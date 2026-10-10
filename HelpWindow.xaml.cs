@@ -23,6 +23,7 @@ public partial class HelpWindow : Window
             ("Middle-click a tab", "Close it"),
             ("Right-click a tab", "Pin or unpin it. Pinned tabs sit at the left, have no close button and are remembered"),
             ("Drag a tab", "Reorder, or drop it on the other pane to move it there"),
+            ("Many tabs", "Below 120 px each they wrap into more rows, which stay where they are when you switch tabs"),
             ("Double-click the splitter", "Make the two panes equal again"),
         }),
         ("Moving around", new[]

@@ -926,23 +926,26 @@ public partial class PaneView : UserControl
         for (int i = 0; i < TabStrip.Children.Count; i++)
         {
             var tabButton = (FrameworkElement)TabStrip.Children[i];
-            var left = tabButton.TranslatePoint(new Point(0, 0), TabStrip).X;
-            if (p.X >= left && p.X < left + tabButton.ActualWidth) return i;
+            var at = tabButton.TranslatePoint(new Point(0, 0), TabStrip);
+            if (p.X >= at.X && p.X < at.X + tabButton.ActualWidth && p.Y >= at.Y && p.Y < at.Y + tabButton.ActualHeight) return i;
         }
         return -1;
     }
 
-    /// Where the dragged tab would land, from the pointer's x over the tab strip.
+    /// Where the dragged tab would land: the row under the pointer, then the place in that row.
     int InsertIndexAt(DragEventArgs e)
     {
-        var x = e.GetPosition(TabStrip).X;
+        var p = e.GetPosition(TabStrip);
+        int lastInRow = -1;
         for (int i = 0; i < TabStrip.Children.Count; i++)
         {
             var tabButton = (FrameworkElement)TabStrip.Children[i];
-            var left = tabButton.TranslatePoint(new Point(0, 0), TabStrip).X;
-            if (x < left + tabButton.ActualWidth / 2) return i;
+            var at = tabButton.TranslatePoint(new Point(0, 0), TabStrip);
+            if (TabStrip.Rows > 1 && (p.Y < at.Y || p.Y >= at.Y + tabButton.ActualHeight)) continue; // another row
+            if (p.X < at.X + tabButton.ActualWidth / 2) return i;
+            lastInRow = i;
         }
-        return TabStrip.Children.Count;
+        return lastInRow >= 0 ? lastInRow + 1 : TabStrip.Children.Count;
     }
 
 
@@ -966,13 +969,17 @@ public partial class PaneView : UserControl
         if (index == dropIndex) return; // only on change: setting it every move is what flickers
         dropIndex = index;
         if (index < 0) { TabDropLine.Visibility = Visibility.Collapsed; return; }
-        double x = TabStrip.Children.Count == 0 ? 0
-            : index < TabStrip.Children.Count
-                ? ((FrameworkElement)TabStrip.Children[index]).TranslatePoint(new Point(0, 0), TabBand).X
-                : ((FrameworkElement)TabStrip.Children[^1]).TranslatePoint(new Point(0, 0), TabBand).X + ((FrameworkElement)TabStrip.Children[^1]).ActualWidth;
+        // beside the tab it lands before, or after the last tab of the row it was dropped in
+        var before = index < TabStrip.Children.Count ? (FrameworkElement)TabStrip.Children[index] : null;
+        var after = index > 0 ? (FrameworkElement)TabStrip.Children[index - 1] : null;
+        var row = after != null && (before == null || before.TranslatePoint(new Point(0, 0), TabBand).Y > after.TranslatePoint(new Point(0, 0), TabBand).Y + 1)
+            ? after : before;
+        if (row == null) return;
+        var at = row.TranslatePoint(new Point(0, 0), TabBand);
+        double x = row == before ? at.X : at.X + row.ActualWidth;
         Canvas.SetLeft(TabDropLine, x - 1.5);
-        Canvas.SetTop(TabDropLine, 4);
-        TabDropLine.Height = Math.Max(0, TabBand.ActualHeight - 4);
+        Canvas.SetTop(TabDropLine, at.Y + 4);
+        TabDropLine.Height = Math.Max(0, row.ActualHeight - 4);
         TabDropLine.Visibility = Visibility.Visible;
     }
 
@@ -1037,12 +1044,16 @@ public partial class PaneView : UserControl
         return true;
     }
 
-    // Each tab gets up to 170 px; when they don't all fit, they shrink evenly so the + stays visible.
-    const double TabMax = 170;
+    // Each tab gets up to 170 px; when they don't all fit they shrink evenly, and below 120 px they
+    // wrap into more rows instead, which stay put: switching tabs never reorders the rows.
+    const double TabMax = 170, TabMin = 120;
     void FitTabs()
     {
         double room = TabBand.ActualWidth - 4 /* left edge */ - NewTabBox.ActualWidth - 8 /* keep some strip visible */;
-        if (room > 0) TabStrip.Width = Math.Min(tabs.Count * TabMax, room);
+        if (room <= 0) return;
+        int perRow = Math.Max(1, (int)(room / TabMin));
+        if (tabs.Count <= perRow) { TabStrip.Rows = 1; TabStrip.Columns = 0; TabStrip.Width = Math.Min(tabs.Count * TabMax, room); }
+        else { TabStrip.Columns = perRow; TabStrip.Rows = (tabs.Count + perRow - 1) / perRow; TabStrip.Width = room; }
         Dispatcher.BeginInvoke(UpdateStripShape, DispatcherPriority.Loaded);
     }
     void TabBand_SizeChanged(object s, SizeChangedEventArgs e) { FitTabs(); UpdateStripShape(); }
@@ -1060,9 +1071,23 @@ public partial class PaneView : UserControl
         Geometry shape = band;
         if (tab >= 0 && tab < TabStrip.Children.Count && TabStrip.Children[tab] is FrameworkElement activeTab)
         {
-            double x = activeTab.TranslatePoint(new Point(0, 0), TabBand).X, tw = activeTab.ActualWidth;
+            var at = activeTab.TranslatePoint(new Point(0, 0), TabBand);
+            double x = at.X, tw = activeTab.ActualWidth;
             var cut = new StreamGeometry();
             using (var g = cut.Open())
+            if (TabStrip.Rows > 1)
+            {
+                // several rows: the active tab may sit above another row, so it is cut out on its own
+                // instead of flaring into the panel below
+                double top = at.Y + StripTop, bottom = at.Y + activeTab.ActualHeight;
+                g.BeginFigure(new Point(x, bottom), true, true);
+                g.LineTo(new Point(x, top + TabRadius), true, true);
+                g.ArcTo(new Point(x + TabRadius, top), new Size(TabRadius, TabRadius), 0, false, SweepDirection.Clockwise, true, true);
+                g.LineTo(new Point(x + tw - TabRadius, top), true, true);
+                g.ArcTo(new Point(x + tw, top + TabRadius), new Size(TabRadius, TabRadius), 0, false, SweepDirection.Clockwise, true, true);
+                g.LineTo(new Point(x + tw, bottom), true, true);
+            }
+            else
             {
                 g.BeginFigure(new Point(x - TabFlare, h), true, true);
                 g.QuadraticBezierTo(new Point(x, h), new Point(x, h - TabFlare), true, true);           // flare out, bottom left
