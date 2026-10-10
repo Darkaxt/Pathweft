@@ -88,6 +88,18 @@
             </StackPanel>
             <TextBlock Style="{StaticResource Hint}" Text="How much room each row takes in Details and List. Compact fits more on screen."/>
 
+            <TextBlock Text="Text size"/>
+            <StackPanel Orientation="Horizontal" Margin="0,6,0,2">
+              <Button x:Name="Text100" Content="100%" Style="{StaticResource Tab}" Click="TextSize_Click"/>
+              <Button x:Name="Text115" Content="115%" Style="{StaticResource Tab}" Click="TextSize_Click"/>
+              <Button x:Name="Text130" Content="130%" Style="{StaticResource Tab}" Click="TextSize_Click"/>
+              <Button x:Name="Text150" Content="150%" Style="{StaticResource Tab}" Click="TextSize_Click"/>
+            </StackPanel>
+            <TextBlock Style="{StaticResource Hint}" Text="Makes the whole window larger, text, icons and rows together, on top of Windows' own scaling."/>
+
+            <CheckBox x:Name="SinglePaneBox" Content="One pane" Click="SinglePane_Click" Margin="0,4,0,0"/>
+            <TextBlock Style="{StaticResource Hint}" Text="Hides the right pane, Explorer style. Ctrl+P switches. F5 and F6 bring the second pane back, since they copy into it."/>
+
             <CheckBox x:Name="AnimationsBox" Content="Animations" Click="Animations_Click" Margin="0,4,0,0"/>
             <TextBlock Style="{StaticResource Hint}" Text="Short fades when a folder is read, when panes change and when a transfer appears. Off means everything switches instantly."/>
           </StackPanel>

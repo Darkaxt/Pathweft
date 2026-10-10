@@ -22,8 +22,7 @@ public partial class MainWindow : Window
         Title = $"File Labs {Updater.Current}";
         PaneView.ShowHidden = Settings.ShowHidden;
         SidebarColumn.Width = new GridLength(Settings.SidebarWidth);
-        PaneGrid.ColumnDefinitions[0].Width = new GridLength(Settings.Split, GridUnitType.Star);
-        PaneGrid.ColumnDefinitions[2].Width = new GridLength(1 - Settings.Split, GridUnitType.Star);
+        ApplyPanes();
         // restore size/position only if it's still on a connected screen
         if (Settings.WindowBounds is { } wb && new Rect(SystemParameters.VirtualScreenLeft, SystemParameters.VirtualScreenTop,
                 SystemParameters.VirtualScreenWidth, SystemParameters.VirtualScreenHeight).IntersectsWith(wb))
@@ -36,9 +35,7 @@ public partial class MainWindow : Window
         {
             Settings.WindowBounds = RestoreBounds;
             Settings.Maximized = WindowState == WindowState.Maximized;
-            var cols = PaneGrid.ColumnDefinitions;
-            double total = cols[0].ActualWidth + cols[2].ActualWidth;
-            if (total > 0) Settings.Split = cols[0].ActualWidth / total; // closed before layout: keep the old value
+            KeepSplit();
             foreach (var p in new[] { Left, Right })
             {
                 Settings.Tabs[p.Name] = p.OpenTabs.ToList();
@@ -208,6 +205,9 @@ public partial class MainWindow : Window
         EditorWindow.AccentChanged();
         ApplyAccent();
         Application.Current.Resources["RowPad"] = new Thickness(4, Settings.RowPad, 4, Settings.RowPad);
+        // Scaling the whole window rather than each font: sizes are set in many places, and icons,
+        // rows and buttons have to grow with the text or it gets clipped.
+        Root.LayoutTransform = Settings.TextScale > 1 ? new ScaleTransform(Settings.TextScale, Settings.TextScale) : null;
         // the pane edge is painted by hand, so a new accent has to be painted on by hand
         Left.SetActive(active == Left); Right.SetActive(active == Right);
     }
@@ -346,6 +346,38 @@ public partial class MainWindow : Window
         Settings.SidebarWidth = SidebarColumn.ActualWidth;
         Settings.Save();
     }
+    /// The split the user dragged to, read before it is lost: on closing, and before one pane takes it all.
+    void KeepSplit()
+    {
+        if (Settings.SinglePane) return; // one pane fills the row, there is no split to keep
+        var cols = PaneGrid.ColumnDefinitions;
+        double total = cols[0].ActualWidth + cols[2].ActualWidth;
+        if (total > 0) Settings.Split = cols[0].ActualWidth / total; // closed before layout: keep the old value
+    }
+
+    /// One pane or two. The right pane keeps its tabs while hidden and comes back where it was.
+    void ApplyPanes()
+    {
+        var cols = PaneGrid.ColumnDefinitions;
+        bool one = Settings.SinglePane;
+        Right.Visibility = PaneSplitter.Visibility = one ? Visibility.Collapsed : Visibility.Visible;
+        cols[1].Width = new GridLength(one ? 0 : 10);
+        cols[2].MinWidth = one ? 0 : 250;
+        cols[0].Width = new GridLength(one ? 1 : Settings.Split, GridUnitType.Star);
+        cols[2].Width = new GridLength(one ? 0 : 1 - Settings.Split, GridUnitType.Star);
+        if (one && active == Right) SetActive(Left);
+    }
+
+    public void SetSinglePane(bool on)
+    {
+        if (on == Settings.SinglePane) return;
+        KeepSplit();
+        Settings.SinglePane = on;
+        Settings.Save();
+        ApplyPanes();
+        active?.FocusList();
+    }
+
     void PaneSplitter_Reset(object s, MouseButtonEventArgs e)
     {
         var cols = ((Grid)((GridSplitter)s).Parent).ColumnDefinitions;
@@ -881,7 +913,8 @@ public partial class MainWindow : Window
         switch (key)
         {
             case Key.Tab when ctrl: active.NextTab(shift ? -1 : 1); break;
-            case Key.Tab: Other.FocusList(); break;
+            case Key.Tab: if (!Settings.SinglePane) Other.FocusList(); break;
+            case Key.P when ctrl: SetSinglePane(!Settings.SinglePane); break;
             case Key.T when ctrl: active.NewTab(); break;
             case Key.W when ctrl: active.CloseTab(); break;
             case Key.L when ctrl: active.EditPath(); break;
@@ -910,6 +943,9 @@ public partial class MainWindow : Window
             case Key.F2: Rename(); break;
             case Key.F4: EditSelected(); break;
             case Key.Z when ctrl: Undo(); break;
+            // F5/F6 copy into the other pane, so with one pane they bring it back first instead of
+            // copying somewhere the user cannot see
+            case Key.F5 or Key.F6 when Settings.SinglePane: SetSinglePane(false); break;
             case Key.F5: Transfer(false); break;
             case Key.F6: Transfer(true); break;
             case Key.F7: MkDir(); break;

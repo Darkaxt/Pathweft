@@ -17,6 +17,7 @@ public partial class SettingsWindow : Window
         EditorBox.IsChecked = Settings.InternalEditor;
         DefaultBox.IsChecked = Settings.IsDefaultFileManager;
         AnimationsBox.IsChecked = Settings.Animations;
+        SinglePaneBox.IsChecked = Settings.SinglePane;
         StrengthSlider.Value = Settings.AccentStrength * 100;
         BuildSwatches();
         BuildWheel();
@@ -174,6 +175,14 @@ public partial class SettingsWindow : Window
         Changed();
     }
 
+    void TextSize_Click(object s, RoutedEventArgs e)
+    {
+        Settings.TextScale = s == Text115 ? 1.15 : s == Text130 ? 1.3 : s == Text150 ? 1.5 : 1;
+        Changed();
+    }
+
+    void SinglePane_Click(object s, RoutedEventArgs e) => main.SetSinglePane(SinglePaneBox.IsChecked == true);
+
     void Animations_Click(object s, RoutedEventArgs e) { Settings.Animations = AnimationsBox.IsChecked == true; Settings.Save(); }
 
     void Refresh()
@@ -188,6 +197,8 @@ public partial class SettingsWindow : Window
         RowCompact.Tag = Settings.RowPad <= 1 ? "on" : null;
         RowNormal.Tag = Settings.RowPad is > 1 and < 6 ? "on" : null;
         RowRoomy.Tag = Settings.RowPad >= 6 ? "on" : null;
+        foreach (var (b, v) in new[] { (Text100, 1.0), (Text115, 1.15), (Text130, 1.3), (Text150, 1.5) })
+            b.Tag = Math.Abs(Settings.TextScale - v) < 0.01 ? "on" : null;
         AccentHex.Text = Settings.Accent;
         ShowAccentOnWheel();
         StrengthText.Text = $"{Settings.AccentStrength * 100:0}%";

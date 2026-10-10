@@ -215,7 +215,7 @@
           <ColumnDefinition MinWidth="250"/>
         </Grid.ColumnDefinitions>
         <!-- drag to resize the two panes; double-click resets 50/50 -->
-        <GridSplitter Grid.Column="1" Width="10" HorizontalAlignment="Stretch" Background="Transparent" ResizeBehavior="PreviousAndNext"
+        <GridSplitter x:Name="PaneSplitter" Grid.Column="1" Width="10" HorizontalAlignment="Stretch" Background="Transparent" ResizeBehavior="PreviousAndNext"
                       MouseDoubleClick="PaneSplitter_Reset"/>
         <local:PaneView x:Name="Left"/>
         <local:PaneView x:Name="Right" Grid.Column="2"/>
