@@ -114,7 +114,7 @@
       <!-- The dark strip is painted by everything AROUND the active tab (left edge, inactive tabs, the
            + area, the rest of the row). The active tab paints nothing, so it is exactly the panel's
            own surface and flows into the path bar below — no colour to keep in sync. -->
-      <Grid DockPanel.Dock="Top">
+      <Grid x:Name="TabsArea" DockPanel.Dock="Top">
       <!-- one shape for the whole strip, with the active tab's silhouette cut out of it: rounded
            top corners flaring outwards at the bottom, the way a browser (and FilePilot) draws tabs.
            The cut-out shows the panel's own surface, so the active tab always matches it exactly. -->
@@ -135,7 +135,7 @@
       </Grid>
 
       <!-- Path: breadcrumbs, editable on click in empty area / Ctrl+L -->
-      <DockPanel DockPanel.Dock="Top" Margin="8,4,8,0">
+      <DockPanel x:Name="PathBar" DockPanel.Dock="Top" Margin="8,4,8,0">
         <Button DockPanel.Dock="Left" Style="{StaticResource Ghost}" Content="&#xE72B;" FontFamily="Segoe Fluent Icons" FontSize="10" ToolTip="Back (Alt+Left) · middle-click: in a new tab" Click="Back_Click" Tag="back" PreviewMouseDown="Nav_MiddleClick"/>
         <Button DockPanel.Dock="Left" Style="{StaticResource Ghost}" Content="&#xE72A;" FontFamily="Segoe Fluent Icons" FontSize="10" ToolTip="Forward (Alt+Right) · middle-click: in a new tab" Click="Fwd_Click" Tag="fwd" PreviewMouseDown="Nav_MiddleClick"/>
         <Button DockPanel.Dock="Left" Style="{StaticResource Ghost}" Content="&#xE74A;" FontFamily="Segoe Fluent Icons" FontSize="10" ToolTip="Up (Backspace) · middle-click: in a new tab" Click="Up_Click" Tag="up" PreviewMouseDown="Nav_MiddleClick"/>
@@ -147,7 +147,7 @@
           </Grid>
         </Border>
         <Grid>
-          <Border Background="Transparent" MouseLeftButtonDown="Crumbs_Click">
+          <Border Background="Transparent" MouseLeftButtonDown="Crumbs_Click" PreviewMouseDown="Crumbs_MiddleClick">
             <StackPanel x:Name="Crumbs" Orientation="Horizontal" VerticalAlignment="Center"/>
           </Border>
           <TextBox x:Name="PathBox" Style="{StaticResource Bare}" Visibility="Collapsed" Margin="4,3"

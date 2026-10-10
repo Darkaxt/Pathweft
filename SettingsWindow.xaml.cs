@@ -21,6 +21,8 @@ public partial class SettingsWindow : Window
         DefaultBox.IsChecked = Settings.IsDefaultFileManager;
         AnimationsBox.IsChecked = Settings.Animations;
         SinglePaneBox.IsChecked = Settings.SinglePane;
+        ScaleSidebar.Value = Settings.SidebarScale * 100; ScaleTabs.Value = Settings.TabsScale * 100;
+        ScalePath.Value = Settings.PathScale * 100; ScaleList.Value = Settings.ListScale * 100;
         QuickLookBox.IsChecked = Settings.QuickLook;
         StrengthSlider.Value = Settings.AccentStrength * 100;
         BuildSwatches();
@@ -185,6 +187,17 @@ public partial class SettingsWindow : Window
         Changed();
     }
 
+    void Scale_Changed(object s, RoutedPropertyChangedEventArgs<double> e)
+    {
+        if (!IsLoaded) return;
+        var v = Math.Round(e.NewValue) / 100;
+        if (s == ScaleSidebar) Settings.SidebarScale = v;
+        else if (s == ScaleTabs) Settings.TabsScale = v;
+        else if (s == ScalePath) Settings.PathScale = v;
+        else Settings.ListScale = v;
+        Changed();
+    }
+
     void SinglePane_Click(object s, RoutedEventArgs e) => main.SetSinglePane(SinglePaneBox.IsChecked == true);
 
     void Animations_Click(object s, RoutedEventArgs e) { Settings.Animations = AnimationsBox.IsChecked == true; Settings.Save(); }
@@ -208,6 +221,8 @@ public partial class SettingsWindow : Window
         RowCompact.Tag = Settings.RowPad <= 1 ? "on" : null;
         RowNormal.Tag = Settings.RowPad is > 1 and < 6 ? "on" : null;
         RowRoomy.Tag = Settings.RowPad >= 6 ? "on" : null;
+        ScaleSidebarText.Text = $"{Settings.SidebarScale * 100:0}%"; ScaleTabsText.Text = $"{Settings.TabsScale * 100:0}%";
+        ScalePathText.Text = $"{Settings.PathScale * 100:0}%"; ScaleListText.Text = $"{Settings.ListScale * 100:0}%";
         foreach (var (b, v) in new[] { (Text100, 1.0), (Text115, 1.15), (Text130, 1.3), (Text150, 1.5) })
             b.Tag = Math.Abs(Settings.TextScale - v) < 0.01 ? "on" : null;
         AccentHex.Text = Settings.Accent;

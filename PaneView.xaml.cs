@@ -1266,6 +1266,22 @@ public partial class PaneView : UserControl
     }
     void EndEditPath() { Suggest.IsOpen = false; PathBox.Visibility = Visibility.Collapsed; Crumbs.Visibility = Visibility.Visible; }
     void Crumbs_Click(object s, MouseButtonEventArgs e) { if (e.OriginalSource is Border) EditPath(); }
+    // middle-click on the empty part of the path: the folder above, in a new tab (a segment opens itself)
+    void Crumbs_MiddleClick(object s, MouseButtonEventArgs e)
+    {
+        if (e.ChangedButton != MouseButton.Middle || e.OriginalSource is not Border || UpTarget() is not { } up) return;
+        OpenInBackgroundTab(up);
+        e.Handled = true;
+    }
+
+    /// Settings → Text size per area: the tabs, the path bar and the list, each on top of the window's own size.
+    public void ApplyScales()
+    {
+        static Transform Scale(double s) => s == 1 ? null : new ScaleTransform(s, s);
+        TabsArea.LayoutTransform = Scale(Settings.TabsScale);
+        PathBar.LayoutTransform = Scale(Settings.PathScale);
+        List.LayoutTransform = Scale(Settings.ListScale);
+    }
     string TypedPath => Environment.ExpandEnvironmentVariables(PathBox.Text.Trim().Trim('"'));
 
     // Preview, not KeyDown: the text box itself handles Up/Down (caret) before KeyDown would see them.

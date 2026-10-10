@@ -112,7 +112,7 @@
     </Grid>
 
     <!-- Sidebar: a bit more opaque, it sits over whatever is behind the window -->
-    <DockPanel Background="#40000000">
+    <DockPanel x:Name="SidebarPanel" Background="#40000000">
       <Button DockPanel.Dock="Bottom" Style="{StaticResource Side}" Margin="8,4,8,10" Click="Settings_Click" ToolTip="Settings (Ctrl+,)">
         <StackPanel Orientation="Horizontal">
           <TextBlock Text="&#xE713;" FontFamily="Segoe Fluent Icons" Foreground="{StaticResource Muted}" Margin="0,2,10,0"/>

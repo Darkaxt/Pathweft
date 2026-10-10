@@ -118,6 +118,27 @@
               <Button x:Name="Text150" Content="150%" Style="{StaticResource Tab}" Click="TextSize_Click"/>
             </StackPanel>
             <TextBlock Style="{StaticResource Hint}" Text="Makes the whole window larger, text, icons and rows together, on top of Windows' own scaling."/>
+            <DockPanel Margin="0,4,0,0">
+              <TextBlock x:Name="ScaleSidebarText" DockPanel.Dock="Right" Width="40" TextAlignment="Right" Foreground="#8A97AA" Typography.NumeralAlignment="Tabular"/>
+              <TextBlock Text="Sidebar" Width="70" VerticalAlignment="Center"/>
+              <Slider x:Name="ScaleSidebar" Minimum="80" Maximum="150" TickFrequency="5" IsSnapToTickEnabled="True" VerticalAlignment="Center" ValueChanged="Scale_Changed"/>
+            </DockPanel>
+            <DockPanel Margin="0,6,0,0">
+              <TextBlock x:Name="ScaleTabsText" DockPanel.Dock="Right" Width="40" TextAlignment="Right" Foreground="#8A97AA" Typography.NumeralAlignment="Tabular"/>
+              <TextBlock Text="Tabs" Width="70" VerticalAlignment="Center"/>
+              <Slider x:Name="ScaleTabs" Minimum="80" Maximum="150" TickFrequency="5" IsSnapToTickEnabled="True" VerticalAlignment="Center" ValueChanged="Scale_Changed"/>
+            </DockPanel>
+            <DockPanel Margin="0,6,0,0">
+              <TextBlock x:Name="ScalePathText" DockPanel.Dock="Right" Width="40" TextAlignment="Right" Foreground="#8A97AA" Typography.NumeralAlignment="Tabular"/>
+              <TextBlock Text="Path bar" Width="70" VerticalAlignment="Center"/>
+              <Slider x:Name="ScalePath" Minimum="80" Maximum="150" TickFrequency="5" IsSnapToTickEnabled="True" VerticalAlignment="Center" ValueChanged="Scale_Changed"/>
+            </DockPanel>
+            <DockPanel Margin="0,6,0,0">
+              <TextBlock x:Name="ScaleListText" DockPanel.Dock="Right" Width="40" TextAlignment="Right" Foreground="#8A97AA" Typography.NumeralAlignment="Tabular"/>
+              <TextBlock Text="File list" Width="70" VerticalAlignment="Center"/>
+              <Slider x:Name="ScaleList" Minimum="80" Maximum="150" TickFrequency="5" IsSnapToTickEnabled="True" VerticalAlignment="Center" ValueChanged="Scale_Changed"/>
+            </DockPanel>
+            <TextBlock Style="{StaticResource Hint}" Text="Each area on its own, on top of the size above: a bigger file list with a compact sidebar, for example."/>
 
             <CheckBox x:Name="SinglePaneBox" Content="One pane" Click="SinglePane_Click" Margin="0,4,0,0"/>
             <TextBlock Style="{StaticResource Hint}" Text="Hides the right pane, Explorer style. Ctrl+P switches. F5 and F6 bring the second pane back, since they copy into it."/>

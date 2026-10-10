@@ -233,6 +233,8 @@ public partial class MainWindow : Window
         // Scaling the whole window rather than each font: sizes are set in many places, and icons,
         // rows and buttons have to grow with the text or it gets clipped.
         Root.LayoutTransform = Settings.TextScale > 1 ? new ScaleTransform(Settings.TextScale, Settings.TextScale) : null;
+        SidebarPanel.LayoutTransform = Settings.SidebarScale != 1 ? new ScaleTransform(Settings.SidebarScale, Settings.SidebarScale) : null;
+        Left.ApplyScales(); Right.ApplyScales();
         BgImage.Source = BackgroundPicture(Settings.BackgroundImage);
         BgLayer.Visibility = BgImage.Source != null ? Visibility.Visible : Visibility.Collapsed;
         BgLayer.Opacity = Settings.ImageOpacity / 100;
@@ -534,6 +536,8 @@ public partial class MainWindow : Window
     // Quick access: pinned folders, one path per line in %AppData%\FileLabs\quickaccess.txt
     static readonly string QuickFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "FileLabs", "quickaccess.txt");
     List<string> pinned = new();
+    string pinDrag;
+    Point pinDragFrom;
 
     void LoadQuickAccess()
     {
@@ -553,6 +557,15 @@ public partial class MainWindow : Window
             up.Click += (_, _) => { int i = pinned.IndexOf(path); if (i > 0) { pinned.RemoveAt(i); pinned.Insert(i - 1, path); SaveQuickAccess(); } };
             remove.Click += (_, _) => { pinned.Remove(path); SaveQuickAccess(); };
             b.ContextMenu = new ContextMenu { Items = { up, remove } };
+            // drag to reorder; the sidebar's drop handler places it (SidebarSections.cs)
+            b.PreviewMouseLeftButtonDown += (_, e) => { pinDrag = path; pinDragFrom = e.GetPosition(QuickAccess); };
+            b.PreviewMouseMove += (_, e) =>
+            {
+                if (pinDrag != path || e.LeftButton != MouseButtonState.Pressed) return;
+                if (Math.Abs((e.GetPosition(QuickAccess) - pinDragFrom).Y) < SystemParameters.MinimumVerticalDragDistance) return;
+                pinDrag = null;
+                DragDrop.DoDragDrop(b, new DataObject("FileLabsPin", path), DragDropEffects.Move);
+            };
             QuickAccess.Children.Add(b);
         }
         QuickHint.Visibility = pinned.Count == 0 ? Visibility.Visible : Visibility.Collapsed;

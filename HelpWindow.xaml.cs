@@ -19,7 +19,7 @@ public partial class HelpWindow : Window
             ("Ctrl+T", "New tab"),
             ("Ctrl+W", "Close the tab (pinned tabs stay)"),
             ("Ctrl+Tab / Ctrl+Shift+Tab", "Next / previous tab"),
-            ("Middle-click a folder", "Open it in a new tab behind this one: in the list, the sidebar, the folder tree, the path, and on Back, Forward and Up"),
+            ("Middle-click a folder", "Open it in a new tab behind this one: in the list, the sidebar, the folder tree, the path, and on Back, Forward and Up. On the empty part of the path: the folder above"),
             ("Middle-click a tab", "Close it"),
             ("Right-click a tab", "Pin or unpin it. Pinned tabs sit at the left, have no close button and are remembered"),
             ("Drag a tab", "Reorder, or drop it on the other pane to move it there"),
@@ -35,7 +35,7 @@ public partial class HelpWindow : Window
             ("Chevron after a path segment", "The folders inside it, to jump sideways"),
             ("Ctrl+F", "Filter this folder as you type; Enter searches every subfolder, * and ? work"),
             ("Esc", "Leave search results"),
-            ("Ctrl+D", "Pin the folder to Quick access"),
+            ("Ctrl+D", "Pin the folder to Quick access; drag a pinned folder to reorder"),
         }),
         ("Files", new[]
         {
@@ -67,7 +67,7 @@ public partial class HelpWindow : Window
             ("Click a column header", "Sort; the selected file stays in sight"),
             ("Ctrl+H", "Show hidden files"),
             ("Ctrl+R", "Refresh and measure folder sizes again"),
-            ("Settings → Text size", "Make the whole window larger"),
+            ("Settings → Text size", "Make the whole window larger, or just the sidebar, the tabs, the path bar or the file list"),
             ("Settings → Background image", "A picture behind the panes, with its own strength, blur and brightness"),
         }),
         ("Everything else", new[]

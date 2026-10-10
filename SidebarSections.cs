@@ -94,7 +94,7 @@ public partial class MainWindow
             SidebarHost.DragLeave += (_, e) =>
             {
                 var p = e.GetPosition(SidebarHost);
-                if (p.X < 0 || p.Y < 0 || p.X > SidebarHost.ActualWidth || p.Y > SidebarHost.ActualHeight) Highlight(null);
+                if (p.X < 0 || p.Y < 0 || p.X > SidebarHost.ActualWidth || p.Y > SidebarHost.ActualHeight) { Highlight(null); pinDrop = -1; }
             };
             SidebarHost.Drop += Sidebar_Drop;
         }
@@ -193,6 +193,7 @@ public partial class MainWindow
 
     void Sidebar_DragOver(object s, DragEventArgs e)
     {
+        if (e.Data.GetDataPresent("FileLabsPin")) { e.Effects = DragDropEffects.Move; e.Handled = true; PinDropAt(e); return; }
         e.Effects = e.Data.GetDataPresent("FileLabsSection") ? DragDropEffects.Move : DragDropEffects.None;
         e.Handled = true;
         if (e.Effects == DragDropEffects.None) { Highlight(null); return; }
@@ -218,8 +219,43 @@ public partial class MainWindow
         DropLine.Visibility = Visibility.Visible;
     }
 
+    // ---- Quick access: a pinned folder dragged up or down its own list ----
+    int pinDrop = -1;
+
+    void PinDropAt(DragEventArgs e)
+    {
+        var y = e.GetPosition(QuickAccess).Y;
+        int at = QuickAccess.Children.Count;
+        for (int i = 0; i < QuickAccess.Children.Count; i++)
+        {
+            var c = (FrameworkElement)QuickAccess.Children[i];
+            if (y < c.TranslatePoint(new Point(0, 0), QuickAccess).Y + c.ActualHeight / 2) { at = i; break; }
+        }
+        if (at == pinDrop) return; // only on change, or the line flickers
+        pinDrop = at;
+        if (QuickAccess.Children.Count == 0) return;
+        var edge = at < QuickAccess.Children.Count ? (FrameworkElement)QuickAccess.Children[at] : (FrameworkElement)QuickAccess.Children[^1];
+        var top = edge.TranslatePoint(new Point(0, 0), SidebarHost).Y + (at < QuickAccess.Children.Count ? 0 : edge.ActualHeight);
+        Canvas.SetTop(DropLine, Math.Max(0, top - DropLine.Height / 2));
+        Canvas.SetLeft(DropLine, 6);
+        DropLine.Width = Math.Max(0, SidebarHost.ActualWidth - 12);
+        DropLine.Visibility = Visibility.Visible;
+    }
+
     void Sidebar_Drop(object s, DragEventArgs e)
     {
+        if (e.Data.GetData("FileLabsPin") is string pin)
+        {
+            int to = pinDrop, from = pinned.IndexOf(pin);
+            pinDrop = -1;
+            Highlight(null);
+            e.Handled = true;
+            if (from < 0 || to < 0 || to == from || to == from + 1) return;
+            pinned.RemoveAt(from);
+            pinned.Insert(to > from ? to - 1 : to, pin);
+            SaveQuickAccess();
+            return;
+        }
         var target = dropTarget;
         bool after = dropAfter;
         Highlight(null);
