@@ -37,6 +37,8 @@ No account, no telemetry, nothing it talks to online.
 | `Ctrl+Shift+C` | copy the selected paths |
 | `` Ctrl+` `` | terminal here |
 | `Alt+Enter` | Properties |
+| `Ctrl+P` | one pane or two |
+| `F1` | every key and feature |
 
 ## Building
 

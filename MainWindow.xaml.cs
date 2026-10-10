@@ -40,6 +40,7 @@ public partial class MainWindow : Window
             {
                 Settings.Tabs[p.Name] = p.OpenTabs.ToList();
                 Settings.ActiveTab[p.Name] = p.ActiveTab;
+                Settings.Pins[p.Name] = p.PinnedTabs;
             }
             Settings.Save();
         };
@@ -101,7 +102,7 @@ public partial class MainWindow : Window
         active = Left;
         // last session's tabs, then the folder asked for on the command line as a new tab
         foreach (var (p, fallback) in new[] { (Left, user), (Right, Path.GetPathRoot(Environment.SystemDirectory)) })
-            if (!Settings.Tabs.TryGetValue(p.Name, out var paths) || !p.Restore(paths, Settings.ActiveTab.TryGetValue(p.Name, out var a) ? a : 0))
+            if (!Settings.Tabs.TryGetValue(p.Name, out var paths) || !p.Restore(paths, Settings.ActiveTab.TryGetValue(p.Name, out var a) ? a : 0, Settings.Pins.GetValueOrDefault(p.Name)))
                 p.Navigate(fallback);
         var arg = Environment.GetCommandLineArgs().Skip(1).FirstOrDefault(a => !a.StartsWith("--"));
         if (arg != null) OpenPath(Left, arg);
@@ -292,6 +293,16 @@ public partial class MainWindow : Window
         settingsWindow.Show();
     }
     void Settings_Click(object s, RoutedEventArgs e) => OpenSettings();
+
+    HelpWindow helpWindow;
+    void OpenHelp()
+    {
+        if (helpWindow != null) { helpWindow.Activate(); return; }
+        helpWindow = new HelpWindow(this);
+        helpWindow.Closed += (_, _) => helpWindow = null;
+        helpWindow.Show();
+    }
+    void Help_Click(object s, RoutedEventArgs e) => OpenHelp();
 
     // The same check the timer runs, on demand. A new version opens the update dialog; otherwise the
     // answer ("… is the latest version") goes to the status bar, so nothing pops up for nothing.
@@ -764,8 +775,10 @@ public partial class MainWindow : Window
         if (sel.Count == 0) return;
         if (permanent && MessageBox.Show(this,
                 $"Permanently delete {(sel.Count == 1 ? $"“{sel[0].Name}”" : $"these {sel.Count} items")}?\n\nThey will not go to the Recycle Bin.",
-                "Delete permanently", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No) != MessageBoxResult.Yes) return;
-        Recycle(sel.Select(e => e.Path).ToList(), UIOption.AllDialogs, permanent);
+                "Delete permanently", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.Yes) != MessageBoxResult.Yes) return;
+        // Shift+Delete, Enter deletes, as in Explorer: Yes is the default button, and the shell is not
+        // asked to confirm a second time what was just confirmed here
+        Recycle(sel.Select(e => e.Path).ToList(), permanent ? UIOption.OnlyErrorDialogs : UIOption.AllDialogs, permanent);
     }
 
     /// Deletes through the shell, to the Recycle Bin unless `permanent`. Also used by Undo, quietly.
@@ -915,6 +928,7 @@ public partial class MainWindow : Window
             case Key.Tab when ctrl: active.NextTab(shift ? -1 : 1); break;
             case Key.Tab: if (!Settings.SinglePane) Other.FocusList(); break;
             case Key.P when ctrl: SetSinglePane(!Settings.SinglePane); break;
+            case Key.F1: OpenHelp(); break;
             case Key.T when ctrl: active.NewTab(); break;
             case Key.W when ctrl: active.CloseTab(); break;
             case Key.L when ctrl: active.EditPath(); break;

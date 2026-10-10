@@ -114,6 +114,12 @@
           <TextBlock Text="Settings"/>
         </StackPanel>
       </Button>
+      <Button DockPanel.Dock="Bottom" Style="{StaticResource Side}" Margin="8,4,8,0" Click="Help_Click" ToolTip="Every key and feature (F1)">
+        <StackPanel Orientation="Horizontal">
+          <TextBlock Text="&#xE897;" FontFamily="Segoe Fluent Icons" Foreground="{StaticResource Muted}" Margin="0,2,10,0"/>
+          <TextBlock Text="Help"/>
+        </StackPanel>
+      </Button>
       <!-- docked after Settings, so it sits just above it -->
       <Button x:Name="UpdateButton" DockPanel.Dock="Bottom" Style="{StaticResource Side}" Margin="8,4,8,0" Click="CheckUpdates_Click"
               ToolTip="Check for updates now (it also checks by itself every 10 minutes)">

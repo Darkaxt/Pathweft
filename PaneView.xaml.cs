@@ -189,6 +189,7 @@ public partial class PaneView : UserControl
     public event Action<List<string>, string, bool> FilesDropped; // sources, destination, move
 
     readonly List<string> tabs = new() { "" };
+    readonly List<bool> pins = new() { false }; // beside tabs, index for index: a pinned tab cannot be closed
     int tab;
     readonly Stack<string> back = new(), fwd = new();
     IList<Entry> items = new List<Entry>(); // an ObservableCollection while search results stream in
@@ -838,6 +839,7 @@ public partial class PaneView : UserControl
             var path = parts[i].Path;
             var b = new Button { Content = new TextBlock { Text = parts[i].Name }, Style = (Style)FindResource("Ghost") };
             b.Click += (_, _) => { Navigate(path); List.Focus(); };
+            b.PreviewMouseDown += (_, e) => { if (e.ChangedButton == MouseButton.Middle) { OpenInBackgroundTab(path); e.Handled = true; } };
             Crumbs.Children.Add(b);
             // Explorer's chevron: the folders inside this one, to jump sideways without going up first
             var next = i + 1 < parts.Count ? parts[i + 1].Path : null;
@@ -881,7 +883,7 @@ public partial class PaneView : UserControl
 
     void BuildTabs()
     {
-        var signature = string.Join("|", tabs) + "@" + tab + "#" + tabs.Count;
+        var signature = string.Join("|", tabs) + "@" + tab + "#" + tabs.Count + "^" + string.Join("", pins.Select(p => p ? 1 : 0));
         if (signature == tabsShown) return;
         tabsShown = signature;
         TabStrip.Children.Clear();
@@ -890,15 +892,22 @@ public partial class PaneView : UserControl
             int idx = i;
             var name = System.IO.Path.GetFileName(tabs[i].TrimEnd((char)92));
             var close = new Button { Style = (Style)FindResource("TabClose"), ToolTip = "Close tab (Ctrl+W)" };
-            if (tabs.Count == 1) close.Visibility = Visibility.Collapsed; // the last tab can't be closed
+            if (tabs.Count == 1 || pins[i]) close.Visibility = Visibility.Collapsed; // the last tab can't be closed, nor a pinned one
             close.Click += (_, e) => { CloseTab(idx); e.Handled = true; };
             var row = new DockPanel();
             DockPanel.SetDock(close, Dock.Right);
             row.Children.Add(close);
+            if (pins[i])
+            {
+                var pin = new TextBlock { Text = "\uE718", FontFamily = new FontFamily("Segoe Fluent Icons"), FontSize = 10, Opacity = 0.7, VerticalAlignment = VerticalAlignment.Center, Margin = new(6, 0, 2, 0) };
+                DockPanel.SetDock(pin, Dock.Right);
+                row.Children.Add(pin);
+            }
             row.Children.Add(MainWindow.ShellIcon(tabs[i], "\uE8B7", 16, new(0, 0, 7, 0)));
             row.Children.Add(new TextBlock { Text = name == "" ? tabs[i] : name, TextTrimming = TextTrimming.CharacterEllipsis, VerticalAlignment = VerticalAlignment.Center });
             var b = new Button { Content = row, Style = (Style)FindResource("BrowserTab"), Tag = i == tab ? "on" : null, Uid = i == tab - 1 ? "beforeActive" : "", ToolTip = tabs[i] };
             b.Click += (_, _) => SwitchTab(idx);
+            b.ContextMenu = TabMenu(idx);
             TabStrip.Children.Add(b);
         }
         FitTabs();
@@ -978,14 +987,17 @@ public partial class PaneView : UserControl
             int from = tabs.IndexOf(drag.Path);
             if (from < 0 || at == from || at == from + 1) return;
             var active = tabs[tab];
-            tabs.RemoveAt(from);
-            tabs.Insert(at > from ? at - 1 : at, drag.Path);
+            var pinned = pins[from];
+            tabs.RemoveAt(from); pins.RemoveAt(from);
+            tabs.Insert(at > from ? at - 1 : at, drag.Path); pins.Insert(at > from ? at - 1 : at, pinned);
             tab = tabs.IndexOf(active);
             BuildTabs();
         }
         else
         {
+            if (drag.Pane.IsPinned(drag.Path)) return; // a pinned tab stays where it was pinned
             drag.Pane.TakeTabAway(drag.Path);
+            pins.Insert(Math.Clamp(at, 0, tabs.Count), false);
             tabs.Insert(Math.Clamp(at, 0, tabs.Count), drag.Path);
             tab = at;
             Navigate(drag.Path, record: false);
@@ -1000,22 +1012,26 @@ public partial class PaneView : UserControl
         int i = tabs.IndexOf(path);
         if (i < 0) return;
         if (tabs.Count == 1) { tabs[0] = System.IO.Path.GetPathRoot(path) ?? path; Navigate(tabs[0], record: false); return; }
-        tabs.RemoveAt(i);
+        tabs.RemoveAt(i); pins.RemoveAt(i);
         if (i < tab || tab == tabs.Count) tab--;
         Navigate(Dir, record: false);
     }
 
+    bool IsPinned(string path) => tabs.IndexOf(path) is >= 0 and var i && pins[i];
+
     // ---- remembering the open tabs ----
     public IReadOnlyList<string> OpenTabs => tabs;
     public int ActiveTab => tab;
+    public List<int> PinnedTabs => Enumerable.Range(0, tabs.Count).Where(i => pins[i]).ToList();
 
     /// False when none of the saved folders exists any more.
-    public bool Restore(List<string> paths, int active)
+    public bool Restore(List<string> paths, int active, List<int> pinned = null)
     {
-        var usable = paths.Where(p => IsRemote(p) || Directory.Exists(p)).ToList(); // a NAS that is off: 21 s per tab
+        var usable = paths.Select((p, i) => (p, pin: pinned?.Contains(i) == true))
+                          .Where(x => IsRemote(x.p) || Directory.Exists(x.p)).ToList(); // a NAS that is off: 21 s per tab
         if (usable.Count == 0) return false;
-        tabs.Clear();
-        tabs.AddRange(usable);
+        tabs.Clear(); pins.Clear();
+        tabs.AddRange(usable.Select(x => x.p)); pins.AddRange(usable.Select(x => x.pin));
         tab = Math.Clamp(active, 0, tabs.Count - 1);
         Navigate(Dir, record: false);
         return true;
@@ -1064,12 +1080,12 @@ public partial class PaneView : UserControl
         StripShape.Data = shape;
     }
 
-    public void NewTab() { tabs.Insert(tab + 1, Dir); tab++; Navigate(Dir, record: false); }
+    public void NewTab() { tabs.Insert(tab + 1, Dir); pins.Insert(tab + 1, false); tab++; Navigate(Dir, record: false); }
     public void CloseTab(int i = -1)
     {
-        if (tabs.Count == 1) return;
         int idx = i < 0 ? tab : i;
-        tabs.RemoveAt(idx);
+        if (tabs.Count == 1 || pins[idx]) return;
+        tabs.RemoveAt(idx); pins.RemoveAt(idx);
         if (idx < tab || tab == tabs.Count) tab--;
         Navigate(Dir, record: false);
         List.Focus();
@@ -1087,7 +1103,48 @@ public partial class PaneView : UserControl
         else if (Dir.StartsWith(@"\\")) Navigate(ServerOf(Dir), name); // share root → the server's shares
     }
 
-    public void OpenInBackgroundTab(string path) { tabs.Insert(tab + 1, path); BuildTabs(); }
+    public void OpenInBackgroundTab(string path) { tabs.Insert(tab + 1, path); pins.Insert(tab + 1, false); BuildTabs(); }
+
+    /// Pinned tabs sit together at the left and have no close button; Ctrl+W and middle-click pass them by.
+    public void TogglePin(int i)
+    {
+        var path = tabs[i]; var active = tabs[tab];
+        bool pin = !pins[i];
+        tabs.RemoveAt(i); pins.RemoveAt(i);
+        int at = pins.Count(p => p); // first place after the pinned group
+        tabs.Insert(at, path); pins.Insert(at, pin);
+        tab = i == tab ? at : tabs.IndexOf(active);
+        BuildTabs();
+        Settings.Save();
+    }
+
+    ContextMenu TabMenu(int i)
+    {
+        var menu = new ContextMenu();
+        var pin = new MenuItem { Header = pins[i] ? "Unpin tab" : "Pin tab" };
+        pin.Click += (_, _) => TogglePin(i);
+        var close = new MenuItem { Header = "Close tab", InputGestureText = "Ctrl+W", IsEnabled = !pins[i] && tabs.Count > 1 };
+        close.Click += (_, _) => CloseTab(i);
+        menu.Items.Add(pin); menu.Items.Add(close);
+        return menu;
+    }
+
+    /// Back, Forward and Up open where they would go in a new tab on a middle click, as in a browser.
+    void Nav_MiddleClick(object s, MouseButtonEventArgs e)
+    {
+        if (e.ChangedButton != MouseButton.Middle) return;
+        var target = (string)((FrameworkElement)s).Tag switch
+        {
+            "back" => back.Count > 0 ? back.Peek() : null,
+            "fwd" => fwd.Count > 0 ? fwd.Peek() : null,
+            _ => UpTarget(),
+        };
+        if (target != null) OpenInBackgroundTab(target);
+        e.Handled = true;
+    }
+
+    string UpTarget() =>
+        IsServer(Dir) ? null : Directory.GetParent(Dir)?.FullName ?? (Dir.StartsWith(@"\\") ? ServerOf(Dir) : null);
 
     // ---- selection by pattern (TC's Num+ / Num- / Num*), and "select these" for Compare ----
     bool bulkSelect; // one footer update at the end instead of one per row
@@ -1283,6 +1340,13 @@ public partial class PaneView : UserControl
     {
         sortKey = key; sortDesc = desc;
         if (view != null) view.CustomSort = new EntrySort(key, desc);
+        // the selected file stays in sight and keeps the keyboard, wherever the new order put it
+        if (List.SelectedItem is { } sel)
+            Dispatcher.BeginInvoke(() =>
+            {
+                List.ScrollIntoView(sel);
+                if (List.IsKeyboardFocusWithin) (List.ItemContainerGenerator.ContainerFromItem(sel) as UIElement)?.Focus();
+            }, DispatcherPriority.Loaded);
         ShowSortArrow();
         SortIcon.Text = desc ? "" : ""; // down / up arrow
         SortName.Text = key;

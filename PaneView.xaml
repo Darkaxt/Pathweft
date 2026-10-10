@@ -136,9 +136,9 @@
 
       <!-- Path: breadcrumbs, editable on click in empty area / Ctrl+L -->
       <DockPanel DockPanel.Dock="Top" Margin="8,4,8,0">
-        <Button DockPanel.Dock="Left" Style="{StaticResource Ghost}" Content="&#xE72B;" FontFamily="Segoe Fluent Icons" FontSize="10" ToolTip="Back (Alt+Left)" Click="Back_Click"/>
-        <Button DockPanel.Dock="Left" Style="{StaticResource Ghost}" Content="&#xE72A;" FontFamily="Segoe Fluent Icons" FontSize="10" ToolTip="Forward (Alt+Right)" Click="Fwd_Click"/>
-        <Button DockPanel.Dock="Left" Style="{StaticResource Ghost}" Content="&#xE74A;" FontFamily="Segoe Fluent Icons" FontSize="10" ToolTip="Up (Backspace)" Click="Up_Click"/>
+        <Button DockPanel.Dock="Left" Style="{StaticResource Ghost}" Content="&#xE72B;" FontFamily="Segoe Fluent Icons" FontSize="10" ToolTip="Back (Alt+Left) · middle-click: in a new tab" Click="Back_Click" Tag="back" PreviewMouseDown="Nav_MiddleClick"/>
+        <Button DockPanel.Dock="Left" Style="{StaticResource Ghost}" Content="&#xE72A;" FontFamily="Segoe Fluent Icons" FontSize="10" ToolTip="Forward (Alt+Right) · middle-click: in a new tab" Click="Fwd_Click" Tag="fwd" PreviewMouseDown="Nav_MiddleClick"/>
+        <Button DockPanel.Dock="Left" Style="{StaticResource Ghost}" Content="&#xE74A;" FontFamily="Segoe Fluent Icons" FontSize="10" ToolTip="Up (Backspace) · middle-click: in a new tab" Click="Up_Click" Tag="up" PreviewMouseDown="Nav_MiddleClick"/>
         <Border DockPanel.Dock="Right" Width="170" Background="#12FFFFFF" CornerRadius="5" Margin="6,0,0,0"
                 ToolTip="Typing filters this folder. Enter searches every subfolder. * and ? work as wildcards.">
           <Grid>
