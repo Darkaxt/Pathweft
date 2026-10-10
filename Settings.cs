@@ -18,6 +18,7 @@ public static class Settings
     public static bool Animations = true;
     public static double TextScale = 1;      // the whole window, text included: 1, 1.15, 1.3, 1.5
     public static bool SinglePane;           // the right pane is hidden
+    public static bool QuickLook;            // Space asks QuickLook (QL-Win) for the preview when it is running
     public static double AccentStrength = 1.0; // how opaque the accent tints are, 1 = as designed
     public static bool InternalEditor = true; // Enter on a code/text file opens the F4 editor, not its app
     public static bool Verify;               // xxHash3 check after copying
@@ -51,6 +52,7 @@ public static class Settings
                 case "animations": Animations = v == "1"; break;
                 case "textscale" when double.TryParse(v, CultureInfo.InvariantCulture, out var ts) && double.IsFinite(ts): TextScale = Math.Clamp(ts, 1, 1.6); break;
                 case "singlepane": SinglePane = v == "1"; break;
+                case "quicklook": QuickLook = v == "1"; break;
                 case "accentstrength" when double.TryParse(v, CultureInfo.InvariantCulture, out var ast) && double.IsFinite(ast): AccentStrength = Math.Clamp(ast, 0.3, 2.5); break;
                 case "verify": Verify = v == "1"; break;
                 case "internaleditor": InternalEditor = v == "1"; break;
@@ -93,6 +95,7 @@ public static class Settings
             $"animations={(Animations ? 1 : 0)}",
             $"textscale={TextScale.ToString(CultureInfo.InvariantCulture)}",
             $"singlepane={(SinglePane ? 1 : 0)}",
+            $"quicklook={(QuickLook ? 1 : 0)}",
             $"accentstrength={AccentStrength.ToString(CultureInfo.InvariantCulture)}",
             $"verify={(Verify ? 1 : 0)}",
             $"internaleditor={(InternalEditor ? 1 : 0)}",

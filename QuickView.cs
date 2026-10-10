@@ -39,9 +39,36 @@ public partial class MainWindow
         return host;
     }
 
+    // QuickLook (QL-Win), for those who prefer it and have it running: Space toggles its preview and a
+    // new selection switches it, the way it follows Explorer. Spoken to over its own named pipe with
+    // its own messages ("<message>|<path>|<options>"); nothing is started when it is not running.
+    static readonly string QuickLookPipe = "QuickLook.App.Pipe." + System.Security.Principal.WindowsIdentity.GetCurrent().User?.Value;
+    bool quickLookUsed; // Switch is only sent once QuickLook has been asked for something
+
+    static bool QuickLookSend(string message, string path)
+    {
+        try
+        {
+            using var pipe = new System.IO.Pipes.NamedPipeClientStream(".", QuickLookPipe, System.IO.Pipes.PipeDirection.Out);
+            pipe.Connect(150); // not running: give up quickly and use Quick View
+            using var w = new StreamWriter(pipe);
+            w.WriteLine($"QuickLook.App.PipeMessages.{message}|{path}|");
+            return true;
+        }
+        catch (Exception ex) when (ex is TimeoutException or IOException or UnauthorizedAccessException) { return false; }
+    }
+
+    void QuickLookFollow(PaneView p)
+    {
+        if (!quickLookUsed || p != active || p.Selected is not { Count: > 0 } sel) return;
+        var path = sel[0].Path;
+        Task.Run(() => QuickLookSend("Switch", path)); // only acts while its window is open
+    }
+
     void QuickView()
     {
         if (quick != null) { quick.Close(); return; }
+        if (Settings.QuickLook && active.Selected is { Count: > 0 } sel && QuickLookSend("Toggle", sel[0].Path)) { quickLookUsed = true; return; }
         quick = new Window
         {
             Owner = this, Width = 1000, Height = 720, WindowStartupLocation = WindowStartupLocation.CenterOwner,

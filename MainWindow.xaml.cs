@@ -50,7 +50,7 @@ public partial class MainWindow : Window
         foreach (var p in new[] { Left, Right })
         {
             p.Activated += () => SetActive(p);
-            p.StatsChanged += () => { if (p == active) UpdateStats(); };
+            p.StatsChanged += () => { if (p == active) UpdateStats(); QuickLookFollow(p); };
             p.Error += msg => Status.Text = msg;
             p.FilesDropped += (files, dest, move) => Submit(files, dest, move);
             p.RenameCommitted += (entry, name) => RenameCommitted(p, entry, name);

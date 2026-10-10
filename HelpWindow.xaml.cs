@@ -50,7 +50,7 @@ public partial class HelpWindow : Window
             ("Ctrl+Z", "Undo the last copy, move, rename, new file or folder, zip or extract"),
             ("Ctrl+Shift+C", "Copy the selected paths as text"),
             ("Alt+Enter", "Properties"),
-            ("Space", "Quick View: images, video, audio, PDF, text"),
+            ("Space", "Quick View: images, video, audio, PDF, text; or QuickLook, if you turn it on in Settings → Files"),
         }),
         ("Selecting", new[]
         {
