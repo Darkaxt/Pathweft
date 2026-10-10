@@ -68,6 +68,7 @@ public partial class HelpWindow : Window
             ("Ctrl+H", "Show hidden files"),
             ("Ctrl+R", "Refresh and measure folder sizes again"),
             ("Settings → Text size", "Make the whole window larger"),
+            ("Settings → Background image", "A picture behind the panes, with its own strength, blur and brightness"),
         }),
         ("Everything else", new[]
         {

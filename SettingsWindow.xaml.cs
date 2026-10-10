@@ -12,6 +12,9 @@ public partial class SettingsWindow : Window
         Owner = main = owner;
         SourceInitialized += (_, _) => MainWindow.ApplyAcrylic(this);
         OpacitySlider.Value = Settings.Opacity;
+        BgOpacitySlider.Value = Settings.ImageOpacity;
+        BgBlurSlider.Value = Settings.ImageBlur;
+        BgBrightSlider.Value = Settings.ImageBrightness;
         HiddenBox.IsChecked = Settings.ShowHidden;
         VerifyBox.IsChecked = Settings.Verify;
         EditorBox.IsChecked = Settings.InternalEditor;
@@ -195,6 +198,13 @@ public partial class SettingsWindow : Window
         MenuOwn.Tag = Settings.NativeMenu ? null : "on";
         MenuWin.Tag = Settings.NativeMenu ? "on" : null;
         OpacityText.Text = Settings.Backdrop == 1 ? "—" : $"{Settings.Opacity:0}%";
+        BgChoose.Tag = Settings.BackgroundImage != "" ? "on" : null;
+        BgNone.Tag = Settings.BackgroundImage == "" ? "on" : null;
+        BgChoose.ToolTip = Settings.BackgroundImage != "" ? Settings.BackgroundImage : "Pick a picture";
+        BgOpacitySlider.IsEnabled = BgBlurSlider.IsEnabled = BgBrightSlider.IsEnabled = Settings.BackgroundImage != "";
+        BgBlurText.Text = Settings.BackgroundImage != "" ? $"{Settings.ImageBlur:0}" : "—";
+        BgBrightText.Text = Settings.BackgroundImage != "" ? $"{Settings.ImageBrightness:+0;-0;0}" : "—";
+        BgOpacityText.Text = Settings.BackgroundImage != "" ? $"{Settings.ImageOpacity:0}%" : "—";
         RowCompact.Tag = Settings.RowPad <= 1 ? "on" : null;
         RowNormal.Tag = Settings.RowPad is > 1 and < 6 ? "on" : null;
         RowRoomy.Tag = Settings.RowPad >= 6 ? "on" : null;
@@ -219,6 +229,37 @@ public partial class SettingsWindow : Window
     void Backdrop_Click(object s, RoutedEventArgs e)
     {
         Settings.Backdrop = s == BdAcrylic ? 3 : s == BdMica ? 2 : 1;
+        Changed();
+    }
+
+    void BgChoose_Click(object s, RoutedEventArgs e)
+    {
+        var pick = new Microsoft.Win32.OpenFileDialog { Title = "Background image", Filter = "Pictures|*.jpg;*.jpeg;*.png;*.bmp;*.gif;*.webp;*.tif;*.tiff|All files|*.*" };
+        if (pick.ShowDialog(this) != true) return;
+        Settings.BackgroundImage = pick.FileName;
+        Changed();
+    }
+
+    void BgNone_Click(object s, RoutedEventArgs e) { Settings.BackgroundImage = ""; Changed(); }
+
+    void BgOpacity_Changed(object s, RoutedPropertyChangedEventArgs<double> e)
+    {
+        if (!IsLoaded) return;
+        Settings.ImageOpacity = e.NewValue;
+        Changed();
+    }
+
+    void BgBlur_Changed(object s, RoutedPropertyChangedEventArgs<double> e)
+    {
+        if (!IsLoaded) return;
+        Settings.ImageBlur = Math.Round(e.NewValue);
+        Changed();
+    }
+
+    void BgBright_Changed(object s, RoutedPropertyChangedEventArgs<double> e)
+    {
+        if (!IsLoaded) return;
+        Settings.ImageBrightness = Math.Round(e.NewValue);
         Changed();
     }
 

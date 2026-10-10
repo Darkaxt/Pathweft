@@ -105,6 +105,11 @@
       <ColumnDefinition x:Name="SidebarColumn" Width="270" MinWidth="160" MaxWidth="600"/>
       <ColumnDefinition/>
     </Grid.ColumnDefinitions>
+    <!-- the picture from Settings → Background image, over the tint and under everything else -->
+    <Grid x:Name="BgLayer" Grid.ColumnSpan="2" IsHitTestVisible="False" Visibility="Collapsed" ClipToBounds="True">
+      <Image x:Name="BgImage" Stretch="UniformToFill"/>
+      <Rectangle x:Name="BgShade"/> <!-- brightness: black or white over the picture -->
+    </Grid>
 
     <!-- Sidebar: a bit more opaque, it sits over whatever is behind the window -->
     <DockPanel Background="#40000000">

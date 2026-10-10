@@ -187,6 +187,30 @@ public partial class MainWindow : Window
     [DllImport("shell32.dll")] static extern int SHGetSpecialFolderLocation(IntPtr hwnd, int folder, out IntPtr pidl);
 
     // Appearance lives in Settings; this applies it to a window.
+    /// The background picture, read once per path: the opacity slider re-applies the appearance on
+    /// every step. Decoded at most 2560 px wide, enough for a window and far less memory than a photo.
+    static string bgPath;
+    static ImageSource bgImage;
+    static ImageSource BackgroundPicture(string path)
+    {
+        if (path == bgPath) return bgImage;
+        bgPath = path; bgImage = null;
+        if (path == "" || !File.Exists(path)) return null;
+        try
+        {
+            var b = new System.Windows.Media.Imaging.BitmapImage();
+            b.BeginInit();
+            b.UriSource = new Uri(path);
+            b.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad; // the file is not kept open
+            b.DecodePixelWidth = 2560;
+            b.EndInit();
+            b.Freeze();
+            bgImage = b;
+        }
+        catch (Exception ex) when (ex is IOException or NotSupportedException or UnauthorizedAccessException or ArgumentException) { } // not a picture after all
+        return bgImage;
+    }
+
     public static Brush Tint() =>
         new SolidColorBrush(Color.FromArgb((byte)(Settings.Backdrop == 1 ? 255 : Settings.Opacity * 2.55), 0x0A, 0x0D, 0x13));
 
@@ -209,6 +233,15 @@ public partial class MainWindow : Window
         // Scaling the whole window rather than each font: sizes are set in many places, and icons,
         // rows and buttons have to grow with the text or it gets clipped.
         Root.LayoutTransform = Settings.TextScale > 1 ? new ScaleTransform(Settings.TextScale, Settings.TextScale) : null;
+        BgImage.Source = BackgroundPicture(Settings.BackgroundImage);
+        BgLayer.Visibility = BgImage.Source != null ? Visibility.Visible : Visibility.Collapsed;
+        BgLayer.Opacity = Settings.ImageOpacity / 100;
+        // a blur fades towards transparent at the picture's edges, so the picture is made larger by
+        // the radius and the overflow clipped
+        BgImage.Effect = Settings.ImageBlur > 0 ? new System.Windows.Media.Effects.BlurEffect { Radius = Settings.ImageBlur, KernelType = System.Windows.Media.Effects.KernelType.Gaussian } : null;
+        BgImage.Margin = new Thickness(-Settings.ImageBlur);
+        BgShade.Fill = Settings.ImageBrightness < 0 ? Brushes.Black : Brushes.White;
+        BgShade.Opacity = Math.Abs(Settings.ImageBrightness) / 100;
         // the pane edge is painted by hand, so a new accent has to be painted on by hand
         Left.SetActive(active == Left); Right.SetActive(active == Right);
     }

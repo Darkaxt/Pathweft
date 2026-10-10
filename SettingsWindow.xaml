@@ -46,6 +46,28 @@
             </DockPanel>
             <TextBlock Style="{StaticResource Hint}" Text="How dark the layer over the backdrop is. Stops at 30% so text stays readable on bright wallpapers."/>
 
+            <TextBlock Text="Background image"/>
+            <StackPanel Orientation="Horizontal" Margin="0,6,0,2">
+              <Button x:Name="BgChoose" Content="Choose…" Style="{StaticResource Tab}" Click="BgChoose_Click"/>
+              <Button x:Name="BgNone" Content="None" Style="{StaticResource Tab}" Click="BgNone_Click"/>
+            </StackPanel>
+            <DockPanel Margin="0,6,0,0">
+              <TextBlock x:Name="BgOpacityText" DockPanel.Dock="Right" Width="40" TextAlignment="Right" Foreground="#8A97AA" Typography.NumeralAlignment="Tabular"/>
+              <TextBlock Text="Strength" Width="70" VerticalAlignment="Center"/>
+              <Slider x:Name="BgOpacitySlider" Minimum="5" Maximum="100" VerticalAlignment="Center" ValueChanged="BgOpacity_Changed"/>
+            </DockPanel>
+            <DockPanel Margin="0,6,0,0">
+              <TextBlock x:Name="BgBlurText" DockPanel.Dock="Right" Width="40" TextAlignment="Right" Foreground="#8A97AA" Typography.NumeralAlignment="Tabular"/>
+              <TextBlock Text="Blur" Width="70" VerticalAlignment="Center"/>
+              <Slider x:Name="BgBlurSlider" Minimum="0" Maximum="40" VerticalAlignment="Center" ValueChanged="BgBlur_Changed"/>
+            </DockPanel>
+            <DockPanel Margin="0,6,0,0">
+              <TextBlock x:Name="BgBrightText" DockPanel.Dock="Right" Width="40" TextAlignment="Right" Foreground="#8A97AA" Typography.NumeralAlignment="Tabular"/>
+              <TextBlock Text="Brightness" Width="70" VerticalAlignment="Center"/>
+              <Slider x:Name="BgBrightSlider" Minimum="-100" Maximum="100" VerticalAlignment="Center" ValueChanged="BgBright_Changed"/>
+            </DockPanel>
+            <TextBlock Style="{StaticResource Hint}" Text="A picture behind the panes, cropped to fill the window. Strength is how much of it shows, Blur softens it, Brightness darkens or lightens it. A darker, softer picture keeps the lists readable."/>
+
             <TextBlock Text="Accent colour"/>
             <DockPanel Margin="0,6,0,2">
               <Border DockPanel.Dock="Right" Background="#12FFFFFF" CornerRadius="5" Padding="8,4" BorderBrush="#2EFFFFFF" BorderThickness="1" Margin="8,0,0,0">
