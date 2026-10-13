@@ -118,7 +118,9 @@
       <!-- one shape for the whole strip, with the active tab's silhouette cut out of it: rounded
            top corners flaring outwards at the bottom, the way a browser (and FilePilot) draws tabs.
            The cut-out shows the panel's own surface, so the active tab always matches it exactly. -->
-      <Path x:Name="StripShape" Fill="{StaticResource TabStripBg}"/>
+      <!-- in a Canvas so its size (set by hand from the band's) never feeds back into the row's height:
+           otherwise a strip drawn for three rows of tabs kept the row that tall after the pane widened -->
+      <Canvas><Path x:Name="StripShape" Fill="{StaticResource TabStripBg}"/></Canvas>
       <DockPanel x:Name="TabBand" AllowDrop="True" Background="Transparent" SizeChanged="TabBand_SizeChanged" DragOver="Tabs_DragOver" DragLeave="Tabs_DragLeave" Drop="Tabs_Drop">
         <Border DockPanel.Dock="Left" Width="4"/>
         <UniformGrid x:Name="TabStrip" DockPanel.Dock="Left" Rows="1"/>
