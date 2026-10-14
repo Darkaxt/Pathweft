@@ -182,8 +182,12 @@
         </Grid>
       </DockPanel>
 
-      <!-- Drive usage -->
-      <DockPanel DockPanel.Dock="Top" Margin="14,6,14,4">
+      <!-- Drive usage. Also a place for the current folder itself, between the address bar and the files:
+           drop here and it goes into this folder whatever is selected, click here and the selection clears. -->
+      <Border x:Name="FolderStrip" DockPanel.Dock="Top" Padding="10,6,10,4" Background="Transparent" CornerRadius="4" Margin="4,0"
+              AllowDrop="True" ToolTip="Drop here to put files in this folder · click to clear the selection"
+              MouseLeftButtonDown="FolderStrip_Click" DragEnter="FolderStrip_DragEnter" DragLeave="FolderStrip_DragLeave">
+      <DockPanel>
         <TextBlock x:Name="DriveInfoText" DockPanel.Dock="Right" Foreground="#80FFFFFF" FontSize="11" Margin="10,0,0,0"
                    Typography.NumeralAlignment="Tabular"/>
         <Grid VerticalAlignment="Center" Height="3">
@@ -191,6 +195,7 @@
           <Border x:Name="UsedBar" Background="{DynamicResource Accent}" CornerRadius="1.5" HorizontalAlignment="Left"/>
         </Grid>
       </DockPanel>
+      </Border>
 
       <DockPanel DockPanel.Dock="Bottom" Margin="14,2,8,5">
         <!-- sorting, reachable in every view mode (the column headers only exist in Details) -->

@@ -237,6 +237,9 @@ public partial class PaneView : UserControl
         List.PreviewMouseMove += Drag_Move;
         List.DragOver += Drop_Over;
         List.Drop += Drop_Drop;
+        // Not a row, so DropTarget gives the folder shown: the strip always means "here".
+        FolderStrip.DragOver += Drop_Over;
+        FolderStrip.Drop += (s, e) => { FolderStrip.Background = Brushes.Transparent; Drop_Drop(s, e); };
         debounce.Tick += (_, _) => { debounce.Stop(); Refresh(); };
 
         // Drags start from the strip, not from a tab button: the strip is rebuilt whenever the tabs
@@ -1435,9 +1438,10 @@ public partial class PaneView : UserControl
 
     void FitName()
     {
-        const double scrollbar = 14, padding = 14;
+        // gutter: a strip of empty space kept right of the last column, to click on (see Drag_Down)
+        const double scrollbar = 14, padding = 14, gutter = 48;
         var others = ((GridView)List.View).Columns.Where(c => c != NameColumn).Sum(c => double.IsNaN(c.Width) ? c.ActualWidth : c.Width);
-        NameColumn.Width = Math.Max(120, List.ActualWidth - others - scrollbar - padding);
+        NameColumn.Width = Math.Max(120, List.ActualWidth - others - scrollbar - padding - gutter);
     }
 
     // ---- View modes (FilePilot-style): Details, List, and M/L/XL icons with shell thumbnails ----
@@ -1682,6 +1686,11 @@ public partial class PaneView : UserControl
         // A press inside the rename box belongs to the text, not to a file drag.
         if (renamingEntry != null || InTextBox(e.OriginalSource)) { dragArmed = false; keepSelection = null; return; }
         var row = FindRow(e.OriginalSource as DependencyObject);
+        // In Details, right of the last column is empty space, as in Explorer: a click there clears the
+        // selection, so a paste lands in the folder itself and not in a subfolder that happened to be selected.
+        if (row != null && Mode == ViewMode.Details
+            && e.GetPosition(List).X > ((GridView)List.View).Columns.Sum(c => c.ActualWidth) + 8)
+            row = null;
         dragArmed = row is { IsUp: false };
         dragStart = e.GetPosition(List);
         keepSelection = null;
@@ -1822,6 +1831,11 @@ public partial class PaneView : UserControl
         e.Effects = DragDropEffects.Copy;
         e.Handled = true;
     }
+
+    void FolderStrip_Click(object s, MouseButtonEventArgs e) { SetSelection(_ => false); List.Focus(); }
+    void FolderStrip_DragEnter(object s, DragEventArgs e) =>
+        FolderStrip.Background = (Brush)FindResource("AccentSoft");
+    void FolderStrip_DragLeave(object s, DragEventArgs e) => FolderStrip.Background = Brushes.Transparent;
 
     void NewTab_Click(object s, RoutedEventArgs e) => NewTab();
     void Back_Click(object s, RoutedEventArgs e) => Back();
