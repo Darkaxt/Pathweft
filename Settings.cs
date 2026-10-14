@@ -18,6 +18,7 @@ public static class Settings
     public static bool Animations = true;
     public static double TextScale = 1;      // the whole window, text included: 1, 1.15, 1.3, 1.5
     public static bool SinglePane;           // the right pane is hidden
+    public static int Stats = 2;             // the cards above the panes: 2 full, 1 compact (one line each), 0 hidden
     public static double SidebarScale = 1, TabsScale = 1, PathScale = 1, ListScale = 1; // per area, on top of TextScale: 0.8–1.5
     public static bool QuickLook;            // Space asks QuickLook (QL-Win) for the preview when it is running
     public static string BackgroundImage = ""; // a picture behind the panes, "" = none
@@ -57,6 +58,7 @@ public static class Settings
                 case "animations": Animations = v == "1"; break;
                 case "textscale" when double.TryParse(v, CultureInfo.InvariantCulture, out var ts) && double.IsFinite(ts): TextScale = Math.Clamp(ts, 1, 1.6); break;
                 case "singlepane": SinglePane = v == "1"; break;
+                case "stats" when int.TryParse(v, out var st) && st is >= 0 and <= 2: Stats = st; break;
                 case "scale.sidebar" when double.TryParse(v, CultureInfo.InvariantCulture, out var s1) && double.IsFinite(s1): SidebarScale = Math.Clamp(s1, 0.8, 1.5); break;
                 case "scale.tabs" when double.TryParse(v, CultureInfo.InvariantCulture, out var s2) && double.IsFinite(s2): TabsScale = Math.Clamp(s2, 0.8, 1.5); break;
                 case "scale.path" when double.TryParse(v, CultureInfo.InvariantCulture, out var s3) && double.IsFinite(s3): PathScale = Math.Clamp(s3, 0.8, 1.5); break;
@@ -108,6 +110,7 @@ public static class Settings
             $"animations={(Animations ? 1 : 0)}",
             $"textscale={TextScale.ToString(CultureInfo.InvariantCulture)}",
             $"singlepane={(SinglePane ? 1 : 0)}",
+            $"stats={Stats}",
             $"scale.sidebar={SidebarScale.ToString(CultureInfo.InvariantCulture)}",
             $"scale.tabs={TabsScale.ToString(CultureInfo.InvariantCulture)}",
             $"scale.path={PathScale.ToString(CultureInfo.InvariantCulture)}",

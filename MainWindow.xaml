@@ -165,8 +165,9 @@
         <RowDefinition Height="Auto"/>
       </Grid.RowDefinitions>
 
-      <!-- Stats for the active pane: the drive, the folder, and the selection (or the latest change) -->
-      <Grid Margin="0,0,0,12">
+      <!-- Stats for the active pane: the drive, the folder, and the selection (or the latest change).
+           Settings can make them one line each, or hide them (ApplyStats). -->
+      <Grid x:Name="StatsRow" Margin="0,0,0,12">
         <Grid.ColumnDefinitions>
           <ColumnDefinition Width="1.25*"/>
           <ColumnDefinition Width="10"/>
@@ -196,7 +197,7 @@
 
         <Border Grid.Column="2" Style="{StaticResource StatCard}">
           <DockPanel>
-            <TextBlock Text="&#xE8B7;" Style="{StaticResource StatIcon}" Foreground="#60A5FA" VerticalAlignment="Center" Margin="0,0,12,0"/>
+            <TextBlock x:Name="FolderIcon" Text="&#xE8B7;" Style="{StaticResource StatIcon}" Foreground="#60A5FA" VerticalAlignment="Center" Margin="0,0,12,0"/>
             <StackPanel VerticalAlignment="Center">
               <TextBlock Text="This folder" Style="{StaticResource StatSub}"/>
               <TextBlock x:Name="StatFolder" Style="{StaticResource StatValue}"/>

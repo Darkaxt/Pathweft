@@ -143,6 +143,10 @@
             <CheckBox x:Name="SinglePaneBox" Content="One pane" Click="SinglePane_Click" Margin="0,4,0,0"/>
             <TextBlock Style="{StaticResource Hint}" Text="Hides the right pane, Explorer style. Ctrl+P switches. F5 and F6 bring the second pane back, since they copy into it."/>
 
+            <CheckBox x:Name="StatsBox" Content="Summary cards above the panes" Click="Stats_Click" Margin="0,4,0,0"/>
+            <CheckBox x:Name="StatsCompactBox" Content="Compact: one line each" Click="Stats_Click" Margin="22,6,0,0"/>
+            <TextBlock Style="{StaticResource Hint}" Text="The drive, the folder and the selection. Compact keeps the figures and drops the icons, bars and second lines; off gives the panes the whole height."/>
+
             <CheckBox x:Name="AnimationsBox" Content="Animations" Click="Animations_Click" Margin="0,4,0,0"/>
             <TextBlock Style="{StaticResource Hint}" Text="Short fades when a folder is read, when panes change and when a transfer appears. Off means everything switches instantly."/>
           </StackPanel>

@@ -21,6 +21,9 @@ public partial class SettingsWindow : Window
         DefaultBox.IsChecked = Settings.IsDefaultFileManager;
         AnimationsBox.IsChecked = Settings.Animations;
         SinglePaneBox.IsChecked = Settings.SinglePane;
+        StatsBox.IsChecked = Settings.Stats > 0;
+        StatsCompactBox.IsChecked = Settings.Stats == 1;
+        StatsCompactBox.IsEnabled = Settings.Stats > 0;
         ScaleSidebar.Value = Settings.SidebarScale * 100; ScaleTabs.Value = Settings.TabsScale * 100;
         ScalePath.Value = Settings.PathScale * 100; ScaleList.Value = Settings.ListScale * 100;
         QuickLookBox.IsChecked = Settings.QuickLook;
@@ -199,6 +202,14 @@ public partial class SettingsWindow : Window
     }
 
     void SinglePane_Click(object s, RoutedEventArgs e) => main.SetSinglePane(SinglePaneBox.IsChecked == true);
+
+    void Stats_Click(object s, RoutedEventArgs e)
+    {
+        Settings.Stats = StatsBox.IsChecked != true ? 0 : StatsCompactBox.IsChecked == true ? 1 : 2;
+        StatsCompactBox.IsEnabled = Settings.Stats > 0;
+        Settings.Save();
+        main.ApplyStats();
+    }
 
     void Animations_Click(object s, RoutedEventArgs e) { Settings.Animations = AnimationsBox.IsChecked == true; Settings.Save(); }
 

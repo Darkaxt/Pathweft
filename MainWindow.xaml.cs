@@ -23,6 +23,7 @@ public partial class MainWindow : Window
         PaneView.ShowHidden = Settings.ShowHidden;
         SidebarColumn.Width = new GridLength(Settings.SidebarWidth);
         ApplyPanes();
+        ApplyStats();
         // restore size/position only if it's still on a connected screen
         if (Settings.WindowBounds is { } wb && new Rect(SystemParameters.VirtualScreenLeft, SystemParameters.VirtualScreenTop,
                 SystemParameters.VirtualScreenWidth, SystemParameters.VirtualScreenHeight).IntersectsWith(wb))
@@ -412,6 +413,18 @@ public partial class MainWindow : Window
         cols[0].Width = new GridLength(one ? 1 : Settings.Split, GridUnitType.Star);
         cols[2].Width = new GridLength(one ? 0 : 1 - Settings.Split, GridUnitType.Star);
         if (one && active == Right) SetActive(Left);
+    }
+
+    /// <summary>The cards above the panes: full, compact (the figure and its label, nothing else), or hidden.</summary>
+    public void ApplyStats()
+    {
+        StatsRow.Visibility = Settings.Stats == 0 ? Visibility.Collapsed : Visibility.Visible;
+        bool full = Settings.Stats == 2;
+        foreach (var e in new FrameworkElement[] { DriveIcon, FolderIcon, SelIcon, DriveBar, KindBar, StatFolderSub, SelSub })
+            e.Visibility = full ? Visibility.Visible : Visibility.Collapsed;
+        foreach (var card in StatsRow.Children.OfType<Border>())
+            card.Padding = full ? new Thickness(12, 9, 14, 9) : new Thickness(10, 3, 12, 3);
+        StatsRow.Margin = new Thickness(0, 0, 0, full ? 12 : 8);
     }
 
     public void SetSinglePane(bool on)

@@ -302,6 +302,7 @@ public partial class PaneView : UserControl
 
     public void Navigate(string dir, string select = null, bool record = true)
     {
+        select ??= ChildToward(dir, Dir);
         if (IsServer(dir)) { NavigateServer(dir.TrimEnd('\\'), select, record); return; }
         DirectoryInfo di;
         try
@@ -1117,6 +1118,17 @@ public partial class PaneView : UserControl
     }
     public void SwitchTab(int i) { tab = (i + tabs.Count) % tabs.Count; back.Clear(); fwd.Clear(); Navigate(Dir, record: false); List.Focus(); }
     public void NextTab(int step) => SwitchTab(tab + step);
+
+    /// <summary>Going up to a folder that holds the one on screen, by any road (Up, Back, a breadcrumb, a typed
+    /// path): the name of the folder just left, so it is selected and a long listing does not start over
+    /// from the top. Null when <paramref name="to"/> is not above <paramref name="from"/>.</summary>
+    static string ChildToward(string to, string from)
+    {
+        var above = to.TrimEnd('\\') + "\\";
+        if (from == null || !from.StartsWith(above, StringComparison.OrdinalIgnoreCase)) return null;
+        var next = from.Substring(above.Length).Split('\\')[0];
+        return next.Length > 0 ? next : null;
+    }
 
     public void Back() { if (back.Count > 0) { fwd.Push(Dir); Navigate(back.Pop(), record: false); } }
     public void Forward() { if (fwd.Count > 0) { back.Push(Dir); Navigate(fwd.Pop(), record: false); } }

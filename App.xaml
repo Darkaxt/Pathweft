@@ -26,6 +26,16 @@
         </Setter.Value>
       </Setter>
     </Style>
+    <!-- The bare track either side of the thumb: invisible, and a click on it scrolls a page, as in Windows. -->
+    <Style x:Key="TrackPage" TargetType="RepeatButton">
+      <Setter Property="Focusable" Value="False"/>
+      <Setter Property="IsTabStop" Value="False"/>
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="RepeatButton"><Border Background="Transparent"/></ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
     <Style TargetType="ScrollBar">
       <Setter Property="Width" Value="10"/>
       <Setter Property="MinWidth" Value="10"/>
@@ -33,6 +43,8 @@
         <Setter.Value>
           <ControlTemplate TargetType="ScrollBar">
             <Track x:Name="PART_Track" IsDirectionReversed="True" Orientation="Vertical">
+              <Track.DecreaseRepeatButton><RepeatButton Style="{StaticResource TrackPage}" Command="ScrollBar.PageUpCommand"/></Track.DecreaseRepeatButton>
+              <Track.IncreaseRepeatButton><RepeatButton Style="{StaticResource TrackPage}" Command="ScrollBar.PageDownCommand"/></Track.IncreaseRepeatButton>
               <Track.Thumb><Thumb Style="{StaticResource Thumb}"/></Track.Thumb>
             </Track>
           </ControlTemplate>
@@ -47,6 +59,8 @@
             <Setter.Value>
               <ControlTemplate TargetType="ScrollBar">
                 <Track x:Name="PART_Track" Orientation="Horizontal">
+                  <Track.DecreaseRepeatButton><RepeatButton Style="{StaticResource TrackPage}" Command="ScrollBar.PageLeftCommand"/></Track.DecreaseRepeatButton>
+                  <Track.IncreaseRepeatButton><RepeatButton Style="{StaticResource TrackPage}" Command="ScrollBar.PageRightCommand"/></Track.IncreaseRepeatButton>
                   <Track.Thumb><Thumb Style="{StaticResource Thumb}"/></Track.Thumb>
                 </Track>
               </ControlTemplate>
