@@ -8,7 +8,10 @@ namespace FileExplorer;
 // key=value lines in %AppData%\FileLabs\settings.txt
 public static class Settings
 {
-    public static readonly string Dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "FileLabs");
+    // FILELABS_PROFILE=<folder>: a copy for testing beside the installed one, with its own settings and
+    // its own single instance, writing nothing the installed copy or the sister apps read
+    public static readonly string Profile = Environment.GetEnvironmentVariable("FILELABS_PROFILE") is { Length: > 0 } p ? p : null;
+    public static readonly string Dir = Profile ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "FileLabs");
     static readonly string FilePath = Path.Combine(Dir, "settings.txt");
 
     public static int Backdrop = 3;          // 1 solid, 2 mica, 3 acrylic
@@ -21,6 +24,8 @@ public static class Settings
     public static int Stats = 2;             // the cards above the panes: 2 full, 1 compact (one line each), 0 hidden
     public static double SidebarScale = 1, TabsScale = 1, PathScale = 1, ListScale = 1; // per area, on top of TextScale: 0.8–1.5
     public static bool QuickLook;            // Space asks QuickLook (QL-Win) for the preview when it is running
+    public static bool ItemTips = true;      // hovering a file shows its full name, type, size and date
+    public static bool DeleteSound = true;   // Shift+Delete's warning and Windows' delete sound; off = silent
     public static string BackgroundImage = ""; // a picture behind the panes, "" = none
     public static double ImageOpacity = 40;  // how much of it shows, 5–100
     public static double ImageBlur;          // blur radius in px, 0–40
@@ -64,6 +69,8 @@ public static class Settings
                 case "scale.path" when double.TryParse(v, CultureInfo.InvariantCulture, out var s3) && double.IsFinite(s3): PathScale = Math.Clamp(s3, 0.8, 1.5); break;
                 case "scale.list" when double.TryParse(v, CultureInfo.InvariantCulture, out var s4) && double.IsFinite(s4): ListScale = Math.Clamp(s4, 0.8, 1.5); break;
                 case "quicklook": QuickLook = v == "1"; break;
+                case "itemtips": ItemTips = v == "1"; break;
+                case "deletesound": DeleteSound = v == "1"; break;
                 case "bgimage": BackgroundImage = v; break;
                 case "bgblur" when double.TryParse(v, CultureInfo.InvariantCulture, out var bb) && double.IsFinite(bb): ImageBlur = Math.Clamp(bb, 0, 40); break;
                 case "bgbright" when double.TryParse(v, CultureInfo.InvariantCulture, out var bl) && double.IsFinite(bl): ImageBrightness = Math.Clamp(bl, -100, 100); break;
@@ -116,6 +123,8 @@ public static class Settings
             $"scale.path={PathScale.ToString(CultureInfo.InvariantCulture)}",
             $"scale.list={ListScale.ToString(CultureInfo.InvariantCulture)}",
             $"quicklook={(QuickLook ? 1 : 0)}",
+            $"itemtips={(ItemTips ? 1 : 0)}",
+            $"deletesound={(DeleteSound ? 1 : 0)}",
             $"bgimage={BackgroundImage}",
             $"bgopacity={ImageOpacity.ToString(CultureInfo.InvariantCulture)}",
             $"bgblur={ImageBlur.ToString(CultureInfo.InvariantCulture)}",

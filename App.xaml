@@ -70,7 +70,16 @@
       </Style.Triggers>
     </Style>
 
-    <Style TargetType="ListViewItem">
+    <!-- every view's rows: the hover tooltip (Entry.Tip), which Settings → Files can turn off and which keeps
+         out of the way of a rename -->
+    <Style x:Key="ItemTip" TargetType="ListViewItem">
+      <Setter Property="ToolTip" Value="{Binding Tip}"/>
+      <Setter Property="ToolTipService.IsEnabled" Value="{DynamicResource ItemTips}"/>
+      <Style.Triggers>
+        <DataTrigger Binding="{Binding Renaming}" Value="True"><Setter Property="ToolTipService.IsEnabled" Value="False"/></DataTrigger>
+      </Style.Triggers>
+    </Style>
+    <Style TargetType="ListViewItem" BasedOn="{StaticResource ItemTip}">
       <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
       <Setter Property="Foreground" Value="#E8EEF6"/>
       <Setter Property="Padding" Value="{DynamicResource RowPad}"/>
@@ -147,7 +156,7 @@
 
 
     <!-- Icon / list views: size comes from the ListView's Tag (thumbnail edge in px) -->
-    <Style x:Key="ListViewItem.Plain" TargetType="ListViewItem">
+    <Style x:Key="ListViewItem.Plain" TargetType="ListViewItem" BasedOn="{StaticResource ItemTip}">
       <Setter Property="Foreground" Value="#E8EEF6"/>
       <Setter Property="Template">
         <Setter.Value>
@@ -166,7 +175,7 @@
         </Setter.Value>
       </Setter>
     </Style>
-    <Style x:Key="TileItem" TargetType="ListViewItem">
+    <Style x:Key="TileItem" TargetType="ListViewItem" BasedOn="{StaticResource ItemTip}">
       <Setter Property="Foreground" Value="#E8EEF6"/>
       <Setter Property="Margin" Value="2"/>
       <Setter Property="VerticalContentAlignment" Value="Top"/>
@@ -246,7 +255,9 @@
             <Grid Background="Transparent">
               <!-- the strip shape behind paints the tab; this only adds hover and the divider -->
               <Border x:Name="Bd" Background="Transparent" CornerRadius="8,8,0,0" Padding="9,7,6,7" Margin="0,4,0,0">
-                <ContentPresenter/>
+                <!-- as tall as the close button, shown or not: a pinned tab has none, and the row of tabs
+                     grew 2 px whenever a hover or a click brought one up -->
+                <ContentPresenter MinHeight="18"/>
               </Border>
               <Border x:Name="Divider" Width="1" Margin="0,12,0,8" HorizontalAlignment="Right" Background="#2EFFFFFF"/>
             </Grid>

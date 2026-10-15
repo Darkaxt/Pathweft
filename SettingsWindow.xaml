@@ -161,6 +161,10 @@
             <TextBlock Style="{StaticResource Hint}" Text="Enter or double-click on a .txt, .json, .py, .php, .html, .ps1 and every other code or text file opens it in the built-in editor. Off: it opens in the app Windows has for it. F4 always opens the built-in editor."/>
             <CheckBox x:Name="QuickLookBox" Content="Space opens QuickLook" Click="QuickLook_Click"/>
             <TextBlock Style="{StaticResource Hint}" Text="For QuickLook users: when it is running, Space previews in QuickLook instead of Quick View, and the preview follows the selection. When it is not running, Quick View opens as usual."/>
+            <CheckBox x:Name="ItemTipsBox" Content="Show details when hovering a file" Click="ItemTips_Click"/>
+            <TextBlock Style="{StaticResource Hint}" Text="A tooltip with the full name, type, size and date, as in Explorer."/>
+            <CheckBox x:Name="DeleteSoundBox" Content="Play a sound when deleting permanently" Click="DeleteSound_Click"/>
+            <TextBlock Style="{StaticResource Hint}" Text="Shift+Delete: the warning when it asks, and Windows' recycle sound when it deletes. Off: both are silent."/>
             <TextBlock Text="Right-click menu"/>
             <StackPanel Orientation="Horizontal" Margin="0,6,0,2">
               <Button x:Name="MenuOwn" Content="File Labs" Style="{StaticResource Tab}" Click="Menu_Click"/>

@@ -27,6 +27,8 @@ public partial class SettingsWindow : Window
         ScaleSidebar.Value = Settings.SidebarScale * 100; ScaleTabs.Value = Settings.TabsScale * 100;
         ScalePath.Value = Settings.PathScale * 100; ScaleList.Value = Settings.ListScale * 100;
         QuickLookBox.IsChecked = Settings.QuickLook;
+        ItemTipsBox.IsChecked = Settings.ItemTips;
+        DeleteSoundBox.IsChecked = Settings.DeleteSound;
         StrengthSlider.Value = Settings.AccentStrength * 100;
         BuildSwatches();
         BuildWheel();
@@ -369,6 +371,12 @@ public partial class SettingsWindow : Window
     void Hidden_Click(object s, RoutedEventArgs e) { Settings.ShowHidden = HiddenBox.IsChecked == true; Settings.Save(); main.RefreshPanes(); }
     void Editor_Click(object s, RoutedEventArgs e) { Settings.InternalEditor = EditorBox.IsChecked == true; Settings.Save(); }
     void QuickLook_Click(object s, RoutedEventArgs e) { Settings.QuickLook = QuickLookBox.IsChecked == true; Settings.Save(); }
+    void ItemTips_Click(object s, RoutedEventArgs e)
+    {
+        Settings.ItemTips = ItemTipsBox.IsChecked == true; Settings.Save();
+        Application.Current.Resources["ItemTips"] = Settings.ItemTips;
+    }
+    void DeleteSound_Click(object s, RoutedEventArgs e) { Settings.DeleteSound = DeleteSoundBox.IsChecked == true; Settings.Save(); }
     void Verify_Click(object s, RoutedEventArgs e) { Settings.Verify = VerifyBox.IsChecked == true; Settings.Save(); }
 
     void Default_Click(object s, RoutedEventArgs e)

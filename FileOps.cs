@@ -247,19 +247,44 @@ public partial class MainWindow
         foreach (var e in pane.Selected)
         {
             var lnk = Unique(Path.Combine(pane.Dir, e.Name + " - Shortcut.lnk"));
-            var link = (IShellLinkW)new ShellLink();
-            try
-            {
-                link.SetPath(e.Path);
-                link.SetWorkingDirectory(e.IsDir ? e.Path : Path.GetDirectoryName(e.Path));
-                ((System.Runtime.InteropServices.ComTypes.IPersistFile)link).Save(lnk, true);
-            }
+            try { SaveShortcut(lnk, e.Path, e.IsDir ? e.Path : Path.GetDirectoryName(e.Path)); }
             catch (Exception ex) when (ex is COMException or UnauthorizedAccessException) { Status.Text = ex.Message; return; }
-            finally { Marshal.ReleaseComObject(link); }
             Remember($"shortcut {Path.GetFileName(lnk)}", () => Recycle(new() { lnk }, UIOption.OnlyErrorDialogs));
             last = lnk;
         }
         if (last != null) ShowCreated(pane, last);
+    }
+
+    internal static void SaveShortcut(string lnk, string target, string workingDir)
+    {
+        var link = (IShellLinkW)new ShellLink();
+        try
+        {
+            link.SetPath(target);
+            link.SetWorkingDirectory(workingDir);
+            ((System.Runtime.InteropServices.ComTypes.IPersistFile)link).Save(lnk, true);
+        }
+        finally { Marshal.ReleaseComObject(link); }
+    }
+
+    /// What a shortcut points at, or the path itself when it is not one or points at nothing on disk.
+    /// QuickLook is handed the document behind a shortcut, as Explorer's Space shows it (Frostpane does the same).
+    internal static string ShortcutTarget(string path)
+    {
+        if (!path.EndsWith(".lnk", StringComparison.OrdinalIgnoreCase)) return path;
+        var link = (IShellLinkW)new ShellLink();
+        var buffer = Marshal.AllocHGlobal(2 * 1024);
+        try
+        {
+            Marshal.WriteInt16(buffer, 0); // stays empty for a shortcut to something that is not a file (Control Panel…)
+            ((System.Runtime.InteropServices.ComTypes.IPersistFile)link).Load(path, 0);
+            link.GetPath(buffer, 1024, IntPtr.Zero, 0);
+            var target = Marshal.PtrToStringUni(buffer);
+            // a network target is not checked: a server that is off answers after 21 s, and Space runs on the UI thread
+            return !string.IsNullOrEmpty(target) && (PaneView.IsRemote(target) || Path.Exists(target)) ? target : path;
+        }
+        catch (Exception ex) when (ex is COMException or UnauthorizedAccessException or IOException) { return path; } // not a readable shortcut
+        finally { Marshal.FreeHGlobal(buffer); Marshal.ReleaseComObject(link); }
     }
 
     [ComImport, Guid("00021401-0000-0000-C000-000000000046")] class ShellLink { }

@@ -15,8 +15,9 @@ public partial class MainWindow
         p.List.ContextMenuOpening += (_, e) =>
         {
             SetActive(p);
-            // right-click on empty space = the folder itself, not whatever is still selected
-            var row = PaneView.FindRow(e.OriginalSource as DependencyObject);
+            // right-click on empty space (in Details also right of the columns) = the folder itself, not
+            // whatever is still selected
+            var row = p.RowAt(e.OriginalSource as DependencyObject);
             if (row == null && e.CursorLeft >= 0) p.List.SelectedItems.Clear();
             var sel = p.Selected;
             e.Handled = true;
@@ -180,7 +181,7 @@ public partial class MainWindow
         m.Items.Add(Item("Invert selection", "", "Num *", p.InvertSelection));
         m.Items.Add(Item("Compare with other pane", "", "Shift+F2", ComparePanes));
         m.Items.Add(new Separator());
-        m.Items.Add(Item("Refresh", "", "Ctrl+R", () => { SizeCache.Clear(); p.Refresh(force: true); }));
+        m.Items.Add(Item("Refresh", "", "Ctrl+R / Ctrl+F5", () => { SizeCache.Clear(); p.Refresh(force: true); }));
         m.Items.Add(Item(Settings.ShowHidden ? "Hide hidden files" : "Show hidden files", "", "Ctrl+H", ToggleHidden));
         m.Items.Add(Item("Pin to Quick access", "", "Ctrl+D", PinSelected));
         m.Items.Add(Item("Open terminal here", "", "Ctrl+`", OpenTerminal));

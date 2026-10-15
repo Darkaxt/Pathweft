@@ -227,6 +227,7 @@ public partial class MainWindow : Window
     {
         Root.Background = Tint();
         SetBackdrop(this);
+        Application.Current.Resources["ItemTips"] = Settings.ItemTips; // the rows' tooltips (App.xaml)
         if (quick != null) SetBackdrop(quick);
         EditorWindow.AccentChanged();
         ApplyAccent();
@@ -547,7 +548,7 @@ public partial class MainWindow : Window
     }
 
     // Quick access: pinned folders, one path per line in %AppData%\FileLabs\quickaccess.txt
-    static readonly string QuickFile = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "FileLabs", "quickaccess.txt");
+    static readonly string QuickFile = Path.Combine(Settings.Dir, "quickaccess.txt");
     List<string> pinned = new();
     string pinDrag;
     Point pinDragFrom;
@@ -668,7 +669,7 @@ public partial class MainWindow : Window
         // the status bar is showing ("Path copied", "Pinned …").
         if (dir != shownDir) { Status.Text = shownDir = dir; }
         bool bareServer = dir.StartsWith(@"\\") && !dir.Trim('\\').Contains('\\'); // not a folder a dialog can open
-        if (dir != publishedFolder && !bareServer)
+        if (dir != publishedFolder && !bareServer && Settings.Profile == null) // a test copy leaves the real one's folder alone
         {
             // for Ctrl+G in Open/Save dialogs (Agent.cs)
             publishedFolder = dir;
@@ -837,12 +838,29 @@ public partial class MainWindow : Window
     {
         var sel = active.Selected;
         if (sel.Count == 0) return;
-        if (permanent && MessageBox.Show(this,
-                $"Permanently delete {(sel.Count == 1 ? $"“{sel[0].Name}”" : $"these {sel.Count} items")}?\n\nThey will not go to the Recycle Bin.",
-                "Delete permanently", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.Yes) != MessageBoxResult.Yes) return;
+        var question = $"Permanently delete {(sel.Count == 1 ? $"“{sel[0].Name}”" : $"these {sel.Count} items")}?";
+        const string detail = "They will not go to the Recycle Bin.";
         // Shift+Delete, Enter deletes, as in Explorer: Yes is the default button, and the shell is not
-        // asked to confirm a second time what was just confirmed here
+        // asked to confirm a second time what was just confirmed here. With the sound off (Settings →
+        // Files) the question is File Labs' own dialog, which is silent, not a box that plays a warning.
+        if (permanent && !(Settings.DeleteSound
+                ? MessageBox.Show(this, question + "\n\n" + detail, "Delete permanently", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.Yes) == MessageBoxResult.Yes
+                : PromptDialog.Choose(this, question, detail, "Delete", "Cancel") == 0)) return;
         Recycle(sel.Select(e => e.Path).ToList(), permanent ? UIOption.OnlyErrorDialogs : UIOption.AllDialogs, permanent);
+    }
+
+    /// A permanent delete without the shell, which plays Windows' "Empty Recycle Bin" sound for one.
+    /// Walked by hand: read-only items are cleared first (the shell deletes them, .NET refuses), and a
+    /// junction is removed, never followed — .NET's own recursive delete fails on one without admin rights.
+    internal static void DeleteQuietly(string path)
+    {
+        var attributes = File.GetAttributes(path); // a folder's too
+        if (attributes.HasFlag(FileAttributes.ReadOnly)) File.SetAttributes(path, attributes & ~FileAttributes.ReadOnly);
+        if (!attributes.HasFlag(FileAttributes.Directory)) { File.Delete(path); return; }
+        if (!attributes.HasFlag(FileAttributes.ReparsePoint))
+            foreach (var child in Directory.GetFileSystemEntries(path, "*", new EnumerationOptions { AttributesToSkip = 0, IgnoreInaccessible = false }))
+                DeleteQuietly(child);
+        Directory.Delete(path);
     }
 
     /// Deletes through the shell, to the Recycle Bin unless `permanent`. Also used by Undo, quietly.
@@ -859,7 +877,8 @@ public partial class MainWindow : Window
             try
             {
                 foreach (var p in paths)
-                    if (Directory.Exists(p)) VbFs.DeleteDirectory(p, ui, how, UICancelOption.ThrowException);
+                    if (permanent && !Settings.DeleteSound) DeleteQuietly(p);
+                    else if (Directory.Exists(p)) VbFs.DeleteDirectory(p, ui, how, UICancelOption.ThrowException);
                     else if (File.Exists(p)) VbFs.DeleteFile(p, ui, how, UICancelOption.ThrowException);
             }
             catch (OperationCanceledException) { }
@@ -1007,7 +1026,7 @@ public partial class MainWindow : Window
             case Key.C when ctrl && !shift: ClipboardPut(cut: false); break;
             case Key.X when ctrl: ClipboardPut(cut: true); break;
             case Key.V when ctrl: ClipboardPaste(); break;
-            case Key.R when ctrl: SizeCache.Clear(); active.Refresh(force: true); break;
+            case Key.R when ctrl: case Key.F5 when ctrl: SizeCache.Clear(); active.Refresh(force: true); break; // F5 alone copies
             case Key.C when ctrl && shift:
                 Clipboard.SetText(string.Join(Environment.NewLine, active.Selected.Select(x => x.Path)));
                 Status.Text = "Path copied"; break;

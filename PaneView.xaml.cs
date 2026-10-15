@@ -21,14 +21,14 @@ public class Entry : INotifyPropertyChanged
     public DateTime Modified
     {
         get => modified;
-        set { modified = value; Changed(nameof(Modified)); Changed(nameof(DateText)); Changed(nameof(FullDate)); Changed(nameof(Age)); Changed(nameof(AgeBrush)); Changed(nameof(AgeTextBrush)); }
+        set { modified = value; Changed(nameof(Modified)); Changed(nameof(DateText)); Changed(nameof(FullDate)); Changed(nameof(Age)); Changed(nameof(AgeBrush)); Changed(nameof(AgeTextBrush)); Changed(nameof(Tip)); }
     }
     public bool IsUp => Name == "..";
     public string Location { get; init; } = ""; // search results: the folder it was found in, relative to where the search started
     public string Where => Location == "" ? "" : "   in " + Location;
 
     long size = -1; // -1 = folder size still computing, -2 = not measured (network shares)
-    public long Size { get => size; set { size = value; Changed(nameof(Size)); Changed(nameof(SizeText)); } }
+    public long Size { get => size; set { size = value; Changed(nameof(Size)); Changed(nameof(SizeText)); Changed(nameof(Tip)); } }
     ImageSource thumb;
     public ImageSource Thumb { get => thumb; set { thumb = value; Changed(nameof(Thumb)); Changed(nameof(NoThumb)); } }
     public bool NoThumb => thumb == null;
@@ -116,6 +116,13 @@ public class Entry : INotifyPropertyChanged
     }
     public string DateText => NoDate ? "" : Modified.ToString("yyyy-MM-dd  HH:mm");
     public string FullDate => NoDate ? null : Modified.ToString("dddd, yyyy-MM-dd HH:mm:ss");
+
+    // The hover tooltip, as Explorer's: the whole name (a long one is cut off in the row), then type, size, date.
+    public string Tip => IsUp ? null : string.Join("\n", new[]
+    {
+        Name, Location != "" ? "In: " + Location : null, "Type: " + Thumbnails.TypeName(Name, IsDir),
+        size >= 0 ? "Size: " + MainWindow.Fmt(size) : null, NoDate ? null : "Date modified: " + Modified.ToString("yyyy-MM-dd HH:mm:ss"),
+    }.Where(line => line != null));
 }
 
 // Names in Explorer's order. Sorting by character code put "_drafts" and "~temp" after every letter
@@ -156,6 +163,14 @@ class EntrySort(string key, bool desc) : IComparer
 public class FileList : ListView
 {
     protected override System.Windows.Automation.Peers.AutomationPeer OnCreateAutomationPeer() => new ListPeer(this);
+
+    // Esc arrives as the character 27 too, and type-to-find compares names the culture's way, which
+    // ignores control characters: every name "started with" it, so Esc jumped to the first row.
+    protected override void OnTextInput(TextCompositionEventArgs e)
+    {
+        if (e.Text.Length > 0 && char.IsControl(e.Text[0])) return;
+        base.OnTextInput(e);
+    }
 
     class ListPeer(FileList owner) : System.Windows.Automation.Peers.ListViewAutomationPeer(owner)
     {
@@ -204,11 +219,11 @@ public partial class PaneView : UserControl
         InitializeComponent();
         details = List.View;
         SetSort(sortKey, sortDesc);
-        Loaded += (_, _) => SetView(Settings.Views.TryGetValue(Name, out var v) ? v : ViewMode.Details);
-        List.GotKeyboardFocus += (_, _) => Activated?.Invoke();
+        Loaded += (_, _) => SetView(Settings.Views.TryGetValue(Name, out var v) ? v : ViewMode.Details);        List.GotKeyboardFocus += (_, _) => Activated?.Invoke();
         PreviewMouseDown += (_, _) => Activated?.Invoke(); // anywhere in the pane: tabs, path, list
-        // FindRow, not "OriginalSource is FrameworkElement": a double-click on the name lands on a Run
-        List.MouseDoubleClick += (_, e) => { if (FindRow(e.OriginalSource as DependencyObject) != null) OpenSelected(); };
+        // FindRow, not "OriginalSource is FrameworkElement": a double-click on the name lands on a Run.
+        // In the rename box a double-click selects a word, it doesn't open the file.
+        List.MouseDoubleClick += (_, e) => { if (!InTextBox(e.OriginalSource) && FindRow(e.OriginalSource as DependencyObject) != null) OpenSelected(); };
         List.SelectionChanged += (_, _) => { if (bulkSelect) return; UpdateFooter(); StatsChanged?.Invoke(); };
         // Ctrl+wheel steps through the view modes, smallest to largest, the way Explorer resizes icons.
         PreviewMouseWheel += (_, e) =>
@@ -266,8 +281,14 @@ public partial class PaneView : UserControl
         {
             // widths survive restarts (saved with the other settings on exit)
             if (Settings.ColumnWidths.TryGetValue(colKey[c], out var w)) c.Width = w;
-            widthProp.AddValueChanged(c, (_, _) => { Settings.ColumnWidths[colKey[c]] = c.Width; FitName(); });
+            widthProp.AddValueChanged(c, (_, _) => { Settings.ColumnWidths[colKey[c]] = c.Width; if (!ResizingColumn) FitName(); });
         }
+        // While a column's edge is dragged Name stays put and gives the room back on release. Shrunk on
+        // every step, it held the dragged edge still under the pointer, and the header (which measures each
+        // step from where the drag began) added the whole distance again each time: 40 px of mouse made a
+        // column 420 px wider.
+        List.AddHandler(System.Windows.Controls.Primitives.Thumb.DragCompletedEvent,
+            new System.Windows.Controls.Primitives.DragCompletedEventHandler((_, _) => { if (Mode == ViewMode.Details) FitName(); }), handledEventsToo: true); // the header marks it handled
     }
 
     public IEnumerable<Entry> Items => items.Where(e => !e.IsUp);
@@ -508,6 +529,7 @@ public partial class PaneView : UserControl
     /// unless `select` names a row to show instead (a rename, a new folder).
     void ShowItems(IList<Entry> list, string select, bool animate = true, bool keep = false)
     {
+        bool focused = List.IsKeyboardFocusWithin;
         var scroller = keep ? FindScroller(List) : null;
         double offset = scroller?.VerticalOffset ?? 0, across = scroller?.HorizontalOffset ?? 0;
         var wasSelected = keep ? List.SelectedItems.Cast<Entry>().Select(e => e.Name).ToHashSet(StringComparer.OrdinalIgnoreCase) : null;
@@ -522,18 +544,23 @@ public partial class PaneView : UserControl
         if (keep && select == null)
         {
             SetSelection(e => wasSelected.Contains(e.Name));
-            scroller.ScrollToVerticalOffset(offset);
-            scroller.ScrollToHorizontalOffset(across);
+            // no scroller in a pane never shown (the right one, with one pane): a file changing in its folder crashed the app
+            scroller?.ScrollToVerticalOffset(offset);
+            scroller?.ScrollToHorizontalOffset(across);
         }
         else
         {
             List.SelectedItem = items.FirstOrDefault(e => e.Name.Equals(select, StringComparison.OrdinalIgnoreCase)) ?? view.Cast<Entry>().FirstOrDefault();
             if (select != null && List.SelectedItem != null) List.ScrollIntoView(List.SelectedItem);
         }
+        // the rows the keyboard was on are gone; without this the next arrow key started over at the first row
+        if (focused) Dispatcher.BeginInvoke(FocusSelectedRow, DispatcherPriority.Loaded);
         if (animate) FadeInList();
         UpdateFooter();
         StatsChanged?.Invoke();
     }
+
+    void FocusSelectedRow() { if (List.SelectedItem is { } sel && List.ItemContainerGenerator.ContainerFromItem(sel) is UIElement row) row.Focus(); }
 
     /// Brings the rows on screen up to date with a fresh read of the same folder, in place. False when
     /// files were added, removed or renamed — then the list has to be replaced.
@@ -1165,8 +1192,20 @@ public partial class PaneView : UserControl
         pin.Click += (_, _) => TogglePin(i);
         var close = new MenuItem { Header = "Close tab", InputGestureText = "Ctrl+W", IsEnabled = !pins[i] && tabs.Count > 1 };
         close.Click += (_, _) => CloseTab(i);
-        menu.Items.Add(pin); menu.Items.Add(close);
+        var others = new MenuItem { Header = "Close other tabs", IsEnabled = pins.Where((p, j) => j != i && !p).Any() };
+        others.Click += (_, _) => CloseOtherTabs(i);
+        menu.Items.Add(pin); menu.Items.Add(close); menu.Items.Add(others);
         return menu;
+    }
+
+    /// Every tab but this one and the pinned ones; this one becomes the active tab.
+    void CloseOtherTabs(int keep)
+    {
+        for (int j = tabs.Count - 1; j >= 0; j--)
+            if (j != keep && !pins[j]) { tabs.RemoveAt(j); pins.RemoveAt(j); if (j < keep) keep--; }
+        tab = keep;
+        Navigate(Dir, record: false);
+        List.Focus();
     }
 
     /// Back, Forward and Up open where they would go in a new tab on a middle click, as in a browser.
@@ -1227,13 +1266,21 @@ public partial class PaneView : UserControl
     {
         if (List.SelectedItem is not Entry e || renamingEntry != null) return;
         renamingEntry = e;
+        List.ScrollIntoView(e); // its row has to exist for the box to appear
         e.Renaming = true;
         foreach (var other in items) other.Dimmed = other != e; // the edited row is the only bright one
     }
 
-    void Rename_Loaded(object s, RoutedEventArgs e)
+    TextBox renameBox;
+
+    // When the row's box appears, not when it is loaded: the box is built with the row, hidden, long before
+    // F2, so focusing it on Loaded did nothing and the keys kept going to the list.
+    void Rename_Shown(object s, DependencyPropertyChangedEventArgs e)
     {
         var box = (TextBox)s;
+        if (!box.IsVisible || box.Tag is not Entry { Renaming: true }) return;
+        renameBox = box;
+        box.Text = ((Entry)box.Tag).Name; // not what was typed last time: an edit cancelled with Esc stays in the box
         box.Focus();
         var dot = System.IO.Path.GetFileNameWithoutExtension(box.Text).Length;
         box.Select(0, dot > 0 ? dot : box.Text.Length); // keep the extension out of the selection
@@ -1241,22 +1288,34 @@ public partial class PaneView : UserControl
 
     void Rename_KeyDown(object s, KeyEventArgs e)
     {
-        if (e.Key == Key.Enter) { Finish((TextBox)s, commit: true); e.Handled = true; }
-        else if (e.Key == Key.Escape) { Finish((TextBox)s, commit: false); e.Handled = true; }
+        var box = (TextBox)s;
+        if (e.Key == Key.Enter) Finish(box, commit: true);
+        else if (e.Key == Key.Escape) Finish(box, commit: false);
+        // one line: Up and Down go to its start and end, as in Explorer (PreviewKeyDown: the box itself
+        // would take them and do nothing), and never on to the list
+        else if (e.Key is Key.Up or Key.PageUp) box.CaretIndex = 0;
+        else if (e.Key is Key.Down or Key.PageDown) box.CaretIndex = box.Text.Length;
+        else return;
+        e.Handled = true;
     }
 
-    // Clicking away keeps the new name, as Explorer does.
-    void Rename_Done(object s, KeyboardFocusChangedEventArgs e) => Finish((TextBox)s, commit: true);
+    /// A click anywhere outside the box ends the rename with the new name, as in Explorer.
+    void CommitRename() { if (renamingEntry != null && renameBox != null) Finish(renameBox, commit: true); }
 
-    void Finish(TextBox box, bool commit)
+    // Clicking away keeps the new name, as Explorer does. The keyboard stays where it went (the other pane,
+    // the sidebar): it is not pulled back to the list.
+    void Rename_Done(object s, KeyboardFocusChangedEventArgs e) => Finish((TextBox)s, commit: true, refocus: false);
+
+    void Finish(TextBox box, bool commit, bool refocus = true)
     {
         if (box.Tag is not Entry entry || !entry.Renaming) return;
         entry.Renaming = false;
-        renamingEntry = null;
+        renamingEntry = null; renameBox = null;
         foreach (var other in items) other.Dimmed = false;
+        // back to the row, not to the list as a whole: from there the next arrow key started over at the top
+        if (refocus && (List.ItemContainerGenerator.ContainerFromItem(entry) as UIElement)?.Focus() != true) List.Focus();
         var name = box.Text.Trim();
         if (commit && name != "" && name != entry.Name) RenameCommitted?.Invoke(entry, name);
-        else List.Focus();
     }
 
     public void OpenSelected()
@@ -1401,7 +1460,7 @@ public partial class PaneView : UserControl
             Dispatcher.BeginInvoke(() =>
             {
                 List.ScrollIntoView(sel);
-                if (List.IsKeyboardFocusWithin) (List.ItemContainerGenerator.ContainerFromItem(sel) as UIElement)?.Focus();
+                if (List.IsKeyboardFocusWithin) FocusSelectedRow();
             }, DispatcherPriority.Loaded);
         ShowSortArrow();
         SortIcon.Text = desc ? "" : ""; // down / up arrow
@@ -1436,10 +1495,12 @@ public partial class PaneView : UserControl
         yield return reverse;
     }
 
+    static bool ResizingColumn => Mouse.Captured is System.Windows.Controls.Primitives.Thumb { TemplatedParent: GridViewColumnHeader };
+
     void FitName()
     {
-        // gutter: a strip of empty space kept right of the last column, to click on (see Drag_Down)
-        const double scrollbar = 14, padding = 14, gutter = 48;
+        // gutter: a strip of empty space kept right of the last column, to click on (see RowAt)
+        const double scrollbar = 14, padding = 14, gutter = 110;
         var others = ((GridView)List.View).Columns.Where(c => c != NameColumn).Sum(c => double.IsNaN(c.Width) ? c.ActualWidth : c.Width);
         NameColumn.Width = Math.Max(120, List.ActualWidth - others - scrollbar - padding - gutter);
     }
@@ -1674,6 +1735,15 @@ public partial class PaneView : UserControl
         return (d as ListViewItem)?.DataContext as Entry;
     }
 
+    /// The row under a click, or null for empty space. In Details that includes the strip right of the last
+    /// column, as in Explorer: a full folder still has somewhere to click (and right-click) for the folder
+    /// itself, so a paste or a new folder lands there and not in a subfolder that happened to be selected.
+    public Entry RowAt(DependencyObject source)
+    {
+        var row = FindRow(source);
+        return row != null && Mode == ViewMode.Details && Mouse.GetPosition(List).X > ((GridView)List.View).Columns.Sum(c => c.ActualWidth) + 8 ? null : row;
+    }
+
     static bool InTextBox(object source)
     {
         var d = source as DependencyObject;
@@ -1683,14 +1753,10 @@ public partial class PaneView : UserControl
 
     void Drag_Down(object s, MouseButtonEventArgs e)
     {
-        // A press inside the rename box belongs to the text, not to a file drag.
-        if (renamingEntry != null || InTextBox(e.OriginalSource)) { dragArmed = false; keepSelection = null; return; }
-        var row = FindRow(e.OriginalSource as DependencyObject);
-        // In Details, right of the last column is empty space, as in Explorer: a click there clears the
-        // selection, so a paste lands in the folder itself and not in a subfolder that happened to be selected.
-        if (row != null && Mode == ViewMode.Details
-            && e.GetPosition(List).X > ((GridView)List.View).Columns.Sum(c => c.ActualWidth) + 8)
-            row = null;
+        // A press inside the rename box belongs to the text, not to a file drag; anywhere else it ends the rename.
+        if (InTextBox(e.OriginalSource)) { dragArmed = false; keepSelection = null; return; }
+        CommitRename();
+        var row = RowAt(e.OriginalSource as DependencyObject);
         dragArmed = row is { IsUp: false };
         dragStart = e.GetPosition(List);
         keepSelection = null;
@@ -1766,8 +1832,11 @@ public partial class PaneView : UserControl
         var rect = new Rect(dragStart, p);
         rect.Intersect(new Rect(0, 0, List.ActualWidth, List.ActualHeight));
         if (rect.IsEmpty) return;
-        Canvas.SetLeft(Marquee, rect.X); Canvas.SetTop(Marquee, rect.Y);
-        Marquee.Width = rect.Width; Marquee.Height = rect.Height;
+        // Drawn in the overlay's coordinates, not the list's: the list has its own size (Settings → Text
+        // size → File list), and at 125% the rectangle was drawn at 80% of where the pointer was.
+        var drawn = List.TransformToVisual(MarqueeLayer).TransformBounds(rect);
+        Canvas.SetLeft(Marquee, drawn.X); Canvas.SetTop(Marquee, drawn.Y);
+        Marquee.Width = drawn.Width; Marquee.Height = drawn.Height;
 
         // Only rows on screen have containers (the list is virtualized); off-screen rows keep their state.
         var want = new HashSet<Entry>(marqueeBase);

@@ -8,7 +8,7 @@ namespace FileExplorer;
 // and File Labs shares its Quick access folders with Lume as data\filelabs.items.json.
 static class Sisters
 {
-    static readonly string Root = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "ProtagonistLabs");
+    static readonly string Root = Path.Combine(Settings.Profile ?? Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "ProtagonistLabs");
     static string Now => DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ");
 
     // the paid apps and their page names, for the discount line in Works with

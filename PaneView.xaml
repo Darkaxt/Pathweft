@@ -19,8 +19,10 @@
       </Setter>
     </Style>
     <DataTemplate x:Key="NameCell">
-      <StackPanel Orientation="Horizontal">
-        <Grid Width="16" Height="16" Margin="0,0,8,0" VerticalAlignment="Center" Style="{StaticResource CutDim}">
+      <!-- a DockPanel, not a horizontal StackPanel: the name gets the column's width, so a long name is
+           trimmed and the rename box scrolls to its end instead of running on, cut off, past the column -->
+      <DockPanel>
+        <Grid DockPanel.Dock="Left" Width="16" Height="16" Margin="0,0,8,0" VerticalAlignment="Center" Style="{StaticResource CutDim}">
           <TextBlock Text="{Binding Icon}" FontFamily="Segoe Fluent Icons" Foreground="{Binding IconBrush}" VerticalAlignment="Center" Opacity="0.9">
             <TextBlock.Visibility><Binding Path="NoSmallIcon"><Binding.Converter><BooleanToVisibilityConverter/></Binding.Converter></Binding></TextBlock.Visibility>
           </TextBlock>
@@ -34,16 +36,16 @@
             <Border.Visibility><Binding Path="Renaming"><Binding.Converter><BooleanToVisibilityConverter/></Binding.Converter></Binding></Border.Visibility>
             <TextBox Text="{Binding Name, Mode=OneWay}" Style="{StaticResource Bare}" Foreground="#FFFFFF" FontWeight="SemiBold"
                      SelectionBrush="{DynamicResource Accent}" SelectionOpacity="0.85" SelectionTextBrush="White" IsInactiveSelectionHighlightEnabled="True"
-                     Loaded="Rename_Loaded" KeyDown="Rename_KeyDown" LostKeyboardFocus="Rename_Done" Tag="{Binding}"/>
+                     IsVisibleChanged="Rename_Shown" PreviewKeyDown="Rename_KeyDown" LostKeyboardFocus="Rename_Done" Tag="{Binding}"/>
           </Border>
         </Grid>
-      </StackPanel>
+      </DockPanel>
     </DataTemplate>
     <DataTemplate x:Key="SizeCell">
       <TextBlock Text="{Binding SizeText}" Foreground="#B3FFFFFF" Typography.NumeralAlignment="Tabular" TextAlignment="Right" Margin="0,0,6,0"/>
     </DataTemplate>
     <DataTemplate x:Key="DateCell">
-      <StackPanel Orientation="Horizontal" ToolTip="{Binding FullDate}">
+      <StackPanel Orientation="Horizontal">
         <Border Background="{Binding AgeBrush}" CornerRadius="3" Width="46" Margin="0,0,8,0">
           <TextBlock Text="{Binding Age}" Foreground="{Binding AgeTextBrush}" FontSize="11" FontWeight="SemiBold"
                      HorizontalAlignment="Center" Typography.NumeralAlignment="Tabular"/>
@@ -52,7 +54,7 @@
       </StackPanel>
     </DataTemplate>
     <DataTemplate x:Key="TileCell">
-      <StackPanel ToolTip="{Binding FullDate}">
+      <StackPanel>
         <Grid Width="{Binding Tag, RelativeSource={RelativeSource AncestorType=ListView}}"
               Height="{Binding Tag, RelativeSource={RelativeSource AncestorType=ListView}}" HorizontalAlignment="Center" Style="{StaticResource CutDim}">
           <!-- either the shell thumbnail or, until it arrives, a dim placeholder glyph — never both -->
@@ -72,13 +74,13 @@
             <Border.Visibility><Binding Path="Renaming"><Binding.Converter><BooleanToVisibilityConverter/></Binding.Converter></Binding></Border.Visibility>
             <TextBox Text="{Binding Name, Mode=OneWay}" Style="{StaticResource Bare}" Foreground="#FFFFFF" FontWeight="SemiBold"
                      SelectionBrush="{DynamicResource Accent}" SelectionOpacity="0.85" SelectionTextBrush="White" IsInactiveSelectionHighlightEnabled="True"
-                     Loaded="Rename_Loaded" KeyDown="Rename_KeyDown" LostKeyboardFocus="Rename_Done" Tag="{Binding}"/>
+                     IsVisibleChanged="Rename_Shown" PreviewKeyDown="Rename_KeyDown" LostKeyboardFocus="Rename_Done" Tag="{Binding}"/>
           </Border>
         </Grid>
       </StackPanel>
     </DataTemplate>
     <DataTemplate x:Key="ListCell">
-      <DockPanel Width="230" ToolTip="{Binding FullDate}">
+      <DockPanel Width="230">
         <Border DockPanel.Dock="Left" Width="6" Margin="0,0,6,0" CornerRadius="2" Background="{Binding AgeBrush}"/>
         <Grid DockPanel.Dock="Left" Width="16" Height="16" Margin="0,0,8,0" VerticalAlignment="Center" Style="{StaticResource CutDim}">
           <TextBlock Text="{Binding Icon}" FontFamily="Segoe Fluent Icons" Foreground="{Binding IconBrush}" VerticalAlignment="Center" Opacity="0.9">
@@ -93,7 +95,7 @@
             <Border.Visibility><Binding Path="Renaming"><Binding.Converter><BooleanToVisibilityConverter/></Binding.Converter></Binding></Border.Visibility>
             <TextBox Text="{Binding Name, Mode=OneWay}" Style="{StaticResource Bare}" Foreground="#FFFFFF" FontWeight="SemiBold"
                      SelectionBrush="{DynamicResource Accent}" SelectionOpacity="0.85" SelectionTextBrush="White" IsInactiveSelectionHighlightEnabled="True"
-                     Loaded="Rename_Loaded" KeyDown="Rename_KeyDown" LostKeyboardFocus="Rename_Done" Tag="{Binding}"/>
+                     IsVisibleChanged="Rename_Shown" PreviewKeyDown="Rename_KeyDown" LostKeyboardFocus="Rename_Done" Tag="{Binding}"/>
           </Border>
         </Grid>
       </DockPanel>
@@ -216,7 +218,7 @@
 
       <Grid>
       <!-- drag-to-select rectangle, drawn over the list so the rows never move under it -->
-      <Canvas Panel.ZIndex="1" IsHitTestVisible="False" Margin="4,0" ClipToBounds="True">
+      <Canvas x:Name="MarqueeLayer" Panel.ZIndex="1" IsHitTestVisible="False" Margin="4,0" ClipToBounds="True">
         <Border x:Name="Marquee" Background="{DynamicResource AccentSoft}" BorderBrush="{DynamicResource AccentEdge}" BorderThickness="1" CornerRadius="2" Visibility="Collapsed"/>
       </Canvas>
       <!-- ScrollUnit=Pixel keeps virtualization but scrolls smoothly instead of jumping a row at a time -->

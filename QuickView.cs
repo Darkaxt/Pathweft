@@ -47,6 +47,7 @@ public partial class MainWindow
 
     static bool QuickLookSend(string message, string path)
     {
+        path = ShortcutTarget(path); // a shortcut to a Word file shows the document, not the shortcut
         try
         {
             using var pipe = new System.IO.Pipes.NamedPipeClientStream(".", QuickLookPipe, System.IO.Pipes.PipeDirection.Out);

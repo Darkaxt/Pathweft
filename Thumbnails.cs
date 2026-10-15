@@ -116,15 +116,24 @@ public static class Thumbnails
         return overlays.GetOrAdd(overlay, n =>
         {
             var iid = typeof(IImageList).GUID;
-            if (SHGetImageList(SHIL_EXTRALARGE, ref iid, out var list) != 0 || list.GetOverlayImage(n, out int image) != 0
-                || list.GetIcon(image, ILD_TRANSPARENT, out var icon) != 0) return null;
+            if (SHGetImageList(SHIL_EXTRALARGE, ref iid, out var ptr) != 0) return null;
+            // A wrapper of its own, released here: the shell gives every thread the same image list, and a
+            // shared wrapper dies with the icon thread that made it, so the next thread to ask for another
+            // badge (a shortcut arrow after a sync badge) crashed the app with InvalidComObjectException.
+            var list = (IImageList)Marshal.GetUniqueObjectForIUnknown(ptr);
+            Marshal.Release(ptr);
             try
             {
-                var bmp = System.Windows.Interop.Imaging.CreateBitmapSourceFromHIcon(icon, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
-                bmp.Freeze();
-                return bmp;
+                if (list.GetOverlayImage(n, out int image) != 0 || list.GetIcon(image, ILD_TRANSPARENT, out var icon) != 0) return null;
+                try
+                {
+                    var bmp = System.Windows.Interop.Imaging.CreateBitmapSourceFromHIcon(icon, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
+                    bmp.Freeze();
+                    return bmp;
+                }
+                finally { DestroyIcon(icon); }
             }
-            finally { DestroyIcon(icon); }
+            finally { Marshal.FinalReleaseComObject(list); }
         });
     }
 
@@ -152,7 +161,17 @@ public static class Thumbnails
     }
 
     [DllImport("shell32.dll", CharSet = CharSet.Unicode)] static extern IntPtr SHGetFileInfo(string path, uint attrs, ref SHFILEINFO fi, uint size, uint flags);
-    [DllImport("shell32.dll")] static extern int SHGetImageList(int list, ref Guid iid, out IImageList imageList);
+    [DllImport("shell32.dll")] static extern int SHGetImageList(int list, ref Guid iid, out IntPtr imageList);
+
+    // What Explorer calls a type ("Text Document", "File folder"), asked of the shell once per extension:
+    // with USEFILEATTRIBUTES it only reads the registry, cheap enough for the UI thread.
+    static readonly System.Collections.Concurrent.ConcurrentDictionary<string, string> typeNames = new(StringComparer.OrdinalIgnoreCase);
+    public static string TypeName(string name, bool dir) => typeNames.GetOrAdd(dir ? "\\" : System.IO.Path.GetExtension(name), ext =>
+    {
+        var fi = new SHFILEINFO();
+        SHGetFileInfo(dir ? "folder" : "x" + ext, dir ? 0x10u : 0x80u /* DIRECTORY / NORMAL */, ref fi, (uint)Marshal.SizeOf<SHFILEINFO>(), 0x400 | 0x10 /* TYPENAME | USEFILEATTRIBUTES */);
+        return fi.szTypeName;
+    });
     [DllImport("user32.dll")] static extern bool DestroyIcon(IntPtr h);
 
     const int SIIGBF_RESIZETOFIT = 0, SIIGBF_ICONONLY = 0x4;

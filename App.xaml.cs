@@ -48,7 +48,7 @@ public partial class App : Application
         new MainWindow().Show(); // opened here, not via StartupUri, so --agent etc. never build it
     }
 
-    static readonly string PipeName = "FileLabs-" + Environment.UserName;
+    static readonly string PipeName = "FileLabs-" + Environment.UserName + (Settings.Profile != null ? "-profile" : "");
 
     /// True while a File Labs window is open for this user (it holds the single-instance mutex).
     internal static bool Running
@@ -197,6 +197,26 @@ public partial class App : Application
             Check(Sisters.ExeFromCard(card) == null, "card with another schema");
             File.WriteAllText(card, "{ not json");
             Check(Sisters.ExeFromCard(card) == null && Sisters.ExeFromCard(Path.Combine(root, "none.json")) == null, "broken or missing card");
+
+            // QuickLook is handed what a shortcut points at; anything else, or a shortcut that can't be read, as it is
+            var lnk = Path.Combine(root, "record.lnk");
+            FileExplorer.MainWindow.SaveShortcut(lnk, info, root);
+            Check(FileExplorer.MainWindow.ShortcutTarget(lnk) == info && FileExplorer.MainWindow.ShortcutTarget(info) == info
+                && FileExplorer.MainWindow.ShortcutTarget(card) == card && FileExplorer.MainWindow.ShortcutTarget(Path.Combine(root, "gone.lnk")) == Path.Combine(root, "gone.lnk"), "shortcut target");
+
+            // a silent permanent delete (Shift+Delete with the sound off): read-only files go too, and a
+            // junction inside is removed without emptying the folder it points at
+            var doomed = Directory.CreateDirectory(Path.Combine(root, "doomed", "sub")).Parent.FullName;
+            var ro = Path.Combine(doomed, "sub", "locked.txt");
+            File.WriteAllText(ro, "read-only");
+            File.SetAttributes(ro, FileAttributes.ReadOnly);
+            var kept = Directory.CreateDirectory(Path.Combine(root, "kept")).FullName;
+            File.WriteAllText(Path.Combine(kept, "stays.txt"), "here");
+            bool doomedLink = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("cmd.exe", $"/c mklink /J \"{Path.Combine(doomed, "link")}\" \"{kept}\"")
+                { CreateNoWindow = true, UseShellExecute = false })!.WaitForExit(5000) && Directory.Exists(Path.Combine(doomed, "link"));
+            FileExplorer.MainWindow.DeleteQuietly(doomed);
+            Check(!Directory.Exists(doomed), "silent delete removes the folder, read-only file included");
+            Check(!doomedLink || File.Exists(Path.Combine(kept, "stays.txt")), "silent delete never empties a junction's target");
 
             Console.WriteLine("selftest: all passed");
             return 0;
