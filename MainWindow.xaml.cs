@@ -556,7 +556,11 @@ public partial class MainWindow : Window
     {
         if (File.Exists(QuickFile)) pinned = File.ReadAllLines(QuickFile).Where(l => l.Trim() != "").ToList();
         BuildQuickAccess();
+        ShareQuickAccess();
     }
+
+    // Lume (sister app) lists these folders in its search; a copy, since the write runs off the UI thread
+    void ShareQuickAccess() { var copy = pinned.ToList(); Task.Run(() => Sisters.WriteItems(copy)); }
 
     void BuildQuickAccess()
     {
@@ -589,6 +593,7 @@ public partial class MainWindow : Window
         Directory.CreateDirectory(Path.GetDirectoryName(QuickFile));
         Settings.WriteAllLines(QuickFile, pinned);
         BuildQuickAccess();
+        ShareQuickAccess();
     }
 
     // Pins the selected folders, or the current folder if no folder is selected.

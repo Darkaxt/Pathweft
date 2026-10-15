@@ -32,9 +32,57 @@ public partial class SettingsWindow : Window
         BuildWheel();
         AboutText.Text = $"File Labs {typeof(App).Assembly.GetName().Version?.ToString(3)} · Protagonist Labs\n" +
                          "Transfers run on the Ferry engine. Settings live in " + Settings.Dir;
+        BuildWorksWith();
         Refresh();
     }
 
+    // ---- Works with: the sister apps that add something here (ecosystem contract v1.1, Sisters.cs) ----
+    // Most useful first: only the first three missing ones are shown.
+    static readonly (string Id, string Name, string Has, string Would)[] WorksWithApps =
+    {
+        ("shelf", "Shelf", "adds folders and .exe files as games, from the right-click menu", "would add folders and .exe files as games, from the right-click menu"),
+        ("reel", "Reel", "adds folders and videos to your film library, from the right-click menu", "would add folders and videos to a film library, from the right-click menu"),
+        ("backuplabs", "Backup Labs", "backs up the selection, from the right-click menu", "would back up the selection, from the right-click menu"),
+        ("spacescan", "SpaceScan", "shows what fills a folder, from the right-click menu", "would show what fills a folder, from the right-click menu"),
+        ("lume", "Lume", "finds your Quick access folders and opens them here", "would find your Quick access folders and open them here"),
+    };
+    const string WorksUtm = "utm_source=filelabs&utm_medium=app&utm_campaign=works-with";
+
+    void BuildWorksWith()
+    {
+        var lines = WorksWith.Inlines;
+        void Line(string name, Action open, string what)
+        {
+            if (lines.Count > 0) lines.Add(new System.Windows.Documents.LineBreak());
+            lines.Add(Link(name, open));
+            lines.Add(" · " + what);
+        }
+        int missing = 0;
+        foreach (var (id, name, has, would) in WorksWithApps)
+        {
+            if (MainWindow.SisterExe(id) is { } exe) Line(name, () => System.Diagnostics.Process.Start(exe), has);
+            else if (missing++ < 3) Line(name, () => Open($"https://protagonistlabs.app/{id}/?{WorksUtm}"), would);
+        }
+        // one quiet last line for someone who bought a paid app: the others at 30% off (Paddle SECOND30 / SECOND30SHELF)
+        var offer = Sisters.Paid.Where(p => MainWindow.SisterExe(p.Id) == null).Take(4).ToList();
+        if (offer.Count == 0 || !Sisters.OwnsPaid()) return;
+        lines.Add(new System.Windows.Documents.LineBreak());
+        lines.Add("Owners of one of our apps get 30% off the others: ");
+        foreach (var (id, name) in offer)
+        {
+            if (id != offer[0].Id) lines.Add(" · ");
+            lines.Add(Link(name, () => Open($"https://protagonistlabs.app/{id}/?code={(id == "shelf" ? "SECOND30SHELF" : "SECOND30")}&{WorksUtm}")));
+        }
+    }
+
+    static void Open(string url) => System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(url) { UseShellExecute = true });
+
+    static System.Windows.Documents.Hyperlink Link(string text, Action open)
+    {
+        var link = new System.Windows.Documents.Hyperlink(new System.Windows.Documents.Run(text));
+        link.Click += (_, _) => open();
+        return link;
+    }
     // Protagonist Labs blue first, then the colours the app already uses for file kinds and recency.
     static readonly string[] Palette = { "#4C8DFF", "#3DDCC8", "#34D399", "#FFD23F", "#FB923C", "#F87171", "#F472B6", "#A78BFA" };
 

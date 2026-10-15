@@ -33,7 +33,7 @@ public partial class MainWindow
         };
     }
 
-    // SpaceScan (sister app) publishes where it is installed; without it the menu item sends the user to its page.
+    // SpaceScan (sister app) publishes where it is installed (before its ecosystem card); without it the menu item sends the user to its page.
     const string SpaceScanPage = "https://protagonistlabs.app/spacescan/?utm_source=filelabs&utm_medium=app&utm_campaign=scan-with-spacescan";
 
     static string SpaceScanExe
@@ -45,17 +45,11 @@ public partial class MainWindow
         }
     }
 
-    static void ScanWithSpaceScan(string path)
-    {
-        var exe = SpaceScanExe;
-        Process.Start(exe == null
-            ? new ProcessStartInfo(SpaceScanPage) { UseShellExecute = true }
-            : new ProcessStartInfo(exe, $"\"{path}\"") { UseShellExecute = true });
-    }
+    static void ScanWithSpaceScan(string path) => HandTo("spacescan", SpaceScanPage, new[] { path });
 
     // Shelf, Reel and Backup Labs (sister apps) take folders and files on the command line, already
     // running or not: Shelf (3.59.0) and Reel (1.9.11) offer to add them, Backup Labs (1.0.2) makes a
-    // new job of them. Each is found through the uninstall entry its installer writes; without one
+    // new job of them. Each is found through its card, else the uninstall entry its installer writes; without either
     // the menu item sends the user to the app's page.
     const string ShelfKey = "93869666-a03d-5775-ba3a-19dde48e73bc", ReelKey = "95693626-e8c4-5132-9e4f-6f4a12169be6";
     const string BackupKey = "{3B9E6A12-8C4D-4F7B-A1E5-6D2F0B8C9E34}_is1";
@@ -72,9 +66,22 @@ public partial class MainWindow
         return exe != null && File.Exists(exe) ? exe : null;
     }
 
-    static void HandTo(string uninstallKey, string page, IEnumerable<string> paths)
+    /// A sister's exe: its ecosystem card first (Sisters.cs), else what older versions left in the registry; null = not installed.
+    internal static string SisterExe(string id) => Sisters.Exe(id) ?? id switch
     {
-        var exe = ExeOf(Microsoft.Win32.Registry.GetValue(@"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Uninstall\" + uninstallKey, "DisplayIcon", null) as string);
+        "spacescan" => SpaceScanExe,
+        "shelf" => Uninstalled(ShelfKey),
+        "reel" => Uninstalled(ReelKey),
+        "backuplabs" => Uninstalled(BackupKey),
+        _ => null,
+    };
+
+    static string Uninstalled(string key) =>
+        ExeOf(Microsoft.Win32.Registry.GetValue(@"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Uninstall\" + key, "DisplayIcon", null) as string);
+
+    static void HandTo(string id, string page, IEnumerable<string> paths)
+    {
+        var exe = SisterExe(id);
         if (exe == null) { Process.Start(new ProcessStartInfo(page) { UseShellExecute = true }); return; }
         // ArgumentList, not a quoted string: a drive root ends in a backslash, which would escape the closing quote
         var start = new ProcessStartInfo(exe);
@@ -144,10 +151,10 @@ public partial class MainWindow
         m.Items.Add(Item("Show in File Explorer", "", "", () => OpenInExplorer($"/select,\"{first.Path}\"")));
         m.Items.Add(Item("Scan with SpaceScan", "", "", () => ScanWithSpaceScan(first.IsDir ? first.Path : Path.GetDirectoryName(first.Path)!)));
         if (sel.All(x => x.IsDir || Path.GetExtension(x.Name).Equals(".exe", StringComparison.OrdinalIgnoreCase)))
-            m.Items.Add(Item("Add to Shelf", "\uE7FC", "", () => HandTo(ShelfKey, ShelfPage, sel.Select(x => x.Path))));
+            m.Items.Add(Item("Add to Shelf", "\uE7FC", "", () => HandTo("shelf", ShelfPage, sel.Select(x => x.Path))));
         if (sel.All(x => x.IsDir || ReelVideo.Contains(Path.GetExtension(x.Name))))
-            m.Items.Add(Item("Add to Reel", "\uE8B2", "", () => HandTo(ReelKey, ReelPage, sel.Select(x => x.Path))));
-        m.Items.Add(Item("Back up with Backup Labs", "\uE81C", "", () => HandTo(BackupKey, BackupPage, sel.Select(x => x.Path))));
+            m.Items.Add(Item("Add to Reel", "\uE8B2", "", () => HandTo("reel", ReelPage, sel.Select(x => x.Path))));
+        m.Items.Add(Item("Back up with Backup Labs", "\uE81C", "", () => HandTo("backuplabs", BackupPage, sel.Select(x => x.Path))));
         m.Items.Add(Item("Windows menu…", "", "", () => { if (ShellMenu.Show(this, p.Dir, sel.Select(x => x.Path).ToList()) == "rename") Rename(); }));
         m.Items.Add(Item("Properties", "", "Alt+Enter", () => Properties(sel.Select(x => x.Path).ToList())));
         return m;
@@ -179,7 +186,7 @@ public partial class MainWindow
         m.Items.Add(Item("Open terminal here", "", "Ctrl+`", OpenTerminal));
         m.Items.Add(Item("Open in File Explorer", "", "", () => OpenInExplorer($"\"{p.Dir}\"")));
         m.Items.Add(Item("Scan with SpaceScan", "", "", () => ScanWithSpaceScan(p.Dir)));
-        m.Items.Add(Item("Back up with Backup Labs", "\uE81C", "", () => HandTo(BackupKey, BackupPage, new[] { p.Dir })));
+        m.Items.Add(Item("Back up with Backup Labs", "\uE81C", "", () => HandTo("backuplabs", BackupPage, new[] { p.Dir })));
         m.Items.Add(new Separator());
         m.Items.Add(Item("Windows menu…", "", "", () => ShellMenu.Show(this, p.Dir, Array.Empty<string>())));
         m.Items.Add(Item("Properties", "", "", () => Properties(p.Dir)));

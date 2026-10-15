@@ -204,6 +204,17 @@
               · <Hyperlink NavigateUri="https://protagonistlabs.app/filelabs/?utm_source=filelabs&amp;utm_medium=app&amp;utm_campaign=about" RequestNavigate="Link_Navigate">Website</Hyperlink>
               · <Hyperlink NavigateUri="https://protagonistlabs.app/?utm_source=filelabs&amp;utm_medium=app&amp;utm_campaign=more-apps" RequestNavigate="Link_Navigate">More apps from Protagonist Labs</Hyperlink>
             </TextBlock>
+            <TextBlock Text="Works with" Style="{StaticResource Hint}" Margin="0,14,0,2"/>
+            <!-- filled by BuildWorksWith: one quiet line per sister app; names are the only links -->
+            <TextBlock x:Name="WorksWith" Style="{StaticResource Hint}" LineHeight="18" Margin="0">
+              <TextBlock.Resources>
+                <Style TargetType="Hyperlink">
+                  <Setter Property="Foreground" Value="#B4BFCE"/>
+                  <Setter Property="TextDecorations" Value="{x:Null}"/>
+                  <Style.Triggers><Trigger Property="IsMouseOver" Value="True"><Setter Property="TextDecorations" Value="Underline"/></Trigger></Style.Triggers>
+                </Style>
+              </TextBlock.Resources>
+            </TextBlock>
           </StackPanel>
         </Border>
       </StackPanel>

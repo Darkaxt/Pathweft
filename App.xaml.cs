@@ -38,6 +38,7 @@ public partial class App : Application
         }
         else _ = Listen();
         Settings.Load(); // before any window: the panes read column widths while being built
+        Task.Run(Sisters.WriteCard); // the ecosystem card, so sister apps find this copy (Sisters.cs)
         SizeCache.StartLoading(); // folder sizes from previous sessions: a full 12 TB drive is minutes of walking
         Exit += (_, _) => SizeCache.Save();
         var sizeSaver = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMinutes(2) };
@@ -185,6 +186,17 @@ public partial class App : Application
             var self = Environment.ProcessPath;
             Check(FileExplorer.MainWindow.ExeOf(self + ",0") == self && FileExplorer.MainWindow.ExeOf($"\"{self}\",0") == self
                 && FileExplorer.MainWindow.ExeOf(Path.Combine(root, "gone.exe") + ",0") == null && FileExplorer.MainWindow.ExeOf(null) == null, "installed app from its uninstall entry");
+
+            // ecosystem cards: what this app writes reads back; garbage, another schema or a gone exe count as not installed
+            var card = Path.Combine(root, "card.json");
+            Sisters.Write(card, new { schema = 1, updated = "2026-10-15T09:00:00Z", exe = self });
+            Check(File.ReadAllBytes(card)[0] == '{' && Sisters.ExeFromCard(card) == self, "card written without BOM and read back");
+            Sisters.Write(card, new { schema = 1, exe = Path.Combine(root, "gone.exe") });
+            Check(Sisters.ExeFromCard(card) == null, "card of an uninstalled app");
+            Sisters.Write(card, new { schema = 2, exe = self });
+            Check(Sisters.ExeFromCard(card) == null, "card with another schema");
+            File.WriteAllText(card, "{ not json");
+            Check(Sisters.ExeFromCard(card) == null && Sisters.ExeFromCard(Path.Combine(root, "none.json")) == null, "broken or missing card");
 
             Console.WriteLine("selftest: all passed");
             return 0;
