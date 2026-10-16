@@ -276,8 +276,8 @@ public partial class MainWindow : Window
         Left.Refresh(); Right.Refresh();
     }
 
-    // Shelf's schedule: 3 s after launch, then every 30 minutes — the app stays open for days.
-    readonly System.Windows.Threading.DispatcherTimer updateTimer = new() { Interval = TimeSpan.FromMinutes(10) };
+    // 3 s after launch, then every hour — the app stays open for days.
+    readonly System.Windows.Threading.DispatcherTimer updateTimer = new() { Interval = TimeSpan.FromMinutes(60) };
     UpdateDialog updateDialog;
 
     void StartUpdateChecks()
@@ -298,7 +298,12 @@ public partial class MainWindow : Window
     public async Task<string> CheckForUpdate(bool manual)
     {
         if (updateDialog != null) { updateDialog.Activate(); return null; }
-        var release = await Updater.Check(manual);
+        Updater.Release release;
+        try { release = await Updater.Check(manual); }
+        catch (Exception ex) when (Updater.Failed(ex))
+        {
+            return manual ? Updater.CheckFailed : null; // the automatic check stays quiet and tries again next hour
+        }
         if (release == null) return manual ? $"File Labs {Updater.Current} is the latest version." : null;
 
         updateDialog = new UpdateDialog(this, release);
@@ -317,7 +322,9 @@ public partial class MainWindow : Window
         Settings.Save();
         if (!upgraded) return;
         // Check() only returns something newer than us; right after updating, the latest IS us.
-        var latest = await Updater.Latest();
+        Updater.Release latest;
+        try { latest = await Updater.Latest(); }
+        catch (Exception ex) when (Updater.Failed(ex)) { return; } // offline: the notes just aren't shown
         if (latest?.Version.ToString() == current) new UpdateDialog(this, latest, notesOnly: true).Show();
     }
 
@@ -351,7 +358,9 @@ public partial class MainWindow : Window
         UpdateButton.IsEnabled = true;
         // The answer goes on the button, not in the status bar: that line belongs to the folder and is
         // rewritten on the next refresh.
-        UpdateButtonText.Text = answer == null ? "Check for updates" : $"Up to date  ·  {Updater.Current}";
+        UpdateButtonText.Text = answer == null ? "Check for updates"
+            : answer == Updater.CheckFailed ? "Couldn't check  ·  try later"
+            : $"Up to date  ·  {Updater.Current}";
         if (answer == null) return;
         var back = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(6) };
         back.Tick += (_, _) => { back.Stop(); UpdateButtonText.Text = "Check for updates"; };

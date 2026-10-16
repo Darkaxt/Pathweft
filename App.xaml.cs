@@ -218,6 +218,15 @@ public partial class App : Application
             Check(!Directory.Exists(doomed), "silent delete removes the folder, read-only file included");
             Check(!doomedLink || File.Exists(Path.Combine(kept, "stays.txt")), "silent delete never empties a junction's target");
 
+            // a failed update check is a failure, never "nothing newer": offline, 403 (rate limit), 5xx,
+            // an unreadable answer all throw; a readable answer with nothing newer returns null
+            Check(UpdateCheckFails("http://127.0.0.1:9/"), "update check offline fails");
+            Check(UpdateCheckFails(Serve(403, "{\"message\":\"API rate limit exceeded\"}")), "update check 403 fails");
+            Check(UpdateCheckFails(Serve(502, "")), "update check 5xx fails");
+            Check(UpdateCheckFails(Serve(200, "<html>")), "update check unreadable answer fails");
+            Updater.Feed = Serve(200, "{\"tag_name\":\"v0.0.1\",\"body\":\"\",\"assets\":[{\"name\":\"FileLabs-0.0.1-setup.exe\",\"browser_download_url\":\"x\",\"size\":1}]}");
+            Check(Task.Run(() => Updater.Check(manual: true)).GetAwaiter().GetResult() == null, "update check: nothing newer is not a failure");
+
             Console.WriteLine("selftest: all passed");
             return 0;
         }
@@ -227,6 +236,33 @@ public partial class App : Application
             return 1;
         }
         finally { try { Directory.Delete(root, true); } catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { } }
+    }
+
+    static bool UpdateCheckFails(string feed)
+    {
+        Updater.Feed = feed;
+        try { Task.Run(() => Updater.Check(manual: true)).GetAwaiter().GetResult(); return false; }
+        catch (Exception ex) when (Updater.Failed(ex)) { return true; }
+    }
+
+    // A one-request local server answering with this status and body; returns its address.
+    static string Serve(int status, string body)
+    {
+        var port = new System.Net.Sockets.TcpListener(System.Net.IPAddress.Loopback, 0);
+        port.Start(); int p = ((System.Net.IPEndPoint)port.LocalEndpoint).Port; port.Stop();
+        var listener = new System.Net.HttpListener();
+        listener.Prefixes.Add($"http://localhost:{p}/");
+        listener.Start();
+        _ = Task.Run(() =>
+        {
+            var c = listener.GetContext();
+            c.Response.StatusCode = status;
+            var bytes = System.Text.Encoding.UTF8.GetBytes(body);
+            c.Response.ContentLength64 = bytes.Length;
+            c.Response.OutputStream.Write(bytes);
+            c.Response.Close(); // the listener is left to the process: stopping it here can cut the answer off
+        });
+        return $"http://localhost:{p}/";
     }
 
     static Job Run(Job j) { Wait(() => !j.Active); return j; }
