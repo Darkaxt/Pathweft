@@ -221,6 +221,9 @@ public partial class PaneView : UserControl
         SetSort(sortKey, sortDesc);
         Loaded += (_, _) => SetView(Settings.Views.TryGetValue(Name, out var v) ? v : ViewMode.Details);        List.GotKeyboardFocus += (_, _) => Activated?.Invoke();
         PreviewMouseDown += (_, _) => Activated?.Invoke(); // anywhere in the pane: tabs, path, list
+        renameTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(GetDoubleClickTime()) };
+        renameTimer.Tick += (_, _) => ClickRename();
+        List.PreviewKeyDown += (_, _) => { renameTimer.Stop(); renameCandidate = null; }; // typing in between cancels, as in Explorer
         // FindRow, not "OriginalSource is FrameworkElement": a double-click on the name lands on a Run.
         // In the rename box a double-click selects a word, it doesn't open the file.
         List.MouseDoubleClick += (_, e) => { if (!InTextBox(e.OriginalSource) && FindRow(e.OriginalSource as DependencyObject) != null) OpenSelected(); };
@@ -273,22 +276,34 @@ public partial class PaneView : UserControl
         };
         TabStrip.PreviewMouseLeftButtonUp += (_, _) => tabDragIndex = -1;
 
-        // Name fills whatever the other columns leave: shrinks with the pane, and absorbs
-        // width when you resize another column. Dragging Name itself sticks until the pane resizes.
+        // Name fills whatever the other columns leave (shrinks with the pane, absorbs width when you resize
+        // another column) until you drag Name's own edge: from then on its width is yours, remembered, and a
+        // list wider than the pane scrolls sideways. Double-clicking Name's edge hands it back to the pane.
         List.SizeChanged += (_, _) => { if (Mode == ViewMode.Details) FitName(); };
         var widthProp = System.ComponentModel.DependencyPropertyDescriptor.FromProperty(GridViewColumn.WidthProperty, typeof(GridViewColumn));
-        foreach (var c in ((GridView)List.View).Columns.Where(c => c != NameColumn))
+        foreach (var c in ((GridView)List.View).Columns)
         {
             // widths survive restarts (saved with the other settings on exit)
             if (Settings.ColumnWidths.TryGetValue(colKey[c], out var w)) c.Width = w;
-            widthProp.AddValueChanged(c, (_, _) => { Settings.ColumnWidths[colKey[c]] = c.Width; if (!ResizingColumn) FitName(); });
+            if (c == NameColumn)
+                widthProp.AddValueChanged(c, (_, _) => { if (double.IsNaN(c.Width)) { Settings.ColumnWidths.Remove("Name"); FitName(); } });
+            else
+                widthProp.AddValueChanged(c, (_, _) => { Settings.ColumnWidths[colKey[c]] = c.Width; if (!ResizingColumn) FitName(); });
         }
         // While a column's edge is dragged Name stays put and gives the room back on release. Shrunk on
         // every step, it held the dragged edge still under the pointer, and the header (which measures each
         // step from where the drag began) added the whole distance again each time: 40 px of mouse made a
-        // column 420 px wider.
+        // column 420 px wider. Name's own edge used to end here too, and FitName took the new width back.
         List.AddHandler(System.Windows.Controls.Primitives.Thumb.DragCompletedEvent,
-            new System.Windows.Controls.Primitives.DragCompletedEventHandler((_, _) => { if (Mode == ViewMode.Details) FitName(); }), handledEventsToo: true); // the header marks it handled
+            new System.Windows.Controls.Primitives.DragCompletedEventHandler((s, e) =>
+            {
+                if (Mode != ViewMode.Details) return;
+                if (e.OriginalSource is System.Windows.Controls.Primitives.Thumb { TemplatedParent: GridViewColumnHeader { Column: var col } } && col == NameColumn)
+                {   // a double-click on the edge also ends a "drag" of 0 px; that one gives Name back to the pane
+                    if (e.HorizontalChange != 0) Settings.ColumnWidths["Name"] = NameColumn.Width;
+                }
+                else FitName();
+            }), handledEventsToo: true); // the header marks it handled
     }
 
     public IEnumerable<Entry> Items => items.Where(e => !e.IsUp);
@@ -301,8 +316,12 @@ public partial class PaneView : UserControl
     readonly SolidColorBrush cardFill = new(), cardEdge = new();
     readonly SolidColorBrush glowColor = new();
 
+    [System.Runtime.InteropServices.DllImport("user32.dll")] static extern uint GetDoubleClickTime();
+
     public void SetActive(bool on)
     {
+        if (on && !isActivePane) paneActivatedAt = Environment.TickCount64;
+        isActivePane = on;
         if (Card.Background != cardFill) { Card.Background = cardFill; Card.BorderBrush = cardEdge; Glow.BorderBrush = glowColor; }
         var accent = ((SolidColorBrush)Application.Current.Resources["AccentEdge"]).Color;
         Animate(cardFill, ((SolidColorBrush)MainWindow.Hex(on ? "#12FFFFFF" : "#0A000000")).Color);
@@ -519,6 +538,9 @@ public partial class PaneView : UserControl
     {
         if (record && tabs[tab] != "" && !tabs[tab].Equals(path, StringComparison.OrdinalIgnoreCase)) { back.Push(tabs[tab]); fwd.Clear(); }
         tabs[tab] = path;
+        // each folder keeps the order it was last sorted in; the rest are by name. Set before its rows are shown.
+        var (key, desc) = Settings.FolderSorts.TryGetValue(path, out var sort) ? sort : ("Name", false);
+        if (key != sortKey || desc != sortDesc) ShowSort(key, desc);
         if (searchQuery != null) { searchQuery = null; FilterBox.Text = ""; } // the query would hide most of the new folder
         BuildCrumbs();
         BuildTabs();
@@ -1451,9 +1473,15 @@ public partial class PaneView : UserControl
     public string SortKey => sortKey;
     public bool SortDescending => sortDesc;
 
+    /// The user's choice: applied, and remembered for this folder (Name ascending is the default, kept as nothing).
     public void SetSort(string key, bool desc)
     {
-        sortKey = key; sortDesc = desc;
+        if (Dir != "")
+        {
+            if (key == "Name" && !desc) Settings.FolderSorts.Remove(Dir);
+            else Settings.FolderSorts[Dir] = (key, desc);
+        }
+        ShowSort(key, desc);
         if (view != null) view.CustomSort = new EntrySort(key, desc);
         // the selected file stays in sight and keeps the keyboard, wherever the new order put it
         if (List.SelectedItem is { } sel)
@@ -1462,6 +1490,11 @@ public partial class PaneView : UserControl
                 List.ScrollIntoView(sel);
                 if (List.IsKeyboardFocusWithin) FocusSelectedRow();
             }, DispatcherPriority.Loaded);
+    }
+
+    void ShowSort(string key, bool desc)
+    {
+        sortKey = key; sortDesc = desc;
         ShowSortArrow();
         SortIcon.Text = desc ? "" : ""; // down / up arrow
         SortName.Text = key;
@@ -1500,6 +1533,7 @@ public partial class PaneView : UserControl
     void FitName()
     {
         // gutter: a strip of empty space kept right of the last column, to click on (see RowAt)
+        if (Settings.ColumnWidths.ContainsKey("Name")) return; // dragged by the user: theirs, not the pane's
         const double scrollbar = 14, padding = 14, gutter = 110;
         var others = ((GridView)List.View).Columns.Where(c => c != NameColumn).Sum(c => double.IsNaN(c.Width) ? c.ActualWidth : c.Width);
         NameColumn.Width = Math.Max(120, List.ActualWidth - others - scrollbar - padding - gutter);
@@ -1532,7 +1566,8 @@ public partial class PaneView : UserControl
             List.ClearValue(ItemsControl.ItemTemplateProperty);
             List.ClearValue(ItemsControl.ItemsPanelProperty);
             List.ClearValue(ItemsControl.ItemContainerStyleProperty);
-            ScrollViewer.SetHorizontalScrollBarVisibility(List, ScrollBarVisibility.Disabled);
+            ScrollViewer.SetHorizontalScrollBarVisibility(List, ScrollBarVisibility.Auto); // columns wider than the pane scroll sideways
+            Dispatcher.BeginInvoke(HideScrollCorner, DispatcherPriority.Loaded); // once the Details template is in
         }
         else
         {
@@ -1559,6 +1594,22 @@ public partial class PaneView : UserControl
         List.SelectedItem = sel;
         if (sel != null) List.ScrollIntoView(sel);
         FadeInList(); // the rows come back in one go; the fade covers the reflow
+    }
+
+    // Windows' Details template draws two white 1 px lines in the square where both scroll bars meet: a bright
+    // corner mark on a dark list, now that wide columns scroll sideways.
+    void HideScrollCorner()
+    {
+        static void Walk(DependencyObject d)
+        {
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(d); i++)
+            {
+                var c = VisualTreeHelper.GetChild(d, i);
+                if (c is System.Windows.Shapes.Rectangle { Fill: SolidColorBrush { Color: var col } } r && col == Colors.White) r.Fill = Brushes.Transparent;
+                else if (c is not ScrollContentPresenter) Walk(c); // not into the rows
+            }
+        }
+        if (FindScroller(List) is { } sv) Walk(sv);
     }
 
     // Details ← List ← M ← L ← XL: the same five modes as Ctrl+Shift+1…5, from smallest to largest.
@@ -1723,7 +1774,7 @@ public partial class PaneView : UserControl
         }
     }
 
-    // ---- Drag & drop: between panes, and to/from Explorer (CF_HDROP). Default is copy; Shift = move. ----
+    // ---- Drag & drop: between panes, and to/from Explorer (CF_HDROP). Explorer's rules: Ctrl copies, Shift moves, else same drive moves. ----
     Point dragStart;
     bool dragArmed;
     Entry keepSelection; // click on an already multi-selected row: keep the selection so it can be dragged
@@ -1741,8 +1792,11 @@ public partial class PaneView : UserControl
     public Entry RowAt(DependencyObject source)
     {
         var row = FindRow(source);
-        return row != null && Mode == ViewMode.Details && Mouse.GetPosition(List).X > ((GridView)List.View).Columns.Sum(c => c.ActualWidth) + 8 ? null : row;
+        return row != null && Mode == ViewMode.Details && Mouse.GetPosition(List).X + ScrollX > ((GridView)List.View).Columns.Sum(c => c.ActualWidth) + 8 ? null : row;
     }
+
+    /// How far the Details columns are scrolled sideways: pointer positions are in the list's own frame.
+    double ScrollX => FindScroller(List)?.HorizontalOffset ?? 0;
 
     static bool InTextBox(object source)
     {
@@ -1754,16 +1808,17 @@ public partial class PaneView : UserControl
     void Drag_Down(object s, MouseButtonEventArgs e)
     {
         // A press inside the rename box belongs to the text, not to a file drag; anywhere else it ends the rename.
+        renameTimer.Stop(); renameCandidate = null; // a second press means a double-click (open) or something else
         if (InTextBox(e.OriginalSource)) { dragArmed = false; keepSelection = null; return; }
         CommitRename();
         var row = RowAt(e.OriginalSource as DependencyObject);
         dragArmed = row is { IsUp: false };
         dragStart = e.GetPosition(List);
-        keepSelection = null;
+        keepSelection = null; deselectOnUp = null;
         // A press on empty space (not a row, scrollbar or column header) may become a selection rectangle.
         // In Details, so may a press on a row outside its Name column, as in Explorer — a full folder
         // has no empty space. Shift keeps its usual range selection.
-        bool otherColumn = row != null && Mode == ViewMode.Details && dragStart.X > NameColumn.ActualWidth && !Keyboard.Modifiers.HasFlag(ModifierKeys.Shift);
+        bool otherColumn = row != null && Mode == ViewMode.Details && dragStart.X + ScrollX > NameColumn.ActualWidth && !Keyboard.Modifiers.HasFlag(ModifierKeys.Shift);
         if (otherColumn && e.ClickCount == 2) { List.SelectedItem = row; OpenSelected(); e.Handled = true; return; }
         marqueeArmed = (row == null || otherColumn) && !OnChrome(e.OriginalSource as DependencyObject);
         if (marqueeArmed)
@@ -1775,17 +1830,52 @@ public partial class PaneView : UserControl
             e.Handled = true; // selection is ours from here: on release (a click) or while dragging (a rectangle)
             return;
         }
+        // A slow second click on the name of the one selected file renames it, as in Explorer: armed here,
+        // started after the double-click time on release (a double-click opens instead). Not the click that
+        // brought the window or this pane forward, and not a click that selected the row.
+        if (row is { IsUp: false } && e.ClickCount == 1 && Keyboard.Modifiers == ModifierKeys.None && List.SelectedItems.Count == 1
+            && List.SelectedItem == row && isActivePane && Environment.TickCount64 - Math.Max(WindowActivatedAt, paneActivatedAt) > 500)
+            renameCandidate = row;
         if (row != null && e.ClickCount == 1 && List.SelectedItems.Count > 1 && List.SelectedItems.Contains(row) && Keyboard.Modifiers == ModifierKeys.None)
         {
             keepSelection = row;
             e.Handled = true;
             List.Focus();
         }
+        // Ctrl+press is ours, not the row's. The list dropped a selected row from the selection on the press, so a
+        // Ctrl+drag (copy) left without it, or with nothing at all; Explorer drops it on release, if it wasn't a
+        // drag. And after the row had handled a Ctrl+press itself, Windows refused the drag that followed ("a drag
+        // operation is already in progress"), which crashed 1.0.36.
+        if (row is { IsUp: false } && e.ClickCount == 1 && Keyboard.Modifiers == ModifierKeys.Control)
+        {
+            if (List.SelectedItems.Contains(row)) deselectOnUp = row;
+            else List.SelectedItems.Add(row);
+            e.Handled = true;
+            if ((List.ItemContainerGenerator.ContainerFromItem(row) as UIElement)?.Focus() != true) List.Focus();
+        }
+    }
+
+    Entry deselectOnUp;
+    Entry renameCandidate;
+    public static long WindowActivatedAt; // MainWindow sets it: the click that activates the window doesn't rename
+    bool isActivePane; long paneActivatedAt;
+    DispatcherTimer renameTimer;
+
+    void ClickRename()
+    {
+        renameTimer.Stop();
+        var row = renameCandidate;
+        renameCandidate = null;
+        // still the one selected row, still focused (the window wasn't left, no menu opened), not dragged
+        if (row != null && renamingEntry == null && List.SelectedItems.Count == 1 && List.SelectedItem == row && List.IsKeyboardFocusWithin)
+            BeginRename();
     }
 
     void Drag_Up(object s, MouseButtonEventArgs e)
     {
         if (keepSelection != null) { List.SelectedItem = keepSelection; keepSelection = null; } // it was a plain click after all
+        if (deselectOnUp != null) { List.SelectedItems.Remove(deselectOnUp); deselectOnUp = null; }
+        if (renameCandidate != null) renameTimer.Start();
         dragArmed = false;
         if (marqueeArmed)
         {
@@ -1863,11 +1953,14 @@ public partial class PaneView : UserControl
         if (!dragArmed || renamingEntry != null || e.LeftButton != MouseButtonState.Pressed) return;
         var d = e.GetPosition(List) - dragStart;
         if (Math.Abs(d.X) < SystemParameters.MinimumHorizontalDragDistance && Math.Abs(d.Y) < SystemParameters.MinimumVerticalDragDistance) return;
-        dragArmed = false; keepSelection = null;
+        dragArmed = false; keepSelection = null; deselectOnUp = null; renameCandidate = null;
         var paths = Selected.Select(x => x.Path).ToArray();
         if (paths.Length == 0) return;
         var data = new DataObject(DataFormats.FileDrop, paths);
-        DragDrop.DoDragDrop(List, data, DragDropEffects.Copy | DragDropEffects.Move);
+        // Windows can refuse to start a drag ("a drag operation is already in progress"): 1.0.36 died of it
+        // once in testing. Then there is simply no drag, as if the mouse hadn't moved far enough.
+        try { DragDrop.DoDragDrop(List, data, DragDropEffects.Copy | DragDropEffects.Move); }
+        catch (System.Runtime.InteropServices.COMException) { }
     }
 
     // Drop on a folder row → into that folder; anywhere else → the folder this pane shows.
@@ -1875,13 +1968,18 @@ public partial class PaneView : UserControl
 
     void Drop_Over(object s, DragEventArgs e)
     {
-        e.Effects = !e.Data.GetDataPresent(DataFormats.FileDrop) ? DragDropEffects.None
-            : e.KeyStates.HasFlag(DragDropKeyStates.ShiftKey) ? DragDropEffects.Move
-            : DragDropEffects.Copy;
-        // no dropping a folder onto itself / into the folder it's already in
-        if (e.Effects != DragDropEffects.None && e.Data.GetData(DataFormats.FileDrop) is string[] files)
+        e.Effects = DragDropEffects.None;
+        // As in Explorer: Ctrl copies, Shift moves, and without either a drop on the same drive moves and
+        // on another drive copies — only as far as the source allows (some offer Copy alone).
+        if (e.Data.GetData(DataFormats.FileDrop) is string[] { Length: > 0 } files)
         {
             var target = DropTarget(e);
+            bool sameDrive = string.Equals(System.IO.Path.GetPathRoot(files[0]), System.IO.Path.GetPathRoot(target), StringComparison.OrdinalIgnoreCase);
+            var want = e.KeyStates.HasFlag(DragDropKeyStates.ControlKey) ? DragDropEffects.Copy
+                : e.KeyStates.HasFlag(DragDropKeyStates.ShiftKey) || sameDrive ? DragDropEffects.Move
+                : DragDropEffects.Copy;
+            e.Effects = e.AllowedEffects.HasFlag(want) ? want : e.AllowedEffects & (DragDropEffects.Copy | DragDropEffects.Move);
+            // no dropping a folder onto itself / into the folder it's already in
             if (files.Any(f => f.Equals(target, StringComparison.OrdinalIgnoreCase)
                             || System.IO.Path.GetDirectoryName(f)?.Equals(target, StringComparison.OrdinalIgnoreCase) == true))
                 e.Effects = DragDropEffects.None;

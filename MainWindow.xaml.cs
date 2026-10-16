@@ -24,6 +24,8 @@ public partial class MainWindow : Window
         SidebarColumn.Width = new GridLength(Settings.SidebarWidth);
         ApplyPanes();
         ApplyStats();
+        previewDelay.Tick += PreviewTick;
+        Activated += (_, _) => PaneView.WindowActivatedAt = Environment.TickCount64; // that click doesn't rename
         // restore size/position only if it's still on a connected screen
         if (Settings.WindowBounds is { } wb && new Rect(SystemParameters.VirtualScreenLeft, SystemParameters.VirtualScreenTop,
                 SystemParameters.VirtualScreenWidth, SystemParameters.VirtualScreenHeight).IntersectsWith(wb))
@@ -51,7 +53,7 @@ public partial class MainWindow : Window
         foreach (var p in new[] { Left, Right })
         {
             p.Activated += () => SetActive(p);
-            p.StatsChanged += () => { if (p == active) UpdateStats(); QuickLookFollow(p); };
+            p.StatsChanged += () => { if (p == active) { UpdateStats(); PreviewFollow(); } QuickLookFollow(p); };
             p.Error += msg => Status.Text = msg;
             p.FilesDropped += (files, dest, move) => Submit(files, dest, move);
             p.RenameCommitted += (entry, name) => RenameCommitted(p, entry, name);
@@ -108,6 +110,7 @@ public partial class MainWindow : Window
         var arg = Environment.GetCommandLineArgs().Skip(1).FirstOrDefault(a => !a.StartsWith("--"));
         if (arg != null) OpenPath(Left, arg);
         SetActive(Left);
+        ApplyPreview();
         Loaded += (_, _) => Left.FocusList();
         // started from the Win+E agent or a folder double-click: make sure we open in front.
         // After the first paint — on Loaded the window isn't on screen yet and the flip does nothing.
@@ -666,6 +669,7 @@ public partial class MainWindow : Window
         Left.SetActive(p == Left);
         Right.SetActive(p == Right);
         UpdateStats();
+        PreviewFollow();
     }
 
     string publishedFolder, shownDir;
@@ -1020,6 +1024,7 @@ public partial class MainWindow : Window
             case Key.Tab when ctrl: active.NextTab(shift ? -1 : 1); break;
             case Key.Tab: if (!Settings.SinglePane) Other.FocusList(); break;
             case Key.P when ctrl: SetSinglePane(!Settings.SinglePane); break;
+            case Key.P when alt: TogglePreview(); break;
             case Key.F1: OpenHelp(); break;
             case Key.T when ctrl: active.NewTab(); break;
             case Key.W when ctrl: active.CloseTab(); break;
@@ -1047,7 +1052,7 @@ public partial class MainWindow : Window
             case Key.Enter: case Key.F3: active.OpenSelected(); break;
             case Key.F2 when shift: ComparePanes(); break;
             case Key.F2: Rename(); break;
-            case Key.F4: EditSelected(); break;
+            case Key.F4 when !alt: EditSelected(); break; // Alt+F4 closes the window, it doesn't open the editor
             case Key.Z when ctrl: Undo(); break;
             // F5/F6 copy into the other pane, so with one pane they bring it back first instead of
             // copying somewhere the user cannot see

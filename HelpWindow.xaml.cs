@@ -42,6 +42,8 @@ public partial class HelpWindow : Window
             ("F5 / F6", "Copy / move to the other pane (with one pane, the first press brings it back)"),
             ("Ctrl+C / Ctrl+X / Ctrl+V", "Copy, cut, paste, also with Explorer"),
             ("F2", "Rename in place; with several selected, rename them all"),
+            ("Click a selected name", "Rename it, as in Explorer: a slow second click, not a double-click"),
+            ("Drag files", "Same drive: move. Other drive: copy. Ctrl copies, Shift moves — to the other pane, Explorer or another app"),
             ("Shift+F2", "Compare the two panes"),
             ("F4", "Edit in the built-in code editor"),
             ("F7 / Ctrl+Shift+N", "New folder"),
@@ -52,6 +54,7 @@ public partial class HelpWindow : Window
             ("Ctrl+Shift+C", "Copy the selected paths as text"),
             ("Alt+Enter", "Properties"),
             ("Space", "Quick View: images, video, audio, PDF, text; or QuickLook, if you turn it on in Settings → Files"),
+            ("Alt+P", "Preview pane: the selected file beside the panes, following the active pane"),
         }),
         ("Selecting", new[]
         {
@@ -64,7 +67,8 @@ public partial class HelpWindow : Window
         {
             ("Ctrl+Shift+1…5", "Details, List, icons M, L, XL"),
             ("Ctrl+wheel", "Zoom through the views"),
-            ("Click a column header", "Sort; the selected file stays in sight"),
+            ("Click a column header", "Sort; the selected file stays in sight. Each folder remembers its own order"),
+            ("Drag a column's edge", "Widen it; once you size Name yourself it stays, and a wide list scrolls sideways. Double-click Name's edge to let it fill the pane again"),
             ("Ctrl+H", "Show hidden files"),
             ("Ctrl+R / Ctrl+F5", "Refresh and measure folder sizes again"),
             ("Settings → Text size", "Make the whole window larger, or just the sidebar, the tabs, the path bar or the file list"),

@@ -21,6 +21,8 @@ public static class Settings
     public static bool Animations = true;
     public static double TextScale = 1;      // the whole window, text included: 1, 1.15, 1.3, 1.5
     public static bool SinglePane;           // the right pane is hidden
+    public static bool Preview;              // the preview pane right of the panes (Alt+P)
+    public static double PreviewWidth = 380;
     public static int Stats = 2;             // the cards above the panes: 2 full, 1 compact (one line each), 0 hidden
     public static double SidebarScale = 1, TabsScale = 1, PathScale = 1, ListScale = 1; // per area, on top of TextScale: 0.8–1.5
     public static bool QuickLook;            // Space asks QuickLook (QL-Win) for the preview when it is running
@@ -47,6 +49,7 @@ public static class Settings
     public static readonly Dictionary<string, List<string>> Tabs = new();   // "Left" → folders open in that pane
     public static readonly Dictionary<string, int> ActiveTab = new(); // "Left" → Details
     public static readonly Dictionary<string, List<int>> Pins = new(); // "Left" → indexes of pinned tabs
+    public static readonly Dictionary<string, (string Key, bool Desc)> FolderSorts = new(StringComparer.OrdinalIgnoreCase); // folder → its own order; absent = by name
 
     public static void Load()
     {
@@ -63,6 +66,8 @@ public static class Settings
                 case "animations": Animations = v == "1"; break;
                 case "textscale" when double.TryParse(v, CultureInfo.InvariantCulture, out var ts) && double.IsFinite(ts): TextScale = Math.Clamp(ts, 1, 1.6); break;
                 case "singlepane": SinglePane = v == "1"; break;
+                case "preview": Preview = v == "1"; break;
+                case "previewwidth" when double.TryParse(v, CultureInfo.InvariantCulture, out var pw) && double.IsFinite(pw): PreviewWidth = Math.Clamp(pw, 200, 1600); break;
                 case "stats" when int.TryParse(v, out var st) && st is >= 0 and <= 2: Stats = st; break;
                 case "scale.sidebar" when double.TryParse(v, CultureInfo.InvariantCulture, out var s1) && double.IsFinite(s1): SidebarScale = Math.Clamp(s1, 0.8, 1.5); break;
                 case "scale.tabs" when double.TryParse(v, CultureInfo.InvariantCulture, out var s2) && double.IsFinite(s2): TabsScale = Math.Clamp(s2, 0.8, 1.5); break;
@@ -88,7 +93,9 @@ public static class Settings
                 case var k when k.StartsWith("activetab.") && int.TryParse(v, out var ai): ActiveTab[k[10..]] = ai; break;
                 case var k when k.StartsWith("pins."): Pins[k[5..]] = v.Split(',').Select(x => int.TryParse(x, out var n) ? n : -1).Where(n => n >= 0).ToList(); break;
                 case var k when k.StartsWith("view.") && Enum.TryParse<PaneView.ViewMode>(v, out var vm): Views[k[5..]] = vm; break;
-                case var k when k.StartsWith("col.") && double.TryParse(v, CultureInfo.InvariantCulture, out var cw) && double.IsFinite(cw): ColumnWidths[k[4..]] = Math.Clamp(cw, 30, 800); break;
+                case var k when k.StartsWith("col.") && double.TryParse(v, CultureInfo.InvariantCulture, out var cw) && double.IsFinite(cw): ColumnWidths[k[4..]] = Math.Clamp(cw, 30, 4000); break;
+                // sort=Modified|1|D:\Photos — the path last: it may hold anything but |
+                case "sort" when v.Split('|', 3) is [var sk, var sd, var sp] && PaneView.SortKeys.Contains(sk) && sp != "": FolderSorts[sp] = (sk, sd == "1"); break;
                 case "sidebarorder" when v != "": SidebarOrder = v.Split(',').Where(x => x != "").ToList(); break;
                 case "sidebarcollapsed": SidebarCollapsed.Clear(); SidebarCollapsed.UnionWith(v.Split(',').Where(x => x != "")); break;
                 case "sidebar" when double.TryParse(v, CultureInfo.InvariantCulture, out var w) && double.IsFinite(w): SidebarWidth = Math.Clamp(w, 160, 600); break;
@@ -117,6 +124,8 @@ public static class Settings
             $"animations={(Animations ? 1 : 0)}",
             $"textscale={TextScale.ToString(CultureInfo.InvariantCulture)}",
             $"singlepane={(SinglePane ? 1 : 0)}",
+            $"preview={(Preview ? 1 : 0)}",
+            $"previewwidth={PreviewWidth.ToString(CultureInfo.InvariantCulture)}",
             $"stats={Stats}",
             $"scale.sidebar={SidebarScale.ToString(CultureInfo.InvariantCulture)}",
             $"scale.tabs={TabsScale.ToString(CultureInfo.InvariantCulture)}",
@@ -145,7 +154,8 @@ public static class Settings
          .Concat(Views.Select(v => $"view.{v.Key}={v.Value}"))
          .Concat(Tabs.Select(t => $"tabs.{t.Key}={string.Join("|", t.Value)}"))
          .Concat(ActiveTab.Select(a => $"activetab.{a.Key}={a.Value}"))
-         .Concat(Pins.Select(p => $"pins.{p.Key}={string.Join(",", p.Value)}")));
+         .Concat(Pins.Select(p => $"pins.{p.Key}={string.Join(",", p.Value)}"))
+         .Concat(FolderSorts.Select(s => $"sort={s.Value.Key}|{(s.Value.Desc ? 1 : 0)}|{s.Key}")));
     }
 
     // ---- Default file manager (per user, HKCU only; turning it off removes every key it added) ----

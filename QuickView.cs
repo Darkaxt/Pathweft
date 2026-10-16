@@ -35,8 +35,68 @@ public partial class MainWindow
     UIElement Handler(Entry e, int v)
     {
         var host = PreviewHost.For(e.Path);
-        if (host != null) host.Failed += msg => { if (v == quickVersion) quick.Content = Summary(e, msg); };
+        if (host != null) host.Failed += msg => { if (v == quickVersion) QuickTarget.Content = Summary(e, msg); };
         return host;
+    }
+
+    // Where a preview goes: the Quick View window while it is open, otherwise the preview pane (Alt+P).
+    ContentControl QuickTarget => quick != null ? quick : PreviewBody;
+    void QuickTitle(string text, bool append = false)
+    {
+        if (quick != null) quick.Title = append ? quick.Title + text : text;
+        else PreviewTitle.Text = append ? PreviewTitle.Text + text : text;
+    }
+
+    // ---- Preview pane: the active pane's selected file beside the panes, as in Explorer (Alt+P) ----
+    readonly DispatcherTimer previewDelay = new() { Interval = TimeSpan.FromMilliseconds(120) };
+    string previewShown; // the file on show, so the many StatsChanged that aren't a new selection cost nothing
+
+    void ApplyPreview()
+    {
+        var on = Settings.Preview ? Visibility.Visible : Visibility.Collapsed;
+        PreviewPane.Visibility = PreviewSplitter.Visibility = on;
+        PreviewGap.Width = new GridLength(Settings.Preview ? 10 : 0);
+        PreviewColumn.Width = new GridLength(Settings.Preview ? Settings.PreviewWidth : 0);
+        PreviewColumn.MinWidth = Settings.Preview ? 200 : 0;
+        previewShown = null;
+        if (Settings.Preview) PreviewFollow();
+        else if (quick == null) { StopMedia(); quickVersion++; PreviewBody.Content = null; } // a video in it stops with it
+    }
+
+    void TogglePreview()
+    {
+        Settings.Preview = !Settings.Preview;
+        Settings.Save();
+        ApplyPreview();
+    }
+
+    void Preview_Click(object s, RoutedEventArgs e) { TogglePreview(); active.FocusList(); }
+
+    void PreviewSplitter_DragCompleted(object s, System.Windows.Controls.Primitives.DragCompletedEventArgs e)
+    {
+        Settings.PreviewWidth = PreviewColumn.ActualWidth;
+        Settings.Save();
+    }
+
+    /// The selection moved: show it after a short pause, so holding an arrow key doesn't decode every photo on the way.
+    void PreviewFollow()
+    {
+        if (!Settings.Preview || quick != null) return;
+        var path = (active.List.SelectedItem as Entry)?.Path;
+        if (path == previewShown) return;
+        previewShown = path;
+        previewDelay.Stop();
+        previewDelay.Start();
+    }
+
+    void PreviewTick(object s, EventArgs e)
+    {
+        previewDelay.Stop();
+        if (!Settings.Preview || quick != null) return;
+        bool focused = active.List.IsKeyboardFocusWithin;
+        FillQuickView();
+        // a preview handler (Office, PDF) takes the keyboard when it starts; the arrows belong to the list
+        if (focused) Dispatcher.BeginInvoke(() => { if (!active.List.IsKeyboardFocusWithin && quick == null) active.FocusList(); }, DispatcherPriority.ApplicationIdle);
     }
 
     // QuickLook (QL-Win), for those who prefer it and have it running: Space toggles its preview and a
@@ -77,7 +137,7 @@ public partial class MainWindow
         };
         quick.SourceInitialized += (_, _) => ApplyAcrylic(quick);
         quick.Background = Tint();
-        quick.Closed += (_, _) => { StopMedia(); quickVersion++; quick = null; active.FocusList(); };
+        quick.Closed += (_, _) => { StopMedia(); quickVersion++; quick = null; active.FocusList(); previewShown = null; PreviewFollow(); };
         quick.PreviewKeyDown += (_, e) =>
         {
             switch (e.Key)
@@ -105,22 +165,24 @@ public partial class MainWindow
     {
         int v = ++quickVersion;
         StopMedia();
-        if (active.List.SelectedItem is not Entry e || e.IsUp) { quick.Content = null; quick.Title = ""; return; }
-        quick.Title = $"{e.Name}  ·  {e.SizeText}";
+        if (active.List.SelectedItem is not Entry e || e.IsUp) { QuickTarget.Content = null; QuickTitle(""); return; }
+        QuickTitle($"{e.Name}  ·  {e.SizeText}");
         var ext = Path.GetExtension(e.Name);
         try
         {
+            // Disk reads off the UI thread: the preview pane follows every selection, and a file or folder
+            // on a share that is asleep answers only after the SMB timeout.
             UIElement content =
-                e.IsDir ? TextView(FolderListing(e.Path)) :
+                e.IsDir ? TextView(await Task.Run(() => FolderListing(e.Path))) :
                 ImageExt.Contains(ext) ? await ImageView(e.Path) :
                 VideoExt.Contains(ext) ? MediaView(e, video: true) :
                 AudioExt.Contains(ext) ? MediaView(e, video: false) :
                 ext.Equals(".pdf", StringComparison.OrdinalIgnoreCase) ? await PdfView(e.Path, v) :
-                ZipExt.Contains(ext) ? TextView(ZipListing(e.Path)) :
+                ZipExt.Contains(ext) ? TextView(await Task.Run(() => ZipListing(e.Path))) :
                 FontExt.Contains(ext) ? FontView(e.Path) :
                 RenderedExt.Contains(ext) && Handler(e, v) is { } rendered ? rendered :
-                ReadText(e.Path) is { } text ? TextView(text) :
-                Handler(e, v) ?? TextView(HexDump(e.Path));
+                await Task.Run(() => ReadText(e.Path)) is { } text ? TextView(text) :
+                Handler(e, v) ?? TextView(await Task.Run(() => HexDump(e.Path)));
             if (v == quickVersion) Show(content);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or NotSupportedException
@@ -133,7 +195,7 @@ public partial class MainWindow
     // Stepping through files with the arrow keys looks like one preview dissolving into the next.
     void Show(UIElement content)
     {
-        quick.Content = content;
+        QuickTarget.Content = content;
         if (Settings.Animations)
             content.BeginAnimation(UIElement.OpacityProperty, new System.Windows.Media.Animation.DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(140)));
     }
@@ -168,7 +230,7 @@ public partial class MainWindow
     {
         var doc = await PdfDocument.LoadFromFileAsync(await StorageFile.GetFileFromPathAsync(path));
         var pages = new StackPanel { Margin = new(16) };
-        quick.Title += $"  ·  {doc.PageCount} pages";
+        QuickTitle($"  ·  {doc.PageCount} pages", append: true);
         _ = Dispatcher.InvokeAsync(async () =>
         {
             for (uint i = 0; i < Math.Min(doc.PageCount, 100u) && v == quickVersion; i++)
@@ -196,7 +258,7 @@ public partial class MainWindow
         play.Click += (_, _) => TogglePlay();
         slider.PreviewMouseLeftButtonUp += (_, _) => media.Position = TimeSpan.FromSeconds(slider.Value);
         media.MediaOpened += (_, _) => { if (media.NaturalDuration.HasTimeSpan) slider.Maximum = media.NaturalDuration.TimeSpan.TotalSeconds; };
-        media.MediaFailed += (_, ev) => { StopMedia(); quick.Content = Summary(e, "Can't play this file (missing codec?): " + ev.ErrorException.Message); };
+        media.MediaFailed += (_, ev) => { StopMedia(); QuickTarget.Content = Summary(e, "Can't play this file (missing codec?): " + ev.ErrorException.Message); };
         media.Tag = (slider, time, play);
         media.MouseLeftButtonUp += (_, _) => TogglePlay();
 
@@ -215,7 +277,9 @@ public partial class MainWindow
             g.Children.Add(Summary(e));
             root.Children.Add(g);
         }
-        media.Play();
+        // Quick View plays at once; the preview pane waits for a click, or every video passed on the way would start
+        if (quick != null) media.Play();
+        else { media.Pause(); paused = true; play.Content = "\uE768"; }
         mediaTimer.Start();
         return root;
     }

@@ -225,7 +225,7 @@
       <local:FileList x:Name="List" AlternationCount="2" Background="Transparent" BorderThickness="0" Margin="4,0"
                 TextSearch.TextPath="Name" VirtualizingPanel.IsVirtualizing="True"
                 VirtualizingPanel.VirtualizationMode="Recycling" VirtualizingPanel.ScrollUnit="Pixel"
-                ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                ScrollViewer.HorizontalScrollBarVisibility="Auto">
         <ListView.View>
           <GridView>
             <GridViewColumn x:Name="NameColumn" Header="Name" Width="200" CellTemplate="{StaticResource NameCell}"/>
