@@ -14,7 +14,7 @@ public partial class HelpWindow : Window
         ("Panes and tabs", new[]
         {
             ("Tab", "Switch to the other pane"),
-            ("Ctrl+P", "One pane or two (also in Settings)"),
+            ("Ctrl+P", "One pane or two (also in Settings and the bottom bar)"),
             ("Ctrl+U", "Swap the two panes"),
             ("Ctrl+T", "New tab"),
             ("Ctrl+W", "Close the tab (pinned tabs stay)"),
@@ -39,11 +39,12 @@ public partial class HelpWindow : Window
         }),
         ("Files", new[]
         {
-            ("F5 / F6", "Copy / move to the other pane (with one pane, the first press brings it back)"),
+            ("Ctrl+F5 / F6", "Copy / move to the other pane (with one pane, the first press brings it back)"),
             ("Ctrl+C / Ctrl+X / Ctrl+V", "Copy, cut, paste, also with Explorer"),
             ("F2", "Rename in place; with several selected, rename them all"),
             ("Click a selected name", "Rename it, as in Explorer: a slow second click, not a double-click"),
             ("Drag files", "Same drive: move. Other drive: copy. Ctrl copies, Shift moves — to the other pane, Explorer or another app"),
+            ("Ctrl+drag in the same folder", "Duplicate, as in Explorer: “name - Copy.ext”, then “name - Copy (2).ext”; folders too. Pasting copied files into their own folder does the same"),
             ("Shift+F2", "Compare the two panes"),
             ("F4", "Edit in the built-in code editor"),
             ("F7 / Ctrl+Shift+N", "New folder"),
@@ -59,6 +60,7 @@ public partial class HelpWindow : Window
         ("Selecting", new[]
         {
             ("Drag on empty space", "Select with a rectangle; Ctrl adds to the selection"),
+            ("Right-drag", "Select with a rectangle from anywhere in the list; letting go opens the menu for what it selected. A plain right-click works as before"),
             ("Num +", "Select by pattern, like *.jpg;*.png"),
             ("Num −", "Deselect by pattern"),
             ("Num *", "Invert the selection"),
@@ -70,7 +72,7 @@ public partial class HelpWindow : Window
             ("Click a column header", "Sort; the selected file stays in sight. Each folder remembers its own order"),
             ("Drag a column's edge", "Widen it; once you size Name yourself it stays, and a wide list scrolls sideways. Double-click Name's edge to let it fill the pane again"),
             ("Ctrl+H", "Show hidden files"),
-            ("Ctrl+R / Ctrl+F5", "Refresh and measure folder sizes again"),
+            ("F5 / Ctrl+R", "Refresh and measure folder sizes again"),
             ("Settings → Text size", "Make the whole window larger, or just the sidebar, the tabs, the path bar or the file list"),
             ("Settings → Background image", "A picture behind the panes, with its own strength, blur and brightness"),
         }),

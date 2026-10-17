@@ -40,6 +40,7 @@ public class Job : INotifyPropertyChanged
     public string Current = "";
     public List<Conflict> Conflicts { get; internal set; } = new();
     public bool Merged { get; internal set; } // a folder went into a folder of the same name that was already there
+    public readonly Dictionary<string, string> Duplicates = new(StringComparer.OrdinalIgnoreCase); // source → its "- Copy" beside it, which Undo removes
     public readonly System.Collections.Concurrent.ConcurrentQueue<string> Errors = new(); // written by the worker, read by the UI
     public readonly System.Collections.Concurrent.ConcurrentQueue<string> Notes = new();
 
@@ -205,10 +206,12 @@ public static class Ferry
             if (job.IsCancelled) break;
             FileSystemInfo fsi = Directory.Exists(s) ? new DirectoryInfo(s) : new FileInfo(s);
             if (!fsi.Exists) { job.Errors.Enqueue($"{s}: cannot be read"); continue; }
-            if (Path.GetDirectoryName(s.TrimEnd('\\'))?.Equals(job.Destination.TrimEnd('\\'), StringComparison.OrdinalIgnoreCase) == true && job.IsMove)
-            { job.Errors.Enqueue($"{fsi.Name}: already in this folder"); continue; }
+            bool here = Path.GetDirectoryName(s.TrimEnd('\\'))?.Equals(job.Destination.TrimEnd('\\'), StringComparison.OrdinalIgnoreCase) == true;
+            if (here && job.IsMove) { job.Errors.Enqueue($"{fsi.Name}: already in this folder"); continue; }
             if (fsi is DirectoryInfo && (job.Destination + "\\").StartsWith(fsi.FullName.TrimEnd('\\') + "\\", StringComparison.OrdinalIgnoreCase))
             { job.Errors.Enqueue($"{fsi.Name}: can't copy a folder into itself"); continue; }
+            // a copy into the folder it is already in is a duplicate beside it, as in Explorer ("name - Copy.ext")
+            if (here) { var copy = CopyName(s.TrimEnd('\\'), fsi is DirectoryInfo); job.Duplicates[s] = copy; Add(fsi, Path.GetFileName(copy)); continue; }
             if (fsi is DirectoryInfo && Directory.Exists(Path.Combine(job.Destination, fsi.Name))) job.Merged = true;
             Add(fsi, fsi.Name);
         }
@@ -353,6 +356,20 @@ public static class Ferry
             if (!File.Exists(candidate) && !Directory.Exists(candidate)) return candidate;
         }
         return target;
+    }
+
+    /// Explorer's name for a duplicate beside the original: "a - Copy.txt", then "a - Copy (2).txt"; a folder keeps
+    /// its dots ("v1.2 - Copy").
+    internal static string CopyName(string path, bool folder)
+    {
+        string dir = Path.GetDirectoryName(path), name = Path.GetFileName(path);
+        string stem = folder ? name : Path.GetFileNameWithoutExtension(name), ext = folder ? "" : Path.GetExtension(name);
+        for (int n = 1; n < 10000; n++)
+        {
+            var candidate = Path.Combine(dir, $"{stem} - Copy{(n > 1 ? $" ({n})" : "")}{ext}");
+            if (!File.Exists(candidate) && !Directory.Exists(candidate)) return candidate;
+        }
+        return path;
     }
 
     // ---- CopyFileExW ----

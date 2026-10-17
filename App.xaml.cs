@@ -227,6 +227,26 @@ public partial class App : Application
             Updater.Feed = Serve(200, "{\"tag_name\":\"v0.0.1\",\"body\":\"\",\"assets\":[{\"name\":\"FileLabs-0.0.1-setup.exe\",\"browser_download_url\":\"x\",\"size\":1}]}");
             Check(Task.Run(() => Updater.Check(manual: true)).GetAwaiter().GetResult() == null, "update check: nothing newer is not a failure");
 
+            // a copy into the folder it is in duplicates beside it, as in Explorer; folders keep their dots
+            var dup = Directory.CreateDirectory(Path.Combine(root, "dup", "v1.2", "inner")).Parent.Parent.FullName;
+            File.WriteAllText(Path.Combine(dup, "v1.2", "inner", "x.txt"), "x");
+            File.WriteAllText(Path.Combine(dup, "notes.txt"), "n");
+            Run(Ferry.Submit(new[] { Path.Combine(dup, "notes.txt"), Path.Combine(dup, "v1.2") }, dup, move: false));
+            j = Run(Ferry.Submit(new[] { Path.Combine(dup, "notes.txt") }, dup, move: false));
+            Check(File.ReadAllText(Path.Combine(dup, "notes - Copy.txt")) == "n" && File.Exists(Path.Combine(dup, "notes - Copy (2).txt"))
+                && File.Exists(Path.Combine(dup, "v1.2 - Copy", "inner", "x.txt")) && File.ReadAllText(Path.Combine(dup, "notes.txt")) == "n"
+                && j.Conflicts.Count == 0 && j.Duplicates[Path.Combine(dup, "notes.txt")] == Path.Combine(dup, "notes - Copy (2).txt"), "duplicate in the same folder");
+
+            // selected text: white on the default accent at 4.5:1 or better, and readable on other accents and strengths
+            var (fill, text) = FileExplorer.MainWindow.Selection(System.Windows.Media.Color.FromRgb(0x4C, 0x8D, 0xFF), 1.0);
+            Check(text == System.Windows.Media.Colors.White && FileExplorer.MainWindow.Contrast(text, fill) >= 4.5, "selection text on the default accent");
+            foreach (var hex in new[] { "#FFD23F", "#FF4FA3", "#E5484D", "#30D158", "#FFFFFF" })
+                foreach (var strength in new[] { 0.3, 1.0, 2.5 })
+                {
+                    var (f, t) = FileExplorer.MainWindow.Selection((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(hex), strength);
+                    Check(FileExplorer.MainWindow.Contrast(t, f) >= 4.5, $"selection text on {hex} at {strength}");
+                }
+
             Console.WriteLine("selftest: all passed");
             return 0;
         }

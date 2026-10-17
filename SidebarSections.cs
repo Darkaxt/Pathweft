@@ -29,6 +29,13 @@ public partial class MainWindow
         tree.Resources[SystemColors.HighlightTextBrushKey] = Hex("#F2F6FB");
         tree.Resources[SystemColors.InactiveSelectionHighlightBrushKey] = Hex("#26FFFFFF");
         tree.Resources[SystemColors.InactiveSelectionHighlightTextBrushKey] = Hex("#E8EEF6");
+        // The tree's own ScrollViewer is never scrollable here (the tree is as tall as its content) but still
+        // swallows every wheel notch, so the sidebar never scrolled with the pointer over Folders. Pass it on.
+        tree.PreviewMouseWheel += (_, e) =>
+        {
+            e.Handled = true;
+            FolderTree.RaiseEvent(new MouseWheelEventArgs(e.MouseDevice, e.Timestamp, e.Delta) { RoutedEvent = MouseWheelEvent, Source = tree });
+        };
         FolderTree.Children.Add(tree);
         folderTree = tree; // its drives arrive with the first drive read (ShowDriveNodes)
     }

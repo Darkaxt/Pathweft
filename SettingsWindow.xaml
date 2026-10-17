@@ -141,7 +141,7 @@
             <TextBlock Style="{StaticResource Hint}" Text="Each area on its own, on top of the size above: a bigger file list with a compact sidebar, for example."/>
 
             <CheckBox x:Name="SinglePaneBox" Content="One pane" Click="SinglePane_Click" Margin="0,4,0,0"/>
-            <TextBlock Style="{StaticResource Hint}" Text="Hides the right pane, Explorer style. Ctrl+P switches. F5 and F6 bring the second pane back, since they copy into it."/>
+            <TextBlock Style="{StaticResource Hint}" Text="Hides the right pane, Explorer style. Ctrl+P (or its button at the bottom) switches. Ctrl+F5 and F6 bring the second pane back, since they copy into it."/>
 
             <CheckBox x:Name="StatsBox" Content="Summary cards above the panes" Click="Stats_Click" Margin="0,4,0,0"/>
             <CheckBox x:Name="StatsCompactBox" Content="Compact: one line each" Click="Stats_Click" Margin="22,6,0,0"/>

@@ -259,15 +259,45 @@ public partial class MainWindow : Window
     public static void ApplyAccent()
     {
         var c = AccentColor;
-        Shade("Accent", 0xFF); Shade("AccentEdge", 0xA6); Shade("AccentSelect", 0x73); Shade("AccentSoft", 0x45);
+        Shade("Accent", 0xFF); Shade("AccentEdge", 0xA6); Shade("AccentSoft", 0x45);
+        var (fill, text) = Selection(c, Settings.AccentStrength);
+        Put("AccentSelect", fill); Put("AccentSelectText", text);
         void Shade(string key, byte alpha)
         {
             // "Accent" itself is the solid fill for bars and must stay opaque; the tints follow the slider.
             if (key != "Accent") alpha = (byte)Math.Clamp(alpha * Settings.AccentStrength, 12, 255);
-            var brush = new SolidColorBrush(Color.FromArgb(alpha, c.R, c.G, c.B));
+            Put(key, Color.FromArgb(alpha, c.R, c.G, c.B));
+        }
+        static void Put(string key, Color color)
+        {
+            var brush = new SolidColorBrush(color);
             brush.Freeze();
             Application.Current.Resources[key] = brush;
         }
+    }
+
+    /// The selection fill and the text on it. The fill is the accent tint already laid on the panes' surface
+    /// (#2C2E35) and opaque: a see-through one took on whatever the glass showed behind it, and over a bright
+    /// wallpaper the selected name washed out. The text is white, or black where black reads better (a light
+    /// accent at a high strength); one of the two always reaches 4.5:1 (WCAG AA).
+    internal static (Color Fill, Color Text) Selection(Color accent, double strength)
+    {
+        double a = Math.Clamp(0x73 * strength, 12, 255) / 255;
+        byte Mix(byte x, byte ground) => (byte)Math.Round(x * a + ground * (1 - a));
+        var fill = Color.FromRgb(Mix(accent.R, 0x2C), Mix(accent.G, 0x2E), Mix(accent.B, 0x35));
+        return (fill, Contrast(Colors.White, fill) >= Contrast(Colors.Black, fill) ? Colors.White : Colors.Black);
+    }
+
+    /// WCAG contrast ratio of two opaque colours, 1 to 21.
+    internal static double Contrast(Color x, Color y)
+    {
+        static double Lum(Color c)
+        {
+            static double Lin(byte v) { var s = v / 255.0; return s <= 0.04045 ? s / 12.92 : Math.Pow((s + 0.055) / 1.055, 2.4); }
+            return 0.2126 * Lin(c.R) + 0.7152 * Lin(c.G) + 0.0722 * Lin(c.B);
+        }
+        double lx = Lum(x), ly = Lum(y);
+        return (Math.Max(lx, ly) + 0.05) / (Math.Min(lx, ly) + 0.05);
     }
 
     public static Color AccentColor =>
@@ -1040,7 +1070,8 @@ public partial class MainWindow : Window
             case Key.C when ctrl && !shift: ClipboardPut(cut: false); break;
             case Key.X when ctrl: ClipboardPut(cut: true); break;
             case Key.V when ctrl: ClipboardPaste(); break;
-            case Key.R when ctrl: case Key.F5 when ctrl: SizeCache.Clear(); active.Refresh(force: true); break; // F5 alone copies
+            // F5 refreshes, as in other file managers; Ctrl+F5 copies to the other pane (below)
+            case Key.R when ctrl: case Key.F5 when !ctrl: SizeCache.Clear(); active.Refresh(force: true); break;
             case Key.C when ctrl && shift:
                 Clipboard.SetText(string.Join(Environment.NewLine, active.Selected.Select(x => x.Path)));
                 Status.Text = "Path copied"; break;
@@ -1054,8 +1085,8 @@ public partial class MainWindow : Window
             case Key.F2: Rename(); break;
             case Key.F4 when !alt: EditSelected(); break; // Alt+F4 closes the window, it doesn't open the editor
             case Key.Z when ctrl: Undo(); break;
-            // F5/F6 copy into the other pane, so with one pane they bring it back first instead of
-            // copying somewhere the user cannot see
+            // Ctrl+F5/F6 copy into the other pane, so with one pane they bring it back first instead of
+            // copying somewhere the user cannot see (F5 alone was taken above)
             case Key.F5 or Key.F6 when Settings.SinglePane: SetSinglePane(false); break;
             case Key.F5: Transfer(false); break;
             case Key.F6: Transfer(true); break;
@@ -1082,4 +1113,5 @@ public partial class MainWindow : Window
     void Rename_Click(object s, RoutedEventArgs e) => Rename();
     void Terminal_Click(object s, RoutedEventArgs e) => OpenTerminal();
     void Hidden_Click(object s, RoutedEventArgs e) => ToggleHidden();
+    void Panes_Click(object s, RoutedEventArgs e) { SetSinglePane(!Settings.SinglePane); active.FocusList(); }
 }

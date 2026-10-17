@@ -4,7 +4,10 @@
     <SolidColorBrush x:Key="Accent" Color="#4C8DFF"/>
     <!-- the accent at the three transparencies the UI needs; all four follow the colour chosen in Settings -->
     <SolidColorBrush x:Key="AccentEdge" Color="#A64C8DFF"/>
-    <SolidColorBrush x:Key="AccentSelect" Color="#734C8DFF"/>
+    <!-- selection: the accent at its transparency mixed onto the panes' own dark surface, opaque, so the wallpaper
+         behind the glass can't lighten it; its text is white, or dark for a light accent (MainWindow.ApplyAccent) -->
+    <SolidColorBrush x:Key="AccentSelect" Color="#3A5990"/>
+    <SolidColorBrush x:Key="AccentSelectText" Color="White"/>
     <SolidColorBrush x:Key="AccentSoft" Color="#454C8DFF"/>
     <SolidColorBrush x:Key="Muted" Color="#8CFFFFFF"/>
     <!-- the darker band tabs sit on -->
@@ -57,6 +60,8 @@
           <Setter Property="Width" Value="Auto"/>
           <Setter Property="MinWidth" Value="0"/>
           <Setter Property="Height" Value="10"/>
+          <!-- the theme's own horizontal style asks for a 17 px minimum, which made this bar fat and square -->
+          <Setter Property="MinHeight" Value="0"/>
           <Setter Property="Template">
             <Setter.Value>
               <ControlTemplate TargetType="ScrollBar">
@@ -102,7 +107,7 @@
               <Trigger Property="ItemsControl.AlternationIndex" Value="1"><Setter TargetName="Bd" Property="Background" Value="#08FFFFFF"/></Trigger>
               <DataTrigger Binding="{Binding Dimmed}" Value="True"><Setter TargetName="Bd" Property="Opacity" Value="0.45"/></DataTrigger>
               <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Bd" Property="Background" Value="#10FFFFFF"/></Trigger>
-              <Trigger Property="IsSelected" Value="True"><Setter TargetName="Bd" Property="Background" Value="{DynamicResource AccentSelect}"/></Trigger>
+              <Trigger Property="IsSelected" Value="True"><Setter TargetName="Bd" Property="Background" Value="{DynamicResource AccentSelect}"/><Setter Property="Foreground" Value="{DynamicResource AccentSelectText}"/></Trigger>
             </ControlTemplate.Triggers>
           </ControlTemplate>
         </Setter.Value>
@@ -171,7 +176,7 @@
               <Trigger Property="ItemsControl.AlternationIndex" Value="1"><Setter TargetName="Bd" Property="Background" Value="#08FFFFFF"/></Trigger>
               <DataTrigger Binding="{Binding Dimmed}" Value="True"><Setter TargetName="Bd" Property="Opacity" Value="0.45"/></DataTrigger>
               <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Bd" Property="Background" Value="#10FFFFFF"/></Trigger>
-              <Trigger Property="IsSelected" Value="True"><Setter TargetName="Bd" Property="Background" Value="{DynamicResource AccentSelect}"/></Trigger>
+              <Trigger Property="IsSelected" Value="True"><Setter TargetName="Bd" Property="Background" Value="{DynamicResource AccentSelect}"/><Setter Property="Foreground" Value="{DynamicResource AccentSelectText}"/></Trigger>
             </ControlTemplate.Triggers>
           </ControlTemplate>
         </Setter.Value>
@@ -190,7 +195,7 @@
             <ControlTemplate.Triggers>
               <DataTrigger Binding="{Binding Dimmed}" Value="True"><Setter TargetName="Bd" Property="Opacity" Value="0.45"/></DataTrigger>
               <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Bd" Property="Background" Value="#10FFFFFF"/></Trigger>
-              <Trigger Property="IsSelected" Value="True"><Setter TargetName="Bd" Property="Background" Value="{DynamicResource AccentSelect}"/></Trigger>
+              <Trigger Property="IsSelected" Value="True"><Setter TargetName="Bd" Property="Background" Value="{DynamicResource AccentSelect}"/><Setter Property="Foreground" Value="{DynamicResource AccentSelectText}"/></Trigger>
             </ControlTemplate.Triggers>
           </ControlTemplate>
         </Setter.Value>
@@ -441,6 +446,7 @@
             <ControlTemplate.Triggers>
               <Trigger Property="IsHighlighted" Value="True">
                 <Setter TargetName="Bd" Property="Background" Value="{DynamicResource AccentSelect}"/>
+                <Setter Property="Foreground" Value="{DynamicResource AccentSelectText}"/>
               </Trigger>
               <Trigger Property="IsEnabled" Value="False">
                 <Setter TargetName="Bd" Property="Opacity" Value="0.4"/>

@@ -42,7 +42,7 @@
       </DockPanel>
     </DataTemplate>
     <DataTemplate x:Key="SizeCell">
-      <TextBlock Text="{Binding SizeText}" Foreground="#B3FFFFFF" Typography.NumeralAlignment="Tabular" TextAlignment="Right" Margin="0,0,6,0"/>
+      <TextBlock Text="{Binding SizeText}" Opacity="0.7" Typography.NumeralAlignment="Tabular" TextAlignment="Right" Margin="0,0,6,0"/>
     </DataTemplate>
     <DataTemplate x:Key="DateCell">
       <StackPanel Orientation="Horizontal">
@@ -50,7 +50,7 @@
           <TextBlock Text="{Binding Age}" Foreground="{Binding AgeTextBrush}" FontSize="11" FontWeight="SemiBold"
                      HorizontalAlignment="Center" Typography.NumeralAlignment="Tabular"/>
         </Border>
-        <TextBlock Text="{Binding DateText}" Foreground="#99FFFFFF" Typography.NumeralAlignment="Tabular"/>
+        <TextBlock Text="{Binding DateText}" Opacity="0.6" Typography.NumeralAlignment="Tabular"/>
       </StackPanel>
     </DataTemplate>
     <DataTemplate x:Key="TileCell">
@@ -171,7 +171,7 @@
                           <Border x:Name="Bd" Padding="8,4" CornerRadius="4" Background="Transparent"><ContentPresenter/></Border>
                           <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Bd" Property="Background" Value="#1AFFFFFF"/></Trigger>
-                            <Trigger Property="IsSelected" Value="True"><Setter TargetName="Bd" Property="Background" Value="{DynamicResource AccentSelect}"/></Trigger>
+                            <Trigger Property="IsSelected" Value="True"><Setter TargetName="Bd" Property="Background" Value="{DynamicResource AccentSelect}"/><Setter Property="Foreground" Value="{DynamicResource AccentSelectText}"/></Trigger>
                           </ControlTemplate.Triggers>
                         </ControlTemplate>
                       </Setter.Value>
@@ -231,12 +231,12 @@
             <GridViewColumn x:Name="NameColumn" Header="Name" Width="200" CellTemplate="{StaticResource NameCell}"/>
             <GridViewColumn Header="Version" Width="80">
               <GridViewColumn.CellTemplate>
-                <DataTemplate><TextBlock Text="{Binding Version}" Foreground="#8A97AA" TextTrimming="CharacterEllipsis" Typography.NumeralAlignment="Tabular"/></DataTemplate>
+                <DataTemplate><TextBlock Text="{Binding Version}" Opacity="0.55" TextTrimming="CharacterEllipsis" Typography.NumeralAlignment="Tabular"/></DataTemplate>
               </GridViewColumn.CellTemplate>
             </GridViewColumn>
             <GridViewColumn Header="Type" Width="50">
               <GridViewColumn.CellTemplate>
-                <DataTemplate><TextBlock Text="{Binding Ext}" Foreground="#8A97AA"/></DataTemplate>
+                <DataTemplate><TextBlock Text="{Binding Ext}" Opacity="0.55"/></DataTemplate>
               </GridViewColumn.CellTemplate>
             </GridViewColumn>
             <GridViewColumn Header="Size" Width="80" CellTemplate="{StaticResource SizeCell}"/>

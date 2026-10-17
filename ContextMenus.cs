@@ -19,19 +19,25 @@ public partial class MainWindow
             // whatever is still selected
             var row = p.RowAt(e.OriginalSource as DependencyObject);
             if (row == null && e.CursorLeft >= 0) p.List.SelectedItems.Clear();
-            var sel = p.Selected;
             e.Handled = true;
-
-            if (Settings.NativeMenu)
-            {
-                if (ShellMenu.Show(this, p.Dir, sel.Select(x => x.Path).ToList()) == "rename") Rename();
-                p.Refresh();
-                return;
-            }
-            var menu = sel.Count > 0 ? ItemMenu(p, sel) : FolderMenu(p);
-            menu.PlacementTarget = p.List;
-            menu.IsOpen = true;
+            ShowMenu(p);
         };
+        p.RightDragSelected += () => { SetActive(p); ShowMenu(p); };
+    }
+
+    /// The menu for the pane's selection, or for its folder when nothing is selected.
+    void ShowMenu(PaneView p)
+    {
+        var sel = p.Selected;
+        if (Settings.NativeMenu)
+        {
+            if (ShellMenu.Show(this, p.Dir, sel.Select(x => x.Path).ToList()) == "rename") Rename();
+            p.Refresh();
+            return;
+        }
+        var menu = sel.Count > 0 ? ItemMenu(p, sel) : FolderMenu(p);
+        menu.PlacementTarget = p.List;
+        menu.IsOpen = true;
     }
 
     // SpaceScan (sister app) publishes where it is installed (before its ecosystem card); without it the menu item sends the user to its page.
@@ -130,7 +136,7 @@ public partial class MainWindow
         m.Items.Add(Item("Cut", "", "Ctrl+X", () => ClipboardPut(cut: true)));
         m.Items.Add(Item("Copy", "", "Ctrl+C", () => ClipboardPut(cut: false)));
         m.Items.Add(Item("Paste", "", "Ctrl+V", ClipboardPaste, Clipboard.ContainsFileDropList()));
-        m.Items.Add(Item("Copy to other pane", "", "F5", () => Transfer(false)));
+        m.Items.Add(Item("Copy to other pane", "", "Ctrl+F5", () => Transfer(false)));
         m.Items.Add(Item("Move to other pane", "", "F6", () => Transfer(true)));
         m.Items.Add(new Separator());
         m.Items.Add(Item("Copy path", "", "Ctrl+Shift+C", () => Clipboard.SetText(string.Join(Environment.NewLine, sel.Select(x => x.Path)))));
@@ -181,7 +187,7 @@ public partial class MainWindow
         m.Items.Add(Item("Invert selection", "", "Num *", p.InvertSelection));
         m.Items.Add(Item("Compare with other pane", "", "Shift+F2", ComparePanes));
         m.Items.Add(new Separator());
-        m.Items.Add(Item("Refresh", "", "Ctrl+R / Ctrl+F5", () => { SizeCache.Clear(); p.Refresh(force: true); }));
+        m.Items.Add(Item("Refresh", "", "F5 / Ctrl+R", () => { SizeCache.Clear(); p.Refresh(force: true); }));
         m.Items.Add(Item(Settings.ShowHidden ? "Hide hidden files" : "Show hidden files", "", "Ctrl+H", ToggleHidden));
         m.Items.Add(Item("Pin to Quick access", "", "Ctrl+D", PinSelected));
         m.Items.Add(Item("Open terminal here", "", "Ctrl+`", OpenTerminal));

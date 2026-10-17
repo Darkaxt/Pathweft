@@ -202,6 +202,7 @@ public partial class PaneView : UserControl
     public event Action Activated, StatsChanged;
     public event Action<string> Error;
     public event Action<List<string>, string, bool> FilesDropped; // sources, destination, move
+    public event Action RightDragSelected; // a right-button rectangle was let go: the menu for what it selected
 
     readonly List<string> tabs = new() { "" };
     readonly List<bool> pins = new() { false }; // beside tabs, index for index: a pinned tab cannot be closed
@@ -253,6 +254,8 @@ public partial class PaneView : UserControl
         List.PreviewMouseLeftButtonDown += Drag_Down;
         List.PreviewMouseLeftButtonUp += Drag_Up;
         List.PreviewMouseMove += Drag_Move;
+        List.PreviewMouseRightButtonDown += RightDrag_Down;
+        List.PreviewMouseRightButtonUp += RightDrag_Up;
         List.DragOver += Drop_Over;
         List.Drop += Drop_Drop;
         // Not a row, so DropTarget gives the folder shown: the strip always means "here".
@@ -1947,8 +1950,35 @@ public partial class PaneView : UserControl
         UpdateFooter();
     }
 
+    // ---- right-button rectangle: selects, and letting go opens the menu for the selection, as in many file
+    // managers. A right-click that doesn't move is left alone: the row selects itself and the menu opens as always.
+    bool rightArmed;
+
+    void RightDrag_Down(object s, MouseButtonEventArgs e)
+    {
+        rightArmed = !marqueeArmed && !InTextBox(e.OriginalSource) && !OnChrome(e.OriginalSource as DependencyObject);
+        if (!rightArmed) return;
+        dragStart = e.GetPosition(List);
+        marqueeBase = Keyboard.Modifiers.HasFlag(ModifierKeys.Control) ? List.SelectedItems.Cast<Entry>().ToHashSet() : new();
+    }
+
+    void RightDrag_Up(object s, MouseButtonEventArgs e)
+    {
+        if (!rightArmed) return;
+        rightArmed = false;
+        if (Marquee.Visibility != Visibility.Visible) return; // a plain right-click
+        Marquee.Visibility = Visibility.Collapsed;
+        List.ReleaseMouseCapture();
+        UpdateFooter();
+        StatsChanged?.Invoke();
+        // the usual menu would be for the spot under the pointer (empty space = the folder, clearing the selection)
+        e.Handled = true;
+        RightDragSelected?.Invoke();
+    }
+
     void Drag_Move(object s, MouseEventArgs e)
     {
+        if (rightArmed && e.RightButton == MouseButtonState.Pressed) { MarqueeMove(e); return; }
         if (marqueeArmed && e.LeftButton == MouseButtonState.Pressed) { MarqueeMove(e); return; }
         if (!dragArmed || renamingEntry != null || e.LeftButton != MouseButtonState.Pressed) return;
         var d = e.GetPosition(List) - dragStart;
@@ -1979,9 +2009,11 @@ public partial class PaneView : UserControl
                 : e.KeyStates.HasFlag(DragDropKeyStates.ShiftKey) || sameDrive ? DragDropEffects.Move
                 : DragDropEffects.Copy;
             e.Effects = e.AllowedEffects.HasFlag(want) ? want : e.AllowedEffects & (DragDropEffects.Copy | DragDropEffects.Move);
-            // no dropping a folder onto itself / into the folder it's already in
+            // no dropping a folder onto itself, nor into the folder it's already in — except Ctrl+drop (a copy),
+            // which duplicates there as in Explorer ("name - Copy.ext")
+            bool duplicate = e.Effects == DragDropEffects.Copy && e.KeyStates.HasFlag(DragDropKeyStates.ControlKey);
             if (files.Any(f => f.Equals(target, StringComparison.OrdinalIgnoreCase)
-                            || System.IO.Path.GetDirectoryName(f)?.Equals(target, StringComparison.OrdinalIgnoreCase) == true))
+                            || !duplicate && System.IO.Path.GetDirectoryName(f)?.Equals(target, StringComparison.OrdinalIgnoreCase) == true))
                 e.Effects = DragDropEffects.None;
         }
         e.Handled = true;

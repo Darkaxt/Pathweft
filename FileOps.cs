@@ -38,7 +38,7 @@ public partial class MainWindow
     void RememberJob(Job job)
     {
         if (undoJobs.Remove(job) || job.Phase != Phase.Done || job.Conflicts.Count > 0 || job.Merged || !job.Errors.IsEmpty) return;
-        var made = job.Sources.Select(s => (Source: s, Target: Path.Combine(job.Destination, Path.GetFileName(s.TrimEnd('\\')))))
+        var made = job.Sources.Select(s => (Source: s, Target: job.Duplicates.GetValueOrDefault(s) ?? Path.Combine(job.Destination, Path.GetFileName(s.TrimEnd('\\')))))
                               .Where(x => Path.GetFileName(x.Target) != "").ToList();
         if (made.Count == 0) return;
         string what = $"{(job.IsMove ? "move" : "copy")} of {(made.Count == 1 ? Path.GetFileName(made[0].Target) : $"{made.Count} items")}";

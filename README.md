@@ -24,7 +24,8 @@ No account, no telemetry, nothing it talks to online.
 
 | Key | Action |
 |---|---|
-| `F5` / `F6` | copy / move to the other pane |
+| `Ctrl+F5` / `F6` | copy / move to the other pane |
+| `F5`, `Ctrl+R` | refresh |
 | `F7` | new folder |
 | `F2` | rename |
 | `F8`, `Del` | delete (to the Recycle Bin) |
