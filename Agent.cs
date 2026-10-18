@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
 using Microsoft.Win32;
@@ -58,7 +59,7 @@ public static class Agent
         {
             int vk = Marshal.ReadInt32(lParam);
             bool down = wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN;
-            if (vk == VK_E && down && WinHeld() && !Held(VK_CONTROL) && !Held(VK_MENU) && !Held(VK_SHIFT))
+            if (vk == VK_E && down && WinHeld() && !Held(VK_CONTROL) && !Held(VK_MENU) && !Held(VK_SHIFT) && !ReleasedWinE())
             {
                 // Swallowing E leaves Windows seeing a lone Win press, which opens Start on release;
                 // an unassigned key in between tells it Win was used as a modifier.
@@ -81,6 +82,22 @@ public static class Agent
             if (vk == VK_G && !down && swallowG) { swallowG = false; return (IntPtr)1; }
         }
         return CallNextHookEx(hook, code, wParam, lParam);
+    }
+
+    /// Settings → "Win+E opens File Labs" off: the key goes on to Windows, and the Explorer window it opens is
+    /// left alone (the watcher below would otherwise hand a folder on disk, say OneDrive, over to File Labs).
+    /// Read from the settings file at the press: the user changes it while the agent runs, and a press is rare.
+    internal static bool ReleasedWinE()
+    {
+        // ponytail: a file read inside the keyboard hook, Win+E presses only; cache with a watcher if it ever shows
+        try { if (!File.ReadLines(Settings.FilePath).Contains("wine=0")) return false; }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return false; } // no settings yet: the default, taken
+        System.Windows.Application.Current?.Dispatcher.BeginInvoke(() =>
+        {
+            using var key = Registry.CurrentUser.CreateSubKey(StateKey);
+            key.SetValue(ExplorerWantedValue, DateTime.UtcNow.Ticks, RegistryValueKind.QWord);
+        });
+        return true;
     }
 
     // A plain launch: the running File Labs comes to the front, or a new one starts.

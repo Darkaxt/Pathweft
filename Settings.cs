@@ -12,7 +12,7 @@ public static class Settings
     // its own single instance, writing nothing the installed copy or the sister apps read
     public static readonly string Profile = Environment.GetEnvironmentVariable("FILELABS_PROFILE") is { Length: > 0 } p ? p : null;
     public static readonly string Dir = Profile ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "FileLabs");
-    static readonly string FilePath = Path.Combine(Dir, "settings.txt");
+    internal static readonly string FilePath = Path.Combine(Dir, "settings.txt");
 
     public static int Backdrop = 3;          // 1 solid, 2 mica, 3 acrylic
     public static double Opacity = 70;       // 30–100, floor keeps text readable
@@ -38,6 +38,7 @@ public static class Settings
     public static bool ShowHidden;
     public static string LastSeenVersion = "";   // What's new is shown once per version
     public static bool NativeMenu;          // right-click shows the Windows menu instead of ours
+    public static bool TakeWinE = true;         // with Windows integration on, Win+E opens File Labs; off = File Explorer
     public static double SidebarWidth = 270;
     public static List<string> SidebarOrder = new() { "quick", "favorites", "drives" };
     public static readonly HashSet<string> SidebarCollapsed = new();
@@ -85,6 +86,7 @@ public static class Settings
                 case "internaleditor": InternalEditor = v == "1"; break;
                 case "hidden": ShowHidden = v == "1"; break;
                 case "nativemenu": NativeMenu = v == "1"; break;
+                case "wine": TakeWinE = v != "0"; break;
                 case "lastseen": LastSeenVersion = v; break;
                 case "split" when double.TryParse(v, CultureInfo.InvariantCulture, out var sp) && double.IsFinite(sp): Split = Math.Clamp(sp, 0.15, 0.85); break;
                 case "maximized": Maximized = v == "1"; break;
@@ -143,6 +145,7 @@ public static class Settings
             $"internaleditor={(InternalEditor ? 1 : 0)}",
             $"hidden={(ShowHidden ? 1 : 0)}",
             $"nativemenu={(NativeMenu ? 1 : 0)}",
+            $"wine={(TakeWinE ? 1 : 0)}",
             $"lastseen={LastSeenVersion}",
             $"sidebar={SidebarWidth.ToString(CultureInfo.InvariantCulture)}",
             $"sidebarorder={string.Join(",", SidebarOrder)}",
@@ -206,7 +209,25 @@ public static class Settings
             }
         }
 
+        SetWinE(on && TakeWinE);
+
+        // Win+E itself: the key above is ignored on recent Windows 11, so a background agent catches it.
+        // With Win+E released the agent stays on: it also hands Explorer windows other apps open to File Labs.
+        if (on) Agent.Enable(exe); else Agent.Disable();
+    }
+
+    /// Win+E through the "This PC" launcher key; off gives it back to whatever had it (Explorer). The agent
+    /// reads TakeWinE itself, at each press.
+    public static void SetWinE(bool on)
+    {
+        var exe = Environment.ProcessPath;
+        var hk = Registry.CurrentUser;
+        using var backup = hk.CreateSubKey(Backup);
         var winEPath = WinE + @"\shell\opennewwindow\command";
+        if (!on)
+            using (var cur = hk.OpenSubKey(winEPath))
+                // not ours (never taken, or Win+E was off when File Labs became the default): nothing to give back
+                if ((cur?.GetValue("") as string)?.Contains("FileLabs.exe", StringComparison.OrdinalIgnoreCase) != true) return;
         if (on)
         {
             using var cmd = hk.CreateSubKey(winEPath);
@@ -229,8 +250,5 @@ public static class Settings
             backup.DeleteValue("WinE", false); backup.DeleteValue("WinEDelegate", false);
         }
         else hk.DeleteSubKeyTree(WinE + @"\shell\opennewwindow", throwOnMissingSubKey: false); // only what we added
-
-        // Win+E itself: the key above is ignored on recent Windows 11, so a background agent catches it.
-        if (on) Agent.Enable(exe); else Agent.Disable();
     }
 }

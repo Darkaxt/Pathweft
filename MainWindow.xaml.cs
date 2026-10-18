@@ -276,15 +276,16 @@ public partial class MainWindow : Window
         }
     }
 
-    /// The selection fill and the text on it. The fill is the accent tint already laid on the panes' surface
-    /// (#2C2E35) and opaque: a see-through one took on whatever the glass showed behind it, and over a bright
-    /// wallpaper the selected name washed out. The text is white, or black where black reads better (a light
-    /// accent at a high strength); one of the two always reaches 4.5:1 (WCAG AA).
+    /// The selection fill and the text on it. The fill is the accent tint laid on a dark ground (#181A20) and
+    /// opaque: a see-through one took on whatever the glass showed behind it, and over a bright wallpaper the
+    /// selected name washed out. The ground was the panes' surface (#2C2E35) until 1.0.38; on it the default
+    /// accent gave a mid blue (#3A5990, 6.97:1) on which white still read as grey. The text is white, or black
+    /// where black reads better (a light accent at a high strength); one of the two always reaches 4.5:1 (WCAG AA).
     internal static (Color Fill, Color Text) Selection(Color accent, double strength)
     {
         double a = Math.Clamp(0x73 * strength, 12, 255) / 255;
         byte Mix(byte x, byte ground) => (byte)Math.Round(x * a + ground * (1 - a));
-        var fill = Color.FromRgb(Mix(accent.R, 0x2C), Mix(accent.G, 0x2E), Mix(accent.B, 0x35));
+        var fill = Color.FromRgb(Mix(accent.R, 0x18), Mix(accent.G, 0x1A), Mix(accent.B, 0x20));
         return (fill, Contrast(Colors.White, fill) >= Contrast(Colors.Black, fill) ? Colors.White : Colors.Black);
     }
 

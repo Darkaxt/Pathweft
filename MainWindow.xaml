@@ -271,8 +271,9 @@
           <Button Style="{StaticResource Ghost}" Click="Delete_Click"><TextBlock><Run Foreground="{StaticResource Muted}">F8</Run> Delete</TextBlock></Button>
           <Button Style="{StaticResource Ghost}" Click="Terminal_Click"><TextBlock><Run Foreground="{StaticResource Muted}">Ctrl+`</Run> Terminal</TextBlock></Button>
           <Button Style="{StaticResource Ghost}" Click="Hidden_Click"><TextBlock><Run Foreground="{StaticResource Muted}">Ctrl+H</Run> Hidden</TextBlock></Button>
-          <Button Style="{StaticResource Ghost}" Click="Preview_Click" ToolTip="Show the selected file beside the panes"><TextBlock><Run Foreground="{StaticResource Muted}">Alt+P</Run> Preview</TextBlock></Button>
+          <!-- in screen order: first pane, second pane, preview -->
           <Button Style="{StaticResource Ghost}" Click="Panes_Click" ToolTip="One pane or two (Ctrl+P)"><TextBlock><Run Foreground="{StaticResource Muted}">Ctrl+P</Run> One / two panes</TextBlock></Button>
+          <Button Style="{StaticResource Ghost}" Click="Preview_Click" ToolTip="Show the selected file beside the panes"><TextBlock><Run Foreground="{StaticResource Muted}">Alt+P</Run> Preview</TextBlock></Button>
         </StackPanel>
         <TextBlock x:Name="Status" Foreground="{StaticResource Muted}" FontSize="11" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="420" HorizontalAlignment="Right" Margin="12,0,0,0"/>
       </DockPanel>

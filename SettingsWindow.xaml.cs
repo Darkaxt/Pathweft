@@ -19,6 +19,7 @@ public partial class SettingsWindow : Window
         VerifyBox.IsChecked = Settings.Verify;
         EditorBox.IsChecked = Settings.InternalEditor;
         DefaultBox.IsChecked = Settings.IsDefaultFileManager;
+        WinEBox.IsChecked = Settings.TakeWinE;
         AnimationsBox.IsChecked = Settings.Animations;
         SinglePaneBox.IsChecked = Settings.SinglePane;
         StatsBox.IsChecked = Settings.Stats > 0;
@@ -30,12 +31,33 @@ public partial class SettingsWindow : Window
         ItemTipsBox.IsChecked = Settings.ItemTips;
         DeleteSoundBox.IsChecked = Settings.DeleteSound;
         StrengthSlider.Value = Settings.AccentStrength * 100;
+        // A double-click on a slider's handle puts it back to its default (Settings.cs), as in Frostpane: one
+        // setting can be tried out and undone without a reset of them all.
+        foreach (var (slider, value) in new (System.Windows.Controls.Slider, double)[]
+        {
+            (OpacitySlider, 70), (BgOpacitySlider, 40), (BgBlurSlider, 0), (BgBrightSlider, 0), (ValueSlider, 100), (StrengthSlider, 100),
+            (ScaleSidebar, 100), (ScaleTabs, 100), (ScalePath, 100), (ScaleList, 100),
+        })
+            slider.PreviewMouseLeftButtonDown += (_, e) =>
+            {
+                if (e.ClickCount != 2 || !OnThumb(e.OriginalSource as DependencyObject, slider)) return;
+                slider.Value = value;
+                e.Handled = true;
+            };
         BuildSwatches();
         BuildWheel();
         AboutText.Text = $"File Labs {typeof(App).Assembly.GetName().Version?.ToString(3)} · Protagonist Labs\n" +
                          "Transfers run on the Ferry engine. Settings live in " + Settings.Dir;
         BuildWorksWith();
         Refresh();
+    }
+
+    /// Whether a press landed on the slider's handle rather than on its track.
+    static bool OnThumb(DependencyObject hit, System.Windows.Controls.Slider slider)
+    {
+        for (var d = hit; d != null && d != slider; d = System.Windows.Media.VisualTreeHelper.GetParent(d))
+            if (d is System.Windows.Controls.Primitives.Thumb) return true;
+        return false;
     }
 
     // ---- Works with: the sister apps that add something here (ecosystem contract v1.1, Sisters.cs) ----
@@ -387,5 +409,17 @@ public partial class SettingsWindow : Window
             MessageBox.Show(this, ex.Message, "Couldn't change the default file manager");
         }
         DefaultBox.IsChecked = Settings.IsDefaultFileManager; // show what actually happened
+    }
+
+    void WinE_Click(object s, RoutedEventArgs e)
+    {
+        Settings.TakeWinE = WinEBox.IsChecked == true;
+        Settings.Save(); // the agent reads it from the file at each Win+E
+        if (!Settings.IsDefaultFileManager) return; // taken or not when File Labs becomes the default
+        try { Settings.SetWinE(Settings.TakeWinE); }
+        catch (Exception ex) when (ex is UnauthorizedAccessException or System.Security.SecurityException or System.IO.IOException)
+        {
+            MessageBox.Show(this, ex.Message, "Couldn't change Win+E");
+        }
     }
 }

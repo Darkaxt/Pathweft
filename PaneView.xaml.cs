@@ -24,6 +24,11 @@ public class Entry : INotifyPropertyChanged
         set { modified = value; Changed(nameof(Modified)); Changed(nameof(DateText)); Changed(nameof(FullDate)); Changed(nameof(Age)); Changed(nameof(AgeBrush)); Changed(nameof(AgeTextBrush)); Changed(nameof(Tip)); }
     }
     public bool IsUp => Name == "..";
+    // A folder, or a shortcut to one: where a middle-click opens and a drop on the row lands. The shortcut is
+    // read once, the first time it is asked (a drag asks on every move).
+    string shortcutFolder;
+    public string FolderTarget => IsDir ? Path : !Path.EndsWith(".lnk", StringComparison.OrdinalIgnoreCase) ? null
+        : (shortcutFolder ??= MainWindow.ShortcutFolder(Path) ?? "") is { Length: > 0 } t ? t : null;
     public string Location { get; init; } = ""; // search results: the folder it was found in, relative to where the search started
     public string Where => Location == "" ? "" : "   in " + Location;
 
@@ -45,6 +50,8 @@ public class Entry : INotifyPropertyChanged
     public bool Dimmed { get => dimmed; set { dimmed = value; Changed(nameof(Dimmed)); } } // the other rows, while one is being renamed
     bool isCut;
     public bool IsCut { get => isCut; set { if (isCut != value) { isCut = value; Changed(nameof(IsCut)); } } }
+    bool dropHover;
+    public bool DropHover { get => dropHover; set { if (dropHover != value) { dropHover = value; Changed(nameof(DropHover)); } } } // a drag is over it and would land inside
     string version = "";
     public string Version { get => version; set { version = value; Changed(nameof(Version)); } }
     public string Ext => IsDir ? "" : System.IO.Path.GetExtension(Name).TrimStart('.').ToLowerInvariant();
@@ -164,6 +171,11 @@ public class FileList : ListView
 {
     protected override System.Windows.Automation.Peers.AutomationPeer OnCreateAutomationPeer() => new ListPeer(this);
 
+    // How far the rows of the inactive pane recede. Per row, not the list's own Opacity: a selected row stays
+    // solid (App.xaml), so its name stays white and its fill opaque in the pane that isn't active too.
+    public static readonly DependencyProperty RowFadeProperty = DependencyProperty.Register(nameof(RowFade), typeof(double), typeof(FileList), new PropertyMetadata(1.0));
+    public double RowFade { get => (double)GetValue(RowFadeProperty); set => SetValue(RowFadeProperty, value); }
+
     // Esc arrives as the character 27 too, and type-to-find compares names the culture's way, which
     // ignores control characters: every name "started with" it, so Esc jumped to the first row.
     protected override void OnTextInput(TextCompositionEventArgs e)
@@ -236,11 +248,11 @@ public partial class PaneView : UserControl
             e.Handled = true; // otherwise the list scrolls as well
             Zoom(e.Delta > 0 ? 1 : -1);
         };
-        // Middle click, as in a browser: a folder opens in a tab behind this one, a tab closes.
+        // Middle click, as in a browser: a folder (or a shortcut to one) opens in a tab behind this one, a tab closes.
         List.PreviewMouseDown += (_, e) =>
         {
-            if (e.ChangedButton != MouseButton.Middle || FindRow(e.OriginalSource as DependencyObject) is not { IsDir: true } row) return;
-            OpenInBackgroundTab(row.Path);
+            if (e.ChangedButton != MouseButton.Middle || FindRow(e.OriginalSource as DependencyObject)?.FolderTarget is not { } folder) return;
+            OpenInBackgroundTab(folder);
             e.Handled = true;
         };
         TabStrip.PreviewMouseDown += (_, e) =>
@@ -258,6 +270,7 @@ public partial class PaneView : UserControl
         List.PreviewMouseRightButtonUp += RightDrag_Up;
         List.DragOver += Drop_Over;
         List.Drop += Drop_Drop;
+        List.DragLeave += (_, _) => ShowDropRow(null); // the next DragOver lights the row again if still on it
         // Not a row, so DropTarget gives the folder shown: the strip always means "here".
         FolderStrip.DragOver += Drop_Over;
         FolderStrip.Drop += (s, e) => { FolderStrip.Background = Brushes.Transparent; Drop_Drop(s, e); };
@@ -333,9 +346,9 @@ public partial class PaneView : UserControl
         var glowTo = on ? 0.7 : 0;
         if (Settings.Animations) Glow.BeginAnimation(OpacityProperty, new DoubleAnimation(glowTo, Quick) { EasingFunction = Ease });
         else { Glow.BeginAnimation(OpacityProperty, null); Glow.Opacity = glowTo; }
-        listOpacity = on ? 1 : 0.88;
-        if (Settings.Animations) List.BeginAnimation(OpacityProperty, new DoubleAnimation(listOpacity, Quick) { EasingFunction = Ease });
-        else { List.BeginAnimation(OpacityProperty, null); List.Opacity = listOpacity; }
+        var fade = on ? 1 : 0.88;
+        if (Settings.Animations) List.BeginAnimation(FileList.RowFadeProperty, new DoubleAnimation(fade, Quick) { EasingFunction = Ease });
+        else { List.BeginAnimation(FileList.RowFadeProperty, null); List.RowFade = fade; }
     }
 
     static void Animate(SolidColorBrush brush, Color to)
@@ -627,14 +640,13 @@ public partial class PaneView : UserControl
     // ---- motion: short, and only where something actually changed ----
     static readonly Duration Quick = TimeSpan.FromMilliseconds(140);
     static readonly IEasingFunction Ease = new QuadraticEase { EasingMode = EasingMode.EaseOut };
-    double listOpacity = 1; // what the pane's active/inactive state wants; animations end here
 
     /// A folder that was read from disk fades in. A folder served from the cache does not — it is
     /// already on screen and fading it would turn "instant" into "blinking".
     void FadeInList()
     {
         if (!Settings.Animations) return;
-        List.BeginAnimation(OpacityProperty, new DoubleAnimation(listOpacity * 0.45, listOpacity, Quick) { EasingFunction = Ease });
+        List.BeginAnimation(OpacityProperty, new DoubleAnimation(0.45, 1, Quick) { EasingFunction = Ease });
     }
 
     // ---- \\server: its shares, as folders (DirectoryInfo can't open a bare server name) ----
@@ -1347,7 +1359,7 @@ public partial class PaneView : UserControl
     {
         if (List.SelectedItem is not Entry e) return;
         if (e.IsUp) Up();
-        else if (e.IsDir) Navigate(e.Path);
+        else if (e.FolderTarget is { } folder) Navigate(folder); // a shortcut to a folder opens here, as in Explorer
         // a script is run, like Explorer does; editing it is F4 / Edit in the menu
         else if (Settings.InternalEditor && EditorWindow.IsText(e.Path) && !MainWindow.Runnable.Contains(Path.GetExtension(e.Path))) EditorWindow.Open(e.Path);
         else
@@ -1993,8 +2005,8 @@ public partial class PaneView : UserControl
         catch (System.Runtime.InteropServices.COMException) { }
     }
 
-    // Drop on a folder row → into that folder; anywhere else → the folder this pane shows.
-    string DropTarget(DragEventArgs e) => FindRow(e.OriginalSource as DependencyObject) is { IsDir: true } row ? row.Path : Dir;
+    // Drop on a folder row, or on a shortcut to a folder → into that folder; anywhere else → the folder this pane shows.
+    string DropTarget(DragEventArgs e) => FindRow(e.OriginalSource as DependencyObject)?.FolderTarget ?? Dir;
 
     void Drop_Over(object s, DragEventArgs e)
     {
@@ -2016,13 +2028,26 @@ public partial class PaneView : UserControl
                             || !duplicate && System.IO.Path.GetDirectoryName(f)?.Equals(target, StringComparison.OrdinalIgnoreCase) == true))
                 e.Effects = DragDropEffects.None;
         }
+        // the folder it would go into lights up, in a colour apart from the selection's
+        var row = FindRow(e.OriginalSource as DependencyObject);
+        ShowDropRow(e.Effects != DragDropEffects.None && row?.FolderTarget != null ? row : null);
         e.Handled = true;
+    }
+
+    Entry dropRow;
+    void ShowDropRow(Entry row)
+    {
+        if (dropRow == row) return;
+        if (dropRow != null) dropRow.DropHover = false;
+        dropRow = row;
+        if (row != null) row.DropHover = true;
     }
 
     void Drop_Drop(object s, DragEventArgs e)
     {
         if (e.Data.GetData(DataFormats.FileDrop) is not string[] files || files.Length == 0) return;
         Drop_Over(s, e);
+        ShowDropRow(null);
         if (e.Effects == DragDropEffects.None) return;
         FilesDropped?.Invoke(files.ToList(), DropTarget(e), e.Effects == DragDropEffects.Move);
         // Report Copy back to the source even for a move: Ferry does the move itself, and a source

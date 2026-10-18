@@ -15,7 +15,8 @@ A free, dual-pane file manager for Windows 11, with a copy engine that shows wha
 - **The real right-click menu** when you want it — Send to, Open with, 7-Zip and other shell
   extensions — or a compact one that matches the app.
 - **Default file manager** (optional) — folders, drives and `Win+E` open in File Labs. Switching
-  it off (or uninstalling) hands them back to whatever had them before.
+  it off (or uninstalling) hands them back to whatever had them before. "Win+E opens File Labs" can be
+  switched off on its own, to keep Win+E for File Explorer.
 - Acrylic, tint or solid backdrop, with an opacity floor so text stays readable.
 
 No account, no telemetry, nothing it talks to online.

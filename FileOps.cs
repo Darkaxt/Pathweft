@@ -269,22 +269,35 @@ public partial class MainWindow
 
     /// What a shortcut points at, or the path itself when it is not one or points at nothing on disk.
     /// QuickLook is handed the document behind a shortcut, as Explorer's Space shows it (Frostpane does the same).
-    internal static string ShortcutTarget(string path)
+    internal static string ShortcutTarget(string path) => ShortcutTarget(path, out _);
+
+    /// The folder a shortcut points at, or null: a middle-click opens it in a tab and a drop on the shortcut
+    /// goes into it, as in Explorer.
+    internal static string ShortcutFolder(string path) => ShortcutTarget(path, out bool folder) is var t && folder && t != path ? t : null;
+
+    static string ShortcutTarget(string path, out bool folder)
     {
+        folder = false;
         if (!path.EndsWith(".lnk", StringComparison.OrdinalIgnoreCase)) return path;
         var link = (IShellLinkW)new ShellLink();
         var buffer = Marshal.AllocHGlobal(2 * 1024);
+        var found = Marshal.AllocHGlobal(592); // WIN32_FIND_DATAW: what the shortcut remembers about its target
         try
         {
             Marshal.WriteInt16(buffer, 0); // stays empty for a shortcut to something that is not a file (Control Panel…)
+            Marshal.WriteInt32(found, 0);
             ((System.Runtime.InteropServices.ComTypes.IPersistFile)link).Load(path, 0);
-            link.GetPath(buffer, 1024, IntPtr.Zero, 0);
+            link.GetPath(buffer, 1024, found, 0);
             var target = Marshal.PtrToStringUni(buffer);
-            // a network target is not checked: a server that is off answers after 21 s, and Space runs on the UI thread
-            return !string.IsNullOrEmpty(target) && (PaneView.IsRemote(target) || Path.Exists(target)) ? target : path;
+            if (string.IsNullOrEmpty(target)) return path;
+            // a network target is not checked: a server that is off answers after 21 s, and Space runs on the UI
+            // thread. Whether it is a folder comes from the shortcut itself (dwFileAttributes, recorded when made).
+            if (PaneView.IsRemote(target)) { folder = (Marshal.ReadInt32(found) & (int)FileAttributes.Directory) != 0; return target; }
+            folder = Directory.Exists(target);
+            return folder || File.Exists(target) ? target : path;
         }
         catch (Exception ex) when (ex is COMException or UnauthorizedAccessException or IOException) { return path; } // not a readable shortcut
-        finally { Marshal.FreeHGlobal(buffer); Marshal.ReleaseComObject(link); }
+        finally { Marshal.FreeHGlobal(buffer); Marshal.FreeHGlobal(found); Marshal.ReleaseComObject(link); }
     }
 
     [ComImport, Guid("00021401-0000-0000-C000-000000000046")] class ShellLink { }

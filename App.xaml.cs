@@ -22,6 +22,7 @@ public partial class App : Application
         // Called by the installer / uninstaller: same code path as the switch in Settings.
         if (e.Args.Contains("--set-default") || e.Args.Contains("--unset-default"))
         {
+            Settings.Load(); // "Win+E opens File Labs" may be off
             try { Settings.SetDefaultFileManager(e.Args.Contains("--set-default")); Shutdown(0); }
             catch (Exception ex) when (ex is UnauthorizedAccessException or System.Security.SecurityException or IOException) { Shutdown(1); }
             return;
@@ -38,6 +39,7 @@ public partial class App : Application
         }
         else _ = Listen();
         Settings.Load(); // before any window: the panes read column widths while being built
+        ShellMenu.FollowSystemTheme(); // the Windows right-click menu dark in dark mode
         Task.Run(Sisters.WriteCard); // the ecosystem card, so sister apps find this copy (Sisters.cs)
         SizeCache.StartLoading(); // folder sizes from previous sessions: a full 12 TB drive is minutes of walking
         Exit += (_, _) => SizeCache.Save();
@@ -203,6 +205,11 @@ public partial class App : Application
             FileExplorer.MainWindow.SaveShortcut(lnk, info, root);
             Check(FileExplorer.MainWindow.ShortcutTarget(lnk) == info && FileExplorer.MainWindow.ShortcutTarget(info) == info
                 && FileExplorer.MainWindow.ShortcutTarget(card) == card && FileExplorer.MainWindow.ShortcutTarget(Path.Combine(root, "gone.lnk")) == Path.Combine(root, "gone.lnk"), "shortcut target");
+            // a shortcut to a folder is where a middle-click opens and a drop lands; one to a file is not
+            var folderLnk = Path.Combine(root, "dst.lnk");
+            FileExplorer.MainWindow.SaveShortcut(folderLnk, dst, dst);
+            Check(FileExplorer.MainWindow.ShortcutFolder(folderLnk) == dst && FileExplorer.MainWindow.ShortcutFolder(lnk) == null
+                && FileExplorer.MainWindow.ShortcutFolder(dst) == null && new Entry { Name = "dst.lnk", Path = folderLnk }.FolderTarget == dst, "shortcut to a folder");
 
             // a silent permanent delete (Shift+Delete with the sound off): read-only files go too, and a
             // junction inside is removed without emptying the folder it points at
@@ -237,9 +244,10 @@ public partial class App : Application
                 && File.Exists(Path.Combine(dup, "v1.2 - Copy", "inner", "x.txt")) && File.ReadAllText(Path.Combine(dup, "notes.txt")) == "n"
                 && j.Conflicts.Count == 0 && j.Duplicates[Path.Combine(dup, "notes.txt")] == Path.Combine(dup, "notes - Copy (2).txt"), "duplicate in the same folder");
 
-            // selected text: white on the default accent at 4.5:1 or better, and readable on other accents and strengths
+            // selected text: white on the default accent at 8:1 or better (1.0.38's 6.97:1 still read as grey), and
+            // readable on other accents and strengths
             var (fill, text) = FileExplorer.MainWindow.Selection(System.Windows.Media.Color.FromRgb(0x4C, 0x8D, 0xFF), 1.0);
-            Check(text == System.Windows.Media.Colors.White && FileExplorer.MainWindow.Contrast(text, fill) >= 4.5, "selection text on the default accent");
+            Check(text == System.Windows.Media.Colors.White && FileExplorer.MainWindow.Contrast(text, fill) >= 8, "selection text on the default accent");
             foreach (var hex in new[] { "#FFD23F", "#FF4FA3", "#E5484D", "#30D158", "#FFFFFF" })
                 foreach (var strength in new[] { 0.3, 1.0, 2.5 })
                 {

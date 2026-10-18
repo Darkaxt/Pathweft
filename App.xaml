@@ -6,7 +6,7 @@
     <SolidColorBrush x:Key="AccentEdge" Color="#A64C8DFF"/>
     <!-- selection: the accent at its transparency mixed onto the panes' own dark surface, opaque, so the wallpaper
          behind the glass can't lighten it; its text is white, or dark for a light accent (MainWindow.ApplyAccent) -->
-    <SolidColorBrush x:Key="AccentSelect" Color="#3A5990"/>
+    <SolidColorBrush x:Key="AccentSelect" Color="#2F4E84"/>
     <SolidColorBrush x:Key="AccentSelectText" Color="White"/>
     <SolidColorBrush x:Key="AccentSoft" Color="#454C8DFF"/>
     <SolidColorBrush x:Key="Muted" Color="#8CFFFFFF"/>
@@ -93,7 +93,7 @@
       <Setter Property="Template">
         <Setter.Value>
           <ControlTemplate TargetType="ListViewItem">
-            <Border x:Name="Bd" Background="Transparent" CornerRadius="2" Padding="{TemplateBinding Padding}">
+            <Border x:Name="Bd" Background="Transparent" Opacity="{Binding RowFade, RelativeSource={RelativeSource AncestorType=ListView}, FallbackValue=1}" CornerRadius="2" Padding="{TemplateBinding Padding}">
               <Grid>
                 <GridViewRowPresenter/>
                 <!-- the age bar: a block in the row's age colour, wide enough to spot recent files down a
@@ -103,11 +103,15 @@
               </Grid>
             </Border>
             <ControlTemplate.Triggers>
+              <!-- the inactive pane's rows recede (FileList.RowFade), its selected rows don't -->
+              <Trigger Property="IsSelected" Value="True"><Setter TargetName="Bd" Property="Opacity" Value="1"/></Trigger>
               <!-- every other row a touch lighter, so a long row is easy to follow across -->
               <Trigger Property="ItemsControl.AlternationIndex" Value="1"><Setter TargetName="Bd" Property="Background" Value="#08FFFFFF"/></Trigger>
               <DataTrigger Binding="{Binding Dimmed}" Value="True"><Setter TargetName="Bd" Property="Opacity" Value="0.45"/></DataTrigger>
               <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Bd" Property="Background" Value="#10FFFFFF"/></Trigger>
               <Trigger Property="IsSelected" Value="True"><Setter TargetName="Bd" Property="Background" Value="{DynamicResource AccentSelect}"/><Setter Property="Foreground" Value="{DynamicResource AccentSelectText}"/></Trigger>
+              <!-- the folder a drag would drop into: brighter than the selection, so the two never look alike -->
+              <DataTrigger Binding="{Binding DropHover}" Value="True"><Setter TargetName="Bd" Property="Background" Value="{DynamicResource AccentEdge}"/></DataTrigger>
             </ControlTemplate.Triggers>
           </ControlTemplate>
         </Setter.Value>
@@ -168,15 +172,19 @@
       <Setter Property="Template">
         <Setter.Value>
           <ControlTemplate TargetType="ListViewItem">
-            <Border x:Name="Bd" Background="Transparent" CornerRadius="2" Padding="4,3" Margin="0,0,8,0">
+            <Border x:Name="Bd" Background="Transparent" Opacity="{Binding RowFade, RelativeSource={RelativeSource AncestorType=ListView}, FallbackValue=1}" CornerRadius="2" Padding="4,3" Margin="0,0,8,0">
               <ContentPresenter/>
             </Border>
             <ControlTemplate.Triggers>
+              <!-- the inactive pane's rows recede (FileList.RowFade), its selected rows don't -->
+              <Trigger Property="IsSelected" Value="True"><Setter TargetName="Bd" Property="Opacity" Value="1"/></Trigger>
               <!-- every other row a touch lighter, so a long row is easy to follow across -->
               <Trigger Property="ItemsControl.AlternationIndex" Value="1"><Setter TargetName="Bd" Property="Background" Value="#08FFFFFF"/></Trigger>
               <DataTrigger Binding="{Binding Dimmed}" Value="True"><Setter TargetName="Bd" Property="Opacity" Value="0.45"/></DataTrigger>
               <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Bd" Property="Background" Value="#10FFFFFF"/></Trigger>
               <Trigger Property="IsSelected" Value="True"><Setter TargetName="Bd" Property="Background" Value="{DynamicResource AccentSelect}"/><Setter Property="Foreground" Value="{DynamicResource AccentSelectText}"/></Trigger>
+              <!-- the folder a drag would drop into: brighter than the selection, so the two never look alike -->
+              <DataTrigger Binding="{Binding DropHover}" Value="True"><Setter TargetName="Bd" Property="Background" Value="{DynamicResource AccentEdge}"/></DataTrigger>
             </ControlTemplate.Triggers>
           </ControlTemplate>
         </Setter.Value>
@@ -189,13 +197,17 @@
       <Setter Property="Template">
         <Setter.Value>
           <ControlTemplate TargetType="ListViewItem">
-            <Border x:Name="Bd" Background="Transparent" CornerRadius="3" Padding="6">
+            <Border x:Name="Bd" Background="Transparent" Opacity="{Binding RowFade, RelativeSource={RelativeSource AncestorType=ListView}, FallbackValue=1}" CornerRadius="3" Padding="6">
               <ContentPresenter/>
             </Border>
             <ControlTemplate.Triggers>
+              <!-- the inactive pane's rows recede (FileList.RowFade), its selected rows don't -->
+              <Trigger Property="IsSelected" Value="True"><Setter TargetName="Bd" Property="Opacity" Value="1"/></Trigger>
               <DataTrigger Binding="{Binding Dimmed}" Value="True"><Setter TargetName="Bd" Property="Opacity" Value="0.45"/></DataTrigger>
               <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Bd" Property="Background" Value="#10FFFFFF"/></Trigger>
               <Trigger Property="IsSelected" Value="True"><Setter TargetName="Bd" Property="Background" Value="{DynamicResource AccentSelect}"/><Setter Property="Foreground" Value="{DynamicResource AccentSelectText}"/></Trigger>
+              <!-- the folder a drag would drop into: brighter than the selection, so the two never look alike -->
+              <DataTrigger Binding="{Binding DropHover}" Value="True"><Setter TargetName="Bd" Property="Background" Value="{DynamicResource AccentEdge}"/></DataTrigger>
             </ControlTemplate.Triggers>
           </ControlTemplate>
         </Setter.Value>

@@ -62,6 +62,11 @@ public static class ShellMenu
                 nShow = 1, // SW_SHOWNORMAL
                 ptInvoke = pt,
             };
+            // The app a command starts (Open with → Notepad) has to take the foreground, which Windows grants only
+            // when the foreground process allows it. A packaged app (Notepad on Windows 11) is started, or an open one
+            // given the file, by other processes on our behalf; a report had Notepad opening behind File Labs. The
+            // user just picked the command, so the right to come forward is passed on to whoever needs it.
+            AllowSetForegroundWindow(ASFW_ANY);
             ctx.InvokeCommand(ref info);
             return null;
         }
@@ -109,6 +114,16 @@ public static class ShellMenu
         return (IContextMenu)obj;
     }
 
+    /// Lets this menu follow Windows' light or dark mode, as Frostpane does. It is a classic Win32 menu, drawn by
+    /// uxtheme, and an app gets dark ones only by asking, through SetPreferredAppMode (ordinal 135; 1 = follow the
+    /// system), as Explorer and Notepad do. Undocumented, but the same since Windows 10 1903; where it is missing
+    /// the menu simply stays light.
+    public static void FollowSystemTheme()
+    {
+        try { SetPreferredAppMode(1); FlushMenuThemes(); }
+        catch (Exception ex) when (ex is EntryPointNotFoundException or DllNotFoundException) { }
+    }
+
     static string Verb(IContextMenu ctx, uint id)
     {
         var buf = new System.Text.StringBuilder(256);
@@ -117,6 +132,7 @@ public static class ShellMenu
 
     // ---- interop ----
     const uint FirstId = 1, LastId = 0x7FFF;
+    const int ASFW_ANY = -1;
     const uint CMF_NORMAL = 0, CMF_EXPLORE = 0x4, CMF_CANRENAME = 0x10, CMF_EXTENDEDVERBS = 0x100;
     const int CMIC_MASK_UNICODE = 0x4000, CMIC_MASK_PTINVOKE = 0x20000000;
     const uint GCS_VERBW = 4, TPM_RETURNCMD = 0x100, TPM_RIGHTBUTTON = 0x2;
@@ -186,4 +202,7 @@ public static class ShellMenu
     [DllImport("user32.dll")] static extern bool DestroyMenu(IntPtr menu);
     [DllImport("user32.dll")] static extern int TrackPopupMenuEx(IntPtr menu, uint flags, int x, int y, IntPtr hwnd, IntPtr tpm);
     [DllImport("user32.dll")] static extern bool GetCursorPos(out POINT pt);
+    [DllImport("user32.dll")] static extern bool AllowSetForegroundWindow(int pid);
+    [DllImport("uxtheme.dll", EntryPoint = "#135")] static extern int SetPreferredAppMode(int mode);
+    [DllImport("uxtheme.dll", EntryPoint = "#136")] static extern void FlushMenuThemes();
 }
