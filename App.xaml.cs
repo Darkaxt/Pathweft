@@ -305,6 +305,92 @@ public partial class App : Application
             var (found, whole) = Backups.CountMessages(many, 1 << 20, () => false);
             Check(!whole && found > 40_000 && found < 200_000, "counting stops at its cap and says so");
 
+            // Reel's list of video files (1.0.41): another app's file, so nothing in it is trusted
+            var rl = Directory.CreateDirectory(Path.Combine(root, "reel")).FullName;
+            var posters = Directory.CreateDirectory(Path.Combine(rl, "posters")).FullName + "\\";
+            var png = Path.Combine(posters, "m1.png");
+            using (var fs = File.Create(png))
+            {
+                var enc = new System.Windows.Media.Imaging.PngBitmapEncoder();
+                enc.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(System.Windows.Media.Imaging.BitmapSource.Create(4, 6, 96, 96, System.Windows.Media.PixelFormats.Bgr32, null, new byte[4 * 6 * 4], 16)));
+                enc.Save(fs);
+            }
+            string ReelJson(string name, string json, bool bom = false)
+            {
+                var file = Path.Combine(rl, name);
+                File.WriteAllBytes(file, (bom ? new byte[] { 0xEF, 0xBB, 0xBF } : []).Concat(System.Text.Encoding.UTF8.GetBytes(json)).ToArray());
+                return file;
+            }
+            string J(string s) => System.Text.Json.JsonSerializer.Serialize(s);
+            var reelJson = $$"""
+                {"schema":1,"updated":"2001-01-01T00:00:00Z","files":[
+                  {"path":"D:\\Films\\Heat (1995)\\Heat.mkv","title":"Heat","year":1995,"poster":{{J(png)}},"watched":true,"lastWatched":"2026-10-12T12:00:00.000Z"},
+                  {"path":"D:\\TV\\X\\S02E04.mkv","title":"Memento Mori","poster":{{J(posters + @"..\..\evil.png")}},"watched":false,"series":"The X-Files","season":2,"episode":4},
+                  {"path":"D:\\TV\\X\\S02E05.mkv","title":"The X-Files","watched":true,"series":"The X-Files","season":2,"episode":5},
+                  {"path":"D:\\a.mkv","title":"UNC poster","poster":"\\\\nas\\share\\p.png","watched":false,"year":1500,"season":5000},
+                  {"path":"D:\\b.mkv","title":"Device poster","poster":"\\\\?\\C:\\p.png","watched":"yes"},
+                  {"path":"relative.mkv","title":"x","watched":true},
+                  {"path":"D:\\c.mkv","title":42,"watched":true},
+                  {"path":"D:\\d.mkv","title":"Bad fields","year":"2019","watched":true,"lastWatched":"yesterday","poster":{{J(posters + "m1.exe")}}},
+                  {"path":"D:\\e.mkv","title":"line\nbreak","watched":true},
+                  {"path":"D:\\Films\\Heat (1995)\\HEAT.mkv","title":"Duplicate","watched":false},
+                  7, null, []
+                ]}
+                """;
+            var good = ReelJson("good.json", reelJson);
+            var rm = Sisters.ReelFiles(good, posters);
+            Check(rm != null && rm.Count == 5, "Reel list: the usable entries only");
+            Check(rm[@"d:\films\heat (1995)\HEAT.MKV"] is { Title: "Heat", Year: 1995, Watched: true, Series: null } heat && heat.Poster == png
+                && heat.LastWatched == new DateTime(2026, 10, 12, 12, 0, 0, DateTimeKind.Utc).ToLocalTime()
+                && FileExplorer.MainWindow.ReelLine(heat) is ("Heat (1995)", var hs) && hs.StartsWith("watched 12 Oct"), "Reel film: title, year, poster, watched, by path in any case");
+            Check(rm[@"D:\TV\X\S02E04.mkv"] is { Poster: null } ep && FileExplorer.MainWindow.ReelLine(ep) == ("The X-Files — S02E04 Memento Mori", "not watched")
+                && FileExplorer.MainWindow.ReelLine(rm[@"D:\TV\X\S02E05.mkv"]) == ("The X-Files — S02E05", "watched"), "Reel episode; a poster climbing out of Reel's folder is dropped");
+            Check(rm[@"D:\a.mkv"] is { Poster: null, Year: null, Season: null } && rm[@"D:\d.mkv"] is { Poster: null, Year: null, LastWatched: null },
+                "UNC poster, poster that isn't a picture, year/season/date out of range or of the wrong type: dropped");
+            Check(!Sisters.Local(@"\\nas\share\x.exe") && !Sisters.Local(@"\\?\C:\x.exe") && !Sisters.Local(@"\\.\pipe\x") && !Sisters.Local("x.exe")
+                && !Sisters.Local("C:x.exe") && Sisters.Local(Environment.ProcessPath), "local paths only");
+            File.WriteAllText(card, $$"""{"schema":1,"id":"reel","exe":"\\\\127.0.0.1\\c$\\Windows\\notepad.exe"}""");
+            Check(Sisters.ExeFromCard(card) == null, "a card whose exe is on a share is never followed");
+            Check(ReferenceEquals(Sisters.ReelFiles(good, posters), rm), "Reel list cached while unchanged");
+            File.AppendAllText(good, " ");
+            Check(Sisters.ReelFiles(good, posters) is { Count: 5 } again && !ReferenceEquals(again, rm), "and read again when it changes");
+            Check(Sisters.ReelFiles(ReelJson("bom.json", reelJson, bom: true), posters) is { Count: 5 }, "Reel list with a BOM");
+            Check(Sisters.ReelFiles(Path.Combine(rl, "missing.json"), posters) == null
+                && Sisters.ReelFiles(ReelJson("s2.json", reelJson.Replace("\"schema\":1", "\"schema\":2")), posters) == null
+                && Sisters.ReelFiles(ReelJson("s1str.json", reelJson.Replace("\"schema\":1", "\"schema\":\"1\"")), posters) == null
+                && Sisters.ReelFiles(ReelJson("obj.json", """{"schema":1,"files":{}}"""), posters) == null
+                && Sisters.ReelFiles(ReelJson("arr.json", "[]"), posters) == null
+                && Sisters.ReelFiles(ReelJson("cut.json", reelJson[..(reelJson.Length / 2)]), posters) == null
+                && Sisters.ReelFiles(ReelJson("deep.json", "{\"schema\":1,\"files\":[" + new string('[', 64) + new string(']', 64) + "]}"), posters) == null,
+                "Reel list missing, schema 2, wrong types, cut off, too deep");
+            var junkJson = Path.Combine(rl, "junk.json");
+            var rnd = new Random(1);
+            var junkBytes = new byte[8 << 20];
+            rnd.NextBytes(junkBytes);
+            File.WriteAllBytes(junkJson, junkBytes);
+            var huge = Path.Combine(rl, "huge.json");
+            using (var fs = File.Create(huge)) fs.SetLength(Sisters.ReelFilesMaxBytes + 1);
+            Check(Sisters.ReelFiles(junkJson, posters) == null && Sisters.ReelFiles(huge, posters) == null, "8 MB of junk, a list over 16 MB");
+            // 20,000 entries the way Reel writes them (~330 bytes each), plus one past Reel's cap
+            var many20 = new System.Text.StringBuilder("{\"schema\":1,\"updated\":\"2026-10-20T10:00:00.000Z\",\"files\":[");
+            for (int k = 0; k <= Sisters.ReelFilesMax; k++)
+                many20.Append(k == 0 ? "" : ",").Append($$"""{"path":{{J($@"E:\Media\Films\A Rather Long Film Title Number {k} (2019)\A.Rather.Long.Film.Title.Number.{k}.2019.1080p.BluRay.x264.mkv")}},"title":"A Rather Long Film Title Number {{k}}","year":2019,"poster":{{J($@"{posters}{k:x8}-0000-4000-8000-000000000000.jpg")}},"watched":{{(k % 3 == 0 ? "true" : "false")}},"lastWatched":"2026-10-12T20:00:00.000Z"}""");
+            var big = ReelJson("big.json", many20.Append("]}").ToString());
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            var bigMap = Sisters.ReelFiles(big, posters);
+            var parse = sw.Elapsed.TotalMilliseconds;
+            Check(bigMap is { Count: 20_000 } && bigMap.ContainsKey($@"E:\Media\Films\A Rather Long Film Title Number 19999 (2019)\A.Rather.Long.Film.Title.Number.19999.2019.1080p.BluRay.x264.mkv")
+                && !bigMap.ContainsKey($@"E:\Media\Films\A Rather Long Film Title Number 20000 (2019)\A.Rather.Long.Film.Title.Number.20000.2019.1080p.BluRay.x264.mkv"), "20,001 entries: Reel's 20,000 read, the rest ignored");
+            sw.Restart();
+            for (int k = 0; k < 1000; k++) Sisters.ReelFiles(big, posters).TryGetValue($@"E:\Media\Films\A Rather Long Film Title Number {k * 20} (2019)\a.rather.long.film.title.number.{k * 20}.2019.1080p.bluray.x264.mkv", out _);
+            Console.WriteLine($"reel.files.json: 20,001 entries, {new FileInfo(big).Length / 1024} KB, first read {parse:F0} ms, cached lookup {sw.Elapsed.TotalMilliseconds:F1} µs (incl. the file check)");
+            var hugePoster = Path.Combine(posters, "huge.png");
+            using (var fs = File.Create(hugePoster)) { fs.Write(File.ReadAllBytes(png)); fs.SetLength(10 << 20); }
+            File.WriteAllBytes(Path.Combine(posters, "junk.jpg"), junkBytes[..5000]);
+            Check(FileExplorer.MainWindow.Poster(png) is { PixelWidth: 200 } && FileExplorer.MainWindow.Poster(hugePoster) == null
+                && FileExplorer.MainWindow.Poster(Path.Combine(posters, "junk.jpg")) == null && FileExplorer.MainWindow.Poster(Path.Combine(posters, "none.jpg")) == null,
+                "poster: decoded small; 10 MB, junk or missing = none");
+
             Console.WriteLine("selftest: all passed");
             return 0;
         }

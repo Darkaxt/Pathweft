@@ -14,6 +14,8 @@ A free, dual-pane file manager for Windows 11, with a copy engine that shows wha
   shows what is inside without restoring anything: apps, profiles and mail folders with their message
   counts, or files, size and where they came from. Enter opens one in its app when that is installed
   (Stash 2.1+, Backup Labs 1.3.0+).
+- **Films from Reel** — with Reel (1.13.0+) installed, a video in its library gets a line above the
+  preview: poster, title and year (or series and episode), watched or not, and a link to Reel.
 - **Folder sizes** in the list, file versions for `.exe`/`.dll`, and a recency tint on dates.
 - **Views** — Details, List and three icon sizes with Explorer's own thumbnails (`Ctrl+Shift+1…5`).
 - **The real right-click menu** when you want it — Send to, Open with, 7-Zip and other shell

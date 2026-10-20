@@ -65,7 +65,7 @@ public partial class SettingsWindow : Window
     static readonly (string Id, string Name, string Has, string Would)[] WorksWithApps =
     {
         ("shelf", "Shelf", "adds folders and .exe files as games, from the right-click menu", "would add folders and .exe files as games, from the right-click menu"),
-        ("reel", "Reel", "adds folders and videos to your film library, from the right-click menu", "would add folders and videos to a film library, from the right-click menu"),
+        ("reel", "Reel", "adds folders and videos to your film library from the right-click menu, and puts a film's poster and watched state above it in the preview", "would add folders and videos to a film library from the right-click menu, and put a film's poster and watched state above it in the preview"),
         ("backuplabs", "Backup Labs", "backs up the selection, from the right-click menu", "would back up the selection, from the right-click menu"),
         ("spacescan", "SpaceScan", "shows what fills a folder, from the right-click menu", "would show what fills a folder, from the right-click menu"),
         ("lume", "Lume", "finds your Quick access folders and opens them here", "would find your Quick access folders and open them here"),

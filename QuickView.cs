@@ -271,7 +271,11 @@ public partial class MainWindow
         var root = new DockPanel();
         DockPanel.SetDock(bar, Dock.Bottom);
         root.Children.Add(bar);
-        if (video) root.Children.Add(new Border { Background = Brushes.Black, Child = media });
+        if (video)
+        {
+            root.Children.Add(new Border { Background = Brushes.Black, Child = media });
+            _ = ReelHeader(e.Path, root, quickVersion);
+        }
         else
         {
             var g = new Grid();
@@ -284,6 +288,64 @@ public partial class MainWindow
         else { media.Pause(); paused = true; play.Content = "\uE768"; }
         mediaTimer.Start();
         return root;
+    }
+
+    // Reel (sister app, Sisters.Reel) knows this video: its poster, title and watched state above it, and "Reel" opens
+    // Reel. Reel's list has no id to hand to its --play, so the link only starts Reel; playing stays this preview's
+    // own button (one Open, the studio's rule). Nothing at all when Reel isn't installed or doesn't know the file.
+    async Task ReelHeader(string path, DockPanel root, int v)
+    {
+        var (f, poster) = await Task.Run(() => Sisters.Reel(path) is { } r ? (r, r.Poster != null ? Poster(r.Poster) : null) : default);
+        if (f == null || v != quickVersion) return;
+        var (name, state) = ReelLine(f);
+        var text = new TextBlock { Foreground = Hex("#99FFFFFF"), TextWrapping = TextWrapping.Wrap, VerticalAlignment = VerticalAlignment.Center };
+        text.Inlines.Add(new System.Windows.Documents.Run(name) { Foreground = Hex("#E6FFFFFF"), FontWeight = FontWeights.SemiBold });
+        text.Inlines.Add($" · {state} · ");
+        var link = new System.Windows.Documents.Hyperlink(new System.Windows.Documents.Run("Reel")) { Foreground = Hex("#B4BFCE"), TextDecorations = null, ToolTip = "Open Reel" };
+        link.MouseEnter += (_, _) => link.TextDecorations = TextDecorations.Underline;
+        link.MouseLeave += (_, _) => link.TextDecorations = null;
+        link.Click += (_, _) => { if (Sisters.Exe("reel") is { } exe) System.Diagnostics.Process.Start(exe); };
+        text.Inlines.Add(link);
+        var header = new DockPanel { Margin = new(12, 10, 12, 10) };
+        if (poster != null)
+        {
+            var img = new Image { Source = poster, Width = 56, Margin = new(0, 0, 12, 0), VerticalAlignment = VerticalAlignment.Top };
+            System.Windows.Automation.AutomationProperties.SetName(img, "Poster");
+            header.Children.Add(img);
+        }
+        header.Children.Add(text);
+        DockPanel.SetDock(header, Dock.Top);
+        root.Children.Insert(0, header);
+    }
+
+    /// "Title (2019)" or "Series — S02E04 Episode title", and "watched 12 Oct" / "not watched".
+    internal static (string Name, string State) ReelLine(Sisters.ReelFile f)
+    {
+        var name = f.Series == null ? f.Title + (f.Year is { } y ? $" ({y})" : "")
+            : f.Series + " — " + (f.Season is { } s && f.Episode is { } n ? $"S{s:00}E{n:00}" + (f.Title != f.Series ? " " + f.Title : "") : f.Title);
+        var state = !f.Watched ? "not watched"
+            : f.LastWatched is { } d ? "watched " + d.ToString(d.Year == DateTime.Now.Year ? "d MMM" : "d MMM yyyy", System.Globalization.CultureInfo.InvariantCulture)
+            : "watched";
+        return (name, state);
+    }
+
+    /// Reel's poster, small: null when it is missing, empty, 10 MB or more, or not a picture. Off the UI thread.
+    internal static BitmapImage Poster(string path)
+    {
+        try
+        {
+            if (new FileInfo(path) is not { Exists: true, Length: > 0 and < 10 << 20 }) return null;
+            var b = new BitmapImage();
+            b.BeginInit();
+            b.CacheOption = BitmapCacheOption.OnLoad; // don't keep Reel's file locked
+            b.DecodePixelWidth = 200;
+            b.UriSource = new Uri(path);
+            b.EndInit();
+            b.Freeze();
+            return b;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or NotSupportedException or FileFormatException
+                                   or System.Runtime.InteropServices.COMException or ArgumentException or InvalidOperationException) { return null; }
     }
 
     bool paused;
