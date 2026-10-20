@@ -178,6 +178,8 @@ public partial class MainWindow
                 VideoExt.Contains(ext) ? MediaView(e, video: true) :
                 AudioExt.Contains(ext) ? MediaView(e, video: false) :
                 ext.Equals(".pdf", StringComparison.OrdinalIgnoreCase) ? await PdfView(e.Path, v) :
+                // null for a zip that only has a backup's name: listed below like any zip
+                Backups.Named(e.Path) && await Task.Run(() => Backups.Inspect(e.Path, details: true, () => v != quickVersion)) is { } backup ? BackupView(e, backup) :
                 ZipExt.Contains(ext) ? TextView(await Task.Run(() => ZipListing(e.Path))) :
                 FontExt.Contains(ext) ? FontView(e.Path) :
                 RenderedExt.Contains(ext) && Handler(e, v) is { } rendered ? rendered :
@@ -318,6 +320,40 @@ public partial class MainWindow
         sp.Children.Add(new TextBlock { Text = string.Join(", ", family.FamilyNames.Values), Foreground = Hex("#99FFFFFF"), Margin = new(0, 0, 0, 12) });
         foreach (var size in new[] { 48, 32, 20, 14 })
             sp.Children.Add(new TextBlock { Text = "The quick brown fox jumps over the lazy dog 0123456789 ăâîșț", FontFamily = family, FontSize = size, TextWrapping = TextWrapping.Wrap, Margin = new(0, 0, 0, 10) });
+        return new ScrollViewer { Content = sp, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
+    }
+
+    // A Stash or Backup Labs backup (Backups.cs): what it is and holds, and a button to open it in its app.
+    UIElement BackupView(Entry e, Backups.Info b)
+    {
+        var sp = new StackPanel { Margin = new(20) };
+        sp.Children.Add(new TextBlock { Text = $"{b.App} backup", FontSize = 16, FontWeight = FontWeights.SemiBold });
+        var made = b.Made?.ToString("dddd, yyyy-MM-dd HH:mm:ss") ?? e.FullDate;
+        var what = b.Unreadable ? "" : b.Encrypted ? " · encrypted" : " · not encrypted";
+        sp.Children.Add(new TextBlock { Text = $"{made} · {e.SizeText}{what}", Foreground = Hex("#99FFFFFF"), TextWrapping = TextWrapping.Wrap, Margin = new(0, 4, 0, 12) });
+        if (b.Unreadable)
+        {
+            sp.Children.Add(new TextBlock { Text = "Could not read this backup", Foreground = Hex("#F87171"), TextWrapping = TextWrapping.Wrap });
+            return sp;
+        }
+        if (b.Encrypted) sp.Children.Add(new TextBlock { Text = $"Encrypted — open it in {b.App} with its password", TextWrapping = TextWrapping.Wrap, Margin = new(0, 0, 0, 12) });
+        var open = new Button { Content = $"Open in {b.App}", Style = (Style)FindResource("Tab"), Tag = "on", Padding = new(14, 6, 14, 6), HorizontalAlignment = HorizontalAlignment.Left };
+        open.Click += (_, _) => OpenBackup(b.Id, e.Path);
+        sp.Children.Add(open);
+        var rows = new Grid { Margin = new(0, 14, 0, 0) };
+        rows.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        rows.ColumnDefinitions.Add(new ColumnDefinition());
+        foreach (var (name, value) in b.Rows)
+        {
+            rows.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            var left = new TextBlock { Text = name, Foreground = Hex("#99FFFFFF"), Margin = new(0, 2, 16, 2) };
+            var right = new TextBlock { Text = value, TextWrapping = TextWrapping.Wrap, Margin = new(0, 2, 0, 2) };
+            Grid.SetRow(left, rows.RowDefinitions.Count - 1);
+            Grid.SetRow(right, rows.RowDefinitions.Count - 1);
+            Grid.SetColumn(right, 1);
+            rows.Children.Add(left); rows.Children.Add(right);
+        }
+        sp.Children.Add(rows);
         return new ScrollViewer { Content = sp, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
     }
 

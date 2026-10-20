@@ -96,6 +96,31 @@ public partial class MainWindow
         Process.Start(start);
     }
 
+    // Stash (2.1) and Backup Labs (1.3.0) open one of their backups (Backups.cs) given `--browse` / `--open` and its
+    // full path. Older versions don't know the switch (Backup Labs would make a bare path a new job), so a version
+    // below these counts as not installed and the button opens the app's page.
+    static readonly Dictionary<string, (string Switch, Version Min, string Page)> BackupApps = new()
+    {
+        ["stash"] = ("--browse", new(2, 1, 0), "https://protagonistlabs.app/stash/?utm_source=filelabs&utm_medium=app&utm_campaign=open-backup"),
+        ["backuplabs"] = ("--open", new(1, 3, 0), "https://protagonistlabs.app/backuplabs/?utm_source=filelabs&utm_medium=app&utm_campaign=open-backup"),
+    };
+
+    /// The command that opens this backup in its app, or null when it isn't one, can't be read, or the app is missing or too old.
+    internal static ProcessStartInfo BackupStart(string path) =>
+        Backups.Inspect(path) is { Unreadable: false } b && BackupStart(b.Id, path) is { } start ? start : null;
+
+    static ProcessStartInfo BackupStart(string id, string path)
+    {
+        if (SisterExe(id) is not { } exe || !Version.TryParse(FileVersionInfo.GetVersionInfo(exe).FileVersion, out var v) || v < BackupApps[id].Min) return null;
+        var start = new ProcessStartInfo(exe);
+        start.ArgumentList.Add(BackupApps[id].Switch);
+        start.ArgumentList.Add(path);
+        return start;
+    }
+
+    static void OpenBackup(string id, string path) =>
+        Process.Start(BackupStart(id, path) ?? new ProcessStartInfo(BackupApps[id].Page) { UseShellExecute = true });
+
     static MenuItem Item(string header, string glyph, string gesture, Action run, bool enabled = true)
     {
         var mi = new MenuItem
@@ -114,6 +139,9 @@ public partial class MainWindow
         var ext = Path.GetExtension(first.Name);
         var m = new ContextMenu();
         m.Items.Add(Item("Open", "", "Enter", () => p.OpenSelected()));
+        // with Stash / Backup Labs installed, Open already opens their backups there; without, this leads to them
+        if (one && !dir && Backups.Inspect(first.Path) is { Unreadable: false } backup && BackupStart(backup.Id, first.Path) == null)
+            m.Items.Add(Item($"Open in {backup.App}", "", "", () => OpenBackup(backup.Id, first.Path)));
         if (dir)
         {
             m.Items.Add(Item("Open in new tab", "", "Middle click", () => { p.NewTab(); p.Navigate(first.Path); }));

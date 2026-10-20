@@ -1355,16 +1355,19 @@ public partial class PaneView : UserControl
         if (commit && name != "" && name != entry.Name) RenameCommitted?.Invoke(entry, name);
     }
 
-    public void OpenSelected()
+    public async void OpenSelected()
     {
         if (List.SelectedItem is not Entry e) return;
+        // a Stash or Backup Labs backup opens in its app when that is installed (1.0.40), otherwise as before;
+        // read off the UI thread, the file may be on a share that is asleep
+        var backup = !e.IsUp && !e.IsDir && Backups.Named(e.Path) ? await Task.Run(() => MainWindow.BackupStart(e.Path)) : null;
         if (e.IsUp) Up();
         else if (e.FolderTarget is { } folder) Navigate(folder); // a shortcut to a folder opens here, as in Explorer
         // a script is run, like Explorer does; editing it is F4 / Edit in the menu
-        else if (Settings.InternalEditor && EditorWindow.IsText(e.Path) && !MainWindow.Runnable.Contains(Path.GetExtension(e.Path))) EditorWindow.Open(e.Path);
+        else if (backup == null && Settings.InternalEditor && EditorWindow.IsText(e.Path) && !MainWindow.Runnable.Contains(Path.GetExtension(e.Path))) EditorWindow.Open(e.Path);
         else
             // started in its own folder, as from Explorer: scripts rely on relative paths
-            try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(e.Path) { UseShellExecute = true, WorkingDirectory = Path.GetDirectoryName(e.Path) }); }
+            try { System.Diagnostics.Process.Start(backup ?? new System.Diagnostics.ProcessStartInfo(e.Path) { UseShellExecute = true, WorkingDirectory = Path.GetDirectoryName(e.Path) }); }
             catch (System.ComponentModel.Win32Exception ex) { Error?.Invoke(ex.Message); } // e.g. no app associated
     }
 

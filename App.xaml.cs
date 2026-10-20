@@ -255,6 +255,56 @@ public partial class App : Application
                     Check(FileExplorer.MainWindow.Contrast(t, f) >= 4.5, $"selection text on {hex} at {strength}");
                 }
 
+            // Stash and Backup Labs backups (1.0.40): told apart by their first bytes, read without trusting them
+            var bk = Directory.CreateDirectory(Path.Combine(root, "backups")).FullName;
+            string Zip(string name, params (string Entry, string Text)[] entries)
+            {
+                var file = Path.Combine(bk, name);
+                using var z = System.IO.Compression.ZipFile.Open(file, System.IO.Compression.ZipArchiveMode.Create);
+                foreach (var (entry, text) in entries) { using var w = new StreamWriter(z.CreateEntry(entry).Open()); w.Write(text); }
+                return file;
+            }
+            const string mbox = "From - Tue Sep  1 10:00:00 2026\r\nSubject: one\r\n\r\nbody\r\nFrom inside a paragraph, not a message\r\n>From quoted\r\n\r\n"
+                              + "From - Tue Sep  1 11:00:00 2026\r\nSubject: two\r\n\r\nbody\r\n\r\nFrom - x\nSubject: three, LF\n\nbody\n\n";
+            var stashEntries = new[]
+            {
+                ("manifest.json", "{\"Format\":2,\"Created\":\"2026-09-01T10:00:00+03:00\",\"Apps\":{\"Thunderbird\":{\"ActiveProfile\":\"p\"}}}"),
+                ("Thunderbird/profiles.ini", "[Profile0]\nName=default-release\nPath=Profiles/p\n"),
+                ("Thunderbird/Profiles/p/Mail/Local Folders/Inbox", mbox), ("Thunderbird/Profiles/p/Mail/Local Folders/Inbox.msf", ""),
+                ("Thunderbird/Profiles/p/Mail/Local Folders/Archives.sbd/2025", mbox), ("Thunderbird/Profiles/p/prefs.js", ""),
+            };
+            var stashZip = Zip("Stash-2026-09-01_10-00-00.zip", stashEntries);
+            var st = Backups.Inspect(stashZip, details: true);
+            Check(st is { Id: "stash", Encrypted: false, Unreadable: false } && st.Made == new DateTimeOffset(2026, 9, 1, 10, 0, 0, TimeSpan.FromHours(3)).LocalDateTime
+                && st.Rows.Contains(("Thunderbird", "profile default-release")) && st.Rows.Contains(("Files", "5 · " + FileExplorer.MainWindow.Fmt(stashEntries.Skip(1).Sum(x => x.Item2.Length))))
+                && st.Rows.Contains(("Local Folders / Inbox", "3 messages")) && st.Rows.Contains(("Local Folders / Archives/2025", "3 messages")) && st.Rows.Count == 4,
+                "plain Stash backup: app, profile, files, mail folders and messages");
+            Check(Backups.Inspect(Zip("Stash-2026-09-02.stash", stashEntries)) is { Id: "stash", Unreadable: false }, "plain .stash (2.1)");
+            var stashEnc = Path.Combine(bk, "Stash-2026-09-03_08-00-00.stash");
+            File.WriteAllBytes(stashEnc, "STASHENC\u0001 rest is ciphertext"u8.ToArray());
+            Check(Backups.Inspect(stashEnc, details: true) is { Id: "stash", Encrypted: true, Unreadable: false } se && se.Made == new DateTime(2026, 9, 3, 8, 0, 0), "encrypted Stash backup");
+            var blEnc = Path.Combine(bk, "2026-09-04_120000.bkl");
+            File.WriteAllBytes(blEnc, "BKLENC1\0 salt and chunks"u8.ToArray());
+            Check(Backups.Inspect(blEnc) is { Id: "backuplabs", Encrypted: true }, "encrypted Backup Labs archive");
+            var blEntries = new[] { ("C/Users/me/Documents/a.txt", "a"), ("C/Users/me/Pictures/2026/b.jpg", "bb"), ("C/Users/me/Pictures/empty/", ""), ("UNC/nas/share/x/c.txt", "c") };
+            var bl = Backups.Inspect(Zip("2026-09-05_120000.bkl", blEntries), details: true);
+            Check(bl is { Id: "backuplabs", Encrypted: false, Unreadable: false } && bl.Rows.Contains(("Files", "3 · " + FileExplorer.MainWindow.Fmt(4)))
+                && bl.Rows.Contains(("From", @"C:\Users\me")) && bl.Rows.Contains(("From", @"\\nas\share\x")), "plain Backup Labs archive: files, size, where from");
+            Check(Backups.Inspect(Zip("2026-09-06_120000.zip", blEntries)) is { Id: "backuplabs" }, "a Backup Labs .zip from before 1.3.0");
+            Check(Backups.Inspect(Zip("2026-09-07_120000.zip", ("docs/a.txt", "a"))) == null && Backups.Inspect(Zip("Stash-2026-09-08_10-00-00.zip", ("a.txt", "a"))) == null
+                && Backups.Inspect(Zip("photos.zip", stashEntries)) == null, "ordinary zips, even named like a backup, stay ordinary zips");
+            var junk = Path.Combine(bk, "junk.bkl");
+            File.WriteAllBytes(junk, Enumerable.Range(0, 4096).Select(k => (byte)(k * 7919 % 251)).ToArray());
+            var full = File.ReadAllBytes(stashZip);
+            var cut = Path.Combine(bk, "cut.stash");
+            File.WriteAllBytes(cut, full[..(full.Length / 2)]);
+            Check(Backups.Inspect(junk, details: true) is { Id: "backuplabs", Unreadable: true } && Backups.Inspect(cut, details: true) is { Id: "stash", Unreadable: true }
+                && Backups.Inspect(Zip("nothing.stash", ("a.txt", "a")), details: true) is { Unreadable: true }
+                && FileExplorer.MainWindow.BackupStart(junk) == null, "junk, a cut-off zip, a .stash without a manifest: could not read");
+            var many = new MemoryStream(System.Text.Encoding.ASCII.GetBytes(string.Concat(Enumerable.Repeat("From - x\r\n\r\nbody\r\n\r\n", 200_000))));
+            var (found, whole) = Backups.CountMessages(many, 1 << 20, () => false);
+            Check(!whole && found > 40_000 && found < 200_000, "counting stops at its cap and says so");
+
             Console.WriteLine("selftest: all passed");
             return 0;
         }
