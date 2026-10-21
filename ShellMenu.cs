@@ -1,3 +1,4 @@
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
@@ -12,7 +13,9 @@ public static class ShellMenu
 {
     /// Shows the menu for items (all in one folder) or, with none, the folder's background menu.
     /// Returns the verb the user picked when File Labs should handle it itself (e.g. "rename"), else null.
-    public static string Show(Window owner, string folder, IReadOnlyList<string> items)
+    /// `view`: File Labs' View modes, as a View submenu at the top of the folder's menu, where Explorer has its own
+    /// (the folder's menu from the shell has none: Explorer adds it from its window).
+    public static string Show(Window owner, string folder, IReadOnlyList<string> items, IReadOnlyList<(string Text, bool On, Action Run)> view = null)
     {
         var hwnd = new WindowInteropHelper(owner).Handle;
         var pidls = new List<IntPtr>();
@@ -29,6 +32,14 @@ public static class ShellMenu
             uint flags = CMF_NORMAL | CMF_EXPLORE | CMF_CANRENAME;
             if (System.Windows.Input.Keyboard.Modifiers.HasFlag(System.Windows.Input.ModifierKeys.Shift)) flags |= CMF_EXTENDEDVERBS;
             ctx.QueryContextMenu(menu, 0, FirstId, LastId, flags);
+            var own = new List<Action>(); // File Labs' own items: ids OwnFirst, OwnFirst + 1, ... past the shell's range
+            if (view != null)
+            {
+                var sub = CreatePopupMenu(); // destroyed with the menu
+                foreach (var (text, on, run) in view) { AppendMenu(sub, on ? MF_CHECKED : 0, (UIntPtr)(OwnFirst + own.Count), text); own.Add(run); }
+                InsertMenu(menu, 0, MF_BYPOSITION | MF_POPUP, (UIntPtr)(ulong)sub, "&View");
+                InsertMenu(menu, 1, MF_BYPOSITION | MF_SEPARATOR, UIntPtr.Zero, null);
+            }
 
             var ctx2 = ctx as IContextMenu2;
             var ctx3 = ctx as IContextMenu3;
@@ -46,6 +57,7 @@ public static class ShellMenu
 
             GetCursorPos(out var pt);
             int cmd = TrackPopupMenuEx(menu, TPM_RETURNCMD | TPM_RIGHTBUTTON, pt.X, pt.Y, hwnd, IntPtr.Zero);
+            if (cmd >= OwnFirst && cmd < OwnFirst + own.Count) { own[cmd - (int)OwnFirst](); return null; }
             if (cmd < FirstId) return null; // dismissed
 
             var verb = Verb(ctx, (uint)(cmd - FirstId));
@@ -67,7 +79,9 @@ public static class ShellMenu
             // given the file, by other processes on our behalf; a report had Notepad opening behind File Labs. The
             // user just picked the command, so the right to come forward is passed on to whoever needs it.
             AllowSetForegroundWindow(ASFW_ANY);
+            var before = items.Count > 0 ? Titles() : null;
             ctx.InvokeCommand(ref info);
+            if (before != null) BringForward(owner, items, before);
             return null;
         }
         catch (COMException) { return null; } // a broken shell extension shouldn't take the app down
@@ -114,6 +128,48 @@ public static class ShellMenu
         return (IContextMenu)obj;
     }
 
+    /// Still not enough for "Open with -> Notepad" when Notepad was already open, minimized or behind File Labs (1.0.39
+    /// report; "Open" at the top was fine): the handler gives it the file after the menu has returned, and Notepad shows
+    /// it where it was. So for 3 s, as long as File Labs is still the window in front (the user hasn't moved on), a
+    /// window of another app whose title has just changed to name one of these files is restored and brought forward.
+    /// File Labs, in front, is allowed to; no other window is touched.
+    static void BringForward(Window owner, IReadOnlyList<string> items, Dictionary<IntPtr, string> before)
+    {
+        var names = items.Select(Path.GetFileName).Where(n => n != "").ToList();
+        long until = Environment.TickCount64 + 3000;
+        var poll = new System.Windows.Threading.DispatcherTimer(System.Windows.Threading.DispatcherPriority.Background, owner.Dispatcher) { Interval = TimeSpan.FromMilliseconds(100) };
+        poll.Tick += (_, _) =>
+        {
+            GetWindowThreadProcessId(GetForegroundWindow(), out uint front);
+            if (Environment.TickCount64 > until || front != Environment.ProcessId) { poll.Stop(); return; } // it came forward, or the user went on
+            foreach (var (h, title) in Titles())
+                if ((!before.TryGetValue(h, out var was) || was != title) && ShowsFile(title, names))
+                {
+                    if (IsIconic(h)) ShowWindow(h, SW_RESTORE);
+                    SetForegroundWindow(h);
+                    poll.Stop();
+                    return;
+                }
+        };
+        poll.Start();
+    }
+
+    internal static bool ShowsFile(string title, IEnumerable<string> names) => names.Any(n => title.Contains(n, StringComparison.OrdinalIgnoreCase));
+
+    /// The titles of the visible top-level windows of other processes.
+    static Dictionary<IntPtr, string> Titles()
+    {
+        var titles = new Dictionary<IntPtr, string>();
+        var text = new System.Text.StringBuilder(512);
+        EnumWindows((h, _) =>
+        {
+            if (IsWindowVisible(h) && GetWindowThreadProcessId(h, out uint pid) != 0 && pid != Environment.ProcessId && GetWindowText(h, text, text.Capacity) > 0)
+                titles[h] = text.ToString();
+            return true;
+        }, IntPtr.Zero);
+        return titles;
+    }
+
     /// Lets this menu follow Windows' light or dark mode, as Frostpane does. It is a classic Win32 menu, drawn by
     /// uxtheme, and an app gets dark ones only by asking, through SetPreferredAppMode (ordinal 135; 1 = follow the
     /// system), as Explorer and Notepad do. Undocumented, but the same since Windows 10 1903; where it is missing
@@ -131,7 +187,9 @@ public static class ShellMenu
     }
 
     // ---- interop ----
-    const uint FirstId = 1, LastId = 0x7FFF;
+    const uint FirstId = 1, LastId = 0x7FFF, OwnFirst = 0x8000;
+    const uint MF_CHECKED = 0x8, MF_POPUP = 0x10, MF_BYPOSITION = 0x400, MF_SEPARATOR = 0x800;
+    const int SW_RESTORE = 9;
     const int ASFW_ANY = -1;
     const uint CMF_NORMAL = 0, CMF_EXPLORE = 0x4, CMF_CANRENAME = 0x10, CMF_EXTENDEDVERBS = 0x100;
     const int CMIC_MASK_UNICODE = 0x4000, CMIC_MASK_PTINVOKE = 0x20000000;
@@ -203,6 +261,17 @@ public static class ShellMenu
     [DllImport("user32.dll")] static extern int TrackPopupMenuEx(IntPtr menu, uint flags, int x, int y, IntPtr hwnd, IntPtr tpm);
     [DllImport("user32.dll")] static extern bool GetCursorPos(out POINT pt);
     [DllImport("user32.dll")] static extern bool AllowSetForegroundWindow(int pid);
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)] static extern bool AppendMenu(IntPtr menu, uint flags, UIntPtr id, string text);
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)] static extern bool InsertMenu(IntPtr menu, int position, uint flags, UIntPtr id, string text);
+    delegate bool EnumWindowsProc(IntPtr h, IntPtr l);
+    [DllImport("user32.dll")] static extern bool EnumWindows(EnumWindowsProc proc, IntPtr l);
+    [DllImport("user32.dll")] static extern bool IsWindowVisible(IntPtr h);
+    [DllImport("user32.dll")] static extern bool IsIconic(IntPtr h);
+    [DllImport("user32.dll")] static extern bool ShowWindow(IntPtr h, int cmd);
+    [DllImport("user32.dll")] static extern bool SetForegroundWindow(IntPtr h);
+    [DllImport("user32.dll")] static extern IntPtr GetForegroundWindow();
+    [DllImport("user32.dll")] static extern uint GetWindowThreadProcessId(IntPtr h, out uint pid);
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)] static extern int GetWindowText(IntPtr h, System.Text.StringBuilder text, int max);
     [DllImport("uxtheme.dll", EntryPoint = "#135")] static extern int SetPreferredAppMode(int mode);
     [DllImport("uxtheme.dll", EntryPoint = "#136")] static extern void FlushMenuThemes();
 }

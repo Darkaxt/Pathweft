@@ -21,6 +21,7 @@
       </DockPanel>
       <TextBlock x:Name="Status" DockPanel.Dock="Bottom" Foreground="#8A97AA" FontSize="11" Margin="2,8,0,0" TextTrimming="CharacterEllipsis"/>
       <Border Background="#0DFFFFFF" CornerRadius="10" BorderThickness="1" BorderBrush="#1AFFFFFF" Padding="4,2">
+        <Grid>
         <ListView x:Name="List" Background="Transparent" BorderThickness="0" SelectionMode="Extended"
                   ScrollViewer.HorizontalScrollBarVisibility="Disabled" MouseDoubleClick="List_DoubleClick">
           <ListView.View>
@@ -53,6 +54,11 @@
             </GridView>
           </ListView.View>
         </ListView>
+        <!-- drag to select (left or right button): the rectangle, drawn as in the panes -->
+        <Canvas x:Name="MarqueeLayer" IsHitTestVisible="False" ClipToBounds="True">
+          <Border x:Name="Marquee" Background="{DynamicResource AccentSoft}" BorderBrush="{DynamicResource AccentEdge}" BorderThickness="1" CornerRadius="2" Visibility="Collapsed"/>
+        </Canvas>
+        </Grid>
       </Border>
     </DockPanel>
   </Grid>

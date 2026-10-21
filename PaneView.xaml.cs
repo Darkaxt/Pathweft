@@ -142,14 +142,18 @@ public sealed class ExplorerOrder : IComparer<string>
     public int Compare(string a, string b) => StrCmpLogicalW(a ?? "", b ?? "");
 }
 
-// Folders first, ".." always on top, then by the chosen column.
+// Folders first, ".." always on top, then by the chosen column. With Settings → Files → "Sort shortcuts to folders
+// with the folders", a shortcut that opens a folder counts as one (its target is read once per row, then kept).
 class EntrySort(string key, bool desc) : IComparer
 {
+    readonly bool shortcuts = Settings.ShortcutsWithFolders;
+    bool Folder(Entry e) => e.IsDir || shortcuts && e.FolderTarget != null;
+
     public int Compare(object a, object b)
     {
         var x = (Entry)a; var y = (Entry)b;
         if (x.IsUp != y.IsUp) return x.IsUp ? -1 : 1;
-        if (x.IsDir != y.IsDir) return x.IsDir ? -1 : 1;
+        if (Folder(x) != Folder(y)) return Folder(x) ? -1 : 1;
         int r = key switch
         {
             "Size" => x.Size.CompareTo(y.Size),
@@ -270,7 +274,13 @@ public partial class PaneView : UserControl
         List.PreviewMouseRightButtonUp += RightDrag_Up;
         List.DragOver += Drop_Over;
         List.Drop += Drop_Drop;
-        List.DragLeave += (_, _) => ShowDropRow(null); // the next DragOver lights the row again if still on it
+        List.DragLeave += (_, e) =>
+        {
+            ShowDropRow(null); // the next DragOver lights the row again if still on it
+            // DragLeave bubbles up from every row; only leaving the list itself ends the wheel's part
+            var at = e.GetPosition(List);
+            if (at.X < 0 || at.Y < 0 || at.X >= List.ActualWidth || at.Y >= List.ActualHeight) WheelWhileDragging(null);
+        };
         // Not a row, so DropTarget gives the folder shown: the strip always means "here".
         FolderStrip.DragOver += Drop_Over;
         FolderStrip.Drop += (s, e) => { FolderStrip.Background = Brushes.Transparent; Drop_Drop(s, e); };
@@ -571,6 +581,8 @@ public partial class PaneView : UserControl
         var scroller = keep ? FindScroller(List) : null;
         double offset = scroller?.VerticalOffset ?? 0, across = scroller?.HorizontalOffset ?? 0;
         var wasSelected = keep ? List.SelectedItems.Cast<Entry>().Select(e => e.Name).ToHashSet(StringComparer.OrdinalIgnoreCase) : null;
+        // where the first selected row sat: if the selection is gone (deleted), the row that moved up into its place
+        int firstSelected = keep && view != null && List.SelectedItems.Count > 0 ? List.SelectedItems.Cast<object>().Min(view.IndexOf) : -1;
         var left = items;
         items = list;
         view = new ListCollectionView((IList)items) { CustomSort = new EntrySort(sortKey, sortDesc) };
@@ -582,6 +594,10 @@ public partial class PaneView : UserControl
         if (keep && select == null)
         {
             SetSelection(e => wasSelected.Contains(e.Name));
+            // Deleted (Delete, Shift+Delete → Enter, or from outside): the keyboard carries on from the next row, as in
+            // Explorer, not from the first row of the folder
+            if (List.SelectedItems.Count == 0 && firstSelected >= 0 && view.Count > 0)
+                List.SelectedItem = view.GetItemAt(Math.Min(firstSelected, view.Count - 1));
             // no scroller in a pane never shown (the right one, with one pane): a file changing in its folder crashed the app
             scroller?.ScrollToVerticalOffset(offset);
             scroller?.ScrollToHorizontalOffset(across);
@@ -1657,6 +1673,9 @@ public partial class PaneView : UserControl
         zoomTimer.Start();
     }
 
+    /// The five view modes, largest first, for the Windows menu's View submenu.
+    public List<(string Text, bool On, Action Run)> ViewChoices() => Modes.Select(m => (m.name, m.mode == Mode, (Action)(() => SetView(m.mode)))).ToList();
+
     void ViewButton_Click(object s, RoutedEventArgs e)
     {
         var menu = new ContextMenu { PlacementTarget = ViewButton, Placement = System.Windows.Controls.Primitives.PlacementMode.Top };
@@ -1844,7 +1863,7 @@ public partial class PaneView : UserControl
             marqueeRow = otherColumn ? row : null;
             marqueeBase = Keyboard.Modifiers.HasFlag(ModifierKeys.Control) ? List.SelectedItems.Cast<Entry>().ToHashSet() : new();
             dragArmed = false;
-            List.Focus();
+            FocusKeepingRow();
             e.Handled = true; // selection is ours from here: on release (a click) or while dragging (a rectangle)
             return;
         }
@@ -2006,6 +2025,7 @@ public partial class PaneView : UserControl
         // once in testing. Then there is simply no drag, as if the mouse hadn't moved far enough.
         try { DragDrop.DoDragDrop(List, data, DragDropEffects.Copy | DragDropEffects.Move); }
         catch (System.Runtime.InteropServices.COMException) { }
+        finally { WheelWhileDragging(null); } // however the drag ended
     }
 
     // Drop on a folder row, or on a shortcut to a folder → into that folder; anywhere else → the folder this pane shows.
@@ -2013,6 +2033,7 @@ public partial class PaneView : UserControl
 
     void Drop_Over(object s, DragEventArgs e)
     {
+        if (s == List) WheelWhileDragging(this);
         e.Effects = DragDropEffects.None;
         // As in Explorer: Ctrl copies, Shift moves, and without either a drop on the same drive moves and
         // on another drive copies — only as far as the source allows (some offer Copy alone).
@@ -2048,6 +2069,7 @@ public partial class PaneView : UserControl
 
     void Drop_Drop(object s, DragEventArgs e)
     {
+        WheelWhileDragging(null);
         if (e.Data.GetData(DataFormats.FileDrop) is not string[] files || files.Length == 0) return;
         Drop_Over(s, e);
         ShowDropRow(null);
@@ -2059,7 +2081,56 @@ public partial class PaneView : UserControl
         e.Handled = true;
     }
 
-    void FolderStrip_Click(object s, MouseButtonEventArgs e) { SetSelection(_ => false); List.Focus(); }
+    // ---- the wheel while a drag is over the list: Windows' drag loop takes the mouse and swallows the wheel (3 notches
+    // scrolled 0 rows in 1.0.41), files from Explorer as much as our own. A low-level mouse hook, set only while a drag
+    // is over a list and removed when it leaves, drops or ends, hands each notch over the list to its scroller, the way
+    // a wheel scrolls it normally (rows in Details, columns in List, tiles in Icons). Wheel turns elsewhere pass by.
+    static IntPtr wheelHook;
+    static PaneView wheelPane;
+    static readonly LowLevelMouseProc WheelProc = OnWheel; // kept alive for as long as Windows may call it
+
+    static void WheelWhileDragging(PaneView pane)
+    {
+        wheelPane = pane;
+        if (pane != null && wheelHook == IntPtr.Zero) wheelHook = SetWindowsHookEx(WH_MOUSE_LL, WheelProc, GetModuleHandle(null), 0);
+        else if (pane == null && wheelHook != IntPtr.Zero) { UnhookWindowsHookEx(wheelHook); wheelHook = IntPtr.Zero; }
+    }
+
+    static IntPtr OnWheel(int code, IntPtr message, IntPtr data)
+    {
+        if (code >= 0 && message == WM_MOUSEWHEEL && wheelPane is { } pane && FindScroller(pane.List) is { } scroller)
+        {
+            var hook = System.Runtime.InteropServices.Marshal.PtrToStructure<MouseHookData>(data);
+            var at = pane.List.PointFromScreen(new Point(hook.X, hook.Y));
+            if (at.X >= 0 && at.Y >= 0 && at.X < pane.List.ActualWidth && at.Y < pane.List.ActualHeight)
+            {
+                scroller.RaiseEvent(new MouseWheelEventArgs(Mouse.PrimaryDevice, Environment.TickCount, (short)(hook.MouseData >> 16)) { RoutedEvent = MouseWheelEvent });
+                return 1; // scrolled here, not also by whatever window has the focus
+            }
+        }
+        return CallNextHookEx(IntPtr.Zero, code, message, data);
+    }
+
+    const int WH_MOUSE_LL = 14;
+    static readonly IntPtr WM_MOUSEWHEEL = 0x020A;
+    delegate IntPtr LowLevelMouseProc(int code, IntPtr message, IntPtr data);
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+    struct MouseHookData { public int X, Y; public uint MouseData, Flags, Time; public IntPtr Extra; }
+    [System.Runtime.InteropServices.DllImport("user32.dll")] static extern IntPtr SetWindowsHookEx(int id, LowLevelMouseProc proc, IntPtr module, uint thread);
+    [System.Runtime.InteropServices.DllImport("user32.dll")] static extern bool UnhookWindowsHookEx(IntPtr hook);
+    [System.Runtime.InteropServices.DllImport("user32.dll")] static extern IntPtr CallNextHookEx(IntPtr hook, int code, IntPtr message, IntPtr data);
+    [System.Runtime.InteropServices.DllImport("kernel32.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode)] static extern IntPtr GetModuleHandle(string name);
+
+    void FolderStrip_Click(object s, MouseButtonEventArgs e) { FocusKeepingRow(); SetSelection(_ => false); }
+
+    /// A click on empty space clears the selection, not the place: the keyboard stays on the row it was on (now
+    /// unselected, as in Explorer), so Up and Down carry on from there. On the list itself, Down left the list.
+    void FocusKeepingRow()
+    {
+        if (Keyboard.FocusedElement is ListViewItem row && ItemsControl.ItemsControlFromItemContainer(row) == List) return;
+        if (List.SelectedItem is { } sel && List.ItemContainerGenerator.ContainerFromItem(sel) is UIElement selRow && selRow.Focus()) return;
+        List.Focus();
+    }
     void FolderStrip_DragEnter(object s, DragEventArgs e) =>
         FolderStrip.Background = (Brush)FindResource("AccentSoft");
     void FolderStrip_DragLeave(object s, DragEventArgs e) => FolderStrip.Background = Brushes.Transparent;

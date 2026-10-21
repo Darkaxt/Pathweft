@@ -3,7 +3,8 @@
 A free, dual-pane file manager for Windows 11, with a copy engine that shows what it is doing.
 
 - **Two panes, with tabs** — browser-style tabs in each pane, `Tab` to switch panes,
-  `Ctrl+U` to swap them, drag and drop between panes and to/from Explorer.
+  `Ctrl+U` to swap them, drag and drop between panes and to/from Explorer (the wheel scrolls the list
+  under a drag).
 - **Transfers you can watch** — copy and move run through the Ferry engine: one scan up front
   (totals and every conflict at once), one conflict decision per job, pause and cancel, a live
   speed chart, one queue per destination drive. Same-drive moves are renames.
@@ -18,8 +19,10 @@ A free, dual-pane file manager for Windows 11, with a copy engine that shows wha
   preview: poster, title and year (or series and episode), watched or not, and a link to Reel.
 - **Folder sizes** in the list, file versions for `.exe`/`.dll`, and a recency tint on dates.
 - **Views** — Details, List and three icon sizes with Explorer's own thumbnails (`Ctrl+Shift+1…5`).
+  Shortcuts to folders can be sorted with the folders (Settings → Files).
 - **The real right-click menu** when you want it — Send to, Open with, 7-Zip and other shell
-  extensions — or a compact one that matches the app.
+  extensions, with a View submenu on the folder's own menu — or a compact one that matches the app.
+  Paste on a folder, or on a shortcut to one, puts the files in it.
 - **Default file manager** (optional) — folders, drives and `Win+E` open in File Labs. Switching
   it off (or uninstalling) hands them back to whatever had them before. "Win+E opens File Labs" can be
   switched off on its own, to keep Win+E for File Explorer.

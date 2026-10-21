@@ -272,8 +272,10 @@
         <Setter.Value>
           <ControlTemplate TargetType="Button">
             <Grid Background="Transparent">
-              <!-- the strip shape behind paints the tab; this only adds hover and the divider -->
-              <Border x:Name="Bd" Background="Transparent" CornerRadius="8,8,0,0" Padding="9,7,6,7" Margin="0,4,0,0">
+              <!-- the strip shape behind paints the tab; this only adds hover, the divider and the active tab's accent
+                   line along its rounded top (as Frostpane's). The 2 px line is always there, transparent when not
+                   active, and comes out of the top padding: no tab changes height. -->
+              <Border x:Name="Bd" Background="Transparent" CornerRadius="8,8,0,0" Padding="9,5,6,7" Margin="0,4,0,0" BorderThickness="0,2,0,0" BorderBrush="Transparent">
                 <!-- as tall as the close button, shown or not: a pinned tab has none, and the row of tabs
                      grew 2 px whenever a hover or a click brought one up -->
                 <ContentPresenter MinHeight="18"/>
@@ -286,6 +288,7 @@
               </Trigger>
               <Trigger Property="Tag" Value="on">
                 <Setter TargetName="Bd" Property="Background" Value="Transparent"/>
+                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource Accent}"/>
                 <Setter TargetName="Divider" Property="Visibility" Value="Hidden"/>
                 <Setter Property="Foreground" Value="#F2F6FB"/>
               </Trigger>

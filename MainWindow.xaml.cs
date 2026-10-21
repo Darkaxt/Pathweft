@@ -310,6 +310,8 @@ public partial class MainWindow : Window
         Left.Refresh(); Right.Refresh();
     }
 
+    public void ResortPanes() { foreach (var p in new[] { Left, Right }) p.SetSort(p.SortKey, p.SortDescending); }
+
     // 3 s after launch, then every hour — the app stays open for days.
     readonly System.Windows.Threading.DispatcherTimer updateTimer = new() { Interval = TimeSpan.FromMinutes(60) };
     UpdateDialog updateDialog;
@@ -457,6 +459,7 @@ public partial class MainWindow : Window
         cols[0].Width = new GridLength(one ? 1 : Settings.Split, GridUnitType.Star);
         cols[2].Width = new GridLength(one ? 0 : 1 - Settings.Split, GridUnitType.Star);
         if (one && active == Right) SetActive(Left);
+        FitPreview(); // one pane leaves the preview more room
     }
 
     /// <summary>The cards above the panes: full, compact (the figure and its label, nothing else), or hidden.</summary>
@@ -867,12 +870,13 @@ public partial class MainWindow : Window
         Status.Text = $"{(cut ? "Cut" : "Copied")} {sel.Count} item(s)";
     }
 
-    void ClipboardPaste()
+    /// Into the folder shown, or into `folder` (right-click → Paste on a folder or a shortcut to one, as in Explorer).
+    void ClipboardPaste(string folder = null)
     {
         if (!Clipboard.ContainsFileDropList()) return;
         var files = Clipboard.GetFileDropList().Cast<string>().ToList();
         bool move = Clipboard.GetData("Preferred DropEffect") is MemoryStream ms && ms.Length >= 4 && (BitConverter.ToInt32(ms.ToArray(), 0) & 2) != 0;
-        Submit(files, active.Dir, move);
+        Submit(files, folder ?? active.Dir, move);
         if (move) { Clipboard.Clear(); PaneView.SetCut(Array.Empty<string>(), Left, Right); } // a cut is pasted once, like Explorer
     }
 

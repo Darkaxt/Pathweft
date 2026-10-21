@@ -16,6 +16,7 @@ public partial class SettingsWindow : Window
         BgBlurSlider.Value = Settings.ImageBlur;
         BgBrightSlider.Value = Settings.ImageBrightness;
         HiddenBox.IsChecked = Settings.ShowHidden;
+        ShortcutFoldersBox.IsChecked = Settings.ShortcutsWithFolders;
         VerifyBox.IsChecked = Settings.Verify;
         EditorBox.IsChecked = Settings.InternalEditor;
         DefaultBox.IsChecked = Settings.IsDefaultFileManager;
@@ -391,6 +392,7 @@ public partial class SettingsWindow : Window
     }
 
     void Hidden_Click(object s, RoutedEventArgs e) { Settings.ShowHidden = HiddenBox.IsChecked == true; Settings.Save(); main.RefreshPanes(); }
+    void ShortcutFolders_Click(object s, RoutedEventArgs e) { Settings.ShortcutsWithFolders = ShortcutFoldersBox.IsChecked == true; Settings.Save(); main.ResortPanes(); }
     void Editor_Click(object s, RoutedEventArgs e) { Settings.InternalEditor = EditorBox.IsChecked == true; Settings.Save(); }
     void QuickLook_Click(object s, RoutedEventArgs e) { Settings.QuickLook = QuickLookBox.IsChecked == true; Settings.Save(); }
     void ItemTips_Click(object s, RoutedEventArgs e)

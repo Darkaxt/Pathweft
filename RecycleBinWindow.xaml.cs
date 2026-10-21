@@ -2,6 +2,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
@@ -37,7 +38,81 @@ public partial class RecycleBinWindow : Window
             if (e.Key == Key.Escape) Close();
             else if (e.Key == Key.Delete) Delete_Click(null, null);
         };
+        List.PreviewMouseDown += Select_Down;
+        PreviewMouseMove += Select_Move;
+        PreviewMouseUp += Select_Up;
+        List.LostMouseCapture += Select_Lost; // alt-tab in the middle of a rectangle
+        LostMouseCapture += Select_Lost;
         Load();
+    }
+
+    // ---- drag to select, with either button, from a row or from empty space: every row the rectangle touches, as in
+    // Explorer's Recycle Bin; Ctrl adds to the selection. The list's own dragging only moved the selection along.
+    Point selectFrom;
+    MouseButton? selectButton; // pressed, not yet a rectangle
+    bool selecting;
+    HashSet<Item> selectBase = new();
+
+    void Select_Down(object s, MouseButtonEventArgs e)
+    {
+        if (e.ChangedButton is not (MouseButton.Left or MouseButton.Right) || OnChrome(e.OriginalSource as DependencyObject)) return;
+        selectButton = e.ChangedButton;
+        selectFrom = e.GetPosition(List);
+        selectBase = Keyboard.Modifiers.HasFlag(ModifierKeys.Control) ? List.SelectedItems.Cast<Item>().ToHashSet() : new();
+    }
+
+    void Select_Move(object s, MouseEventArgs e)
+    {
+        if (selectButton is not { } button) return;
+        if ((button == MouseButton.Left ? e.LeftButton : e.RightButton) != MouseButtonState.Pressed) { selectButton = null; return; }
+        var p = e.GetPosition(List);
+        if (!selecting)
+        {
+            if (Math.Abs(p.X - selectFrom.X) < SystemParameters.MinimumHorizontalDragDistance && Math.Abs(p.Y - selectFrom.Y) < SystemParameters.MinimumVerticalDragDistance) return;
+            selecting = true;
+            Marquee.Visibility = Visibility.Visible;
+            // the moves are ours from here. A left press: the list already holds the mouse, and keeps it; taken from it,
+            // the window got no input at all afterwards. A right press: the list lets go on its first move, so the window holds it.
+            if (button == MouseButton.Left) List.CaptureMouse(); else CaptureMouse();
+        }
+        var rect = new Rect(selectFrom, p);
+        rect.Intersect(new Rect(0, 0, List.ActualWidth, List.ActualHeight));
+        if (rect.IsEmpty) return;
+        var drawn = List.TransformToVisual(MarqueeLayer).TransformBounds(rect);
+        Canvas.SetLeft(Marquee, drawn.X); Canvas.SetTop(Marquee, drawn.Y);
+        Marquee.Width = drawn.Width; Marquee.Height = drawn.Height;
+        // only the rows on screen have containers (the list is virtualized); the others keep their state
+        var want = new HashSet<Item>(selectBase);
+        foreach (Item item in List.Items)
+            if (List.ItemContainerGenerator.ContainerFromItem(item) is ListViewItem { IsVisible: true } row
+                && row.TransformToAncestor(List).TransformBounds(new Rect(row.RenderSize)).IntersectsWith(rect)) want.Add(item);
+        foreach (var x in List.SelectedItems.Cast<Item>().Where(x => !want.Contains(x)).ToList()) List.SelectedItems.Remove(x);
+        foreach (var x in want) if (!List.SelectedItems.Contains(x)) List.SelectedItems.Add(x);
+    }
+
+    void Select_Up(object s, MouseButtonEventArgs e)
+    {
+        if (e.ChangedButton != selectButton) return;
+        selectButton = null;
+        if (!selecting) return; // a click: the list handles it as always
+        selecting = false;
+        Marquee.Visibility = Visibility.Collapsed;
+        Mouse.Capture(null);
+        e.Handled = true;
+    }
+
+    void Select_Lost(object s, MouseEventArgs e)
+    {
+        if (!selecting) return;
+        selecting = false; selectButton = null;
+        Marquee.Visibility = Visibility.Collapsed;
+    }
+
+    static bool OnChrome(DependencyObject d)
+    {
+        for (; d != null && d is not ListView; d = d is Visual ? VisualTreeHelper.GetParent(d) : LogicalTreeHelper.GetParent(d))
+            if (d is System.Windows.Controls.Primitives.ScrollBar or GridViewColumnHeader) return true;
+        return false;
     }
 
     void Load()

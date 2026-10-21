@@ -40,17 +40,17 @@ public partial class HelpWindow : Window
         ("Files", new[]
         {
             ("Ctrl+F5 / F6", "Copy / move to the other pane (with one pane, the first press brings it back)"),
-            ("Ctrl+C / Ctrl+X / Ctrl+V", "Copy, cut, paste, also with Explorer"),
+            ("Ctrl+C / Ctrl+X / Ctrl+V", "Copy, cut, paste, also with Explorer. Right-click a folder, or a shortcut to one, → Paste puts the files in it"),
             ("F2", "Rename in place; with several selected, rename them all"),
             ("Click a selected name", "Rename it, as in Explorer: a slow second click, not a double-click"),
-            ("Drag files", "Same drive: move. Other drive: copy. Ctrl copies, Shift moves — to the other pane, Explorer or another app. The folder they would go into lights up; a shortcut to a folder takes them into that folder"),
+            ("Drag files", "Same drive: move. Other drive: copy. Ctrl copies, Shift moves — to the other pane, Explorer or another app. The folder they would go into lights up; a shortcut to a folder takes them into that folder. The wheel scrolls the list while you drag"),
             ("Ctrl+drag in the same folder", "Duplicate, as in Explorer: “name - Copy.ext”, then “name - Copy (2).ext”; folders too. Pasting copied files into their own folder does the same"),
             ("Shift+F2", "Compare the two panes"),
             ("F4", "Edit in the built-in code editor"),
             ("F7 / Ctrl+Shift+N", "New folder"),
             ("Ctrl+N", "New file"),
             ("F8 / Del", "Delete to the Recycle Bin"),
-            ("Shift+Del, Enter", "Delete permanently"),
+            ("Shift+Del, Enter", "Delete permanently; the next file is selected, to carry on from there"),
             ("Ctrl+Z", "Undo the last copy, move, rename, new file or folder, zip or extract"),
             ("Ctrl+Shift+C", "Copy the selected paths as text"),
             ("Alt+Enter", "Properties"),
@@ -59,7 +59,8 @@ public partial class HelpWindow : Window
         }),
         ("Selecting", new[]
         {
-            ("Drag on empty space", "Select with a rectangle; Ctrl adds to the selection"),
+            ("Drag on empty space", "Select with a rectangle; Ctrl adds to the selection. In the Recycle Bin, from anywhere, with either button"),
+            ("Click on empty space", "Clears the selection; Up and Down carry on from the file you were on"),
             ("Right-drag", "Select with a rectangle from anywhere in the list; letting go opens the menu for what it selected. A plain right-click works as before"),
             ("Num +", "Select by pattern, like *.jpg;*.png"),
             ("Num −", "Deselect by pattern"),

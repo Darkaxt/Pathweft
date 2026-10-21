@@ -58,6 +58,7 @@ public partial class MainWindow
         PreviewGap.Width = new GridLength(Settings.Preview ? 10 : 0);
         PreviewColumn.Width = new GridLength(Settings.Preview ? Settings.PreviewWidth : 0);
         PreviewColumn.MinWidth = Settings.Preview ? 200 : 0;
+        FitPreview();
         previewShown = null;
         if (Settings.Preview) PreviewFollow();
         else if (quick == null) { StopMedia(); quickVersion++; PreviewBody.Content = null; } // a video in it stops with it
@@ -71,6 +72,17 @@ public partial class MainWindow
     }
 
     void Preview_Click(object s, RoutedEventArgs e) { TogglePreview(); active.FocusList(); }
+
+    /// The preview gets what the panes leave (250 each and 10 between, or one pane's 250), never more. Its splitter
+    /// only resizes the preview's own column and knew no limit: dragged to the window's left edge it made the column
+    /// 8,267 px wide in a 1,500 px window, so the picture, centred in it, ran off to the right and out of sight.
+    void FitPreview()
+    {
+        double panes = Settings.SinglePane ? 250 : 510;
+        PreviewColumn.MaxWidth = Settings.Preview ? Math.Max(PreviewColumn.MinWidth, PaneArea.ActualWidth - 10 - panes) : double.PositiveInfinity;
+    }
+
+    void PaneArea_SizeChanged(object s, SizeChangedEventArgs e) => FitPreview();
 
     void PreviewSplitter_DragCompleted(object s, System.Windows.Controls.Primitives.DragCompletedEventArgs e)
     {

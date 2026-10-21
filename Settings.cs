@@ -36,6 +36,7 @@ public static class Settings
     public static bool InternalEditor = true; // Enter on a code/text file opens the F4 editor, not its app
     public static bool Verify;               // xxHash3 check after copying
     public static bool ShowHidden;
+    public static bool ShortcutsWithFolders;     // shortcuts to folders sort among the folders, not the files
     public static string LastSeenVersion = "";   // What's new is shown once per version
     public static bool NativeMenu;          // right-click shows the Windows menu instead of ours
     public static bool TakeWinE = true;         // with Windows integration on, Win+E opens File Labs; off = File Explorer
@@ -85,6 +86,7 @@ public static class Settings
                 case "verify": Verify = v == "1"; break;
                 case "internaleditor": InternalEditor = v == "1"; break;
                 case "hidden": ShowHidden = v == "1"; break;
+                case "shortcutfolders": ShortcutsWithFolders = v == "1"; break;
                 case "nativemenu": NativeMenu = v == "1"; break;
                 case "wine": TakeWinE = v != "0"; break;
                 case "lastseen": LastSeenVersion = v; break;
@@ -144,6 +146,7 @@ public static class Settings
             $"verify={(Verify ? 1 : 0)}",
             $"internaleditor={(InternalEditor ? 1 : 0)}",
             $"hidden={(ShowHidden ? 1 : 0)}",
+            $"shortcutfolders={(ShortcutsWithFolders ? 1 : 0)}",
             $"nativemenu={(NativeMenu ? 1 : 0)}",
             $"wine={(TakeWinE ? 1 : 0)}",
             $"lastseen={LastSeenVersion}",

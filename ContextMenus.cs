@@ -31,7 +31,8 @@ public partial class MainWindow
         var sel = p.Selected;
         if (Settings.NativeMenu)
         {
-            if (ShellMenu.Show(this, p.Dir, sel.Select(x => x.Path).ToList()) == "rename") Rename();
+            // the folder's menu gets File Labs' View submenu; Paste on a folder, or a shortcut to one, is Windows' own here
+            if (ShellMenu.Show(this, p.Dir, sel.Select(x => x.Path).ToList(), sel.Count == 0 ? p.ViewChoices() : null) == "rename") Rename();
             p.Refresh();
             return;
         }
@@ -163,7 +164,10 @@ public partial class MainWindow
         m.Items.Add(new Separator());
         m.Items.Add(Item("Cut", "", "Ctrl+X", () => ClipboardPut(cut: true)));
         m.Items.Add(Item("Copy", "", "Ctrl+C", () => ClipboardPut(cut: false)));
-        m.Items.Add(Item("Paste", "", "Ctrl+V", ClipboardPaste, Clipboard.ContainsFileDropList()));
+        // on a folder, or a shortcut to one, Paste goes into it (Explorer's rule); on a file, into the folder shown
+        var into = one ? first.FolderTarget : null;
+        m.Items.Add(into != null ? Item("Paste into folder", "", "", () => ClipboardPaste(into), Clipboard.ContainsFileDropList())
+                                 : Item("Paste", "", "Ctrl+V", () => ClipboardPaste(), Clipboard.ContainsFileDropList()));
         m.Items.Add(Item("Copy to other pane", "", "Ctrl+F5", () => Transfer(false)));
         m.Items.Add(Item("Move to other pane", "", "F6", () => Transfer(true)));
         m.Items.Add(new Separator());
@@ -199,7 +203,7 @@ public partial class MainWindow
     {
         var m = new ContextMenu();
         if (undo.Count > 0) m.Items.Add(Item($"Undo {undo[^1].What}", "", "Ctrl+Z", Undo));
-        m.Items.Add(Item("Paste", "", "Ctrl+V", ClipboardPaste, Clipboard.ContainsFileDropList()));
+        m.Items.Add(Item("Paste", "", "Ctrl+V", () => ClipboardPaste(), Clipboard.ContainsFileDropList()));
         m.Items.Add(new Separator());
         m.Items.Add(Item("New folder", "", "Ctrl+Shift+N", MkDir));
         m.Items.Add(Item("New file…", "", "Ctrl+N", NewFile));

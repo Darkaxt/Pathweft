@@ -220,7 +220,7 @@
         </Border>
       </Grid>
 
-      <Grid Grid.Row="1">
+      <Grid x:Name="PaneArea" Grid.Row="1" SizeChanged="PaneArea_SizeChanged">
         <Grid.ColumnDefinitions>
           <ColumnDefinition/>
           <ColumnDefinition x:Name="PreviewGap" Width="0"/>

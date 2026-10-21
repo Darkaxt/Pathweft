@@ -210,6 +210,20 @@ public partial class App : Application
             FileExplorer.MainWindow.SaveShortcut(folderLnk, dst, dst);
             Check(FileExplorer.MainWindow.ShortcutFolder(folderLnk) == dst && FileExplorer.MainWindow.ShortcutFolder(lnk) == null
                 && FileExplorer.MainWindow.ShortcutFolder(dst) == null && new Entry { Name = "dst.lnk", Path = folderLnk }.FolderTarget == dst, "shortcut to a folder");
+            // Settings → Files → "Sort shortcuts to folders with the folders": off, the shortcut sorts with the files
+            string Sorted(bool shortcutsWithFolders)
+            {
+                Settings.ShortcutsWithFolders = shortcutsWithFolders;
+                var rows = new List<Entry> { new() { Name = "record.lnk", Path = lnk }, new() { Name = "a.txt", Path = info }, new() { Name = "dst.lnk", Path = folderLnk },
+                                             new() { Name = "zz", Path = dst, IsDir = true }, new() { Name = "..", Path = root, IsDir = true } };
+                rows.Sort((x, y) => new EntrySort("Name", false).Compare(x, y));
+                return string.Join(",", rows.Select(r => r.Name));
+            }
+            Check(Sorted(false) == "..,zz,a.txt,dst.lnk,record.lnk" && Sorted(true) == "..,dst.lnk,zz,a.txt,record.lnk", "shortcuts to folders sorted with the folders, or not");
+            Settings.ShortcutsWithFolders = false;
+            // the Windows menu brings forward the app that took the file: its title has to name the file
+            Check(ShellMenu.ShowsFile("note.txt - Notepad", new[] { "note.txt" }) && ShellMenu.ShowsFile("*NOTE.TXT - Notepad", new[] { "x.png", "note.txt" })
+                && !ShellMenu.ShowsFile("Untitled - Notepad", new[] { "note.txt" }), "a window showing the file");
 
             // a silent permanent delete (Shift+Delete with the sound off): read-only files go too, and a
             // junction inside is removed without emptying the folder it points at
