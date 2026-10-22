@@ -199,7 +199,7 @@
             <CheckBox x:Name="TrayBox" Content="Close to the notification area" Click="Tray_Click"/>
             <TextBlock Style="{StaticResource Hint}" Text="Closing the window hides File Labs next to the clock instead of quitting, so it opens again at once. Click its icon to bring it back; right-click the icon → Quit to really close."/>
             <CheckBox x:Name="StartupBox" Content="Start with Windows, hidden next to the clock" Click="Startup_Click" Margin="22,0,0,0"/>
-            <TextBlock Style="{StaticResource Hint}" Margin="22,2,0,10" Text="File Labs starts when you sign in and waits by the clock, so even the first window of the day opens at once. It uses some memory while it waits."/>
+            <TextBlock Style="{StaticResource Hint}" Margin="22,2,0,10" Text="Off unless you turn it on. File Labs starts when you sign in and waits by the clock, so even the first window of the day opens at once; this also turns on Close to the notification area. It uses some memory while it waits."/>
           </StackPanel>
         </Border>
 

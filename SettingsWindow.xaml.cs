@@ -22,8 +22,7 @@ public partial class SettingsWindow : Window
         DefaultBox.IsChecked = Settings.IsDefaultFileManager;
         WinEBox.IsChecked = Settings.TakeWinE;
         TrayBox.IsChecked = Settings.CloseToTray;
-        StartupBox.IsChecked = Settings.StartWithWindows;
-        StartupBox.IsEnabled = Settings.CloseToTray;
+        StartupBox.IsChecked = Settings.StartWithWindows; // off unless the user turns it on: nothing else writes it
         StartupText.Text = StartupClock.Last;
         AnimationsBox.IsChecked = Settings.Animations;
         SinglePaneBox.IsChecked = Settings.SinglePane;
@@ -412,12 +411,13 @@ public partial class SettingsWindow : Window
         Settings.Save();
         main.ApplyTray();
         // starting hidden makes no sense without the icon that brings the window back
-        StartupBox.IsEnabled = Settings.CloseToTray;
         if (!Settings.CloseToTray && StartupBox.IsChecked == true) { StartupBox.IsChecked = false; Startup_Click(s, e); }
     }
 
     void Startup_Click(object s, RoutedEventArgs e)
     {
+        // starting hidden needs the icon by the clock to bring the window back, so it turns that on too
+        if (StartupBox.IsChecked == true && !Settings.CloseToTray) { TrayBox.IsChecked = true; Settings.CloseToTray = true; Settings.Save(); main.ApplyTray(); }
         try { Settings.StartWithWindows = StartupBox.IsChecked == true; }
         catch (Exception ex) when (ex is UnauthorizedAccessException or System.Security.SecurityException or System.IO.IOException) { StartupBox.IsChecked = Settings.StartWithWindows; }
     }
