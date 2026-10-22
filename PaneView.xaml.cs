@@ -103,7 +103,7 @@ public class Entry : INotifyPropertyChanged
             return Stops[^1].c;
         }
     }
-    public Brush AgeBrush => NoDate ? Brushes.Transparent : new SolidColorBrush(AgeColor);
+    public Brush AgeBrush { get { if (NoDate) return Brushes.Transparent; var b = new SolidColorBrush(AgeColor); b.Freeze(); return b; } }
     public Brush AgeTextBrush
     {
         get { var c = AgeColor; return 0.299 * c.R + 0.587 * c.G + 0.114 * c.B > 140 ? MainWindow.Hex("#E6111111") : MainWindow.Hex("#E6FFFFFF"); }
@@ -369,6 +369,10 @@ public partial class PaneView : UserControl
         else { brush.BeginAnimation(SolidColorBrush.ColorProperty, null); brush.Color = to; }
     }
 
+    // Set at the main window's first frame. Before it, a finished listing waits at Background priority, so the window
+    // appears first and the rows after: first frame 5.2 → 3.3 s on a throttled CPU (1.0.44).
+    public static bool WindowShown;
+    public bool Listed; // its first folder is on screen (the startup clock waits for it)
     int navVersion; // a newer Navigate wins; a slow share must not overwrite the folder you moved on to
 
     public void Navigate(string dir, string select = null, bool record = true)
@@ -444,10 +448,12 @@ public partial class PaneView : UserControl
                     UsedBar.SetBinding(WidthProperty, new Binding("ActualWidth") { Source = UsedBar.Parent, Converter = new Scale(used) });
                     DriveInfoText.Text = driveText;
                 }
+                Listed = true;
                 UpdateFooter();
                 StatsChanged?.Invoke();
                 StartPrefetch();
-            });
+                // at startup: after the window's first frame
+            }, WindowShown ? DispatcherPriority.Normal : DispatcherPriority.Background);
         });
     }
 
@@ -520,7 +526,7 @@ public partial class PaneView : UserControl
                 if (!hidden && fsi.Attributes.HasFlag(FileAttributes.Hidden)) continue;
                 bool isDir = fsi is DirectoryInfo;
                 var e = new Entry { Name = fsi.Name, Path = fsi.FullName, IsDir = isDir, Modified = fsi.LastWriteTime, IsCut = CutPaths.Contains(fsi.FullName) };
-                e.Size = isDir ? SizeCache.Get(fsi.FullName, fsi.LastWriteTimeUtc) : ((FileInfo)fsi).Length;
+                e.Size = isDir ? SizeCache.Peek(fsi.FullName, fsi.LastWriteTimeUtc) : ((FileInfo)fsi).Length; // never waits for the cache
                 list.Add(e);
             }
         }

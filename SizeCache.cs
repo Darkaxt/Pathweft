@@ -18,11 +18,17 @@ public static class SizeCache
     static readonly string FilePath = Path.Combine(Settings.Dir, "folder-sizes.txt");
     const int MaxEntries = 1_000_000; // ~100 MB on disk at most; the least recently used go first
 
-    // Loaded in the background at startup (a big cache is a second of parsing); callers are all off the
-    // UI thread and wait for it, so nothing is measured twice for having asked too early.
-    static Task loading = Task.CompletedTask;
-    public static void StartLoading() => loading = Task.Run(Load);
-    static void Ready() { if (!loading.IsCompleted) loading.Wait(); }
+    // Read in the background after the window's first frame (MainWindow), or as soon as something needs a size.
+    // Read at startup, a big cache delayed the first frame: its parse and garbage collections took 0.8 s of the
+    // UI thread here and 2.2 s on a throttled CPU (1.0.44). Callers of Get are all off the UI thread and wait for it,
+    // so nothing is measured twice for having asked too early; a listing Peeks instead and never waits.
+    static Task loading; // null until something asks
+    static readonly object gate = new();
+    public static void StartLoading() { lock (gate) loading ??= Task.Run(Load); }
+    static void Ready() { StartLoading(); loading.Wait(); }
+
+    /// For a listing: the remembered size if the cache is already read, else -1 (the sizing pass fills it in). Never waits.
+    public static long Peek(string path, DateTime lastWriteUtc) => loading is { IsCompleted: true } ? Get(path, lastWriteUtc) : -1;
 
     /// The remembered size, or -1 when unknown or the folder has changed since. Call off the UI thread.
     public static long Get(string path, DateTime lastWriteUtc)
@@ -68,15 +74,32 @@ public static class SizeCache
             foreach (var line in File.ReadLines(FilePath))
             {
                 var p = line.Split('|', 4);
-                if (p.Length == 4 && long.TryParse(p[0], out var size) && long.TryParse(p[1], out var stamp) && long.TryParse(p[2], out var used))
+                if (p.Length == 4 && long.TryParse(p[0], out var size) && long.TryParse(p[1], out var stamp) && long.TryParse(p[2], out var used)
+                    && !Loops(p[3]))
                     map[p[3]] = new Entry(size, stamp, used);
             }
         }
         catch (IOException) { } // unreadable cache is not worth a message; it just rebuilds
     }
 
+    /// A path that goes round a loop: the same three folders twice in a row of its parts. A junction pointing back up
+    /// its own tree, copied once as real folders (moving a pnpm workspace to another drive did it), left 563,000 such
+    /// entries and a 277 MB cache that was parsed at every start. Real paths that long almost never repeat like that;
+    /// one that does is only measured again. Checked only past 200 characters, where loops end up.
+    internal static bool Loops(string path)
+    {
+        if (path.Length <= 200) return false;
+        var parts = path.Split('\\');
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        for (int i = 0; i + 3 <= parts.Length; i++)
+            if (!seen.Add(string.Join('\\', parts, i, 3))) return true;
+        return false;
+    }
+
     public static void Save()
     {
+        if (loading == null) return; // never read: saving would replace the file with nothing
+        Ready();                     // still reading: saving now would write half of it
         try
         {
             Directory.CreateDirectory(Settings.Dir);

@@ -110,7 +110,7 @@ public static class Agent
         ThreadPool.QueueUserWorkItem(_ =>
         {
             // Already open: tell it directly. Starting a process only to pass that on cost ~175 ms a press.
-            if (App.Running && App.HandOff("")) return;
+            if (Program.Running && Program.HandOff("")) return;
             try { Process.Start(new ProcessStartInfo(Environment.ProcessPath, "--front") { UseShellExecute = false }); }
             catch (System.ComponentModel.Win32Exception) { } // exe gone (e.g. mid-uninstall): nothing to open
         });
@@ -234,7 +234,7 @@ public static class Agent
 
     static void OpenInFileLabs(string path) => ThreadPool.QueueUserWorkItem(_ =>
     {
-        if (App.Running && App.HandOff(path)) return;
+        if (Program.Running && Program.HandOff(path)) return;
         try { Process.Start(new ProcessStartInfo(Environment.ProcessPath) { ArgumentList = { "--front", path }, UseShellExecute = false }); }
         catch (System.ComponentModel.Win32Exception) { } // exe gone (e.g. mid-uninstall)
     });

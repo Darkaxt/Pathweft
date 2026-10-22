@@ -22,6 +22,9 @@ public partial class SettingsWindow : Window
         DefaultBox.IsChecked = Settings.IsDefaultFileManager;
         WinEBox.IsChecked = Settings.TakeWinE;
         TrayBox.IsChecked = Settings.CloseToTray;
+        StartupBox.IsChecked = Settings.StartWithWindows;
+        StartupBox.IsEnabled = Settings.CloseToTray;
+        StartupText.Text = StartupClock.Last;
         AnimationsBox.IsChecked = Settings.Animations;
         SinglePaneBox.IsChecked = Settings.SinglePane;
         StatsBox.IsChecked = Settings.Stats > 0;
@@ -403,7 +406,21 @@ public partial class SettingsWindow : Window
     }
     void DeleteSound_Click(object s, RoutedEventArgs e) { Settings.DeleteSound = DeleteSoundBox.IsChecked == true; Settings.Save(); }
     void Verify_Click(object s, RoutedEventArgs e) { Settings.Verify = VerifyBox.IsChecked == true; Settings.Save(); }
-    void Tray_Click(object s, RoutedEventArgs e) { Settings.CloseToTray = TrayBox.IsChecked == true; Settings.Save(); main.ApplyTray(); }
+    void Tray_Click(object s, RoutedEventArgs e)
+    {
+        Settings.CloseToTray = TrayBox.IsChecked == true;
+        Settings.Save();
+        main.ApplyTray();
+        // starting hidden makes no sense without the icon that brings the window back
+        StartupBox.IsEnabled = Settings.CloseToTray;
+        if (!Settings.CloseToTray && StartupBox.IsChecked == true) { StartupBox.IsChecked = false; Startup_Click(s, e); }
+    }
+
+    void Startup_Click(object s, RoutedEventArgs e)
+    {
+        try { Settings.StartWithWindows = StartupBox.IsChecked == true; }
+        catch (Exception ex) when (ex is UnauthorizedAccessException or System.Security.SecurityException or System.IO.IOException) { StartupBox.IsChecked = Settings.StartWithWindows; }
+    }
     void WhatsNew_Click(object s, RoutedEventArgs e) => main.OpenWhatsNew();
 
     void Default_Click(object s, RoutedEventArgs e)

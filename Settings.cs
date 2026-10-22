@@ -41,6 +41,21 @@ public static class Settings
     public static bool NativeMenu;          // right-click shows the Windows menu instead of ours
     public static bool TakeWinE = true;         // with Windows integration on, Win+E opens File Labs; off = File Explorer
     public static bool CloseToTray;             // closing hides the window to the notification area; the next open is instant
+
+    // Started at sign-in, hidden in the notification area (needs CloseToTray). The Run value is the truth; a test
+    // copy (FILELABS_PROFILE) never writes it.
+    const string RunKey = @"Software\Microsoft\Windows\CurrentVersion\Run", RunValue = "File Labs";
+    public static bool StartWithWindows
+    {
+        get { using var k = Registry.CurrentUser.OpenSubKey(RunKey); return k?.GetValue(RunValue) is string; }
+        set
+        {
+            if (Profile != null) return;
+            using var k = Registry.CurrentUser.CreateSubKey(RunKey);
+            if (value) k.SetValue(RunValue, $"\"{Environment.ProcessPath}\" --tray");
+            else k.DeleteValue(RunValue, throwOnMissingValue: false);
+        }
+    }
     public static List<string> RecentFolders = new();      // newest first, for the history menu
     public static List<string> RecentDestinations = new(); // where copies and moves went, newest first, for Copy to / Move to
     public static double SidebarWidth = 270;

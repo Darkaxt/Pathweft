@@ -198,6 +198,8 @@
             <TextBlock Style="{StaticResource Hint}" Margin="22,2,0,10" Text="Off: Win+E keeps opening File Explorer while folders still open in File Labs."/>
             <CheckBox x:Name="TrayBox" Content="Close to the notification area" Click="Tray_Click"/>
             <TextBlock Style="{StaticResource Hint}" Text="Closing the window hides File Labs next to the clock instead of quitting, so it opens again at once. Click its icon to bring it back; right-click the icon → Quit to really close."/>
+            <CheckBox x:Name="StartupBox" Content="Start with Windows, hidden next to the clock" Click="Startup_Click" Margin="22,0,0,0"/>
+            <TextBlock Style="{StaticResource Hint}" Margin="22,2,0,10" Text="File Labs starts when you sign in and waits by the clock, so even the first window of the day opens at once. It uses some memory while it waits."/>
           </StackPanel>
         </Border>
 
@@ -205,6 +207,8 @@
           <StackPanel>
             <TextBlock Text="About" Style="{StaticResource H}"/>
             <TextBlock x:Name="AboutText" Foreground="#8A97AA" TextWrapping="Wrap"/>
+            <TextBlock x:Name="StartupText" Foreground="#8A97AA" TextWrapping="Wrap" Margin="0,6,0,0"
+                       ToolTip="From launching File Labs to its window, and to the files in its panes. The last starts are in startup.log in the settings folder."/>
             <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
               <Button x:Name="UpdateCheck" Content="Check for updates" Style="{StaticResource Tab}" Padding="12,6" Click="Update_Click"/>
               <Button Content="What&#x2019;s new" Style="{StaticResource Tab}" Padding="12,6" Margin="6,0,0,0" Click="WhatsNew_Click"/>

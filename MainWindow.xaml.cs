@@ -57,7 +57,7 @@ public partial class MainWindow : Window
         foreach (var p in new[] { Left, Right })
         {
             p.Activated += () => SetActive(p);
-            p.StatsChanged += () => { if (p == active) { UpdateStats(); PreviewFollow(); } QuickLookFollow(p); };
+            p.StatsChanged += () => { if (p == active) { UpdateStats(); PreviewFollow(); } QuickLookFollow(p); FilesShown(); };
             p.Error += msg => Status.Text = msg;
             p.FilesDropped += (files, dest, move) => Submit(files, dest, move);
             p.RenameCommitted += (entry, name) => RenameCommitted(p, entry, name);
@@ -86,9 +86,9 @@ public partial class MainWindow : Window
             HookContextMenu(p);
         }
 
-        RefreshDrives();
+        // the drive rows and the folder tree's drives come after the first frame (RefreshDrives in ContentRendered):
+        // building them took 200-270 ms of a throttled start
         driveTimer.Tick += (_, _) => { RefreshDrives(); UpdateStats(); }; // free space changes without us doing anything
-        driveTimer.Start();
         // The sidebar's folders are one click away, so read them into the panes' caches while the user
         // is still looking at the first folder.
         var warmUp = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(2) };
@@ -120,6 +120,12 @@ public partial class MainWindow : Window
         // After the first paint — on Loaded the window isn't on screen yet and the flip does nothing.
         ContentRendered += (_, _) =>
         {
+            PaneView.WindowShown = true;
+            StartupClock.WindowShown();
+            RefreshDrives();
+            driveTimer.Start();
+            Dispatcher.BeginInvoke(SizeCache.StartLoading, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+            if (startHidden) { FinishHiddenStart(); return; } // started at sign-in: shown by the notification-area icon later
             // Started by the Win+E agent (--front): Windows' foreground lock keeps a freshly started
             // background-launched window behind the current one.
             if (Environment.GetCommandLineArgs().Contains("--front")) TakeForeground();
@@ -326,12 +332,23 @@ public partial class MainWindow : Window
         first.Tick += async (_, _) =>
         {
             first.Stop();
+            // started hidden at sign-in: What's new and an update offer wait for the window to be opened
+            if (!IsVisible || startHidden) { await WhenVisible(); await Task.Delay(1500); }
             ShowWhatsNew();
             await CheckForUpdate(manual: false);
         };
         first.Start();
         updateTimer.Tick += async (_, _) => await CheckForUpdate(manual: false);
         updateTimer.Start();
+    }
+
+    Task WhenVisible()
+    {
+        var shown = new TaskCompletionSource();
+        DependencyPropertyChangedEventHandler h = null;
+        h = (_, _) => { if (IsVisible) { IsVisibleChanged -= h; shown.TrySetResult(); } };
+        IsVisibleChanged += h;
+        return shown.Task;
     }
 
     /// Returns what to tell the user (only used by the manual check in Settings).
@@ -413,6 +430,7 @@ public partial class MainWindow : Window
     // taskbar) → just bring the existing window to the front, like switching to it.
     public void OpenFromOutside(string path)
     {
+        if (startHidden) FinishHiddenStart(); // opened before the sign-in start finished drawing
         if (!IsVisible) Show(); // hidden to the notification area
         if (!string.IsNullOrEmpty(path)) OpenPath(active, path);
         if (WindowState == WindowState.Minimized) WindowState = WindowState.Normal;
@@ -700,17 +718,31 @@ public partial class MainWindow : Window
         // Asking the shell blocks — on a network path for the best part of a second — so it happens
         // off the UI thread and the glyph stands in until the icon arrives.
         var dispatcher = box.Dispatcher;
-        var thread = new Thread(() =>
+        IconQueue.Add(() =>
         {
             var img = Thumbnails.Get(path, 32, iconOnly: true);
             dispatcher.BeginInvoke(() => { shellIcons[path] = img; Show(img); });
-        }) { IsBackground = true };
-        thread.SetApartmentState(ApartmentState.STA);
-        thread.Start();
+        });
         return box;
     }
 
-    public static Brush Hex(string c) => (Brush)new BrushConverter().ConvertFrom(c);
+    // One STA thread for every sidebar and tab icon. A thread each cost the UI thread 259 ms of Thread.Start across
+    // ~13 icons at startup on a throttled CPU (1.0.44).
+    // ponytail: one thread, so a slow network drive's icon holds up the icons queued after it; a small pool if that shows
+    static readonly System.Collections.Concurrent.BlockingCollection<Action> IconQueue = StartIconThread();
+    static System.Collections.Concurrent.BlockingCollection<Action> StartIconThread()
+    {
+        var queue = new System.Collections.Concurrent.BlockingCollection<Action>();
+        var thread = new Thread(() => { foreach (var work in queue.GetConsumingEnumerable()) work(); }) { IsBackground = true, Name = "Shell icons" };
+        thread.SetApartmentState(ApartmentState.STA);
+        thread.Start();
+        return queue;
+    }
+
+    // Parsed once per colour and frozen: rows ask for their icon and age colours as they are built, and a fresh
+    // parse per row was part of drawing the first lists (1.0.44). Frozen brushes are also cheaper to draw.
+    static readonly System.Collections.Concurrent.ConcurrentDictionary<string, Brush> hexBrushes = new();
+    public static Brush Hex(string c) => hexBrushes.GetOrAdd(c, k => { var b = (Brush)new BrushConverter().ConvertFrom(k); b.Freeze(); return b; });
 
     public static string Fmt(long b)
     {

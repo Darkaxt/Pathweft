@@ -4,6 +4,57 @@ using System.Windows;
 
 namespace FileExplorer;
 
+// A second launch (a folder double-click, the Start menu, Win+E without the agent) only hands its folder to the running
+// window. Done here, before WPF and App.xaml are loaded, that costs 86 ms instead of 185 (190 instead of 381 on a
+// throttled laptop-like CPU). Switches (--agent, --selftest, …) always take the full start.
+static class Program
+{
+    // a test copy (FILELABS_PROFILE) gets a single instance per profile folder, so two test copies don't hand off to each
+    // other. Read from the environment here, not from Settings, whose types would load WPF.
+    internal static readonly string PipeName = "FileLabs-" + Environment.UserName
+        + (Environment.GetEnvironmentVariable("FILELABS_PROFILE") is { Length: > 0 } profile
+            ? "-profile-" + System.IO.Hashing.XxHash32.HashToUInt32(System.Text.Encoding.UTF8.GetBytes(profile.ToLowerInvariant())).ToString("x8") : "");
+
+    [STAThread]
+    static void Main(string[] args)
+    {
+        if (!args.Any(a => a.StartsWith("--")) && Running)
+        {
+            AllowSetForegroundWindow(-1); // we were just launched by the user, so we may pass focus on
+            if (HandOff(args.FirstOrDefault() ?? "")) return;
+            // the running window didn't answer (hung or closing): start normally
+        }
+        App.Main();
+    }
+
+    /// True while a File Labs window is open for this user (it holds the single-instance mutex).
+    internal static bool Running
+    {
+        get
+        {
+            if (!Mutex.TryOpenExisting(PipeName, out var m)) return false;
+            m.Dispose();
+            return true;
+        }
+    }
+
+    /// Passes a folder to the running window ("" = just come to the front). False if it didn't answer.
+    internal static bool HandOff(string path)
+    {
+        try
+        {
+            using var pipe = new NamedPipeClientStream(".", PipeName, PipeDirection.Out);
+            pipe.Connect(3000);
+            using var w = new StreamWriter(pipe);
+            w.WriteLine(path);
+            return true;
+        }
+        catch (Exception ex) when (ex is TimeoutException or IOException) { return false; }
+    }
+
+    [System.Runtime.InteropServices.DllImport("user32.dll")] internal static extern bool AllowSetForegroundWindow(int pid);
+}
+
 public partial class App : Application
 {
     // `FileLabs.exe --selftest`: runs the Ferry engine on real files in a temp dir, exit code 0 = pass.
@@ -30,62 +81,37 @@ public partial class App : Application
 
         // Single instance: a second launch (folder double-click, Win+E) hands its path to the
         // running window, which opens it as a new tab, then exits.
-        instance = new Mutex(true, PipeName, out bool first);
+        instance = new Mutex(true, Program.PipeName, out bool first);
+        bool hidden = e.Args.Contains("--tray"); // started at sign-in (Settings → Windows integration)
+        if (!first && hidden) { Shutdown(); return; } // already running: nothing to start
         if (!first)
         {
-            AllowSetForegroundWindow(-1); // we were just launched by the user, so we may pass focus on
-            if (HandOff(e.Args.FirstOrDefault(a => !a.StartsWith("--")) ?? "")) { Shutdown(); return; }
+            Program.AllowSetForegroundWindow(-1); // we were just launched by the user, so we may pass focus on
+            if (Program.HandOff(e.Args.FirstOrDefault(a => !a.StartsWith("--")) ?? "")) { Shutdown(); return; }
             // first instance hung or closing: just start normally
         }
         else _ = Listen();
         Settings.Load(); // before any window: the panes read column widths while being built
         ShellMenu.FollowSystemTheme(); // the Windows right-click menu dark in dark mode
         Task.Run(Sisters.WriteCard); // the ecosystem card, so sister apps find this copy (Sisters.cs)
-        SizeCache.StartLoading(); // folder sizes from previous sessions: a full 12 TB drive is minutes of walking
+        // folder sizes from previous sessions are read after the first frame, or on first need (SizeCache.StartLoading)
         Exit += (_, _) => SizeCache.Save();
         var sizeSaver = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMinutes(2) };
         sizeSaver.Tick += (_, _) => Task.Run(SizeCache.SaveIfChanged); // off the UI thread: up to 50 000 lines
         sizeSaver.Start();
         base.OnStartup(e);
-        new MainWindow().Show(); // opened here, not via StartupUri, so --agent etc. never build it
+        var window = new MainWindow(); // opened here, not via StartupUri, so --agent etc. never build it
+        if (hidden) window.PrepareHiddenStart();
+        window.Show();
     }
 
-    // a test copy (FILELABS_PROFILE) gets a single instance per profile folder, so two test copies don't hand off to each other
-    static readonly string PipeName = "FileLabs-" + Environment.UserName + (Settings.Profile != null
-        ? "-profile-" + System.IO.Hashing.XxHash32.HashToUInt32(System.Text.Encoding.UTF8.GetBytes(Settings.Profile.ToLowerInvariant())).ToString("x8") : "");
-
-    /// True while a File Labs window is open for this user (it holds the single-instance mutex).
-    internal static bool Running
-    {
-        get
-        {
-            if (!Mutex.TryOpenExisting(PipeName, out var m)) return false;
-            m.Dispose();
-            return true;
-        }
-    }
-
-    /// Passes a folder to the running window ("" = just come to the front). False if it didn't answer.
-    internal static bool HandOff(string path)
-    {
-        try
-        {
-            using var pipe = new NamedPipeClientStream(".", PipeName, PipeDirection.Out);
-            pipe.Connect(3000);
-            using var w = new StreamWriter(pipe);
-            w.WriteLine(path);
-            return true;
-        }
-        catch (Exception ex) when (ex is TimeoutException or IOException) { return false; }
-    }
     Mutex instance;
-    [System.Runtime.InteropServices.DllImport("user32.dll")] static extern bool AllowSetForegroundWindow(int pid);
 
     async Task Listen()
     {
         while (true)
         {
-            using var server = new NamedPipeServerStream(PipeName, PipeDirection.In, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
+            using var server = new NamedPipeServerStream(Program.PipeName, PipeDirection.In, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
             await server.WaitForConnectionAsync();
             string path;
             try { path = await new StreamReader(server).ReadLineAsync(); }
@@ -417,6 +443,11 @@ public partial class App : Application
             Check(recent.SequenceEqual(new[] { @"C:\C", @"c:\b" }), "recent folders: newest first, once, capped");
             Check(FileExplorer.MainWindow.ParentForMenu(@"C:\Users\x\file") == @"C:\Users\x"
                   && FileExplorer.MainWindow.ParentForMenu(@"C:\Users\someone\AppData\Local\Temp\claude\deep\folder\x") == @"C:\…\deep\folder", "menu paths shortened past 40 characters");
+
+            // the size cache drops paths that go round a junction loop (563,000 of them made a 277 MB cache), not long real ones
+            Check(SizeCache.Loops(@"G:\Claude Projects\automaton\repo\packages\cli\node_modules\@conway\automaton\packages\cli\node_modules\@conway\automaton\packages\cli\node_modules\@conway\automaton\packages\cli\node_modules\viem\_types")
+                  && !SizeCache.Loops(@"G:\Claude Projects\automaton\repo\packages\cli\node_modules\.pnpm\@typescript-eslint+typescript-estree@8.8.0_typescript@5.6.2\node_modules\@typescript-eslint\typescript-estree\dist\create-program\shared\x")
+                  && !SizeCache.Loops(@"C:\short\a\b\c\a\b\c"), "size cache: loop paths dropped, long real ones and short ones kept");
 
             Console.WriteLine("selftest: all passed");
             return 0;

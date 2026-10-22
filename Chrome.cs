@@ -215,6 +215,40 @@ public partial class MainWindow
         return null;
     }
 
+    // ---- the startup clock ----
+    bool filesTimed;
+    void FilesShown()
+    {
+        if (filesTimed || startHidden || !Left.Listed || !(Settings.SinglePane || Right.Listed)) return;
+        filesTimed = true;
+        StartupClock.FilesShown();
+    }
+
+    // ---- started at sign-in (--tray): drawn once off screen, then hidden, so the first open is as fast as the next ----
+    bool startHidden;
+    (double Left, double Top, WindowState State) shownAt;
+
+    /// Called before Show(): the window is built and drawn where nobody sees it, without taking focus.
+    internal void PrepareHiddenStart()
+    {
+        startHidden = true;
+        shownAt = (((Window)this).Left, Top, WindowState);
+        WindowStartupLocation = WindowStartupLocation.Manual;
+        WindowState = WindowState.Normal;
+        ((Window)this).Left = -32000; Top = -32000;
+        ShowActivated = false;
+        ShowInTaskbar = false;
+    }
+
+    void FinishHiddenStart()
+    {
+        Hide();
+        ((Window)this).Left = shownAt.Left; Top = shownAt.Top;
+        ShowInTaskbar = true;
+        WindowState = shownAt.State;
+        startHidden = false;
+    }
+
     // ---- the notification area: closing hides the window, the next open shows it at once ----
     System.Windows.Forms.NotifyIcon tray;
     bool quitting; // a real exit (Quit, updating, signing out) closes even with "close to the notification area" on
@@ -245,6 +279,7 @@ public partial class MainWindow
 
     void ShowFromTray()
     {
+        if (startHidden) return; // still drawing itself off screen, a moment after sign-in
         Show();
         if (WindowState == WindowState.Minimized) WindowState = WindowState.Normal;
         Activate();
@@ -255,5 +290,45 @@ public partial class MainWindow
     {
         quitting = true;
         Close();
+    }
+}
+
+/// How long the last starts took, from launching the process to the window's first frame and to the files in its
+/// panes, with whether the PC was on battery. Shown in Settings → About and kept in startup.log (the last 30), so a
+/// slow start on another PC can be read there instead of guessed.
+static class StartupClock
+{
+    static readonly string Log = System.IO.Path.Combine(Settings.Dir, "startup.log");
+    static double windowMs;
+
+    public static void WindowShown() => windowMs = Since();
+
+    static double Since() => (DateTime.Now - System.Diagnostics.Process.GetCurrentProcess().StartTime).TotalMilliseconds;
+
+    public static void FilesShown()
+    {
+        var line = string.Create(System.Globalization.CultureInfo.InvariantCulture,
+            $"{DateTime.Now:yyyy-MM-dd HH:mm}  window {windowMs:0} ms  files {Since():0} ms  {(SystemParameters.PowerLineStatus == PowerLineStatus.Offline ? "on battery" : "plugged in")}  {Updater.Current}");
+        Task.Run(() =>
+        {
+            try
+            {
+                var lines = File.Exists(Log) ? File.ReadAllLines(Log).TakeLast(29).ToList() : new List<string>();
+                lines.Add(line);
+                Directory.CreateDirectory(Settings.Dir);
+                Settings.WriteAllLines(Log, lines);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { } // only a record
+        });
+    }
+
+    /// The last start, for About: from the log, so a start hidden at sign-in (not timed) shows the one before.
+    public static string Last
+    {
+        get
+        {
+            try { return File.Exists(Log) && File.ReadLines(Log).LastOrDefault() is { Length: > 0 } l ? "Last start: " + l : ""; }
+            catch (IOException) { return ""; }
+        }
     }
 }

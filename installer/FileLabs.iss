@@ -1,4 +1,4 @@
-; Inno Setup script for File Labs. Build it through build.ps1, which publishes the app first and
+﻿; Inno Setup script for File Labs. Build it through build.ps1, which publishes the app first and
 ; passes the version in.
 
 #define AppName "File Labs"
@@ -61,6 +61,10 @@ Filename: "{app}\{#AppExe}"; Parameters: "--set-default"; StatusMsg: "Setting Fi
 ; An update closes every File Labs process, the Win+E agent included: bring it back if it was on.
 Filename: "{app}\{#AppExe}"; Parameters: "--agent"; Flags: nowait runhidden; Check: AgentWanted
 Filename: "{app}\{#AppExe}"; Description: "Launch {#AppName}"; Flags: nowait postinstall skipifsilent
+
+[Registry]
+; Settings → "Start with Windows, hidden next to the clock" writes this value; nothing is written here, it only goes on uninstall
+Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: none; ValueName: "File Labs"; Flags: uninsdeletevalue dontcreatekey
 
 [UninstallRun]
 ; Hand folders back to File Explorer before the exe the keys point at disappears.
