@@ -111,11 +111,11 @@ public partial class MainWindow : Window
         foreach (var (p, fallback) in new[] { (Left, user), (Right, Path.GetPathRoot(Environment.SystemDirectory)) })
             if (!Settings.Tabs.TryGetValue(p.Name, out var paths) || !p.Restore(paths, Settings.ActiveTab.TryGetValue(p.Name, out var a) ? a : 0, Settings.Pins.GetValueOrDefault(p.Name)))
                 p.Navigate(fallback);
-        var arg = Environment.GetCommandLineArgs().Skip(1).FirstOrDefault(a => !a.StartsWith("--"));
-        if (arg != null) OpenPath(Left, arg);
-        SetActive(Left);
+        SetActive(Left); // first: a folder already open in the right pane makes that one active
+        var arg = Program.PathArg(Environment.GetCommandLineArgs().Skip(1));
+        if (arg != "") OpenPath(Left, arg);
         ApplyPreview();
-        Loaded += (_, _) => Left.FocusList();
+        Loaded += (_, _) => active.FocusList();
         // started from the Win+E agent or a folder double-click: make sure we open in front.
         // After the first paint — on Loaded the window isn't on screen yet and the flip does nothing.
         ContentRendered += (_, _) =>
@@ -129,7 +129,7 @@ public partial class MainWindow : Window
             // Started by the Win+E agent (--front): Windows' foreground lock keeps a freshly started
             // background-launched window behind the current one.
             if (Environment.GetCommandLineArgs().Contains("--front")) TakeForeground();
-            Topmost = true; Topmost = false; Activate(); Left.FocusList();
+            Topmost = true; Topmost = false; Activate(); active.FocusList();
         };
     }
 
@@ -426,7 +426,8 @@ public partial class MainWindow : Window
         UpdateButton.ToolTip = answer == null ? "Check for updates (it also checks by itself every hour)" : text;
     }
 
-    // A second launch sent us a folder → new tab in the active pane. Sent nothing (Win+E, Start menu,
+    // A second launch sent us a folder → new tab in the active pane; a file → its folder, with the file selected
+    // and the keyboard on it (PaneView.Navigate selects once the folder is read). Sent nothing (Win+E, Start menu,
     // taskbar) → just bring the existing window to the front, like switching to it.
     public void OpenFromOutside(string path)
     {

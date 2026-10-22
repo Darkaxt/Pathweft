@@ -25,6 +25,7 @@ public partial class SettingsWindow : Window
         StartupBox.IsChecked = Settings.StartWithWindows; // off unless the user turns it on: nothing else writes it
         StartupText.Text = StartupClock.Last;
         AnimationsBox.IsChecked = Settings.Animations;
+        SmoothScrollBox.IsChecked = Settings.SmoothScroll;
         SinglePaneBox.IsChecked = Settings.SinglePane;
         StatsBox.IsChecked = Settings.Stats > 0;
         StatsCompactBox.IsChecked = Settings.Stats == 1;
@@ -288,6 +289,7 @@ public partial class SettingsWindow : Window
     }
 
     void Animations_Click(object s, RoutedEventArgs e) { Settings.Animations = AnimationsBox.IsChecked == true; Settings.Save(); }
+    void SmoothScroll_Click(object s, RoutedEventArgs e) { Settings.SmoothScroll = SmoothScrollBox.IsChecked == true; Settings.Save(); }
 
     void Refresh()
     {

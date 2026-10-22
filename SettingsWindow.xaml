@@ -150,6 +150,8 @@
 
             <CheckBox x:Name="AnimationsBox" Content="Animations" Click="Animations_Click" Margin="0,4,0,0"/>
             <TextBlock Style="{StaticResource Hint}" Text="Short fades when a folder is read, when panes change and when a transfer appears. Off means everything switches instantly."/>
+            <CheckBox x:Name="SmoothScrollBox" Content="Smooth scrolling" Click="SmoothScroll_Click" Margin="0,4,0,0"/>
+            <TextBlock Style="{StaticResource Hint}" Text="The mouse wheel glides the file list instead of jumping a few rows at a time."/>
           </StackPanel>
         </Border>
 

@@ -254,6 +254,16 @@ public partial class PaneView : UserControl
             e.Handled = true; // otherwise the list scrolls as well
             Zoom(e.Delta > 0 ? 1 : -1);
         };
+        // Settings → Smooth scrolling: the wheel glides as far as it would have jumped. Details and the icon views;
+        // List scrolls sideways and keeps the plain wheel.
+        List.PreviewMouseWheel += (_, e) =>
+        {
+            if (!Settings.SmoothScroll || e.Handled || Keyboard.Modifiers != ModifierKeys.None || FindScroller(List) is not { ScrollableHeight: > 0 } sv) return;
+            e.Handled = true;
+            int lines = SystemParameters.WheelScrollLines; // -1: a screen a notch
+            Glide(sv, -e.Delta / 120.0 * (lines > 0 ? lines * (Mode == ViewMode.Details ? 16 : 32) : sv.ViewportHeight));
+        };
+        edgeTimer.Tick += (_, _) => { if (FindScroller(List) is { } sv) sv.ScrollToVerticalOffset(sv.VerticalOffset + edgeSpeed); };
         // Middle click, as in a browser: a folder (or a shortcut to one) opens in a tab behind this one, a tab closes.
         List.PreviewMouseDown += (_, e) =>
         {
@@ -279,6 +289,7 @@ public partial class PaneView : UserControl
         List.DragLeave += (_, e) =>
         {
             ShowDropRow(null); // the next DragOver lights the row again if still on it
+            ScrollAtEdge(null); // likewise: the next DragOver starts it again if still at the edge
             // DragLeave bubbles up from every row; only leaving the list itself ends the wheel's part
             var at = e.GetPosition(List);
             if (at.X < 0 || at.Y < 0 || at.X >= List.ActualWidth || at.Y >= List.ActualHeight) WheelWhileDragging(null);
@@ -438,6 +449,8 @@ public partial class PaneView : UserControl
                     {
                         List.SelectedItem = row;
                         List.ScrollIntoView(row);
+                        // a file shown from outside, in the folder already on screen: the keyboard goes to it too
+                        if (List.IsKeyboardFocusWithin && renamingEntry == null) Dispatcher.BeginInvoke(FocusSelectedRow, DispatcherPriority.Loaded);
                     }
                 }
                 else
@@ -2065,7 +2078,7 @@ public partial class PaneView : UserControl
         // once in testing. Then there is simply no drag, as if the mouse hadn't moved far enough.
         try { DragDrop.DoDragDrop(List, data, DragDropEffects.Copy | DragDropEffects.Move); }
         catch (System.Runtime.InteropServices.COMException) { }
-        finally { WheelWhileDragging(null); } // however the drag ended
+        finally { WheelWhileDragging(null); ScrollAtEdge(null); } // however the drag ended
     }
 
     // Drop on a folder row, or on a shortcut to a folder → into that folder; anywhere else → the folder this pane shows.
@@ -2073,7 +2086,8 @@ public partial class PaneView : UserControl
 
     void Drop_Over(object s, DragEventArgs e)
     {
-        if (s == List) WheelWhileDragging(this);
+        // DragOver only: Drop_Drop runs this too, after it has ended both
+        if (s == List && e.RoutedEvent == DragOverEvent) { WheelWhileDragging(this); ScrollAtEdge(e); }
         e.Effects = DragDropEffects.None;
         // As in Explorer: Ctrl copies, Shift moves, and without either a drop on the same drive moves and
         // on another drive copies — only as far as the source allows (some offer Copy alone).
@@ -2110,6 +2124,7 @@ public partial class PaneView : UserControl
     void Drop_Drop(object s, DragEventArgs e)
     {
         WheelWhileDragging(null);
+        ScrollAtEdge(null);
         if (e.Data.GetData(DataFormats.FileDrop) is not string[] files || files.Length == 0) return;
         Drop_Over(s, e);
         ShowDropRow(null);
@@ -2149,6 +2164,60 @@ public partial class PaneView : UserControl
             }
         }
         return CallNextHookEx(IntPtr.Zero, code, message, data);
+    }
+
+    // ---- a drag held near the top or bottom of the list scrolls it, faster the closer to the edge, as in Explorer.
+    // Windows' drag loop still runs the dispatcher's timers, so a timer keeps it going while the pointer rests. ----
+    readonly DispatcherTimer edgeTimer = new() { Interval = TimeSpan.FromMilliseconds(16) };
+    double edgeSpeed; // pixels a tick, negative = up
+
+    void ScrollAtEdge(DragEventArgs e) // null: the drag left the list, dropped or ended
+    {
+        edgeSpeed = 0;
+        // measured on the rows' area: the column header above it and the scrollbar below count as the edge too
+        if (e != null && FindScroller(List) is { } sv && sv.Template.FindName("PART_ScrollContentPresenter", sv) is FrameworkElement rows)
+        {
+            double y = e.GetPosition(rows).Y, h = rows.ActualHeight, zone = Math.Min(48, h / 4);
+            if (y < zone) edgeSpeed = -20 * Math.Min(1, (zone - y) / zone);
+            else if (y > h - zone) edgeSpeed = 20 * Math.Min(1, (y - h + zone) / zone);
+        }
+        if (edgeSpeed != 0) edgeTimer.Start(); else edgeTimer.Stop();
+    }
+
+    // ---- smooth wheel (Settings): each notch moves a target, and the list eases toward it frame by frame ----
+    ScrollViewer gliding;
+    double glideTo, glideAt; // where the wheel wants the list; where the last frame put it
+    TimeSpan glideFrame;
+
+    void Glide(ScrollViewer sv, double by)
+    {
+        // notches during a glide add to its target, so a fast spin goes further instead of starting over
+        if (gliding != sv)
+        {
+            if (gliding == null) CompositionTarget.Rendering += GlideStep;
+            gliding = sv; glideTo = glideAt = sv.VerticalOffset; glideFrame = TimeSpan.Zero;
+        }
+        glideTo = Math.Clamp(glideTo + by, 0, sv.ScrollableHeight);
+    }
+
+    void GlideStep(object s, EventArgs e)
+    {
+        var now = ((RenderingEventArgs)e).RenderingTime;
+        double dt = glideFrame == TimeSpan.Zero ? 1 / 60.0 : (now - glideFrame).TotalSeconds;
+        glideFrame = now;
+        var sv = gliding;
+        // anything else that scrolled it meanwhile (scrollbar, keys, a new folder) wins; so does a target reached
+        if (Math.Abs(sv.VerticalOffset - glideAt) > 1 || Math.Abs(glideTo - sv.VerticalOffset) < 0.5)
+        {
+            CompositionTarget.Rendering -= GlideStep;
+            gliding = null;
+            return;
+        }
+        // about 85% of the way in 0.1 s, whatever the screen's refresh rate
+        double left = glideTo - sv.VerticalOffset, next = glideTo - left * Math.Exp(-dt / 0.05);
+        if (Math.Abs(glideTo - next) < 0.5) next = glideTo;
+        sv.ScrollToVerticalOffset(next);
+        glideAt = next;
     }
 
     const int WH_MOUSE_LL = 14;

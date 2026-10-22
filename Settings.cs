@@ -19,6 +19,7 @@ public static class Settings
     public static string Accent = "#4C8DFF"; // Protagonist Labs blue by default
     public static double RowPad = 3;         // row height: 1 compact, 3 normal, 6 roomy
     public static bool Animations = true;
+    public static bool SmoothScroll;         // the wheel glides the file list instead of jumping
     public static double TextScale = 1;      // the whole window, text included: 1, 1.15, 1.3, 1.5
     public static bool SinglePane;           // the right pane is hidden
     public static bool Preview;              // the preview pane right of the panes (Alt+P)
@@ -94,6 +95,7 @@ public static class Settings
                 case "accent" when System.Text.RegularExpressions.Regex.IsMatch(v, "^#[0-9a-fA-F]{6}$"): Accent = v; break;
                 case "rowpad" when double.TryParse(v, CultureInfo.InvariantCulture, out var rp) && double.IsFinite(rp): RowPad = Math.Clamp(rp, 0, 10); break;
                 case "animations": Animations = v == "1"; break;
+                case "smoothscroll": SmoothScroll = v == "1"; break;
                 case "textscale" when double.TryParse(v, CultureInfo.InvariantCulture, out var ts) && double.IsFinite(ts): TextScale = Math.Clamp(ts, 1, 1.6); break;
                 case "singlepane": SinglePane = v == "1"; break;
                 case "preview": Preview = v == "1"; break;
@@ -158,6 +160,7 @@ public static class Settings
             $"accent={Accent}",
             $"rowpad={RowPad.ToString(CultureInfo.InvariantCulture)}",
             $"animations={(Animations ? 1 : 0)}",
+            $"smoothscroll={(SmoothScroll ? 1 : 0)}",
             $"textscale={TextScale.ToString(CultureInfo.InvariantCulture)}",
             $"singlepane={(SinglePane ? 1 : 0)}",
             $"preview={(Preview ? 1 : 0)}",

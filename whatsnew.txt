@@ -1,6 +1,14 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.0.46 | 2026-10-22 | Show in folder lands on the file, and the list scrolls the way you move
+Three requests from a File Labs power user, all about getting to the right file without hunting for it.
+**Show in folder**
+- When another program asks File Labs to show a file, such as **Open path** in Everything, the file's folder opens with that file selected, in view and ready for the keyboard. Programs that send Explorer's own "/select," form work too.
+**Scrolling**
+- Settings → Appearance → **Smooth scrolling** makes the mouse wheel glide through the file list instead of jumping a few rows at a time. It stays off unless you turn it on.
+- Dragging files near the top or bottom edge of the list now scrolls it, faster the closer you get to the edge, whether the files come from File Labs or from another app. Move away from the edge and it stops.
+
 ## 1.0.45 | 2026-10-22 | Easier to see where a selection starts, and readable renames
 Three small things that make everyday use smoother, all from your feedback.
 **Selecting**

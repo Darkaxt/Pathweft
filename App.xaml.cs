@@ -21,7 +21,7 @@ static class Program
         if (!args.Any(a => a.StartsWith("--")) && Running)
         {
             AllowSetForegroundWindow(-1); // we were just launched by the user, so we may pass focus on
-            if (HandOff(args.FirstOrDefault() ?? "")) return;
+            if (HandOff(PathArg(args))) return;
             // the running window didn't answer (hung or closing): start normally
         }
         App.Main();
@@ -36,6 +36,17 @@ static class Program
             m.Dispose();
             return true;
         }
+    }
+
+    /// The path a launch asks for, "" if none. Explorer's own form too, which "Open path" in Everything and other
+    /// programs pass to a file manager: `/select,"C:\x\file.txt"` (also behind `/n,` and the like). Windows keeps
+    /// `/select,"C:\a b\f.txt"` as one argument, but a space after the comma, or a path with spaces and no
+    /// quotes, arrives in pieces: they are put back together.
+    internal static string PathArg(IEnumerable<string> args)
+    {
+        var s = string.Join(" ", args.Where(a => !a.StartsWith("--"))).Trim();
+        while (s.StartsWith('/') && s.IndexOf(',') is > 0 and var comma) s = s[(comma + 1)..].TrimStart();
+        return s.Trim('"').Trim();
     }
 
     /// Passes a folder to the running window ("" = just come to the front). False if it didn't answer.
@@ -87,7 +98,7 @@ public partial class App : Application
         if (!first)
         {
             Program.AllowSetForegroundWindow(-1); // we were just launched by the user, so we may pass focus on
-            if (Program.HandOff(e.Args.FirstOrDefault(a => !a.StartsWith("--")) ?? "")) { Shutdown(); return; }
+            if (Program.HandOff(Program.PathArg(e.Args))) { Shutdown(); return; }
             // first instance hung or closing: just start normally
         }
         else _ = Listen();
@@ -285,6 +296,12 @@ public partial class App : Application
             Check(File.ReadAllText(Path.Combine(dup, "notes - Copy.txt")) == "n" && File.Exists(Path.Combine(dup, "notes - Copy (2).txt"))
                 && File.Exists(Path.Combine(dup, "v1.2 - Copy", "inner", "x.txt")) && File.ReadAllText(Path.Combine(dup, "notes.txt")) == "n"
                 && j.Conflicts.Count == 0 && j.Duplicates[Path.Combine(dup, "notes.txt")] == Path.Combine(dup, "notes - Copy (2).txt"), "duplicate in the same folder");
+
+            // the path a launch asks for (1.0.46): Explorer's /select, as "Open path" programs send it, or a plain path
+            Check(Program.PathArg(new[] { @"/select,C:\a b\f.txt" }) == @"C:\a b\f.txt", "launch: /select,\"path\"");
+            Check(Program.PathArg(new[] { "/select,", @"C:\a", @"b\f.txt" }) == @"C:\a b\f.txt", "launch: /select, then a path in pieces");
+            Check(Program.PathArg(new[] { @"/n,/select,C:\f.txt""" }) == @"C:\f.txt", "launch: two switches, a stray quote");
+            Check(Program.PathArg(new[] { "--front", @"C:\Users" }) == @"C:\Users" && Program.PathArg(new[] { "--front" }) == "", "launch: plain path, none");
 
             // selected text: white on the default accent at 8:1 or better (1.0.38's 6.97:1 still read as grey), and
             // readable on other accents and strengths
