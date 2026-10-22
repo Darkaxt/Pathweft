@@ -21,6 +21,7 @@ public partial class SettingsWindow : Window
         EditorBox.IsChecked = Settings.InternalEditor;
         DefaultBox.IsChecked = Settings.IsDefaultFileManager;
         WinEBox.IsChecked = Settings.TakeWinE;
+        TrayBox.IsChecked = Settings.CloseToTray;
         AnimationsBox.IsChecked = Settings.Animations;
         SinglePaneBox.IsChecked = Settings.SinglePane;
         StatsBox.IsChecked = Settings.Stats > 0;
@@ -402,6 +403,8 @@ public partial class SettingsWindow : Window
     }
     void DeleteSound_Click(object s, RoutedEventArgs e) { Settings.DeleteSound = DeleteSoundBox.IsChecked == true; Settings.Save(); }
     void Verify_Click(object s, RoutedEventArgs e) { Settings.Verify = VerifyBox.IsChecked == true; Settings.Save(); }
+    void Tray_Click(object s, RoutedEventArgs e) { Settings.CloseToTray = TrayBox.IsChecked == true; Settings.Save(); main.ApplyTray(); }
+    void WhatsNew_Click(object s, RoutedEventArgs e) => main.OpenWhatsNew();
 
     void Default_Click(object s, RoutedEventArgs e)
     {

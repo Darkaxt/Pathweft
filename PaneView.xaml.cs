@@ -219,6 +219,8 @@ public partial class PaneView : UserControl
     public event Action<string> Error;
     public event Action<List<string>, string, bool> FilesDropped; // sources, destination, move
     public event Action RightDragSelected; // a right-button rectangle was let go: the menu for what it selected
+    public static event Action<string> Visited;   // every folder a pane shows, for the history menu
+    public static event Action<string> TabClosed; // for Reopen closed tab (Ctrl+Shift+T)
 
     readonly List<string> tabs = new() { "" };
     readonly List<bool> pins = new() { false }; // beside tabs, index for index: a pinned tab cannot be closed
@@ -342,7 +344,7 @@ public partial class PaneView : UserControl
     readonly SolidColorBrush cardFill = new(), cardEdge = new();
     readonly SolidColorBrush glowColor = new();
 
-    [System.Runtime.InteropServices.DllImport("user32.dll")] static extern uint GetDoubleClickTime();
+    [System.Runtime.InteropServices.DllImport("user32.dll")] internal static extern uint GetDoubleClickTime();
 
     public void SetActive(bool on)
     {
@@ -564,6 +566,7 @@ public partial class PaneView : UserControl
     {
         if (record && tabs[tab] != "" && !tabs[tab].Equals(path, StringComparison.OrdinalIgnoreCase)) { back.Push(tabs[tab]); fwd.Clear(); }
         tabs[tab] = path;
+        Visited?.Invoke(path);
         // each folder keeps the order it was last sorted in; the rest are by name. Set before its rows are shown.
         var (key, desc) = Settings.FolderSorts.TryGetValue(path, out var sort) ? sort : ("Name", false);
         if (key != sortKey || desc != sortDesc) ShowSort(key, desc);
@@ -1133,7 +1136,7 @@ public partial class PaneView : UserControl
     const double TabMax = 170, TabMin = 120;
     void FitTabs()
     {
-        double room = TabBand.ActualWidth - 4 /* left edge */ - NewTabBox.ActualWidth - 8 /* keep some strip visible */;
+        double room = TabBand.ActualWidth - 4 /* left edge */ - NewTabBox.ActualWidth - CaptionSpace.Width - 8 /* keep some strip visible */;
         if (room <= 0) return;
         int perRow = Math.Max(1, (int)(room / TabMin));
         if (tabs.Count <= perRow) { TabStrip.Rows = 1; TabStrip.Columns = 0; TabStrip.Width = Math.Min(tabs.Count * TabMax, room); }
@@ -1194,6 +1197,7 @@ public partial class PaneView : UserControl
     {
         int idx = i < 0 ? tab : i;
         if (tabs.Count == 1 || pins[idx]) return;
+        TabClosed?.Invoke(tabs[idx]);
         tabs.RemoveAt(idx); pins.RemoveAt(idx);
         if (idx < tab || tab == tabs.Count) tab--;
         Navigate(Dir, record: false);
@@ -1221,6 +1225,20 @@ public partial class PaneView : UserControl
         var name = System.IO.Path.GetFileName(Dir.TrimEnd('\\'));
         if (Directory.GetParent(Dir) is { } p) Navigate(p.FullName, name);
         else if (Dir.StartsWith(@"\\")) Navigate(ServerOf(Dir), name); // share root → the server's shares
+    }
+
+    /// The tab showing `path`, or -1. Opening a folder from outside switches to it instead of adding a duplicate.
+    public int FindTab(string path) => tabs.FindIndex(t => t.TrimEnd('\\').Equals(path.TrimEnd('\\'), StringComparison.OrdinalIgnoreCase));
+    public void ShowTab(int i, string select = null) { tab = i; back.Clear(); fwd.Clear(); Navigate(Dir, select, record: false); }
+
+    /// Room kept free at the right of the tab row for the window's own buttons, which sit over it.
+    /// Part of the tab row, so it still moves the window like the rest of the row's empty space.
+    public void ReserveCaption(double width) { CaptionSpace.Width = width; FitTabs(); }
+
+    // The empty part of the tab row moves the window, as a title bar would: the window has no other.
+    void TabBand_MouseDown(object s, MouseButtonEventArgs e)
+    {
+        if (e.OriginalSource == TabBand || e.OriginalSource is Border { Child: null }) (Window.GetWindow(this) as MainWindow)?.CaptionDown(e);
     }
 
     public void OpenInBackgroundTab(string path) { tabs.Insert(tab + 1, path); pins.Insert(tab + 1, false); BuildTabs(); }
@@ -1255,7 +1273,7 @@ public partial class PaneView : UserControl
     void CloseOtherTabs(int keep)
     {
         for (int j = tabs.Count - 1; j >= 0; j--)
-            if (j != keep && !pins[j]) { tabs.RemoveAt(j); pins.RemoveAt(j); if (j < keep) keep--; }
+            if (j != keep && !pins[j]) { TabClosed?.Invoke(tabs[j]); tabs.RemoveAt(j); pins.RemoveAt(j); if (j < keep) keep--; }
         tab = keep;
         Navigate(Dir, record: false);
         List.Focus();

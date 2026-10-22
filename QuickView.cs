@@ -59,6 +59,7 @@ public partial class MainWindow
         PreviewColumn.Width = new GridLength(Settings.Preview ? Settings.PreviewWidth : 0);
         PreviewColumn.MinWidth = Settings.Preview ? 200 : 0;
         FitPreview();
+        PlaceCaption();
         previewShown = null;
         if (Settings.Preview) PreviewFollow();
         else if (quick == null) { StopMedia(); quickVersion++; PreviewBody.Content = null; } // a video in it stops with it

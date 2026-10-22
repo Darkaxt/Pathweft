@@ -170,6 +170,10 @@ public partial class MainWindow
                                  : Item("Paste", "", "Ctrl+V", () => ClipboardPaste(), Clipboard.ContainsFileDropList()));
         m.Items.Add(Item("Copy to other pane", "", "Ctrl+F5", () => Transfer(false)));
         m.Items.Add(Item("Move to other pane", "", "F6", () => Transfer(true)));
+        m.Items.Add(SendTo("Copy to", "\uE8C8", p, sel, move: false));
+        m.Items.Add(SendTo("Move to", "\uE8DE", p, sel, move: true));
+        m.Items.Add(Item("Group into new folder…", "\uE8F4", "", () => GroupIntoFolder(p, sel)));
+        m.Items.Add(Item("Add to Drop bin", "\uE7B8", "Ctrl+B", () => AddToBin(sel.Select(x => x.Path))));
         m.Items.Add(new Separator());
         m.Items.Add(Item("Copy path", "", "Ctrl+Shift+C", () => Clipboard.SetText(string.Join(Environment.NewLine, sel.Select(x => x.Path)))));
         m.Items.Add(Item("Copy name", "", "", () => Clipboard.SetText(string.Join(Environment.NewLine, sel.Select(x => x.Name)))));
@@ -230,6 +234,46 @@ public partial class MainWindow
         m.Items.Add(Item("Windows menu…", "", "", () => ShellMenu.Show(this, p.Dir, Array.Empty<string>())));
         m.Items.Add(Item("Properties", "", "", () => Properties(p.Dir)));
         return m;
+    }
+
+    /// Copy to / Move to: the folders copies and moves went to lately, then any folder. The folder shown is left
+    /// out (copying there duplicates, moving there does nothing).
+    MenuItem SendTo(string header, string glyph, PaneView p, List<Entry> sel, bool move)
+    {
+        var sub = Item(header, glyph, "", () => { });
+        var paths = sel.Select(x => x.Path).ToList();
+        foreach (var dest in Settings.RecentDestinations.Where(d => !d.Equals(p.Dir, StringComparison.OrdinalIgnoreCase)
+                                                                   && (PaneView.IsRemote(d) || Directory.Exists(d))))
+        {
+            var target = dest;
+            var mi = Item(Path.GetFileName(dest.TrimEnd('\\')) is { Length: > 0 } n ? n : dest, "", "", () => Submit(paths, target, move));
+            mi.InputGestureText = ParentForMenu(dest); // where it is, muted at the right
+            mi.ToolTip = dest;
+            mi.Icon = ShellIcon(dest, "\uE8B7", 16, new Thickness(0));
+            sub.Items.Add(mi);
+        }
+        if (sub.Items.Count > 0) sub.Items.Add(new Separator());
+        sub.Items.Add(Item("Choose a folder…", "\uE838", "", () =>
+        {
+            var pick = new Microsoft.Win32.OpenFolderDialog { Title = $"{header} which folder?", InitialDirectory = Other.Dir };
+            if (pick.ShowDialog(this) == true) Submit(paths, pick.FolderName, move);
+        }));
+        return sub;
+    }
+
+    /// Makes a folder beside the selection and moves the selection into it (one Ferry move, undoable with Ctrl+Z);
+    /// the new folder is selected afterwards. An existing name is refused rather than merged into.
+    void GroupIntoFolder(PaneView p, List<Entry> sel)
+    {
+        var name = PromptDialog.Ask(this, "Group into new folder", $"Move the {(sel.Count == 1 ? "selected item" : $"{sel.Count} selected items")} into a new folder named", "New folder", "Group");
+        if (string.IsNullOrWhiteSpace(name)) return;
+        name = name.Trim();
+        if (name.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0) { MessageBox.Show(this, $"A folder name can't contain {string.Join(" ", Path.GetInvalidFileNameChars().Where(c => c >= ' '))}", "Group into new folder"); return; }
+        var folder = Path.Combine(p.Dir, name);
+        if (Directory.Exists(folder) || File.Exists(folder)) { MessageBox.Show(this, $"“{name}” already exists here.", "Group into new folder"); return; }
+        if (!Run(() => Directory.CreateDirectory(folder))) return;
+        Submit(sel.Select(x => x.Path).ToList(), folder, move: true);
+        p.Navigate(p.Dir, name, record: false);
     }
 
     // Notepad++ path from its installer's registry entries (App Paths, then its own key), or null if not installed.

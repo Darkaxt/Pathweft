@@ -50,7 +50,9 @@ public partial class App : Application
         new MainWindow().Show(); // opened here, not via StartupUri, so --agent etc. never build it
     }
 
-    static readonly string PipeName = "FileLabs-" + Environment.UserName + (Settings.Profile != null ? "-profile" : "");
+    // a test copy (FILELABS_PROFILE) gets a single instance per profile folder, so two test copies don't hand off to each other
+    static readonly string PipeName = "FileLabs-" + Environment.UserName + (Settings.Profile != null
+        ? "-profile-" + System.IO.Hashing.XxHash32.HashToUInt32(System.Text.Encoding.UTF8.GetBytes(Settings.Profile.ToLowerInvariant())).ToString("x8") : "");
 
     /// True while a File Labs window is open for this user (it holds the single-instance mutex).
     internal static bool Running
@@ -404,6 +406,17 @@ public partial class App : Application
             Check(FileExplorer.MainWindow.Poster(png) is { PixelWidth: 200 } && FileExplorer.MainWindow.Poster(hugePoster) == null
                 && FileExplorer.MainWindow.Poster(Path.Combine(posters, "junk.jpg")) == null && FileExplorer.MainWindow.Poster(Path.Combine(posters, "none.jpg")) == null,
                 "poster: decoded small; 10 MB, junk or missing = none");
+
+            // What's new: every release parses, newest first, with notes, the running version included (a release
+            // without its entry in whatsnew.txt fails here)
+            var notes = WhatsNewWindow.Load();
+            Check(notes.Count >= 44 && notes[0].Version == Updater.Current.ToString() && notes.All(n => n.Lines.Count > 0)
+                  && notes.Zip(notes.Skip(1)).All(p => Version.Parse(p.First.Version) > Version.Parse(p.Second.Version)), "what's new: every release, newest first, this one included");
+            var recent = new List<string> { @"C:\A", @"C:\B" };
+            Settings.Bump(recent, @"c:\b", 2); Settings.Bump(recent, @"C:\C", 2);
+            Check(recent.SequenceEqual(new[] { @"C:\C", @"c:\b" }), "recent folders: newest first, once, capped");
+            Check(FileExplorer.MainWindow.ParentForMenu(@"C:\Users\x\file") == @"C:\Users\x"
+                  && FileExplorer.MainWindow.ParentForMenu(@"C:\Users\someone\AppData\Local\Temp\claude\deep\folder\x") == @"C:\…\deep\folder", "menu paths shortened past 40 characters");
 
             Console.WriteLine("selftest: all passed");
             return 0;

@@ -4,7 +4,50 @@
         xmlns:local="clr-namespace:FileExplorer"
         Title="File Labs" Width="1400" Height="860" Background="Transparent"
         Foreground="#E8E8E8" FontFamily="Segoe UI Variable Text, Segoe UI" FontSize="12">
+  <!-- No Windows title bar: the tabs take the top row, the window's buttons sit at its right end, and the
+       empty part of the tab row (and the sidebar's name) moves the window. GlassFrameThickness -1 keeps the
+       DWM frame, so the acrylic, the shadow and the rounded corners stay. -->
+  <WindowChrome.WindowChrome>
+    <WindowChrome CaptionHeight="0" ResizeBorderThickness="6" GlassFrameThickness="-1" CornerRadius="0" UseAeroCaptionButtons="False"/>
+  </WindowChrome.WindowChrome>
   <Window.Resources>
+    <!-- minimize / maximize / close and the history button: Windows 11's sizes and glyphs -->
+    <Style x:Key="Caption" TargetType="Button">
+      <Setter Property="Foreground" Value="#D0FFFFFF"/>
+      <Setter Property="FontFamily" Value="Segoe Fluent Icons"/>
+      <Setter Property="FontSize" Value="10"/>
+      <Setter Property="Width" Value="46"/>
+      <Setter Property="Height" Value="32"/>
+      <Setter Property="Focusable" Value="False"/>
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="Button">
+            <Border x:Name="Bd" Background="Transparent" CornerRadius="6">
+              <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Border>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Bd" Property="Background" Value="#18FFFFFF"/></Trigger>
+              <!-- the maximize button is hit-tested by Windows (snap layouts), so WPF never sees the mouse over it -->
+              <Trigger Property="Tag" Value="hover"><Setter TargetName="Bd" Property="Background" Value="#18FFFFFF"/></Trigger>
+              <MultiTrigger>
+                <MultiTrigger.Conditions><Condition Property="Uid" Value="close"/><Condition Property="IsMouseOver" Value="True"/></MultiTrigger.Conditions>
+                <Setter TargetName="Bd" Property="Background" Value="#C42B1C"/>
+                <Setter Property="Foreground" Value="White"/>
+              </MultiTrigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+    <!-- the sidebar's bottom row: Drop bin, updates, what's new, help, settings as icons with tooltips -->
+    <Style x:Key="IconButton" TargetType="Button" BasedOn="{StaticResource Ghost}">
+      <Setter Property="FontFamily" Value="Segoe Fluent Icons"/>
+      <Setter Property="FontSize" Value="14"/>
+      <Setter Property="Foreground" Value="{StaticResource Muted}"/>
+      <Setter Property="Width" Value="34"/>
+      <Setter Property="Height" Value="30"/>
+      <Setter Property="HorizontalContentAlignment" Value="Center"/>
+    </Style>
     <Style x:Key="StatValue" TargetType="TextBlock">
       <Setter Property="FontSize" Value="20"/>
       <Setter Property="FontWeight" Value="SemiBold"/>
@@ -113,26 +156,49 @@
 
     <!-- Sidebar: a bit more opaque, it sits over whatever is behind the window -->
     <DockPanel x:Name="SidebarPanel" Background="#40000000">
-      <Button DockPanel.Dock="Bottom" Style="{StaticResource Side}" Margin="8,4,8,10" Click="Settings_Click" ToolTip="Settings (Ctrl+,)">
-        <StackPanel Orientation="Horizontal">
-          <TextBlock Text="&#xE713;" FontFamily="Segoe Fluent Icons" Foreground="{StaticResource Muted}" Margin="0,2,10,0"/>
-          <TextBlock Text="Settings"/>
-        </StackPanel>
-      </Button>
-      <Button DockPanel.Dock="Bottom" Style="{StaticResource Side}" Margin="8,4,8,0" Click="Help_Click" ToolTip="Every key and feature (F1)">
-        <StackPanel Orientation="Horizontal">
-          <TextBlock Text="&#xE897;" FontFamily="Segoe Fluent Icons" Foreground="{StaticResource Muted}" Margin="0,2,10,0"/>
-          <TextBlock Text="Help"/>
-        </StackPanel>
-      </Button>
-      <!-- docked after Settings, so it sits just above it -->
-      <Button x:Name="UpdateButton" DockPanel.Dock="Bottom" Style="{StaticResource Side}" Margin="8,4,8,0" Click="CheckUpdates_Click"
-              ToolTip="Check for updates now (it also checks by itself every hour)">
-        <StackPanel Orientation="Horizontal">
-          <TextBlock Text="&#xE895;" FontFamily="Segoe Fluent Icons" Foreground="{StaticResource Muted}" Margin="0,2,10,0"/>
-          <TextBlock x:Name="UpdateButtonText" Text="Check for updates"/>
-        </StackPanel>
-      </Button>
+      <!-- the app's name, where the title bar used to say it; it moves the window like one -->
+      <DockPanel DockPanel.Dock="Top" Margin="18,13,8,0" Height="26" Background="Transparent" MouseDown="Caption_MouseDown">
+        <Image Source="/app.ico" Width="16" Height="16" Margin="0,0,10,0" RenderOptions.BitmapScalingMode="HighQuality"/>
+        <TextBlock Text="File Labs" FontWeight="SemiBold" FontSize="13" VerticalAlignment="Center"/>
+        <TextBlock x:Name="VersionText" Foreground="{StaticResource Muted}" FontSize="11" Margin="8,1,0,0" VerticalAlignment="Center"/>
+      </DockPanel>
+      <DockPanel DockPanel.Dock="Bottom" Margin="8,4,8,8">
+        <Button DockPanel.Dock="Right" Style="{StaticResource IconButton}" Content="&#xE713;" Click="Settings_Click" ToolTip="Settings (Ctrl+,)" AutomationProperties.Name="Settings"/>
+        <Button DockPanel.Dock="Right" Style="{StaticResource IconButton}" Content="&#xE897;" Click="Help_Click" ToolTip="Help: everything File Labs does (F1)" AutomationProperties.Name="Help"/>
+        <Button DockPanel.Dock="Right" Style="{StaticResource IconButton}" Content="&#xE789;" Click="WhatsNew_Click" ToolTip="What&#x2019;s new" AutomationProperties.Name="What&#x2019;s new"/>
+        <Button x:Name="UpdateButton" DockPanel.Dock="Right" Style="{StaticResource IconButton}" Content="&#xE895;" Click="CheckUpdates_Click"
+                ToolTip="Check for updates (it also checks by itself every hour)" AutomationProperties.Name="Check for updates"/>
+        <!-- the Drop bin: a click shows it, and files dropped on the button go in -->
+        <Button x:Name="BinButton" DockPanel.Dock="Left" Style="{StaticResource IconButton}" Width="Auto" HorizontalAlignment="Left"
+                Click="BinButton_Click" AutomationProperties.Name="Drop bin" AllowDrop="True" DragOver="Bin_DragOver" Drop="Bin_Drop"
+                ToolTip="Drop bin: collect files from several folders, then copy or move them all at once (Ctrl+B adds the selection)">
+          <StackPanel Orientation="Horizontal">
+            <TextBlock Text="&#xE7B8;" VerticalAlignment="Center"/>
+            <TextBlock x:Name="BinCount" FontFamily="Segoe UI Variable Text, Segoe UI" FontSize="11" Margin="6,0,0,0" VerticalAlignment="Center"
+                       Foreground="{DynamicResource Accent}"/>
+          </StackPanel>
+        </Button>
+      </DockPanel>
+      <!-- Drop bin: files gathered from anywhere, sent together to the active pane's folder -->
+      <Border x:Name="DropBin" DockPanel.Dock="Bottom" Visibility="Collapsed" Margin="8,4,8,0" Padding="10,8" CornerRadius="8"
+              Background="#0DFFFFFF" BorderBrush="#1AFFFFFF" BorderThickness="1" AllowDrop="True" DragOver="Bin_DragOver" Drop="Bin_Drop">
+        <DockPanel>
+          <DockPanel DockPanel.Dock="Top">
+            <Button DockPanel.Dock="Right" Style="{StaticResource Ghost}" FontFamily="Segoe Fluent Icons" FontSize="10" Content="&#xE711;"
+                    ToolTip="Hide the Drop bin (what is in it stays)" AutomationProperties.Name="Hide the Drop bin" Click="BinButton_Click"/>
+            <Button DockPanel.Dock="Right" Style="{StaticResource Ghost}" FontSize="11" Content="Clear" ToolTip="Empty the Drop bin (the files stay where they are)" Click="BinClear_Click"/>
+            <TextBlock Text="Drop bin" FontWeight="SemiBold" VerticalAlignment="Center"/>
+          </DockPanel>
+          <TextBlock x:Name="BinSummary" DockPanel.Dock="Top" Foreground="{StaticResource Muted}" FontSize="11" Margin="0,2,0,6" TextWrapping="Wrap"/>
+          <StackPanel x:Name="BinActions" DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,6,0,0">
+            <Button Style="{StaticResource Tab}" Tag="on" Click="BinCopy_Click" Content="Copy here"/>
+            <Button Style="{StaticResource Tab}" Click="BinMove_Click" Content="Move here"/>
+          </StackPanel>
+          <ScrollViewer MaxHeight="190" VerticalScrollBarVisibility="Auto">
+            <StackPanel x:Name="BinList"/>
+          </ScrollViewer>
+        </DockPanel>
+      </Border>
       <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="8,12">
         <!-- Sections (Quick access / Favorites / Drives) are added by SidebarSections.cs, in the
              order the user dragged them into; each one collapses and both are remembered. -->
@@ -157,17 +223,18 @@
     <GridSplitter Grid.Column="0" Width="5" HorizontalAlignment="Right" Background="Transparent" ResizeBehavior="CurrentAndNext"
                   DragCompleted="SidebarSplitter_DragCompleted"/>
 
-    <Grid Grid.Column="1" Margin="14,12,14,0">
+    <!-- the panes first: their tabs are the window's top row; the summary cards sit under them -->
+    <Grid Grid.Column="1" Margin="10,8,10,0">
       <Grid.RowDefinitions>
-        <RowDefinition Height="Auto"/>
         <RowDefinition/>
+        <RowDefinition Height="Auto"/>
         <RowDefinition Height="Auto"/>
         <RowDefinition Height="Auto"/>
       </Grid.RowDefinitions>
 
       <!-- Stats for the active pane: the drive, the folder, and the selection (or the latest change).
            Settings can make them one line each, or hide them (ApplyStats). -->
-      <Grid x:Name="StatsRow" Margin="0,0,0,12">
+      <Grid x:Name="StatsRow" Grid.Row="1" Margin="0,10,0,0">
         <Grid.ColumnDefinitions>
           <ColumnDefinition Width="1.25*"/>
           <ColumnDefinition Width="10"/>
@@ -220,7 +287,7 @@
         </Border>
       </Grid>
 
-      <Grid x:Name="PaneArea" Grid.Row="1" SizeChanged="PaneArea_SizeChanged">
+      <Grid x:Name="PaneArea" SizeChanged="PaneArea_SizeChanged">
         <Grid.ColumnDefinitions>
           <ColumnDefinition/>
           <ColumnDefinition x:Name="PreviewGap" Width="0"/>
@@ -243,7 +310,7 @@
                     Visibility="Collapsed" DragCompleted="PreviewSplitter_DragCompleted"/>
       <Border x:Name="PreviewPane" Grid.Column="2" Visibility="Collapsed" Background="#0DFFFFFF" CornerRadius="10" BorderThickness="1" BorderBrush="#1AFFFFFF" ClipToBounds="True">
         <DockPanel>
-          <DockPanel DockPanel.Dock="Top" Margin="12,6,6,4">
+          <DockPanel x:Name="PreviewHeader" DockPanel.Dock="Top" Margin="12,6,6,4">
             <Button DockPanel.Dock="Right" Style="{StaticResource Ghost}" Content="&#xE711;" FontFamily="Segoe Fluent Icons" FontSize="10"
                     ToolTip="Close the preview (Alt+P)" Click="Preview_Click"/>
             <TextBlock x:Name="PreviewTitle" Foreground="{StaticResource Muted}" FontSize="11" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
@@ -278,5 +345,14 @@
         <TextBlock x:Name="Status" Foreground="{StaticResource Muted}" FontSize="11" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="420" HorizontalAlignment="Right" Margin="12,0,0,0"/>
       </DockPanel>
     </Grid>
+
+    <!-- the window's buttons, over the right end of the tab row (the pane under them keeps that room free) -->
+    <StackPanel x:Name="CaptionButtons" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,10,12,0">
+      <Button x:Name="HistoryButton" Style="{StaticResource Caption}" Width="40" FontSize="13" Content="&#xE81C;" Click="History_Click" AutomationProperties.Name="History"
+              ToolTip="Recent folders and closed tabs (Ctrl+Shift+T reopens the last closed tab)"/>
+      <Button Style="{StaticResource Caption}" Content="&#xE921;" Click="Minimize_Click" ToolTip="Minimize" AutomationProperties.Name="Minimize"/>
+      <Button x:Name="MaxButton" Style="{StaticResource Caption}" Content="&#xE922;" Click="Maximize_Click" AutomationProperties.Name="Maximize"/>
+      <Button Style="{StaticResource Caption}" Uid="close" Content="&#xE8BB;" Click="Close_Click" ToolTip="Close" AutomationProperties.Name="Close"/>
+    </StackPanel>
   </Grid>
 </Window>

@@ -4,13 +4,13 @@ using System.Windows;
 
 namespace FileExplorer;
 
-// "Update available" — and, after an update has landed, the same window as a read-only "What's new".
+// "Update available": the new version's notes, Later or Update now. (What's new after an update is WhatsNewWindow.)
 public partial class UpdateDialog : Window
 {
     readonly Updater.Release release;
     readonly CancellationTokenSource cancel = new();
 
-    public UpdateDialog(Window owner, Updater.Release release, bool notesOnly = false)
+    public UpdateDialog(Window owner, Updater.Release release)
     {
         InitializeComponent();
         Owner = owner;
@@ -19,19 +19,8 @@ public partial class UpdateDialog : Window
         Root.Background = MainWindow.Tint();
         Notes.Text = release.Notes.Trim() == "" ? "No release notes." : release.Notes.Trim();
 
-        if (notesOnly)
-        {
-            Title = "What's new";
-            Heading.Text = $"File Labs {release.Version}";
-            Sub.Text = "Updated on this machine.";
-            UpdateButton.Visibility = Visibility.Collapsed;
-            LaterButton.Content = "Close";
-        }
-        else
-        {
-            Heading.Text = $"File Labs {release.Version} is available";
-            Sub.Text = $"You have {Updater.Current}. The installer is {MainWindow.Fmt(release.AssetSize)}.";
-        }
+        Heading.Text = $"File Labs {release.Version} is available";
+        Sub.Text = $"You have {Updater.Current}. The installer is {MainWindow.Fmt(release.AssetSize)}.";
         Closed += (_, _) => cancel.Cancel();
     }
 

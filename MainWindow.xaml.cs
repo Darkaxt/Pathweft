@@ -22,6 +22,7 @@ public partial class MainWindow : Window
         Title = $"File Labs {Updater.Current}";
         PaneView.ShowHidden = Settings.ShowHidden;
         SidebarColumn.Width = new GridLength(Settings.SidebarWidth);
+        SetUpChrome();
         ApplyPanes();
         ApplyStats();
         previewDelay.Tick += PreviewTick;
@@ -34,7 +35,7 @@ public partial class MainWindow : Window
             ((Window)this).Left = wb.Left; Top = wb.Top; Width = wb.Width; Height = wb.Height;
         }
         if (Settings.Maximized) WindowState = WindowState.Maximized;
-        Closing += (_, _) =>
+        Closing += (_, e) =>
         {
             Settings.WindowBounds = RestoreBounds;
             Settings.Maximized = WindowState == WindowState.Maximized;
@@ -46,7 +47,10 @@ public partial class MainWindow : Window
                 Settings.Pins[p.Name] = p.PinnedTabs;
             }
             Settings.Save();
+            // with the notification-area icon on, closing only hides: the next open is instant
+            if (tray != null && !quitting) { e.Cancel = true; Hide(); }
         };
+        Closed += (_, _) => tray?.Dispose(); // or the icon lingers until the pointer passes over it
         SourceInitialized += (_, _) => { ApplyAcrylic(this); WatchShellChanges(); };
         StartUpdateChecks();
 
@@ -322,7 +326,7 @@ public partial class MainWindow : Window
         first.Tick += async (_, _) =>
         {
             first.Stop();
-            await ShowWhatsNew();
+            ShowWhatsNew();
             await CheckForUpdate(manual: false);
         };
         first.Start();
@@ -349,7 +353,7 @@ public partial class MainWindow : Window
     }
 
     // First launch after an update: the release notes for the version now running.
-    async Task ShowWhatsNew()
+    void ShowWhatsNew()
     {
         var current = Updater.Current.ToString();
         if (Settings.LastSeenVersion == current) return;
@@ -357,12 +361,18 @@ public partial class MainWindow : Window
         Settings.LastSeenVersion = current;
         Settings.Save();
         if (!upgraded) return;
-        // Check() only returns something newer than us; right after updating, the latest IS us.
-        Updater.Release latest;
-        try { latest = await Updater.Latest(); }
-        catch (Exception ex) when (Updater.Failed(ex)) { return; } // offline: the notes just aren't shown
-        if (latest?.Version.ToString() == current) new UpdateDialog(this, latest, notesOnly: true).Show();
+        OpenWhatsNew();
     }
+
+    WhatsNewWindow whatsNewWindow;
+    public void OpenWhatsNew()
+    {
+        if (whatsNewWindow != null) { whatsNewWindow.Activate(); return; }
+        whatsNewWindow = new WhatsNewWindow(this);
+        whatsNewWindow.Closed += (_, _) => whatsNewWindow = null;
+        whatsNewWindow.Show();
+    }
+    void WhatsNew_Click(object s, RoutedEventArgs e) => OpenWhatsNew();
 
     SettingsWindow settingsWindow;
     void OpenSettings()
@@ -389,24 +399,21 @@ public partial class MainWindow : Window
     async void CheckUpdates_Click(object s, RoutedEventArgs e)
     {
         UpdateButton.IsEnabled = false;
-        UpdateButtonText.Text = "Checking…";
+        Status.Text = "Checking for updates…";
         var answer = await CheckForUpdate(manual: true);
         UpdateButton.IsEnabled = true;
-        // The answer goes on the button, not in the status bar: that line belongs to the folder and is
-        // rewritten on the next refresh.
-        UpdateButtonText.Text = answer == null ? "Check for updates"
-            : answer == Updater.CheckFailed ? "Couldn't check  ·  try later"
-            : $"Up to date  ·  {Updater.Current}";
-        if (answer == null) return;
-        var back = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(6) };
-        back.Tick += (_, _) => { back.Stop(); UpdateButtonText.Text = "Check for updates"; };
-        back.Start();
+        // The status line is the folder's and is rewritten when the folder changes, which is fine for an answer
+        // read at once; the button's tooltip keeps it until the next check.
+        var text = answer == null ? "" : answer == Updater.CheckFailed ? "Couldn't check for updates · try later" : $"Up to date · File Labs {Updater.Current}";
+        Status.Text = text;
+        UpdateButton.ToolTip = answer == null ? "Check for updates (it also checks by itself every hour)" : text;
     }
 
     // A second launch sent us a folder → new tab in the active pane. Sent nothing (Win+E, Start menu,
     // taskbar) → just bring the existing window to the front, like switching to it.
     public void OpenFromOutside(string path)
     {
+        if (!IsVisible) Show(); // hidden to the notification area
         if (!string.IsNullOrEmpty(path)) OpenPath(active, path);
         if (WindowState == WindowState.Minimized) WindowState = WindowState.Normal;
         // Win+E arrives straight from the agent now, which can't pass on the right to take focus (a
@@ -419,11 +426,26 @@ public partial class MainWindow : Window
     }
 
     /// A folder opens as a new tab; a file opens its folder with the file selected — what "show in
-    /// folder" asks for (the agent passes those on from Explorer windows other programs open).
-    static void OpenPath(PaneView pane, string path)
+    /// folder" asks for (the agent passes those on from Explorer windows other programs open). A folder
+    /// already open in a tab, in either pane, is switched to instead of opened twice.
+    void OpenPath(PaneView pane, string path)
     {
-        if (File.Exists(path)) { pane.NewTab(); pane.Navigate(Path.GetDirectoryName(path), Path.GetFileName(path)); }
-        else if (PaneView.IsRemote(path) || Directory.Exists(path)) { pane.NewTab(); pane.Navigate(path); }
+        string folder, select = null;
+        try
+        {
+            if (File.Exists(path)) { folder = Path.GetDirectoryName(Path.GetFullPath(path)); select = Path.GetFileName(path); }
+            else if (PaneView.IsRemote(path) || Directory.Exists(path)) folder = Path.GetFullPath(path);
+            else return;
+        }
+        catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException) { return; }
+        if (TabShowing(folder) is var (open, i))
+        {
+            open.ShowTab(i, select);
+            SetActive(open);
+            return;
+        }
+        pane.NewTab();
+        pane.Navigate(folder, select);
     }
 
     /// Explorer on purpose: the agent is told to leave the window alone instead of taking it over.
@@ -460,6 +482,7 @@ public partial class MainWindow : Window
         cols[2].Width = new GridLength(one ? 0 : 1 - Settings.Split, GridUnitType.Star);
         if (one && active == Right) SetActive(Left);
         FitPreview(); // one pane leaves the preview more room
+        PlaceCaption();
     }
 
     /// <summary>The cards above the panes: full, compact (the figure and its label, nothing else), or hidden.</summary>
@@ -471,7 +494,7 @@ public partial class MainWindow : Window
             e.Visibility = full ? Visibility.Visible : Visibility.Collapsed;
         foreach (var card in StatsRow.Children.OfType<Border>())
             card.Padding = full ? new Thickness(12, 9, 14, 9) : new Thickness(10, 3, 12, 3);
-        StatsRow.Margin = new Thickness(0, 0, 0, full ? 12 : 8);
+        StatsRow.Margin = new Thickness(0, full ? 10 : 8, 0, 0);
     }
 
     public void SetSinglePane(bool on)
@@ -725,6 +748,7 @@ public partial class MainWindow : Window
         }
         ShowFolderStats();
         ShowSelectionStats();
+        if (bin.Count > 0) ShowBinTarget();
 
         // The figures come from the drive rows, read off the UI thread every 10 s and after every copy or
         // delete: asking a network drive here cost up to 177 ms, once per folder whose size came in.
@@ -827,6 +851,7 @@ public partial class MainWindow : Window
     Job Submit(List<string> sources, string dest, bool move)
     {
         if (sources.Count == 0) return null;
+        Settings.Bump(Settings.RecentDestinations, dest, Settings.DestinationsMax); // for Copy to / Move to
         var job = Ferry.Submit(sources, dest, move);
         jobs.Insert(0, job);
         jobTimer.Start();
@@ -1061,7 +1086,9 @@ public partial class MainWindow : Window
             case Key.P when ctrl: SetSinglePane(!Settings.SinglePane); break;
             case Key.P when alt: TogglePreview(); break;
             case Key.F1: OpenHelp(); break;
+            case Key.T when ctrl && shift: ReopenClosedTab(); break;
             case Key.T when ctrl: active.NewTab(); break;
+            case Key.B when ctrl: if (active.Selected.Count > 0) AddToBin(active.Selected.Select(x => x.Path)); break;
             case Key.W when ctrl: active.CloseTab(); break;
             case Key.L when ctrl: active.EditPath(); break;
             case Key.F when ctrl: active.FocusFilter(); break;

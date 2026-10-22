@@ -3,10 +3,13 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
     <UseWPF>true</UseWPF>
+    <!-- only for the notification-area icon (Settings → close to the notification area); WinForms ships with the
+         desktop runtime already, so the app gets no bigger. Its namespace stays out of the global usings. -->
+    <UseWindowsForms>true</UseWindowsForms>
     <AssemblyName>FileLabs</AssemblyName>
     <Product>File Labs</Product>
     <Company>Protagonist Labs</Company>
-    <Version>1.0.42</Version>
+    <Version>1.0.43</Version>
     <!-- WPF windows without their own Icon use this one, so every window gets it -->
     <ApplicationIcon>app.ico</ApplicationIcon>
     <DefaultItemExcludes>$(DefaultItemExcludes);dist\**;installer\**</DefaultItemExcludes>
@@ -14,11 +17,21 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
   <ItemGroup>
+    <Using Remove="System.Windows.Forms" />
+    <Using Remove="System.Drawing" />
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="System.IO.Hashing" Version="10.0.12" />
     <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4258.31" />
   </ItemGroup>
   <ItemGroup>
     <!-- The F4 editor: Monaco and the page hosting it, loaded from the app folder -->
     <None Include="Editor\**" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- the sidebar shows the app icon where the title bar used to -->
+    <Resource Include="app.ico" />
+    <!-- What's new: every release's notes, read from inside the exe (WhatsNewWindow.cs) -->
+    <EmbeddedResource Include="whatsnew.txt" LogicalName="whatsnew.txt" />
   </ItemGroup>
 </Project>

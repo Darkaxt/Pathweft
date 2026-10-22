@@ -123,13 +123,15 @@
       <!-- in a Canvas so its size (set by hand from the band's) never feeds back into the row's height:
            otherwise a strip drawn for three rows of tabs kept the row that tall after the pane widened -->
       <Canvas><Path x:Name="StripShape" Fill="{StaticResource TabStripBg}"/></Canvas>
-      <DockPanel x:Name="TabBand" AllowDrop="True" Background="Transparent" SizeChanged="TabBand_SizeChanged" DragOver="Tabs_DragOver" DragLeave="Tabs_DragLeave" Drop="Tabs_Drop">
+      <DockPanel x:Name="TabBand" AllowDrop="True" Background="Transparent" SizeChanged="TabBand_SizeChanged" MouseDown="TabBand_MouseDown" DragOver="Tabs_DragOver" DragLeave="Tabs_DragLeave" Drop="Tabs_Drop">
         <Border DockPanel.Dock="Left" Width="4"/>
         <UniformGrid x:Name="TabStrip" DockPanel.Dock="Left" Rows="1"/>
         <Border x:Name="NewTabBox" DockPanel.Dock="Left" Padding="4,4,4,2">
           <Button x:Name="NewTabButton" Style="{StaticResource Ghost}" Content="&#xE710;" FontFamily="Segoe Fluent Icons" FontSize="11"
                   ToolTip="New tab (Ctrl+T)" Click="NewTab_Click" VerticalAlignment="Center"/>
         </Border>
+        <!-- under the window's buttons, when this pane is the one at the top right (MainWindow.PlaceCaption) -->
+        <Border x:Name="CaptionSpace" DockPanel.Dock="Right" Width="0" Background="Transparent"/>
         <Border/>
       </DockPanel>
       <!-- where a dragged tab would land; an overlay, so the tabs never move under the pointer -->

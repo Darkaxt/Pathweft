@@ -40,6 +40,9 @@ public static class Settings
     public static string LastSeenVersion = "";   // What's new is shown once per version
     public static bool NativeMenu;          // right-click shows the Windows menu instead of ours
     public static bool TakeWinE = true;         // with Windows integration on, Win+E opens File Labs; off = File Explorer
+    public static bool CloseToTray;             // closing hides the window to the notification area; the next open is instant
+    public static List<string> RecentFolders = new();      // newest first, for the history menu
+    public static List<string> RecentDestinations = new(); // where copies and moves went, newest first, for Copy to / Move to
     public static double SidebarWidth = 270;
     public static List<string> SidebarOrder = new() { "quick", "favorites", "drives" };
     public static readonly HashSet<string> SidebarCollapsed = new();
@@ -52,6 +55,16 @@ public static class Settings
     public static readonly Dictionary<string, int> ActiveTab = new(); // "Left" → Details
     public static readonly Dictionary<string, List<int>> Pins = new(); // "Left" → indexes of pinned tabs
     public static readonly Dictionary<string, (string Key, bool Desc)> FolderSorts = new(StringComparer.OrdinalIgnoreCase); // folder → its own order; absent = by name
+
+    public const int RecentMax = 25, DestinationsMax = 8;
+
+    /// Puts `path` first in a most-recent-first list, once, and cuts the list to `max`.
+    public static void Bump(List<string> list, string path, int max)
+    {
+        list.RemoveAll(x => x.Equals(path, StringComparison.OrdinalIgnoreCase));
+        list.Insert(0, path);
+        if (list.Count > max) list.RemoveRange(max, list.Count - max);
+    }
 
     public static void Load()
     {
@@ -90,6 +103,10 @@ public static class Settings
                 case "nativemenu": NativeMenu = v == "1"; break;
                 case "wine": TakeWinE = v != "0"; break;
                 case "lastseen": LastSeenVersion = v; break;
+                case "tray": CloseToTray = v == "1"; break;
+                // paths can't hold |, so it separates them
+                case "recent": RecentFolders = v.Split('|').Where(x => x != "").Take(RecentMax).ToList(); break;
+                case "destinations": RecentDestinations = v.Split('|').Where(x => x != "").Take(DestinationsMax).ToList(); break;
                 case "split" when double.TryParse(v, CultureInfo.InvariantCulture, out var sp) && double.IsFinite(sp): Split = Math.Clamp(sp, 0.15, 0.85); break;
                 case "maximized": Maximized = v == "1"; break;
                 case "window": try { var r = Rect.Parse(v); if (!r.IsEmpty) WindowBounds = r; } catch (FormatException) { } break; // hand-edited file
@@ -150,6 +167,9 @@ public static class Settings
             $"nativemenu={(NativeMenu ? 1 : 0)}",
             $"wine={(TakeWinE ? 1 : 0)}",
             $"lastseen={LastSeenVersion}",
+            $"tray={(CloseToTray ? 1 : 0)}",
+            $"recent={string.Join("|", RecentFolders)}",
+            $"destinations={string.Join("|", RecentDestinations)}",
             $"sidebar={SidebarWidth.ToString(CultureInfo.InvariantCulture)}",
             $"sidebarorder={string.Join(",", SidebarOrder)}",
             $"sidebarcollapsed={string.Join(",", SidebarCollapsed)}",

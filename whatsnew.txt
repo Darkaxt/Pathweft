@@ -1,0 +1,300 @@
+# Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
+# "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
+
+## 1.0.43 | 2026-10-22 | Tabs at the top, a Drop bin, history and Group into folder
+- **No more title bar.** The tabs are the top row, with minimize, maximize and close at its right end. File Labs' name moved to the top of the sidebar, and Check for updates, What's new, Help and Settings are one row of icons at its bottom. The summary cards sit under the panes.
+- **Drop bin.** Collect files from several folders (drag them onto the bin at the bottom of the sidebar, or press Ctrl+B), then Copy here or Move here sends them all at once.
+- **History.** The button left of minimize lists the folders you visited and the tabs you closed. Ctrl+Shift+T reopens the last closed tab.
+- **No duplicate tabs.** A folder opened from Explorer, another app or Win+E switches to the tab that already shows it.
+- Right-click → **Group into new folder…** moves the selection into a new folder. **Copy to / Move to** list the folders you copied or moved to lately, or let you choose one.
+- Settings → Windows integration → **Close to the notification area**: closing hides File Labs next to the clock, so it opens again at once.
+- **What's new** lists every release by month, each under its own banner, and works offline.
+- **Help** (F1) now covers everything File Labs does, by topic.
+
+## 1.0.42 | 2026-10-21 | Arrows, Delete and Paste into folder behave like Explorer
+- Arrow keys after a click on empty space carry on from the row you were on, as in Explorer.
+- After Shift+Delete (or Delete), the next file is selected instead of nothing.
+- The preview pane can no longer be dragged wider than the window.
+- Recycle Bin: drag to select several items (left or right button); Ctrl adds.
+- Open with → Notepad: a minimized or hidden Notepad window is brought forward with your file.
+- New: a View submenu (icon sizes, List, Details) at the top of the Windows menu on empty space.
+- The mouse wheel scrolls the list while you drag files.
+- The active tab has an accent line along its top.
+- Right-click a folder or a shortcut to one → Paste into folder.
+- Settings → Files: sort shortcuts to folders with the folders (off by default).
+
+## 1.0.41 | 2026-10-20 | What Reel knows about a video, above its preview
+- With Reel 1.13 installed, a video from your Reel library gets a line above its preview (and in Quick View): its poster, then for example "Heat (1995) · watched 12 Oct · Reel", or "The X-Files — S02E04 Memento Mori · not watched · Reel" for an episode.
+- "Reel" in that line opens Reel. The preview's own play button stays the only one.
+- Nothing changes for videos that aren't in Reel, or when Reel isn't installed.
+- Works with: Reel's line says it puts a film's poster and watched state above the preview.
+- Safer: File Labs never contacts a network path just to check whether another app is installed.
+
+## 1.0.40 | 2026-10-20 | Stash and Backup Labs backups previewed and opened in their apps
+- File Labs recognises Stash and Backup Labs backups (`.stash`, `.bkl`, and their older `.zip` ones). The preview shows the date, size and whether the backup is encrypted; for Stash also the mail folders and how many messages each holds, for Backup Labs the number of files and where they came from.
+- "Open in Stash" / "Open in Backup Labs" in the preview, and Enter or a double-click on the file, opens it in its app (Stash 2.1.0 or Backup Labs 1.3.0 and later). Without the app, the button leads to its page.
+- Ordinary zip files behave exactly as before.
+
+## 1.0.39 | 2026-10-18 | Folder shortcuts open and take drops, drop target lit, whiter selection, dark Windows menu
+- Shortcuts to folders behave like folders: middle-click opens the folder in a new tab, double-click opens it, and files dropped on the shortcut go into the folder.
+- While you drag, the folder the files would go into lights up, in a colour apart from the selection.
+- Selected names are whiter: a deeper selection colour, and the pane that isn't active no longer dims its selection.
+- The Windows right-click menu is dark in dark mode.
+- An app opened from the Windows menu (Open with → Notepad) can come to the front.
+- Settings minimizes to the taskbar, and a double-click on a slider's handle puts it back to its default.
+- New option under Windows integration: "Win+E opens File Labs" — switch it off to keep Win+E for File Explorer.
+- The bottom bar shows Ctrl+P One / two panes before Alt+P Preview.
+
+## 1.0.38 | 2026-10-17 | F5 refreshes, Ctrl+drag duplicates, right-drag selects, readable selection
+- **F5 now refreshes**, as in other file managers. Copy to the other pane moved to **Ctrl+F5** (F6 still moves).
+- Ctrl+drag a file or folder inside its own folder to duplicate it, as in Explorer: "name - Copy.ext", "name - Copy (2).ext". Pasting copied files into their own folder does the same, and Ctrl+Z removes the duplicate.
+- Right-drag selects with a rectangle, and letting go opens the menu for what it selected. A plain right-click works as before.
+- New "Ctrl+P One / two panes" button in the bottom bar.
+- Selected names are white on a solid selection that a bright wallpaper can no longer wash out; light accents get dark text.
+- The mouse wheel scrolls the sidebar over the Folders tree too.
+- The sideways scrollbar is as thin and rounded as the vertical one.
+
+## 1.0.37 | 2026-10-16 | Click to rename, Ctrl+drag copies, Name keeps its width, sort per folder, preview pane
+- Click to rename: a slow second click on the name of the selected file renames it, as in Explorer.
+- Ctrl+drag copies files and folders, to the other pane, Explorer or another app. Drops follow Explorer's rules: Ctrl copies, Shift moves, same drive moves, another drive copies.
+- Fixed a crash when Ctrl+dragging several files.
+- The Name column keeps the width you drag it to, also after a restart; a list wider than the pane scrolls sideways. Double-click Name's edge to let it fill the pane again.
+- Each folder remembers its own sort order.
+- New preview pane (Alt+P, or Preview in the bottom bar): the selected file of the active pane beside the panes — pictures, PDFs, text, folders and more.
+- Alt+F4 closes File Labs again instead of opening the editor.
+
+## 1.0.36 | 2026-10-16 | Checks for updates every hour; a failed check says so
+- File Labs now looks for a new version every hour while it's open, and still checks a few seconds after it starts.
+- If Check for updates can't reach GitHub (no connection, or GitHub is busy), it now says so instead of saying you have the latest version.
+
+## 1.0.35 | 2026-10-15 | Rename that behaves like Explorer, a steady rectangle and tab row
+- F2 rename works like Explorer: you can type right away, arrow keys move the cursor, a click anywhere else keeps the new name, Esc cancels, and long names scroll to their end.
+- Double-clicking a word while renaming selects the word instead of opening the file.
+- The drag-to-select rectangle is drawn under the pointer when the file list has a larger text size.
+- Esc in the file list no longer jumps to the top.
+- Hover a file to see its full name, type, size and date (can be turned off in Settings → Files).
+- The tab row no longer twitches when a pinned tab is active.
+- Details view: a wider empty strip right of the columns; right-click it for New folder, Paste, Refresh.
+- Resizing columns right of Name follows the mouse instead of jumping.
+- QuickLook previews the document behind a shortcut.
+- New option: no sound for Shift+Delete (Settings → Files).
+- "Close other tabs" in the tab menu (pinned tabs stay), and Ctrl+F5 refreshes.
+- Fixed two crashes: opening some folders with shortcuts, and a file changing in the hidden pane's folder in one-pane mode.
+
+## 1.0.34 | 2026-10-15 | Protagonist Labs ecosystem card, Quick access for Lume, Works with
+- Your Quick access folders now show up in Lume's search, and open in File Labs.
+- Settings → About has a short "Works with" list of the sister apps that add something to File Labs.
+- Fixed: "Scan with SpaceScan" on a whole drive (like D:\) now opens the right drive.
+- Everything stays on your PC: the apps share a folder in AppData, nothing is sent anywhere.
+
+## 1.0.33 | 2026-10-14 | A place to click and drop for the folder itself
+- **A place to click for "this folder".** In Details, the strip right of the last column is now empty space: a click there clears the selection, so a paste goes into the folder you are looking at, not into a subfolder that happened to be selected.
+- **Drop onto the drive strip** between the address bar and the files to put files in the folder shown, whatever is selected. It lights up while something is dragged over it; a click on it clears the selection too.
+
+## 1.0.32 | 2026-10-14 | Summary cards compact or hidden, the folder you left stays selected, the scroll track pages
+- The summary cards above the panes (drive, folder, selection) can be made compact, one line each, or hidden: Settings → Summary cards above the panes.
+- Going up to a folder, by Up, Back, a breadcrumb or a typed path, keeps the folder you just left selected, so a long listing does not start over from the top.
+- A click on the empty part of a scroll bar scrolls a page, as in Windows.
+
+## 1.0.31 | 2026-10-13 | Tabs shrink back after the window widens
+- **Tabs shrink back after the window widens.** Making the window narrow wrapped the tabs into several rows; widening it again left the tab row that tall, with stretched tabs. It now fits the tabs again.
+
+## 1.0.30 | 2026-10-10 | Text size per area, drag to reorder Quick access, middle-click on the path's empty part
+- **Text size per area**: Settings → Appearance now has a size for the sidebar, the tabs, the path bar and the file list, each from 80% to 150% on top of the window's text size. A bigger file list with a compact sidebar, for example.
+- **Reorder Quick access** by dragging a pinned folder up or down.
+- **Middle-click on the empty part of the path** opens the folder above in a new tab.
+
+## 1.0.29 | 2026-10-10 | A background image, with strength, blur and brightness
+- **Background image**: Settings → Appearance → Background image. Pick any picture; it fills the window behind the panes. Three sliders: **Strength** (how much of it shows), **Blur** and **Brightness** (darker or lighter), so the lists stay readable on any picture.
+
+## 1.0.28 | 2026-10-10 | Tabs wrap into rows instead of shrinking
+- **Tabs on several rows**: when tabs would get narrower than 120 px, they wrap into more rows instead of shrinking further. The rows stay where they are when you switch tabs, so a tab never jumps away from where you left it. Dragging to reorder works across rows.
+
+## 1.0.27 | 2026-10-10 | Space can open QuickLook
+- **QuickLook**: for QuickLook (QL-Win) users, Settings → Files → Space opens QuickLook. While it is running, Space previews in QuickLook, with all its plugins, and the preview follows the selection as you move, the way it does in Explorer. When it is not running, Space opens Quick View as before. Off by default.
+
+## 1.0.26 | 2026-10-10 | One pane, text size, pinned tabs, F1 help
+- **One pane**: hide the right pane, Explorer style. Ctrl+P switches, or Settings → One pane. F5/F6 bring the second pane back, since they copy into it.
+- **Text size**: Settings → Appearance → 100 / 115 / 130 / 150 %. The whole window grows, text, icons and rows together.
+- **Pinned tabs**: right-click a tab → Pin. Pinned tabs sit at the left, have no close button, ignore Ctrl+W and middle-click, and are remembered.
+- **Middle-click on Back, Forward, Up and any part of the path** opens that folder in a new tab, as it already did on folders, the sidebar and the tree.
+- **Sorting keeps your place**: the selected file stays in sight and keeps the keyboard after the order changes.
+- **Shift+Del, Enter** deletes permanently, as in Explorer. Yes is now the default, and Windows no longer asks a second time.
+- **Help (F1)**: every key and feature in one searchable window, also from the sidebar.
+
+## 1.0.25 | 2026-09-30 | Scripts run on Enter, like in Explorer
+- **Scripts run on Enter.** .bat and .cmd files now run when opened, like in Explorer, instead of opening in the editor. Edit (F4) in the right-click menu still edits them.
+- Files opened from File Labs start in their own folder, so scripts that use relative paths work.
+
+## 1.0.24 | 2026-09-29 | The editor gets tabs, a status bar and a memory
+The editor grows up:
+- **Tabs.** Every file opens as a tab in one editor window. Ctrl+Tab and Ctrl+PgUp/PgDn switch, Ctrl+W or a middle click closes, and a dot marks unsaved changes. Closing the window asks once for all of them.
+- **Status bar** with line and column, and the language, encoding (UTF-8, UTF-8 with BOM, UTF-16), line endings (CRLF/LF) and indentation — click any of them to change it.
+- **Changed on disk?** If another program changes an open file, a bar offers to reload it or keep what you have.
+- **Your tabs come back** the next time you open the editor, cursors where you left them.
+- **Settings** (the gear): font size, word wrap, minimap, whitespace, tabs or spaces. Ctrl+mouse wheel zooms.
+- **Markdown preview** beside the text (Ctrl+Shift+V).
+- **Compare in editor:** select two files, right-click, and see them side by side with the differences marked.
+- **Save as administrator** for files like hosts that need it.
+- The editor uses your File Labs accent colour, and its questions are in File Labs' own style.
+
+## 1.0.23 | 2026-09-29 | A built-in code editor
+- **Built-in code editor.** F4, or Edit in the right-click menu, opens a file in the editor from VS Code: colours for about 80 languages (PHP, HTML, JSON, PowerShell, Python, C#, SQL, YAML…), Format Document with Shift+Alt+F, multi-cursor, find and replace. Ctrl+S saves, keeping the file's encoding.
+- Enter or double-click on a code or text file now opens it in the editor. Prefer the app Windows has for it? Settings → Files → turn off *Open code and text files in the File Labs editor*.
+
+## 1.0.22 | 2026-09-29 | Back up with Backup Labs in the context menu
+Back up with Backup Labs, in the right-click menu.
+- **Back up with Backup Labs** on folders and files, several at once too, opens Backup Labs, our free backup app, on a new job that has them as what to back up. Pick where the backups go and it is ready. Needs Backup Labs 1.0.2 or newer.
+- The same item is in the menu of a pane's empty space, for the folder you are in.
+- If Backup Labs is not installed, the item opens its page.
+
+## 1.0.21 | 2026-09-29 | Add to Shelf and Add to Reel in the context menu
+Add to Shelf and Add to Reel, in the right-click menu.
+- **Add to Shelf** on folders and .exe files hands them to Shelf, our game library, which offers them in its Import Games list. Needs Shelf 3.59.0 or newer.
+- **Add to Reel** on folders and videos hands them to Reel, our film library, which adds a video as a film and asks what a folder is: one film, a folder of films or a folder of series. Needs Reel 1.9.11 or newer.
+- Both work whether the app is already running or not, and on several selected items at once. If the app is not installed, the item opens its page.
+
+## 1.0.20 | 2026-09-29 | "show in folder" from other apps opens File Labs
+"Show in folder" from other apps now opens File Labs.
+- qBittorrent's "Open destination folder", a browser's "Show in folder" and similar commands used to open File Explorer even with File Labs as your default. They now open File Labs, with the file selected.
+- The Explorer window they would have opened is never shown.
+- This PC, Control Panel, the Recycle Bin and other places only Explorer can show still open in Explorer.
+- "Open in File Explorer" and "Show in File Explorer" from File Labs' own menu still open Explorer.
+Requires File Labs to be your default file manager (Settings → Windows integration).
+
+## 1.0.19 | 2026-09-29 | Scan with SpaceScan in the context menu
+Right-click a folder (or the empty space in a pane) and pick **Scan with SpaceScan** to see what is filling it up. If SpaceScan is not installed, the item opens its page.
+
+## 1.0.18 | 2026-09-27 | Striped rows and a bolder age bar
+Easier to read long lists, and recent files stand out.
+- Every other row is a touch lighter, so a row is easy to follow across.
+- The age bar left of each name is a wider block in the age colour: files changed minutes or hours ago are easy to spot down a long list.
+- The age badge is more precise under a day: 4h 56' instead of 4h.
+
+## 1.0.17 | 2026-09-27 | Names sort the way Explorer sorts them
+Names sort the way Explorer sorts them.
+- Folders and files starting with a symbol (_drafts, ~temp, (old), #tags) now come first instead of last.
+- Numbers sort by value: folder2 comes before folder10.
+- The same order in the list, the Folders tree and the path bar's folder menus.
+
+## 1.0.16 | 2026-09-27 | Every folder size remembered, a new stats bar, colour wheel
+**Folder sizes are remembered — all of them**
+- Scanning a folder now remembers the size of every folder inside it. Open any folder below one that was scanned and its sizes are there at once.
+- Leave a folder while it is being measured and nothing is lost: coming back continues from where it stopped.
+- Sizes survive restarts (saved every two minutes and on exit) and load in the background, so startup doesn't wait.
+- When a folder changes, its size and every total above it are measured again.
+**A new stats bar**
+- Drive: free space, used of total, and a capacity bar that turns red and glows when the drive is over 90% full.
+- This folder: how many folders and files, and a bar showing what it's made of (images, video, archives, programs, code…).
+- Selection: its size, or — when nothing is selected — the latest change in the folder.
+**Looks**
+- Nearly full drives in the sidebar are bright red with a soft glow.
+- The active pane's edge glows in your accent colour.
+- Settings → Accent colour now has a colour wheel with a brightness slider; the app changes colour live as you drag.
+
+## 1.0.15 | 2026-09-26 | Faster folder changes, no NAS freezes, safer moves
+Faster, and safer with files.
+**Speed**
+- Changing folders or tabs is 4× faster (≈400 ms → ≈90 ms of frozen window) on PCs running password managers, Logitech Options, ShareX, ChatGPT or screen readers — most PCs.
+- A NAS or network drive that is off no longer freezes the window for 21 seconds.
+- Startup no longer waits for every drive to answer.
+- Quick View steps through large photos without freezing.
+- Win+E brings an open File Labs to the front almost instantly.
+- Thumbnail memory is capped.
+**Fixes**
+- Files that grow or change in place (downloads, logs) show their new size and date live.
+- A folder that keeps changing no longer drops your selection or scroll position.
+- Moving a folder onto a folder with the same name merges them, like Explorer.
+- Undo is no longer offered where it could remove files that were already there.
+- Junctions inside a moved folder are left alone.
+- Settings and caches can no longer be left empty by a crash or shutdown.
+- Screen readers now read file names in the list.
+- Updates are checked against GitHub's published SHA-256 before installing.
+- Settings → About: feedback email and website links.
+
+## 1.0.14 | 2026-09-24 | The accent reads as a colour, and a slider tunes it
+The accent colour was drawn at low alpha over an already translucent window, so it washed out twice and a selected row read as grey. The tints are stronger now.
+- Selected rows, the marquee and the active pane's edge are noticeably more blue.
+- Settings > Appearance has a **Strength** slider (30-250%) so the accent can be tuned without a new build.
+- The coloured file-kind glyph went from 50% to 90% opacity.
+
+## 1.0.13 | 2026-09-23 | The icon views only build what is on screen
+- **Zooming is smooth on big folders.** The icon and list views used to build every item — C:\Windows\System32 (5 001 files) in XL icons froze the window. They now build only what is on screen.
+- A wheel spin applies once instead of once per notch, and switching view rebuilds the list a single time.
+- Thumbnails are no longer re-fetched at a new size for every zoom step.
+
+## 1.0.12 | 2026-09-23 | Ctrl+wheel zooms the view
+- **Ctrl + mouse wheel** makes the thumbnails bigger and smaller: it steps through the five view modes, Details → List → M → L → XL icons, and back down again.
+
+## 1.0.11 | 2026-09-23 | Folder cache, motion, appearance settings
+- **Folders are cached**, so switching tabs or going back to a folder is instant: an unchanged folder is not re-read at all and keeps its scroll position, icons and sizes. Icons, thumbnails and sync badges are cached too, and the folders you are likely to open next (other tabs, subfolders, the sidebar's) are read in the background.
+- **Smoother scrolling**: pixel scrolling instead of jumping a row at a time.
+- **Motion**: short fades when a folder is read, when panes change, in Quick View, and a transfer card sliding in. Can be switched off in Settings.
+- **Settings → Appearance**: accent colour (8 colours or any #RRGGBB), row height (Compact / Normal / Roomy), animations on or off.
+- **Updates**: checked every 10 minutes, plus a Check for updates button in the sidebar.
+- Fixed the white selection block in the Folders tree, and the status bar losing its message every 10 seconds.
+
+## 1.0.10 | 2026-09-23 | Sorting everywhere, live drive space, multi-item properties
+- **Sorting in every view**: a Sort button in the pane footer and a Sort by submenu in the right-click menu, so the icon and list views can be sorted too. Sorting by Version now works.
+- **Drive space keeps up**: the sidebar and the figures at the top refresh every 10 seconds and right after a copy, move or delete — no restart needed.
+- **Right-click keeps the selection**: clicking a file name with several items selected no longer drops them.
+- **Properties of several items** opens Windows' combined dialog (total size, counts).
+
+## 1.0.9 | 2026-09-21 | Double-click opens folders and files again
+- Double-clicking a folder opens it again, and double-clicking a program or file launches it (broken in 1.0.8; Enter still worked).
+
+## 1.0.8 | 2026-09-21 | Search, zip, undo, Recycle Bin, sync badges and more
+- **Search in subfolders**: type in the filter box and press Enter (wildcards like *.log work, Esc goes back)
+- **Address bar** suggests folders as you type; the arrows between path segments list the folders inside
+- **Middle click**: folders open in a background tab, tabs close
+- **Drag to select** from empty space, or from the Size/Date columns in Details
+- **ZIP**: Compress to ZIP, Extract here, Extract to folder
+- **Undo (Ctrl+Z)** for renames, new files/folders, zips, shortcuts, and copies/moves without conflicts
+- **Shift+Delete** deletes permanently, always asking first
+- **Rename many** (F2 with several selected): [N] name, [C] counter, [E] extension, find/replace, live preview
+- **Selection**: Num+ by pattern, Num- to deselect, Num* invert; **Shift+F2** compares the two panes
+- **Recycle Bin** in the sidebar: restore, delete, empty
+- **Network**: \\server lists its shares
+- **Menu**: SHA-256 checksum, Create shortcut, Run as administrator
+- **Ctrl+G in Open/Save dialogs** jumps to the folder open in File Labs
+- **Folders tree** in the sidebar
+- **Quick View** shows Office, HTML, mail and more through Windows' own previewers
+- **Sync badges** from Google Drive and Nextcloud on icons, updated live
+- Fixed a crash when clicking a file name
+
+## 1.0.7 | 2026-09-21 | Typing an address works again
+- Typing an address and pressing Enter now goes to that folder (it used to stay put).
+- Paths pasted with quotes around them, like Explorer's Copy as path, are accepted.
+
+## 1.0.6 | 2026-09-20 | Browser-shaped tabs
+**Tabs have the browser shape** — rounded top corners flaring outwards at the bottom, like FilePilot's. The active tab still shows the panel's own surface, whatever opacity you set.
+
+## 1.0.5 | 2026-09-20 | Tabs you can drag and that survive a restart
+**Tabs can be dragged.** Drag a tab to reorder it, or drop it on the other panel's tab bar to move it there. A line shows where it will land.
+**Tabs survive a restart.** The open tabs of both panels, and which one was active, are remembered, so File Labs reopens in the folder you left it in.
+**Switching tabs is instant** — from about 1.2 seconds to under 20 ms. Folders you've visited are kept in memory and painted immediately while being re-read in the background, and the list no longer scrolls itself into place when there's nothing to scroll to. Sidebar and tab icons are fetched in the background, which alone could take most of a second on a network drive.
+
+## 1.0.4 | 2026-09-20 | Sidebar sections you can fold and reorder
+**The sidebar is now three panels: Quick access, Favorites and Drives.**
+- Each has its own border and header. Click a header to fold that section away.
+- Drag a header to reorder the sections. A line shows in the gap where the panel will land.
+- The order and which sections are folded are remembered between sessions.
+
+## 1.0.3 | 2026-09-20 | Rename in the list, and the version in the title bar
+**Rename in the list.** F2 turns the row into an edit box, the way Explorer does it: the extension stays out of the selection, Enter keeps the new name, Esc cancels, and clicking elsewhere keeps it. The row being renamed stays bright inside a bordered box while the rest of the list dims, so it's obvious what you're renaming. Dragging inside the box selects text instead of starting a file drag.
+**New folder** asks in File Labs' own window instead of the old Windows input box.
+**The title bar shows the version.**
+
+## 1.0.2 | 2026-09-20 | Self-update, folder-size cache, New file dialog
+**Self-update.** File Labs now updates itself: it checks shortly after launch and every 30 minutes, downloads the installer, and restarts into the new version. "Later" silences a version until the next launch, and Settings → About has a manual check.
+**Folder sizes are remembered between sessions.** Opening a full 12 TB drive used to rescan everything; now the sizes are there immediately (49 s of CPU → 1.2 s in a real measurement). A size is reused only while the folder itself is unchanged; Ctrl+R rescans.
+**Folders open without freezing the window.** Reading a folder and asking the drive for free space — slow on network drives — happen in the background.
+**New file and New folder.** Ctrl+N asks which type of file to create, using the same list Explorer's New menu shows, plus everyday types it may be missing (text, Markdown, JSON, CSV, PowerShell, batch). Ctrl+Shift+N makes a folder. Both have buttons in the bottom bar.
+**Looks.** Real Windows icons in the sidebar and on tabs, the active tab now shares the panel's surface, and a file that has been cut shows a dimmed icon.
+
+## 1.0.1 | 2026-09-19 | Speed chart in decimal MB/s, like every other figure
+- The transfer speed chart uses the same units as the rest of the app (1 MB = 1000 KB). Its axis used 1024-based units under an MB/s label, so it could disagree with the live reading next to it.
+
+## 1.0.0 | 2026-09-19 | First public release
+First public release.
+Two panes with tabs, copy and move through the Ferry engine (one scan, one conflict decision per job, pause, live speed chart, optional xxHash3 verification), Quick View on Space, folder sizes, Explorer's thumbnails and real right-click menu, and an optional switch to make it the default file manager (folders, drives, Win+E). Windows 11.
