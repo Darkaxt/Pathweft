@@ -651,7 +651,8 @@ public partial class PaneView : UserControl
         foreach (var e in items) rows[e.Name] = e;
         foreach (var f in fresh)
             if (!rows.TryGetValue(f.Name, out var e) || e.IsDir != f.IsDir) return false;
-        bool resize = false, rethumb = false;
+        bool resize = false, rethumb = false, reversion = false;
+        var reicon = new List<Entry>();
         foreach (var f in fresh)
         {
             var e = rows[f.Name];
@@ -660,11 +661,16 @@ public partial class PaneView : UserControl
                 e.Modified = f.Modified;
                 if (e.IsDir) { e.Size = f.Size; resize |= f.Size == -1; } // -1: its contents changed, measure again
                 else if (e.Thumb != null) { e.Thumb = null; e.ThumbSize = 0; rethumb = true; } // an edited photo
+                // an installer still being written when it was first listed had no version or icon yet
+                if (!e.IsDir && Versioned.Contains(System.IO.Path.GetExtension(e.Name))) reversion = true;
+                if (!e.IsDir && OwnIcon.Contains(System.IO.Path.GetExtension(e.Name))) reicon.Add(e);
             }
             if (!e.IsDir && e.Size != f.Size) e.Size = f.Size;
         }
         if (resize) StartSizing();
         if (rethumb) StartThumbs();
+        if (reversion) StartVersions();
+        if (reicon.Count > 0) StartIcons(reicon);
         return true;
     }
 
@@ -1452,6 +1458,7 @@ public partial class PaneView : UserControl
         TabsArea.LayoutTransform = Scale(Settings.TabsScale);
         PathBar.LayoutTransform = Scale(Settings.PathScale);
         List.LayoutTransform = Scale(Settings.ListScale);
+        PlaceNameEdge();
     }
     string TypedPath => Environment.ExpandEnvironmentVariables(PathBox.Text.Trim().Trim('"'));
 
@@ -1631,7 +1638,8 @@ public partial class PaneView : UserControl
         bool show = Mode == ViewMode.Details;
         NameEdge.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
         if (!show) return;
-        Canvas.SetLeft(NameEdge, NameColumn.ActualWidth - ScrollX); // the same boundary Drag_Down tests
+        // the same boundary Drag_Down tests, mapped through the list's text-size scale like the marquee
+        Canvas.SetLeft(NameEdge, List.TransformToVisual(MarqueeLayer).Transform(new Point(NameColumn.ActualWidth - ScrollX, 0)).X);
         NameEdge.Height = MarqueeLayer.ActualHeight;
     }
 
@@ -1753,7 +1761,8 @@ public partial class PaneView : UserControl
     static readonly System.Collections.Concurrent.ConcurrentDictionary<string, ImageSource> IconByExt = new(StringComparer.OrdinalIgnoreCase);
     static readonly HashSet<string> OwnIcon = new(StringComparer.OrdinalIgnoreCase) { ".exe", ".lnk", ".ico", ".url", ".cur", ".ani", ".msc", ".appref-ms" };
     CancellationTokenSource icons;
-    void StartIcons()
+    /// stale: rows whose file was rewritten, asked again although they have an icon
+    void StartIcons(ICollection<Entry> stale = null)
     {
         icons?.Cancel();
         var cts = icons = new CancellationTokenSource();
@@ -1763,10 +1772,11 @@ public partial class PaneView : UserControl
             foreach (var e in todo)
             {
                 if (cts.IsCancellationRequested) return;
-                if (e.SmallIcon != null) continue; // kept from the last time this folder was shown
+                if (e.SmallIcon != null && stale?.Contains(e) != true) continue; // kept from the last time this folder was shown
                 var ext = System.IO.Path.GetExtension(e.Name);
                 bool shared = !e.IsDir && !OwnIcon.Contains(ext);
-                ImageSource img = shared && IconByExt.TryGetValue(ext, out var cached) ? cached : Thumbnails.Get(e.Path, 32, iconOnly: true);
+                // a file's own icon is cached by its timestamp, so a rewritten one isn't served the old answer
+                ImageSource img = shared && IconByExt.TryGetValue(ext, out var cached) ? cached : Thumbnails.Get(e.Path, 32, iconOnly: true, stamp: shared ? 0 : e.Modified.Ticks);
                 if (img == null) continue;
                 if (shared) IconByExt.TryAdd(ext, img);
                 Dispatcher.BeginInvoke(() => e.SmallIcon = img);

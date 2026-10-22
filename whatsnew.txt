@@ -1,6 +1,13 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.0.47 | 2026-10-22 | The Name line stays on the Name column
+Two small fixes from a sharp-eyed user, both about the list showing exactly what's there.
+**Details view**
+- The faint line that marks where the Name column ends now sits exactly on the column's edge at any width. With the list's text size in Settings set to anything other than 100%, it used to drift off the edge, and further the wider Name got.
+**New files**
+- A program or installer that was still being written while its folder was open, such as a fresh build, now shows its own icon and version once it's finished, instead of a plain setup icon and an empty Version cell.
+
 ## 1.0.46 | 2026-10-22 | Show in folder lands on the file, and the list scrolls the way you move
 Three requests from a File Labs power user, all about getting to the right file without hunting for it.
 **Show in folder**
