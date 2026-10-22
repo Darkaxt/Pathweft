@@ -17,7 +17,8 @@ public class WhatsNewWindow : Window
 
     readonly List<Release> releases = Load();
     readonly StackPanel nav = new();
-    readonly Border banner = new() { Height = 168, CornerRadius = new CornerRadius(10), ClipToBounds = true, Margin = new(0, 0, 0, 14) };
+    // 960 x 170 in every app (Shelf too), so a picture made at that size fits exactly; a narrower window shrinks it
+    readonly Border banner = new() { CornerRadius = new CornerRadius(10), ClipToBounds = true, Margin = new(0, 0, 0, 14), HorizontalAlignment = HorizontalAlignment.Left };
     readonly StackPanel notes = new();
     readonly ScrollViewer notesScroll;
     int shown = -1;
@@ -41,7 +42,7 @@ public class WhatsNewWindow : Window
     {
         Owner = owner;
         Title = "What's new — File Labs";
-        Width = 980; Height = 680; MinWidth = 700; MinHeight = 420;
+        Width = 1240; Height = 720; MinWidth = 700; MinHeight = 420; // room for the list and a 960 x 170 banner
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
         ShowInTaskbar = false;
         Background = Brushes.Transparent;
@@ -114,7 +115,7 @@ public class WhatsNewWindow : Window
         buttons[i].Tag = "on";
         buttons[i].BringIntoView();
 
-        banner.Child = Banner(r);
+        banner.Child = new Viewbox { Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly, Child = Banner(r) };
         notes.Children.Clear();
         notes.Children.Add(new TextBlock { Text = r.Date.ToString("d MMMM yyyy", System.Globalization.CultureInfo.InvariantCulture), Foreground = (Brush)FindResource("Muted"), Margin = new(0, 0, 0, 8) });
         foreach (var line in r.Lines)
@@ -369,13 +370,16 @@ public class WhatsNewWindow : Window
         var ground = new LinearGradientBrush(Hsl(hue, sat, 13), Hsl(hue + second / 4, sat, 30), 20 + rnd() * 50);
         var glow = rnd() < 0.5 ? new Ellipse { Width = 520, Height = 360, Fill = new RadialGradientBrush(Hsl(hue + second, sat, 50, 0.35), Hsl(hue + second, sat, 50, 0)) } : null;
         if (glow != null) { Canvas.SetLeft(glow, 380 + rnd() * 200); Canvas.SetTop(glow, -120 + rnd() * 60); art.Children.Insert(0, glow); }
-        var picture = new Viewbox { Stretch = Stretch.UniformToFill, HorizontalAlignment = HorizontalAlignment.Right, Child = art };
+        // the pictures were drawn on 900 x 180; moved to sit at the right of the 960 x 170 banner
+        var picture = new Canvas { Width = 960, Height = 170, ClipToBounds = true };
+        Canvas.SetLeft(art, 60); Canvas.SetTop(art, -5);
+        picture.Children.Add(art);
         // the words sit on the dark side; a shade under them keeps them readable over any picture
         var shade = new Border { Background = new LinearGradientBrush(Color.FromArgb(0xB0, 0, 0, 0), Color.FromArgb(0, 0, 0, 0), 0) };
         var words = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Margin = new(26, 0, 0, 0), MaxWidth = 460, HorizontalAlignment = HorizontalAlignment.Left };
         words.Children.Add(new TextBlock { Text = "WHAT’S NEW IN", FontSize = 11, FontWeight = FontWeights.SemiBold, Foreground = new SolidColorBrush(Color.FromArgb(0xCC, 255, 255, 255)) });
         words.Children.Add(new TextBlock { Text = r.Version, FontSize = 34, FontWeight = FontWeights.SemiBold, Foreground = Brushes.White });
         words.Children.Add(new TextBlock { Text = r.Title, FontSize = 14, TextWrapping = TextWrapping.Wrap, Foreground = new SolidColorBrush(Color.FromArgb(0xE6, 255, 255, 255)) });
-        return new Grid { Background = ground, Children = { picture, shade, words } };
+        return new Grid { Width = 960, Height = 170, Background = ground, Children = { picture, shade, words } };
     }
 }
