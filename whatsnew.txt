@@ -8,6 +8,8 @@ Three requests from a File Labs power user, all about getting to the right file 
 **Scrolling**
 - Settings → Appearance → **Smooth scrolling** makes the mouse wheel glide through the file list instead of jumping a few rows at a time. It stays off unless you turn it on.
 - Dragging files near the top or bottom edge of the list now scrolls it, faster the closer you get to the edge, whether the files come from File Labs or from another app. Move away from the edge and it stops.
+**Deleting**
+- **Delete permanently** (Shift+Delete) now shows the Windows progress window for anything that takes more than a moment, with Cancel, instead of working out of sight. With the delete sound off in Settings it stays silent.
 
 ## 1.0.45 | 2026-10-22 | Easier to see where a selection starts, and readable renames
 Three small things that make everyday use smoother, all from your feedback.

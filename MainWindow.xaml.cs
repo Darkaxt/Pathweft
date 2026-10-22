@@ -952,28 +952,82 @@ public partial class MainWindow : Window
         if (permanent && !(Settings.DeleteSound
                 ? MessageBox.Show(this, question + "\n\n" + detail, "Delete permanently", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.Yes) == MessageBoxResult.Yes
                 : PromptDialog.Choose(this, question, detail, "Delete", "Cancel") == 0)) return;
-        Recycle(sel.Select(e => e.Path).ToList(), permanent ? UIOption.OnlyErrorDialogs : UIOption.AllDialogs, permanent);
+        Recycle(sel.Select(e => e.Path).ToList(), UIOption.AllDialogs, permanent);
     }
 
     /// A permanent delete without the shell, which plays Windows' "Empty Recycle Bin" sound for one.
     /// Walked by hand: read-only items are cleared first (the shell deletes them, .NET refuses), and a
     /// junction is removed, never followed — .NET's own recursive delete fails on one without admin rights.
-    internal static void DeleteQuietly(string path)
+    internal static void DeleteQuietly(string path, Action<string> deleting = null)
     {
+        deleting?.Invoke(path);
         var attributes = File.GetAttributes(path); // a folder's too
         if (attributes.HasFlag(FileAttributes.ReadOnly)) File.SetAttributes(path, attributes & ~FileAttributes.ReadOnly);
         if (!attributes.HasFlag(FileAttributes.Directory)) { File.Delete(path); return; }
         if (!attributes.HasFlag(FileAttributes.ReparsePoint))
             foreach (var child in Directory.GetFileSystemEntries(path, "*", new EnumerationOptions { AttributesToSkip = 0, IgnoreInaccessible = false }))
-                DeleteQuietly(child);
+                DeleteQuietly(child, deleting);
         Directory.Delete(path);
+    }
+
+    // Shift+Delete with the sound off: deleted by hand as above, in Windows' own progress window (silent,
+    // with the item being deleted and Cancel), as the shell shows for every other delete.
+    static void DeleteWithProgress(IntPtr owner, List<string> paths)
+    {
+        var dialog = (IProgressDialog)Activator.CreateInstance(Type.GetTypeFromCLSID(new Guid("F8383852-FCD3-11d1-A6B9-006097DF5BD4")));
+        dialog.SetTitle("Deleting");
+        dialog.StartProgressDialog(owner, null, PROGDLG_NOTIME | PROGDLG_MARQUEEPROGRESS, IntPtr.Zero);
+        int done = 0;
+        long shown = 0;
+        try
+        {
+            foreach (var p in paths)
+                DeleteQuietly(p, item =>
+                {
+                    done++;
+                    if (Environment.TickCount64 - shown < 100) return; // each call waits on the dialog's thread: ten a second
+                    shown = Environment.TickCount64;
+                    if (dialog.HasUserCancelled()) throw new OperationCanceledException();
+                    dialog.SetLine(1, item, true, IntPtr.Zero);
+                    dialog.SetLine(2, $"{done:N0} items deleted", false, IntPtr.Zero);
+                });
+        }
+        finally { dialog.StopProgressDialog(); Marshal.ReleaseComObject(dialog); }
+    }
+
+    // Shift+Delete with the sound on: the shell's delete with its progress window and error prompts, but not
+    // its own confirmation (FOF_NOCONFIRMATION) — File Labs has just asked. Without FOF_ALLOWUNDO it's permanent.
+    static string ShellDelete(IntPtr owner, List<string> paths)
+    {
+        var op = new SHFILEOPSTRUCT { hwnd = owner, wFunc = FO_DELETE, pFrom = string.Join("\0", paths) + "\0", fFlags = FOF_NOCONFIRMATION };
+        int r = SHFileOperation(ref op);
+        return r == 0 || op.fAnyOperationsAborted ? null : $"Not everything could be deleted (error {r}).";
+    }
+
+    const uint FO_DELETE = 3, PROGDLG_NOTIME = 0x4, PROGDLG_MARQUEEPROGRESS = 0x20;
+    const ushort FOF_NOCONFIRMATION = 0x10;
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+    struct SHFILEOPSTRUCT { public IntPtr hwnd; public uint wFunc; public string pFrom, pTo; public ushort fFlags; public bool fAnyOperationsAborted; public IntPtr hNameMappings; public string lpszProgressTitle; }
+    [DllImport("shell32.dll", CharSet = CharSet.Unicode)] static extern int SHFileOperation(ref SHFILEOPSTRUCT op);
+
+    [ComImport, InterfaceType(ComInterfaceType.InterfaceIsIUnknown), Guid("EBBC7C04-315E-11d2-B62F-006097DF5BD4")]
+    interface IProgressDialog // only up to SetLine, in vtable order
+    {
+        void StartProgressDialog(IntPtr parent, [MarshalAs(UnmanagedType.IUnknown)] object modeless, uint flags, IntPtr reserved);
+        void StopProgressDialog();
+        void SetTitle([MarshalAs(UnmanagedType.LPWStr)] string title);
+        void SetAnimation(IntPtr instance, ushort id);
+        [PreserveSig] bool HasUserCancelled();
+        void SetProgress(uint completed, uint total);
+        void SetProgress64(ulong completed, ulong total);
+        void SetLine(uint line, [MarshalAs(UnmanagedType.LPWStr)] string text, bool compactPath, IntPtr reserved);
     }
 
     /// Deletes through the shell, to the Recycle Bin unless `permanent`. Also used by Undo, quietly.
     void Recycle(List<string> paths, UIOption ui, bool permanent = false)
     {
         if (paths.Count == 0) return;
-        var how = permanent ? RecycleOption.DeletePermanently : RecycleOption.SendToRecycleBin;
+        var owner = new WindowInteropHelper(this).Handle;
         // The Windows delete/recycle dialog runs its own loop on the calling thread and doesn't return
         // until it's done, so it gets a thread of its own (STA, as the shell dialog needs); the window
         // stays responsive and refreshes when the delete finishes. The watcher shows progress meanwhile.
@@ -982,10 +1036,11 @@ public partial class MainWindow : Window
             string error = null;
             try
             {
-                foreach (var p in paths)
-                    if (permanent && !Settings.DeleteSound) DeleteQuietly(p);
-                    else if (Directory.Exists(p)) VbFs.DeleteDirectory(p, ui, how, UICancelOption.ThrowException);
-                    else if (File.Exists(p)) VbFs.DeleteFile(p, ui, how, UICancelOption.ThrowException);
+                if (permanent && Settings.DeleteSound) error = ShellDelete(owner, paths);
+                else if (permanent) DeleteWithProgress(owner, paths);
+                else foreach (var p in paths)
+                    if (Directory.Exists(p)) VbFs.DeleteDirectory(p, ui, RecycleOption.SendToRecycleBin, UICancelOption.ThrowException);
+                    else if (File.Exists(p)) VbFs.DeleteFile(p, ui, RecycleOption.SendToRecycleBin, UICancelOption.ThrowException);
             }
             catch (OperationCanceledException) { }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException) { error = ex.Message; }

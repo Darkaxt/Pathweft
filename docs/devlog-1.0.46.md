@@ -20,6 +20,12 @@ Three requests from a power user. Local build only, not released.
   the scrollbar count as the edge) scrolls up to 20 px every 16 ms, faster the closer to the edge, for files dragged
   from File Labs or from another app. It stops when the pointer leaves the zone or the list, on drop, Esc, or the
   end of the drag.
+- **Delete permanently shows progress.** Shift+Delete deleted with no window at all: after File Labs' own question,
+  the shell was called with `UIOption.OnlyErrorDialogs`, which is `FOF_SILENT` (no progress), and with the delete
+  sound off the files were deleted by hand with nothing on screen. A big folder looked like nothing was happening.
+  Now, with the sound on, it is the shell's delete with its usual progress window (count, speed, Pause, Cancel) and
+  no second confirmation; with the sound off, still the silent hand-made delete, inside Windows' own progress window
+  (the item being deleted, how many are gone, Cancel). Both only appear once the delete takes about a second.
 
 ## How
 
@@ -42,6 +48,13 @@ Three requests from a power user. Local build only, not released.
   - started with `/select,"…\file-250.txt"`: file-250 selected and on screen (UI Automation, read-only).
   - a second launch, `/select,` and the path as two arguments, handed off to the copy: file-040 selected and on
     screen in the same tab; the second process exited at once.
+- Permanent delete, called from a small harness on the built `FileLabs.dll` (no window of the user's touched), on
+  a scratch folder of 30,061 items each time:
+  - sound on (`ShellDelete`): the shell's progress window from 1.3 s ("Deleting 30,061 items", 15% → 99%), no
+    confirmation, all gone in 8.0 s.
+  - sound off (`DeleteWithProgress`): "Deleting" window from 1.1 s with the current file and the count, all gone in
+    4.4 s; Cancel (clicked with `BM_CLICK` on the harness's own dialog) at 1.5 s stopped it with 19,119 files left.
+  - one small file: deleted in 0.1 s, no window shown.
 
 ## Not tested
 
@@ -49,4 +62,7 @@ Three requests from a power user. Local build only, not released.
   Automation could not report it.
 - Smooth scrolling and the edge scroll were not tried live: both need real mouse input on the desktop the user was
   working on. They build, and were checked by reading the code paths only.
+- Shift+Delete pressed in the running app: the delete code was tested directly, the key and the confirmation that
+  come before it are unchanged.
+- Error prompts from the shell (a file in use, no permission), and the shell window's Pause.
 - Everything's "Open path" itself, and the agent's Explorer-window route with it.
