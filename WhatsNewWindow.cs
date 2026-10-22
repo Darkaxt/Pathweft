@@ -185,6 +185,21 @@ public class WhatsNewWindow : Window
 
     static UIElement Banner(Release r)
     {
+        // From 1.0.46 a release shows the studio's collage for the month it came out, when there is one built in;
+        // the ones before keep the pictures drawn here.
+        if (Version.Parse(r.Version) >= new Version(1, 0, 46)
+            && typeof(WhatsNewWindow).Assembly.GetManifestResourceStream($"whatsnew-{r.Date:yyyy-MM}.jpg") is { } stream)
+            using (stream)
+            {
+                var collage = new System.Windows.Media.Imaging.BitmapImage();
+                collage.BeginInit();
+                collage.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad;
+                collage.StreamSource = stream;
+                collage.EndInit();
+                collage.Freeze();
+                return new Image { Source = collage, Width = 960, Height = 170, Stretch = Stretch.UniformToFill };
+            }
+
         var rnd = Seeded(r.Version);
         var v = r.Version.Split('.').Select(int.Parse).ToArray();
         int n = v[0] * 10000 + v[1] * 100 + v[2];

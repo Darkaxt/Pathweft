@@ -35,5 +35,7 @@
     <Resource Include="app.ico" />
     <!-- What's new: every release's notes, read from inside the exe (WhatsNewWindow.cs) -->
     <EmbeddedResource Include="whatsnew.txt" LogicalName="whatsnew.txt" />
+    <!-- From 1.0.46, the banner of the month a release came out (the studio's collage, 1920 x 340) -->
+    <EmbeddedResource Include="banners\*.jpg" LogicalName="whatsnew-%(Filename).jpg" />
   </ItemGroup>
 </Project>
