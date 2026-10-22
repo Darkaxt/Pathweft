@@ -35,7 +35,7 @@
           <Border Background="#F2151A22" BorderBrush="{DynamicResource Accent}" BorderThickness="1.5" CornerRadius="3" Padding="4,1" Margin="-4,-1,0,-1">
             <Border.Visibility><Binding Path="Renaming"><Binding.Converter><BooleanToVisibilityConverter/></Binding.Converter></Binding></Border.Visibility>
             <TextBox Text="{Binding Name, Mode=OneWay}" Style="{StaticResource Bare}" Foreground="#FFFFFF" FontWeight="SemiBold"
-                     SelectionBrush="{DynamicResource Accent}" SelectionOpacity="0.85" SelectionTextBrush="White" IsInactiveSelectionHighlightEnabled="True"
+                     SelectionBrush="{DynamicResource Accent}" SelectionOpacity="0.45" IsInactiveSelectionHighlightEnabled="True"
                      IsVisibleChanged="Rename_Shown" PreviewKeyDown="Rename_KeyDown" LostKeyboardFocus="Rename_Done" Tag="{Binding}"/>
           </Border>
         </Grid>
@@ -73,7 +73,7 @@
           <Border Background="#F2151A22" BorderBrush="{DynamicResource Accent}" BorderThickness="1.5" CornerRadius="3" Padding="4,1" Margin="-4,-1,0,-1">
             <Border.Visibility><Binding Path="Renaming"><Binding.Converter><BooleanToVisibilityConverter/></Binding.Converter></Binding></Border.Visibility>
             <TextBox Text="{Binding Name, Mode=OneWay}" Style="{StaticResource Bare}" Foreground="#FFFFFF" FontWeight="SemiBold"
-                     SelectionBrush="{DynamicResource Accent}" SelectionOpacity="0.85" SelectionTextBrush="White" IsInactiveSelectionHighlightEnabled="True"
+                     SelectionBrush="{DynamicResource Accent}" SelectionOpacity="0.45" IsInactiveSelectionHighlightEnabled="True"
                      IsVisibleChanged="Rename_Shown" PreviewKeyDown="Rename_KeyDown" LostKeyboardFocus="Rename_Done" Tag="{Binding}"/>
           </Border>
         </Grid>
@@ -94,7 +94,7 @@
           <Border Background="#F2151A22" BorderBrush="{DynamicResource Accent}" BorderThickness="1.5" CornerRadius="3" Padding="4,1" Margin="-4,-1,0,-1">
             <Border.Visibility><Binding Path="Renaming"><Binding.Converter><BooleanToVisibilityConverter/></Binding.Converter></Binding></Border.Visibility>
             <TextBox Text="{Binding Name, Mode=OneWay}" Style="{StaticResource Bare}" Foreground="#FFFFFF" FontWeight="SemiBold"
-                     SelectionBrush="{DynamicResource Accent}" SelectionOpacity="0.85" SelectionTextBrush="White" IsInactiveSelectionHighlightEnabled="True"
+                     SelectionBrush="{DynamicResource Accent}" SelectionOpacity="0.45" IsInactiveSelectionHighlightEnabled="True"
                      IsVisibleChanged="Rename_Shown" PreviewKeyDown="Rename_KeyDown" LostKeyboardFocus="Rename_Done" Tag="{Binding}"/>
           </Border>
         </Grid>
@@ -221,6 +221,8 @@
       <Grid>
       <!-- drag-to-select rectangle, drawn over the list so the rows never move under it -->
       <Canvas x:Name="MarqueeLayer" Panel.ZIndex="1" IsHitTestVisible="False" Margin="4,0" ClipToBounds="True">
+        <!-- Details: where Name ends. A press right of it, on any row, starts a selection rectangle (PlaceNameEdge) -->
+        <Rectangle x:Name="NameEdge" Width="1" Fill="#40FFFFFF" Visibility="Collapsed"/>
         <Border x:Name="Marquee" Background="{DynamicResource AccentSoft}" BorderBrush="{DynamicResource AccentEdge}" BorderThickness="1" CornerRadius="2" Visibility="Collapsed"/>
       </Canvas>
       <!-- ScrollUnit=Pixel keeps virtualization but scrolls smoothly instead of jumping a row at a time -->

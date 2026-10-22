@@ -318,6 +318,10 @@ public partial class PaneView : UserControl
             else
                 widthProp.AddValueChanged(c, (_, _) => { Settings.ColumnWidths[colKey[c]] = c.Width; if (!ResizingColumn) FitName(); });
         }
+        // The line where Name ends follows its width, the sideways scroll and the list's height.
+        ((System.ComponentModel.INotifyPropertyChanged)NameColumn).PropertyChanged += (_, e) => { if (e.PropertyName == "ActualWidth") PlaceNameEdge(); };
+        List.AddHandler(ScrollViewer.ScrollChangedEvent, new ScrollChangedEventHandler((_, _) => PlaceNameEdge()));
+        MarqueeLayer.SizeChanged += (_, _) => PlaceNameEdge();
         // While a column's edge is dragged Name stays put and gives the room back on release. Shrunk on
         // every step, it held the dragged edge still under the pointer, and the header (which measures each
         // step from where the drag began) added the whole distance again each time: 40 px of mouse made a
@@ -1607,9 +1611,21 @@ public partial class PaneView : UserControl
     ViewBase details;
     public ViewMode Mode { get; private set; } = ViewMode.Details;
 
+    /// In Details, a thin line down the list where the Name column ends: right of it, a press on any row starts a
+    /// selection rectangle instead of picking up the file (Drag_Down), and the line shows where that begins.
+    void PlaceNameEdge()
+    {
+        bool show = Mode == ViewMode.Details;
+        NameEdge.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
+        if (!show) return;
+        Canvas.SetLeft(NameEdge, NameColumn.ActualWidth - ScrollX); // the same boundary Drag_Down tests
+        NameEdge.Height = MarqueeLayer.ActualHeight;
+    }
+
     public void SetView(ViewMode mode)
     {
         Mode = mode;
+        PlaceNameEdge();
         var m = Modes.First(x => x.mode == mode);
         ViewIcon.Text = m.glyph; ViewName.Text = m.name;
         Settings.Views[Name] = mode;
