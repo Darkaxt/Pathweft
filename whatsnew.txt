@@ -1,6 +1,15 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.0.45 | 2026-10-22 | Easier to see where a selection starts, and readable renames
+Three small things that make everyday use smoother, all from your feedback.
+**Selecting**
+- In Details, a faint line now marks where the Name column ends. Press to the right of it on any row and drag to select with a rectangle; press on the name to pick the file up.
+**Renaming**
+- The selected part of a name is easy to read again with any accent colour. With a red accent it used to turn into red on red.
+**Starting with Windows**
+- Settings → Windows integration → **Start with Windows, hidden next to the clock** can be ticked straight away; it turns on the icon by the clock it needs. It stays off unless you turn it on.
+
 ## 1.0.44 | 2026-10-22 | Opens up to three times faster, and can be ready before you need it
 File Labs now opens up to three times faster. A user told us the window took three to five seconds to appear on a laptop running on battery, so we timed every step of the start and moved everything that didn't need to happen before the first frame.
 **Faster from the first click**
