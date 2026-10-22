@@ -222,7 +222,7 @@
       <!-- drag-to-select rectangle, drawn over the list so the rows never move under it -->
       <Canvas x:Name="MarqueeLayer" Panel.ZIndex="1" IsHitTestVisible="False" Margin="4,0" ClipToBounds="True">
         <!-- Details: where Name ends. A press right of it, on any row, starts a selection rectangle (PlaceNameEdge) -->
-        <Rectangle x:Name="NameEdge" Width="1" Fill="#40FFFFFF" Visibility="Collapsed"/>
+        <Rectangle x:Name="NameEdge" Width="1" Fill="#18FFFFFF" Visibility="Collapsed"/>
         <Border x:Name="Marquee" Background="{DynamicResource AccentSoft}" BorderBrush="{DynamicResource AccentEdge}" BorderThickness="1" CornerRadius="2" Visibility="Collapsed"/>
       </Canvas>
       <!-- ScrollUnit=Pixel keeps virtualization but scrolls smoothly instead of jumping a row at a time -->
