@@ -15,7 +15,7 @@ public static class SizeCache
     record Entry(long Size, long Stamp, long UsedAt); // Stamp = folder's LastWriteTimeUtc ticks
 
     static readonly ConcurrentDictionary<string, Entry> map = new(StringComparer.OrdinalIgnoreCase);
-    static readonly string FilePath = Path.Combine(Settings.Dir, "folder-sizes.txt");
+    static string FilePath => Path.Combine(Settings.Dir, "folder-sizes.txt");
     const int MaxEntries = 1_000_000; // ~100 MB on disk at most; the least recently used go first
 
     // Read in the background after the window's first frame (MainWindow), or as soon as something needs a size.

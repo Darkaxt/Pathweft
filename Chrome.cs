@@ -298,7 +298,7 @@ public partial class MainWindow
 /// slow start on another PC can be read there instead of guessed.
 static class StartupClock
 {
-    static readonly string Log = System.IO.Path.Combine(Settings.Dir, "startup.log");
+    static string Log => System.IO.Path.Combine(Settings.Dir, "startup.log");
     static double windowMs;
 
     public static void WindowShown() => windowMs = Since();

@@ -5,14 +5,17 @@ using Microsoft.Win32;
 
 namespace FileExplorer;
 
-// key=value lines in %AppData%\FileLabs\settings.txt
+// key=value lines in %AppData%\ProtagonistLabs\File Labs\settings.txt (%AppData%\FileLabs up to 1.0.47, see DataFolder)
 public static class Settings
 {
     // FILELABS_PROFILE=<folder>: a copy for testing beside the installed one, with its own settings and
     // its own single instance, writing nothing the installed copy or the sister apps read
     public static readonly string Profile = Environment.GetEnvironmentVariable("FILELABS_PROFILE") is { Length: > 0 } p ? p : null;
-    public static readonly string Dir = Profile ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "FileLabs");
-    internal static readonly string FilePath = Path.Combine(Dir, "settings.txt");
+    // Decided at the first call, not when the class loads: the start moves the old folder first (DataFolder.Migrate), and
+    // .NET may load this class before that line runs. Every path below the data folder is derived at call time too.
+    public static string Dir => dir ??= Profile ?? DataFolder.Current;
+    static string dir;
+    internal static string FilePath => Path.Combine(Dir, "settings.txt");
 
     public static int Backdrop = 3;          // 1 solid, 2 mica, 3 acrylic
     public static double Opacity = 70;       // 30–100, floor keeps text readable
@@ -291,5 +294,103 @@ public static class Settings
             backup.DeleteValue("WinE", false); backup.DeleteValue("WinEDelegate", false);
         }
         else hk.DeleteSubKeyTree(WinE + @"\shell\opennewwindow", throwOnMissingSubKey: false); // only what we added
+    }
+}
+
+// Ecosystem v3 (vault Proiecte/Ecosistem-v3-foldere.md): since 1.0.48 File Labs installs per machine to Program
+// Files\ProtagonistLabs\File Labs and keeps all its data in %AppData%\ProtagonistLabs\File Labs. Up to 1.0.47 the data was
+// in %AppData%\FileLabs (settings, folder sizes, Quick access, editor state, startup log) and %LocalAppData%\FileLabs\WebView2
+// (the editor's browser data, now a WebView2 subfolder). The installer moves both (FileLabs.iss, same rule); the start
+// does it too, for an install that couldn't (a locked file) or ran from another admin account.
+static class DataFolder
+{
+    static readonly string Roaming = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+    static readonly string LocalData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+    internal static readonly string New = Path.Combine(Roaming, "ProtagonistLabs", "File Labs");
+    static readonly string Old = Path.Combine(Roaming, "FileLabs"), OldLocal = Path.Combine(LocalData, "FileLabs");
+
+    /// The data folder for this session: the old one only while its move is still pending (it failed, or hasn't run).
+    internal static string Current => Directory.Exists(Old) && !HasEntries(New) ? Old : New;
+
+    /// The editor's WebView2 data: in the data folder, unless the old one is still waiting to be moved.
+    internal static string WebView2 =>
+        Path.Combine(Settings.Dir, "WebView2") is var mine && Settings.Profile == null && !Directory.Exists(mine) && Directory.Exists(Path.Combine(OldLocal, "WebView2"))
+            ? Path.Combine(OldLocal, "WebView2") : mine;
+
+    /// Run before anything reads the data, and never while another File Labs window is open. A test copy
+    /// (FILELABS_PROFILE) keeps its data in the profile and moves nothing. Doesn't touch Settings, which would fix Dir.
+    internal static void Migrate()
+    {
+        if (Environment.GetEnvironmentVariable("FILELABS_PROFILE") is not { Length: > 0 }) Migrate(Old, OldLocal, New);
+    }
+
+    internal static void Migrate(string old, string oldLocal, string @new)
+    {
+        var (moved, log) = Move(old, @new);
+        if (moved)
+        {
+            var (webMoved, webLog) = Move(Path.Combine(oldLocal, "WebView2"), Path.Combine(@new, "WebView2"));
+            log += webLog;
+            // ponytail: a Local folder that can't be renamed into Roaming (Roaming redirected to another drive) is retried
+            // and logged at every start; fine until someone has that setup
+            if (webMoved) try { if (Directory.Exists(oldLocal) && !HasEntries(oldLocal)) Directory.Delete(oldLocal); }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
+        }
+        if (log == "") return;
+        try { File.AppendAllText(Path.Combine(moved ? @new : old, "migration.log"), log); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
+    }
+
+    /// The rule (spec §2): `from` is renamed to `to` when `to` is missing or empty — one rename on the same drive, never
+    /// a partial copy. `to` with data already: nothing is mixed, `from` stays where it is. A failed rename (a locked
+    /// file) leaves everything in `from`, used from there this session and tried again at the next start.
+    /// Moved = `to` is the folder to use.
+    static (bool Moved, string Log) Move(string from, string to)
+    {
+        if (!Directory.Exists(from)) return (true, "");
+        var now = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
+        if (HasEntries(to)) return (true, $"{now}  {from} left in place: {to} already has data\r\n");
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(to));
+            if (Directory.Exists(to)) Directory.Delete(to);
+            Directory.Move(from, to);
+            return (true, $"{now}  moved {from} to {to}\r\n");
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return (false, $"{now}  could not move {from} to {to}, used where it is and tried again next start: {ex.Message}\r\n");
+        }
+    }
+
+    static bool HasEntries(string dir) => Directory.Exists(dir) && Directory.EnumerateFileSystemEntries(dir).Any();
+
+    // The HKCU values that name the exe: started at sign-in (the tray, the Win+E agent), and folders and Win+E opened in
+    // File Labs as the default file manager. Up to 1.0.47 they named the per-user exe the new installer removes.
+    const string Run = @"Software\Microsoft\Windows\CurrentVersion\Run";
+    static readonly (string Key, string Value)[] ExeValues =
+    {
+        (Run, "File Labs"), (Run, "File Labs Agent"),
+        (@"Software\Classes\Directory\shell\filelabs", "Icon"), (@"Software\Classes\Directory\shell\filelabs\command", ""),
+        (@"Software\Classes\Drive\shell\filelabs", "Icon"), (@"Software\Classes\Drive\shell\filelabs\command", ""),
+        (@"Software\Classes\CLSID\{52205fd8-5dfb-447d-801a-d0b52f2e83e1}\shell\opennewwindow\command", ""),
+    };
+
+    /// Points those values at this exe: only from the per-machine install (never a dev build or a test copy), and only
+    /// the ones that still name the old per-user exe.
+    internal static void Repoint()
+    {
+        var exe = Environment.ProcessPath;
+        var oldExe = Path.Combine(LocalData, "Programs", "File Labs", "FileLabs.exe");
+        if (Settings.Profile != null || exe == null
+            || !exe.StartsWith(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "ProtagonistLabs") + "\\", StringComparison.OrdinalIgnoreCase)) return;
+        foreach (var (key, value) in ExeValues)
+            try
+            {
+                using var k = Registry.CurrentUser.OpenSubKey(key, writable: true);
+                if (k?.GetValue(value) is string v && v.Contains(oldExe, StringComparison.OrdinalIgnoreCase))
+                    k.SetValue(value, v.Replace(oldExe, exe, StringComparison.OrdinalIgnoreCase));
+            }
+            catch (Exception ex) when (ex is UnauthorizedAccessException or System.Security.SecurityException or IOException) { } // a locked key keeps its value
     }
 }

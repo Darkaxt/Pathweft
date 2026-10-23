@@ -13,10 +13,10 @@ namespace FileExplorer;
 //     automatic one stays quiet and tries again next hour;
 //   • "Later" silences that one version for this session only, and the manual check in Settings
 //     ignores it, because asking explicitly deserves an answer;
-//   • updating downloads the release's installer, checks its size against the GitHub asset, then
-//     hands off to a detached one-shot .cmd and quits: nothing in this process can outlive the
-//     installer that is about to overwrite it. The script waits for us to go, runs the installer
-//     silently, and starts the app again (a silent install suppresses the installer's own relaunch).
+//   • updating downloads the release's installer, checks its size and SHA-256 against the GitHub asset,
+//     starts it through UAC (per machine since 1.0.48) and quits: nothing in this process can outlive
+//     the installer that is about to overwrite it. The installer waits for us to go and starts the app
+//     again itself (a [Run] entry for silent installs in FileLabs.iss, as the signed-in user).
 public static class Updater
 {
     public const string Repo = "limburatorul/file-labs";
@@ -114,21 +114,17 @@ public static class Updater
         return path;
     }
 
-    /// Hands off to a detached script and returns; the caller then quits so the installer can replace us.
-    public static void InstallAndRestart(string installer)
+    /// Starts the installer and returns true; the caller then quits so it can replace us. Since 1.0.48 it installs per
+    /// machine, so it goes through ShellExecute and the UAC prompt (CreateProcess would fail with error 740). It waits for
+    /// this window to close, closes the agent itself and starts File Labs again ([Run] with WizardSilent, FileLabs.iss).
+    /// False when the user said no to the prompt: nothing changed, the app carries on.
+    public static bool InstallAndRestart(string installer)
     {
-        var exe = Environment.ProcessPath;
-        var script = Path.Combine(Path.GetTempPath(), $"filelabs-update-{Environment.ProcessId}.cmd");
-        // Waits for *this* process only: the Win+E agent is also FileLabs.exe, and the installer
-        // closes it itself. Then silent install, restart, and the script deletes itself.
-        File.WriteAllText(script, $"""
-            @echo off
-            :wait
-            tasklist /FI "PID eq {Environment.ProcessId}" | find "{Environment.ProcessId}" >nul && (timeout /t 1 /nobreak >nul & goto wait)
-            "{installer}" /VERYSILENT /SUPPRESSMSGBOXES /NORESTART
-            start "" "{exe}"
-            del "%~f0"
-            """);
-        Process.Start(new ProcessStartInfo("cmd.exe", $"/c \"{script}\"") { CreateNoWindow = true, UseShellExecute = false });
+        try
+        {
+            Process.Start(new ProcessStartInfo(installer, "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART") { UseShellExecute = true, Verb = "runas" })?.Dispose();
+            return true;
+        }
+        catch (System.ComponentModel.Win32Exception ex) when (ex.NativeErrorCode == 1223) { return false; } // ERROR_CANCELLED: UAC declined
     }
 }

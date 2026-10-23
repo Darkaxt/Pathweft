@@ -1,6 +1,20 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.0.48 | 2026-10-23 | One home for the program, one for your settings
+All Protagonist Labs apps now live in the same two places, so they're easy to find, back up and remove. File Labs moves over by itself; nothing to do on your side.
+**Where things are now**
+- The program installs to **C:\Program Files\ProtagonistLabs\File Labs**, for everyone on this PC. Installing and updating now show the Windows permission prompt once.
+- Your settings, folder sizes, Quick access, editor tabs and the editor's browser data are all in **%AppData%\ProtagonistLabs\File Labs**, one folder instead of two.
+**Moving over**
+- The first install of this version moves your data in one step and removes the old copy from your user folder, its Start menu entry included. A desktop or taskbar shortcut you had keeps working and now opens the new copy.
+- If File Labs opens folders and Win+E for you, or starts with Windows, those keep working: they're pointed at the new copy.
+- If something held a file open during the move, nothing is copied halfway: File Labs keeps using the old folder and tries again the next time it starts.
+**Updates**
+- Updating asks for permission first. Say no and nothing changes; File Labs tells you the update wasn't installed and carries on.
+**Works with**
+- Shelf, Reel, SpaceScan and Backup Labs are found wherever they're installed, in the new shared folder or the old per-user one, and film posters from Reel's new data folder show in the preview.
+
 ## 1.0.47 | 2026-10-22 | The Name line stays on the Name column
 Two small fixes from a sharp-eyed user, both about the list showing exactly what's there.
 **Details view**

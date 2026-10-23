@@ -17,7 +17,7 @@ public sealed class EditorWindow : Window
     const string Host = "filelabs.editor";
     const long MaxBytes = 20 * 1024 * 1024; // Monaco copes, but past this it's a log, not something to edit
     static readonly string EditorDir = Path.Combine(AppContext.BaseDirectory, "Editor");
-    static readonly string StateFile = Path.Combine(Settings.Dir, "editor.json");
+    static string StateFile => Path.Combine(Settings.Dir, "editor.json");
     static Task<CoreWebView2Environment> env;
     static EditorWindow instance;
 
@@ -216,8 +216,7 @@ public sealed class EditorWindow : Window
     {
         try
         {
-            env ??= CoreWebView2Environment.CreateAsync(null, Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "FileLabs", "WebView2"));
+            env ??= CoreWebView2Environment.CreateAsync(null, DataFolder.WebView2);
             await web.EnsureCoreWebView2Async(await env);
         }
         catch (WebView2RuntimeNotFoundException)

@@ -20,7 +20,7 @@ static class Sisters
     {
         schema = 1, updated = Now,
         id = "filelabs", name = "File Labs", version = typeof(App).Assembly.GetName().Version?.ToString(3),
-        exe = Environment.ProcessPath, edition = "free", paid = false,
+        exe = Environment.ProcessPath, data = Settings.Dir, edition = "free", paid = false,
         page = "https://protagonistlabs.app/filelabs/",
         commands = new Dictionary<string, string[]> { ["open"] = new[] { "{path}" } }, // a folder → new tab (single instance)
     });
@@ -89,8 +89,11 @@ static class Sisters
     sealed record ReelCache(string File, DateTime Stamp, long Length, Dictionary<string, ReelFile> Map);
     static ReelCache reelCache; // one reference, swapped whole: lookups run on worker threads
     internal const int ReelFilesMaxBytes = 16 << 20, ReelFilesMax = 20_000;
-    // Reel imports every poster into its own userData (Electron's %AppData%\reel); a poster anywhere else is not Reel's
-    internal static readonly string ReelPosters = Path.Combine(Settings.Profile ?? Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "reel", "posters") + "\\";
+    // Reel imports every poster into its own data folder; a poster anywhere else is not Reel's. That folder is
+    // %AppData%\ProtagonistLabs\Reel from ecosystem v3 and was Electron's %AppData%\reel before: both count while users update.
+    static readonly string AppData = Settings.Profile ?? Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+    internal static readonly string[] ReelPosters =
+        { Path.Combine(AppData, "ProtagonistLabs", "Reel", "posters") + "\\", Path.Combine(AppData, "reel", "posters") + "\\" };
 
     /// What Reel knows about this video, or null: Reel not installed (card + exe), its list missing or not one, or the
     /// video not in it. Reads the disk (the list once per change of the file): call it off the UI thread.
@@ -98,7 +101,7 @@ static class Sisters
         Exe("reel") != null && ReelFiles(Path.Combine(Root, "data", "reel.files.json"), ReelPosters) is { } map && map.TryGetValue(video, out var f) ? f : null;
 
     /// The list by full path (case-insensitive), cached by the file's time and size; null when it isn't a usable list.
-    internal static Dictionary<string, ReelFile> ReelFiles(string file, string posters)
+    internal static Dictionary<string, ReelFile> ReelFiles(string file, params string[] posters)
     {
         try
         {
@@ -116,7 +119,7 @@ static class Sisters
     }
 
     // Every field checked: an entry without a usable path, title or watched is skipped, a bad optional field dropped.
-    static Dictionary<string, ReelFile> ParseReelFiles(ReadOnlyMemory<byte> json, string posters)
+    static Dictionary<string, ReelFile> ParseReelFiles(ReadOnlyMemory<byte> json, string[] posters)
     {
         using var doc = JsonDocument.Parse(json, new JsonDocumentOptions { MaxDepth = 8 });
         var root = doc.RootElement;
@@ -128,7 +131,7 @@ static class Sisters
             if (f.ValueKind != JsonValueKind.Object || Text(f, "path", 1024) is not { } path || !Path.IsPathFullyQualified(path)
                 || Text(f, "title", 300) is not { } title || !f.TryGetProperty("watched", out var w) || w.ValueKind is not (JsonValueKind.True or JsonValueKind.False)) continue;
             var poster = Text(f, "poster", 1024);
-            if (poster != null && !(Local(poster) && Path.GetFullPath(poster).StartsWith(posters, StringComparison.OrdinalIgnoreCase)
+            if (poster != null && !(Local(poster) && Path.GetFullPath(poster) is var full && posters.Any(p => full.StartsWith(p, StringComparison.OrdinalIgnoreCase))
                                     && Path.GetExtension(poster).ToLowerInvariant() is ".jpg" or ".jpeg" or ".png" or ".webp")) poster = null;
             DateTime? last = Text(f, "lastWatched", 40) is { } d && DateTimeOffset.TryParse(d, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var t) ? t.LocalDateTime : null;
             map.TryAdd(path, new ReelFile(title, Number(f, "year", 1870, 2100), poster, w.GetBoolean(), last,

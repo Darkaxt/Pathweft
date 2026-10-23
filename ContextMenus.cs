@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using System.IO;
+using Microsoft.Win32;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
@@ -77,15 +78,26 @@ public partial class MainWindow
     /// A sister's exe: its ecosystem card first (Sisters.cs), else what older versions left in the registry; null = not installed.
     internal static string SisterExe(string id) => Sisters.Exe(id) ?? id switch
     {
-        "spacescan" => SpaceScanExe,
+        "spacescan" => SpaceScanExe ?? Uninstalled(SpaceScanKey),
         "shelf" => Uninstalled(ShelfKey),
         "reel" => Uninstalled(ReelKey),
         "backuplabs" => Uninstalled(BackupKey),
         _ => null,
     };
+    const string SpaceScanKey = "{5B7F3C21-9D4A-4E86-B0C7-2A9E6F1D8B53}_is1";
 
-    static string Uninstalled(string key) =>
-        ExeOf(Microsoft.Win32.Registry.GetValue(@"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Uninstall\" + key, "DisplayIcon", null) as string);
+    // Since ecosystem v3 the studio's apps install per machine (Program Files\ProtagonistLabs), so their uninstall entry is
+    // in HKLM, in the 64-bit view (Inno in 64-bit mode) or the 32-bit one (an NSIS installer); a per-user install in HKCU.
+    static string Uninstalled(string key)
+    {
+        foreach (var (hive, view) in new[] { (RegistryHive.LocalMachine, RegistryView.Registry64), (RegistryHive.LocalMachine, RegistryView.Registry32), (RegistryHive.CurrentUser, RegistryView.Default) })
+        {
+            using var root = RegistryKey.OpenBaseKey(hive, view);
+            using var entry = root.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Uninstall\" + key);
+            if (ExeOf(entry?.GetValue("DisplayIcon") as string) is { } exe) return exe;
+        }
+        return null;
+    }
 
     static void HandTo(string id, string page, IEnumerable<string> paths)
     {

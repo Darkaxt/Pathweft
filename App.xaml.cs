@@ -90,6 +90,17 @@ public partial class App : Application
             return;
         }
 
+        // Run by the installer as the signed-in user after the files are in place (runasoriginaluser): the data from
+        // before 1.0.48 moved if the installer couldn't, the HKCU entries pointed at this exe, the card for the sisters.
+        if (e.Args.Contains("--installed"))
+        {
+            if (!Program.Running) DataFolder.Migrate();
+            DataFolder.Repoint();
+            Sisters.WriteCard();
+            Shutdown(0);
+            return;
+        }
+
         // Single instance: a second launch (folder double-click, Win+E) hands its path to the
         // running window, which opens it as a new tab, then exits.
         instance = new Mutex(true, Program.PipeName, out bool first);
@@ -101,10 +112,14 @@ public partial class App : Application
             if (Program.HandOff(Program.PathArg(e.Args))) { Shutdown(); return; }
             // first instance hung or closing: just start normally
         }
-        else _ = Listen();
+        else
+        {
+            DataFolder.Migrate(); // the data from before 1.0.48, before anything reads it (Settings.cs)
+            _ = Listen();
+        }
         Settings.Load(); // before any window: the panes read column widths while being built
         ShellMenu.FollowSystemTheme(); // the Windows right-click menu dark in dark mode
-        Task.Run(Sisters.WriteCard); // the ecosystem card, so sister apps find this copy (Sisters.cs)
+        Task.Run(() => { DataFolder.Repoint(); Sisters.WriteCard(); }); // the ecosystem card, so sister apps find this copy (Sisters.cs)
         // folder sizes from previous sessions are read after the first frame, or on first need (SizeCache.StartLoading)
         Exit += (_, _) => SizeCache.Save();
         var sizeSaver = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMinutes(2) };
@@ -449,6 +464,39 @@ public partial class App : Application
             Check(FileExplorer.MainWindow.Poster(png) is { PixelWidth: 200 } && FileExplorer.MainWindow.Poster(hugePoster) == null
                 && FileExplorer.MainWindow.Poster(Path.Combine(posters, "junk.jpg")) == null && FileExplorer.MainWindow.Poster(Path.Combine(posters, "none.jpg")) == null,
                 "poster: decoded small; 10 MB, junk or missing = none");
+            // ecosystem v3: Reel's posters move to %AppData%\ProtagonistLabs\Reel\posters; the old folder still counts
+            var postersV3 = Directory.CreateDirectory(Path.Combine(rl, "ProtagonistLabs", "Reel", "posters")).FullName + "\\";
+            var v3 = ReelJson("v3.json", $$"""{"schema":1,"files":[{"path":"D:\\new.mkv","title":"New","watched":false,"poster":{{J(postersV3 + "n.jpg")}}},{"path":"D:\\old.mkv","title":"Old","watched":false,"poster":{{J(posters + "o.jpg")}}}]}""");
+            Check(Sisters.ReelFiles(v3, postersV3, posters) is { } m3 && m3[@"D:\new.mkv"].Poster == postersV3 + "n.jpg" && m3[@"D:\old.mkv"].Poster == posters + "o.jpg"
+                && Sisters.ReelPosters.Length == 2 && Sisters.ReelPosters.All(p => p.EndsWith(@"\posters\")), "Reel posters from the new and the old folder");
+
+            // ecosystem v3: the data folder moves once, by rename, never mixed, never half (DataFolder in Settings.cs)
+            var mig = Directory.CreateDirectory(Path.Combine(root, "migrate")).FullName;
+            string oldR = Path.Combine(mig, "Roaming", "FileLabs"), oldL = Path.Combine(mig, "Local", "FileLabs"), newR = Path.Combine(mig, "Roaming", "ProtagonistLabs", "File Labs");
+            Directory.CreateDirectory(Path.Combine(oldL, "WebView2", "EBWebView"));
+            File.WriteAllText(Path.Combine(oldL, "WebView2", "EBWebView", "Local State"), "{}");
+            Directory.CreateDirectory(oldR);
+            File.WriteAllText(Path.Combine(oldR, "settings.txt"), "accent=#FF0000");
+            Directory.CreateDirectory(newR); // an empty new folder (a sister wrote nothing yet) doesn't block the move
+            DataFolder.Migrate(oldR, oldL, newR);
+            Check(File.ReadAllText(Path.Combine(newR, "settings.txt")) == "accent=#FF0000" && File.Exists(Path.Combine(newR, "WebView2", "EBWebView", "Local State"))
+                && !Directory.Exists(oldR) && !Directory.Exists(oldL) && File.ReadAllText(Path.Combine(newR, "migration.log")).Contains("moved"), "data: both old folders moved into the new one, logged");
+            var logLength = new FileInfo(Path.Combine(newR, "migration.log")).Length;
+            DataFolder.Migrate(oldR, oldL, newR);
+            Check(new FileInfo(Path.Combine(newR, "migration.log")).Length == logLength && File.Exists(Path.Combine(newR, "settings.txt")), "data: a second run does nothing");
+            Directory.CreateDirectory(oldR);
+            File.WriteAllText(Path.Combine(oldR, "settings.txt"), "accent=#00FF00");
+            DataFolder.Migrate(oldR, oldL, newR);
+            Check(File.ReadAllText(Path.Combine(oldR, "settings.txt")) == "accent=#00FF00" && File.ReadAllText(Path.Combine(newR, "settings.txt")) == "accent=#FF0000"
+                && File.ReadAllText(Path.Combine(newR, "migration.log")).Contains("left in place"), "data: the new folder has data, so the old one is left alone, not mixed in");
+            var newB = Path.Combine(mig, "Roaming", "ProtagonistLabs", "File Labs B");
+            using (new FileStream(Path.Combine(oldR, "settings.txt"), FileMode.Open, FileAccess.Read, FileShare.None))
+                DataFolder.Migrate(oldR, oldL, newB);
+            Check(File.Exists(Path.Combine(oldR, "settings.txt")) && !Directory.Exists(newB) && File.ReadAllText(Path.Combine(oldR, "migration.log")).Contains("could not move"),
+                "data: a locked file stops the move whole, the old folder stays in use and says why");
+            DataFolder.Migrate(oldR, oldL, newB);
+            Check(File.ReadAllText(Path.Combine(newB, "settings.txt")) == "accent=#00FF00" && File.Exists(Path.Combine(newB, "migration.log")) && !Directory.Exists(oldR),
+                "data: moved at the next start, its log with it");
 
             // What's new: every release parses, newest first, with notes, the running version included (a release
             // without its entry in whatsnew.txt fails here)

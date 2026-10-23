@@ -635,8 +635,8 @@ public partial class MainWindow : Window
         return WNetGetConnection(root.TrimEnd((char)92), sb, ref len) == 0 ? sb.ToString() : null;
     }
 
-    // Quick access: pinned folders, one path per line in %AppData%\FileLabs\quickaccess.txt
-    static readonly string QuickFile = Path.Combine(Settings.Dir, "quickaccess.txt");
+    // Quick access: pinned folders, one path per line in quickaccess.txt in the data folder
+    static string QuickFile => Path.Combine(Settings.Dir, "quickaccess.txt");
     List<string> pinned = new();
     string pinDrag;
     Point pinDragFrom;

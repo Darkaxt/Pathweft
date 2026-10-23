@@ -36,7 +36,13 @@ public partial class UpdateDialog : Window
             var progress = new Progress<double>(p => { Progress.Value = p; Status.Text = $"Downloading… {p * 100:0}%"; });
             var installer = await Updater.Download(release, progress, cancel.Token);
             Status.Text = "Installing — File Labs will restart.";
-            Updater.InstallAndRestart(installer);
+            if (!Updater.InstallAndRestart(installer))
+            {
+                Progress.Visibility = Visibility.Collapsed;
+                Status.Text = "Update not installed: Windows asked for permission and it wasn't given. Try again whenever you like.";
+                UpdateButton.IsEnabled = LaterButton.IsEnabled = true;
+                return;
+            }
             Application.Current.Shutdown(); // the installer replaces our files; nothing of ours may stay
         }
         catch (Exception ex) when (ex is HttpRequestException or IOException or TaskCanceledException)
