@@ -13,6 +13,31 @@ public partial class SettingsWindow : Window
         SourceInitialized += (_, _) => MainWindow.ApplyAcrylic(this);
         // its cards took 130-200 ms to lay out before the first frame: the window comes up empty, they follow on the next
         ContentRendered += (_, _) => Body.Visibility = Visibility.Visible;
+        ShowValues();
+        // A double-click on a slider's handle puts it back to its default (Settings.cs), as in Frostpane: one
+        // setting can be tried out and undone without a reset of them all.
+        foreach (var (slider, value) in new (System.Windows.Controls.Slider, double)[]
+        {
+            (OpacitySlider, 70), (BgOpacitySlider, 40), (BgBlurSlider, 0), (BgBrightSlider, 0), (ValueSlider, 100), (StrengthSlider, 100),
+            (ScaleSidebar, 100), (ScaleTabs, 100), (ScalePath, 100), (ScaleList, 100), (TipDelaySlider, 1500),
+        })
+            slider.PreviewMouseLeftButtonDown += (_, e) =>
+            {
+                if (e.ClickCount != 2 || !OnThumb(e.OriginalSource as DependencyObject, slider)) return;
+                slider.Value = value;
+                e.Handled = true;
+            };
+        BuildSwatches();
+        BuildWheel();
+        AboutText.Text = $"File Labs {typeof(App).Assembly.GetName().Version?.ToString(3)} · Protagonist Labs\n" +
+                         "Transfers run on the Ferry engine. Settings live in " + Settings.Dir;
+        BuildWorksWith();
+        Refresh();
+    }
+
+    /// Every control set from what is in use: at opening, and after a reset.
+    void ShowValues()
+    {
         OpacitySlider.Value = Settings.Opacity;
         BgOpacitySlider.Value = Settings.ImageOpacity;
         BgBlurSlider.Value = Settings.ImageBlur;
@@ -38,26 +63,61 @@ public partial class SettingsWindow : Window
         ItemTipsBox.IsChecked = Settings.ItemTips;
         DeleteSoundBox.IsChecked = Settings.DeleteSound;
         StrengthSlider.Value = Settings.AccentStrength * 100;
-        // A double-click on a slider's handle puts it back to its default (Settings.cs), as in Frostpane: one
-        // setting can be tried out and undone without a reset of them all.
-        foreach (var (slider, value) in new (System.Windows.Controls.Slider, double)[]
-        {
-            (OpacitySlider, 70), (BgOpacitySlider, 40), (BgBlurSlider, 0), (BgBrightSlider, 0), (ValueSlider, 100), (StrengthSlider, 100),
-            (ScaleSidebar, 100), (ScaleTabs, 100), (ScalePath, 100), (ScaleList, 100),
-        })
-            slider.PreviewMouseLeftButtonDown += (_, e) =>
-            {
-                if (e.ClickCount != 2 || !OnThumb(e.OriginalSource as DependencyObject, slider)) return;
-                slider.Value = value;
-                e.Handled = true;
-            };
-        BuildSwatches();
-        BuildWheel();
-        AboutText.Text = $"File Labs {typeof(App).Assembly.GetName().Version?.ToString(3)} · Protagonist Labs\n" +
-                         "Transfers run on the Ferry engine. Settings live in " + Settings.Dir;
-        BuildWorksWith();
+        CloseEmptyPaneBox.IsChecked = Settings.CloseEmptyPane;
+        AutoscrollBox.IsChecked = Settings.Autoscroll;
+        AutoscrollUpDownBox.IsChecked = !Settings.AutoscrollSideways;
+        AutoscrollUpDownBox.IsEnabled = Settings.Autoscroll;
+        TipDelaySlider.Value = Settings.TipDelay;
+        TipDelayText.Text = $"{Settings.TipDelay / 1000.0:0.0} s";
+    }
+
+    // ---- Reset to defaults: a card's settings, or all three cards, as File Labs comes (Settings.Reset) ----
+    // Windows integration is left out: it changes Windows (the default file manager, Win+E, sign-in), not File Labs.
+    internal static readonly string[] AppearanceKeys =
+    {
+        "backdrop", "opacity", "bgimage", "bgopacity", "bgblur", "bgbright", "accent", "accentstrength", "rowpad", "textscale",
+        "scale.sidebar", "scale.tabs", "scale.path", "scale.list", "singlepane", "closeemptypane", "stats", "animations", "smoothscroll",
+        "autoscroll", "autoscrollx",
+    };
+    internal static readonly string[] FilesKeys = { "hidden", "shortcutfolders", "internaleditor", "quicklook", "itemtips", "tipdelay", "deletesound", "nativemenu" };
+    internal static readonly string[] TransfersKeys = { "verify" };
+    /// What File Labs keeps that isn't a choice in these cards: Windows integration, and what it remembers by itself.
+    internal static readonly string[] NotReset =
+    {
+        "wine", "tray", "preview", "previewwidth", "lastseen", "recent", "destinations", "sidebar", "sidebarorder", "sidebarcollapsed", "split", "maximized", "window", "quicklist",
+    };
+
+    void ResetAll_Click(object s, RoutedEventArgs e) =>
+        Reset(AppearanceKeys.Concat(FilesKeys).Concat(TransfersKeys), "Reset every setting to its default?",
+              "Appearance, Files and Transfers go back to how File Labs comes. Windows integration stays as it is, and so do your tabs, Quick access lists and folder sizes.");
+
+    void ResetSection_Click(object s, RoutedEventArgs e)
+    {
+        var (keys, card) = s == ResetAppearance ? (AppearanceKeys, "Appearance") : s == ResetFiles ? (FilesKeys, "Files") : (TransfersKeys, "Transfers");
+        Reset(keys, $"Reset {card} to its defaults?", $"Only the settings in the {card} card change.");
+    }
+
+    void Reset(IEnumerable<string> keys, string question, string detail)
+    {
+        if (PromptDialog.Choose(this, question, detail, "Reset", "Cancel") != 0) return;
+        bool onePane = Settings.SinglePane;
+        Settings.Reset(keys);
+        // one pane or two goes through the main window, which keeps the split and moves the keyboard
+        if (Settings.SinglePane != onePane) { var want = Settings.SinglePane; Settings.SinglePane = onePane; main.SetSinglePane(want); }
+        Settings.Save();
+        main.ApplyAppearance();
+        main.ApplyStats();
+        main.ApplyCloseEmptyPane();
+        main.RefreshPanes(); // hidden files
+        main.ResortPanes(); // shortcuts with the folders
+        MainWindow.SetBackdrop(this);
+        loading = true; // the controls take the defaults without each one saving and repainting again
+        ShowValues();
+        loading = false;
         Refresh();
     }
+
+    bool loading;
 
     /// Whether a press landed on the slider's handle rather than on its track.
     static bool OnThumb(DependencyObject hit, System.Windows.Controls.Slider slider)
@@ -235,7 +295,7 @@ public partial class SettingsWindow : Window
 
     void Value_Changed(object s, RoutedPropertyChangedEventArgs<double> e)
     {
-        if (!IsLoaded || syncing) return;
+        if (!IsLoaded || syncing || loading) return;
         val = e.NewValue / 100;
         Settings.Accent = ToHex(FromHsv(hue, sat, val));
         Changed();
@@ -252,7 +312,7 @@ public partial class SettingsWindow : Window
 
     void Strength_Changed(object s, RoutedPropertyChangedEventArgs<double> e)
     {
-        if (!IsLoaded) return;
+        if (!IsLoaded || loading) return;
         Settings.AccentStrength = e.NewValue / 100;
         Changed();
     }
@@ -271,7 +331,7 @@ public partial class SettingsWindow : Window
 
     void Scale_Changed(object s, RoutedPropertyChangedEventArgs<double> e)
     {
-        if (!IsLoaded) return;
+        if (!IsLoaded || loading) return;
         var v = Math.Round(e.NewValue) / 100;
         if (s == ScaleSidebar) Settings.SidebarScale = v;
         else if (s == ScaleTabs) Settings.TabsScale = v;
@@ -291,6 +351,21 @@ public partial class SettingsWindow : Window
     }
 
     void Animations_Click(object s, RoutedEventArgs e) { Settings.Animations = AnimationsBox.IsChecked == true; Settings.Save(); }
+    void CloseEmptyPane_Click(object s, RoutedEventArgs e) { Settings.CloseEmptyPane = CloseEmptyPaneBox.IsChecked == true; Settings.Save(); main.ApplyCloseEmptyPane(); }
+    void Autoscroll_Click(object s, RoutedEventArgs e)
+    {
+        Settings.Autoscroll = AutoscrollBox.IsChecked == true;
+        Settings.AutoscrollSideways = AutoscrollUpDownBox.IsChecked != true;
+        AutoscrollUpDownBox.IsEnabled = Settings.Autoscroll;
+        Settings.Save();
+    }
+    void TipDelay_Changed(object s, RoutedPropertyChangedEventArgs<double> e)
+    {
+        if (!IsLoaded || loading) return;
+        Settings.TipDelay = (int)Math.Round(e.NewValue);
+        TipDelayText.Text = $"{Settings.TipDelay / 1000.0:0.0} s";
+        Settings.Save();
+    }
     void SmoothScroll_Click(object s, RoutedEventArgs e) { Settings.SmoothScroll = SmoothScrollBox.IsChecked == true; Settings.Save(); }
 
     void Refresh()
@@ -350,28 +425,28 @@ public partial class SettingsWindow : Window
 
     void BgOpacity_Changed(object s, RoutedPropertyChangedEventArgs<double> e)
     {
-        if (!IsLoaded) return;
+        if (!IsLoaded || loading) return;
         Settings.ImageOpacity = e.NewValue;
         Changed();
     }
 
     void BgBlur_Changed(object s, RoutedPropertyChangedEventArgs<double> e)
     {
-        if (!IsLoaded) return;
+        if (!IsLoaded || loading) return;
         Settings.ImageBlur = Math.Round(e.NewValue);
         Changed();
     }
 
     void BgBright_Changed(object s, RoutedPropertyChangedEventArgs<double> e)
     {
-        if (!IsLoaded) return;
+        if (!IsLoaded || loading) return;
         Settings.ImageBrightness = Math.Round(e.NewValue);
         Changed();
     }
 
     void Opacity_Changed(object s, RoutedPropertyChangedEventArgs<double> e)
     {
-        if (!IsLoaded) return;
+        if (!IsLoaded || loading) return;
         Settings.Opacity = e.NewValue;
         Changed();
     }

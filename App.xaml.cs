@@ -120,6 +120,7 @@ public partial class App : Application
             _ = Listen();
         }
         Settings.Load(); // before any window: the panes read column widths while being built
+        UseTipDelay();
         ShellMenu.FollowSystemTheme(); // the Windows right-click menu dark in dark mode
         Task.Run(() => { DataFolder.Repoint(); Sisters.WriteCard(); }); // the ecosystem card, so sister apps find this copy (Sisters.cs)
         // folder sizes from previous sessions are read after the first frame, or on first need (SizeCache.StartLoading)
@@ -134,6 +135,19 @@ public partial class App : Application
     }
 
     Mutex instance;
+
+    /// Settings: every tooltip waits this long, 1.5 s unless changed. Up to 1.0.50 it was WPF's own 1 s, and once one tooltip
+    /// had shown, the next came after 0.1 s (BetweenShowDelay): running the pointer down a list, every row popped one. Now
+    /// each waits the whole time. A tooltip reads its wait from its own element, so the default for all of them is changed,
+    /// once and before the first window: it can't be changed again while running, hence "from the next start".
+    internal static void UseTipDelay()
+    {
+        foreach (var type in new[] { typeof(FrameworkElement), typeof(FrameworkContentElement) })
+        {
+            System.Windows.Controls.ToolTipService.InitialShowDelayProperty.OverrideMetadata(type, new FrameworkPropertyMetadata(Settings.TipDelay));
+            System.Windows.Controls.ToolTipService.BetweenShowDelayProperty.OverrideMetadata(type, new FrameworkPropertyMetadata(0));
+        }
+    }
 
     async Task Listen()
     {
@@ -521,6 +535,81 @@ public partial class App : Application
             Check(SizeCache.Loops(@"G:\Claude Projects\automaton\repo\packages\cli\node_modules\@conway\automaton\packages\cli\node_modules\@conway\automaton\packages\cli\node_modules\@conway\automaton\packages\cli\node_modules\viem\_types")
                   && !SizeCache.Loops(@"G:\Claude Projects\automaton\repo\packages\cli\node_modules\.pnpm\@typescript-eslint+typescript-estree@8.8.0_typescript@5.6.2\node_modules\@typescript-eslint\typescript-estree\dist\create-program\shared\x")
                   && !SizeCache.Loops(@"C:\short\a\b\c\a\b\c"), "size cache: loop paths dropped, long real ones and short ones kept");
+
+            // 1.0.51 Reset to defaults: every setting belongs to a card that resets it, or is knowingly kept (Windows
+            // integration, what File Labs remembers by itself); a reset puts back the defaults and touches nothing else
+            var resettable = SettingsWindow.AppearanceKeys.Concat(SettingsWindow.FilesKeys).Concat(SettingsWindow.TransfersKeys).ToList();
+            var defaults = Settings.DefaultKeys.ToHashSet();
+            Check(defaults.All(k => resettable.Contains(k) || SettingsWindow.NotReset.Contains(k)), "reset: every setting is in a card or kept on purpose, missing "
+                  + string.Join(",", defaults.Where(k => !resettable.Contains(k) && !SettingsWindow.NotReset.Contains(k))));
+            Check(resettable.All(defaults.Contains) && resettable.Distinct().Count() == resettable.Count, "reset: the cards name real settings, each once");
+            (Settings.Accent, Settings.TipDelay, Settings.Autoscroll, Settings.CloseEmptyPane, Settings.ShowHidden, Settings.Verify, Settings.CloseToTray, Settings.RowPad)
+                = ("#FF0000", 2500, true, true, true, true, true, 6);
+            Settings.Reset(SettingsWindow.AppearanceKeys);
+            Check(Settings.Accent == "#4C8DFF" && Settings.RowPad == 3 && !Settings.Autoscroll && !Settings.CloseEmptyPane
+                  && Settings.TipDelay == 2500 && Settings.ShowHidden && Settings.Verify && Settings.CloseToTray, "reset: one card, and only that card");
+            Settings.Reset(resettable);
+            Check(Settings.TipDelay == 1500 && !Settings.ShowHidden && !Settings.Verify && Settings.CloseToTray && Settings.AutoscrollSideways, "reset: all three cards; Windows integration kept");
+            Settings.CloseToTray = false;
+
+            // 1.0.51 Quick access lists: the file of 1.0.50 and before is one list, written back exactly as it was
+            var oldQuick = new[] { @"C:\Users\x\Projects", @"\\nas\share\photos", @"D:\Games" };
+            var one = FileExplorer.MainWindow.ParseQuickLists(oldQuick.Append(""));
+            Check(one is [{ Name: "Quick access" } q1] && q1.Folders.SequenceEqual(oldQuick) && FileExplorer.MainWindow.QuickListLines(one).SequenceEqual(oldQuick), "quick access: a file from before is one list, kept in its form");
+            one.Add(new FileExplorer.MainWindow.QuickList { Name = "Work # 2", Folders = { @"E:\Work" } });
+            var two = FileExplorer.MainWindow.ParseQuickLists(FileExplorer.MainWindow.QuickListLines(one));
+            Check(two.Count == 2 && two[0].Name == "Quick access" && two[0].Folders.SequenceEqual(oldQuick) && two[1].Name == "Work # 2" && two[1].Folders.SequenceEqual(new[] { @"E:\Work" }), "quick access: two lists, names and folders, read back");
+            two[0].Name = "Home";
+            two.Add(new FileExplorer.MainWindow.QuickList { Name = "Empty" });
+            Check(FileExplorer.MainWindow.ParseQuickLists(FileExplorer.MainWindow.QuickListLines(two)) is [{ Name: "Home" }, { Name: "Work # 2" }, { Name: "Empty", Folders.Count: 0 }]
+                  && FileExplorer.MainWindow.ParseQuickLists(Array.Empty<string>()) is [{ Name: "Quick access", Folders.Count: 0 }], "quick access: renamed first list, an empty list, no file");
+
+            // 1.0.51 Find duplicates: same size and content, in subfolders when asked; shortcuts by their target
+            var dupes = Directory.CreateDirectory(Path.Combine(root, "dupes", "sub", "deeper")).Parent.Parent.FullName;
+            var blob = new byte[200_000]; new Random(7).NextBytes(blob);
+            var blobOther = (byte[])blob.Clone(); blobOther[150_000] ^= 1; // the same first 64 KB, then one byte apart
+            File.WriteAllBytes(Path.Combine(dupes, "a.bin"), blob);
+            File.WriteAllBytes(Path.Combine(dupes, "a copy.bin"), blob);
+            File.WriteAllBytes(Path.Combine(dupes, "almost.bin"), blobOther);
+            File.WriteAllBytes(Path.Combine(dupes, "sub", "deeper", "a again.bin"), blob);
+            File.WriteAllText(Path.Combine(dupes, "small.txt"), "same words");
+            File.WriteAllText(Path.Combine(dupes, "sub", "small too.txt"), "same words");
+            File.WriteAllText(Path.Combine(dupes, "other.txt"), "diff words"); // same size, other content
+            File.WriteAllText(Path.Combine(dupes, "empty1.txt"), ""); File.WriteAllText(Path.Combine(dupes, "empty2.txt"), "");
+            FileExplorer.MainWindow.SaveShortcut(Path.Combine(dupes, "to a.lnk"), Path.Combine(dupes, "a.bin"), dupes);
+            FileExplorer.MainWindow.SaveShortcut(Path.Combine(dupes, "sub", "also to a.lnk"), Path.Combine(dupes, "a.bin"), dupes);
+            FileExplorer.MainWindow.SaveShortcut(Path.Combine(dupes, "to other.lnk"), Path.Combine(dupes, "other.txt"), dupes);
+            string Shape(List<DuplicatesWindow.DupGroup> gs) => string.Join(" | ", gs.Select(g => (g.Target != null ? "lnk:" : "") + string.Join(",", g.Files.Select(f => Path.GetFileName(f.Path)).OrderBy(n => n))));
+            var top = DuplicatesWindow.Find(dupes, subfolders: false, hidden: false, null, default);
+            Check(Shape(top) == "a copy.bin,a.bin", "duplicates in one folder: " + Shape(top));
+            var nested = DuplicatesWindow.Find(dupes, subfolders: true, hidden: false, null, default);
+            Check(Shape(nested) == "a again.bin,a copy.bin,a.bin | small too.txt,small.txt | lnk:also to a.lnk,to a.lnk" && nested[0].Wasted == 400_000, "duplicates with subfolders: " + Shape(nested));
+            using (var stop = new CancellationTokenSource())
+            {
+                stop.Cancel();
+                bool cancelled = false;
+                try { DuplicatesWindow.Find(dupes, true, false, null, stop.Token); } catch (OperationCanceledException) { cancelled = true; }
+                Check(cancelled, "duplicates: Stop stops it");
+            }
+
+            // 1.0.51 Open path through the agent: the file Explorer selects late still reaches File Labs, after its folder
+            (string, bool)[] Watch(params (string Folder, string Selected)[] looks)
+            {
+                var w = new Agent.SelectionWatch();
+                var said = new List<(string, bool)>();
+                foreach (var (f, sel) in looks) { var r = w.Look(f, sel); if (r.Open != null || r.Done) said.Add(r); if (r.Done) break; }
+                return said.ToArray();
+            }
+            var none = Enumerable.Repeat((@"C:\D", (string)null), 9);
+            Check(Watch((@"C:\D", @"C:\D\f.txt")).SequenceEqual(new[] { (@"C:\D\f.txt", true) }), "agent: selected at once, the file");
+            Check(Watch(none.Append((@"C:\D", @"C:\D\f.txt")).ToArray()).SequenceEqual(new[] { (@"C:\D\f.txt", true) }), "agent: selected within 0.5 s, the file");
+            Check(Watch(none.Concat(none).Append((@"C:\D", @"C:\D\f.txt")).ToArray()).SequenceEqual(new[] { (@"C:\D", false), (@"C:\D\f.txt", true) }), "agent: selected late, the folder, then the file");
+            Check(Watch(Enumerable.Repeat((@"C:\D", (string)null), 200).ToArray()).SequenceEqual(new[] { (@"C:\D", false), ((string)null, true) }), "agent: never selected, the folder, then done");
+            Check(Watch(none.Concat(none).Append((@"C:\Other", @"C:\Other\x")).ToArray()).SequenceEqual(new[] { (@"C:\D", false), ((string)null, true) }), "agent: navigated elsewhere, nothing more");
+
+            // 1.0.51 middle-click autoscroll: still inside the dead zone, then faster the further away, either way
+            Check(PaneView.AutoscrollSpeed(0) == 0 && PaneView.AutoscrollSpeed(-12) == 0 && PaneView.AutoscrollSpeed(30) > 0 && PaneView.AutoscrollSpeed(-30) == -PaneView.AutoscrollSpeed(30)
+                  && PaneView.AutoscrollSpeed(200) > PaneView.AutoscrollSpeed(100) && PaneView.AutoscrollSpeed(100000) == 8000, "autoscroll speed");
 
             Console.WriteLine("selftest: all passed");
             return 0;

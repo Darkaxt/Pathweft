@@ -37,6 +37,7 @@ public partial class HelpWindow : Window
             ("Many tabs", "Below 120 px each they wrap into more rows, which stay where they are when you switch tabs"),
             ("A folder opened from outside", "From Explorer, another app, a shortcut or Win+E: if a tab already shows it, File Labs switches to that tab instead of opening a second one"),
             ("Double-click the splitter", "Make the two panes equal again"),
+            ("Settings → Close the second pane with its last tab", "Closing the right pane's last tab (its ×, Ctrl+W or a middle click) hides the pane; Ctrl+P brings it back with that tab"),
             ("Tabs are remembered", "Every pane's tabs come back the next time File Labs starts"),
         }),
         ("Moving around", new[]
@@ -49,6 +50,8 @@ public partial class HelpWindow : Window
             ("Ctrl+F", "Filter this folder as you type; Enter searches every subfolder, * and ? work"),
             ("Esc", "Leave search results"),
             ("Ctrl+D", "Pin the folder (or the selected folders) to Quick access; drag a pinned folder to reorder, right-click it to move or remove it"),
+            ("Quick access lists", "Several lists with names you choose: the ··· on Quick access' header, or a right-click on the header, switches between them and adds, renames, reorders or deletes them. Ctrl+D pins to the list shown"),
+            ("Middle-click empty space", "With Settings → Middle-click autoscroll on: a round marker where you clicked, and the list scrolls toward the pointer, faster the further it is. A left or middle click stops it (or letting go, if you held the button). Settings can keep it to up and down"),
             ("\\\\server", "Type a server's name to see its shared folders; going up from a share comes back to that list"),
         }),
         ("Files", new[]
@@ -104,6 +107,7 @@ public partial class HelpWindow : Window
             ("F4", "Edit in the built-in code editor: tabs, syntax colouring, a status bar for encoding, line endings, indentation and language, Markdown preview (Ctrl+Shift+V). It reopens what you had open"),
             ("Right-click → Compare in editor", "Two selected files side by side in the editor"),
             ("Shift+F2", "Compare the two panes: on each side, what the other lacks or has older (or of another size) is selected"),
+            ("Right-click → Find duplicates…", "Files that are exactly alike in this folder, and in its subfolders if you tick that, plus shortcuts that open the same thing. Select extra copies keeps the oldest of each; send the rest to the Recycle Bin or move them. It works in the background, with progress and Stop"),
             ("Compress to ZIP / Extract", "From the right-click menu. Extract here first checks that nothing would be overwritten"),
             ("Checksum (SHA-256)", "Of one file, in a window you can copy from; a hash already on the clipboard is compared with it"),
             ("Create shortcut", "“name - Shortcut” beside the original"),
@@ -117,6 +121,7 @@ public partial class HelpWindow : Window
         {
             ("Ctrl+Shift+1…5", "Details, List, icons M, L, XL"),
             ("Ctrl+wheel", "Zoom through the views"),
+            ("Right-click empty space → View", "The same five views, from the menu"),
             ("Click a column header", "Sort; the selected file stays in sight. Each folder remembers its own order"),
             ("Drag a column's edge", "Widen it; once you size Name yourself it stays, and a wide list scrolls sideways. Double-click Name's edge to let it fill the pane again"),
             ("Colours by age", "The bar at the left of each row and the age badge go from red (minutes ago) through orange and yellow to blue-grey (a year): what changed lately stands out"),
@@ -129,7 +134,8 @@ public partial class HelpWindow : Window
         {
             ("Settings → Use File Labs as the default file manager", "Folders and drives you open anywhere in Windows open in File Labs; switching it off gives them back to what had them before"),
             ("Win+E", "Opens File Labs, or brings it forward, while it is the default file manager. Settings can leave Win+E to File Explorer"),
-            ("Show in folder", "When another app asks Explorer to show a file, File Labs opens its folder with the file selected"),
+            ("Show in folder", "When another app asks Explorer to show a file (Open path in Everything, Show in folder in a browser), File Labs opens its folder with the file selected"),
+            ("Right-click a drive or a folder in the sidebar", "Windows' own menu for it: Properties, Eject, Format, BitLocker and what other apps add"),
             ("Ctrl+G in an Open or Save dialog", "Takes the dialog to the folder File Labs is showing (while File Labs is the default file manager)"),
             ("Settings → Close to the notification area", "Closing hides File Labs next to the clock instead of quitting, so it opens again at once. Click the icon to bring it back; right-click it → Quit to really close"),
         }),
@@ -147,6 +153,8 @@ public partial class HelpWindow : Window
             ("Ctrl+,", "Settings: appearance (backdrop, opacity, background picture, accent colour, row height, text size per area, summary cards, animations), files, the right-click menu, transfers, Windows integration, about"),
             ("Updates", "File Labs checks every hour and asks before updating; the update downloads, is checked against GitHub's published SHA-256, installs and restarts in about ten seconds"),
             ("What's new", "Every release's notes, by month, from the button at the bottom of the sidebar. It opens by itself after an update"),
+            ("Settings → Reset to defaults", "Every setting back to how File Labs comes, after asking; each card has its own Reset. Windows integration, tabs and Quick access stay. A double-click on a slider's handle resets just that slider"),
+            ("Tooltips", "Wait 1.5 s before they show, each one; Settings → Files → Tooltip delay changes that, from the next start"),
             ("F1", "This help"),
         }),
     };

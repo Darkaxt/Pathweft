@@ -45,6 +45,11 @@ public static class Settings
     public static bool NativeMenu;          // right-click shows the Windows menu instead of ours
     public static bool TakeWinE = true;         // with Windows integration on, Win+E opens File Labs; off = File Explorer
     public static bool CloseToTray;             // closing hides the window to the notification area; the next open is instant
+    public static bool CloseEmptyPane;          // closing the second pane's last tab hides that pane (one pane), as Ctrl+P does
+    public static int TipDelay = 1500;          // ms before a tooltip shows; WPF's own wait was 1000 (1.0.51: "a little slower")
+    public static bool Autoscroll;              // a middle click on the list's empty space scrolls it by moving the mouse, as in a browser
+    public static bool AutoscrollSideways = true; // ... sideways too; off: up and down only
+    public static int QuickList;                // which Quick access list the sidebar shows (MainWindow.QuickLists)
 
     // Started at sign-in, hidden in the notification area (needs CloseToTray). The Run value is the truth; a test
     // copy (FILELABS_PROFILE) never writes it.
@@ -75,6 +80,10 @@ public static class Settings
     public static readonly Dictionary<string, List<int>> Pins = new(); // "Left" → indexes of pinned tabs
     public static readonly Dictionary<string, (string Key, bool Desc)> FolderSorts = new(StringComparer.OrdinalIgnoreCase); // folder → its own order; absent = by name
 
+    // Every setting as it comes, in the file's own form, taken before Load from the initial values above (it must stay
+    // the last field: fields are set in the order they're written). Reset reads them back through the same parser.
+    static readonly string[] Defaults = Lines().ToArray();
+
     public const int RecentMax = 25, DestinationsMax = 8;
 
     /// Puts `path` first in a most-recent-first list, once, and cuts the list to `max`.
@@ -87,8 +96,22 @@ public static class Settings
 
     public static void Load()
     {
-        if (!File.Exists(FilePath)) return;
-        foreach (var kv in File.ReadAllLines(FilePath).Select(l => l.Split('=', 2)).Where(a => a.Length == 2))
+        if (File.Exists(FilePath)) Apply(File.ReadAllLines(FilePath));
+    }
+
+    /// Settings → Reset to defaults: these keys back to how File Labs comes. Not saved here.
+    public static void Reset(IEnumerable<string> keys)
+    {
+        var set = keys.ToHashSet();
+        Apply(Defaults.Where(l => set.Contains(l.Split('=', 2)[0])));
+    }
+
+    /// The keys a fresh copy writes (the selftest checks that every setting can be reset).
+    internal static IEnumerable<string> DefaultKeys => Defaults.Where(l => l != "").Select(l => l.Split('=', 2)[0]);
+
+    static void Apply(IEnumerable<string> lines)
+    {
+        foreach (var kv in lines.Select(l => l.Split('=', 2)).Where(a => a.Length == 2))
         {
             var v = kv[1].Trim();
             switch (kv[0].Trim())
@@ -124,6 +147,11 @@ public static class Settings
                 case "wine": TakeWinE = v != "0"; break;
                 case "lastseen": LastSeenVersion = v; break;
                 case "tray": CloseToTray = v == "1"; break;
+                case "closeemptypane": CloseEmptyPane = v == "1"; break;
+                case "tipdelay" when int.TryParse(v, out var td): TipDelay = Math.Clamp(td, 0, 3000); break;
+                case "autoscroll": Autoscroll = v == "1"; break;
+                case "autoscrollx": AutoscrollSideways = v != "0"; break;
+                case "quicklist" when int.TryParse(v, out var ql) && ql >= 0: QuickList = ql; break;
                 // paths can't hold |, so it separates them
                 case "recent": RecentFolders = v.Split('|').Where(x => x != "").Take(RecentMax).ToList(); break;
                 case "destinations": RecentDestinations = v.Split('|').Where(x => x != "").Take(DestinationsMax).ToList(); break;
@@ -156,7 +184,10 @@ public static class Settings
     public static void Save()
     {
         Directory.CreateDirectory(Dir);
-        WriteAllLines(FilePath, new[]
+        WriteAllLines(FilePath, Lines());
+    }
+
+    static IEnumerable<string> Lines() => new[]
         {
             $"backdrop={Backdrop}",
             $"opacity={Opacity.ToString(CultureInfo.InvariantCulture)}",
@@ -189,6 +220,11 @@ public static class Settings
             $"wine={(TakeWinE ? 1 : 0)}",
             $"lastseen={LastSeenVersion}",
             $"tray={(CloseToTray ? 1 : 0)}",
+            $"closeemptypane={(CloseEmptyPane ? 1 : 0)}",
+            $"tipdelay={TipDelay}",
+            $"autoscroll={(Autoscroll ? 1 : 0)}",
+            $"autoscrollx={(AutoscrollSideways ? 1 : 0)}",
+            $"quicklist={QuickList}",
             $"recent={string.Join("|", RecentFolders)}",
             $"destinations={string.Join("|", RecentDestinations)}",
             $"sidebar={SidebarWidth.ToString(CultureInfo.InvariantCulture)}",
@@ -202,8 +238,7 @@ public static class Settings
          .Concat(Tabs.Select(t => $"tabs.{t.Key}={string.Join("|", t.Value)}"))
          .Concat(ActiveTab.Select(a => $"activetab.{a.Key}={a.Value}"))
          .Concat(Pins.Select(p => $"pins.{p.Key}={string.Join(",", p.Value)}"))
-         .Concat(FolderSorts.Select(s => $"sort={s.Value.Key}|{(s.Value.Desc ? 1 : 0)}|{s.Key}")));
-    }
+         .Concat(FolderSorts.Select(s => $"sort={s.Value.Key}|{(s.Value.Desc ? 1 : 0)}|{s.Key}"));
 
     // ---- Default file manager (per user, HKCU only; turning it off removes every key it added) ----
     // Folder/drive double-clicks go through the Directory/Drive default verb; Win+E through the

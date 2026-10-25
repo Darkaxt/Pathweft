@@ -16,7 +16,9 @@ public static class ShellMenu
     /// Returns the verb the user picked when File Labs should handle it itself (e.g. "rename"), else null.
     /// `view`: File Labs' View modes, as a View submenu at the top of the folder's menu, where Explorer has its own
     /// (the folder's menu from the shell has none: Explorer adds it from its window).
-    public static string Show(Window owner, string folder, IReadOnlyList<string> items, IReadOnlyList<(string Text, bool On, Action Run)> view = null)
+    /// `rename`: false where File Labs has no in-place rename to offer (the sidebar's drives and folders), so Windows
+    /// leaves Rename out instead of showing an item that does nothing.
+    public static string Show(Window owner, string folder, IReadOnlyList<string> items, IReadOnlyList<(string Text, bool On, Action Run)> view = null, bool rename = true)
     {
         var hwnd = new WindowInteropHelper(owner).Handle;
         var pidls = new List<IntPtr>();
@@ -30,7 +32,7 @@ public static class ShellMenu
             if (ctx == null) return null;
 
             menu = CreatePopupMenu();
-            uint flags = CMF_NORMAL | CMF_EXPLORE | CMF_CANRENAME;
+            uint flags = CMF_NORMAL | CMF_EXPLORE | (rename ? CMF_CANRENAME : 0);
             if (System.Windows.Input.Keyboard.Modifiers.HasFlag(System.Windows.Input.ModifierKeys.Shift)) flags |= CMF_EXTENDEDVERBS;
             ctx.QueryContextMenu(menu, 0, FirstId, LastId, flags);
             var own = new List<Action>(); // File Labs' own items: ids OwnFirst, OwnFirst + 1, ... past the shell's range

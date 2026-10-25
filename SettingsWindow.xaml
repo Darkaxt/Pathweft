@@ -32,7 +32,11 @@
       <StackPanel>
         <Border Style="{StaticResource Card}">
           <StackPanel>
-            <TextBlock Text="Appearance" Style="{StaticResource H}"/>
+            <DockPanel>
+              <Button x:Name="ResetAppearance" DockPanel.Dock="Right" Content="Reset" Style="{StaticResource Tab}" VerticalAlignment="Top" Click="ResetSection_Click"
+                      ToolTip="Put this card's settings back to their defaults"/>
+              <TextBlock Text="Appearance" Style="{StaticResource H}"/>
+            </DockPanel>
             <TextBlock Style="{StaticResource Hint}" Margin="0,-4,0,10" Text="Double-click a slider's handle to put it back to its default."/>
             <TextBlock Text="Backdrop"/>
             <StackPanel Orientation="Horizontal" Margin="0,6,0,2">
@@ -144,6 +148,8 @@
 
             <CheckBox x:Name="SinglePaneBox" Content="One pane" Click="SinglePane_Click" Margin="0,4,0,0"/>
             <TextBlock Style="{StaticResource Hint}" Text="Hides the right pane, Explorer style. Ctrl+P (or its button at the bottom) switches. Ctrl+F5 and F6 bring the second pane back, since they copy into it."/>
+            <CheckBox x:Name="CloseEmptyPaneBox" Content="Close the second pane with its last tab" Click="CloseEmptyPane_Click" Margin="0,4,0,0"/>
+            <TextBlock Style="{StaticResource Hint}" Text="Closing the right pane's last tab (its x, Ctrl+W or a middle click) hides the pane, as Ctrl+P does; Ctrl+P brings it back with that tab. Off: a pane's last tab can't be closed."/>
 
             <CheckBox x:Name="StatsBox" Content="Summary cards below the panes" Click="Stats_Click" Margin="0,4,0,0"/>
             <CheckBox x:Name="StatsCompactBox" Content="Compact: one line each" Click="Stats_Click" Margin="22,6,0,0"/>
@@ -153,12 +159,20 @@
             <TextBlock Style="{StaticResource Hint}" Text="Short fades when a folder is read, when panes change and when a transfer appears. Off means everything switches instantly."/>
             <CheckBox x:Name="SmoothScrollBox" Content="Smooth scrolling" Click="SmoothScroll_Click" Margin="0,4,0,0"/>
             <TextBlock Style="{StaticResource Hint}" Text="The mouse wheel glides the file list instead of jumping a few rows at a time."/>
+            <CheckBox x:Name="AutoscrollBox" Content="Middle-click autoscroll" Click="Autoscroll_Click" Margin="0,4,0,0"/>
+            <TextBlock Style="{StaticResource Hint}" Text="A middle click on the list's empty space puts a round marker there, as in a browser: move the mouse away from it and the list scrolls that way, faster the further you go. A left or middle click stops it, and so does letting go if you held the button down. A middle click on a folder still opens it in a new tab."/>
+            <CheckBox x:Name="AutoscrollUpDownBox" Content="Up and down only" Click="Autoscroll_Click" Margin="22,0,0,0"/>
+            <TextBlock Style="{StaticResource Hint}" Margin="22,2,0,10" Text="Sideways movement is ignored, so a wide Details list doesn't drift left or right."/>
           </StackPanel>
         </Border>
 
         <Border Style="{StaticResource Card}">
           <StackPanel>
-            <TextBlock Text="Files" Style="{StaticResource H}"/>
+            <DockPanel>
+              <Button x:Name="ResetFiles" DockPanel.Dock="Right" Content="Reset" Style="{StaticResource Tab}" VerticalAlignment="Top" Click="ResetSection_Click"
+                      ToolTip="Put this card's settings back to their defaults"/>
+              <TextBlock Text="Files" Style="{StaticResource H}"/>
+            </DockPanel>
             <CheckBox x:Name="HiddenBox" Content="Show hidden files" Click="Hidden_Click"/>
             <TextBlock Style="{StaticResource Hint}" Text="Also Ctrl+H."/>
             <CheckBox x:Name="ShortcutFoldersBox" Content="Sort shortcuts to folders with the folders" Click="ShortcutFolders_Click"/>
@@ -169,6 +183,12 @@
             <TextBlock Style="{StaticResource Hint}" Text="For QuickLook users: when it is running, Space previews in QuickLook instead of Quick View, and the preview follows the selection. When it is not running, Quick View opens as usual."/>
             <CheckBox x:Name="ItemTipsBox" Content="Show details when hovering a file" Click="ItemTips_Click"/>
             <TextBlock Style="{StaticResource Hint}" Text="A tooltip with the full name, type, size and date, as in Explorer."/>
+            <DockPanel Margin="0,2,0,0">
+              <TextBlock x:Name="TipDelayText" DockPanel.Dock="Right" Width="40" TextAlignment="Right" Foreground="#8A97AA" Typography.NumeralAlignment="Tabular"/>
+              <TextBlock Text="Tooltip delay" Width="90" VerticalAlignment="Center"/>
+              <Slider x:Name="TipDelaySlider" Minimum="0" Maximum="3000" TickFrequency="100" IsSnapToTickEnabled="True" VerticalAlignment="Center" ValueChanged="TipDelay_Changed"/>
+            </DockPanel>
+            <TextBlock Style="{StaticResource Hint}" Text="How long the pointer rests on something before its tooltip shows, for every tooltip in File Labs, the next one too: running the pointer down a list no longer pops one on every row. 1.5 s unless you change it (1 s before 1.0.51). Takes effect the next time File Labs starts."/>
             <CheckBox x:Name="DeleteSoundBox" Content="Play a sound when deleting permanently" Click="DeleteSound_Click"/>
             <TextBlock Style="{StaticResource Hint}" Text="Shift+Delete: the warning when it asks, and Windows' recycle sound when it deletes. Off: both are silent."/>
             <TextBlock Text="Right-click menu"/>
@@ -182,7 +202,11 @@
 
         <Border Style="{StaticResource Card}">
           <StackPanel>
-            <TextBlock Text="Transfers" Style="{StaticResource H}"/>
+            <DockPanel>
+              <Button x:Name="ResetTransfers" DockPanel.Dock="Right" Content="Reset" Style="{StaticResource Tab}" VerticalAlignment="Top" Click="ResetSection_Click"
+                      ToolTip="Put this card's settings back to their defaults"/>
+              <TextBlock Text="Transfers" Style="{StaticResource H}"/>
+            </DockPanel>
             <CheckBox x:Name="VerifyBox" Content="Verify copies after transfer" Click="Verify_Click"/>
             <TextBlock Style="{StaticResource Hint}" Text="Reads source and copy back and compares xxHash3 digests. Catches a disk or cable that dropped bytes, at the cost of a second full read. On a move, a source whose copy doesn't match is kept."/>
           </StackPanel>
@@ -203,6 +227,14 @@
             <TextBlock Style="{StaticResource Hint}" Text="Closing the window hides File Labs next to the clock instead of quitting, so it opens again at once. Click its icon to bring it back; right-click the icon → Quit to really close."/>
             <CheckBox x:Name="StartupBox" Content="Start with Windows, hidden next to the clock" Click="Startup_Click" Margin="22,0,0,0"/>
             <TextBlock Style="{StaticResource Hint}" Margin="22,2,0,10" Text="Off unless you turn it on. File Labs starts when you sign in and waits by the clock, so even the first window of the day opens at once; this also turns on Close to the notification area. It uses some memory while it waits."/>
+          </StackPanel>
+        </Border>
+
+        <Border Style="{StaticResource Card}">
+          <StackPanel>
+            <TextBlock Text="Defaults" Style="{StaticResource H}"/>
+            <Button x:Name="ResetAll" Content="Reset to defaults…" Style="{StaticResource Tab}" HorizontalAlignment="Left" Padding="12,6" Click="ResetAll_Click"/>
+            <TextBlock Style="{StaticResource Hint}" Margin="0,6,0,0" Text="Appearance, Files and Transfers go back to how File Labs comes, after you confirm. Windows integration stays as it is, and so do your tabs, Quick access lists and folder sizes. Each card's own Reset does just that card."/>
           </StackPanel>
         </Border>
 

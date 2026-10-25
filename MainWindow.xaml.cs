@@ -111,6 +111,7 @@ public partial class MainWindow : Window
             if (!Settings.Tabs.TryGetValue(p.Name, out var paths) || !p.Restore(paths, Settings.ActiveTab.TryGetValue(p.Name, out var a) ? a : 0, Settings.Pins.GetValueOrDefault(p.Name)))
                 p.Navigate(fallback);
         SetActive(Left); // first: a folder already open in the right pane makes that one active
+        ApplyCloseEmptyPane();
         var arg = Program.PathArg(Environment.GetCommandLineArgs().Skip(1));
         if (arg != "") OpenPath(Left, arg);
         ApplyPreview();
@@ -354,7 +355,7 @@ public partial class MainWindow : Window
     /// Returns what to tell the user (only used by the manual check in Settings).
     public async Task<string> CheckForUpdate(bool manual)
     {
-        if (updateDialog != null) { updateDialog.Activate(); return null; }
+        if (updateDialog != null) { Bring(updateDialog); return null; }
         Updater.Release release;
         try { release = await Updater.Check(manual); }
         catch (Exception ex) when (Updater.Failed(ex))
@@ -391,7 +392,7 @@ public partial class MainWindow : Window
     }
     void WhatsNew_Click(object s, RoutedEventArgs e) => OpenWhatsNew();
 
-    /// An open Settings, Help or What's new to the front. Activate alone leaves a window minimized to the taskbar
+    /// An open Settings, Help, What's new or update offer to the front. Activate alone leaves a window minimized to the taskbar
     /// where it is, so the gear did nothing then (1.0.48 report).
     static void Bring(Window w)
     {
@@ -475,6 +476,17 @@ public partial class MainWindow : Window
         pane.Navigate(folder, select);
     }
 
+    /// A file found elsewhere in File Labs (Find duplicates): its folder, with it selected, in the active pane.
+    internal void ShowFile(string path)
+    {
+        OpenPath(active, path);
+        active.FocusList();
+        Activate();
+    }
+
+    /// Find duplicates in this folder (and its subfolders, if asked in the window), in a window of its own.
+    void FindDuplicates(string folder) => new DuplicatesWindow(this, folder).Show();
+
     /// Explorer on purpose: the agent is told to leave the window alone instead of taking it over.
     static void OpenInExplorer(string arguments)
     {
@@ -523,6 +535,9 @@ public partial class MainWindow : Window
             card.Padding = full ? new Thickness(12, 9, 14, 9) : new Thickness(10, 3, 12, 3);
         StatsRow.Margin = new Thickness(0, full ? 10 : 8, 0, 0);
     }
+
+    /// Settings → "Close the second pane with its last tab": closing that tab hides the pane, as Ctrl+P does.
+    public void ApplyCloseEmptyPane() => Right.CloseLastTab = Settings.CloseEmptyPane ? () => SetSinglePane(true) : null;
 
     public void SetSinglePane(bool on)
     {
@@ -634,6 +649,8 @@ public partial class MainWindow : Window
         var b = new Button { Content = g, Style = (Style)FindResource("Side"), HorizontalContentAlignment = HorizontalAlignment.Stretch, Margin = new(0, 1, 0, 1), ToolTip = $"{d.Name}  {d.Format}  ·  {Fmt(d.Free)} free" };
         b.Click += (_, _) => { active.Navigate(d.Name); active.FocusList(); };
         b.PreviewMouseDown += (_, e) => { if (e.ChangedButton == MouseButton.Middle) { active.OpenInBackgroundTab(d.Name); e.Handled = true; } };
+        // Windows' own menu for the drive (Properties, Eject, Format, BitLocker…), hosted as the folders' Windows menu is
+        b.MouseRightButtonUp += (_, e) => { e.Handled = true; ShellMenu.Show(this, d.Name, new[] { d.Name }, rename: false); RefreshDrives(); };
         return b;
     }
 
@@ -644,22 +661,51 @@ public partial class MainWindow : Window
         return WNetGetConnection(root.TrimEnd((char)92), sb, ref len) == 0 ? sb.ToString() : null;
     }
 
-    // Quick access: pinned folders, one path per line in quickaccess.txt in the data folder
+    // Quick access: pinned folders, one path per line in quickaccess.txt in the data folder. Since 1.0.51 there can be several
+    // lists, OneCommander style, each with a name the user picks: "# name" starts one. A file without such a line (every one
+    // before 1.0.51) is one list, "Quick access", and is written back the same way while that is the only list.
     static string QuickFile => Path.Combine(Settings.Dir, "quickaccess.txt");
-    List<string> pinned = new();
+    internal sealed class QuickList { public string Name; public List<string> Folders = new(); }
+    internal const string FirstQuickList = "Quick access";
+    List<QuickList> quickLists = new() { new() { Name = FirstQuickList } };
+    QuickList CurrentQuickList => quickLists[Math.Clamp(Settings.QuickList, 0, quickLists.Count - 1)];
+    List<string> pinned => CurrentQuickList.Folders; // the list the sidebar shows; Ctrl+D pins to it
     string pinDrag;
     Point pinDragFrom;
 
+    internal static List<QuickList> ParseQuickLists(IEnumerable<string> lines)
+    {
+        var lists = new List<QuickList>();
+        foreach (var line in lines.Where(l => l.Trim() != ""))
+            if (line.StartsWith("# ") && line[2..].Trim() is { Length: > 0 } name) lists.Add(new QuickList { Name = name });
+            else
+            {
+                if (lists.Count == 0) lists.Add(new QuickList { Name = FirstQuickList });
+                lists[^1].Folders.Add(line);
+            }
+        if (lists.Count == 0) lists.Add(new QuickList { Name = FirstQuickList });
+        return lists;
+    }
+
+    internal static IEnumerable<string> QuickListLines(List<QuickList> lists) =>
+        lists is [{ Name: FirstQuickList } only] ? only.Folders : lists.SelectMany(q => q.Folders.Prepend("# " + q.Name));
+
     void LoadQuickAccess()
     {
-        if (File.Exists(QuickFile)) pinned = File.ReadAllLines(QuickFile).Where(l => l.Trim() != "").ToList();
+        if (File.Exists(QuickFile)) quickLists = ParseQuickLists(File.ReadAllLines(QuickFile));
         if (File.Exists(LumeFile)) lumePins = File.ReadAllLines(LumeFile).Where(l => l.Trim() != "").ToList();
         BuildQuickAccess();
         ShareQuickAccess();
     }
 
-    // Lume (sister app) lists these folders, and what was pinned to it, in its search; copies, since the write runs off the UI thread
-    void ShareQuickAccess() { var copy = pinned.ToList(); var lume = lumePins.ToList(); Task.Run(() => Sisters.WriteItems(copy, lume)); }
+    // Lume (sister app) lists these folders, from every Quick access list, and what was pinned to it, in its search; copies,
+    // since the write runs off the UI thread
+    void ShareQuickAccess()
+    {
+        var folders = quickLists.SelectMany(q => q.Folders).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+        var lume = lumePins.ToList();
+        Task.Run(() => Sisters.WriteItems(folders, lume));
+    }
 
     // Pin to Lume (1.0.50): files, folders and shortcuts that Lume then finds by name, one path per line in lume.txt in
     // the data folder. They reach Lume with Quick access, in data\filelabs.items.json (Sisters.WriteItems).
@@ -712,9 +758,64 @@ public partial class MainWindow : Window
     void SaveQuickAccess()
     {
         Directory.CreateDirectory(Path.GetDirectoryName(QuickFile));
-        Settings.WriteAllLines(QuickFile, pinned);
+        Settings.WriteAllLines(QuickFile, QuickListLines(quickLists));
         BuildQuickAccess();
         ShareQuickAccess();
+    }
+
+    // ---- the lists themselves: from the button and the right-click on Quick access' header (SidebarSections.cs) ----
+    ContextMenu QuickListsMenu()
+    {
+        var m = new ContextMenu();
+        for (int i = 0; i < quickLists.Count; i++)
+        {
+            int index = i;
+            bool shown = quickLists[i] == CurrentQuickList;
+            var list = new MenuItem { Header = new TextBlock { Text = quickLists[i].Name }, IsChecked = shown, FontWeight = shown ? FontWeights.SemiBold : FontWeights.Normal, InputGestureText = $"{quickLists[i].Folders.Count}" };
+            list.Click += (_, _) => SwitchQuickList(index);
+            m.Items.Add(list);
+        }
+        m.Items.Add(new Separator());
+        var current = CurrentQuickList;
+        int at = quickLists.IndexOf(current);
+        m.Items.Add(Item("New list…", "\uE710", "", () =>
+        {
+            if (PromptDialog.Ask(this, "New Quick access list", "Name of the list", "New list", "Create") is not { } name) return;
+            quickLists.Insert(at + 1, new QuickList { Name = name });
+            SwitchQuickList(at + 1);
+        }));
+        m.Items.Add(Item($"Rename “{current.Name}”…", "\uE8AC", "", () =>
+        {
+            if (PromptDialog.Ask(this, "Rename list", "Name of the list", current.Name, "Rename", selectAll: true) is not { } name) return;
+            current.Name = name;
+            SwitchQuickList(at);
+        }));
+        m.Items.Add(Item("Move list up", "\uE74A", "", () => MoveQuickList(at, at - 1), at > 0));
+        m.Items.Add(Item("Move list down", "\uE74B", "", () => MoveQuickList(at, at + 1), at < quickLists.Count - 1));
+        m.Items.Add(Item($"Delete “{current.Name}”…", "\uE74D", "", () =>
+        {
+            if (current.Folders.Count > 0 && PromptDialog.Choose(this, $"Delete the list “{current.Name}”?",
+                    $"Its {current.Folders.Count} folder{(current.Folders.Count == 1 ? "" : "s")} leave Quick access; the folders themselves stay where they are.", "Delete", "Cancel") != 0) return;
+            quickLists.Remove(current);
+            SwitchQuickList(Math.Min(at, quickLists.Count - 1));
+        }, quickLists.Count > 1));
+        return m;
+    }
+
+    void SwitchQuickList(int index)
+    {
+        Settings.QuickList = index;
+        Settings.Save();
+        SaveQuickAccess();
+        BuildSidebar(); // the section's title is the list's name
+    }
+
+    void MoveQuickList(int from, int to)
+    {
+        var list = quickLists[from];
+        quickLists.RemoveAt(from);
+        quickLists.Insert(to, list);
+        SwitchQuickList(to);
     }
 
     // Pins the selected folders, or the current folder if no folder is selected.
@@ -722,10 +823,10 @@ public partial class MainWindow : Window
     {
         var dirs = active.Selected.Where(e => e.IsDir).Select(e => e.Path).DefaultIfEmpty(active.Dir);
         var added = dirs.Where(d => !pinned.Contains(d, StringComparer.OrdinalIgnoreCase)).ToList();
-        if (added.Count == 0) { Status.Text = "Already in Quick access"; return; }
+        if (added.Count == 0) { Status.Text = $"Already in {CurrentQuickList.Name}"; return; }
         pinned.AddRange(added);
         SaveQuickAccess();
-        Status.Text = $"Pinned {string.Join(", ", added.Select(Path.GetFileName))}";
+        Status.Text = $"Pinned {string.Join(", ", added.Select(Path.GetFileName))} to {CurrentQuickList.Name}";
     }
 
     // Windows' own icon for a path (folder, drive, network drive, special folder), cached per path;
@@ -913,7 +1014,7 @@ public partial class MainWindow : Window
 
     void Transfer(bool move) => Submit(active.Selected.Select(e => e.Path).ToList(), Other.Dir, move);
 
-    Job Submit(List<string> sources, string dest, bool move)
+    internal Job Submit(List<string> sources, string dest, bool move)
     {
         if (sources.Count == 0) return null;
         Settings.Bump(Settings.RecentDestinations, dest, Settings.DestinationsMax); // for Copy to / Move to
@@ -1071,8 +1172,9 @@ public partial class MainWindow : Window
         void SetLine(uint line, [MarshalAs(UnmanagedType.LPWStr)] string text, bool compactPath, IntPtr reserved);
     }
 
-    /// Deletes through the shell, to the Recycle Bin unless `permanent`. Also used by Undo, quietly.
-    void Recycle(List<string> paths, UIOption ui, bool permanent = false)
+    /// Deletes through the shell, to the Recycle Bin unless `permanent`. Also used by Undo, quietly. `done` runs on this
+    /// thread when it has finished (Find duplicates takes the files that went out of its list).
+    internal void Recycle(List<string> paths, UIOption ui, bool permanent = false, Action done = null)
     {
         if (paths.Count == 0) return;
         var owner = new WindowInteropHelper(this).Handle;
@@ -1097,6 +1199,7 @@ public partial class MainWindow : Window
                 if (error != null) MessageBox.Show(this, error, "Delete");
                 Left.Refresh(); Right.Refresh();
                 RefreshDrives(); UpdateStats();
+                done?.Invoke();
             });
         }) { IsBackground = false }; // finishing a delete beats closing fast
         t.SetApartmentState(ApartmentState.STA);

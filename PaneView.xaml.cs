@@ -263,13 +263,30 @@ public partial class PaneView : UserControl
             int lines = SystemParameters.WheelScrollLines; // -1: a screen a notch
             Glide(sv, -e.Delta / 120.0 * (lines > 0 ? lines * (Mode == ViewMode.Details ? 16 : 32) : sv.ViewportHeight));
         };
-        // Middle click, as in a browser: a folder (or a shortcut to one) opens in a tab behind this one, a tab closes.
+        // Middle click, as in a browser: a folder (or a shortcut to one) opens in a tab behind this one, a tab closes, and
+        // on the list's empty space (Settings: Middle-click autoscroll) moving the mouse scrolls the list.
         List.PreviewMouseDown += (_, e) =>
         {
-            if (e.ChangedButton != MouseButton.Middle || FindRow(e.OriginalSource as DependencyObject)?.FolderTarget is not { } folder) return;
-            OpenInBackgroundTab(folder);
+            if (e.ChangedButton != MouseButton.Middle) return;
+            var at = e.OriginalSource as DependencyObject;
+            if (FindRow(at)?.FolderTarget is { } folder) OpenInBackgroundTab(folder);
+            else if (!Settings.Autoscroll || RowAt(at) != null || OnChrome(at) || !StartAutoscroll(e.GetPosition(List))) return;
             e.Handled = true;
         };
+        // on the pane, so it comes before the list's own handling of the press (selecting, a drag, a rectangle)
+        PreviewMouseDown += (_, e) => { if (autoscrolling) { StopAutoscroll(); swallowUp = e.ChangedButton; e.Handled = true; } };
+        PreviewMouseUp += (_, e) =>
+        {
+            if (swallowUp == e.ChangedButton) { swallowUp = null; e.Handled = true; } // the click that ended it does nothing else
+            else if (autoscrolling && autoscrollHeld && e.ChangedButton == MouseButton.Middle)
+            {
+                autoscrollHeld = false;
+                if (autoscrollMoved) StopAutoscroll(); // held and moved, as in a browser: letting go ends it
+                e.Handled = true;
+            }
+        };
+        List.PreviewKeyDown += (_, e) => { if (autoscrolling) { StopAutoscroll(); if (e.Key == Key.Escape) e.Handled = true; } };
+        LostMouseCapture += (_, _) => StopAutoscroll();
         TabStrip.PreviewMouseDown += (_, e) =>
         {
             if (e.ChangedButton != MouseButton.Middle || TabIndexAt(e.GetPosition(TabStrip)) is not (>= 0 and var i)) return;
@@ -1006,7 +1023,7 @@ public partial class PaneView : UserControl
             int idx = i;
             var name = System.IO.Path.GetFileName(tabs[i].TrimEnd((char)92));
             var close = new Button { Style = (Style)FindResource("TabClose"), ToolTip = "Close tab (Ctrl+W)" };
-            if (tabs.Count == 1 || pins[i]) close.Visibility = Visibility.Collapsed; // the last tab can't be closed, nor a pinned one
+            if (tabs.Count == 1 && closeLast == null || pins[i]) close.Visibility = Visibility.Collapsed; // the last tab can't be closed (unless it closes the pane), nor a pinned one
             close.Click += (_, e) => { CloseTab(idx); e.Handled = true; };
             var row = new DockPanel();
             DockPanel.SetDock(close, Dock.Right);
@@ -1220,10 +1237,21 @@ public partial class PaneView : UserControl
     }
 
     public void NewTab() { tabs.Insert(tab + 1, Dir); pins.Insert(tab + 1, false); tab++; Navigate(Dir, record: false); }
+
+    /// What closing the last tab does instead of nothing: the second pane hides itself (Settings → "Close the second pane
+    /// with its last tab"). The tab stays, so the pane comes back as it was. Null: the last tab can't be closed.
+    Action closeLast;
+    public Action CloseLastTab
+    {
+        get => closeLast;
+        set { closeLast = value; tabsShown = ""; if (Dir != "") BuildTabs(); } // the last tab's close button comes or goes
+    }
+
     public void CloseTab(int i = -1)
     {
         int idx = i < 0 ? tab : i;
-        if (tabs.Count == 1 || pins[idx]) return;
+        if (pins[idx]) return;
+        if (tabs.Count == 1) { closeLast?.Invoke(); return; }
         TabClosed?.Invoke(tabs[idx]);
         tabs.RemoveAt(idx); pins.RemoveAt(idx);
         if (idx < tab || tab == tabs.Count) tab--;
@@ -1288,7 +1316,7 @@ public partial class PaneView : UserControl
         var menu = new ContextMenu();
         var pin = new MenuItem { Header = pins[i] ? "Unpin tab" : "Pin tab" };
         pin.Click += (_, _) => TogglePin(i);
-        var close = new MenuItem { Header = "Close tab", InputGestureText = "Ctrl+W", IsEnabled = !pins[i] && tabs.Count > 1 };
+        var close = new MenuItem { Header = "Close tab", InputGestureText = "Ctrl+W", IsEnabled = !pins[i] && (tabs.Count > 1 || closeLast != null) };
         close.Click += (_, _) => CloseTab(i);
         var others = new MenuItem { Header = "Close other tabs", IsEnabled = pins.Where((p, j) => j != i && !p).Any() };
         others.Click += (_, _) => CloseOtherTabs(i);
@@ -1752,6 +1780,13 @@ public partial class PaneView : UserControl
     void ViewButton_Click(object s, RoutedEventArgs e)
     {
         var menu = new ContextMenu { PlacementTarget = ViewButton, Placement = System.Windows.Controls.Primitives.PlacementMode.Top };
+        foreach (var item in ViewMenuItems()) menu.Items.Add(item);
+        menu.IsOpen = true;
+    }
+
+    /// The five view modes, largest first, shared by the View button and the right-click menu's View submenu.
+    public IEnumerable<MenuItem> ViewMenuItems()
+    {
         int n = 0;
         foreach (var m in Modes)
         {
@@ -1763,10 +1798,11 @@ public partial class PaneView : UserControl
                 FontWeight = mode == Mode ? FontWeights.SemiBold : FontWeights.Normal,
             };
             mi.Click += (_, _) => SetView(mode);
-            menu.Items.Add(mi);
+            yield return mi;
         }
-        menu.IsOpen = true;
     }
+
+    public string ViewModeName => Modes.First(x => x.mode == Mode).name;
 
     // Real Windows icons for Details/List rows (instead of outline glyphs). Plain files share one icon
     // per extension, so those are looked up once; exe/lnk/ico and folders carry their own.
@@ -2278,6 +2314,95 @@ public partial class PaneView : UserControl
         sv.ScrollToVerticalOffset(next);
         glideAt = next;
     }
+
+    // ---- middle-click autoscroll (Settings): the list scrolls toward the pointer, faster the further it is from where the
+    // click was, every frame, until a click or a key. The pointer is read from Windows each frame: with no button held,
+    // the window gets no moves once the pointer is outside it. ----
+    bool autoscrolling, autoscrollHeld, autoscrollMoved;
+    MouseButton? swallowUp;
+    Point autoscrollFrom;
+    TimeSpan autoscrollFrame;
+    ScrollViewer autoscroller;
+    bool autoscrollUpDown, autoscrollSides;
+    Window autoscrollWindow;
+    const double AutoscrollDeadZone = 12;
+
+    /// False when there is nowhere to scroll.
+    bool StartAutoscroll(Point at)
+    {
+        if (FindScroller(List) is not { } sv) return false;
+        autoscrollUpDown = sv.ScrollableHeight > 0;
+        autoscrollSides = Settings.AutoscrollSideways && sv.ScrollableWidth > 0;
+        if (!autoscrollUpDown && !autoscrollSides) return false;
+        autoscroller = sv;
+        autoscrolling = autoscrollHeld = true;
+        autoscrollMoved = false;
+        autoscrollFrom = at;
+        autoscrollFrame = TimeSpan.Zero;
+        AutoscrollUpDown.Visibility = autoscrollUpDown ? Visibility.Visible : Visibility.Collapsed;
+        AutoscrollSides.Visibility = autoscrollSides ? Visibility.Visible : Visibility.Collapsed;
+        var mark = List.TransformToVisual(MarqueeLayer).Transform(at);
+        Canvas.SetLeft(AutoscrollMark, mark.X - AutoscrollMark.Width / 2);
+        Canvas.SetTop(AutoscrollMark, mark.Y - AutoscrollMark.Height / 2);
+        AutoscrollMark.Visibility = Visibility.Visible;
+        Mouse.OverrideCursor = AutoscrollCursor(0, 0);
+        CaptureMouse(); // every click comes to the pane, so one anywhere in the window ends it
+        autoscrollWindow = Window.GetWindow(this);
+        if (autoscrollWindow != null) autoscrollWindow.Deactivated += AutoscrollDeactivated;
+        CompositionTarget.Rendering += AutoscrollStep;
+        return true;
+    }
+
+    void AutoscrollDeactivated(object s, EventArgs e) => StopAutoscroll();
+
+    void StopAutoscroll()
+    {
+        if (!autoscrolling) return;
+        autoscrolling = autoscrollHeld = false;
+        CompositionTarget.Rendering -= AutoscrollStep;
+        if (autoscrollWindow != null) autoscrollWindow.Deactivated -= AutoscrollDeactivated;
+        autoscrollWindow = null;
+        AutoscrollMark.Visibility = Visibility.Collapsed;
+        Mouse.OverrideCursor = null;
+        if (IsMouseCaptured) ReleaseMouseCapture(); // raises LostMouseCapture, which finds it stopped
+    }
+
+    /// Pixels a second for a pointer this far from where the click was: nothing inside the dead zone, then gently
+    /// faster, as in a browser (100 px away: about 1,100 px a second).
+    internal static double AutoscrollSpeed(double distance)
+    {
+        double a = Math.Abs(distance) - AutoscrollDeadZone;
+        return a <= 0 ? 0 : Math.Sign(distance) * Math.Min(8000, a * 8 + a * a * 0.05);
+    }
+
+    void AutoscrollStep(object s, EventArgs e)
+    {
+        var now = ((RenderingEventArgs)e).RenderingTime;
+        double dt = autoscrollFrame == TimeSpan.Zero ? 1 / 60.0 : (now - autoscrollFrame).TotalSeconds;
+        if (dt <= 0) return; // raised twice for one frame
+        autoscrollFrame = now;
+        if (!List.IsVisible || PresentationSource.FromVisual(List) == null) { StopAutoscroll(); return; }
+        GetCursorPos(out var cursor);
+        var d = List.PointFromScreen(new Point(cursor.X, cursor.Y)) - autoscrollFrom;
+        double dx = autoscrollSides ? d.X : 0, dy = autoscrollUpDown ? d.Y : 0;
+        if (Math.Abs(dx) > AutoscrollDeadZone || Math.Abs(dy) > AutoscrollDeadZone) autoscrollMoved = true;
+        if (AutoscrollCursor(AutoscrollSpeed(dx), AutoscrollSpeed(dy)) is var c && c != Mouse.OverrideCursor) Mouse.OverrideCursor = c; // on change: each set asks the whole window for its cursor again
+        dt = Math.Min(dt, 0.1); // a long frame (a folder loading) is not a jump
+        var sv = autoscroller;
+        if (dy != 0) sv.ScrollToVerticalOffset(Math.Clamp(sv.VerticalOffset + AutoscrollSpeed(dy) * dt, 0, sv.ScrollableHeight));
+        if (dx != 0) sv.ScrollToHorizontalOffset(Math.Clamp(sv.HorizontalOffset + AutoscrollSpeed(dx) * dt, 0, sv.ScrollableWidth));
+    }
+
+    /// Windows' own autoscroll pointers: which way it is going, or the ways it can go while it rests.
+    Cursor AutoscrollCursor(double vx, double vy) => (Math.Sign(vx), Math.Sign(vy)) switch
+    {
+        (0, 0) => autoscrollUpDown && autoscrollSides ? Cursors.ScrollAll : autoscrollUpDown ? Cursors.ScrollNS : Cursors.ScrollWE,
+        (0, < 0) => Cursors.ScrollN, (0, > 0) => Cursors.ScrollS, (< 0, 0) => Cursors.ScrollW, (> 0, 0) => Cursors.ScrollE,
+        (< 0, < 0) => Cursors.ScrollNW, (> 0, < 0) => Cursors.ScrollNE, (< 0, > 0) => Cursors.ScrollSW, _ => Cursors.ScrollSE,
+    };
+
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)] struct CursorPoint { public int X, Y; }
+    [System.Runtime.InteropServices.DllImport("user32.dll")] static extern bool GetCursorPos(out CursorPoint p);
 
     const int WH_MOUSE_LL = 14;
     static readonly IntPtr WM_MOUSEWHEEL = 0x020A;

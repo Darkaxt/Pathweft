@@ -172,6 +172,7 @@ public partial class MainWindow
         {
             m.Items.Add(Item("Open in new tab", "", "Middle click", () => { p.NewTab(); p.Navigate(first.Path); }));
             m.Items.Add(Item("Open in other pane", "", "", () => Other.Navigate(first.Path)));
+            m.Items.Add(Item("Find duplicates in folder…", "", "", () => FindDuplicates(first.Path)));
         }
         // Windows' Open with list (its apps in Windows' order, Choose another app, the Store), for several files too
         if (!AddShell(m, shell, "openwith") && one && !dir)
@@ -261,6 +262,10 @@ public partial class MainWindow
         m.Items.Add(Item("New folder", "", "Ctrl+Shift+N", MkDir));
         m.Items.Add(Item("New file…", "", "Ctrl+N", NewFile));
         m.Items.Add(new Separator());
+        // View, as in Explorer's own menu for a folder (the Windows menu gets the same from ShellMenu.Show)
+        var view = new MenuItem { Header = $"View  ·  {p.ViewModeName}", Icon = new TextBlock { Text = "", FontFamily = new FontFamily("Segoe Fluent Icons"), FontSize = 13 } };
+        foreach (var item in p.ViewMenuItems()) view.Items.Add(item);
+        m.Items.Add(view);
         var sort = new MenuItem
         {
             Header = $"Sort by  ·  {p.SortKey}",
@@ -271,6 +276,7 @@ public partial class MainWindow
         m.Items.Add(Item("Select by pattern…", "", "Num +", () => SelectByPattern(true)));
         m.Items.Add(Item("Invert selection", "", "Num *", p.InvertSelection));
         m.Items.Add(Item("Compare with other pane", "", "Shift+F2", ComparePanes));
+        m.Items.Add(Item("Find duplicates…", "", "", () => FindDuplicates(p.Dir)));
         m.Items.Add(new Separator());
         m.Items.Add(Item("Refresh", "", "F5 / Ctrl+R", () => { SizeCache.Clear(); p.Refresh(force: true); }));
         m.Items.Add(Item(Settings.ShowHidden ? "Hide hidden files" : "Show hidden files", "", "Ctrl+H", ToggleHidden));

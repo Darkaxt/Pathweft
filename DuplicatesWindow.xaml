@@ -1,0 +1,71 @@
+<Window x:Class="FileExplorer.DuplicatesWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Find duplicates — File Labs" Width="980" Height="640" MinWidth="620" MinHeight="380"
+        WindowStartupLocation="CenterOwner" ShowInTaskbar="True" Background="Transparent"
+        Foreground="#E8EEF6" FontFamily="Segoe UI Variable Text, Segoe UI" FontSize="12">
+  <Grid x:Name="Root" Background="#B30A0D13">
+    <DockPanel Margin="14,12,14,12">
+      <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8">
+        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+          <CheckBox x:Name="SubfoldersBox" Content="Include subfolders" Margin="0,0,14,0" VerticalAlignment="Center" Click="Subfolders_Click"/>
+          <Button x:Name="SearchButton" Style="{StaticResource Tab}" Tag="on" Padding="14,6" Click="Search_Click" Content="Search again"/>
+        </StackPanel>
+        <TextBlock x:Name="FolderText" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+      </DockPanel>
+      <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8">
+        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+          <Button Style="{StaticResource Tab}" MaxWidth="220" Padding="12,6" Margin="0,0,6,0" Click="SelectExtra_Click"
+                  ToolTip="In every group, select all the copies but one: the oldest is kept">
+            <TextBlock><Run FontFamily="Segoe Fluent Icons" Text="&#xE762;"/>  Select extra copies</TextBlock>
+          </Button>
+          <Button Style="{StaticResource Tab}" MaxWidth="220" Padding="12,6" Margin="0,0,6,0" Click="Move_Click" ToolTip="Move the selected copies to a folder you choose">
+            <TextBlock><Run FontFamily="Segoe Fluent Icons" Text="&#xE8DE;"/>  Move to…</TextBlock>
+          </Button>
+          <Button Style="{StaticResource Tab}" MaxWidth="240" Padding="12,6" Click="Delete_Click" ToolTip="Send the selected copies to the Recycle Bin (Delete)">
+            <TextBlock><Run FontFamily="Segoe Fluent Icons" Text="&#xE74D;"/>  Delete to Recycle Bin</TextBlock>
+          </Button>
+        </StackPanel>
+        <TextBlock x:Name="Summary" Foreground="#8A97AA" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+      </DockPanel>
+      <DockPanel DockPanel.Dock="Bottom" Margin="2,8,0,0">
+        <TextBlock x:Name="Status" Foreground="#8A97AA" FontSize="11" TextTrimming="CharacterEllipsis"/>
+      </DockPanel>
+      <ProgressBar x:Name="Progress" DockPanel.Dock="Top" Height="4" Maximum="1" Margin="0,0,0,8" Visibility="Collapsed"/>
+      <Border Background="#0DFFFFFF" CornerRadius="10" BorderThickness="1" BorderBrush="#1AFFFFFF" Padding="4,2">
+        <ListView x:Name="List" Background="Transparent" BorderThickness="0" SelectionMode="Extended"
+                  VirtualizingPanel.IsVirtualizingWhenGrouping="True" VirtualizingPanel.VirtualizationMode="Recycling"
+                  ScrollViewer.HorizontalScrollBarVisibility="Disabled" MouseDoubleClick="List_DoubleClick" SelectionChanged="List_SelectionChanged">
+          <ListView.GroupStyle>
+            <GroupStyle>
+              <GroupStyle.HeaderTemplate>
+                <DataTemplate>
+                  <TextBlock Text="{Binding Name.Title, Mode=OneWay}" Foreground="#8A97AA" FontSize="11" Margin="6,10,0,3"/>
+                </DataTemplate>
+              </GroupStyle.HeaderTemplate>
+            </GroupStyle>
+          </ListView.GroupStyle>
+          <ListView.View>
+            <GridView>
+              <GridViewColumn Header="Name" Width="290">
+                <GridViewColumn.CellTemplate>
+                  <DataTemplate><TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis"/></DataTemplate>
+                </GridViewColumn.CellTemplate>
+              </GridViewColumn>
+              <GridViewColumn Header="Folder" Width="390">
+                <GridViewColumn.CellTemplate>
+                  <DataTemplate><TextBlock Text="{Binding Folder}" Foreground="#8A97AA" TextTrimming="CharacterEllipsis"/></DataTemplate>
+                </GridViewColumn.CellTemplate>
+              </GridViewColumn>
+              <GridViewColumn Header="Modified" Width="150">
+                <GridViewColumn.CellTemplate>
+                  <DataTemplate><TextBlock Text="{Binding ModifiedText}" Foreground="#99FFFFFF" Typography.NumeralAlignment="Tabular"/></DataTemplate>
+                </GridViewColumn.CellTemplate>
+              </GridViewColumn>
+            </GridView>
+          </ListView.View>
+        </ListView>
+      </Border>
+    </DockPanel>
+  </Grid>
+</Window>

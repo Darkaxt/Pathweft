@@ -13,7 +13,7 @@ public partial class MainWindow
     // The content panels live in MainWindow.xaml; a section is just a header wrapped around one.
     (string Key, string Title, string Glyph, Panel Content)[] Sections => new[]
     {
-        ("quick",     "Quick access", "", (Panel)QuickAccess),
+        ("quick",     CurrentQuickList.Name, "", (Panel)QuickAccess), // the list shown (MainWindow.QuickLists)
         ("favorites", "Favorites",    "", (Panel)Favorites),
         ("drives",    "Drives",       "", (Panel)Drives),
         ("tree",      "Folders",      "", (Panel)FolderTree),
@@ -79,6 +79,13 @@ public partial class MainWindow
             active.OpenInBackgroundTab(path);
             e.Handled = true;
         };
+        // Windows' own menu for the drive or folder, as for a drive in Drives
+        node.MouseRightButtonUp += (_, e) =>
+        {
+            if (FindNode(e.OriginalSource as DependencyObject) != node) return;
+            e.Handled = true;
+            ShellMenu.Show(this, Path.GetDirectoryName(path) ?? path, new[] { path }, rename: false);
+        };
         return node;
     }
 
@@ -133,6 +140,18 @@ public partial class MainWindow
         var headerRow = new DockPanel();
         DockPanel.SetDock(grip, Dock.Right);
         headerRow.Children.Add(grip);
+        if (section.Key == "quick")
+        {
+            // Quick access lists (1.0.51): switch, add, rename, reorder and delete them from here, or by right-clicking the header
+            var lists = new TextBlock
+            {
+                Text = "", FontFamily = new FontFamily("Segoe Fluent Icons"), FontSize = 10, Foreground = Hex("#8A97AA"), Padding = new(6, 2, 6, 2),
+                VerticalAlignment = VerticalAlignment.Center, Background = Brushes.Transparent, ToolTip = "Quick access lists: switch, add, rename, reorder, delete",
+            };
+            DockPanel.SetDock(lists, Dock.Right);
+            lists.MouseLeftButtonDown += (_, e) => { e.Handled = true; var m = QuickListsMenu(); m.PlacementTarget = lists; m.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom; m.IsOpen = true; };
+            headerRow.Children.Add(lists);
+        }
         headerRow.Children.Add(chevron);
         headerRow.Children.Add(title);
 
@@ -173,6 +192,7 @@ public partial class MainWindow
             dragKey = null;
             DragDrop.DoDragDrop(wrapper, new DataObject("FileLabsSection", section.Key), DragDropEffects.Move);
         };
+        if (section.Key == "quick") header.MouseRightButtonUp += (_, e) => { e.Handled = true; var m = QuickListsMenu(); m.PlacementTarget = header; m.IsOpen = true; };
         header.MouseLeftButtonUp += (_, e) =>
         {
             if (dragKey != section.Key) return; // a plain click: collapse or expand

@@ -163,23 +163,76 @@ public static class Agent
         SetWindowPos(hwnd, IntPtr.Zero, -32000, -32000, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_ASYNCWINDOWPOS);
 
         // A fresh explorer.exe registers its window ~1.3 s after starting (measured); poll until then.
-        int tries = 0, waitedForSelection = 0;
+        int tries = 0;
+        var watch = new SelectionWatch();
+        dynamic last = null;
         var poll = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(50) };
         poll.Tick += (_, _) =>
         {
             if (!IsWindow(hwnd)) { poll.Stop(); hidden.Remove(hwnd); return; }
             var (window, folder, selected) = Locate(hwnd);
-            if (window == null && ++tries < 100) return;
-            // "Show in folder" selects the file a moment after the folder is shown; give it ~0.5 s
-            if (folder != null && selected == null && ++waitedForSelection < 10) return;
+            last = window ?? last;
+            if (watch.Handed == null)
+            {
+                if (window == null && ++tries < 100) return;
+                if (folder == null) { poll.Stop(); GiveBack(hwnd); return; } // a virtual place, or never registered: Explorer keeps it
+            }
+            var (open, done) = watch.Look(folder, selected);
+            if (open != null) OpenInFileLabs(open);
+            if (!done)
+            {
+                if (open != null) HideFromTaskbar(hwnd); // the folder went to File Labs; the window stays out of sight a little longer
+                return;
+            }
             poll.Stop();
-            if (folder == null) { GiveBack(hwnd); return; } // a virtual place, or never registered: Explorer keeps it
             hidden.Remove(hwnd);
-            try { window.Quit(); } catch (COMException) { }
-            OpenInFileLabs(selected ?? folder);
+            try { last?.Quit(); } catch (COMException) { }
         };
         poll.Start();
     }
+
+    /// What an Explorer window that other programs opened hands to File Labs, look by look (every 50 ms). "Show in folder"
+    /// selects the file a moment after the folder shows: ~0.5 s are given for it. Open path in Everything, in a big folder,
+    /// selects it later still, and before 1.0.51 File Labs then got the folder alone, with its first file selected. Now the
+    /// folder goes at 0.5 s, and the file follows if Explorer selects it within 2 s more (File Labs selects it in the tab it
+    /// has just opened).
+    internal sealed class SelectionWatch
+    {
+        int waited;
+        public string Handed { get; private set; } // the folder File Labs was given while nothing was selected
+
+        /// `folder`: on disk, as Explorer shows it now; `selected`: its one selected item, or null.
+        public (string Open, bool Done) Look(string folder, string selected)
+        {
+            if (Handed != null)
+            {
+                if (selected == null && folder == Handed && ++waited < 40) return (null, false);
+                return (selected != null && folder == Handed ? selected : null, true);
+            }
+            if (selected != null) return (selected, true);
+            if (++waited < 10) return (null, false);
+            Handed = folder;
+            waited = 0;
+            return (folder, false);
+        }
+    }
+
+    /// The Explorer window being looked at has no taskbar button while it waits, out of sight, for a late selection.
+    static void HideFromTaskbar(IntPtr hwnd)
+    {
+        try
+        {
+            var bar = (ITaskbarList)new TaskbarList();
+            bar.HrInit();
+            bar.DeleteTab(hwnd);
+            Marshal.ReleaseComObject(bar);
+        }
+        catch (COMException) { } // no taskbar (Explorer restarting): nothing to hide
+    }
+
+    [ComImport, Guid("56FDF342-FD6D-11d0-958A-006097C9A090"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    interface ITaskbarList { void HrInit(); void AddTab(IntPtr h); void DeleteTab(IntPtr h); void ActivateTab(IntPtr h); void SetActiveAlt(IntPtr h); }
+    [ComImport, Guid("56FDF344-FD6D-11d0-958A-006097C9A090")] class TaskbarList { }
 
     /// Invisible and click-through: a layered window at alpha 0. Returns the style to restore.
     static IntPtr MakeTransparent(IntPtr hwnd)

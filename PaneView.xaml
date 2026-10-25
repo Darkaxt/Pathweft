@@ -225,6 +225,13 @@
         <!-- Details: where Name ends. A press right of it, on any row, starts a selection rectangle (PlaceNameEdge) -->
         <Rectangle x:Name="NameEdge" Width="1" Fill="#18FFFFFF" Visibility="Collapsed"/>
         <Border x:Name="Marquee" Background="{DynamicResource AccentSoft}" BorderBrush="{DynamicResource AccentEdge}" BorderThickness="1" CornerRadius="2" Visibility="Collapsed"/>
+        <!-- middle-click autoscroll: where the click was, as in a browser; the arrows say which ways it scrolls -->
+        <Grid x:Name="AutoscrollMark" Width="30" Height="30" Visibility="Collapsed">
+          <Ellipse Fill="#D91A1F29" Stroke="#B3FFFFFF" StrokeThickness="1.5"/>
+          <Path x:Name="AutoscrollUpDown" Fill="#E6FFFFFF" Data="M15,4.5 L19,9.5 L11,9.5 Z M15,25.5 L19,20.5 L11,20.5 Z"/>
+          <Path x:Name="AutoscrollSides" Fill="#E6FFFFFF" Data="M4.5,15 L9.5,11 L9.5,19 Z M25.5,15 L20.5,11 L20.5,19 Z"/>
+          <Ellipse Width="4" Height="4" Fill="#E6FFFFFF"/>
+        </Grid>
       </Canvas>
       <!-- ScrollUnit=Pixel keeps virtualization but scrolls smoothly instead of jumping a row at a time -->
       <local:FileList x:Name="List" AlternationCount="2" Background="Transparent" BorderThickness="0" Margin="4,0"

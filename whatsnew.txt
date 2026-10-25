@@ -1,6 +1,23 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.0.51 | 2026-10-25 | Find duplicates, Quick access lists, autoscroll
+Everything left on a long-time tester's list, down to the two ideas he wasn't sure were even possible.
+**New**
+- **Find duplicates**: right-click a folder's empty space → Find duplicates… lists the files that are exactly alike, in that folder or in its subfolders too. **Select extra copies** keeps the oldest of each; send the rest to the Recycle Bin or move them away. Shortcuts that open the same thing count as duplicates. It works in the background with progress and Stop, and only files of the same size are ever read.
+- **Several Quick access lists**, with names you choose. The "···" on Quick access' header, or a right-click on the header, adds, renames, reorders, deletes and switches lists, and Ctrl+D pins to the one shown. Your Quick access is the first list, and Lume still finds the folders of all of them.
+- **Middle-click autoscroll**, in Settings → Appearance: a middle click on the list's empty space leaves a round marker, and moving the mouse away scrolls the list that way, faster the further you go, smoothly at your screen's rate. A left or middle click stops it. **Up and down only** keeps a wide list from drifting sideways.
+**Right-click**
+- A drive in the sidebar, or a folder in the Folders tree, now has Windows' own menu: Properties, Eject, Format, BitLocker and the rest.
+- File Labs' own menu on a folder's empty space has **View**: XL, L and M icons, List and Details.
+**Settings**
+- **Reset to defaults** puts every setting back with one button, after asking, and each card has its own Reset. Windows integration, your tabs and Quick access stay as they are.
+- A new option closes the second pane together with its last tab. It's off unless you turn it on.
+- Tooltips wait **1.5 s** before they show, up from 1 s, and the next one waits too, so running the pointer down a list no longer pops a tooltip on every row. The wait is a slider in Settings → Files.
+**Fixes**
+- The update window minimizes to the taskbar, like Settings, and the update button brings it back up.
+- With File Labs as the default file manager, **Open path** in Everything selects the file even in a big folder, where Explorer picks it out late. File Labs used to get the folder alone, with its first file selected.
+
 ## 1.0.50 | 2026-10-25 | 7-Zip, WinRAR and Open with in the menu
 More of Windows' right-click menu in File Labs' own, and six fixes from the notes of a long-time tester.
 **In the right-click menu**
