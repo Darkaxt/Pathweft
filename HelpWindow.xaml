@@ -5,7 +5,8 @@
         WindowStartupLocation="CenterOwner" ShowInTaskbar="False" Background="Transparent"
         Foreground="#E8EEF6" FontFamily="Segoe UI Variable Text, Segoe UI" FontSize="12">
   <Grid x:Name="Root" Background="#B30A0D13">
-    <DockPanel Margin="18,14,18,14">
+    <!-- shown once the empty window is on screen (HelpWindow.xaml.cs) -->
+    <DockPanel x:Name="Body" Margin="18,14,18,14" Visibility="Collapsed">
       <Border DockPanel.Dock="Top" Background="#12FFFFFF" CornerRadius="6" Margin="0,0,0,12">
         <Grid>
           <TextBlock x:Name="FindHint" Text="Find a key or a feature" Foreground="#66FFFFFF" Margin="10,0" VerticalAlignment="Center" IsHitTestVisible="False"/>

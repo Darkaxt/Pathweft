@@ -68,6 +68,8 @@ static class Program
 
 public partial class App : Application
 {
+    public App() => Motion.Hook(); // before any window is made
+
     // `FileLabs.exe --selftest`: runs the Ferry engine on real files in a temp dir, exit code 0 = pass.
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -278,6 +280,11 @@ public partial class App : Application
             // the Windows menu brings forward the app that took the file: its title has to name the file
             Check(ShellMenu.ShowsFile("note.txt - Notepad", new[] { "note.txt" }) && ShellMenu.ShowsFile("*NOTE.TXT - Notepad", new[] { "x.png", "note.txt" })
                 && !ShellMenu.ShowsFile("Untitled - Notepad", new[] { "note.txt" }), "a window showing the file");
+            // 7-Zip / WinRAR / Open with items in File Labs' menu: their access keys in WPF's form, stray separators dropped
+            Check(ShellMenu.Label("Add &to \"a_b.rar\"\tCtrl+T") == ("Add _to \"a__b.rar\"", "Ctrl+T") && ShellMenu.Label("Tom && Jerry").Label == "Tom & Jerry", "shell menu labels");
+            ShellMenu.Node Sep() => new(null, null, null, null, null);
+            ShellMenu.Node Cmd(string t) => new(t, null, null, null, () => { });
+            Check(string.Join(",", ShellMenu.Tidy(new() { Sep(), Cmd("a"), Sep(), Sep(), Cmd("b"), Sep() }).Select(n => n.Text ?? "-")) == "a,-,b", "shell menu separators tidied");
 
             // a silent permanent delete (Shift+Delete with the sound off): read-only files go too, and a
             // junction inside is removed without emptying the folder it points at
@@ -503,6 +510,7 @@ public partial class App : Application
             var notes = WhatsNewWindow.Load();
             Check(notes.Count >= 44 && notes[0].Version == Updater.Current.ToString() && notes.All(n => n.Lines.Count > 0)
                   && notes.Zip(notes.Skip(1)).All(p => Version.Parse(p.First.Version) > Version.Parse(p.Second.Version)), "what's new: every release, newest first, this one included");
+            Check(notes.All(n => { using var pic = WhatsNewWindow.Picture(n); return pic != null; }), "what's new: every release has the picture of its month built in");
             var recent = new List<string> { @"C:\A", @"C:\B" };
             Settings.Bump(recent, @"c:\b", 2); Settings.Bump(recent, @"C:\C", 2);
             Check(recent.SequenceEqual(new[] { @"C:\C", @"c:\b" }), "recent folders: newest first, once, capped");

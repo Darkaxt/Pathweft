@@ -57,7 +57,7 @@ public static class Thumbnails
 
     // CreateBitmapSourceFromHBitmap drops the alpha channel (icons get black corners),
     // so copy the DIB bits directly.
-    static BitmapSource ToBitmapSource(IntPtr hbmp)
+    internal static BitmapSource ToBitmapSource(IntPtr hbmp)
     {
         if (GetObject(hbmp, Marshal.SizeOf<BITMAP>(), out var bm) == 0) return null;
         int w = bm.bmWidth, h = bm.bmHeight, stride = w * 4;

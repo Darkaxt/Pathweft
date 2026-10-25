@@ -158,8 +158,9 @@
           </Border>
           <TextBox x:Name="PathBox" Style="{StaticResource Bare}" Visibility="Collapsed" Margin="4,3"
                    PreviewKeyDown="PathBox_PreviewKeyDown" TextChanged="PathBox_Changed" LostKeyboardFocus="PathBox_Lost"/>
-          <!-- folder suggestions while typing a path -->
-          <Popup x:Name="Suggest" PlacementTarget="{Binding ElementName=PathBox}" Placement="Bottom" AllowsTransparency="True" StaysOpen="True">
+          <!-- folder suggestions while typing a path; it opens the way Windows opens menus (fade, slide or none) -->
+          <Popup x:Name="Suggest" PlacementTarget="{Binding ElementName=PathBox}" Placement="Bottom" AllowsTransparency="True" StaysOpen="True"
+                 PopupAnimation="{DynamicResource {x:Static SystemParameters.MenuPopupAnimationKey}}">
             <Border Background="#F2161B24" BorderBrush="#2EFFFFFF" BorderThickness="1" CornerRadius="6" Padding="3"
                     MinWidth="{Binding ActualWidth, ElementName=PathBox}">
               <ListBox x:Name="SuggestList" Focusable="False" Background="Transparent" BorderThickness="0" Foreground="#E8EEF6"

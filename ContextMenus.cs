@@ -27,7 +27,7 @@ public partial class MainWindow
     }
 
     /// The menu for the pane's selection, or for its folder when nothing is selected.
-    void ShowMenu(PaneView p)
+    async void ShowMenu(PaneView p)
     {
         var sel = p.Selected;
         if (Settings.NativeMenu)
@@ -37,7 +37,16 @@ public partial class MainWindow
             p.Refresh();
             return;
         }
-        var menu = sel.Count > 0 ? ItemMenu(p, sel) : FolderMenu(p);
+        // A file named like a Stash or Backup Labs backup is looked into off the UI thread (it may be on a share that is
+        // asleep); the menu waits for that at most 150 ms, then opens without "Open in …". Other files cost nothing here.
+        Backups.Info backup = null;
+        if (sel.Count == 1 && !sel[0].IsDir && Backups.Named(sel[0].Path))
+        {
+            var path = sel[0].Path;
+            var look = Task.Run(() => Backups.Inspect(path) is { Unreadable: false } b && BackupStart(b.Id, path) == null ? b : null);
+            if (await Task.WhenAny(look, Task.Delay(150)) == look) backup = look.Result;
+        }
+        var menu = sel.Count > 0 ? ItemMenu(p, sel, backup) : FolderMenu(p);
         menu.PlacementTarget = p.List;
         menu.IsOpen = true;
     }
@@ -145,24 +154,30 @@ public partial class MainWindow
         return mi;
     }
 
-    ContextMenu ItemMenu(PaneView p, List<Entry> sel)
+    /// `backup`: the selected file is a backup whose app isn't installed (ShowMenu), so the menu leads to it.
+    ContextMenu ItemMenu(PaneView p, List<Entry> sel, Backups.Info backup)
     {
         var first = sel[0];
         bool one = sel.Count == 1, dir = one && first.IsDir;
         var ext = Path.GetExtension(first.Name);
         var m = new ContextMenu();
+        // Open with, 7-Zip, WinRAR and Google Drive: their own commands, as in Explorer (ShellMenu.LoadExtensions)
+        var shell = ShellMenu.LoadExtensions(this, sel.Select(x => x.Path).ToList());
+        m.Closed += (_, _) => Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.ApplicationIdle, shell.Dispose); // after a Click
         m.Items.Add(Item("Open", "", "Enter", () => p.OpenSelected()));
         // with Stash / Backup Labs installed, Open already opens their backups there; without, this leads to them
-        if (one && !dir && Backups.Inspect(first.Path) is { Unreadable: false } backup && BackupStart(backup.Id, first.Path) == null)
+        if (backup != null)
             m.Items.Add(Item($"Open in {backup.App}", "", "", () => OpenBackup(backup.Id, first.Path)));
         if (dir)
         {
             m.Items.Add(Item("Open in new tab", "", "Middle click", () => { p.NewTab(); p.Navigate(first.Path); }));
             m.Items.Add(Item("Open in other pane", "", "", () => Other.Navigate(first.Path)));
         }
-        else if (one)
-        {
+        // Windows' Open with list (its apps in Windows' order, Choose another app, the Store), for several files too
+        if (!AddShell(m, shell, "openwith") && one && !dir)
             m.Items.Add(Item("Open with…", "", "", () => Process.Start("rundll32.exe", $"shell32.dll,OpenAs_RunDLL {first.Path}")));
+        if (one && !dir)
+        {
             if (Runnable.Contains(ext)) m.Items.Add(Item("Run as administrator", "", "", () => RunAsAdmin(first.Path)));
         }
         if (p.InSearch && one)
@@ -199,11 +214,15 @@ public partial class MainWindow
             m.Items.Add(Item("Extract here", "", "", () => Extract(first, toFolder: false)));
             m.Items.Add(Item($"Extract to {Path.GetFileNameWithoutExtension(first.Name)}\\", "", "", () => Extract(first, toFolder: true)));
         }
+        AddShell(m, shell, "7-zip");
+        AddShell(m, shell, "winrar");
         if (one && !dir) m.Items.Add(Item("Checksum (SHA-256)", "", "", () => Checksum(first)));
         m.Items.Add(Item("Create shortcut", "", "", CreateShortcuts));
         m.Items.Add(new Separator());
         if (sel.Any(x => x.IsDir)) m.Items.Add(Item("Pin to Quick access", "", "Ctrl+D", PinSelected));
+        if (LumeItem(sel.Select(x => x.Path).ToList()) is { } lume) m.Items.Add(lume);
         m.Items.Add(Item("Show in File Explorer", "", "", () => OpenInExplorer($"/select,\"{first.Path}\"")));
+        AddShell(m, shell, "drive");
         m.Items.Add(Item("Scan with SpaceScan", "", "", () => ScanWithSpaceScan(first.IsDir ? first.Path : Path.GetDirectoryName(first.Path)!)));
         if (sel.All(x => x.IsDir || Path.GetExtension(x.Name).Equals(".exe", StringComparison.OrdinalIgnoreCase)))
             m.Items.Add(Item("Add to Shelf", "\uE7FC", "", () => HandTo("shelf", ShelfPage, sel.Select(x => x.Path))));
@@ -213,6 +232,24 @@ public partial class MainWindow
         m.Items.Add(Item("Windows menu…", "", "", () => { if (ShellMenu.Show(this, p.Dir, sel.Select(x => x.Path).ToList()) == "rename") Rename(); }));
         m.Items.Add(Item("Properties", "", "Alt+Enter", () => Properties(sel.Select(x => x.Path).ToList())));
         return m;
+    }
+
+    /// Adds what a shell extension offered for the selection (ShellMenu.Extensions); false when it offered nothing.
+    static bool AddShell(ItemsControl menu, ShellMenu.Extensions shell, string name)
+    {
+        if (!shell.Found.TryGetValue(name, out var nodes)) return false;
+        foreach (var n in nodes) menu.Items.Add(ShellItem(n));
+        return true;
+    }
+
+    static object ShellItem(ShellMenu.Node n)
+    {
+        if (n.Text == null) return new Separator();
+        var mi = new MenuItem { Header = n.Text, InputGestureText = n.Gesture ?? "" };
+        if (n.Icon != null) mi.Icon = new Image { Source = n.Icon, Width = 16, Height = 16 };
+        if (n.Children != null) foreach (var c in n.Children) mi.Items.Add(ShellItem(c));
+        else mi.Click += (_, _) => n.Run();
+        return mi;
     }
 
     ContextMenu FolderMenu(PaneView p)
@@ -238,6 +275,7 @@ public partial class MainWindow
         m.Items.Add(Item("Refresh", "", "F5 / Ctrl+R", () => { SizeCache.Clear(); p.Refresh(force: true); }));
         m.Items.Add(Item(Settings.ShowHidden ? "Hide hidden files" : "Show hidden files", "", "Ctrl+H", ToggleHidden));
         m.Items.Add(Item("Pin to Quick access", "", "Ctrl+D", PinSelected));
+        if (LumeItem(new[] { p.Dir }) is { } lume) m.Items.Add(lume);
         m.Items.Add(Item("Open terminal here", "", "Ctrl+`", OpenTerminal));
         m.Items.Add(Item("Open in File Explorer", "", "", () => OpenInExplorer($"\"{p.Dir}\"")));
         m.Items.Add(Item("Scan with SpaceScan", "", "", () => ScanWithSpaceScan(p.Dir)));

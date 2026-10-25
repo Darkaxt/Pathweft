@@ -27,7 +27,8 @@
   </Window.Resources>
 
   <Grid x:Name="Root" Background="#B30A0D13">
-    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="18,16">
+    <!-- shown once the empty window is on screen (SettingsWindow.xaml.cs) -->
+    <ScrollViewer x:Name="Body" VerticalScrollBarVisibility="Auto" Padding="18,16" Visibility="Collapsed">
       <StackPanel>
         <Border Style="{StaticResource Card}">
           <StackPanel>
@@ -144,7 +145,7 @@
             <CheckBox x:Name="SinglePaneBox" Content="One pane" Click="SinglePane_Click" Margin="0,4,0,0"/>
             <TextBlock Style="{StaticResource Hint}" Text="Hides the right pane, Explorer style. Ctrl+P (or its button at the bottom) switches. Ctrl+F5 and F6 bring the second pane back, since they copy into it."/>
 
-            <CheckBox x:Name="StatsBox" Content="Summary cards above the panes" Click="Stats_Click" Margin="0,4,0,0"/>
+            <CheckBox x:Name="StatsBox" Content="Summary cards below the panes" Click="Stats_Click" Margin="0,4,0,0"/>
             <CheckBox x:Name="StatsCompactBox" Content="Compact: one line each" Click="Stats_Click" Margin="22,6,0,0"/>
             <TextBlock Style="{StaticResource Hint}" Text="The drive, the folder and the selection. Compact keeps the figures and drops the icons, bars and second lines; off gives the panes the whole height."/>
 

@@ -1,6 +1,38 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.0.50 | 2026-10-25 | 7-Zip, WinRAR and Open with in the menu
+More of Windows' right-click menu in File Labs' own, and six fixes from the notes of a long-time tester.
+**In the right-click menu**
+- **Open with** is now a list, as in Windows: the apps Windows suggests for the file, with their icons, then Search the Microsoft Store and Choose another app. The app you pick comes to the front, even when it was already open.
+- **7-Zip** and **WinRAR** are there when you have them, with the same commands as in Explorer: Add to archive, Add to "name.7z" or "name.rar", Compress and email and the rest. They follow your 7-Zip and WinRAR settings.
+- Files in your Google Drive folder get **Share with Google Drive**, Copy link to clipboard and Open with Google Drive; other folders get Sync or Backup this folder. They appear only with Google Drive for desktop installed.
+- **Pin to Lume** puts a file, folder or shortcut in Lume's search: type its name in Lume to open it. Unpin from Lume takes it out. It shows when Lume is installed.
+**Opening files**
+- Open with → Notepad in the Windows menu now brings Notepad to the front when it was already open, minimized or behind File Labs, instead of only lighting up its taskbar button.
+- A shortcut to a folder that no longer exists now gets Windows' own message: it says the shortcut no longer works and asks whether to delete it. Yes or No, it's your call; File Labs never removes it for you.
+**Moving around**
+- After a click on Back, Forward or Up, the arrow keys move through the files right away, starting from the folder you just came out of.
+- Pressing the gear while Settings is minimized to the taskbar brings Settings back up, in front. Help and What's new do the same.
+**Dragging**
+- When a drag scrolls the list at its top or bottom edge, the folder lit up as the drop target is always the one under the pointer. It used to stay on the row where the scrolling began and slide away with it.
+**Settings**
+- "Summary cards above the panes" now reads "below the panes", where the cards have been since the tabs moved to the top.
+
+## 1.0.49 | 2026-10-25 | Smooth, and easy to spot
+**A new icon**
+- File Labs has a new icon: a dark folder with two panes on a pink and orange tile. It fills its whole square, so it's easy to spot in the taskbar, even on a 4K screen.
+**Smooth everywhere**
+- Windows and dialogs now fade and grow in as they open, and fade out as they close. The address suggestions, the drop bin, the preview pane and the second pane fade in too.
+- Copy and move progress bars move at your screen's rate instead of a few times a second, and dragging files to the edge of a list scrolls it just as smoothly.
+- The first menu you open after starting File Labs appears at once, instead of after half a second. Settings and Help open straight away.
+- Right-clicking a backup file on a sleeping network drive no longer freezes the window.
+- Turn off animations in Settings, or in Windows, and everything appears at once, as before.
+**Easier scrolling**
+- In a folder with thousands of files, the scroll bar is never shorter than 40 pixels, so it's easy to grab.
+**What's new**
+- Every release here now has its picture.
+
 ## 1.0.48 | 2026-10-23 | One home for the program, one for your settings
 All Protagonist Labs apps now live in the same two places, so they're easy to find, back up and remove. File Labs moves over by itself; nothing to do on your side.
 **Where things are now**

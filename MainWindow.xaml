@@ -72,22 +72,9 @@
     </Style>
     <!-- One Ferry job: progress, speed/ETA, pause/cancel, and the conflict decision inline -->
     <DataTemplate x:Key="JobCard">
+      <!-- a new transfer slides up into place instead of appearing under the panes (Motion.Enter, off with reduced motion) -->
       <Border Background="#0DFFFFFF" BorderBrush="#16FFFFFF" BorderThickness="1" CornerRadius="10" Padding="12,9" Margin="0,0,0,6"
-              RenderTransformOrigin="0.5,0.5">
-        <!-- a new transfer slides up into place instead of appearing under the panes -->
-        <Border.RenderTransform><TranslateTransform/></Border.RenderTransform>
-        <Border.Triggers>
-          <EventTrigger RoutedEvent="FrameworkElement.Loaded">
-            <BeginStoryboard>
-              <Storyboard>
-                <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0" To="1" Duration="0:0:0.18"/>
-                <DoubleAnimation Storyboard.TargetProperty="RenderTransform.Y" From="10" To="0" Duration="0:0:0.18">
-                  <DoubleAnimation.EasingFunction><QuadraticEase EasingMode="EaseOut"/></DoubleAnimation.EasingFunction>
-                </DoubleAnimation>
-              </Storyboard>
-            </BeginStoryboard>
-          </EventTrigger>
-        </Border.Triggers>
+              Loaded="JobCard_Loaded">
         <StackPanel>
           <DockPanel>
             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">

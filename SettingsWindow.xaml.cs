@@ -11,6 +11,8 @@ public partial class SettingsWindow : Window
         InitializeComponent();
         Owner = main = owner;
         SourceInitialized += (_, _) => MainWindow.ApplyAcrylic(this);
+        // its cards took 130-200 ms to lay out before the first frame: the window comes up empty, they follow on the next
+        ContentRendered += (_, _) => Body.Visibility = Visibility.Visible;
         OpacitySlider.Value = Settings.Opacity;
         BgOpacitySlider.Value = Settings.ImageOpacity;
         BgBlurSlider.Value = Settings.ImageBlur;

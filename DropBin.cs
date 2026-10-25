@@ -16,7 +16,7 @@ public partial class MainWindow
         int before = bin.Count;
         foreach (var p in paths)
             if (!bin.Contains(p, StringComparer.OrdinalIgnoreCase)) bin.Add(p);
-        DropBin.Visibility = Visibility.Visible;
+        if (!DropBin.IsVisible) { DropBin.Visibility = Visibility.Visible; Motion.Enter(DropBin, rise: 8); }
         ShowBin();
         Status.Text = bin.Count == before ? "Already in the Drop bin" : $"{bin.Count - before} added to the Drop bin";
     }
@@ -68,6 +68,7 @@ public partial class MainWindow
     void BinButton_Click(object s, RoutedEventArgs e)
     {
         DropBin.Visibility = DropBin.IsVisible ? Visibility.Collapsed : Visibility.Visible;
+        if (DropBin.Visibility == Visibility.Visible) Motion.Enter(DropBin, rise: 8);
         ShowBin();
     }
 

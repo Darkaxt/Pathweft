@@ -134,7 +134,9 @@ public partial class MainWindow
 
     bool OverMaxButton(IntPtr lParam)
     {
-        if (!MaxButton.IsVisible) return false;
+        // a hit test can still arrive while the window closes, after its presentation source is gone: PointToScreen
+        // threw there and took the app down (seen in 1.0.50's live test)
+        if (!MaxButton.IsVisible || PresentationSource.FromVisual(MaxButton) == null) return false;
         int x = unchecked((short)(long)lParam), y = unchecked((short)((long)lParam >> 16)); // screen pixels
         var topLeft = MaxButton.PointToScreen(new Point(0, 0));
         var bottomRight = MaxButton.PointToScreen(new Point(MaxButton.ActualWidth, MaxButton.ActualHeight));

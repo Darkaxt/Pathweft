@@ -263,7 +263,6 @@ public partial class PaneView : UserControl
             int lines = SystemParameters.WheelScrollLines; // -1: a screen a notch
             Glide(sv, -e.Delta / 120.0 * (lines > 0 ? lines * (Mode == ViewMode.Details ? 16 : 32) : sv.ViewportHeight));
         };
-        edgeTimer.Tick += (_, _) => { if (FindScroller(List) is { } sv) sv.ScrollToVerticalOffset(sv.VerticalOffset + edgeSpeed); };
         // Middle click, as in a browser: a folder (or a shortcut to one) opens in a tab behind this one, a tab closes.
         List.PreviewMouseDown += (_, e) =>
         {
@@ -288,11 +287,14 @@ public partial class PaneView : UserControl
         List.Drop += Drop_Drop;
         List.DragLeave += (_, e) =>
         {
-            ShowDropRow(null); // the next DragOver lights the row again if still on it
-            ScrollAtEdge(null); // likewise: the next DragOver starts it again if still at the edge
-            // DragLeave bubbles up from every row; only leaving the list itself ends the wheel's part
+            // DragLeave bubbles up from every row, and rows scrolling away under a resting pointer raise it too: acting
+            // on those turned the lit folder off and stopped the edge scroll until the next DragOver, a flicker and a
+            // stutter all the way down (1.0.50, seen with a real drag). Only leaving the list itself ends them.
             var at = e.GetPosition(List);
-            if (at.X < 0 || at.Y < 0 || at.X >= List.ActualWidth || at.Y >= List.ActualHeight) WheelWhileDragging(null);
+            if (at.X >= 0 && at.Y >= 0 && at.X < List.ActualWidth && at.Y < List.ActualHeight) return;
+            ShowDropRow(null);
+            ScrollAtEdge(null);
+            WheelWhileDragging(null);
         };
         // Not a row, so DropTarget gives the folder shown: the strip always means "here".
         FolderStrip.DragOver += Drop_Over;
@@ -371,16 +373,16 @@ public partial class PaneView : UserControl
         Animate(cardEdge, on ? accent : Color.FromArgb(0x0F, 255, 255, 255));
         glowColor.Color = Color.FromRgb(accent.R, accent.G, accent.B); // a discreet glow around the active pane only
         var glowTo = on ? 0.7 : 0;
-        if (Settings.Animations) Glow.BeginAnimation(OpacityProperty, new DoubleAnimation(glowTo, Quick) { EasingFunction = Ease });
+        if (Motion.On) Glow.BeginAnimation(OpacityProperty, new DoubleAnimation(glowTo, Quick) { EasingFunction = Ease });
         else { Glow.BeginAnimation(OpacityProperty, null); Glow.Opacity = glowTo; }
         var fade = on ? 1 : 0.88;
-        if (Settings.Animations) List.BeginAnimation(FileList.RowFadeProperty, new DoubleAnimation(fade, Quick) { EasingFunction = Ease });
+        if (Motion.On) List.BeginAnimation(FileList.RowFadeProperty, new DoubleAnimation(fade, Quick) { EasingFunction = Ease });
         else { List.BeginAnimation(FileList.RowFadeProperty, null); List.RowFade = fade; }
     }
 
     static void Animate(SolidColorBrush brush, Color to)
     {
-        if (Settings.Animations) brush.BeginAnimation(SolidColorBrush.ColorProperty, new ColorAnimation(to, Quick) { EasingFunction = Ease });
+        if (Motion.On) brush.BeginAnimation(SolidColorBrush.ColorProperty, new ColorAnimation(to, Quick) { EasingFunction = Ease });
         else { brush.BeginAnimation(SolidColorBrush.ColorProperty, null); brush.Color = to; }
     }
 
@@ -691,11 +693,7 @@ public partial class PaneView : UserControl
 
     /// A folder that was read from disk fades in. A folder served from the cache does not — it is
     /// already on screen and fading it would turn "instant" into "blinking".
-    void FadeInList()
-    {
-        if (!Settings.Animations) return;
-        List.BeginAnimation(OpacityProperty, new DoubleAnimation(0.45, 1, Quick) { EasingFunction = Ease });
-    }
+    void FadeInList() => Motion.Enter(List, from: 0.45, ms: 140); // begun after the frame that builds the rows, which can be long
 
     // ---- \\server: its shares, as folders (DirectoryInfo can't open a bare server name) ----
     static bool IsServer(string p) => p.StartsWith(@"\\") && p.Trim('\\').Length > 0 && !p.Trim('\\').Contains('\\');
@@ -1429,9 +1427,23 @@ public partial class PaneView : UserControl
         // a script is run, like Explorer does; editing it is F4 / Edit in the menu
         else if (backup == null && Settings.InternalEditor && EditorWindow.IsText(e.Path) && !MainWindow.Runnable.Contains(Path.GetExtension(e.Path))) EditorWindow.Open(e.Path);
         else
+        {
+            // A shortcut whose target is gone gets Windows' own answer, as from Explorer: it looks for the target, then
+            // says the shortcut no longer works and asks whether to delete it. Without its dialogs Windows gave up
+            // silently and the list only said "cancelled" (1.0.39 report); what happens to the shortcut is the user's call.
+            bool link = e.Path.EndsWith(".lnk", StringComparison.OrdinalIgnoreCase);
             // started in its own folder, as from Explorer: scripts rely on relative paths
-            try { System.Diagnostics.Process.Start(backup ?? new System.Diagnostics.ProcessStartInfo(e.Path) { UseShellExecute = true, WorkingDirectory = Path.GetDirectoryName(e.Path) }); }
+            try
+            {
+                System.Diagnostics.Process.Start(backup ?? new System.Diagnostics.ProcessStartInfo(e.Path)
+                {
+                    UseShellExecute = true, WorkingDirectory = Path.GetDirectoryName(e.Path),
+                    ErrorDialog = link, ErrorDialogParentHandle = link ? new System.Windows.Interop.WindowInteropHelper(Window.GetWindow(this)).Handle : IntPtr.Zero,
+                });
+            }
+            catch (System.ComponentModel.Win32Exception ex) when (ex.NativeErrorCode == 1223) { } // ERROR_CANCELLED: answered in Windows' dialog
             catch (System.ComponentModel.Win32Exception ex) { Error?.Invoke(ex.Message); } // e.g. no app associated
+        }
     }
 
     public void EditPath()
@@ -2098,28 +2110,34 @@ public partial class PaneView : UserControl
     {
         // DragOver only: Drop_Drop runs this too, after it has ended both
         if (s == List && e.RoutedEvent == DragOverEvent) { WheelWhileDragging(this); ScrollAtEdge(e); }
-        e.Effects = DragDropEffects.None;
-        // As in Explorer: Ctrl copies, Shift moves, and without either a drop on the same drive moves and
-        // on another drive copies — only as far as the source allows (some offer Copy alone).
-        if (e.Data.GetData(DataFormats.FileDrop) is string[] { Length: > 0 } files)
-        {
-            var target = DropTarget(e);
-            bool sameDrive = string.Equals(System.IO.Path.GetPathRoot(files[0]), System.IO.Path.GetPathRoot(target), StringComparison.OrdinalIgnoreCase);
-            var want = e.KeyStates.HasFlag(DragDropKeyStates.ControlKey) ? DragDropEffects.Copy
-                : e.KeyStates.HasFlag(DragDropKeyStates.ShiftKey) || sameDrive ? DragDropEffects.Move
-                : DragDropEffects.Copy;
-            e.Effects = e.AllowedEffects.HasFlag(want) ? want : e.AllowedEffects & (DragDropEffects.Copy | DragDropEffects.Move);
-            // no dropping a folder onto itself, nor into the folder it's already in — except Ctrl+drop (a copy),
-            // which duplicates there as in Explorer ("name - Copy.ext")
-            bool duplicate = e.Effects == DragDropEffects.Copy && e.KeyStates.HasFlag(DragDropKeyStates.ControlKey);
-            if (files.Any(f => f.Equals(target, StringComparison.OrdinalIgnoreCase)
-                            || !duplicate && System.IO.Path.GetDirectoryName(f)?.Equals(target, StringComparison.OrdinalIgnoreCase) == true))
-                e.Effects = DragDropEffects.None;
-        }
+        e.Effects = DropEffects(e, DropTarget(e));
         // the folder it would go into lights up, in a colour apart from the selection's
         var row = FindRow(e.OriginalSource as DependencyObject);
         ShowDropRow(e.Effects != DragDropEffects.None && row?.FolderTarget != null ? row : null);
         e.Handled = true;
+    }
+
+    /// What a drop of this drag into `target` would do.
+    static DragDropEffects DropEffects(DragEventArgs e, string target)
+    {
+        var effects = DragDropEffects.None;
+        // As in Explorer: Ctrl copies, Shift moves, and without either a drop on the same drive moves and
+        // on another drive copies — only as far as the source allows (some offer Copy alone).
+        if (e.Data.GetData(DataFormats.FileDrop) is string[] { Length: > 0 } files)
+        {
+            bool sameDrive = string.Equals(System.IO.Path.GetPathRoot(files[0]), System.IO.Path.GetPathRoot(target), StringComparison.OrdinalIgnoreCase);
+            var want = e.KeyStates.HasFlag(DragDropKeyStates.ControlKey) ? DragDropEffects.Copy
+                : e.KeyStates.HasFlag(DragDropKeyStates.ShiftKey) || sameDrive ? DragDropEffects.Move
+                : DragDropEffects.Copy;
+            effects = e.AllowedEffects.HasFlag(want) ? want : e.AllowedEffects & (DragDropEffects.Copy | DragDropEffects.Move);
+            // no dropping a folder onto itself, nor into the folder it's already in — except Ctrl+drop (a copy),
+            // which duplicates there as in Explorer ("name - Copy.ext")
+            bool duplicate = effects == DragDropEffects.Copy && e.KeyStates.HasFlag(DragDropKeyStates.ControlKey);
+            if (files.Any(f => f.Equals(target, StringComparison.OrdinalIgnoreCase)
+                            || !duplicate && System.IO.Path.GetDirectoryName(f)?.Equals(target, StringComparison.OrdinalIgnoreCase) == true))
+                effects = DragDropEffects.None;
+        }
+        return effects;
     }
 
     Entry dropRow;
@@ -2177,21 +2195,52 @@ public partial class PaneView : UserControl
     }
 
     // ---- a drag held near the top or bottom of the list scrolls it, faster the closer to the edge, as in Explorer.
-    // Windows' drag loop still runs the dispatcher's timers, so a timer keeps it going while the pointer rests. ----
-    readonly DispatcherTimer edgeTimer = new() { Interval = TimeSpan.FromMilliseconds(16) };
-    double edgeSpeed; // pixels a tick, negative = up
+    // Windows' drag loop still renders frames, so a step a frame keeps it going while the pointer rests. It moves by the
+    // time since the last frame: a 16 ms timer ticked every 16 or 31 ms and scrolled in uneven jerks (35 steps a second). ----
+    double edgeSpeed; // pixels a second, negative = up
+    bool edging;
+    TimeSpan edgeFrame;
+    // Windows sends DragOver when the pointer or a key changes, not while the pointer rests, so as the rows scroll
+    // under a resting pointer the folder lit as the drop target is picked again each frame from where the pointer
+    // was; it used to stay on the row under the pointer when the scrolling began and travel away with it (1.0.48)
+    DragEventArgs edgeDrag;
+    Point edgeAt;
 
     void ScrollAtEdge(DragEventArgs e) // null: the drag left the list, dropped or ended
     {
         edgeSpeed = 0;
+        edgeDrag = e;
+        if (e != null) edgeAt = e.GetPosition(List);
         // measured on the rows' area: the column header above it and the scrollbar below count as the edge too
         if (e != null && FindScroller(List) is { } sv && sv.Template.FindName("PART_ScrollContentPresenter", sv) is FrameworkElement rows)
         {
             double y = e.GetPosition(rows).Y, h = rows.ActualHeight, zone = Math.Min(48, h / 4);
-            if (y < zone) edgeSpeed = -20 * Math.Min(1, (zone - y) / zone);
-            else if (y > h - zone) edgeSpeed = 20 * Math.Min(1, (y - h + zone) / zone);
+            if (y < zone) edgeSpeed = -1250 * Math.Min(1, (zone - y) / zone);
+            else if (y > h - zone) edgeSpeed = 1250 * Math.Min(1, (y - h + zone) / zone);
         }
-        if (edgeSpeed != 0) edgeTimer.Start(); else edgeTimer.Stop();
+        EdgeScroll(edgeSpeed != 0);
+    }
+
+    void EdgeScroll(bool on)
+    {
+        if (on == edging) return;
+        edging = on;
+        if (on) { edgeFrame = TimeSpan.Zero; CompositionTarget.Rendering += EdgeStep; }
+        else CompositionTarget.Rendering -= EdgeStep;
+    }
+
+    void EdgeStep(object s, EventArgs e)
+    {
+        var now = ((RenderingEventArgs)e).RenderingTime;
+        double dt = edgeFrame == TimeSpan.Zero ? 1 / 60.0 : (now - edgeFrame).TotalSeconds;
+        if (dt <= 0) return; // raised twice for one frame
+        edgeFrame = now;
+        if (FindScroller(List) is not { } sv) return;
+        sv.ScrollToVerticalOffset(sv.VerticalOffset + edgeSpeed * Math.Min(dt, 0.1));
+        if (edgeDrag == null) return;
+        List.UpdateLayout(); // the rows where this frame draws them (the layout pass this frame would run anyway)
+        var row = FindRow(List.InputHitTest(edgeAt) as DependencyObject);
+        ShowDropRow(row?.FolderTarget is { } into && DropEffects(edgeDrag, into) != DragDropEffects.None ? row : null);
     }
 
     // ---- smooth wheel (Settings): each notch moves a target, and the list eases toward it frame by frame ----
@@ -2255,7 +2304,10 @@ public partial class PaneView : UserControl
     void FolderStrip_DragLeave(object s, DragEventArgs e) => FolderStrip.Background = Brushes.Transparent;
 
     void NewTab_Click(object s, RoutedEventArgs e) => NewTab();
-    void Back_Click(object s, RoutedEventArgs e) => Back();
-    void Fwd_Click(object s, RoutedEventArgs e) => Forward();
-    void Up_Click(object s, RoutedEventArgs e) => Up();
+    // The press gave the button the keyboard, and the list only puts it back on a row when it had it (ShowItems):
+    // after a click on Back the arrow keys moved between the buttons instead of the files (1.0.47 report).
+    // Handed to the list first, the folder that opens puts it on its selected row, as Alt+Left does.
+    void Back_Click(object s, RoutedEventArgs e) { FocusKeepingRow(); Back(); }
+    void Fwd_Click(object s, RoutedEventArgs e) { FocusKeepingRow(); Forward(); }
+    void Up_Click(object s, RoutedEventArgs e) { FocusKeepingRow(); Up(); }
 }

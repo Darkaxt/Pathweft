@@ -50,7 +50,8 @@
             <Track x:Name="PART_Track" IsDirectionReversed="True" Orientation="Vertical">
               <Track.DecreaseRepeatButton><RepeatButton Style="{StaticResource TrackPage}" Command="ScrollBar.PageUpCommand"/></Track.DecreaseRepeatButton>
               <Track.IncreaseRepeatButton><RepeatButton Style="{StaticResource TrackPage}" Command="ScrollBar.PageDownCommand"/></Track.IncreaseRepeatButton>
-              <Track.Thumb><Thumb Style="{StaticResource Thumb}"/></Track.Thumb>
+              <!-- never shorter than 40 px: in a folder of 25,000 files the thumb's share of the track was a dot, too small to grab -->
+              <Track.Thumb><Thumb Style="{StaticResource Thumb}" MinHeight="40"/></Track.Thumb>
             </Track>
           </ControlTemplate>
         </Setter.Value>
@@ -68,7 +69,7 @@
                 <Track x:Name="PART_Track" Orientation="Horizontal">
                   <Track.DecreaseRepeatButton><RepeatButton Style="{StaticResource TrackPage}" Command="ScrollBar.PageLeftCommand"/></Track.DecreaseRepeatButton>
                   <Track.IncreaseRepeatButton><RepeatButton Style="{StaticResource TrackPage}" Command="ScrollBar.PageRightCommand"/></Track.IncreaseRepeatButton>
-                  <Track.Thumb><Thumb Style="{StaticResource Thumb}"/></Track.Thumb>
+                  <Track.Thumb><Thumb Style="{StaticResource Thumb}" MinWidth="40"/></Track.Thumb>
                 </Track>
               </ControlTemplate>
             </Setter.Value>
@@ -451,7 +452,7 @@
                 </Grid>
               </Border>
               <Popup x:Name="PART_Popup" IsOpen="{TemplateBinding IsSubmenuOpen}" Placement="Right" HorizontalOffset="-6"
-                     AllowsTransparency="True" Focusable="False" PopupAnimation="Fade">
+                     AllowsTransparency="True" Focusable="False" PopupAnimation="{DynamicResource {x:Static SystemParameters.MenuPopupAnimationKey}}">
                 <Border Background="#1C2029" BorderBrush="#2EFFFFFF" BorderThickness="1" CornerRadius="8" Padding="0,4" MinWidth="160" Margin="0,0,6,6">
                   <Border.Effect><DropShadowEffect BlurRadius="14" ShadowDepth="3" Opacity="0.45"/></Border.Effect>
                   <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Cycle"/>

@@ -6,7 +6,7 @@ namespace FileExplorer;
 
 // The Protagonist Labs ecosystem (contract v1, vault Proiecte/Ecosistem.md): every app leaves a card in
 // %AppData%\ProtagonistLabs\apps\<id>.json at each start, sisters find each other through those cards,
-// and File Labs shares its Quick access folders with Lume as data\filelabs.items.json.
+// and File Labs shares its Quick access folders and Lume pins with Lume as data\filelabs.items.json.
 static class Sisters
 {
     static readonly string Root = Path.Combine(Settings.Profile ?? Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "ProtagonistLabs");
@@ -25,16 +25,32 @@ static class Sisters
         commands = new Dictionary<string, string[]> { ["open"] = new[] { "{path}" } }, // a folder → new tab (single instance)
     });
 
-    // Quick access folders as Lume launcher entries; running one opens it in File Labs.
-    internal static void WriteItems(List<string> folders) => Write(Path.Combine(Root, "data", "filelabs.items.json"), new
+    // Quick access folders and what was pinned to Lume (1.0.50) as Lume launcher entries: a folder opens in File Labs, a
+    // file or shortcut as a double-click would (explorer.exe), with its own icon (`icon`, read by Lume 0.5.2). A pin that
+    // is gone is left out of the file, not out of lume.txt (a drive may be unplugged). Runs off the UI thread.
+    internal static void WriteItems(List<string> folders, List<string> pins) => Write(Path.Combine(Root, "data", "filelabs.items.json"), new
     {
         schema = 1, updated = Now,
-        items = folders.Select(f => new
-        {
-            title = Path.GetFileName(f.TrimEnd('\\')) is { Length: > 0 } n ? n : f, subtitle = f, kind = "folder",
-            run = new { exe = Environment.ProcessPath, args = new[] { f } },
-        }),
+        items = folders.Select(Folder).Concat(pins.Where(p => !folders.Contains(p, StringComparer.OrdinalIgnoreCase)).Select(Pin).Where(i => i != null)),
     });
+
+    static object Folder(string f) => new
+    {
+        title = Path.GetFileName(f.TrimEnd('\\')) is { Length: > 0 } n ? n : f, subtitle = f, kind = "folder",
+        run = new { exe = Environment.ProcessPath, args = new[] { f } },
+    };
+
+    static object Pin(string path)
+    {
+        if (Directory.Exists(path)) return Folder(path);
+        if (!File.Exists(path)) return null;
+        bool link = Path.GetExtension(path).Equals(".lnk", StringComparison.OrdinalIgnoreCase);
+        return new
+        {
+            title = link ? Path.GetFileNameWithoutExtension(path) : Path.GetFileName(path), subtitle = path, kind = link ? "shortcut" : "file", icon = path,
+            run = new { exe = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "explorer.exe"), args = new[] { path } },
+        };
+    }
 
     // UTF-8 without BOM, through a .tmp so a reader never sees half a file. Runs off the UI thread; a
     // locked or full disk only leaves the previous file in place.

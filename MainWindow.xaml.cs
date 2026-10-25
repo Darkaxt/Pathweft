@@ -79,7 +79,6 @@ public partial class MainWindow : Window
         LoadQuickAccess();
         ApplyAppearance(); // the accent and row height the user picked, before anything is drawn
         Transfers.ItemsSource = jobs;
-        jobTimer.Tick += JobTick;
         Ferry.Finished += JobDone;
         foreach (var p in new[] { Left, Right })
         {
@@ -125,6 +124,7 @@ public partial class MainWindow : Window
             RefreshDrives();
             driveTimer.Start();
             Dispatcher.BeginInvoke(SizeCache.StartLoading, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+            Dispatcher.BeginInvoke(Motion.WarmPopups, System.Windows.Threading.DispatcherPriority.ApplicationIdle); // the first menu's stall, paid now
             if (startHidden) { FinishHiddenStart(); return; } // started at sign-in: shown by the notification-area icon later
             // Started by the Win+E agent (--front): Windows' foreground lock keeps a freshly started
             // background-launched window behind the current one.
@@ -384,17 +384,25 @@ public partial class MainWindow : Window
     WhatsNewWindow whatsNewWindow;
     public void OpenWhatsNew()
     {
-        if (whatsNewWindow != null) { whatsNewWindow.Activate(); return; }
+        if (whatsNewWindow != null) { Bring(whatsNewWindow); return; }
         whatsNewWindow = new WhatsNewWindow(this);
         whatsNewWindow.Closed += (_, _) => whatsNewWindow = null;
         whatsNewWindow.Show();
     }
     void WhatsNew_Click(object s, RoutedEventArgs e) => OpenWhatsNew();
 
+    /// An open Settings, Help or What's new to the front. Activate alone leaves a window minimized to the taskbar
+    /// where it is, so the gear did nothing then (1.0.48 report).
+    static void Bring(Window w)
+    {
+        if (w.WindowState == WindowState.Minimized) SystemCommands.RestoreWindow(w); // as its taskbar button does: maximized again if it was
+        w.Activate();
+    }
+
     SettingsWindow settingsWindow;
     void OpenSettings()
     {
-        if (settingsWindow != null) { settingsWindow.Activate(); return; }
+        if (settingsWindow != null) { Bring(settingsWindow); return; }
         settingsWindow = new SettingsWindow(this);
         settingsWindow.Closed += (_, _) => settingsWindow = null;
         settingsWindow.Show();
@@ -404,7 +412,7 @@ public partial class MainWindow : Window
     HelpWindow helpWindow;
     void OpenHelp()
     {
-        if (helpWindow != null) { helpWindow.Activate(); return; }
+        if (helpWindow != null) { Bring(helpWindow); return; }
         helpWindow = new HelpWindow(this);
         helpWindow.Closed += (_, _) => helpWindow = null;
         helpWindow.Show();
@@ -504,7 +512,7 @@ public partial class MainWindow : Window
         PlaceCaption();
     }
 
-    /// <summary>The cards above the panes: full, compact (the figure and its label, nothing else), or hidden.</summary>
+    /// <summary>The cards below the panes: full, compact (the figure and its label, nothing else), or hidden.</summary>
     public void ApplyStats()
     {
         StatsRow.Visibility = Settings.Stats == 0 ? Visibility.Collapsed : Visibility.Visible;
@@ -523,6 +531,7 @@ public partial class MainWindow : Window
         Settings.SinglePane = on;
         Settings.Save();
         ApplyPanes();
+        if (!on) Motion.Enter(Right); // the second pane fades in; resizing it per frame would relayout both panes every frame
         active?.FocusList();
     }
 
@@ -644,12 +653,35 @@ public partial class MainWindow : Window
     void LoadQuickAccess()
     {
         if (File.Exists(QuickFile)) pinned = File.ReadAllLines(QuickFile).Where(l => l.Trim() != "").ToList();
+        if (File.Exists(LumeFile)) lumePins = File.ReadAllLines(LumeFile).Where(l => l.Trim() != "").ToList();
         BuildQuickAccess();
         ShareQuickAccess();
     }
 
-    // Lume (sister app) lists these folders in its search; a copy, since the write runs off the UI thread
-    void ShareQuickAccess() { var copy = pinned.ToList(); Task.Run(() => Sisters.WriteItems(copy)); }
+    // Lume (sister app) lists these folders, and what was pinned to it, in its search; copies, since the write runs off the UI thread
+    void ShareQuickAccess() { var copy = pinned.ToList(); var lume = lumePins.ToList(); Task.Run(() => Sisters.WriteItems(copy, lume)); }
+
+    // Pin to Lume (1.0.50): files, folders and shortcuts that Lume then finds by name, one path per line in lume.txt in
+    // the data folder. They reach Lume with Quick access, in data\filelabs.items.json (Sisters.WriteItems).
+    static string LumeFile => Path.Combine(Settings.Dir, "lume.txt");
+    List<string> lumePins = new();
+
+    /// "Pin to Lume", or "Unpin from Lume" when all of them are pinned; null without Lume.
+    MenuItem LumeItem(IReadOnlyList<string> paths)
+    {
+        if (SisterExe("lume") == null) return null;
+        bool all = paths.All(x => lumePins.Contains(x, StringComparer.OrdinalIgnoreCase));
+        return Item(all ? "Unpin from Lume" : "Pin to Lume", all ? "" : "", "", () =>
+        {
+            if (all) lumePins.RemoveAll(x => paths.Contains(x, StringComparer.OrdinalIgnoreCase));
+            else lumePins.AddRange(paths.Where(x => !lumePins.Contains(x, StringComparer.OrdinalIgnoreCase)));
+            Directory.CreateDirectory(Path.GetDirectoryName(LumeFile));
+            Settings.WriteAllLines(LumeFile, lumePins);
+            ShareQuickAccess();
+            var names = string.Join(", ", paths.Select(x => Path.GetFileName(x.TrimEnd('\\')) is { Length: > 0 } n ? n : x));
+            Status.Text = all ? $"Unpinned {names} from Lume" : $"Pinned {names} to Lume";
+        });
+    }
 
     void BuildQuickAccess()
     {
@@ -887,15 +919,29 @@ public partial class MainWindow : Window
         Settings.Bump(Settings.RecentDestinations, dest, Settings.DestinationsMax); // for Copy to / Move to
         var job = Ferry.Submit(sources, dest, move);
         jobs.Insert(0, job);
-        jobTimer.Start();
+        WatchJobs();
         return job;
     }
 
-    readonly System.Windows.Threading.DispatcherTimer jobTimer = new() { Interval = TimeSpan.FromMilliseconds(100) };
-    void JobTick(object s, EventArgs e)
+    // The bars move every frame, the figures and the chart ten times a second. A 100 ms timer moved the bars in
+    // visible jumps (9 steps a second, up to 390 ms apart while the UI thread was busy).
+    bool watchingJobs;
+    TimeSpan jobsRefreshed;
+    void WatchJobs()
     {
-        foreach (var j in jobs) j.Refresh();
-        if (!jobs.Any(j => j.Active)) jobTimer.Stop();
+        if (watchingJobs) return;
+        watchingJobs = true;
+        jobsRefreshed = TimeSpan.Zero;
+        CompositionTarget.Rendering += JobFrame;
+    }
+
+    void JobFrame(object s, EventArgs e)
+    {
+        var now = ((RenderingEventArgs)e).RenderingTime;
+        bool full = now - jobsRefreshed >= TimeSpan.FromMilliseconds(100);
+        if (full) jobsRefreshed = now;
+        foreach (var j in jobs) if (full) j.Refresh(); else if (j.Active) j.RefreshBars();
+        if (full && !jobs.Any(j => j.Active)) { CompositionTarget.Rendering -= JobFrame; watchingJobs = false; }
     }
 
     void JobDone(Job job) => Dispatcher.BeginInvoke(() =>
@@ -905,6 +951,8 @@ public partial class MainWindow : Window
         Left.Refresh(); Right.Refresh();
         RefreshDrives(); UpdateStats(); // a finished copy or move changes what's free
     });
+
+    void JobCard_Loaded(object s, RoutedEventArgs e) => Motion.Enter((UIElement)s, rise: 10); // a new transfer slides up into place
 
     static Job JobOf(object sender) => (Job)((FrameworkElement)sender).DataContext;
     void JobPause_Click(object s, RoutedEventArgs e) { var j = JobOf(s); if (j.Paused) j.Resume(); else j.Pause(); }

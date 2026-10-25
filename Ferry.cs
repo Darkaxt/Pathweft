@@ -76,6 +76,12 @@ public class Job : INotifyPropertyChanged
     // ---- view ----
     public event PropertyChangedEventHandler PropertyChanged;
     public void Refresh() => PropertyChanged?.Invoke(this, new(null));
+    /// Only the two bars, every frame: the text and the chart change ten times a second (Refresh).
+    public void RefreshBars()
+    {
+        PropertyChanged?.Invoke(this, new(nameof(Fraction)));
+        PropertyChanged?.Invoke(this, new(nameof(CurrentFraction)));
+    }
 
     string Verb => IsMove ? "Moving" : "Copying";
     public string Title => Phase switch

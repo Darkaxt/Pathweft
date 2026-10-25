@@ -70,6 +70,7 @@ public partial class MainWindow
         Settings.Preview = !Settings.Preview;
         Settings.Save();
         ApplyPreview();
+        if (Settings.Preview) Motion.Enter(PreviewPane); // a fade, not a growing column: that would relayout the panes every frame
     }
 
     void Preview_Click(object s, RoutedEventArgs e) { TogglePreview(); active.FocusList(); }
@@ -211,8 +212,7 @@ public partial class MainWindow
     void Show(UIElement content)
     {
         QuickTarget.Content = content;
-        if (Settings.Animations)
-            content.BeginAnimation(UIElement.OpacityProperty, new System.Windows.Media.Animation.DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(140)));
+        Motion.Enter(content, ms: 140);
     }
 
     // Decoded off the UI thread: a 24 MP photo took 170 ms, and stepping through photos with the arrow

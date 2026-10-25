@@ -27,7 +27,7 @@ public static class Settings
     public static bool SinglePane;           // the right pane is hidden
     public static bool Preview;              // the preview pane right of the panes (Alt+P)
     public static double PreviewWidth = 380;
-    public static int Stats = 2;             // the cards above the panes: 2 full, 1 compact (one line each), 0 hidden
+    public static int Stats = 2;             // the cards below the panes: 2 full, 1 compact (one line each), 0 hidden
     public static double SidebarScale = 1, TabsScale = 1, PathScale = 1, ListScale = 1; // per area, on top of TextScale: 0.8–1.5
     public static bool QuickLook;            // Space asks QuickLook (QL-Win) for the preview when it is running
     public static bool ItemTips = true;      // hovering a file shows its full name, type, size and date

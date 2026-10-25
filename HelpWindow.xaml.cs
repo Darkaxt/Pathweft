@@ -158,7 +158,9 @@ public partial class HelpWindow : Window
         SourceInitialized += (_, _) => MainWindow.ApplyAcrylic(this);
         Root.Background = MainWindow.Tint();
         PreviewKeyDown += (_, e) => { if (e.Key == Key.Escape) Close(); };
-        Loaded += (_, _) => Find.Focus();
+        // Laying out every topic took 150-250 ms before the first frame; the window comes up empty and they follow on
+        // the next one, while it fades in (Motion).
+        ContentRendered += (_, _) => { Body.Visibility = Visibility.Visible; Find.Focus(); };
         Show("");
     }
 

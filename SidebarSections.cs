@@ -290,8 +290,7 @@ public partial class MainWindow
         bool collapsed = !Settings.SidebarCollapsed.Remove(key);
         if (collapsed) Settings.SidebarCollapsed.Add(key);
         content.Visibility = collapsed ? Visibility.Collapsed : Visibility.Visible;
-        if (!collapsed) // unfolding: fade the contents in rather than having them appear mid-list
-            content.BeginAnimation(OpacityProperty, new System.Windows.Media.Animation.DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(160)));
+        if (!collapsed) Motion.Enter(content, ms: 160); // unfolding: fade the contents in rather than having them appear mid-list
         if (key == "quick") QuickHint.Visibility = collapsed || pinned.Count > 0 ? Visibility.Collapsed : Visibility.Visible;
         chevron.Text = collapsed ? "" : "";
         Settings.Save();
