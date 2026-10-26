@@ -122,7 +122,10 @@ public static class Updater
     {
         try
         {
-            Process.Start(new ProcessStartInfo(installer, "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART") { UseShellExecute = true, Verb = "runas" })?.Dispose();
+            // Not Verb = "runas": started elevated, Setup has no un-elevated user to go back to, and its runasoriginaluser restart
+            // brought the app back as administrator (26.10.2026: File Labs, whose pipe then refused every hand-off). Setup asks for
+            // elevation itself (PrivilegesRequired=admin, asInvoker manifest) and restarts the app as the user.
+            Process.Start(new ProcessStartInfo(installer, "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART") { UseShellExecute = true })?.Dispose();
             return true;
         }
         catch (System.ComponentModel.Win32Exception ex) when (ex.NativeErrorCode == 1223) { return false; } // ERROR_CANCELLED: UAC declined

@@ -1,6 +1,10 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.0.52 | 2026-10-26 | Updates no longer leave File Labs running as administrator
+**Fixes**
+- After updating itself, File Labs started again as administrator. Windows then kept other programs from talking to it, so **Open in File Labs** in Shelf, **Open path** in Everything and dragging files in from other windows did nothing. Updates now bring File Labs back as you. This one update still comes through the old updater, so if File Labs restarted on its own, close it once and open it again.
+
 ## 1.0.51 | 2026-10-25 | Find duplicates, Quick access lists, autoscroll
 Everything left on a long-time tester's list, down to the two ideas he wasn't sure were even possible.
 **New**
