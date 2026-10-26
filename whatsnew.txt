@@ -1,6 +1,10 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.0.53 | 2026-10-26 | Smooth Ctrl+wheel zoom
+**Better**
+- **Ctrl+wheel zooms smoothly.** In the icon views every notch makes the icons a little bigger or smaller, from small to very large, and the tiles glide to the new size instead of the list jumping between three sizes. A quick spin no longer leaps from the smallest view to the largest: going past the smallest icons steps on to List, then Details, one at a time.
+
 ## 1.0.52 | 2026-10-26 | Updates no longer leave File Labs running as administrator
 **Fixes**
 - After updating itself, File Labs started again as administrator. Windows then kept other programs from talking to it, so **Open in File Labs** in Shelf, **Open path** in Everything and dragging files in from other windows did nothing. Updates now bring File Labs back as you. This one update still comes through the old updater, so if File Labs restarted on its own, close it once and open it again.

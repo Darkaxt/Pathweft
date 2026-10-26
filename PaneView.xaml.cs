@@ -1710,9 +1710,10 @@ public partial class PaneView : UserControl
             bool list = mode == ViewMode.List;
             List.Tag = (double)m.size;
             List.ItemTemplate = (DataTemplate)FindResource(list ? "ListCell" : "TileCell");
-            var style = new Style(typeof(ListViewItem), (Style)FindResource(list ? "ListViewItem.Plain" : "TileItem"));
-            if (!list) style.Setters.Add(new Setter(WidthProperty, m.size + 28.0));
-            List.ItemContainerStyle = style;
+            // No Width on the tiles: the panel arranges each at TileWidth, which less TileItem's 2 px margin is the
+            // size + 28 they had, and the size can then change while zooming without the list being rebuilt.
+            List.ItemContainerStyle = (Style)FindResource(list ? "ListViewItem.Plain" : "TileItem");
+            if (!list) iconSize = iconTarget = m.size;
             // List flows top→bottom then sideways; icons wrap left→right then down. The panel only
             // builds the tiles on screen — a WrapPanel built all 5 000 of them and froze the window.
             var panel = new FrameworkElementFactory(typeof(TileVirtualizer));
@@ -1750,28 +1751,82 @@ public partial class PaneView : UserControl
     // Details ← List ← M ← L ← XL: the same five modes as Ctrl+Shift+1…5, from smallest to largest.
     static readonly ViewMode[] ZoomOrder = { ViewMode.Details, ViewMode.List, ViewMode.IconsM, ViewMode.IconsL, ViewMode.IconsXL };
 
-    // A wheel spin arrives as a burst of notches. Applying each one rebuilds the whole list, which is
-    // what made zooming look like a slideshow, so the notches are added up and applied once.
+    // 1.0.53: in the icon views Ctrl+wheel resizes the icons in steps of 16 px, from 48 to 256, gliding to each new
+    // size at the screen's rate with the tiles resized in place, so every step shows. Below the smallest icons it
+    // steps on to List and Details; those changes rebuild the list, so they come one per notch, 160 ms apart,
+    // instead of a fast spin adding up and jumping from one end to the other.
+    const double IconMin = 48, IconMax = 256, IconStep = 16;
+    double iconSize = 64, iconTarget = 64;
     int zoomSteps;
     DispatcherTimer zoomTimer;
+    bool zoomGliding;
 
     public void Zoom(int step)
     {
+        if (Mode is ViewMode.IconsM or ViewMode.IconsL or ViewMode.IconsXL && zoomSteps == 0
+            && (step > 0 || iconTarget > IconMin))
+        {
+            iconTarget = Math.Clamp(iconTarget + step * IconStep, IconMin, IconMax);
+            if (!zoomGliding) { zoomGliding = true; CompositionTarget.Rendering += Glide; }
+            return;
+        }
         zoomSteps += step;
-        zoomTimer ??= new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(90) };
+        zoomTimer ??= new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(160) };
         if (zoomTimer.Tag == null)
         {
             zoomTimer.Tag = "hooked";
             zoomTimer.Tick += (_, _) =>
             {
-                zoomTimer.Stop();
-                int next = Math.Clamp(Array.IndexOf(ZoomOrder, Mode) + zoomSteps, 0, ZoomOrder.Length - 1);
-                zoomSteps = 0;
+                int one = Math.Sign(zoomSteps);
+                zoomSteps -= one;
+                int next = Math.Clamp(Array.IndexOf(ZoomOrder, Mode) + one, 0, ZoomOrder.Length - 1);
                 if (ZoomOrder[next] != Mode) SetView(ZoomOrder[next]);
+                else zoomSteps = 0;
+                // once in the icons, the rest of the spin resizes them
+                if (zoomSteps != 0 && Mode is ViewMode.IconsM) { int rest = zoomSteps; zoomSteps = 0; Zoom(rest); }
+                if (zoomSteps == 0) zoomTimer.Stop();
             };
         }
-        zoomTimer.Stop();
-        zoomTimer.Start();
+        if (!zoomTimer.IsEnabled) zoomTimer.Start();
+    }
+
+    void Glide(object s, EventArgs e)
+    {
+        double diff = iconTarget - iconSize;
+        iconSize = Math.Abs(diff) < 0.5 ? iconTarget : iconSize + diff * 0.3;
+        ApplyIconSize();
+        if (iconSize != iconTarget) return;
+        CompositionTarget.Rendering -= Glide;
+        zoomGliding = false;
+        // the nearest of the three icon views, for the View button, the menus and the next start
+        var mode = iconSize < 88 ? ViewMode.IconsM : iconSize < 152 ? ViewMode.IconsL : ViewMode.IconsXL;
+        if (mode != Mode)
+        {
+            Mode = mode;
+            var m = Modes.First(x => x.mode == mode);
+            ViewIcon.Text = m.glyph; ViewName.Text = m.name;
+            Settings.Views[Name] = mode;
+        }
+        StartThumbs(); // a bigger size may want the larger thumbnails; ones already big enough are kept
+    }
+
+    void ApplyIconSize()
+    {
+        List.Tag = iconSize;
+        if (FindPanel(List) is { } panel)
+        {
+            panel.TileWidth = iconSize + 32;
+            panel.TileHeight = iconSize + 62;
+        }
+        static TileVirtualizer FindPanel(DependencyObject d)
+        {
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(d); i++)
+            {
+                var c = VisualTreeHelper.GetChild(d, i);
+                if ((c as TileVirtualizer ?? FindPanel(c)) is { } p) return p;
+            }
+            return null;
+        }
     }
 
     /// The five view modes, largest first, for the Windows menu's View submenu.
@@ -1885,7 +1940,7 @@ public partial class PaneView : UserControl
         var cts = thumbs = new CancellationTokenSource();
         // Two sizes only, not one per mode: zooming between L and XL then costs no new thumbnails, and
         // an image already fetched at a larger size is kept instead of being asked for again.
-        int size = Mode == ViewMode.IconsM ? 128 : 256;
+        int size = iconSize <= 96 ? 128 : 256;
         var todo = view?.Cast<Entry>().Where(e => !e.IsUp).Take(3000).ToList() ?? new();
         var t = new Thread(() =>
         {
