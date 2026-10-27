@@ -115,6 +115,15 @@ public class Job : INotifyPropertyChanged
     public string PauseGlyph => Paused ? "\uE768" : "\uE769";
     public string PauseText => Paused ? "Resume" : "Pause";
 
+    // ---- the Transfers window: a colour per job (its card and its band in the total chart), and the section it sits in ----
+    public System.Windows.Media.Brush Hue { get; set; } = System.Windows.Media.Brushes.CornflowerBlue;
+    public int Seq { get; set; } // newest first within a section
+    public int StateOrder => HasConflicts ? 0 : Active ? 1 : 2;
+    public string StateGroup => StateOrder switch { 0 => "Needs you", 1 => "Running", _ => "Done" };
+    public string PercentText => $"{Fraction * 100:0}%";
+    public double Rate => Copying && !Paused ? rate : 0; // what this job adds to the total chart right now
+    public string Where => System.IO.Path.GetFileName(Destination.TrimEnd('\\')) is { Length: > 0 } n ? n : Destination;
+
     // Speed chart data (drawn by SpeedChart): timestamped points and the held ceiling.
     readonly List<(double at, double value)> speeds = new();
     public (double at, double value)[] SpeedSamples { get { lock (speeds) return speeds.ToArray(); } }

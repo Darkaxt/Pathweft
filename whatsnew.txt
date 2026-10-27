@@ -1,6 +1,16 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.0.56 | 2026-10-27 | Every transfer in its own colour
+The Transfers window, redrawn: the whole picture at the top, and what needs you first.
+**At a glance**
+- The **total speed** of everything running, in big figures, with each transfer's own speed beside it.
+- **One chart as wide as the window**, and it follows the window when you resize it: every running copy or move is a band in its own colour, stacked, so you see what each adds to the total.
+- Each card has a band of **the same colour** down its left edge.
+**In order**
+- Transfers sit in three groups: **Needs you** on top, then **Running**, then **Done**, and move between them on their own.
+- When files already exist, the four answers are **one row of equal buttons**, with Keep both in your accent colour. Pause, Cancel and Dismiss sit on the right of each card.
+
 ## 1.0.55 | 2026-10-27 | Transfers get a window of their own
 Copies and moves no longer take room under the panes, and their buttons are easy to find.
 **Transfers**

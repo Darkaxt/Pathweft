@@ -77,11 +77,13 @@
       <Setter Property="FontSize" Value="13"/>
       <Setter Property="Cursor" Value="Hand"/>
       <Setter Property="Margin" Value="0,0,8,0"/>
+      <Setter Property="Padding" Value="14,7"/>
+      <Setter Property="MinHeight" Value="34"/>
       <Setter Property="Template">
         <Setter.Value>
           <ControlTemplate TargetType="Button">
-            <Border x:Name="Bd" Background="#1FFFFFFF" BorderBrush="#26FFFFFF" BorderThickness="1" CornerRadius="7" Padding="14,7" MinHeight="34">
-              <ContentPresenter VerticalAlignment="Center"/>
+            <Border x:Name="Bd" Background="#1FFFFFFF" BorderBrush="#26FFFFFF" BorderThickness="1" CornerRadius="7" Padding="{TemplateBinding Padding}" MinHeight="{TemplateBinding MinHeight}">
+              <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"/>
             </Border>
             <ControlTemplate.Triggers>
               <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Bd" Property="Background" Value="#33FFFFFF"/></Trigger>
@@ -96,28 +98,48 @@
         </Setter.Value>
       </Setter>
     </Style>
-    <!-- One Ferry job, in the Transfers window: progress, speed/ETA, pause/cancel, and the conflict decision inline -->
+    <!-- the conflict choices: four equal buttons on one row, text only, smaller than the job's own buttons -->
+    <Style x:Key="JobChoice" TargetType="Button" BasedOn="{StaticResource JobAction}">
+      <Setter Property="Padding" Value="8,4"/>
+      <Setter Property="MinHeight" Value="28"/>
+      <Setter Property="FontSize" Value="12"/>
+      <Setter Property="HorizontalContentAlignment" Value="Center"/>
+      <Setter Property="Margin" Value="0,0,6,0"/>
+    </Style>
+    <!-- One Ferry job in the Transfers window: a band of its colour on the left (the same colour as its part of the
+         chart above), progress, figures, and what it needs from you -->
     <DataTemplate x:Key="JobCard">
       <!-- a new transfer slides up into place (Motion.Enter, off with reduced motion) -->
-      <Border Background="#0DFFFFFF" BorderBrush="#16FFFFFF" BorderThickness="1" CornerRadius="10" Padding="14,12" Margin="0,0,0,8"
-              Loaded="JobCard_Loaded">
+      <Border Background="#0DFFFFFF" BorderBrush="{Binding Hue}" BorderThickness="3,0,0,0" CornerRadius="4,10,10,4" Margin="0,0,0,8" Loaded="JobCard_Loaded">
+        <Border BorderBrush="#16FFFFFF" BorderThickness="0,1,1,1" CornerRadius="0,10,10,0" Padding="12,10">
         <StackPanel>
-          <TextBlock Text="{Binding Title}" FontWeight="SemiBold" FontSize="13" TextTrimming="CharacterEllipsis"/>
-          <ProgressBar Value="{Binding Fraction, Mode=OneWay}" Margin="0,7,0,5"/>
-          <TextBlock Text="{Binding Stats}" Foreground="#8A97AA" FontSize="11" Typography.NumeralAlignment="Tabular"/>
-          <DockPanel Visibility="{Binding Copying, Converter={StaticResource Vis}}" Margin="0,4,0,0">
-            <ProgressBar DockPanel.Dock="Right" Width="120" Height="3" Value="{Binding CurrentFraction, Mode=OneWay}" Foreground="#8A97AA" Margin="10,0,0,0"/>
+          <DockPanel>
+            <TextBlock DockPanel.Dock="Right" Text="{Binding PercentText}" FontSize="13" Typography.NumeralAlignment="Tabular" Margin="12,0,0,0"/>
+            <TextBlock Text="{Binding Title}" FontWeight="SemiBold" FontSize="13" TextTrimming="CharacterEllipsis"/>
+          </DockPanel>
+          <ProgressBar Value="{Binding Fraction, Mode=OneWay}" Foreground="{Binding Hue}" Height="6" Margin="0,8,0,6"/>
+          <DockPanel Visibility="{Binding Copying, Converter={StaticResource Vis}}" Margin="0,0,0,4">
+            <ProgressBar DockPanel.Dock="Right" Width="100" Height="3" Value="{Binding CurrentFraction, Mode=OneWay}" Foreground="#8A97AA" Margin="10,0,0,0"/>
             <TextBlock Text="{Binding Current}" Foreground="#8A97AA" FontSize="11" TextTrimming="CharacterEllipsis"/>
           </DockPanel>
-          <!-- speed over time -->
-          <local:SpeedChart Height="96" Margin="0,8,0,2" Samples="{Binding SpeedSamples}" Ceiling="{Binding SpeedCeiling}"
-                            Visibility="{Binding HasGraph, Converter={StaticResource Vis}}"/>
-          <TextBlock Text="{Binding ErrorSummary}" ToolTip="{Binding ErrorDetail}" Foreground="#F87171" FontSize="11" Margin="0,4,0,0"
+          <TextBlock Text="{Binding ErrorSummary}" ToolTip="{Binding ErrorDetail}" Foreground="#F87171" FontSize="11" Margin="0,0,0,4"
                      Visibility="{Binding HasErrors, Converter={StaticResource Vis}}"/>
+          <!-- figures on the left, its buttons on the right -->
+          <DockPanel>
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+              <Button Style="{StaticResource JobAction}" Visibility="{Binding Copying, Converter={StaticResource Vis}}" Click="JobPause_Click">
+                <TextBlock><Run FontFamily="Segoe Fluent Icons" Text="{Binding PauseGlyph, Mode=OneWay}"/>  <Run Text="{Binding PauseText, Mode=OneWay}"/></TextBlock></Button>
+              <Button Style="{StaticResource JobAction}" Margin="0" Visibility="{Binding Active, Converter={StaticResource Vis}}" Click="JobCancel_Click">
+                <TextBlock><Run FontFamily="Segoe Fluent Icons" Text="&#xE711;"/>  Cancel</TextBlock></Button>
+              <Button Style="{StaticResource JobAction}" Margin="0" Visibility="{Binding Finished, Converter={StaticResource Vis}}" Click="JobDismiss_Click">
+                <TextBlock><Run FontFamily="Segoe Fluent Icons" Text="&#xE73E;"/>  Dismiss</TextBlock></Button>
+            </StackPanel>
+            <TextBlock Text="{Binding Stats}" Foreground="#8A97AA" FontSize="11" Typography.NumeralAlignment="Tabular" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+          </DockPanel>
 
-          <StackPanel Visibility="{Binding HasConflicts, Converter={StaticResource Vis}}" Margin="0,8,0,0">
-            <TextBlock Text="{Binding ConflictTitle}" Foreground="#FFD23F"/>
-            <ItemsControl ItemsSource="{Binding Conflicts}" MaxHeight="110" Margin="0,4,0,6">
+          <StackPanel Visibility="{Binding HasConflicts, Converter={StaticResource Vis}}" Margin="0,10,0,0">
+            <TextBlock Text="{Binding ConflictTitle}" Foreground="#FFD23F" FontWeight="SemiBold"/>
+            <ItemsControl ItemsSource="{Binding Conflicts}" MaxHeight="96" Margin="0,4,0,8">
               <ItemsControl.Template>
                 <ControlTemplate><ScrollViewer VerticalScrollBarVisibility="Auto"><ItemsPresenter/></ScrollViewer></ControlTemplate>
               </ItemsControl.Template>
@@ -130,29 +152,15 @@
                 </DataTemplate>
               </ItemsControl.ItemTemplate>
             </ItemsControl>
-            <TextBlock Text="For all of them:" Foreground="#8A97AA" Margin="0,0,0,6"/>
-            <WrapPanel>
-              <Button Style="{StaticResource JobAction}" Tag="on" Click="JobResolve_Click" CommandParameter="Rename" Margin="0,0,8,6">
-                <TextBlock><Run FontFamily="Segoe Fluent Icons" Text="&#xE8C8;"/>  Keep both</TextBlock></Button>
-              <Button Style="{StaticResource JobAction}" Click="JobResolve_Click" CommandParameter="Newer" Margin="0,0,8,6">
-                <TextBlock><Run FontFamily="Segoe Fluent Icons" Text="&#xE823;"/>  Replace if newer</TextBlock></Button>
-              <Button Style="{StaticResource JobAction}" Click="JobResolve_Click" CommandParameter="Overwrite" Margin="0,0,8,6">
-                <TextBlock><Run FontFamily="Segoe Fluent Icons" Text="&#xE8AB;"/>  Replace</TextBlock></Button>
-              <Button Style="{StaticResource JobAction}" Click="JobResolve_Click" CommandParameter="Skip" Margin="0,0,8,6">
-                <TextBlock><Run FontFamily="Segoe Fluent Icons" Text="&#xE893;"/>  Skip</TextBlock></Button>
-            </WrapPanel>
-          </StackPanel>
-
-          <!-- pause / cancel while it runs, dismiss once it is done -->
-          <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
-            <Button Style="{StaticResource JobAction}" Visibility="{Binding Copying, Converter={StaticResource Vis}}" Click="JobPause_Click">
-              <TextBlock><Run FontFamily="Segoe Fluent Icons" Text="{Binding PauseGlyph, Mode=OneWay}"/>  <Run Text="{Binding PauseText, Mode=OneWay}"/></TextBlock></Button>
-            <Button Style="{StaticResource JobAction}" Visibility="{Binding Active, Converter={StaticResource Vis}}" Click="JobCancel_Click">
-              <TextBlock><Run FontFamily="Segoe Fluent Icons" Text="&#xE711;"/>  Cancel</TextBlock></Button>
-            <Button Style="{StaticResource JobAction}" Visibility="{Binding Finished, Converter={StaticResource Vis}}" Click="JobDismiss_Click">
-              <TextBlock><Run FontFamily="Segoe Fluent Icons" Text="&#xE73E;"/>  Dismiss</TextBlock></Button>
+            <UniformGrid Rows="1" Margin="0,0,-6,0">
+              <Button Style="{StaticResource JobChoice}" Tag="on" Click="JobResolve_Click" CommandParameter="Rename" Content="Keep both"/>
+              <Button Style="{StaticResource JobChoice}" Click="JobResolve_Click" CommandParameter="Newer" Content="Replace if newer"/>
+              <Button Style="{StaticResource JobChoice}" Click="JobResolve_Click" CommandParameter="Overwrite" Content="Replace"/>
+              <Button Style="{StaticResource JobChoice}" Click="JobResolve_Click" CommandParameter="Skip" Content="Skip"/>
+            </UniformGrid>
           </StackPanel>
         </StackPanel>
+        </Border>
       </Border>
     </DataTemplate>
 

@@ -1039,6 +1039,8 @@ public partial class MainWindow : Window
         if (sources.Count == 0 || dest == PaneView.ThisPC) return null; // a paste or drop on This PC goes nowhere
         Settings.Bump(Settings.RecentDestinations, dest, Settings.DestinationsMax); // for Copy to / Move to
         var job = Ferry.Submit(sources, dest, move);
+        job.Seq = ++jobSeq;
+        job.Hue = Hex(JobHues[(jobSeq - 1) % JobHues.Length]);
         jobs.Insert(0, job);
         WatchJobs();
         ShowTransfers(activate: false); // the keyboard stays in the list
@@ -1046,19 +1048,46 @@ public partial class MainWindow : Window
     }
 
     // ---- the Transfers window: every copy and move, apart from the panes (under them it took the files' room) ----
+    // On top the total speed and a chart as wide as the window, each running job a band in its own colour; under it the
+    // jobs in three sections, what needs you first, then what runs, then what is done (each card edged in its colour).
     Window transfersWindow;
     readonly HashSet<Job> askedForward = new(); // a job's conflicts bring the window forward once
+    TotalChart totalChart;
+    TextBlock totalSpeed, totalLegend;
+    System.Windows.Data.ListCollectionView jobView;
+    readonly Dictionary<Job, int> shownState = new();
+    int jobSeq;
+    static readonly string[] JobHues = { "#4C8DFF", "#5DCAA5", "#F0997B", "#ED93B1", "#AFA9EC", "#FAC775" };
 
     void ShowTransfers(bool activate)
     {
         if (transfersWindow == null)
         {
-            var list = new ItemsControl { ItemTemplate = (DataTemplate)FindResource("JobCard"), ItemsSource = jobs };
-            var root = new Grid { Background = Tint() };
-            root.Children.Add(new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Content = list, Padding = new(14, 14, 14, 6) });
+            jobView = new System.Windows.Data.ListCollectionView(jobs);
+            jobView.GroupDescriptions.Add(new System.Windows.Data.PropertyGroupDescription(nameof(Job.StateGroup)));
+            jobView.SortDescriptions.Add(new System.ComponentModel.SortDescription(nameof(Job.StateOrder), System.ComponentModel.ListSortDirection.Ascending));
+            jobView.SortDescriptions.Add(new System.ComponentModel.SortDescription(nameof(Job.Seq), System.ComponentModel.ListSortDirection.Descending));
+            var list = new ItemsControl { ItemTemplate = (DataTemplate)FindResource("JobCard"), ItemsSource = jobView };
+            var header = new FrameworkElementFactory(typeof(TextBlock));
+            header.SetBinding(TextBlock.TextProperty, new System.Windows.Data.Binding("Name"));
+            header.SetValue(TextBlock.ForegroundProperty, FindResource("Muted"));
+            header.SetValue(MarginProperty, new Thickness(2, 6, 0, 6));
+            list.GroupStyle.Add(new GroupStyle { HeaderTemplate = new DataTemplate { VisualTree = header } });
+
+            totalSpeed = new TextBlock { FontSize = 26, FontWeight = FontWeights.SemiBold, Margin = new(0, 0, 12, 0) };
+            totalLegend = new TextBlock { Foreground = (Brush)FindResource("Muted"), VerticalAlignment = VerticalAlignment.Bottom, Margin = new(0, 0, 0, 5), TextTrimming = TextTrimming.CharacterEllipsis };
+            var top = new DockPanel { Margin = new(14, 12, 14, 0) };
+            DockPanel.SetDock(totalSpeed, Dock.Left);
+            top.Children.Add(totalSpeed); top.Children.Add(totalLegend);
+            totalChart = new TotalChart { Height = 110, Margin = new(6, 6, 14, 4) }; // as wide as the window, whatever its size
+
+            var root = new DockPanel { Background = Tint() };
+            DockPanel.SetDock(top, Dock.Top); DockPanel.SetDock(totalChart, Dock.Top);
+            root.Children.Add(top); root.Children.Add(totalChart);
+            root.Children.Add(new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Content = list, Padding = new(14, 0, 14, 6) });
             var w = transfersWindow = new Window
             {
-                Title = "Transfers — File Labs", Owner = this, Width = 600, Height = 460, MinWidth = 440, MinHeight = 220,
+                Title = "Transfers — File Labs", Owner = this, Width = 640, Height = 560, MinWidth = 460, MinHeight = 300,
                 WindowStartupLocation = WindowStartupLocation.CenterOwner, ShowInTaskbar = true, Background = Brushes.Transparent,
                 Foreground = Hex("#E8EEF6"), FontFamily = FontFamily, FontSize = 12, Content = root,
             };
@@ -1070,13 +1099,34 @@ public partial class MainWindow : Window
             {
                 TransfersButton.Visibility = jobs.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
                 TransfersText.Text = jobs.Count > 1 ? $"Transfers ({jobs.Count})" : "Transfers";
-                if (jobs.Count == 0) w.Hide(); // the last one dismissed
+                if (jobs.Count == 0) { w.Hide(); totalChart.Clear(); } // the last one dismissed
             };
             TransfersButton.Visibility = Visibility.Visible;
+            UpdateTransfers();
         }
         if (transfersWindow.WindowState == WindowState.Minimized) transfersWindow.WindowState = WindowState.Normal;
         if (!transfersWindow.IsVisible) { transfersWindow.ShowActivated = activate; transfersWindow.Show(); }
         else if (activate) transfersWindow.Activate();
+    }
+
+    /// Ten times a second: the total and its chart, and each job moved to its section when its state changed.
+    void UpdateTransfers()
+    {
+        if (transfersWindow == null) return;
+        var running = jobs.Where(j => j.Copying).ToList();
+        if (running.Count > 0) totalChart.Add(Environment.TickCount64, running);
+        double total = running.Sum(j => j.Rate);
+        totalSpeed.Text = running.Count > 0 ? $"{Fmt((long)total)}/s" : jobs.Any(j => j.HasConflicts) ? "Waiting for you" : jobs.Any(j => j.Active) ? "Waiting" : "Done";
+        totalLegend.Inlines.Clear();
+        foreach (var j in running)
+        {
+            if (totalLegend.Inlines.Count > 0) totalLegend.Inlines.Add(new System.Windows.Documents.Run("   "));
+            totalLegend.Inlines.Add(new System.Windows.Documents.Run("■ ") { Foreground = j.Hue });
+            totalLegend.Inlines.Add(new System.Windows.Documents.Run($"{j.Where} {Fmt((long)j.Rate)}/s"));
+        }
+        bool moved = false;
+        foreach (var j in jobs) if (!shownState.TryGetValue(j, out var was) || was != j.StateOrder) { shownState[j] = j.StateOrder; moved = true; }
+        if (moved) jobView.Refresh();
     }
 
     void Transfers_Click(object s, RoutedEventArgs e) => ShowTransfers(activate: true);
@@ -1101,12 +1151,14 @@ public partial class MainWindow : Window
         foreach (var j in jobs) if (full) j.Refresh(); else if (j.Active) j.RefreshBars();
         // a question waits (files already there): the window comes forward with it, once per job
         if (full) foreach (var j in jobs) if (j.HasConflicts && askedForward.Add(j)) ShowTransfers(activate: true);
+        if (full) UpdateTransfers();
         if (full && !jobs.Any(j => j.Active)) { CompositionTarget.Rendering -= JobFrame; watchingJobs = false; }
     }
 
     void JobDone(Job job) => Dispatcher.BeginInvoke(() =>
     {
         job.Refresh();
+        UpdateTransfers(); // into Done
         RememberJob(job);
         Left.Refresh(); Right.Refresh();
         RefreshDrives(); UpdateStats(); // a finished copy or move changes what's free
@@ -1117,7 +1169,7 @@ public partial class MainWindow : Window
     static Job JobOf(object sender) => (Job)((FrameworkElement)sender).DataContext;
     void JobPause_Click(object s, RoutedEventArgs e) { var j = JobOf(s); if (j.Paused) j.Resume(); else j.Pause(); }
     void JobCancel_Click(object s, RoutedEventArgs e) => JobOf(s).Cancel();
-    void JobDismiss_Click(object s, RoutedEventArgs e) { var j = JobOf(s); jobs.Remove(j); askedForward.Remove(j); }
+    void JobDismiss_Click(object s, RoutedEventArgs e) { var j = JobOf(s); jobs.Remove(j); askedForward.Remove(j); shownState.Remove(j); }
     void JobResolve_Click(object s, RoutedEventArgs e) => JobOf(s).Resolve(Enum.Parse<Choice>((string)((Button)s).CommandParameter));
 
     // Clipboard in Explorer's own format (CF_HDROP + Preferred DropEffect), so copy/paste works both ways.

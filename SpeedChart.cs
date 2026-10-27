@@ -22,7 +22,7 @@ public class SpeedChart : FrameworkElement
 
     const double PadL = 58, PadR = 6, PadT = 6, PadB = 16;
     static readonly Brush Axis = Frozen(new SolidColorBrush(Color.FromRgb(0x8A, 0x97, 0xAA)));
-    static readonly Pen Grid = FrozenPen(new SolidColorBrush(Color.FromArgb(0x1C, 0xFF, 0xFF, 0xFF)), 1);
+    internal static readonly Pen Grid = FrozenPen(new SolidColorBrush(Color.FromArgb(0x1C, 0xFF, 0xFF, 0xFF)), 1);
     static readonly Typeface Face = new("Segoe UI");
 
     protected override void OnRender(DrawingContext dc)
@@ -76,14 +76,14 @@ public class SpeedChart : FrameworkElement
         Label(dc, "now", right, h - 13, dpi, alignRight: true);
     }
 
-    static void Label(DrawingContext dc, string text, double x, double y, double dpi, bool alignRight = false)
+    internal static void Label(DrawingContext dc, string text, double x, double y, double dpi, bool alignRight = false)
     {
         var ft = new FormattedText(text, CultureInfo.InvariantCulture, FlowDirection.LeftToRight, Face, 10, Axis, dpi);
         dc.DrawText(ft, new Point(alignRight ? x - ft.Width : x, y));
     }
 
     /// Axis marks drop the decimal the live reading keeps. Decimal units (1 MB = 1000 KB), like every size in the app.
-    static string AxisSpeed(double bps)
+    internal static string AxisSpeed(double bps)
     {
         double mb = bps / 1e6;
         return mb >= 1 ? $"{Math.Round(mb)} MB/s" : $"{Math.Round(bps / 1000)} KB/s";
@@ -100,4 +100,67 @@ public class SpeedChart : FrameworkElement
 
     static Brush Frozen(Brush b) { b.Freeze(); return b; }
     static Pen FrozenPen(Brush b, double t) { var p = new Pen(b, t); p.Freeze(); return p; }
+}
+
+/// The Transfers window's chart: every running job's speed, stacked, each in its own colour, as wide as the window.
+/// The window adds a sample ten times a second (MainWindow.JobFrame); the last 90 s are kept.
+public class TotalChart : FrameworkElement
+{
+    readonly List<(double at, Dictionary<Job, double> rates)> samples = new();
+    double peak;
+
+    public void Add(double atMs, IEnumerable<Job> running)
+    {
+        var rates = running.ToDictionary(j => j, j => j.Rate);
+        samples.Add((atMs, rates));
+        peak = Math.Max(peak, rates.Values.Sum());
+        while (samples.Count > 900 || samples[0].at < atMs - 90000) samples.RemoveAt(0);
+        InvalidateVisual();
+    }
+
+    public void Clear() { samples.Clear(); peak = 0; InvalidateVisual(); }
+
+    const double PadL = 58, PadR = 6, PadT = 6, PadB = 16;
+
+    protected override void OnRender(DrawingContext dc)
+    {
+        double w = ActualWidth, h = ActualHeight, floor = h - PadB, right = w - PadR;
+        if (samples.Count < 2 || w < PadL + 20) return;
+        double ceiling = SpeedChart.NiceCeiling(peak), dpi = VisualTreeHelper.GetDpi(this).PixelsPerDip;
+        foreach (var frac in new[] { 0.0, 0.5, 1.0 })
+        {
+            double y = Math.Round(PadT + (floor - PadT) * frac) + 0.5;
+            dc.DrawLine(SpeedChart.Grid, new Point(PadL, y), new Point(w, y));
+            SpeedChart.Label(dc, frac == 1 ? "0" : SpeedChart.AxisSpeed(ceiling * (1 - frac)), PadL - 8, y - 7, dpi, alignRight: true);
+        }
+        double first = samples[0].at, span = Math.Max(1, samples[^1].at - first);
+        double X(int i) => PadL + (samples[i].at - first) / span * (right - PadL);
+        double Y(double v) => PadT + (floor - PadT) * (1 - Math.Min(1, v / ceiling));
+        // bottom to top in the order they started, so a band never jumps from one place to another
+        var jobs = samples.SelectMany(s => s.rates.Keys).Distinct().OrderBy(j => j.Seq).ToList();
+        var below = new double[samples.Count];
+        foreach (var job in jobs)
+        {
+            var top = new double[samples.Count];
+            for (int i = 0; i < samples.Count; i++) top[i] = below[i] + samples[i].rates.GetValueOrDefault(job);
+            var band = new StreamGeometry();
+            var edge = new StreamGeometry();
+            using (var b = band.Open())
+            using (var e = edge.Open())
+            {
+                b.BeginFigure(new Point(X(0), Y(top[0])), true, true);
+                e.BeginFigure(new Point(X(0), Y(top[0])), false, false);
+                for (int i = 1; i < samples.Count; i++) { var p = new Point(X(i), Y(top[i])); b.LineTo(p, false, true); e.LineTo(p, true, true); }
+                for (int i = samples.Count - 1; i >= 0; i--) b.LineTo(new Point(X(i), Y(below[i])), false, true);
+            }
+            band.Freeze(); edge.Freeze();
+            var c = ((SolidColorBrush)job.Hue).Color;
+            dc.DrawGeometry(new SolidColorBrush(Color.FromArgb(0x55, c.R, c.G, c.B)), null, band);
+            dc.DrawGeometry(null, new Pen(job.Hue, 1.5) { LineJoin = PenLineJoin.Round }, edge);
+            below = top;
+        }
+        double seconds = span / 1000;
+        if (seconds >= 1) SpeedChart.Label(dc, $"{Math.Round(seconds)}s ago", PadL, h - 13, dpi);
+        SpeedChart.Label(dc, "now", right, h - 13, dpi, alignRight: true);
+    }
 }
