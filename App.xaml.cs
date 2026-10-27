@@ -543,6 +543,17 @@ public partial class App : Application
                   && Entry.DateGroupOf(new DateTime(2026, 2, 1), at) == 6 && Entry.DateGroupOf(new DateTime(2025, 12, 31), at) == 7,
                   "group by date: today (and later), yesterday, this month, last month, this year, long ago");
 
+            // 1.0.58 search terms: name words with the terms taken out, sizes in 1000s, dates, a regex, a quoted content
+            var sq = PaneView.SearchQuery.Parse("report size:1MB-100MB within:7d re:\"^q\\d\" content:\"two words\"", at);
+            Check(sq.Error == null && sq.Name == "report" && sq.MinSize == 1_000_000 && sq.MaxSize == 100_000_000 && sq.After == at.AddDays(-7)
+                  && sq.Pattern.IsMatch("Q3 report.pdf") && sq.Content == "two words" && sq.FilesOnly, "search terms: parsed");
+            var overGb = PaneView.SearchQuery.Parse("size:>1GB", at);
+            Check(!overGb.MatchesMeta("a.iso", false, 1_000_000_000, at) && overGb.MatchesMeta("a.iso", false, 1_000_000_001, at) && !overGb.MatchesMeta("dir", true, 0, at)
+                  && PaneView.SearchQuery.Parse("*.txt before:2026-01-01", at).MatchesMeta("a.txt", false, 5, new DateTime(2025, 6, 1))
+                  && !PaneView.SearchQuery.Parse("*.txt before:2026-01-01", at).MatchesMeta("a.txt", false, 5, at)
+                  && PaneView.SearchQuery.Parse("re:\"(\"", at).Error != null && PaneView.SearchQuery.Parse("size:lots", at).Error != null,
+                  "search terms: size, date, wildcard, bad regex and bad size refused");
+
             // 1.0.51 Reset to defaults: every setting belongs to a card that resets it, or is knowingly kept (Windows
             // integration, what File Labs remembers by itself); a reset puts back the defaults and touches nothing else
             var resettable = SettingsWindow.AppearanceKeys.Concat(SettingsWindow.FilesKeys).Concat(SettingsWindow.TransfersKeys).ToList();

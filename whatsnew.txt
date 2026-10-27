@@ -1,6 +1,13 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.0.58 | 2026-10-27 | Search by size, date, pattern and text inside files
+**Search**
+- The **funnel button** beside the filter box sets what else to look for: a size, when it was changed, a regular expression on the name, or **text inside files**. Each choice is written into the box, so you can see it and edit it.
+- Or type the terms yourself, beside the words of the name: `size:>100MB`, `size:1MB-100MB`, `within:7d`, `after:2026-10-01`, `re:"^IMG_\d+"`, `content:"invoice"`.
+- Typing filters the folder as before, now with sizes and dates too. Enter searches every subfolder, and that's where text inside files is read (files up to 64 MB; ones kept only in the cloud are skipped, not downloaded).
+- A term that can't be read, like a broken regular expression, is said at the bottom instead of quietly finding nothing.
+
 ## 1.0.57 | 2026-10-27 | Group by date
 **New**
 - **Group by date**, in the Sort menu (the Sort button at the bottom, or Sort by in the right-click menu): files fall under Today, Yesterday, Earlier this week, Last week, Earlier this month, Last month, Earlier this year and A long time ago, newest first, each heading with how many it holds. Within a group the folder keeps its sort.

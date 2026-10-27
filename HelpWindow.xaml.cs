@@ -96,6 +96,7 @@ public partial class HelpWindow : Window
         ("Search and preview", new[]
         {
             ("Filter box", "At the right of the path: typing filters this folder; Enter searches every subfolder and shows where each result was found. Esc leaves the results"),
+            ("Search terms", "In the filter box, beside the words of the name: size:>10MB, size:<1KB, size:10MB-1GB · within:today, within:7d (d, w, m, y) · after:2026-10-01, before:2026-01-01 · re:\"^IMG_\\d+\" for a regular expression · content:\"some text\" to look inside files (on Enter, up to 64 MB). The funnel button beside the box writes them for you"),
             ("Space", "Quick View: pictures, video and audio (←/→ skip 5 s), PDF, text and code, zip contents, fonts, folders, and a hex view for anything else; Windows' own previewers where installed. Up/Down move through the list while it is open; Space or Esc closes it"),
             ("Alt+P", "Preview pane: the selected file beside the panes, following the active pane; drag its edge to size it"),
             ("Settings → Files → QuickLook", "Space opens QuickLook instead, when it is installed and running"),

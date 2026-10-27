@@ -842,9 +842,104 @@ public partial class PaneView : UserControl
     public bool InSearch => searchQuery != null;
     const int MaxResults = 10_000;
 
+    /// What the filter box asks for: words of the name (with * and ?), and terms for the rest —
+    /// size:>10MB · size:<1KB · size:10MB-1GB · within:7d (d, w, m, y, or today) · after:2026-10-01 · before:2026-01-01 ·
+    /// re:^IMG_\d+ (a regular expression on the name) · content:"some text" (inside files, on Enter only).
+    /// Quotes keep spaces in a term. Sizes count in 1000s, like every size in File Labs.
+    internal sealed class SearchQuery
+    {
+        public string Name = "";
+        public System.Text.RegularExpressions.Regex Pattern;
+        public string Content;
+        public long MinSize = -1, MaxSize = long.MaxValue;
+        public DateTime After = DateTime.MinValue, Before = DateTime.MaxValue;
+        public string Error; // a term that couldn't be read; the search doesn't run
+        public bool FilesOnly => Content != null || MinSize >= 0 || MaxSize != long.MaxValue;
+
+        public static SearchQuery Parse(string text, DateTime now)
+        {
+            var q = new SearchQuery();
+            var words = new List<string>();
+            foreach (System.Text.RegularExpressions.Match m in System.Text.RegularExpressions.Regex.Matches(text, @"(\w+:)?(""[^""]*""|\S+)"))
+            {
+                var key = m.Groups[1].Value.ToLowerInvariant().TrimEnd(':');
+                var val = m.Groups[2].Value.Trim('"');
+                switch (key)
+                {
+                    case "size" when ReadSizes(val, q): break;
+                    case "within" when Ago(val, now) is { } since: q.After = since; break;
+                    case "after" when DateTime.TryParse(val, out var a): q.After = a; break;
+                    case "before" when DateTime.TryParse(val, out var b): q.Before = b; break;
+                    case "content" when val != "": q.Content = val; break;
+                    case "re":
+                        try { q.Pattern = new(val, System.Text.RegularExpressions.RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(50)); }
+                        catch (ArgumentException) { q.Error = $"\"{val}\" isn't a valid regular expression"; }
+                        break;
+                    case "size" or "within" or "after" or "before" or "content": q.Error = $"Can't read \"{m.Value}\""; break;
+                    default: words.Add(m.Value.Trim('"')); break;
+                }
+            }
+            q.Name = string.Join(" ", words);
+            return q;
+        }
+
+        static bool ReadSizes(string v, SearchQuery q)
+        {
+            if (v.Split('-') is [var lo, var hi] && Bytes(lo) is { } l && Bytes(hi) is { } h) { q.MinSize = l; q.MaxSize = h; return true; }
+            if (v.StartsWith('>') && Bytes(v[1..]) is { } min) { q.MinSize = min + 1; return true; }
+            if (v.StartsWith('<') && Bytes(v[1..]) is { } max) { q.MaxSize = max - 1; return true; }
+            if (Bytes(v) is { } at) { q.MinSize = at; return true; } // size:1GB = at least 1 GB
+            return false;
+        }
+
+        internal static long? Bytes(string v)
+        {
+            var m = System.Text.RegularExpressions.Regex.Match(v.Trim(), @"^(\d+(?:[.,]\d+)?)\s*(b|kb|k|mb|m|gb|g|tb|t)?$", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            if (!m.Success) return null;
+            double n = double.Parse(m.Groups[1].Value.Replace(',', '.'), System.Globalization.CultureInfo.InvariantCulture);
+            double unit = m.Groups[2].Value.ToLowerInvariant() switch { "kb" or "k" => 1e3, "mb" or "m" => 1e6, "gb" or "g" => 1e9, "tb" or "t" => 1e12, _ => 1 };
+            return (long)(n * unit);
+        }
+
+        static DateTime? Ago(string v, DateTime now)
+        {
+            if (v.Equals("today", StringComparison.OrdinalIgnoreCase)) return now.Date;
+            var m = System.Text.RegularExpressions.Regex.Match(v, @"^(\d+)([dwmy])$", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            if (!m.Success) return null;
+            int n = int.Parse(m.Groups[1].Value);
+            return m.Groups[2].Value.ToLowerInvariant() switch { "d" => now.AddDays(-n), "w" => now.AddDays(-7 * n), "m" => now.AddMonths(-n), _ => now.AddYears(-n) };
+        }
+
+        /// Everything but the contents: what the live filter can check without reading a file.
+        public bool MatchesMeta(string name, bool isDir, long size, DateTime modified)
+        {
+            if (Name != "" && !(Name.IndexOfAny(new[] { '*', '?' }) >= 0 ? System.IO.Enumeration.FileSystemName.MatchesSimpleExpression(Name, name)
+                                                                          : name.Contains(Name, StringComparison.OrdinalIgnoreCase))) return false;
+            if (Pattern != null)
+                try { if (!Pattern.IsMatch(name)) return false; }
+                catch (System.Text.RegularExpressions.RegexMatchTimeoutException) { return false; }
+            if (isDir && FilesOnly) return false; // a folder's size isn't known while searching, and it has no text
+            if (!isDir && (size < MinSize || size > MaxSize)) return false;
+            return modified >= After && modified < Before;
+        }
+
+        /// Files up to 64 MB, read as text (UTF-8, or the encoding their BOM names). Files kept only in the cloud are
+        /// skipped rather than downloaded. ponytail: whole-file read; a streaming search would lift the 64 MB ceiling.
+        public bool MatchesContent(FileInfo f)
+        {
+            if (Content == null) return true;
+            const FileAttributes InCloud = FileAttributes.Offline | (FileAttributes)0x40000 | (FileAttributes)0x400000;
+            if (f.Length > 64_000_000 || (f.Attributes & InCloud) != 0) return false;
+            try { return File.ReadAllText(f.FullName).Contains(Content, StringComparison.OrdinalIgnoreCase); }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return false; }
+        }
+    }
+
     public void Search(string query)
     {
         if (IsServer(Dir) || Dir == ThisPC) return;
+        var find = SearchQuery.Parse(query, DateTime.Now);
+        if (find.Error != null) { Error?.Invoke(find.Error); return; }
         searchQuery = query;
         searching = true;
         int v = ++navVersion;
@@ -853,7 +948,7 @@ public partial class PaneView : UserControl
         var results = new System.Collections.ObjectModel.ObservableCollection<Entry>();
         ShowItems(results, null);
         string root = Dir;
-        bool wild = query.IndexOfAny(new[] { '*', '?' }) >= 0, hidden = ShowHidden;
+        bool hidden = ShowHidden;
         Task.Run(() =>
         {
             var opts = new EnumerationOptions
@@ -874,9 +969,9 @@ public partial class PaneView : UserControl
                 foreach (var fsi in new DirectoryInfo(root).EnumerateFileSystemInfos("*", opts))
                 {
                     if (v != navVersion) return;
-                    if (!(wild ? System.IO.Enumeration.FileSystemName.MatchesSimpleExpression(query, fsi.Name)
-                               : fsi.Name.Contains(query, StringComparison.OrdinalIgnoreCase))) continue;
                     bool isDir = fsi is DirectoryInfo;
+                    if (!find.MatchesMeta(fsi.Name, isDir, isDir ? 0 : ((FileInfo)fsi).Length, fsi.LastWriteTime)
+                        || !isDir && !find.MatchesContent((FileInfo)fsi)) continue;
                     var where = System.IO.Path.GetRelativePath(root, System.IO.Path.GetDirectoryName(fsi.FullName));
                     batch.Add(new Entry
                     {
@@ -898,6 +993,53 @@ public partial class PaneView : UserControl
                 StartSizing(); StartVersions(); StartIcons(); StartThumbs();
             });
         });
+    }
+
+    // ---- the search options button: each choice writes its term into the filter box, replacing one of the same kind ----
+    void SearchOptions_Click(object s, RoutedEventArgs e)
+    {
+        var menu = new ContextMenu { PlacementTarget = SearchOptions, Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom };
+        MenuItem Choice(string header, string kind, string term)
+        {
+            var mi = new MenuItem { Header = header, IsChecked = term != null && FilterBox.Text.Contains(term, StringComparison.OrdinalIgnoreCase) };
+            mi.Click += (_, _) => SetTerm(kind, term);
+            return mi;
+        }
+        var size = new MenuItem { Header = "Size" };
+        foreach (var (h, t) in new[] { ("Any size", null), ("Under 1 MB", "size:<1MB"), ("1 MB to 100 MB", "size:1MB-100MB"), ("Over 100 MB", "size:>100MB"), ("Over 1 GB", "size:>1GB") })
+            size.Items.Add(Choice(h, "size", t));
+        var date = new MenuItem { Header = "Modified" };
+        foreach (var (h, t) in new[] { ("Any time", null), ("Today", "within:today"), ("In the last 7 days", "within:7d"), ("In the last 30 days", "within:30d"), ("In the last year", "within:1y") })
+            date.Items.Add(Choice(h, "within", t));
+        menu.Items.Add(size);
+        menu.Items.Add(date);
+        menu.Items.Add(new Separator());
+        var re = new MenuItem { Header = "Name matches a regular expression…" };
+        re.Click += (_, _) => { if (Ask("Regular expression", "The name matches (case doesn't matter)", "re:") is { } v) SetTerm("re", $"re:\"{v}\""); };
+        var content = new MenuItem { Header = "Contains text…", ToolTip = "Looks inside files up to 64 MB when you press Enter (files only in the cloud are skipped)" };
+        content.Click += (_, _) => { if (Ask("Contains text", "Text inside the file", "content:") is { } v) SetTerm("content", $"content:\"{v}\""); };
+        menu.Items.Add(re);
+        menu.Items.Add(content);
+        menu.Items.Add(new Separator());
+        var go = new MenuItem { Header = "Search every subfolder", InputGestureText = "Enter", IsEnabled = FilterBox.Text.Trim() != "" };
+        go.Click += (_, _) => { Search(FilterBox.Text.Trim()); FocusList(); };
+        menu.Items.Add(go);
+        menu.IsOpen = true;
+
+        string Ask(string title, string label, string kind)
+        {
+            var current = System.Text.RegularExpressions.Regex.Match(FilterBox.Text, @"(?<!\S)" + kind + @"(""[^""]*""|\S+)", System.Text.RegularExpressions.RegexOptions.IgnoreCase).Groups[1].Value.Trim('"');
+            return PromptDialog.Ask(Window.GetWindow(this), title, label, current, "Use") is { Length: > 0 } v ? v.Replace("\"", "") : null;
+        }
+    }
+
+    /// Puts `term` in the filter box in place of any term of the same kind (null just removes it).
+    void SetTerm(string kind, string term)
+    {
+        var rest = System.Text.RegularExpressions.Regex.Replace(FilterBox.Text, @"(?<!\S)" + kind + @":(""[^""]*""|\S+)", "", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        FilterBox.Text = System.Text.RegularExpressions.Regex.Replace((rest + " " + term).Trim(), @"\s{2,}", " ");
+        FilterBox.Focus();
+        FilterBox.CaretIndex = FilterBox.Text.Length;
     }
 
     /// Esc in the filter box: out of search results, or just clear the filter.
@@ -1657,9 +1799,10 @@ public partial class PaneView : UserControl
     {
         if (view == null) return;
         var q = searchQuery != null ? "" : FilterBox.Text; // search results are already the matches
-        bool wild = q.IndexOfAny(new[] { '*', '?' }) >= 0;
-        view.Filter = q == "" ? null : o => o is Entry { IsUp: true }
-            || (wild ? System.IO.Enumeration.FileSystemName.MatchesSimpleExpression(q, ((Entry)o).Name) : ((Entry)o).Name.Contains(q, StringComparison.OrdinalIgnoreCase));
+        // the same words and terms as the search, but contents only on Enter: the filter runs at every keystroke
+        var find = SearchQuery.Parse(q, DateTime.Now);
+        view.Filter = q.Trim() == "" || find.Error != null ? null : o => o is Entry { IsUp: true }
+            || o is Entry e && find.MatchesMeta(e.Name, e.IsDir, e.Size, e.Modified);
     }
 
     void Header_Click(object s, RoutedEventArgs e)
