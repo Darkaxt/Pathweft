@@ -554,6 +554,33 @@ public partial class App : Application
                   && PaneView.SearchQuery.Parse("re:\"(\"", at).Error != null && PaneView.SearchQuery.Parse("size:lots", at).Error != null,
                   "search terms: size, date, wildcard, bad regex and bad size refused");
 
+            // 1.0.61 small files several at once: the same files arrive, whole, either way; the times are printed
+            var manyDir = Directory.CreateDirectory(Path.Combine(root, "many", "files")).FullName;
+            var seeded = new Random(7);
+            for (int k = 0; k < 1200; k++)
+            {
+                var bytes = new byte[4096 + k % 60 * 1024];
+                seeded.NextBytes(bytes);
+                File.WriteAllBytes(Path.Combine(manyDir, $"f{k:D4}.bin"), bytes);
+            }
+            Job Timed(bool parallel, string to, out long ms)
+            {
+                var keep = Settings.ParallelCopy;
+                Settings.ParallelCopy = parallel;
+                var clock = System.Diagnostics.Stopwatch.StartNew();
+                var job = Run(Ferry.Submit(new[] { manyDir }, Directory.CreateDirectory(to).FullName, move: false));
+                ms = clock.ElapsedMilliseconds;
+                Settings.ParallelCopy = keep;
+                return job;
+            }
+            var oneByOne = Timed(false, Path.Combine(root, "many", "one"), out var msOne);
+            var together = Timed(true, Path.Combine(root, "many", "four"), out var msFour);
+            bool same = Directory.GetFiles(manyDir).All(f =>
+                File.ReadAllBytes(f).AsSpan().SequenceEqual(File.ReadAllBytes(Path.Combine(root, "many", "four", "files", Path.GetFileName(f)))));
+            Check(oneByOne.DoneFiles == 1200 && together.DoneFiles == 1200 && together.Errors.IsEmpty && same,
+                  $"parallel copy: 1200 small files arrive whole ({together.DoneFiles} copied, {together.Errors.Count} errors)");
+            Console.WriteLine($"1200 small files on {Path.GetPathRoot(root)} (fast: {Ferry.Fast(root)}): one by one {msOne} ms, four at a time {msFour} ms");
+
             // 1.0.60 archives: a ZIP and a TAR.GZ listed by folder, extracted without overwriting, a "../" entry refused,
             // a ZIP added to and taken from
             var arch = Path.Combine(root, "arch");

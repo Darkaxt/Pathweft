@@ -25,6 +25,7 @@ public class Job : INotifyPropertyChanged
     public string Destination { get; init; }
     public bool IsMove { get; init; }
     public bool Verify { get; init; }
+    public bool Parallel { get; init; } // Settings → Transfers: small files several at once, where the drives take it well
 
     // 0 running, 1 paused, 2 cancelled — read from the CopyFileExW callback, so kept lock-free.
     volatile int state;
@@ -57,6 +58,11 @@ public class Job : INotifyPropertyChanged
     {
         Interlocked.Add(ref DoneBytes, delta);
         Interlocked.Add(ref CurrentDone, delta);
+        lock (clock) AddRate(delta);
+    }
+
+    void AddRate(long delta)
+    {
         double now = clock.Elapsed.TotalSeconds, dt = now - lastAt;
         if (dt <= 0) return;
         double instant = delta / dt;
@@ -139,7 +145,7 @@ public static class Ferry
     // Same destination volume → runs after the previous job there; other volumes run in parallel.
     public static Job Submit(IEnumerable<string> sources, string destination, bool move)
     {
-        var job = new Job { Sources = sources.ToList(), Destination = destination, IsMove = move, Verify = Settings.Verify };
+        var job = new Job { Sources = sources.ToList(), Destination = destination, IsMove = move, Verify = Settings.Verify, Parallel = Settings.ParallelCopy };
         var lane = Path.GetPathRoot(destination);
         lock (lanes)
         {
@@ -265,9 +271,10 @@ public static class Ferry
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { job.Errors.Enqueue($"{d}: {ex.Message}"); }
 
         var copied = new List<(string Source, string Target, long Size, string Relative)>();
+        // where each file goes, decided first: a "Rename" target is picked before any copy runs beside it
+        var work = new List<(FileEntry File, string Target, bool Overwrite)>();
         for (int i = 0; i < plan.Files.Count; i++)
         {
-            if (job.IsCancelled) return;
             var e = plan.Files[i];
             var target = Path.Combine(job.Destination, e.Relative);
             bool overwrite = false;
@@ -277,23 +284,43 @@ public static class Ferry
                 if (ch == Choice.Skip) { job.TotalBytes -= e.Size; job.TotalFiles--; continue; }
                 if (ch == Choice.Rename) target = UniqueName(target); else overwrite = true;
             }
-            job.Current = e.Relative; job.CurrentSize = e.Size; job.CurrentDone = 0;
-            Directory.CreateDirectory(Path.GetDirectoryName(target));
+            work.Add((e, target, overwrite));
+        }
 
-            bool sameDiskMove = job.IsMove && SameVolume(e.Source, target);
+        void One((FileEntry File, string Target, bool Overwrite) w)
+        {
+            var e = w.File;
+            while (job.Paused && !job.IsCancelled) Thread.Sleep(60);
+            if (job.IsCancelled) return;
+            job.Current = e.Relative; job.CurrentSize = e.Size; job.CurrentDone = 0;
+            Directory.CreateDirectory(Path.GetDirectoryName(w.Target));
+            bool sameDiskMove = job.IsMove && SameVolume(e.Source, w.Target);
             string error = null;
             if (sameDiskMove)
             {
-                if (MoveFileEx(Long(e.Source), Long(target), MOVEFILE_COPY_ALLOWED | MOVEFILE_WRITE_THROUGH | (overwrite ? MOVEFILE_REPLACE_EXISTING : 0)))
+                if (MoveFileEx(Long(e.Source), Long(w.Target), MOVEFILE_COPY_ALLOWED | MOVEFILE_WRITE_THROUGH | (w.Overwrite ? MOVEFILE_REPLACE_EXISTING : 0)))
                     job.AddBytes(e.Size);
                 else error = LastError();
             }
-            else error = CopyOne(job, e.Source, target, e.Size, overwrite);
-
+            else error = CopyOne(job, e.Source, w.Target, e.Size, w.Overwrite);
             if (job.IsCancelled) return;
-            if (error == null) { job.DoneFiles++; if (!sameDiskMove) copied.Add((e.Source, target, e.Size, e.Relative)); }
+            if (error == null) { Interlocked.Increment(ref job.DoneFiles); if (!sameDiskMove) lock (copied) copied.Add((e.Source, w.Target, e.Size, e.Relative)); }
             else job.Errors.Enqueue($"{e.Relative}: {error}"); // one bad file doesn't stop the other thousand
         }
+
+        // 1.0.61: small files several at a time where both ends take it well (SSDs, network shares: a small file is mostly
+        // waiting, on the drive or the network); on a spinning disk the heads would only jump between them, so one by one.
+        // Big files always one by one: each already keeps the drive busy.
+        bool together = job.Parallel && Fast(job.Destination) && job.Sources.All(Fast);
+        var small = together ? work.Where(w => w.File.Size < ParallelBelow).ToList() : new();
+        if (small.Count > 1)
+            System.Threading.Tasks.Parallel.ForEach(small, new ParallelOptions { MaxDegreeOfParallelism = ParallelWays }, (w, state) => { if (job.IsCancelled) state.Stop(); else One(w); });
+        foreach (var w in small.Count > 1 ? work.Except(small) : work)
+        {
+            if (job.IsCancelled) return;
+            One(w);
+        }
+        if (job.IsCancelled) return;
 
         var bad = job.Verify && !job.IsCancelled ? VerifyAll(job, copied) : new HashSet<string>();
 
@@ -387,6 +414,37 @@ public static class Ferry
         }
         return path;
     }
+
+    // ---- several at once: on which drives ----
+    internal const long ParallelBelow = 16L * 1024 * 1024;
+    internal const int ParallelWays = 4; // ponytail: fixed; measured on NVMe and a 1 GbE NAS, tune per drive if it ever matters
+    static readonly System.Collections.Concurrent.ConcurrentDictionary<string, bool> fast = new(StringComparer.OrdinalIgnoreCase);
+
+    /// A network path, or a drive Windows says has no seek penalty (SSD, NVMe). A spinning disk, or one Windows won't
+    /// say about, is not.
+    internal static bool Fast(string path)
+    {
+        if (path.StartsWith(@"\\")) return true;
+        var root = Path.GetPathRoot(path);
+        if (string.IsNullOrEmpty(root)) return false;
+        return fast.GetOrAdd(root, r =>
+        {
+            try { if (new DriveInfo(r).DriveType == DriveType.Network) return true; } catch (ArgumentException) { return false; }
+            using var h = CreateFile($@"\\.\{r.TrimEnd('\\')}", 0, 3 /* read | write sharing */, IntPtr.Zero, 3 /* OPEN_EXISTING */, 0, IntPtr.Zero);
+            if (h.IsInvalid) return false;
+            var query = new STORAGE_PROPERTY_QUERY { PropertyId = 7 /* StorageDeviceSeekPenaltyProperty */ };
+            return DeviceIoControl(h, IOCTL_STORAGE_QUERY_PROPERTY, ref query, Marshal.SizeOf<STORAGE_PROPERTY_QUERY>(), out var seek, Marshal.SizeOf<DEVICE_SEEK_PENALTY_DESCRIPTOR>(), out _, IntPtr.Zero)
+                   && seek.IncursSeekPenalty == 0;
+        });
+    }
+
+    const uint IOCTL_STORAGE_QUERY_PROPERTY = 0x2D1400;
+    [StructLayout(LayoutKind.Sequential)] struct STORAGE_PROPERTY_QUERY { public int PropertyId, QueryType; public byte Extra; }
+    [StructLayout(LayoutKind.Sequential)] struct DEVICE_SEEK_PENALTY_DESCRIPTOR { public uint Version, Size; public byte IncursSeekPenalty; }
+    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    static extern Microsoft.Win32.SafeHandles.SafeFileHandle CreateFile(string name, uint access, uint share, IntPtr security, uint disposition, uint flags, IntPtr template);
+    [DllImport("kernel32.dll", SetLastError = true)]
+    static extern bool DeviceIoControl(Microsoft.Win32.SafeHandles.SafeFileHandle h, uint code, ref STORAGE_PROPERTY_QUERY input, int inSize, out DEVICE_SEEK_PENALTY_DESCRIPTOR output, int outSize, out int returned, IntPtr overlapped);
 
     // ---- CopyFileExW ----
     const uint COPY_FILE_FAIL_IF_EXISTS = 0x1, COPY_FILE_NO_BUFFERING = 0x1000;

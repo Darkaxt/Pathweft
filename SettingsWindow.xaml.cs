@@ -45,6 +45,7 @@ public partial class SettingsWindow : Window
         HiddenBox.IsChecked = Settings.ShowHidden;
         ShortcutFoldersBox.IsChecked = Settings.ShortcutsWithFolders;
         VerifyBox.IsChecked = Settings.Verify;
+        ParallelBox.IsChecked = Settings.ParallelCopy;
         EditorBox.IsChecked = Settings.InternalEditor;
         DefaultBox.IsChecked = Settings.IsDefaultFileManager;
         WinEBox.IsChecked = Settings.TakeWinE;
@@ -80,7 +81,7 @@ public partial class SettingsWindow : Window
         "autoscroll", "autoscrollx",
     };
     internal static readonly string[] FilesKeys = { "hidden", "shortcutfolders", "internaleditor", "quicklook", "itemtips", "tipdelay", "deletesound", "nativemenu" };
-    internal static readonly string[] TransfersKeys = { "verify" };
+    internal static readonly string[] TransfersKeys = { "verify", "parallel" };
     /// What File Labs keeps that isn't a choice in these cards: Windows integration, and what it remembers by itself.
     internal static readonly string[] NotReset =
     {
@@ -484,6 +485,7 @@ public partial class SettingsWindow : Window
     }
     void DeleteSound_Click(object s, RoutedEventArgs e) { Settings.DeleteSound = DeleteSoundBox.IsChecked == true; Settings.Save(); }
     void Verify_Click(object s, RoutedEventArgs e) { Settings.Verify = VerifyBox.IsChecked == true; Settings.Save(); }
+    void Parallel_Click(object s, RoutedEventArgs e) { Settings.ParallelCopy = ParallelBox.IsChecked == true; Settings.Save(); }
     void Tray_Click(object s, RoutedEventArgs e)
     {
         Settings.CloseToTray = TrayBox.IsChecked == true;
