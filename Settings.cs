@@ -79,6 +79,7 @@ public static class Settings
     public static readonly Dictionary<string, int> ActiveTab = new(); // "Left" → Details
     public static readonly Dictionary<string, List<int>> Pins = new(); // "Left" → indexes of pinned tabs
     public static readonly Dictionary<string, (string Key, bool Desc)> FolderSorts = new(StringComparer.OrdinalIgnoreCase); // folder → its own order; absent = by name
+    public static readonly HashSet<string> DateGroupFolders = new(StringComparer.OrdinalIgnoreCase); // folders shown grouped by date (Details)
 
     // Every setting as it comes, in the file's own form, taken before Load from the initial values above (it must stay
     // the last field: fields are set in the order they're written). Reset reads them back through the same parser.
@@ -165,6 +166,7 @@ public static class Settings
                 case var k when k.StartsWith("col.") && double.TryParse(v, CultureInfo.InvariantCulture, out var cw) && double.IsFinite(cw): ColumnWidths[k[4..]] = Math.Clamp(cw, k == "col.Name" ? 30 : 0, 4000); break; // a column squeezed shut stays shut (Rico, 1.0.53)
                 // sort=Modified|1|D:\Photos — the path last: it may hold anything but |
                 case "sort" when v.Split('|', 3) is [var sk, var sd, var sp] && PaneView.SortKeys.Contains(sk) && sp != "": FolderSorts[sp] = (sk, sd == "1"); break;
+                case "groupdate" when v != "": DateGroupFolders.Add(v); break;
                 case "sidebarorder" when v != "": SidebarOrder = v.Split(',').Where(x => x != "").ToList(); break;
                 case "sidebarcollapsed": SidebarCollapsed.Clear(); SidebarCollapsed.UnionWith(v.Split(',').Where(x => x != "")); break;
                 case "sidebar" when double.TryParse(v, CultureInfo.InvariantCulture, out var w) && double.IsFinite(w): SidebarWidth = Math.Clamp(w, 160, 600); break;
@@ -238,7 +240,8 @@ public static class Settings
          .Concat(Tabs.Select(t => $"tabs.{t.Key}={string.Join("|", t.Value)}"))
          .Concat(ActiveTab.Select(a => $"activetab.{a.Key}={a.Value}"))
          .Concat(Pins.Select(p => $"pins.{p.Key}={string.Join(",", p.Value)}"))
-         .Concat(FolderSorts.Select(s => $"sort={s.Value.Key}|{(s.Value.Desc ? 1 : 0)}|{s.Key}"));
+         .Concat(FolderSorts.Select(s => $"sort={s.Value.Key}|{(s.Value.Desc ? 1 : 0)}|{s.Key}"))
+         .Concat(DateGroupFolders.Select(f => $"groupdate={f}"));
 
     // ---- Default file manager (per user, HKCU only; turning it off removes every key it added) ----
     // Folder/drive double-clicks go through the Directory/Drive default verb; Win+E through the

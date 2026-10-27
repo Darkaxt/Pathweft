@@ -21,9 +21,28 @@ public class Entry : INotifyPropertyChanged
     public DateTime Modified
     {
         get => modified;
-        set { modified = value; Changed(nameof(Modified)); Changed(nameof(DateText)); Changed(nameof(FullDate)); Changed(nameof(Age)); Changed(nameof(AgeBrush)); Changed(nameof(AgeTextBrush)); Changed(nameof(Tip)); }
+        set { modified = value; Changed(nameof(Modified)); Changed(nameof(DateText)); Changed(nameof(FullDate)); Changed(nameof(Age)); Changed(nameof(AgeBrush)); Changed(nameof(AgeTextBrush)); Changed(nameof(Tip)); Changed(nameof(DateGroup)); }
     }
     public bool IsUp => Name == "..";
+
+    /// Group by date (Details): Explorer's groups, newest first. ".." heads the list in a group of its own.
+    public string DateGroup => IsUp ? "" : DateGroups[DateGroupOf(Modified, DateTime.Now)];
+    internal static readonly string[] DateGroups =
+        { "Today", "Yesterday", "Earlier this week", "Last week", "Earlier this month", "Last month", "Earlier this year", "A long time ago" };
+    internal static int DateGroupOf(DateTime t, DateTime now)
+    {
+        var day = now.Date;
+        if (t >= day) return 0; // a date in the future counts as today
+        if (t >= day.AddDays(-1)) return 1;
+        int back = ((int)day.DayOfWeek - (int)System.Globalization.CultureInfo.CurrentCulture.DateTimeFormat.FirstDayOfWeek + 7) % 7;
+        var week = day.AddDays(-back);
+        if (t >= week) return 2;
+        if (t >= week.AddDays(-7)) return 3;
+        var month = new DateTime(day.Year, day.Month, 1);
+        if (t >= month) return 4;
+        if (t >= month.AddMonths(-1)) return 5;
+        return t >= new DateTime(day.Year, 1, 1) ? 6 : 7;
+    }
     // A folder, or a shortcut to one: where a middle-click opens and a drop on the row lands. The shortcut is
     // read once, the first time it is asked (a drag asks on every move).
     string shortcutFolder;
@@ -650,6 +669,7 @@ public partial class PaneView : UserControl
         var left = items;
         items = list;
         view = new ListCollectionView((IList)items) { CustomSort = new EntrySort(sortKey, sortDesc) };
+        ApplyGrouping();
         ApplyFilter();
         List.ItemsSource = view;
         // The rows just left stay in the folder cache; their thumbnails don't. Kept there, every photo
@@ -1705,6 +1725,38 @@ public partial class PaneView : UserControl
         };
         reverse.Click += (_, _) => SetSort(sortKey, !sortDesc);
         yield return reverse;
+        yield return new Separator();
+        var group = new MenuItem { Header = "Group by date", IsChecked = Settings.DateGroupFolders.Contains(Dir), ToolTip = "Today, Yesterday, Last week… in Details, for this folder" };
+        group.Click += (_, _) => ToggleDateGroups();
+        yield return group;
+    }
+
+    // ---- Group by date: per folder, like its sort; shown in Details (in the icon views it waits for Details) ----
+    public void ToggleDateGroups()
+    {
+        if (Dir == "" || Dir == ThisPC) return;
+        if (!Settings.DateGroupFolders.Remove(Dir)) Settings.DateGroupFolders.Add(Dir);
+        if (Mode != ViewMode.Details && Settings.DateGroupFolders.Contains(Dir)) SetView(ViewMode.Details); // groups show only there
+        else ApplyGrouping();
+        if (List.SelectedItem is { } sel) Dispatcher.BeginInvoke(() => List.ScrollIntoView(sel), DispatcherPriority.Loaded);
+    }
+
+    // the view hands the comparer its groups, not their names (a cast to string took 1.0.57's first build down)
+    static readonly IComparer DateGroupOrder = Comparer<object>.Create((a, b) => GroupRank(a).CompareTo(GroupRank(b)));
+    static int GroupRank(object g) => Array.IndexOf(Entry.DateGroups, (g as CollectionViewGroup)?.Name ?? g); // "" (..) is -1: first
+
+    void ApplyGrouping()
+    {
+        if (view == null) return;
+        bool on = Mode == ViewMode.Details && Settings.DateGroupFolders.Contains(Dir) && searchQuery == null;
+        if (on == view.GroupDescriptions.Count > 0) return;
+        if (on)
+        {
+            view.GroupDescriptions.Add(new PropertyGroupDescription(nameof(Entry.DateGroup)) { CustomSort = DateGroupOrder });
+            view.IsLiveGrouping = true; // a file written now moves to Today
+            view.LiveGroupingProperties.Add(nameof(Entry.DateGroup));
+        }
+        else { view.GroupDescriptions.Clear(); view.IsLiveGrouping = false; view.LiveGroupingProperties.Clear(); }
     }
 
     static bool ResizingColumn => Mouse.Captured is System.Windows.Controls.Primitives.Thumb { TemplatedParent: GridViewColumnHeader };
@@ -1752,6 +1804,7 @@ public partial class PaneView : UserControl
         // containers after each one. Detached from its items it rebuilds once, when they come back.
         var source = List.ItemsSource;
         List.ItemsSource = null;
+        ApplyGrouping(); // Details only: the icon views' own panel can't hold groups
         if (mode == ViewMode.Details)
         {
             List.View = details;

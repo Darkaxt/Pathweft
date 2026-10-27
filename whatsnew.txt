@@ -1,6 +1,12 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.0.57 | 2026-10-27 | Group by date
+**New**
+- **Group by date**, in the Sort menu (the Sort button at the bottom, or Sort by in the right-click menu): files fall under Today, Yesterday, Earlier this week, Last week, Earlier this month, Last month, Earlier this year and A long time ago, newest first, each heading with how many it holds. Within a group the folder keeps its sort.
+- It's **remembered for each folder**, like its sort, so Downloads can be grouped while the rest stay as they are. Groups show in Details; turning them on in another view switches to Details.
+- A file that changes moves to Today on its own.
+
 ## 1.0.56 | 2026-10-27 | Every transfer in its own colour
 The Transfers window, redrawn: the whole picture at the top, and what needs you first.
 **At a glance**

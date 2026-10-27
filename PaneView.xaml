@@ -236,8 +236,25 @@
       <!-- ScrollUnit=Pixel keeps virtualization but scrolls smoothly instead of jumping a row at a time -->
       <local:FileList x:Name="List" AlternationCount="2" Background="Transparent" BorderThickness="0" Margin="4,0"
                 TextSearch.TextPath="Name" VirtualizingPanel.IsVirtualizing="True"
-                VirtualizingPanel.VirtualizationMode="Recycling" VirtualizingPanel.ScrollUnit="Pixel"
+                VirtualizingPanel.VirtualizationMode="Recycling" VirtualizingPanel.ScrollUnit="Pixel" VirtualizingPanel.IsVirtualizingWhenGrouping="True"
                 ScrollViewer.HorizontalScrollBarVisibility="Auto">
+        <!-- Group by date (Details): a quiet heading per group, its count, and a rule to the edge -->
+        <ListView.GroupStyle>
+          <GroupStyle>
+            <GroupStyle.HeaderTemplate>
+              <DataTemplate>
+                <DockPanel Margin="6,10,8,4">
+                  <DockPanel.Style><Style TargetType="DockPanel"><Style.Triggers>
+                    <DataTrigger Binding="{Binding Name}" Value=""><Setter Property="Visibility" Value="Collapsed"/></DataTrigger> <!-- the ".." group -->
+                  </Style.Triggers></Style></DockPanel.Style>
+                  <TextBlock Text="{Binding Name}" FontWeight="SemiBold" Foreground="{DynamicResource Accent}" FontSize="12"/>
+                  <TextBlock Text="{Binding ItemCount}" Foreground="#8A97AA" FontSize="11" Margin="8,0,10,0" VerticalAlignment="Center"/>
+                  <Border Height="1" Background="#1FFFFFFF" VerticalAlignment="Center"/>
+                </DockPanel>
+              </DataTemplate>
+            </GroupStyle.HeaderTemplate>
+          </GroupStyle>
+        </ListView.GroupStyle>
         <ListView.View>
           <GridView>
             <GridViewColumn x:Name="NameColumn" Header="Name" Width="200" CellTemplate="{StaticResource NameCell}"/>

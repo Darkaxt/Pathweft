@@ -536,6 +536,13 @@ public partial class App : Application
                   && !SizeCache.Loops(@"G:\Claude Projects\automaton\repo\packages\cli\node_modules\.pnpm\@typescript-eslint+typescript-estree@8.8.0_typescript@5.6.2\node_modules\@typescript-eslint\typescript-estree\dist\create-program\shared\x")
                   && !SizeCache.Loops(@"C:\short\a\b\c\a\b\c"), "size cache: loop paths dropped, long real ones and short ones kept");
 
+            // 1.0.57 Group by date: Explorer's buckets, from a fixed "now" (Wednesday 28 Oct 2026, noon)
+            var at = new DateTime(2026, 10, 28, 12, 0, 0);
+            Check(Entry.DateGroupOf(at.AddHours(3), at) == 0 && Entry.DateGroupOf(at.Date, at) == 0 && Entry.DateGroupOf(at.Date.AddMinutes(-1), at) == 1
+                  && Entry.DateGroupOf(new DateTime(2026, 10, 8), at) == 4 && Entry.DateGroupOf(new DateTime(2026, 9, 18), at) == 5
+                  && Entry.DateGroupOf(new DateTime(2026, 2, 1), at) == 6 && Entry.DateGroupOf(new DateTime(2025, 12, 31), at) == 7,
+                  "group by date: today (and later), yesterday, this month, last month, this year, long ago");
+
             // 1.0.51 Reset to defaults: every setting belongs to a card that resets it, or is knowingly kept (Windows
             // integration, what File Labs remembers by itself); a reset puts back the defaults and touches nothing else
             var resettable = SettingsWindow.AppearanceKeys.Concat(SettingsWindow.FilesKeys).Concat(SettingsWindow.TransfersKeys).ToList();
