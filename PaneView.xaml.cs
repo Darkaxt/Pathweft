@@ -263,14 +263,26 @@ public partial class PaneView : UserControl
             int lines = SystemParameters.WheelScrollLines; // -1: a screen a notch
             Glide(sv, -e.Delta / 120.0 * (lines > 0 ? lines * (Mode == ViewMode.Details ? 16 : 32) : sv.ViewportHeight));
         };
+        // During a rectangle the list holds the mouse, so the wheel lands on the list itself and never reaches its scroller.
+        List.MouseWheel += (_, e) =>
+        {
+            if (e.Handled || !Marqueeing || FindScroller(List) is not { } sv) return;
+            int lines = SystemParameters.WheelScrollLines;
+            sv.ScrollToVerticalOffset(sv.VerticalOffset - e.Delta / 120.0 * (lines > 0 ? lines * 16 : sv.ViewportHeight));
+            e.Handled = true;
+        };
         // Middle click, as in a browser: a folder (or a shortcut to one) opens in a tab behind this one, a tab closes, and
         // on the list's empty space (Settings: Middle-click autoscroll) moving the mouse scrolls the list.
         List.PreviewMouseDown += (_, e) =>
         {
             if (e.ChangedButton != MouseButton.Middle) return;
             var at = e.OriginalSource as DependencyObject;
-            if (FindRow(at)?.FolderTarget is { } folder) OpenInBackgroundTab(folder);
-            else if (!Settings.Autoscroll || RowAt(at) != null || OnChrome(at) || !StartAutoscroll(e.GetPosition(List))) return;
+            // Empty space as a left press sees it: in Details a row's other columns and the strip past them count too.
+            // FindRow alone took any press on a folder's row for the folder, so autoscroll there opened it (Rico, 1.0.53).
+            var row = Settings.Autoscroll ? RowAt(at) : FindRow(at);
+            if (row != null && Settings.Autoscroll && Mode == ViewMode.Details && e.GetPosition(List).X + ScrollX > NameColumn.ActualWidth) row = null;
+            if (row?.FolderTarget is { } folder) OpenInBackgroundTab(folder);
+            else if (!Settings.Autoscroll || row != null || OnChrome(at) || !StartAutoscroll(e.GetPosition(List))) return;
             e.Handled = true;
         };
         // on the pane, so it comes before the list's own handling of the press (selecting, a drag, a rectangle)
@@ -350,7 +362,11 @@ public partial class PaneView : UserControl
         }
         // The line where Name ends follows its width, the sideways scroll and the list's height.
         ((System.ComponentModel.INotifyPropertyChanged)NameColumn).PropertyChanged += (_, e) => { if (e.PropertyName == "ActualWidth") PlaceNameEdge(); };
-        List.AddHandler(ScrollViewer.ScrollChangedEvent, new ScrollChangedEventHandler((_, _) => PlaceNameEdge()));
+        List.AddHandler(ScrollViewer.ScrollChangedEvent, new ScrollChangedEventHandler((_, _) =>
+        {
+            PlaceNameEdge();
+            if (Marqueeing) MarqueeMove(Mouse.GetPosition(List)); // a wheel or the edge moved the rows under a rectangle
+        }));
         MarqueeLayer.SizeChanged += (_, _) => PlaceNameEdge();
         // While a column's edge is dragged Name stays put and gives the room back on release. Shrunk on
         // every step, it held the dragged edge still under the pointer, and the header (which measures each
@@ -411,6 +427,7 @@ public partial class PaneView : UserControl
 
     public void Navigate(string dir, string select = null, bool record = true)
     {
+        if (dir.Equals(ThisPC, StringComparison.OrdinalIgnoreCase)) { NavigateThisPC(select ?? Dir, record); return; }
         select ??= ChildToward(dir, Dir);
         if (IsServer(dir)) { NavigateServer(dir.TrimEnd('\\'), select, record); return; }
         DirectoryInfo di;
@@ -582,7 +599,7 @@ public partial class PaneView : UserControl
         prefetching?.Cancel();
         var cts = prefetching = new CancellationTokenSource();
         var todo = (extra ?? Enumerable.Empty<string>())
-            .Concat(tabs.Where(t => t != "" && !t.Equals(Dir, StringComparison.OrdinalIgnoreCase)))
+            .Concat(tabs.Where(t => t != "" && t != ThisPC && !t.Equals(Dir, StringComparison.OrdinalIgnoreCase)))
             .Concat(items.Where(e => e.IsDir && !e.IsUp).Select(e => e.Path).Take(40))
             .Distinct(StringComparer.OrdinalIgnoreCase).ToList();
         bool hidden = ShowHidden;
@@ -745,6 +762,34 @@ public partial class PaneView : UserControl
         });
     }
 
+    /// This PC (Favorites, and Up from a drive): the drives, as rows. Its path is the shell's parsing name, which every
+    /// file call refuses, so nothing can be pasted, dropped or created "in" it.
+    public const string ThisPC = "::{20D04FE0-3AEA-1069-A2D8-08002B30309D}";
+    public static string NameOf(string path) => path.Equals(ThisPC, StringComparison.OrdinalIgnoreCase) ? "This PC" : System.IO.Path.GetFileName(path.TrimEnd('\\'));
+
+    void NavigateThisPC(string from, bool record)
+    {
+        int v = GoTo(ThisPC, record);
+        watcher?.Dispose(); watcher = null;
+        sizing?.Cancel();
+        Task.Run(() => DriveInfo.GetDrives().Select(d =>
+        {
+            // a drive that isn't ready (an empty card reader) is listed without asking it more
+            string label = "";
+            try { if (d.IsReady) label = d.VolumeLabel; } catch (IOException) { } catch (UnauthorizedAccessException) { }
+            if (label == "") label = d.DriveType switch { DriveType.Network => "Network drive", DriveType.Removable => "Removable disk", DriveType.CDRom => "DVD drive", _ => "Local Disk" };
+            return new Entry { Name = $"{d.Name.TrimEnd('\\')}  {label}", Path = d.Name, IsDir = true, Size = -2 }; // as in Drives: by letter
+        }).ToList()).ContinueWith(t => Dispatcher.BeginInvoke(() =>
+        {
+            if (v != navVersion) return;
+            var drives = t.Result;
+            ShowItems(drives, drives.FirstOrDefault(e => e.Path.Equals(from, StringComparison.OrdinalIgnoreCase))?.Name);
+            DriveInfoText.Text = "";
+            UsedBar.Width = 0;
+            StartIcons();
+        }));
+    }
+
     [System.Runtime.InteropServices.DllImport("netapi32.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
     static extern int NetShareEnum(string server, int level, out IntPtr buf, int prefMax, out int read, out int total, IntPtr resume);
     [System.Runtime.InteropServices.DllImport("netapi32.dll")] static extern int NetApiBufferFree(IntPtr buf);
@@ -777,7 +822,7 @@ public partial class PaneView : UserControl
 
     public void Search(string query)
     {
-        if (IsServer(Dir)) return;
+        if (IsServer(Dir) || Dir == ThisPC) return;
         searchQuery = query;
         searching = true;
         int v = ++navVersion;
@@ -961,7 +1006,8 @@ public partial class PaneView : UserControl
     {
         Crumbs.Children.Clear();
         var parts = new List<(string Name, string Path)>();
-        if (!IsServer(Dir))
+        if (Dir == ThisPC) parts.Add(("This PC", ThisPC));
+        else if (!IsServer(Dir))
             for (var d = new DirectoryInfo(Dir); d != null; d = d.Parent)
                 parts.Insert(0, (d.Parent != null ? d.Name : d.Name.TrimEnd('\\').Split('\\')[^1], d.FullName)); // "C:", or the share's name
         if (Dir.StartsWith(@"\\")) parts.Insert(0, (ServerOf(Dir), ServerOf(Dir)));
@@ -989,6 +1035,7 @@ public partial class PaneView : UserControl
         var opts = new EnumerationOptions { IgnoreInaccessible = true, AttributesToSkip = ShowHidden ? 0 : FileAttributes.Hidden };
         var dirs = await Task.Run(() =>
         {
+            if (folder == ThisPC) return DriveInfo.GetDrives().Select(d => d.Name).ToList();
             if (IsServer(folder)) return NetShares(folder)?.Select(s => $@"{folder}\{s}").ToList() ?? new();
             try { return Directory.EnumerateDirectories(folder, "*", opts).Take(500).ToList(); }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return new List<string>(); }
@@ -1000,7 +1047,7 @@ public partial class PaneView : UserControl
             var path = d;
             var mi = new MenuItem
             {
-                Header = new TextBlock { Text = System.IO.Path.GetFileName(d) }, // a string header would eat underscores as access keys
+                Header = new TextBlock { Text = System.IO.Path.GetFileName(d) is { Length: > 0 } n ? n : d }, // a drive (This PC's) by its root // a string header would eat underscores as access keys
                 FontWeight = d.Equals(current, StringComparison.OrdinalIgnoreCase) ? FontWeights.SemiBold : FontWeights.Normal,
             };
             mi.Click += (_, _) => { Navigate(path); List.Focus(); };
@@ -1021,7 +1068,7 @@ public partial class PaneView : UserControl
         for (int i = 0; i < tabs.Count; i++)
         {
             int idx = i;
-            var name = System.IO.Path.GetFileName(tabs[i].TrimEnd((char)92));
+            var name = NameOf(tabs[i]);
             var close = new Button { Style = (Style)FindResource("TabClose"), ToolTip = "Close tab (Ctrl+W)" };
             if (tabs.Count == 1 && closeLast == null || pins[i]) close.Visibility = Visibility.Collapsed; // the last tab can't be closed (unless it closes the pane), nor a pinned one
             close.Click += (_, e) => { CloseTab(idx); e.Handled = true; };
@@ -1166,7 +1213,7 @@ public partial class PaneView : UserControl
     public bool Restore(List<string> paths, int active, List<int> pinned = null)
     {
         var usable = paths.Select((p, i) => (p, pin: pinned?.Contains(i) == true))
-                          .Where(x => IsRemote(x.p) || Directory.Exists(x.p)).ToList(); // a NAS that is off: 21 s per tab
+                          .Where(x => x.p == ThisPC || IsRemote(x.p) || Directory.Exists(x.p)).ToList(); // a NAS that is off: 21 s per tab
         if (usable.Count == 0) return false;
         tabs.Clear(); pins.Clear();
         tabs.AddRange(usable.Select(x => x.p)); pins.AddRange(usable.Select(x => x.pin));
@@ -1276,10 +1323,11 @@ public partial class PaneView : UserControl
     public void Forward() { if (fwd.Count > 0) { back.Push(Dir); Navigate(fwd.Pop(), record: false); } }
     public void Up()
     {
-        if (IsServer(Dir)) return;
+        if (IsServer(Dir) || Dir == ThisPC) return;
         var name = System.IO.Path.GetFileName(Dir.TrimEnd('\\'));
         if (Directory.GetParent(Dir) is { } p) Navigate(p.FullName, name);
         else if (Dir.StartsWith(@"\\")) Navigate(ServerOf(Dir), name); // share root → the server's shares
+        else Navigate(ThisPC, Dir); // a drive → This PC, with the drive selected
     }
 
     /// The tab showing `path`, or -1. Opening a folder from outside switches to it instead of adding a duplicate.
@@ -1349,7 +1397,7 @@ public partial class PaneView : UserControl
     }
 
     string UpTarget() =>
-        IsServer(Dir) ? null : Directory.GetParent(Dir)?.FullName ?? (Dir.StartsWith(@"\\") ? ServerOf(Dir) : null);
+        IsServer(Dir) || Dir == ThisPC ? null : Directory.GetParent(Dir)?.FullName ?? (Dir.StartsWith(@"\\") ? ServerOf(Dir) : ThisPC);
 
     // ---- selection by pattern (TC's Num+ / Num- / Num*), and "select these" for Compare ----
     bool bulkSelect; // one footer update at the end instead of one per row
@@ -1570,7 +1618,14 @@ public partial class PaneView : UserControl
     }
 
     public void FocusFilter() { FilterBox.Focus(); FilterBox.SelectAll(); }
-    public void FocusList() => List.Focus();
+    // On the selected row once it is drawn, not on the list: a file handed in from outside (Open path in Everything,
+    // Open-Shell) was selected while the keyboard stayed on the list, so the arrows started elsewhere (Rico, 1.0.53).
+    // A folder read from the cache is shown before this runs, and a fresh read that changes nothing only patches it.
+    public void FocusList()
+    {
+        List.Focus();
+        Dispatcher.BeginInvoke(() => { if (Keyboard.FocusedElement == List) FocusSelectedRow(); }, DispatcherPriority.Loaded);
+    }
     void Filter_Changed(object s, TextChangedEventArgs e)
     {
         FilterHint.Visibility = FilterBox.Text == "" ? Visibility.Visible : Visibility.Collapsed;
@@ -2027,7 +2082,7 @@ public partial class PaneView : UserControl
         if (marqueeArmed)
         {
             marqueeRow = otherColumn ? row : null;
-            marqueeBase = Keyboard.Modifiers.HasFlag(ModifierKeys.Control) ? List.SelectedItems.Cast<Entry>().ToHashSet() : new();
+            ArmMarquee();
             dragArmed = false;
             FocusKeepingRow();
             e.Handled = true; // selection is ours from here: on release (a click) or while dragging (a rectangle)
@@ -2091,6 +2146,7 @@ public partial class PaneView : UserControl
             }
             marqueeArmed = false;
             Marquee.Visibility = Visibility.Collapsed;
+            EdgeScroll(false);
             List.ReleaseMouseCapture();
             UpdateFooter();
             StatsChanged?.Invoke();
@@ -2101,6 +2157,23 @@ public partial class PaneView : UserControl
     bool marqueeArmed;
     Entry marqueeRow; // the row pressed outside its Name column, selected if it turns out to be a click
     HashSet<Entry> marqueeBase = new();
+    // The rectangle lives in the content, not on the screen: its start is where the press was before any scrolling,
+    // and every row seen under it keeps its place there. Before 1.0.54 it was redrawn from the screen alone, so a wheel
+    // or a scroll during the drag dropped the rows scrolled away from the selection (Rico, 1.0.53).
+    Point marqueeFrom;
+    Dictionary<Entry, Rect> marqueeSeen = new();
+
+    Vector ScrollOffset => FindScroller(List) is { } sv ? new Vector(sv.HorizontalOffset, sv.VerticalOffset) : default;
+
+    void ArmMarquee()
+    {
+        marqueeBase = Keyboard.Modifiers.HasFlag(ModifierKeys.Control) ? List.SelectedItems.Cast<Entry>().ToHashSet() : new();
+        marqueeFrom = dragStart + ScrollOffset;
+        marqueeSeen.Clear();
+    }
+
+    bool Marqueeing => Marquee.Visibility == Visibility.Visible
+        && (marqueeArmed && Mouse.LeftButton == MouseButtonState.Pressed || rightArmed && Mouse.RightButton == MouseButtonState.Pressed);
 
     static bool OnChrome(DependencyObject d)
     {
@@ -2112,17 +2185,21 @@ public partial class PaneView : UserControl
         return false;
     }
 
-    void MarqueeMove(MouseEventArgs e)
+    void MarqueeMove(MouseEventArgs e) => MarqueeMove(e.GetPosition(List));
+
+    void MarqueeMove(Point p)
     {
-        var p = e.GetPosition(List);
-        var d = p - dragStart;
+        var offset = ScrollOffset;
+        var d = p + offset - marqueeFrom;
         if (Marquee.Visibility != Visibility.Visible)
         {
             if (Math.Abs(d.X) < SystemParameters.MinimumHorizontalDragDistance && Math.Abs(d.Y) < SystemParameters.MinimumVerticalDragDistance) return;
             Marquee.Visibility = Visibility.Visible;
             List.CaptureMouse(); // keep getting moves when the pointer leaves the list
         }
-        var rect = new Rect(dragStart, p);
+        MarqueeEdge(p);
+        var area = new Rect(marqueeFrom, p + offset); // in the content
+        var rect = new Rect(area.TopLeft - offset, area.Size); // on screen
         rect.Intersect(new Rect(0, 0, List.ActualWidth, List.ActualHeight));
         if (rect.IsEmpty) return;
         // Drawn in the overlay's coordinates, not the list's: the list has its own size (Settings → Text
@@ -2131,14 +2208,17 @@ public partial class PaneView : UserControl
         Canvas.SetLeft(Marquee, drawn.X); Canvas.SetTop(Marquee, drawn.Y);
         Marquee.Width = drawn.Width; Marquee.Height = drawn.Height;
 
-        // Only rows on screen have containers (the list is virtualized); off-screen rows keep their state.
-        var want = new HashSet<Entry>(marqueeBase);
+        // Only rows on screen have containers (the list is virtualized): each one seen is remembered where it sits in the
+        // content, so it stays in (or out) once scrolled away. Rows never on screen keep their state.
         foreach (Entry item in view)
         {
             if (item.IsUp || List.ItemContainerGenerator.ContainerFromItem(item) is not ListViewItem c || !c.IsVisible) continue;
             var bounds = c.TransformToAncestor(List).TransformBounds(new Rect(c.RenderSize));
-            if (bounds.IntersectsWith(rect)) want.Add(item);
+            bounds.Offset(offset);
+            marqueeSeen[item] = bounds;
         }
+        var want = new HashSet<Entry>(marqueeBase);
+        foreach (var (item, bounds) in marqueeSeen) if (bounds.IntersectsWith(area)) want.Add(item);
         bulkSelect = true;
         try
         {
@@ -2159,7 +2239,7 @@ public partial class PaneView : UserControl
         rightArmed = !marqueeArmed && !InTextBox(e.OriginalSource) && !OnChrome(e.OriginalSource as DependencyObject);
         if (!rightArmed) return;
         dragStart = e.GetPosition(List);
-        marqueeBase = Keyboard.Modifiers.HasFlag(ModifierKeys.Control) ? List.SelectedItems.Cast<Entry>().ToHashSet() : new();
+        ArmMarquee();
     }
 
     void RightDrag_Up(object s, MouseButtonEventArgs e)
@@ -2168,6 +2248,7 @@ public partial class PaneView : UserControl
         rightArmed = false;
         if (Marquee.Visibility != Visibility.Visible) return; // a plain right-click
         Marquee.Visibility = Visibility.Collapsed;
+        EdgeScroll(false);
         List.ReleaseMouseCapture();
         UpdateFooter();
         StatsChanged?.Invoke();
@@ -2308,6 +2389,21 @@ public partial class PaneView : UserControl
             double y = e.GetPosition(rows).Y, h = rows.ActualHeight, zone = Math.Min(48, h / 4);
             if (y < zone) edgeSpeed = -1250 * Math.Min(1, (zone - y) / zone);
             else if (y > h - zone) edgeSpeed = 1250 * Math.Min(1, (y - h + zone) / zone);
+        }
+        EdgeScroll(edgeSpeed != 0);
+    }
+
+    // Past the top or bottom of the rows during a rectangle, the list scrolls toward the pointer, faster the further out.
+    // ponytail: up and down only; List view (which scrolls sideways) doesn't scroll at its sides.
+    void MarqueeEdge(Point p)
+    {
+        edgeSpeed = 0;
+        edgeDrag = null;
+        if (FindScroller(List) is { } sv && sv.Template.FindName("PART_ScrollContentPresenter", sv) is FrameworkElement rows)
+        {
+            double y = List.TranslatePoint(p, rows).Y, h = rows.ActualHeight;
+            if (y < 0) edgeSpeed = -Math.Min(2500, 300 + 12 * -y);
+            else if (y > h) edgeSpeed = Math.Min(2500, 300 + 12 * (y - h));
         }
         EdgeScroll(edgeSpeed != 0);
     }

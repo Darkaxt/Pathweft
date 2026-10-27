@@ -1,6 +1,20 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.0.54 | 2026-10-27 | This PC, and a selection that survives scrolling
+Two fixes and six wishes from a long-time tester's newest notes.
+**Fixes**
+- **Drag a selection rectangle and scroll** with the wheel, or past the top or bottom of the list, and every file it went over stays selected. Rows that scrolled out of sight used to drop out of the selection.
+- With **Middle-click autoscroll** on, a middle click beside a folder's name in Details (its size, its date, or the space after the last column) starts the autoscroll instead of opening the folder in a new tab. A middle click on the name still opens it.
+**Sidebar**
+- **This PC** is first in Favorites: your drives, in the pane, in letter order. Up from a drive goes back to it.
+- Favorites have **Windows' own menu** on a right-click: Properties, Send to, Empty Recycle Bin and the rest.
+- A Quick access folder's menu has **Move down** next to Move up, and **Properties**. With the Windows menu chosen in Settings, it gets Windows' menu with Move up, Move down and Remove on top.
+**Also**
+- After a click on empty space clears the selection, the file you were on keeps a thin outline, so you can see where the arrow keys will carry on.
+- A column squeezed shut (Version, say) stays shut after File Labs restarts.
+- **Open path** from Everything or Open-Shell now puts the keyboard on the file it selects, so the arrow keys start right there.
+
 ## 1.0.53 | 2026-10-26 | Smooth Ctrl+wheel zoom
 **Better**
 - **Ctrl+wheel zooms smoothly.** In the icon views every notch makes the icons a little bigger or smaller, from small to very large, and the tiles glide to the new size instead of the list jumping between three sizes. A quick spin no longer leaps from the smallest view to the largest: going past the smallest icons steps on to List, then Details, one at a time.

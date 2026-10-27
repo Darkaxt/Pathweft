@@ -18,7 +18,9 @@ public static class ShellMenu
     /// (the folder's menu from the shell has none: Explorer adds it from its window).
     /// `rename`: false where File Labs has no in-place rename to offer (the sidebar's drives and folders), so Windows
     /// leaves Rename out instead of showing an item that does nothing.
-    public static string Show(Window owner, string folder, IReadOnlyList<string> items, IReadOnlyList<(string Text, bool On, Action Run)> view = null, bool rename = true)
+    /// `top`: File Labs' own commands above Windows' (a Quick access folder's Move up, Move down and Remove).
+    public static string Show(Window owner, string folder, IReadOnlyList<string> items, IReadOnlyList<(string Text, bool On, Action Run)> view = null, bool rename = true,
+        IReadOnlyList<(string Text, Action Run)> top = null)
     {
         var hwnd = new WindowInteropHelper(owner).Handle;
         var pidls = new List<IntPtr>();
@@ -42,6 +44,11 @@ public static class ShellMenu
                 foreach (var (text, on, run) in view) { AppendMenu(sub, on ? MF_CHECKED : 0, (UIntPtr)(OwnFirst + own.Count), text); own.Add(run); }
                 InsertMenu(menu, 0, MF_BYPOSITION | MF_POPUP, (UIntPtr)(ulong)sub, "&View");
                 InsertMenu(menu, 1, MF_BYPOSITION | MF_SEPARATOR, UIntPtr.Zero, null);
+            }
+            if (top != null)
+            {
+                for (int i = 0; i < top.Count; i++) { InsertMenu(menu, i, MF_BYPOSITION, (UIntPtr)(OwnFirst + own.Count), top[i].Text); own.Add(top[i].Run); }
+                InsertMenu(menu, top.Count, MF_BYPOSITION | MF_SEPARATOR, UIntPtr.Zero, null);
             }
 
             var ctx2 = ctx as IContextMenu2;

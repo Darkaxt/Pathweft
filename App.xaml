@@ -94,6 +94,7 @@
       <Setter Property="Template">
         <Setter.Value>
           <ControlTemplate TargetType="ListViewItem">
+            <Grid>
             <Border x:Name="Bd" Background="Transparent" Opacity="{Binding RowFade, RelativeSource={RelativeSource AncestorType=ListView}, FallbackValue=1}" CornerRadius="2" Padding="{TemplateBinding Padding}">
               <Grid>
                 <GridViewRowPresenter/>
@@ -103,7 +104,14 @@
                 <Border Width="6" CornerRadius="2" Background="{Binding AgeBrush}" HorizontalAlignment="Left" Margin="-4,0,0,0"/>
               </Grid>
             </Border>
+            <Border x:Name="Focus" CornerRadius="2" BorderThickness="1" IsHitTestVisible="False"/>
+            </Grid>
             <ControlTemplate.Triggers>
+              <!-- where the keyboard is when nothing is selected (a click on empty space): an outline, as in Explorer (Rico, 1.0.53) -->
+              <MultiTrigger>
+                <MultiTrigger.Conditions><Condition Property="IsKeyboardFocused" Value="True"/><Condition Property="IsSelected" Value="False"/></MultiTrigger.Conditions>
+                <Setter TargetName="Focus" Property="BorderBrush" Value="{DynamicResource Accent}"/>
+              </MultiTrigger>
               <!-- the inactive pane's rows recede (FileList.RowFade), its selected rows don't -->
               <Trigger Property="IsSelected" Value="True"><Setter TargetName="Bd" Property="Opacity" Value="1"/></Trigger>
               <!-- every other row a touch lighter, so a long row is easy to follow across -->
@@ -173,10 +181,17 @@
       <Setter Property="Template">
         <Setter.Value>
           <ControlTemplate TargetType="ListViewItem">
-            <Border x:Name="Bd" Background="Transparent" Opacity="{Binding RowFade, RelativeSource={RelativeSource AncestorType=ListView}, FallbackValue=1}" CornerRadius="2" Padding="4,3" Margin="0,0,8,0">
+            <Grid Margin="0,0,8,0">
+            <Border x:Name="Bd" Background="Transparent" Opacity="{Binding RowFade, RelativeSource={RelativeSource AncestorType=ListView}, FallbackValue=1}" CornerRadius="2" Padding="4,3">
               <ContentPresenter/>
             </Border>
+            <Border x:Name="Focus" CornerRadius="2" BorderThickness="1" IsHitTestVisible="False"/>
+            </Grid>
             <ControlTemplate.Triggers>
+              <MultiTrigger>
+                <MultiTrigger.Conditions><Condition Property="IsKeyboardFocused" Value="True"/><Condition Property="IsSelected" Value="False"/></MultiTrigger.Conditions>
+                <Setter TargetName="Focus" Property="BorderBrush" Value="{DynamicResource Accent}"/>
+              </MultiTrigger>
               <!-- the inactive pane's rows recede (FileList.RowFade), its selected rows don't -->
               <Trigger Property="IsSelected" Value="True"><Setter TargetName="Bd" Property="Opacity" Value="1"/></Trigger>
               <!-- every other row a touch lighter, so a long row is easy to follow across -->
@@ -198,10 +213,17 @@
       <Setter Property="Template">
         <Setter.Value>
           <ControlTemplate TargetType="ListViewItem">
+            <Grid>
             <Border x:Name="Bd" Background="Transparent" Opacity="{Binding RowFade, RelativeSource={RelativeSource AncestorType=ListView}, FallbackValue=1}" CornerRadius="3" Padding="6">
               <ContentPresenter/>
             </Border>
+            <Border x:Name="Focus" CornerRadius="3" BorderThickness="1" IsHitTestVisible="False"/>
+            </Grid>
             <ControlTemplate.Triggers>
+              <MultiTrigger>
+                <MultiTrigger.Conditions><Condition Property="IsKeyboardFocused" Value="True"/><Condition Property="IsSelected" Value="False"/></MultiTrigger.Conditions>
+                <Setter TargetName="Focus" Property="BorderBrush" Value="{DynamicResource Accent}"/>
+              </MultiTrigger>
               <!-- the inactive pane's rows recede (FileList.RowFade), its selected rows don't -->
               <Trigger Property="IsSelected" Value="True"><Setter TargetName="Bd" Property="Opacity" Value="1"/></Trigger>
               <DataTrigger Binding="{Binding Dimmed}" Value="True"><Setter TargetName="Bd" Property="Opacity" Value="0.45"/></DataTrigger>

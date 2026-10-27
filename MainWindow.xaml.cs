@@ -73,8 +73,20 @@ public partial class MainWindow : Window
             ("", "Music", Environment.GetFolderPath(Environment.SpecialFolder.MyMusic)),
             ("", "Videos", Environment.GetFolderPath(Environment.SpecialFolder.MyVideos)) })
             if (Directory.Exists(path)) Favorites.Children.Add(SideButton(icon, name, path));
+        Favorites.Children.Insert(0, SideButton("", "This PC", PaneView.ThisPC)); // the drives, in the pane (Rico, 1.0.53)
         // the shell's parsing name for the Recycle Bin: only used here to fetch its real icon
         Favorites.Children.Add(SideButton("", "Recycle Bin", "::{645FF040-5081-101B-9F08-00AA002F954E}", click: OpenRecycleBin));
+
+        // Windows' own menu on each, as on a drive in Drives (Properties, Empty Recycle Bin, Manage…) (Rico, 1.0.53)
+        foreach (var b in Favorites.Children.OfType<Button>())
+        {
+            var path = b.ToolTip as string == "Recycle Bin" ? "::{645FF040-5081-101B-9F08-00AA002F954E}" : (string)b.ToolTip;
+            b.PreviewMouseRightButtonUp += (_, e) =>
+            {
+                e.Handled = true;
+                ShellMenu.Show(this, path.StartsWith("::") ? path : Path.GetDirectoryName(path) ?? path, new[] { path }, rename: false);
+            };
+        }
 
         LoadQuickAccess();
         ApplyAppearance(); // the accent and row height the user picked, before anything is drawn
@@ -96,7 +108,7 @@ public partial class MainWindow : Window
             warmUp.Stop();
             var paths = pinned.Concat(shownDrives.Select(d => d.Name))
                 .Concat(Favorites.Children.OfType<Button>().Select(b => b.ToolTip as string))
-                .Where(p => !string.IsNullOrEmpty(p)).ToList();
+                .Where(p => !string.IsNullOrEmpty(p) && !p.StartsWith("::")).ToList(); // This PC isn't a folder on disk
             Left.PrefetchPaths(paths);
             Right.PrefetchPaths(paths);
         };
@@ -736,11 +748,20 @@ public partial class MainWindow : Window
         {
             var name = Path.GetFileName(path.TrimEnd('\\'));
             var b = SideButton(PaneView.IsRemote(path) || Directory.Exists(path) ? "\uE718" : "\uE7BA", name == "" ? path : name, path); // pin / warning if gone
-            var up = new MenuItem { Header = "Move up" };
-            var remove = new MenuItem { Header = "Remove from Quick access" };
-            up.Click += (_, _) => { int i = pinned.IndexOf(path); if (i > 0) { pinned.RemoveAt(i); pinned.Insert(i - 1, path); SaveQuickAccess(); } };
-            remove.Click += (_, _) => { pinned.Remove(path); SaveQuickAccess(); };
-            b.ContextMenu = new ContextMenu { Items = { up, remove } };
+            void Move(int by) { int i = pinned.IndexOf(path); if (i + by >= 0 && i + by < pinned.Count) { pinned.RemoveAt(i); pinned.Insert(i + by, path); SaveQuickAccess(); } }
+            (string, Action)[] own = { ("Move &up", () => Move(-1)), ("Move &down", () => Move(1)), ("&Remove from Quick access", () => { pinned.Remove(path); SaveQuickAccess(); }) };
+            var menu = new ContextMenu();
+            foreach (var (text, run) in own) menu.Items.Add(Item(text.Replace("&", "_"), "", "", run));
+            menu.Items.Add(new Separator());
+            menu.Items.Add(Item("Properties", "", "", () => Properties(path)));
+            b.ContextMenu = menu;
+            // Settings → Right-click menu → Windows: Windows' menu for the folder, with these three on top (Rico, 1.0.53)
+            b.PreviewMouseRightButtonUp += (_, e) =>
+            {
+                if (!Settings.NativeMenu || !(PaneView.IsRemote(path) || Directory.Exists(path))) return;
+                e.Handled = true;
+                ShellMenu.Show(this, Path.GetDirectoryName(path.TrimEnd('\\')) ?? path, new[] { path }, rename: false, top: own);
+            };
             // drag to reorder; the sidebar's drop handler places it (SidebarSections.cs)
             b.PreviewMouseLeftButtonDown += (_, e) => { pinDrag = path; pinDragFrom = e.GetPosition(QuickAccess); };
             b.PreviewMouseMove += (_, e) =>
@@ -822,7 +843,7 @@ public partial class MainWindow : Window
     void PinSelected()
     {
         var dirs = active.Selected.Where(e => e.IsDir).Select(e => e.Path).DefaultIfEmpty(active.Dir);
-        var added = dirs.Where(d => !pinned.Contains(d, StringComparer.OrdinalIgnoreCase)).ToList();
+        var added = dirs.Where(d => d != PaneView.ThisPC && !pinned.Contains(d, StringComparer.OrdinalIgnoreCase)).ToList(); // This PC is in Favorites
         if (added.Count == 0) { Status.Text = $"Already in {CurrentQuickList.Name}"; return; }
         pinned.AddRange(added);
         SaveQuickAccess();
@@ -903,8 +924,8 @@ public partial class MainWindow : Window
         if (active?.Dir is not { Length: > 0 } dir) return;
         // Only when the folder actually changed: the 10 s refresh would otherwise wipe whatever message
         // the status bar is showing ("Path copied", "Pinned …").
-        if (dir != shownDir) { Status.Text = shownDir = dir; }
-        bool bareServer = dir.StartsWith(@"\\") && !dir.Trim('\\').Contains('\\'); // not a folder a dialog can open
+        if (dir != shownDir) { shownDir = dir; Status.Text = dir == PaneView.ThisPC ? "This PC" : dir; }
+        bool bareServer = dir.StartsWith(@"\\") && !dir.Trim('\\').Contains('\\') || dir == PaneView.ThisPC; // not a folder a dialog can open
         if (dir != publishedFolder && !bareServer && Settings.Profile == null) // a test copy leaves the real one's folder alone
         {
             // for Ctrl+G in Open/Save dialogs (Agent.cs)
