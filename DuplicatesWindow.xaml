@@ -8,10 +8,20 @@
     <DockPanel Margin="14,12,14,12">
       <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8">
         <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+          <!-- what makes two files duplicates; a change searches again -->
+          <StackPanel x:Name="MatchChoices" Orientation="Horizontal" Margin="0,0,12,0" VerticalAlignment="Center"
+                      ToolTip="Same content compares the bytes; the other two only names and sizes, so they find look-alikes, not proven copies">
+            <Button Style="{StaticResource Tab}" Tag="on" Padding="10,5" MaxWidth="200" Content="Same content" Click="Match_Click"/>
+            <Button Style="{StaticResource Tab}" Padding="10,5" MaxWidth="200" Content="Same name and size" Click="Match_Click"/>
+            <Button Style="{StaticResource Tab}" Padding="10,5" MaxWidth="200" Content="Same name" Click="Match_Click"/>
+          </StackPanel>
           <CheckBox x:Name="SubfoldersBox" Content="Include subfolders" Margin="0,0,14,0" VerticalAlignment="Center" Click="Subfolders_Click"/>
           <Button x:Name="SearchButton" Style="{StaticResource Tab}" Tag="on" Padding="14,6" Click="Search_Click" Content="Search again"/>
         </StackPanel>
-        <TextBlock x:Name="FolderText" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+        <!-- the places searched together: click for the list, to add one or take one out -->
+        <Button x:Name="LocationsButton" Style="{StaticResource Ghost}" Click="Locations_Click" HorizontalContentAlignment="Left" ToolTip="Add a folder, or take one out">
+          <TextBlock><Run x:Name="FolderText" FontSize="14" FontWeight="SemiBold"/>  <Run FontFamily="Segoe Fluent Icons" FontSize="10" Foreground="#8A97AA" Text="&#xE70D;"/></TextBlock>
+        </Button>
       </DockPanel>
       <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8">
         <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">

@@ -598,17 +598,30 @@ public partial class App : Application
             FileExplorer.MainWindow.SaveShortcut(Path.Combine(dupes, "sub", "also to a.lnk"), Path.Combine(dupes, "a.bin"), dupes);
             FileExplorer.MainWindow.SaveShortcut(Path.Combine(dupes, "to other.lnk"), Path.Combine(dupes, "other.txt"), dupes);
             string Shape(List<DuplicatesWindow.DupGroup> gs) => string.Join(" | ", gs.Select(g => (g.Target != null ? "lnk:" : "") + string.Join(",", g.Files.Select(f => Path.GetFileName(f.Path)).OrderBy(n => n))));
-            var top = DuplicatesWindow.Find(dupes, subfolders: false, hidden: false, null, default);
+            var top = DuplicatesWindow.Find(new[] { dupes }, subfolders: false, hidden: false, null, default);
             Check(Shape(top) == "a copy.bin,a.bin", "duplicates in one folder: " + Shape(top));
-            var nested = DuplicatesWindow.Find(dupes, subfolders: true, hidden: false, null, default);
+            var nested = DuplicatesWindow.Find(new[] { dupes }, subfolders: true, hidden: false, null, default);
             Check(Shape(nested) == "a again.bin,a copy.bin,a.bin | small too.txt,small.txt | lnk:also to a.lnk,to a.lnk" && nested[0].Wasted == 400_000, "duplicates with subfolders: " + Shape(nested));
             using (var stop = new CancellationTokenSource())
             {
                 stop.Cancel();
                 bool cancelled = false;
-                try { DuplicatesWindow.Find(dupes, true, false, null, stop.Token); } catch (OperationCanceledException) { cancelled = true; }
+                try { DuplicatesWindow.Find(new[] { dupes }, true, false, null, stop.Token); } catch (OperationCanceledException) { cancelled = true; }
                 Check(cancelled, "duplicates: Stop stops it");
             }
+
+            // 1.0.59 several locations and looser matches: a file under two listed folders counts once; by name, sizes may differ
+            File.WriteAllText(Path.Combine(dupes, "same name.txt"), "first");
+            File.WriteAllText(Path.Combine(dupes, "sub", "same name.txt"), "second, longer");
+            var sub = Path.Combine(dupes, "sub");
+            var twice = DuplicatesWindow.Find(new[] { dupes, sub, dupes }, subfolders: true, hidden: false, null, default);
+            Check(Shape(twice) == Shape(nested), "duplicates: overlapping locations count each file once: " + Shape(twice));
+            var byName = DuplicatesWindow.Find(new[] { dupes, sub }, subfolders: false, hidden: false, null, default, DuplicatesWindow.Match.Name);
+            var bySizeToo = DuplicatesWindow.Find(new[] { dupes, sub }, subfolders: false, hidden: false, null, default, DuplicatesWindow.Match.NameAndSize);
+            var byBytes = DuplicatesWindow.Find(new[] { dupes, sub }, subfolders: false, hidden: false, null, default);
+            Check(byName.Any(g => g.Name == "same name.txt" && g.Files.Count == 2) && !bySizeToo.Any(g => g.Files.Any(f => f.Path.EndsWith("same name.txt")))
+                  && !byBytes.Any(g => g.Files.Any(f => f.Path.EndsWith("same name.txt"))) && byName.First(g => g.Name == "same name.txt").Wasted == 5,
+                  "duplicates: by name finds the two, by name and size and by content don't: " + Shape(byName));
 
             // 1.0.51 Open path through the agent: the file Explorer selects late still reaches File Labs, after its folder
             (string, bool)[] Watch(params (string Folder, string Selected)[] looks)

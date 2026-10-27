@@ -496,7 +496,7 @@ public partial class MainWindow : Window
     }
 
     /// Find duplicates in this folder (and its subfolders, if asked in the window), in a window of its own.
-    void FindDuplicates(string folder) => new DuplicatesWindow(this, folder).Show();
+    void FindDuplicates(params string[] folders) => new DuplicatesWindow(this, folders).Show();
 
     /// Explorer on purpose: the agent is told to leave the window alone instead of taking it over.
     static void OpenInExplorer(string arguments)

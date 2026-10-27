@@ -1,6 +1,12 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.0.59 | 2026-10-27 | Duplicates across folders, and by name
+**Find duplicates**
+- Look in **several folders at once**: select two or more folders and right-click → Find duplicates in these folders, or right-click a folder's empty space → Find duplicates here and in the other pane. In the window, the folder names at the top open a list to add another folder or take one out.
+- Choose what counts as a duplicate: **Same content** (the bytes, as before), **Same name and size**, or **Same name**. The last two read nothing, so they're instant even on a big drive, and they find look-alikes rather than proven copies; Delete says so before anything goes.
+- A file inside two of the folders you picked is counted once.
+
 ## 1.0.58 | 2026-10-27 | Search by size, date, pattern and text inside files
 **Search**
 - The **funnel button** beside the filter box sets what else to look for: a size, when it was changed, a regular expression on the name, or **text inside files**. Each choice is written into the box, so you can see it and edit it.

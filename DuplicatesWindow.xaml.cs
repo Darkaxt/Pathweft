@@ -13,8 +13,12 @@ namespace FileExplorer;
 // those, the first 64 KB are hashed, and only files still alike after that are read whole. xxHash-128 (System.IO.Hashing,
 // already used by Verify copies): two different files share a digest with a chance of about 1 in 10^38. All of it runs in
 // the background, with progress and Stop; the window is the user's to choose what goes.
+// 1.0.59: several folders at once (a file under two of them counts once), and two looser kinds of match, by name and
+// size or by name alone, which find look-alikes without reading a byte.
 public partial class DuplicatesWindow : Window
 {
+    public enum Match { Content, NameAndSize, Name }
+
     public sealed record DupFile(string Path, long Size, DateTime Modified);
 
     /// Files with the same content, or shortcuts with the same target (`Target` set).
@@ -22,10 +26,11 @@ public partial class DuplicatesWindow : Window
     {
         public long Size { get; init; }
         public string Target { get; init; }
+        public string Name { get; init; } // set when they were matched by name alone: sizes may differ
         public List<DupFile> Files { get; init; }
-        public long Wasted => Target != null ? 0 : Size * (Files.Count - 1);
-        public string Title => Target != null
-            ? $"{Files.Count} shortcuts to {Target}"
+        public long Wasted => Target != null ? 0 : Name != null ? Files.Sum(f => f.Size) - Files.Max(f => f.Size) : Size * (Files.Count - 1);
+        public string Title => Target != null ? $"{Files.Count} shortcuts to {Target}"
+            : Name != null ? $"{Files.Count} files named {Name}"
             : $"{Files.Count} copies  ·  {MainWindow.Fmt(Size)} each  ·  {MainWindow.Fmt(Wasted)} to free";
     }
 
@@ -34,25 +39,38 @@ public partial class DuplicatesWindow : Window
     const int Head = 64 * 1024;
 
     /// The groups, most space to free first. `progress`: what is happening and how far along (0–1).
-    internal static List<DupGroup> Find(string folder, bool subfolders, bool hidden, IProgress<(string Text, double Done)> progress, CancellationToken token)
+    internal static List<DupGroup> Find(IReadOnlyList<string> folders, bool subfolders, bool hidden, IProgress<(string Text, double Done)> progress, CancellationToken token,
+                                        Match match = Match.Content)
     {
         // every file, without following junctions or symbolic links into other folders (a loop, or the same files twice)
         var options = new EnumerationOptions { RecurseSubdirectories = subfolders, IgnoreInaccessible = true, AttributesToSkip = FileAttributes.System | (hidden ? 0 : FileAttributes.Hidden) };
-        var all = new FileSystemEnumerable<DupFile>(folder, (ref FileSystemEntry e) => new DupFile(e.ToFullPath(), e.Length, e.LastWriteTimeUtc.LocalDateTime), options)
-        {
-            ShouldIncludePredicate = (ref FileSystemEntry e) => !e.IsDirectory && (e.Attributes & InCloud) == 0,
-            ShouldRecursePredicate = (ref FileSystemEntry e) => (e.Attributes & FileAttributes.ReparsePoint) == 0,
-        };
         var files = new List<DupFile>();
         var links = new List<DupFile>();
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase); // a folder inside another listed one adds nothing twice
         long reported = 0;
         var buffer = new byte[1 << 20]; // one for every file: a fresh megabyte each was 300 MB of garbage for 300 files
-        foreach (var f in all)
+        foreach (var folder in folders)
         {
-            token.ThrowIfCancellationRequested();
-            (f.Path.EndsWith(".lnk", StringComparison.OrdinalIgnoreCase) ? links : files).Add(f);
-            if ((files.Count + links.Count) % 500 == 0) progress?.Report(($"Looking at {files.Count + links.Count:N0} files…", 0));
+            var all = new FileSystemEnumerable<DupFile>(folder, (ref FileSystemEntry e) => new DupFile(e.ToFullPath(), e.Length, e.LastWriteTimeUtc.LocalDateTime), options)
+            {
+                ShouldIncludePredicate = (ref FileSystemEntry e) => !e.IsDirectory && (e.Attributes & InCloud) == 0,
+                ShouldRecursePredicate = (ref FileSystemEntry e) => (e.Attributes & FileAttributes.ReparsePoint) == 0,
+            };
+            foreach (var f in all)
+            {
+                token.ThrowIfCancellationRequested();
+                if (!seen.Add(f.Path)) continue;
+                (match == Match.Content && f.Path.EndsWith(".lnk", StringComparison.OrdinalIgnoreCase) ? links : files).Add(f);
+                if ((files.Count + links.Count) % 500 == 0) progress?.Report(($"Looking at {files.Count + links.Count:N0} files…", 0));
+            }
         }
+
+        // by name (and size): nothing is read
+        if (match != Match.Content)
+            return files.GroupBy(f => match == Match.Name ? System.IO.Path.GetFileName(f.Path) : $"{System.IO.Path.GetFileName(f.Path)}|{f.Size}", StringComparer.OrdinalIgnoreCase)
+                .Where(g => g.Count() > 1)
+                .Select(g => new DupGroup { Size = g.First().Size, Name = match == Match.Name ? System.IO.Path.GetFileName(g.First().Path) : null, Files = g.ToList() })
+                .OrderByDescending(g => g.Wasted).ThenByDescending(g => g.Files.Count).ToList();
 
         var groups = new List<DupGroup>();
         // shortcuts: by what they open (a shortcut whose target is gone opens nothing, so it has no twin)
@@ -117,30 +135,41 @@ public partial class DuplicatesWindow : Window
     }
 
     // ---- the window ----
-    public sealed class Row(DupGroup group, DupFile file, string root)
+    public sealed class Row(DupGroup group, DupFile file, IReadOnlyList<string> roots)
     {
         public DupGroup Group { get; } = group;
         public DupFile File { get; } = file;
         public string Name => System.IO.Path.GetFileName(File.Path);
-        public string Folder => System.IO.Path.GetRelativePath(root, System.IO.Path.GetDirectoryName(File.Path)) is var r && r != "." ? r : "(this folder)";
+        /// Where it is, under the location it was found in; with several locations, that location's name first.
+        public string Folder
+        {
+            get
+            {
+                var dir = System.IO.Path.GetDirectoryName(File.Path);
+                var root = roots.Where(r => dir.StartsWith(r.TrimEnd('\\'), StringComparison.OrdinalIgnoreCase)).MaxBy(r => r.Length) ?? roots[0];
+                var rel = System.IO.Path.GetRelativePath(root, dir);
+                if (roots.Count == 1) return rel != "." ? rel : "(this folder)";
+                var name = System.IO.Path.GetFileName(root.TrimEnd('\\')) is { Length: > 0 } n ? n : root;
+                return rel != "." ? System.IO.Path.Combine(name, rel) : name;
+            }
+        }
         public string ModifiedText => File.Modified.ToString("yyyy-MM-dd  HH:mm");
         public string Tip => File.Path; // the rows' tooltip (App.xaml)
     }
 
     readonly MainWindow main;
-    readonly string folder;
+    readonly List<string> folders;
     CancellationTokenSource running;
     List<Row> rows = new();
 
-    public DuplicatesWindow(MainWindow owner, string folder)
+    public DuplicatesWindow(MainWindow owner, IEnumerable<string> folders)
     {
         InitializeComponent();
         Owner = main = owner;
-        this.folder = folder;
+        this.folders = folders.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
         SourceInitialized += (_, _) => MainWindow.ApplyAcrylic(this);
         Root.Background = MainWindow.Tint();
-        FolderText.Text = folder;
-        FolderText.ToolTip = folder;
+        ShowFolders();
         ContentRendered += (_, _) => Search();
         Closed += (_, _) => { running?.Cancel(); Ferry.Finished -= MoveFinished; };
         PreviewKeyDown += (_, e) =>
@@ -163,10 +192,12 @@ public partial class DuplicatesWindow : Window
         Status.Text = "";
         ShowGroups(new List<DupGroup>());
         bool sub = SubfoldersBox.IsChecked == true, hidden = PaneView.ShowHidden;
+        var where = folders.ToList();
+        var match = this.match;
         var progress = new Progress<(string Text, double Done)>(p => { if (running == cts) { Summary.Text = p.Text; Progress.Value = p.Done; } });
         List<DupGroup> found = null;
         string error = null;
-        try { found = await Task.Run(() => Find(folder, sub, hidden, progress, cts.Token), cts.Token); }
+        try { found = await Task.Run(() => Find(where, sub, hidden, progress, cts.Token, match), cts.Token); }
         catch (OperationCanceledException) { }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException) { error = ex.Message; }
         if (running != cts) return; // a newer search took over
@@ -180,7 +211,7 @@ public partial class DuplicatesWindow : Window
 
     void ShowGroups(List<DupGroup> groups)
     {
-        rows = groups.SelectMany(g => g.Files.Select(f => new Row(g, f, folder))).ToList();
+        rows = groups.SelectMany(g => g.Files.Select(f => new Row(g, f, folders))).ToList();
         var view = new ListCollectionView(rows);
         view.GroupDescriptions.Add(new PropertyGroupDescription(nameof(Row.Group)));
         List.ItemsSource = view;
@@ -196,6 +227,44 @@ public partial class DuplicatesWindow : Window
     }
 
     void Subfolders_Click(object s, RoutedEventArgs e) => Search();
+    Match match = Match.Content;
+    void Match_Click(object s, RoutedEventArgs e)
+    {
+        var buttons = MatchChoices.Children.OfType<System.Windows.Controls.Button>().ToList();
+        match = (Match)buttons.IndexOf((System.Windows.Controls.Button)s);
+        foreach (var b in buttons) b.Tag = b == s ? "on" : null;
+        Search();
+    }
+
+    void ShowFolders()
+    {
+        FolderText.Text = folders.Count == 1 ? folders[0] : string.Join("  ·  ", folders.Select(f => System.IO.Path.GetFileName(f.TrimEnd('\\')) is { Length: > 0 } n ? n : f));
+        LocationsButton.ToolTip = string.Join("\n", folders) + "\n\nAdd a folder, or take one out";
+    }
+
+    /// The places searched together: each one to take out (while there are two or more), and Add folder….
+    void Locations_Click(object s, RoutedEventArgs e)
+    {
+        var menu = new System.Windows.Controls.ContextMenu { PlacementTarget = LocationsButton, Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom };
+        foreach (var f in folders.ToList())
+        {
+            var mi = new System.Windows.Controls.MenuItem { Header = $"Take out  {f}", IsEnabled = folders.Count > 1 };
+            mi.Click += (_, _) => { folders.Remove(f); ShowFolders(); Search(); };
+            menu.Items.Add(mi);
+        }
+        menu.Items.Add(new System.Windows.Controls.Separator());
+        var add = new System.Windows.Controls.MenuItem { Header = "Add folder…" };
+        add.Click += (_, _) =>
+        {
+            var pick = new Microsoft.Win32.OpenFolderDialog { Title = "Also look for duplicates in", Multiselect = true };
+            if (pick.ShowDialog(this) != true) return;
+            folders.AddRange(pick.FolderNames.Where(n => !folders.Contains(n, StringComparer.OrdinalIgnoreCase)));
+            ShowFolders();
+            Search();
+        };
+        menu.Items.Add(add);
+        menu.IsOpen = true;
+    }
     void Search_Click(object s, RoutedEventArgs e) { if (running != null) running.Cancel(); else Search(); }
 
     List<Row> Selected => List.SelectedItems.Cast<Row>().ToList();
@@ -232,7 +301,9 @@ public partial class DuplicatesWindow : Window
     {
         if (Chosen() is not { } paths) return;
         long bytes = Selected.Sum(r => r.File.Size);
-        if (PromptDialog.Choose(this, $"Send {paths.Count} file{(paths.Count == 1 ? "" : "s")} to the Recycle Bin?", $"{MainWindow.Fmt(bytes)}. One copy of each stays where it is.", "Delete", "Cancel") != 0) return;
+        // matched by name, the files may well differ: said before anything goes
+        var looseNote = match != Match.Content ? " These were matched by name, not by content: make sure they really are the same." : "";
+        if (PromptDialog.Choose(this, $"Send {paths.Count} file{(paths.Count == 1 ? "" : "s")} to the Recycle Bin?", $"{MainWindow.Fmt(bytes)}. One copy of each stays where it is.{looseNote}", "Delete", "Cancel") != 0) return;
         Status.Text = "Deleting…";
         main.Recycle(paths, UIOption.OnlyErrorDialogs, done: Prune);
     }

@@ -189,6 +189,8 @@ public partial class MainWindow
             m.Items.Add(Item("Open in other pane", "", "", () => Other.Navigate(first.Path)));
             m.Items.Add(Item("Find duplicates in folder…", "", "", () => FindDuplicates(first.Path)));
         }
+        else if (sel.Count(x => x.FolderTarget != null) > 1) // several folders: compared with each other
+            m.Items.Add(Item("Find duplicates in these folders…", "", "", () => FindDuplicates(sel.Where(x => x.FolderTarget != null).Select(x => x.FolderTarget).ToArray())));
         // Windows' Open with list (its apps in Windows' order, Choose another app, the Store), for several files too
         if (!AddShell(m, shell, "openwith") && one && !dir)
             m.Items.Add(Item("Open with…", "", "", () => Process.Start("rundll32.exe", $"shell32.dll,OpenAs_RunDLL {first.Path}")));
@@ -292,6 +294,10 @@ public partial class MainWindow
         m.Items.Add(Item("Invert selection", "", "Num *", p.InvertSelection));
         m.Items.Add(Item("Compare with other pane", "", "Shift+F2", ComparePanes));
         m.Items.Add(Item("Find duplicates…", "", "", () => FindDuplicates(p.Dir)));
+        // the other pane's folder too, when both are on screen and show different places
+        var other = p == Left ? Right : Left;
+        if (!Settings.SinglePane && other.Dir is { Length: > 0 } od && od != PaneView.ThisPC && !od.Equals(p.Dir, StringComparison.OrdinalIgnoreCase))
+            m.Items.Add(Item("Find duplicates here and in the other pane…", "", "", () => FindDuplicates(p.Dir, od)));
         m.Items.Add(new Separator());
         m.Items.Add(Item("Refresh", "", "F5 / Ctrl+R", () => { SizeCache.Clear(); p.Refresh(force: true); }));
         m.Items.Add(Item(Settings.ShowHidden ? "Hide hidden files" : "Show hidden files", "", "Ctrl+H", ToggleHidden));
