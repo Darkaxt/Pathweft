@@ -110,6 +110,8 @@ public partial class HelpWindow : Window
             ("Shift+F2", "Compare the two panes: on each side, what the other lacks or has older (or of another size) is selected"),
             ("Right-click → Find duplicates…", "Files that are exactly alike in this folder, and in its subfolders if you tick that, plus shortcuts that open the same thing. Select extra copies keeps the oldest of each; send the rest to the Recycle Bin or move them. It works in the background, with progress and Stop"),
             ("Compress to ZIP / Extract", "From the right-click menu. Extract here first checks that nothing would be overwritten"),
+            ("Inside an archive", "Enter on a ZIP, TAR or TAR.GZ opens it like a folder. Enter on a file inside opens a copy of it; Ctrl+F5 or Extract to… takes the selection out (nothing already there is overwritten); with a ZIP, Del takes items out of it and dropping or pasting files adds them"),
+            ("Disk images", "Right-click an ISO, IMG, VHD or VHDX → Mount: Windows mounts it and it opens as a new drive. Eject is in the drive's right-click menu"),
             ("Checksum (SHA-256)", "Of one file, in a window you can copy from; a hash already on the clipboard is compared with it"),
             ("Create shortcut", "“name - Shortcut” beside the original"),
             ("Run as administrator", "For programs, scripts and installers"),

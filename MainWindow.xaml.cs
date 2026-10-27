@@ -59,7 +59,8 @@ public partial class MainWindow : Window
             p.Activated += () => SetActive(p);
             p.StatsChanged += () => { if (p == active) { UpdateStats(); PreviewFollow(); } QuickLookFollow(p); FilesShown(); };
             p.Error += msg => Status.Text = msg;
-            p.FilesDropped += (files, dest, move) => Submit(files, dest, move);
+            p.FilesDropped += (files, dest, move) => { if (PaneView.ArchiveOf(dest) != null) AddToArchive(p, files, dest); else Submit(files, dest, move); };
+            p.OpenArchived += e => OpenFromArchive(p, e);
             p.RenameCommitted += (entry, name) => RenameCommitted(p, entry, name);
         }
 
@@ -924,7 +925,7 @@ public partial class MainWindow : Window
         // Only when the folder actually changed: the 10 s refresh would otherwise wipe whatever message
         // the status bar is showing ("Path copied", "Pinned …").
         if (dir != shownDir) { shownDir = dir; Status.Text = dir == PaneView.ThisPC ? "This PC" : dir; }
-        bool bareServer = dir.StartsWith(@"\\") && !dir.Trim('\\').Contains('\\') || dir == PaneView.ThisPC; // not a folder a dialog can open
+        bool bareServer = dir.StartsWith(@"\\") && !dir.Trim('\\').Contains('\\') || PaneView.IsVirtual(dir); // not a folder a dialog can open
         if (dir != publishedFolder && !bareServer && Settings.Profile == null) // a test copy leaves the real one's folder alone
         {
             // for Ctrl+G in Open/Save dialogs (Agent.cs)
@@ -1032,11 +1033,15 @@ public partial class MainWindow : Window
     // Copy/move through the Ferry engine; delete still goes to the Recycle Bin via the VB API.
     readonly System.Collections.ObjectModel.ObservableCollection<Job> jobs = new();
 
-    void Transfer(bool move) => Submit(active.Selected.Select(e => e.Path).ToList(), Other.Dir, move);
+    void Transfer(bool move)
+    {
+        if (active.ArchiveRoot != null) { if (!move) ExtractFromArchive(active, Other.Dir); return; } // Ctrl+F5 in an archive extracts to the other pane
+        Submit(active.Selected.Select(e => e.Path).ToList(), Other.Dir, move);
+    }
 
     internal Job Submit(List<string> sources, string dest, bool move)
     {
-        if (sources.Count == 0 || dest == PaneView.ThisPC) return null; // a paste or drop on This PC goes nowhere
+        if (sources.Count == 0 || PaneView.IsVirtual(dest)) return null; // nothing goes "into" This PC, nor into an archive this way (AddToArchive)
         Settings.Bump(Settings.RecentDestinations, dest, Settings.DestinationsMax); // for Copy to / Move to
         var job = Ferry.Submit(sources, dest, move);
         job.Seq = ++jobSeq;
@@ -1194,7 +1199,9 @@ public partial class MainWindow : Window
         if (!Clipboard.ContainsFileDropList()) return;
         var files = Clipboard.GetFileDropList().Cast<string>().ToList();
         bool move = Clipboard.GetData("Preferred DropEffect") is MemoryStream ms && ms.Length >= 4 && (BitConverter.ToInt32(ms.ToArray(), 0) & 2) != 0;
-        Submit(files, folder ?? active.Dir, move);
+        var into = folder ?? active.Dir;
+        if (PaneView.ArchiveOf(into) != null) { AddToArchive(active, files, into); return; } // a paste into a ZIP adds to it
+        Submit(files, into, move);
         if (move) { Clipboard.Clear(); PaneView.SetCut(Array.Empty<string>(), Left, Right); } // a cut is pasted once, like Explorer
     }
 
@@ -1202,6 +1209,7 @@ public partial class MainWindow : Window
     // switched its delete confirmation on (off by default), and this one can't be taken back.
     void Delete(bool permanent = false)
     {
+        if (active.ArchiveRoot != null) { DeleteFromArchive(active); return; } // out of the ZIP: asked there, never to the Recycle Bin
         var sel = active.Selected;
         if (sel.Count == 0) return;
         var question = $"Permanently delete {(sel.Count == 1 ? $"“{sel[0].Name}”" : $"these {sel.Count} items")}?";
@@ -1327,7 +1335,7 @@ public partial class MainWindow : Window
 
     void MkDir()
     {
-        if (active.Dir == PaneView.ThisPC) return; // This PC holds drives, not files
+        if (PaneView.IsVirtual(active.Dir)) return; // This PC holds drives, an archive its own entries
         var name = PromptDialog.Ask(this, "New folder", "Folder name", "New folder", "Create");
         if (name == null) return;
         var path = Path.Combine(active.Dir, name);
@@ -1340,7 +1348,7 @@ public partial class MainWindow : Window
     // Ctrl+N: pick a type (Explorer's own New list), then the name.
     void NewFile()
     {
-        if (active.Dir == PaneView.ThisPC) return;
+        if (PaneView.IsVirtual(active.Dir)) return;
         var dialog = new NewFileDialog(this);
         if (dialog.ShowDialog() != true) return;
         string created = null;

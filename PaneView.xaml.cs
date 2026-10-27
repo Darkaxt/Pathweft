@@ -236,6 +236,7 @@ public partial class PaneView : UserControl
     public string Dir => tabs[tab];
     public event Action Activated, StatsChanged;
     public event Action<string> Error;
+    public event Action<Entry> OpenArchived; // Enter on a file inside an archive: MainWindow opens it from a temp copy
     public event Action<List<string>, string, bool> FilesDropped; // sources, destination, move
     public event Action RightDragSelected; // a right-button rectangle was let go: the menu for what it selected
     public static event Action<string> Visited;   // every folder a pane shows, for the history menu
@@ -406,7 +407,7 @@ public partial class PaneView : UserControl
     public IEnumerable<Entry> Items => items.Where(e => !e.IsUp);
     // This PC's rows are drive roots: nothing that copies, moves, deletes, renames or drags them may get them, so in
     // This PC the selection is empty to every command (the menu there is Windows' own, MainWindow.ShowMenu).
-    public List<Entry> Selected => Dir == ThisPC ? new() : List.SelectedItems.Cast<Entry>().Where(e => !e.IsUp).ToList();
+    public List<Entry> Selected => Dir == ThisPC || ArchiveRoot != null ? new() : List.SelectedItems.Cast<Entry>().Where(e => !e.IsUp).ToList();
     public long FolderTotal => Items.Sum(e => Math.Max(0, e.Size));
     public bool SizesPending => Items.Any(e => e.Size == -1);
 
@@ -449,6 +450,7 @@ public partial class PaneView : UserControl
     public void Navigate(string dir, string select = null, bool record = true)
     {
         if (dir.Equals(ThisPC, StringComparison.OrdinalIgnoreCase)) { NavigateThisPC(select ?? Dir, record); return; }
+        if (ArchiveOf(dir) is { } inArchive) { NavigateArchive(dir.TrimEnd('\\'), inArchive, select ?? ChildToward(dir, Dir), record); return; }
         select ??= ChildToward(dir, Dir);
         if (IsServer(dir)) { NavigateServer(dir.TrimEnd('\\'), select, record); return; }
         DirectoryInfo di;
@@ -646,6 +648,7 @@ public partial class PaneView : UserControl
     {
         if (record && tabs[tab] != "" && !tabs[tab].Equals(path, StringComparison.OrdinalIgnoreCase)) { back.Push(tabs[tab]); fwd.Clear(); }
         tabs[tab] = path;
+        ArchiveRoot = null; // NavigateArchive sets it again right after
         Visited?.Invoke(path);
         // each folder keeps the order it was last sorted in; the rest are by name. Set before its rows are shown.
         var (key, desc) = Settings.FolderSorts.TryGetValue(path, out var sort) ? sort : ("Name", false);
@@ -788,6 +791,47 @@ public partial class PaneView : UserControl
     /// file call refuses, so nothing can be pasted, dropped or created "in" it.
     public const string ThisPC = "::{20D04FE0-3AEA-1069-A2D8-08002B30309D}";
     public static string NameOf(string path) => path.Equals(ThisPC, StringComparison.OrdinalIgnoreCase) ? "This PC" : System.IO.Path.GetFileName(path.TrimEnd('\\'));
+
+    // ---- inside a ZIP or TAR (1.0.60): its folders as rows; the path goes on past the archive, "C:\a\b.zip\docs" ----
+    /// The archive this pane shows, and the folder inside it ('/'-separated, "" = its top); null on a real folder.
+    public (string Archive, string Inner)? ArchiveRoot { get; private set; }
+
+    /// The archive a path runs through, if any. Only paths that name one are looked at on disk.
+    public static (string Archive, string Inner)? ArchiveOf(string path)
+    {
+        if (string.IsNullOrEmpty(path) || !(path.Contains(".zip", StringComparison.OrdinalIgnoreCase) || path.Contains(".tar", StringComparison.OrdinalIgnoreCase)
+            || path.Contains(".tgz", StringComparison.OrdinalIgnoreCase))) return null;
+        path = path.TrimEnd('\\');
+        for (var at = path; at != null && at.Length > 3; at = System.IO.Path.GetDirectoryName(at))
+            if (Archive.IsArchiveName(at) && File.Exists(at))
+                return (at, at.Length == path.Length ? "" : path[(at.Length + 1)..].Replace('\\', '/'));
+        return null;
+    }
+
+    /// This PC and the inside of an archive: shown like folders, but nothing can be copied, moved or created "in" them.
+    public static bool IsVirtual(string dir) => dir == ThisPC || ArchiveOf(dir) != null;
+
+    void NavigateArchive(string dir, (string Archive, string Inner) at, string select, bool record)
+    {
+        int v = GoTo(dir, record);
+        ArchiveRoot = at;
+        watcher?.Dispose(); watcher = null;
+        sizing?.Cancel();
+        Task.Run(() =>
+        {
+            try { return (Archive.List(at.Archive, at.Inner), (string)null); }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException or FormatException) { return (null, ex.Message); }
+        }).ContinueWith(t => Dispatcher.BeginInvoke(() =>
+        {
+            if (v != navVersion) return;
+            var (items, error) = t.Result;
+            if (error != null) { Error?.Invoke($"Can't read {System.IO.Path.GetFileName(at.Archive)}: {error}"); return; }
+            ShowItems(items.Select(i => new Entry { Name = i.Name, Path = dir + "\\" + i.Name, IsDir = i.IsDir, Size = i.Size, Modified = i.Modified }).ToList(), select);
+            DriveInfoText.Text = $"Inside {System.IO.Path.GetFileName(at.Archive)}";
+            UsedBar.Width = 0;
+            StartIcons();
+        }));
+    }
 
     void NavigateThisPC(string from, bool record)
     {
@@ -937,7 +981,7 @@ public partial class PaneView : UserControl
 
     public void Search(string query)
     {
-        if (IsServer(Dir) || Dir == ThisPC) return;
+        if (IsServer(Dir) || Dir == ThisPC || ArchiveRoot != null) { if (ArchiveRoot != null) Error?.Invoke("Search works in folders, not inside an archive; the filter still narrows this one"); return; }
         var find = SearchQuery.Parse(query, DateTime.Now);
         if (find.Error != null) { Error?.Invoke(find.Error); return; }
         searchQuery = query;
@@ -1377,7 +1421,7 @@ public partial class PaneView : UserControl
     public bool Restore(List<string> paths, int active, List<int> pinned = null)
     {
         var usable = paths.Select((p, i) => (p, pin: pinned?.Contains(i) == true))
-                          .Where(x => x.p == ThisPC || IsRemote(x.p) || Directory.Exists(x.p)).ToList(); // a NAS that is off: 21 s per tab
+                          .Where(x => x.p == ThisPC || IsRemote(x.p) || Directory.Exists(x.p) || ArchiveOf(x.p) != null).ToList(); // a NAS that is off: 21 s per tab
         if (usable.Count == 0) return false;
         tabs.Clear(); pins.Clear();
         tabs.AddRange(usable.Select(x => x.p)); pins.AddRange(usable.Select(x => x.pin));
@@ -1663,6 +1707,8 @@ public partial class PaneView : UserControl
         // read off the UI thread, the file may be on a share that is asleep
         var backup = !e.IsUp && !e.IsDir && Backups.Named(e.Path) ? await Task.Run(() => MainWindow.BackupStart(e.Path)) : null;
         if (e.IsUp) Up();
+        else if (ArchiveRoot != null) { if (e.IsDir) Navigate(e.Path); else OpenArchived?.Invoke(e); }
+        else if (!e.IsDir && Archive.IsArchiveName(e.Path)) Navigate(e.Path); // a ZIP or TAR opens like a folder
         else if (e.FolderTarget is { } folder) Navigate(folder); // a shortcut to a folder opens here, as in Explorer
         // a script is run, like Explorer does; editing it is F4 / Edit in the menu
         else if (backup == null && Settings.InternalEditor && EditorWindow.IsText(e.Path) && !MainWindow.Runnable.Contains(Path.GetExtension(e.Path))) EditorWindow.Open(e.Path);
@@ -2481,7 +2527,8 @@ public partial class PaneView : UserControl
         // DragOver only: Drop_Drop runs this too, after it has ended both
         if (s == List && e.RoutedEvent == DragOverEvent) { WheelWhileDragging(this); ScrollAtEdge(e); }
         // onto a drive's row it goes into the drive; onto This PC itself, nowhere
-        e.Effects = DropTarget(e) is var into && into != ThisPC ? DropEffects(e, into) : DragDropEffects.None;
+        e.Effects = DropTarget(e) is var into && into != ThisPC ? ArchiveOf(into) is { } a ? (Archive.CanChange(a.Archive) && e.Data.GetDataPresent(DataFormats.FileDrop) ? DragDropEffects.Copy : DragDropEffects.None)
+                    : DropEffects(e, into) : DragDropEffects.None;
         // the folder it would go into lights up, in a colour apart from the selection's
         var row = FindRow(e.OriginalSource as DependencyObject);
         ShowDropRow(e.Effects != DragDropEffects.None && row?.FolderTarget != null ? row : null);

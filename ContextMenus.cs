@@ -44,6 +44,24 @@ public partial class MainWindow
             p.Refresh();
             return;
         }
+        if (p.ArchiveRoot is var (archive, _))
+        {
+            var rows = ArchiveSelection(p);
+            var am = new ContextMenu();
+            if (rows.Count == 1) am.Items.Add(Item("Open", "", "Enter", p.OpenSelected));
+            if (rows.Count > 0)
+            {
+                am.Items.Add(Item("Extract to other pane", "", "Ctrl+F5", () => ExtractFromArchive(p, Other.Dir), !Settings.SinglePane && !PaneView.IsVirtual(Other.Dir)));
+                am.Items.Add(Item("Extract to…", "", "", () => ExtractFromArchiveTo(p)));
+                if (Archive.CanChange(archive)) am.Items.Add(Item("Delete from the ZIP", "", "Del", () => DeleteFromArchive(p)));
+            }
+            else am.Items.Add(Item("Paste into the ZIP", "", "Ctrl+V", () => ClipboardPaste(), Archive.CanChange(archive) && Clipboard.ContainsFileDropList()));
+            am.Items.Add(new Separator());
+            am.Items.Add(Item("Show the archive", "", "", () => p.Navigate(Path.GetDirectoryName(archive), Path.GetFileName(archive))));
+            am.PlacementTarget = p.List;
+            am.IsOpen = true;
+            return;
+        }
         var sel = p.Selected;
         if (Settings.NativeMenu)
         {
@@ -227,11 +245,12 @@ public partial class MainWindow
         m.Items.Add(Item("Delete permanently", "", "Shift+Del", () => Delete(permanent: true)));
         m.Items.Add(new Separator());
         m.Items.Add(Item("Compress to ZIP", "", "", Compress));
-        if (one && ZipExt.Contains(ext))
+        if (one && (ZipExt.Contains(ext) || Archive.IsArchiveName(first.Path)))
         {
             m.Items.Add(Item("Extract here", "", "", () => Extract(first, toFolder: false)));
             m.Items.Add(Item($"Extract to {Path.GetFileNameWithoutExtension(first.Name)}\\", "", "", () => Extract(first, toFolder: true)));
         }
+        if (one && DiskImageExt.Contains(ext)) m.Items.Add(Item("Mount", "", "", () => MountImage(first.Path)));
         AddShell(m, shell, "7-zip");
         AddShell(m, shell, "winrar");
         if (one && !dir) m.Items.Add(Item("Checksum (SHA-256)", "", "", () => Checksum(first)));

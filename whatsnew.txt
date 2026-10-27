@@ -1,6 +1,15 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.0.60 | 2026-10-27 | Open archives like folders, mount disk images
+**Archives**
+- **Enter on a ZIP, TAR or TAR.GZ opens it like a folder**, right in the pane: go into its folders, see sizes and dates, and the path shows where you are inside it.
+- Enter on a file inside opens a copy of it. **Ctrl+F5** extracts what you selected to the other pane, or right-click → Extract to… anywhere; files already there are left as they were.
+- In a ZIP you can also **add**: drop or paste files into it. **Del** takes items out, after asking, since the Recycle Bin can't hold them.
+- Extract here and Extract to folder now work for TAR and TAR.GZ too.
+**Disk images**
+- Right-click an ISO, IMG, VHD or VHDX → **Mount**: Windows mounts it and it opens in a new tab as a drive. Eject is in that drive's right-click menu.
+
 ## 1.0.59 | 2026-10-27 | Duplicates across folders, and by name
 **Find duplicates**
 - Look in **several folders at once**: select two or more folders and right-click → Find duplicates in these folders, or right-click a folder's empty space → Find duplicates here and in the other pane. In the window, the folder names at the top open a list to add another folder or take one out.

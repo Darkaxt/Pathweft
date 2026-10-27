@@ -554,6 +554,51 @@ public partial class App : Application
                   && PaneView.SearchQuery.Parse("re:\"(\"", at).Error != null && PaneView.SearchQuery.Parse("size:lots", at).Error != null,
                   "search terms: size, date, wildcard, bad regex and bad size refused");
 
+            // 1.0.60 archives: a ZIP and a TAR.GZ listed by folder, extracted without overwriting, a "../" entry refused,
+            // a ZIP added to and taken from
+            var arch = Path.Combine(root, "arch");
+            Directory.CreateDirectory(arch);
+            var zipPath = Path.Combine(arch, "a.zip");
+            using (var z = System.IO.Compression.ZipFile.Open(zipPath, System.IO.Compression.ZipArchiveMode.Create))
+            {
+                using (var w = new StreamWriter(z.CreateEntry("top.txt").Open())) w.Write("top");
+                using (var w = new StreamWriter(z.CreateEntry("docs/inner/deep.txt").Open())) w.Write("deep");
+            }
+            var tgz = Path.Combine(arch, "b.tar.gz");
+            var tarSrc = Path.Combine(arch, "tarsrc");
+            Directory.CreateDirectory(Path.Combine(tarSrc, "sub"));
+            File.WriteAllText(Path.Combine(tarSrc, "sub", "t.txt"), "tar text");
+            using (var fs = File.Create(tgz))
+            using (var gz = new System.IO.Compression.GZipStream(fs, System.IO.Compression.CompressionLevel.Fastest))
+                System.Formats.Tar.TarFile.CreateFromDirectory(tarSrc, gz, includeBaseDirectory: false);
+            var topList = string.Join(",", Archive.List(zipPath, "").OrderBy(i => i.Name).Select(i => i.Name + (i.IsDir ? "/" : "")));
+            var innerList = string.Join(",", Archive.List(zipPath, "docs").Select(i => i.Name + (i.IsDir ? "/" : "")));
+            var outDir = Path.Combine(arch, "out");
+            Directory.CreateDirectory(outDir);
+            var first = Archive.Extract(zipPath, new[] { "docs" }, "", outDir);
+            File.WriteAllText(Path.Combine(outDir, "top.txt"), "mine");
+            var second = Archive.Extract(zipPath, new[] { "top.txt", "docs" }, "", outDir);
+            var fromTar = Archive.Extract(tgz, new[] { "t.txt" }, "sub", outDir);
+            Check(topList == "docs/,top.txt" && innerList == "inner/" && first == (1, 0) && second == (0, 2)
+                  && File.ReadAllText(Path.Combine(outDir, "docs", "inner", "deep.txt")) == "deep" && File.ReadAllText(Path.Combine(outDir, "top.txt")) == "mine"
+                  && Archive.List(tgz, "sub").Single().Name == "t.txt" && fromTar == (1, 0) && File.ReadAllText(Path.Combine(outDir, "t.txt")) == "tar text",
+                  $"archives: listed by folder, extracted without overwriting ({topList} / {innerList} / {first} {second} {fromTar})");
+            var evil = Path.Combine(arch, "evil.zip");
+            using (var z = System.IO.Compression.ZipFile.Open(evil, System.IO.Compression.ZipArchiveMode.Create))
+                using (var w = new StreamWriter(z.CreateEntry("../escaped.txt").Open())) w.Write("x");
+            bool refused = false;
+            try { Archive.Extract(evil, new[] { ".." }, "", outDir); } catch (IOException) { refused = true; }
+            Check(refused && !File.Exists(Path.Combine(arch, "escaped.txt")), "archives: an entry leading out of the folder is refused");
+            var addMe = Path.Combine(arch, "add me.txt");
+            File.WriteAllText(addMe, "added");
+            var addedOnce = Archive.Add(zipPath, "docs", new[] { addMe });
+            var addedTwice = Archive.Add(zipPath, "docs", new[] { addMe });
+            Archive.Delete(zipPath, new[] { "inner" }, "docs");
+            Check(addedOnce == (1, 0) && addedTwice == (0, 1) && string.Join(",", Archive.List(zipPath, "docs").Select(i => i.Name)) == "add me.txt",
+                  "archives: added to a ZIP once, a folder taken out of it");
+            Check(PaneView.ArchiveOf(Path.Combine(zipPath, "docs")) is ({ } za, "docs") && za == zipPath && PaneView.ArchiveOf(arch) == null,
+                  "archives: a path running through a ZIP is found, a plain folder isn't");
+
             // 1.0.51 Reset to defaults: every setting belongs to a card that resets it, or is knowingly kept (Windows
             // integration, what File Labs remembers by itself); a reset puts back the defaults and touches nothing else
             var resettable = SettingsWindow.AppearanceKeys.Concat(SettingsWindow.FilesKeys).Concat(SettingsWindow.TransfersKeys).ToList();
