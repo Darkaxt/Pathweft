@@ -74,7 +74,7 @@ public partial class HelpWindow : Window
         }),
         ("Copy, move and the Drop bin", new[]
         {
-            ("Transfers", "Every copy and move is a card under the panes: one scan first (so the time left is real), progress, speed over time as a chart, pause, cancel. Several to the same drive run one after another; to different drives, together"),
+            ("Transfers", "Every copy and move is a card in the Transfers window, which opens with it and comes forward when files already exist (the Transfers button at the bottom brings it back): one scan first (so the time left is real), progress, speed over time as a chart, pause, cancel. Several to the same drive run one after another; to different drives, together"),
             ("Files already there", "One question for the whole transfer, inside its card: Keep both, Replace if newer, Replace, or Skip"),
             ("Moving on one drive", "Instant at any size: nothing is copied, the files are renamed into place. A folder moved onto a folder of the same name is merged, file by file"),
             ("Settings → Transfers → Verify", "Reads both copies back after copying and compares them (xxHash3)"),

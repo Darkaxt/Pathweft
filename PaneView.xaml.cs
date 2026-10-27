@@ -385,7 +385,9 @@ public partial class PaneView : UserControl
     }
 
     public IEnumerable<Entry> Items => items.Where(e => !e.IsUp);
-    public List<Entry> Selected => List.SelectedItems.Cast<Entry>().Where(e => !e.IsUp).ToList();
+    // This PC's rows are drive roots: nothing that copies, moves, deletes, renames or drags them may get them, so in
+    // This PC the selection is empty to every command (the menu there is Windows' own, MainWindow.ShowMenu).
+    public List<Entry> Selected => Dir == ThisPC ? new() : List.SelectedItems.Cast<Entry>().Where(e => !e.IsUp).ToList();
     public long FolderTotal => Items.Sum(e => Math.Max(0, e.Size));
     public bool SizesPending => Items.Any(e => e.Size == -1);
 
@@ -1438,7 +1440,7 @@ public partial class PaneView : UserControl
 
     public void BeginRename()
     {
-        if (List.SelectedItem is not Entry e || renamingEntry != null) return;
+        if (List.SelectedItem is not Entry e || renamingEntry != null || Dir == ThisPC) return;
         renamingEntry = e;
         List.ScrollIntoView(e); // its row has to exist for the box to appear
         e.Renaming = true;
@@ -2282,7 +2284,8 @@ public partial class PaneView : UserControl
     {
         // DragOver only: Drop_Drop runs this too, after it has ended both
         if (s == List && e.RoutedEvent == DragOverEvent) { WheelWhileDragging(this); ScrollAtEdge(e); }
-        e.Effects = DropEffects(e, DropTarget(e));
+        // onto a drive's row it goes into the drive; onto This PC itself, nowhere
+        e.Effects = DropTarget(e) is var into && into != ThisPC ? DropEffects(e, into) : DragDropEffects.None;
         // the folder it would go into lights up, in a colour apart from the selection's
         var row = FindRow(e.OriginalSource as DependencyObject);
         ShowDropRow(e.Effects != DragDropEffects.None && row?.FolderTarget != null ? row : null);

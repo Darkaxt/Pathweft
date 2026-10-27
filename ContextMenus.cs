@@ -29,6 +29,21 @@ public partial class MainWindow
     /// The menu for the pane's selection, or for its folder when nothing is selected.
     async void ShowMenu(PaneView p)
     {
+        // This PC: Windows' menu for the drive (Properties, Eject, Format…), or for This PC itself (Map network drive…)
+        if (p.Dir == PaneView.ThisPC)
+        {
+            var drive = p.List.SelectedItem as Entry;
+            // Explorer adds these two to This PC's menu from its own window, so the shell's menu has neither: Windows' dialogs
+            void Net(bool map)
+            {
+                var hwnd = new System.Windows.Interop.WindowInteropHelper(this).Handle;
+                if ((map ? WNetConnectionDialog(hwnd, 1) : WNetDisconnectDialog(hwnd, 1)) == 0) { RefreshDrives(); p.Refresh(); } // RESOURCETYPE_DISK
+            }
+            (string, Action)[] net = { ("&Map network drive…", () => Net(true)), ("&Disconnect network drive…", () => Net(false)) };
+            ShellMenu.Show(this, PaneView.ThisPC, drive != null ? new[] { drive.Path } : Array.Empty<string>(), rename: false, top: drive == null ? net : null);
+            p.Refresh();
+            return;
+        }
         var sel = p.Selected;
         if (Settings.NativeMenu)
         {
@@ -347,6 +362,8 @@ public partial class MainWindow
     static string NotepadPlusPlus => nppPath.Value;
 
     [DllImport("shell32.dll", CharSet = CharSet.Unicode)] static extern bool SHObjectProperties(IntPtr hwnd, int type, string name, string page);
+    [DllImport("mpr.dll")] static extern int WNetConnectionDialog(IntPtr hwnd, int type);
+    [DllImport("mpr.dll")] static extern int WNetDisconnectDialog(IntPtr hwnd, int type);
     [DllImport("shell32.dll", CharSet = CharSet.Unicode)] static extern int SHParseDisplayName(string name, IntPtr bindCtx, out IntPtr pidl, uint sfgaoIn, out uint sfgaoOut);
     [DllImport("shell32.dll")] static extern int SHCreateDataObject(IntPtr folder, uint count, IntPtr[] pidls, IntPtr inner, ref Guid iid, [MarshalAs(UnmanagedType.Interface)] out object dataObject);
     [DllImport("shell32.dll")] static extern int SHMultiFileProperties([MarshalAs(UnmanagedType.Interface)] object dataObject, int flags);

@@ -70,23 +70,39 @@
       <Setter Property="CornerRadius" Value="10"/>
       <Setter Property="Padding" Value="12,9,14,9"/>
     </Style>
-    <!-- One Ferry job: progress, speed/ETA, pause/cancel, and the conflict decision inline -->
+    <!-- the transfer window's buttons: big, filled and labelled, so they are found at a glance; Tag="on" is the
+         accent one (the default answer) -->
+    <Style x:Key="JobAction" TargetType="Button">
+      <Setter Property="Foreground" Value="#F0FFFFFF"/>
+      <Setter Property="FontSize" Value="13"/>
+      <Setter Property="Cursor" Value="Hand"/>
+      <Setter Property="Margin" Value="0,0,8,0"/>
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="Button">
+            <Border x:Name="Bd" Background="#1FFFFFFF" BorderBrush="#26FFFFFF" BorderThickness="1" CornerRadius="7" Padding="14,7" MinHeight="34">
+              <ContentPresenter VerticalAlignment="Center"/>
+            </Border>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Bd" Property="Background" Value="#33FFFFFF"/></Trigger>
+              <Trigger Property="Tag" Value="on">
+                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource AccentSelect}"/>
+                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource Accent}"/>
+                <Setter Property="Foreground" Value="{DynamicResource AccentSelectText}"/>
+              </Trigger>
+              <Trigger Property="IsPressed" Value="True"><Setter TargetName="Bd" Property="Opacity" Value="0.8"/></Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+    <!-- One Ferry job, in the Transfers window: progress, speed/ETA, pause/cancel, and the conflict decision inline -->
     <DataTemplate x:Key="JobCard">
-      <!-- a new transfer slides up into place instead of appearing under the panes (Motion.Enter, off with reduced motion) -->
-      <Border Background="#0DFFFFFF" BorderBrush="#16FFFFFF" BorderThickness="1" CornerRadius="10" Padding="12,9" Margin="0,0,0,6"
+      <!-- a new transfer slides up into place (Motion.Enter, off with reduced motion) -->
+      <Border Background="#0DFFFFFF" BorderBrush="#16FFFFFF" BorderThickness="1" CornerRadius="10" Padding="14,12" Margin="0,0,0,8"
               Loaded="JobCard_Loaded">
         <StackPanel>
-          <DockPanel>
-            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
-              <Button Style="{StaticResource Ghost}" FontFamily="Segoe Fluent Icons" FontSize="11" Content="{Binding PauseGlyph}" ToolTip="Pause / resume"
-                      Visibility="{Binding Copying, Converter={StaticResource Vis}}" Click="JobPause_Click"/>
-              <Button Style="{StaticResource Ghost}" FontFamily="Segoe Fluent Icons" FontSize="11" Content="&#xE711;" ToolTip="Cancel"
-                      Visibility="{Binding Active, Converter={StaticResource Vis}}" Click="JobCancel_Click"/>
-              <Button Style="{StaticResource Ghost}" FontFamily="Segoe Fluent Icons" FontSize="11" Content="&#xE8BB;" ToolTip="Dismiss"
-                      Visibility="{Binding Finished, Converter={StaticResource Vis}}" Click="JobDismiss_Click"/>
-            </StackPanel>
-            <TextBlock Text="{Binding Title}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
-          </DockPanel>
+          <TextBlock Text="{Binding Title}" FontWeight="SemiBold" FontSize="13" TextTrimming="CharacterEllipsis"/>
           <ProgressBar Value="{Binding Fraction, Mode=OneWay}" Margin="0,7,0,5"/>
           <TextBlock Text="{Binding Stats}" Foreground="#8A97AA" FontSize="11" Typography.NumeralAlignment="Tabular"/>
           <DockPanel Visibility="{Binding Copying, Converter={StaticResource Vis}}" Margin="0,4,0,0">
@@ -114,13 +130,27 @@
                 </DataTemplate>
               </ItemsControl.ItemTemplate>
             </ItemsControl>
-            <StackPanel Orientation="Horizontal">
-              <TextBlock Text="For all:" Foreground="#8A97AA" VerticalAlignment="Center" Margin="0,0,6,0"/>
-              <Button Style="{StaticResource Tab}" Content="Keep both" Tag="on" Click="JobResolve_Click" CommandParameter="Rename"/>
-              <Button Style="{StaticResource Tab}" Content="Replace if newer" Click="JobResolve_Click" CommandParameter="Newer"/>
-              <Button Style="{StaticResource Tab}" Content="Replace" Click="JobResolve_Click" CommandParameter="Overwrite"/>
-              <Button Style="{StaticResource Tab}" Content="Skip" Click="JobResolve_Click" CommandParameter="Skip"/>
-            </StackPanel>
+            <TextBlock Text="For all of them:" Foreground="#8A97AA" Margin="0,0,0,6"/>
+            <WrapPanel>
+              <Button Style="{StaticResource JobAction}" Tag="on" Click="JobResolve_Click" CommandParameter="Rename" Margin="0,0,8,6">
+                <TextBlock><Run FontFamily="Segoe Fluent Icons" Text="&#xE8C8;"/>  Keep both</TextBlock></Button>
+              <Button Style="{StaticResource JobAction}" Click="JobResolve_Click" CommandParameter="Newer" Margin="0,0,8,6">
+                <TextBlock><Run FontFamily="Segoe Fluent Icons" Text="&#xE823;"/>  Replace if newer</TextBlock></Button>
+              <Button Style="{StaticResource JobAction}" Click="JobResolve_Click" CommandParameter="Overwrite" Margin="0,0,8,6">
+                <TextBlock><Run FontFamily="Segoe Fluent Icons" Text="&#xE8AB;"/>  Replace</TextBlock></Button>
+              <Button Style="{StaticResource JobAction}" Click="JobResolve_Click" CommandParameter="Skip" Margin="0,0,8,6">
+                <TextBlock><Run FontFamily="Segoe Fluent Icons" Text="&#xE893;"/>  Skip</TextBlock></Button>
+            </WrapPanel>
+          </StackPanel>
+
+          <!-- pause / cancel while it runs, dismiss once it is done -->
+          <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+            <Button Style="{StaticResource JobAction}" Visibility="{Binding Copying, Converter={StaticResource Vis}}" Click="JobPause_Click">
+              <TextBlock><Run FontFamily="Segoe Fluent Icons" Text="{Binding PauseGlyph, Mode=OneWay}"/>  <Run Text="{Binding PauseText, Mode=OneWay}"/></TextBlock></Button>
+            <Button Style="{StaticResource JobAction}" Visibility="{Binding Active, Converter={StaticResource Vis}}" Click="JobCancel_Click">
+              <TextBlock><Run FontFamily="Segoe Fluent Icons" Text="&#xE711;"/>  Cancel</TextBlock></Button>
+            <Button Style="{StaticResource JobAction}" Visibility="{Binding Finished, Converter={StaticResource Vis}}" Click="JobDismiss_Click">
+              <TextBlock><Run FontFamily="Segoe Fluent Icons" Text="&#xE73E;"/>  Dismiss</TextBlock></Button>
           </StackPanel>
         </StackPanel>
       </Border>
@@ -307,10 +337,7 @@
       </Border>
       </Grid>
 
-      <!-- Ferry transfers -->
-      <ScrollViewer Grid.Row="2" MaxHeight="280" VerticalScrollBarVisibility="Auto" Margin="0,8,0,0">
-        <ItemsControl x:Name="Transfers" ItemTemplate="{StaticResource JobCard}"/>
-      </ScrollViewer>
+      <!-- Ferry transfers live in a window of their own (MainWindow.ShowTransfers): under the panes they took the files' room -->
 
       <!-- Command bar -->
       <DockPanel Grid.Row="3" Margin="0,6,0,6">
@@ -328,6 +355,9 @@
           <!-- in screen order: first pane, second pane, preview -->
           <Button Style="{StaticResource Ghost}" Click="Panes_Click" ToolTip="One pane or two (Ctrl+P)"><TextBlock><Run Foreground="{StaticResource Muted}">Ctrl+P</Run> One / two panes</TextBlock></Button>
           <Button Style="{StaticResource Ghost}" Click="Preview_Click" ToolTip="Show the selected file beside the panes"><TextBlock><Run Foreground="{StaticResource Muted}">Alt+P</Run> Preview</TextBlock></Button>
+          <!-- brings the Transfers window back; there while any copy or move is listed -->
+          <Button x:Name="TransfersButton" Style="{StaticResource Ghost}" Click="Transfers_Click" Visibility="Collapsed" ToolTip="Show the copies and moves">
+            <TextBlock><Run FontFamily="Segoe Fluent Icons" Foreground="{DynamicResource Accent}" Text="&#xE8AB;"/> <Run x:Name="TransfersText" Text="Transfers"/></TextBlock></Button>
         </StackPanel>
         <TextBlock x:Name="Status" Foreground="{StaticResource Muted}" FontSize="11" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="420" HorizontalAlignment="Right" Margin="12,0,0,0"/>
       </DockPanel>

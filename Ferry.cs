@@ -113,6 +113,7 @@ public class Job : INotifyPropertyChanged
     public string ErrorSummary => string.Join("  ·  ", new[] { Errors.Count > 0 ? $"{Errors.Count} error(s)" : null }.Concat(Notes).Where(x => x != null));
     public string ErrorDetail => string.Join("\n", Errors.Take(50));
     public string PauseGlyph => Paused ? "\uE768" : "\uE769";
+    public string PauseText => Paused ? "Resume" : "Pause";
 
     // Speed chart data (drawn by SpeedChart): timestamped points and the held ceiling.
     readonly List<(double at, double value)> speeds = new();

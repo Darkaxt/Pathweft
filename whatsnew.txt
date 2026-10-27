@@ -1,6 +1,16 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.0.55 | 2026-10-27 | Transfers get a window of their own
+Copies and moves no longer take room under the panes, and their buttons are easy to find.
+**Transfers**
+- Every copy and move shows in a **Transfers window** that opens with it, beside your files, while the keyboard stays in the list. When files already exist in the destination, the window comes forward with the question.
+- **Bigger buttons with names**: Pause, Cancel and Dismiss, and Keep both, Replace if newer, Replace and Skip, with Keep both in your accent colour.
+- Closing the window doesn't stop anything. The **Transfers** button at the bottom brings it back, with how many are listed.
+**This PC**
+- Right-click a drive for Windows' menu (Properties, Eject, Format…). Right-click the empty space for **Map network drive** and **Disconnect network drive**.
+- Drives in This PC can't be deleted, renamed, cut, moved or dragged away by accident, and nothing can be pasted or created in This PC itself.
+
 ## 1.0.54 | 2026-10-27 | This PC, and a selection that survives scrolling
 Two fixes and six wishes from a long-time tester's newest notes.
 **Fixes**

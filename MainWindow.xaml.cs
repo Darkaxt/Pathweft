@@ -90,7 +90,6 @@ public partial class MainWindow : Window
 
         LoadQuickAccess();
         ApplyAppearance(); // the accent and row height the user picked, before anything is drawn
-        Transfers.ItemsSource = jobs;
         Ferry.Finished += JobDone;
         foreach (var p in new[] { Left, Right })
         {
@@ -1037,13 +1036,50 @@ public partial class MainWindow : Window
 
     internal Job Submit(List<string> sources, string dest, bool move)
     {
-        if (sources.Count == 0) return null;
+        if (sources.Count == 0 || dest == PaneView.ThisPC) return null; // a paste or drop on This PC goes nowhere
         Settings.Bump(Settings.RecentDestinations, dest, Settings.DestinationsMax); // for Copy to / Move to
         var job = Ferry.Submit(sources, dest, move);
         jobs.Insert(0, job);
         WatchJobs();
+        ShowTransfers(activate: false); // the keyboard stays in the list
         return job;
     }
+
+    // ---- the Transfers window: every copy and move, apart from the panes (under them it took the files' room) ----
+    Window transfersWindow;
+    readonly HashSet<Job> askedForward = new(); // a job's conflicts bring the window forward once
+
+    void ShowTransfers(bool activate)
+    {
+        if (transfersWindow == null)
+        {
+            var list = new ItemsControl { ItemTemplate = (DataTemplate)FindResource("JobCard"), ItemsSource = jobs };
+            var root = new Grid { Background = Tint() };
+            root.Children.Add(new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Content = list, Padding = new(14, 14, 14, 6) });
+            var w = transfersWindow = new Window
+            {
+                Title = "Transfers — File Labs", Owner = this, Width = 600, Height = 460, MinWidth = 440, MinHeight = 220,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner, ShowInTaskbar = true, Background = Brushes.Transparent,
+                Foreground = Hex("#E8EEF6"), FontFamily = FontFamily, FontSize = 12, Content = root,
+            };
+            w.SourceInitialized += (_, _) => ApplyAcrylic(w);
+            // closing only hides it: the jobs go on, and the Transfers button or the next copy brings it back
+            w.Closing += (_, e) => { if (!quitting && IsLoaded) { e.Cancel = true; w.Hide(); } };
+            w.PreviewKeyDown += (_, e) => { if (e.Key == Key.Escape) { w.Hide(); e.Handled = true; } };
+            jobs.CollectionChanged += (_, _) =>
+            {
+                TransfersButton.Visibility = jobs.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+                TransfersText.Text = jobs.Count > 1 ? $"Transfers ({jobs.Count})" : "Transfers";
+                if (jobs.Count == 0) w.Hide(); // the last one dismissed
+            };
+            TransfersButton.Visibility = Visibility.Visible;
+        }
+        if (transfersWindow.WindowState == WindowState.Minimized) transfersWindow.WindowState = WindowState.Normal;
+        if (!transfersWindow.IsVisible) { transfersWindow.ShowActivated = activate; transfersWindow.Show(); }
+        else if (activate) transfersWindow.Activate();
+    }
+
+    void Transfers_Click(object s, RoutedEventArgs e) => ShowTransfers(activate: true);
 
     // The bars move every frame, the figures and the chart ten times a second. A 100 ms timer moved the bars in
     // visible jumps (9 steps a second, up to 390 ms apart while the UI thread was busy).
@@ -1063,6 +1099,8 @@ public partial class MainWindow : Window
         bool full = now - jobsRefreshed >= TimeSpan.FromMilliseconds(100);
         if (full) jobsRefreshed = now;
         foreach (var j in jobs) if (full) j.Refresh(); else if (j.Active) j.RefreshBars();
+        // a question waits (files already there): the window comes forward with it, once per job
+        if (full) foreach (var j in jobs) if (j.HasConflicts && askedForward.Add(j)) ShowTransfers(activate: true);
         if (full && !jobs.Any(j => j.Active)) { CompositionTarget.Rendering -= JobFrame; watchingJobs = false; }
     }
 
@@ -1079,7 +1117,7 @@ public partial class MainWindow : Window
     static Job JobOf(object sender) => (Job)((FrameworkElement)sender).DataContext;
     void JobPause_Click(object s, RoutedEventArgs e) { var j = JobOf(s); if (j.Paused) j.Resume(); else j.Pause(); }
     void JobCancel_Click(object s, RoutedEventArgs e) => JobOf(s).Cancel();
-    void JobDismiss_Click(object s, RoutedEventArgs e) => jobs.Remove(JobOf(s));
+    void JobDismiss_Click(object s, RoutedEventArgs e) { var j = JobOf(s); jobs.Remove(j); askedForward.Remove(j); }
     void JobResolve_Click(object s, RoutedEventArgs e) => JobOf(s).Resolve(Enum.Parse<Choice>((string)((Button)s).CommandParameter));
 
     // Clipboard in Explorer's own format (CF_HDROP + Preferred DropEffect), so copy/paste works both ways.
@@ -1237,6 +1275,7 @@ public partial class MainWindow : Window
 
     void MkDir()
     {
+        if (active.Dir == PaneView.ThisPC) return; // This PC holds drives, not files
         var name = PromptDialog.Ask(this, "New folder", "Folder name", "New folder", "Create");
         if (name == null) return;
         var path = Path.Combine(active.Dir, name);
@@ -1249,6 +1288,7 @@ public partial class MainWindow : Window
     // Ctrl+N: pick a type (Explorer's own New list), then the name.
     void NewFile()
     {
+        if (active.Dir == PaneView.ThisPC) return;
         var dialog = new NewFileDialog(this);
         if (dialog.ShowDialog() != true) return;
         string created = null;
