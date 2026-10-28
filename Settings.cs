@@ -13,7 +13,9 @@ public static class Settings
     public static readonly string Profile = Environment.GetEnvironmentVariable("FILELABS_PROFILE") is { Length: > 0 } p ? p : null;
     // Decided at the first call, not when the class loads: the start moves the old folder first (DataFolder.Migrate), and
     // .NET may load this class before that line runs. Every path below the data folder is derived at call time too.
-    public static string Dir => dir ??= Profile ?? DataFolder.Current;
+    public static string Dir => dir ??= Profile ?? Portable ?? DataFolder.Current;
+    /// A portable copy keeps everything in Data beside the exe, so the folder can travel on a stick (Rico, 1.0.61).
+    public static readonly string Portable = Program.PortableDir is { } d ? Path.Combine(d, "Data") : null;
     static string dir;
     internal static string FilePath => Path.Combine(Dir, "settings.txt");
 
@@ -362,7 +364,7 @@ static class DataFolder
     /// (FILELABS_PROFILE) keeps its data in the profile and moves nothing. Doesn't touch Settings, which would fix Dir.
     internal static void Migrate()
     {
-        if (Environment.GetEnvironmentVariable("FILELABS_PROFILE") is not { Length: > 0 }) Migrate(Old, OldLocal, New);
+        if (Environment.GetEnvironmentVariable("FILELABS_PROFILE") is not { Length: > 0 } && Program.PortableDir == null) Migrate(Old, OldLocal, New);
     }
 
     internal static void Migrate(string old, string oldLocal, string @new)

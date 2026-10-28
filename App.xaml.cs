@@ -9,11 +9,17 @@ namespace FileExplorer;
 // throttled laptop-like CPU). Switches (--agent, --selftest, …) always take the full start.
 static class Program
 {
+    /// The folder of a portable copy: the exe's own, when a portable.txt sits beside it (the portable zip has one).
+    /// Before PipeName, which reads it: static fields start in the order they are written.
+    internal static readonly string PortableDir = File.Exists(Path.Combine(AppContext.BaseDirectory, "portable.txt")) ? AppContext.BaseDirectory.TrimEnd('\\') : null;
+
     // a test copy (FILELABS_PROFILE) gets a single instance per profile folder, so two test copies don't hand off to each
     // other. Read from the environment here, not from Settings, whose types would load WPF.
+    // A portable copy (portable.txt beside the exe) is its own instance too: started while the installed one runs, it
+    // would otherwise hand its start over and never open.
     internal static readonly string PipeName = "FileLabs-" + Environment.UserName
-        + (Environment.GetEnvironmentVariable("FILELABS_PROFILE") is { Length: > 0 } profile
-            ? "-profile-" + System.IO.Hashing.XxHash32.HashToUInt32(System.Text.Encoding.UTF8.GetBytes(profile.ToLowerInvariant())).ToString("x8") : "");
+        + ((Environment.GetEnvironmentVariable("FILELABS_PROFILE") is { Length: > 0 } p ? p : PortableDir) is { } own
+            ? "-profile-" + System.IO.Hashing.XxHash32.HashToUInt32(System.Text.Encoding.UTF8.GetBytes(own.ToLowerInvariant())).ToString("x8") : "");
 
     [STAThread]
     static void Main(string[] args)

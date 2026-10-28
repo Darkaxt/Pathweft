@@ -10,6 +10,20 @@ namespace FileExplorer;
 static class Sisters
 {
     static readonly string Root = Path.Combine(Settings.Profile ?? Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "ProtagonistLabs");
+
+    /// Whether this copy speaks for File Labs to the sisters. A portable copy does only on a PC where File Labs isn't
+    /// installed: otherwise its card and Quick access would replace the installed copy's, and Shelf, Lume and Launchpad
+    /// would open the copy on the stick.
+    static bool Speaks
+    {
+        get
+        {
+            if (Settings.Portable == null) return true;
+            using var hklm = Microsoft.Win32.RegistryKey.OpenBaseKey(Microsoft.Win32.RegistryHive.LocalMachine, Microsoft.Win32.RegistryView.Registry64);
+            using var installed = hklm.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Uninstall\{7E4C2B9A-3F1D-4C8E-9A6B-51D0C2E8F4A7}_is1");
+            return installed == null;
+        }
+    }
     static string Now => DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ");
 
     // the paid apps and their page names, for the discount line in Works with
@@ -56,6 +70,7 @@ static class Sisters
     // locked or full disk only leaves the previous file in place.
     internal static void Write(string path, object body)
     {
+        if (!Speaks && path.StartsWith(Root, StringComparison.OrdinalIgnoreCase)) return; // a portable copy beside an installed one
         try
         {
             Directory.CreateDirectory(Path.GetDirectoryName(path));

@@ -43,7 +43,7 @@ public class WhatsNewWindow : Window
         Title = "What's new — File Labs";
         Width = 1240; Height = 720; MinWidth = 700; MinHeight = 420; // room for the list and a 960 x 170 banner
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
-        ShowInTaskbar = false;
+        ShowInTaskbar = true; // minimized, it goes to the taskbar like Settings, not a stub above it (Rico, 1.0.61)
         Background = Brushes.Transparent;
         Foreground = MainWindow.Hex("#E8EEF6");
         FontFamily = new FontFamily("Segoe UI Variable Text, Segoe UI");

@@ -283,6 +283,12 @@ public partial class PaneView : UserControl
             int lines = SystemParameters.WheelScrollLines; // -1: a screen a notch
             Glide(sv, -e.Delta / 120.0 * (lines > 0 ? lines * (Mode == ViewMode.Details ? 16 : 32) : sv.ViewportHeight));
         };
+        // During a rectangle the row with the keyboard scrolls away and is recycled; WPF then asked to bring it back into
+        // view and the list jumped back to where the drag began, over and over (trace: offset 281 → 69), so the count went
+        // 50 → 100 → 50 (Rico, 1.0.61). Nothing is brought into view while a rectangle is drawn.
+        // (Caught under the list's ScrollViewer, which acts on it first: ArmMarquee hooks its content presenter.)
+        // A row's tooltip only over the row's columns: the empty strip past them in Details is the folder's (Rico, 1.0.61)
+        List.AddHandler(ToolTipOpeningEvent, new ToolTipEventHandler((_, e) => { if (FindRow(e.OriginalSource as DependencyObject) != null && RowAt(e.OriginalSource as DependencyObject) == null) e.Handled = true; }));
         // During a rectangle the list holds the mouse, so the wheel lands on the list itself and never reaches its scroller.
         List.MouseWheel += (_, e) =>
         {
@@ -361,7 +367,9 @@ public partial class PaneView : UserControl
             if (tabDragIndex >= tabs.Count) return;
             dragTab = (this, tabs[tabDragIndex]);
             tabDragIndex = -1;
-            try { DragDrop.DoDragDrop(TabStrip, new DataObject("FileLabsTab", ""), DragDropEffects.Move); }
+            var data = new DataObject("FileLabsTab", "");
+            data.SetData("FileLabsFolder", dragTab.Value.Path); // dropped on Quick access, the tab's folder is pinned there
+            try { DragDrop.DoDragDrop(TabStrip, data, DragDropEffects.Move | DragDropEffects.Link); }
             finally { dragTab = null; }
         };
         TabStrip.PreviewMouseLeftButtonUp += (_, _) => tabDragIndex = -1;
@@ -518,6 +526,7 @@ public partial class PaneView : UserControl
                     ShowItems(list, select, animate: cached == null, keep: shown);
                     StartPasses();
                 }
+                if (pendingSelect != null) ApplyPendingSelect();
                 if (watcher?.Path != di.FullName) Watch();
                 if (driveText != null)
                 {
@@ -699,6 +708,55 @@ public partial class PaneView : UserControl
         if (animate) FadeInList();
         UpdateFooter();
         StatsChanged?.Invoke();
+    }
+
+    // ---- after a paste or drop: the new arrivals selected once the folder has been read again ----
+    // (also a tab coming back: its selection, the row the keyboard was on, and how far it was scrolled)
+    HashSet<string> pendingSelect;
+    string pendingCurrent;
+    double? pendingOffset;
+    bool pendingFocus;
+    public void SelectAfterRefresh(IEnumerable<string> names, bool focus)
+    {
+        pendingSelect = names.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        pendingCurrent = null; pendingOffset = null;
+        pendingFocus = focus;
+    }
+
+    void ApplyPendingSelect()
+    {
+        var (names, current, offset) = (pendingSelect, pendingCurrent, pendingOffset);
+        pendingSelect = null; pendingCurrent = null; pendingOffset = null;
+        if (names.Count > 0 && !items.Any(e => names.Contains(e.Name))) return; // not here (yet): the selection stays as it was
+        if (names.Count > 0 || offset != null) SetSelection(e => names.Contains(e.Name)); // a tab left with nothing selected comes back so
+        var first = view.Cast<Entry>().FirstOrDefault(e => current != null ? e.Name.Equals(current, StringComparison.OrdinalIgnoreCase) : names.Contains(e.Name))
+                    ?? view.Cast<Entry>().FirstOrDefault(e => names.Contains(e.Name));
+        if (first == null && offset == null) return;
+        if (offset == null) List.ScrollIntoView(first);
+        bool focus = pendingFocus;
+        Dispatcher.BeginInvoke(() =>
+        {
+            if (offset is { } y) FindScroller(List)?.ScrollToVerticalOffset(y);
+            if (focus && first != null && List.ItemContainerGenerator.ContainerFromItem(first) is UIElement row) row.Focus();
+        }, DispatcherPriority.Loaded);
+    }
+
+    // ---- each tab keeps its selection and scroll while another is shown (Rico, 1.0.61); kept for the session ----
+    readonly Dictionary<string, (HashSet<string> Selected, string Current, double Offset)> tabMemory = new(StringComparer.OrdinalIgnoreCase);
+
+    void RememberTab()
+    {
+        if (Dir == "" || view == null || searchQuery != null) return;
+        tabMemory[Dir] = (List.SelectedItems.Cast<Entry>().Select(e => e.Name).ToHashSet(StringComparer.OrdinalIgnoreCase),
+                          (Keyboard.FocusedElement as ListViewItem)?.DataContext is Entry { } f ? f.Name : (List.SelectedItem as Entry)?.Name,
+                          FindScroller(List)?.VerticalOffset ?? 0);
+    }
+
+    void RecallTab(bool focus)
+    {
+        if (!tabMemory.TryGetValue(Dir, out var m) || m.Selected.Count == 0 && m.Offset == 0) return;
+        (pendingSelect, pendingCurrent, pendingOffset, pendingFocus) = (m.Selected, m.Current, m.Offset, focus);
+        if (Cached(Dir)?.Items == items) ApplyPendingSelect(); // the cached rows are on screen already; otherwise when the read lands
     }
 
     void FocusSelectedRow() { if (List.SelectedItem is { } sel && List.ItemContainerGenerator.ContainerFromItem(sel) is UIElement row) row.Focus(); }
@@ -1512,8 +1570,9 @@ public partial class PaneView : UserControl
         if (idx < tab || tab == tabs.Count) tab--;
         Navigate(Dir, record: false);
         List.Focus();
+        RecallTab(focus: true);
     }
-    public void SwitchTab(int i) { tab = (i + tabs.Count) % tabs.Count; back.Clear(); fwd.Clear(); Navigate(Dir, record: false); List.Focus(); }
+    public void SwitchTab(int i) { RememberTab(); tab = (i + tabs.Count) % tabs.Count; back.Clear(); fwd.Clear(); Navigate(Dir, record: false); List.Focus(); RecallTab(focus: true); }
     public void NextTab(int step) => SwitchTab(tab + step);
 
     /// <summary>Going up to a folder that holds the one on screen, by any road (Up, Back, a breadcrumb, a typed
@@ -1540,7 +1599,7 @@ public partial class PaneView : UserControl
 
     /// The tab showing `path`, or -1. Opening a folder from outside switches to it instead of adding a duplicate.
     public int FindTab(string path) => tabs.FindIndex(t => t.TrimEnd('\\').Equals(path.TrimEnd('\\'), StringComparison.OrdinalIgnoreCase));
-    public void ShowTab(int i, string select = null) { tab = i; back.Clear(); fwd.Clear(); Navigate(Dir, select, record: false); }
+    public void ShowTab(int i, string select = null) { RememberTab(); tab = i; back.Clear(); fwd.Clear(); Navigate(Dir, select, record: false); if (select == null) RecallTab(focus: List.IsKeyboardFocusWithin); }
 
     /// Room kept free at the right of the tab row for the window's own buttons, which sit over it.
     /// Part of the tab row, so it still moves the window like the rest of the row's empty space.
@@ -2414,7 +2473,10 @@ public partial class PaneView : UserControl
         marqueeBase = Keyboard.Modifiers.HasFlag(ModifierKeys.Control) ? List.SelectedItems.Cast<Entry>().ToHashSet() : new();
         marqueeFrom = dragStart + ScrollOffset;
         marqueeSeen.Clear();
+        if (FindScroller(List) is { } sv && sv.Template.FindName("PART_ScrollContentPresenter", sv) is UIElement rows && hookedRows.Add(rows))
+            rows.AddHandler(RequestBringIntoViewEvent, new RequestBringIntoViewEventHandler((_, e) => { if (Marqueeing) e.Handled = true; }));
     }
+    readonly HashSet<UIElement> hookedRows = new(); // each view mode's scroller, hooked once
 
     bool Marqueeing => Marquee.Visibility == Visibility.Visible
         && (marqueeArmed && Mouse.LeftButton == MouseButtonState.Pressed || rightArmed && Mouse.RightButton == MouseButtonState.Pressed);
@@ -2444,7 +2506,9 @@ public partial class PaneView : UserControl
         MarqueeEdge(p);
         var area = new Rect(marqueeFrom, p + offset); // in the content
         var rect = new Rect(area.TopLeft - offset, area.Size); // on screen
-        rect.Intersect(new Rect(0, 0, List.ActualWidth, List.ActualHeight));
+        // drawn within the rows: not over the column headers above them or the scrollbar below (Rico, 1.0.61)
+        rect.Intersect(FindScroller(List)?.Template.FindName("PART_ScrollContentPresenter", FindScroller(List)) is FrameworkElement rows
+            ? rows.TransformToAncestor(List).TransformBounds(new Rect(rows.RenderSize)) : new Rect(0, 0, List.ActualWidth, List.ActualHeight));
         if (rect.IsEmpty) return;
         // Drawn in the overlay's coordinates, not the list's: the list has its own size (Settings → Text
         // size → File list), and at 125% the rectangle was drawn at 80% of where the pointer was.
@@ -2503,8 +2567,11 @@ public partial class PaneView : UserControl
 
     void Drag_Move(object s, MouseEventArgs e)
     {
-        if (rightArmed && e.RightButton == MouseButtonState.Pressed) { MarqueeMove(e); return; }
-        if (marqueeArmed && e.LeftButton == MouseButtonState.Pressed) { MarqueeMove(e); return; }
+        // Handled: the list holds the mouse for the rectangle, and ListBox's own drag-select would otherwise run as well,
+        // scrolling and selecting a range from its anchor when the pointer is outside it, so the count jumped back and
+        // forth (50 → 100 → 50) and the rows flickered (Rico, 1.0.61)
+        if (rightArmed && e.RightButton == MouseButtonState.Pressed) { MarqueeMove(e); e.Handled = Marquee.Visibility == Visibility.Visible; return; }
+        if (marqueeArmed && e.LeftButton == MouseButtonState.Pressed) { MarqueeMove(e); e.Handled = Marquee.Visibility == Visibility.Visible; return; }
         if (!dragArmed || renamingEntry != null || e.LeftButton != MouseButtonState.Pressed) return;
         var d = e.GetPosition(List) - dragStart;
         if (Math.Abs(d.X) < SystemParameters.MinimumHorizontalDragDistance && Math.Abs(d.Y) < SystemParameters.MinimumVerticalDragDistance) return;

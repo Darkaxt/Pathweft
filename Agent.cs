@@ -165,6 +165,7 @@ public static class Agent
         // A fresh explorer.exe registers its window ~1.3 s after starting (measured); poll until then.
         int tries = 0;
         var watch = new SelectionWatch();
+        bool handed = false;
         dynamic last = null;
         var poll = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(50) };
         poll.Tick += (_, _) =>
@@ -178,7 +179,7 @@ public static class Agent
                 if (folder == null) { poll.Stop(); GiveBack(hwnd); return; } // a virtual place, or never registered: Explorer keeps it
             }
             var (open, done) = watch.Look(folder, selected);
-            if (open != null) OpenInFileLabs(open);
+            if (open != null) { OpenInFileLabs(open); handed = true; }
             if (!done)
             {
                 if (open != null) HideFromTaskbar(hwnd); // the folder went to File Labs; the window stays out of sight a little longer
@@ -187,6 +188,10 @@ public static class Agent
             poll.Stop();
             hidden.Remove(hwnd);
             try { last?.Quit(); } catch (COMException) { }
+            // The Explorer window, out of sight, could still be the active one (the browser or Everything handed it the
+            // right); closing it gave the keyboard back to them, not to File Labs, and the file selected there wasn't
+            // focused (Rico, 1.0.61). Once it's gone, File Labs is brought forward once more, its selected row focused.
+            if (handed) OpenInFileLabsLater("", 300);
         };
         poll.Start();
     }
@@ -284,6 +289,8 @@ public static class Agent
         using var key = Registry.CurrentUser.OpenSubKey(StateKey);
         return key?.GetValue(ExplorerWantedValue) is long ticks && DateTime.UtcNow.Ticks - ticks < TimeSpan.FromSeconds(10).Ticks;
     }
+
+    static void OpenInFileLabsLater(string path, int ms) => ThreadPool.QueueUserWorkItem(_ => { Thread.Sleep(ms); OpenInFileLabs(path); });
 
     static void OpenInFileLabs(string path) => ThreadPool.QueueUserWorkItem(_ =>
     {

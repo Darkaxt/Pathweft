@@ -1,6 +1,23 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.0.62 | 2026-10-28 | Focus where you'd expect it, and a portable copy
+A long-time tester's newest notes: everything File Labs should keep track of for you, it now does.
+**Keeping your place**
+- **Open path** in Everything or Open-Shell, and **Show in folder** in a browser, now leave the keyboard on the file in File Labs. The hidden Explorer window File Labs takes over could keep the focus and hand it back to the other app when it closed.
+- What you paste or drop is **selected where it lands**, the first of it in sight, so three new files among a hundred are easy to find.
+- **Each tab keeps its selection and how far it was scrolled** while you're in another one.
+**The selection rectangle**
+- Holding it past the top or bottom of the list now scrolls smoothly to the end. Before, the list kept jumping back to where you started, and the count went 50, 100, 50, 100.
+- It no longer runs over the column headers, and it doesn't flicker while the list scrolls.
+**Also**
+- **Drag a folder, a shortcut to one, or a tab onto Quick access** to pin it there.
+- Text size in Settings now applies to the Settings window too.
+- What's new goes to the taskbar when minimized, like Settings.
+- No row tooltip over the empty space to the right of the columns in Details.
+**Portable**
+- A **portable zip** comes with every release: unpack it anywhere, even on a stick. It keeps its settings in a Data folder beside it, installs nothing, and leaves the installed File Labs and its links with the other apps alone.
+
 ## 1.0.61 | 2026-10-27 | Small files, several at once
 **Faster copies**
 - Copying many small files is **about twice as fast** on an SSD: files under 16 MB now go four at a time. 1,200 small files on this PC's NVMe drive took 0.31–0.38 s instead of 0.56–0.62 s.

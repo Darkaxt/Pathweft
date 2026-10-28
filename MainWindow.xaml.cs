@@ -926,7 +926,7 @@ public partial class MainWindow : Window
         // the status bar is showing ("Path copied", "Pinned …").
         if (dir != shownDir) { shownDir = dir; Status.Text = dir == PaneView.ThisPC ? "This PC" : dir; }
         bool bareServer = dir.StartsWith(@"\\") && !dir.Trim('\\').Contains('\\') || PaneView.IsVirtual(dir); // not a folder a dialog can open
-        if (dir != publishedFolder && !bareServer && Settings.Profile == null) // a test copy leaves the real one's folder alone
+        if (dir != publishedFolder && !bareServer && Settings.Profile == null && Settings.Portable == null) // a test or portable copy leaves the installed one's folder alone
         {
             // for Ctrl+G in Open/Save dialogs (Agent.cs)
             publishedFolder = dir;
@@ -1165,6 +1165,14 @@ public partial class MainWindow : Window
         job.Refresh();
         UpdateTransfers(); // into Done
         RememberJob(job);
+        // what was pasted or dropped is selected where it arrived, the first of it in sight with the keyboard on it,
+        // instead of somewhere among the folder's other hundred files (Rico, 1.0.61)
+        if (job.Phase == Phase.Done)
+        {
+            var arrived = job.Sources.Select(s => Path.GetFileName(job.Duplicates.GetValueOrDefault(s) ?? s.TrimEnd('\\'))).Where(n => n != "").ToList();
+            foreach (var pane in new[] { Left, Right })
+                if (pane.Dir.TrimEnd('\\').Equals(job.Destination.TrimEnd('\\'), StringComparison.OrdinalIgnoreCase)) pane.SelectAfterRefresh(arrived, focus: pane == active);
+        }
         Left.Refresh(); Right.Refresh();
         RefreshDrives(); UpdateStats(); // a finished copy or move changes what's free
     });

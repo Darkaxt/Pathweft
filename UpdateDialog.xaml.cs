@@ -28,6 +28,13 @@ public partial class UpdateDialog : Window
 
     async void Update_Click(object s, RoutedEventArgs e)
     {
+        // a portable copy isn't installed: its update is the new zip, unpacked over this folder (Data stays as it is)
+        if (Settings.Portable != null)
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo($"https://github.com/limburatorul/file-labs/releases/tag/{release.Tag}") { UseShellExecute = true });
+            Status.Text = "This copy is portable: download the portable zip from the page that just opened and unpack it over this folder. Your settings in Data stay.";
+            return;
+        }
         UpdateButton.IsEnabled = LaterButton.IsEnabled = false;
         Progress.Visibility = Visibility.Visible;
         Status.Text = "Downloading…";

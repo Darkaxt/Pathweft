@@ -13,6 +13,7 @@ public partial class SettingsWindow : Window
         SourceInitialized += (_, _) => MainWindow.ApplyAcrylic(this);
         // its cards took 130-200 ms to lay out before the first frame: the window comes up empty, they follow on the next
         ContentRendered += (_, _) => Body.Visibility = Visibility.Visible;
+        ApplyTextSize();
         ShowValues();
         // A double-click on a slider's handle puts it back to its default (Settings.cs), as in Frostpane: one
         // setting can be tried out and undone without a reset of them all.
@@ -328,7 +329,11 @@ public partial class SettingsWindow : Window
     {
         Settings.TextScale = s == Text115 ? 1.15 : s == Text130 ? 1.3 : s == Text150 ? 1.5 : 1;
         Changed();
+        ApplyTextSize();
     }
+
+    /// Settings → Text size covers this window too (Rico, 1.0.61), as it does the main window: the whole of it, scaled.
+    void ApplyTextSize() => Root.LayoutTransform = Settings.TextScale > 1 ? new System.Windows.Media.ScaleTransform(Settings.TextScale, Settings.TextScale) : null;
 
     void Scale_Changed(object s, RoutedPropertyChangedEventArgs<double> e)
     {
