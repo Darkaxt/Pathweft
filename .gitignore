@@ -7,3 +7,5 @@ publish/
 /graft/
 .ignore
 .claude/
+# Machine-specific environment notes and verification receipts.
+/.local/

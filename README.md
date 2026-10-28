@@ -1,75 +1,47 @@
-# File Labs
+# Pathweft
 
-A free, dual-pane file manager for Windows 11, with a copy engine that shows what it is doing.
+**Browse. Find. Preview. Move.**
 
-- **Two panes, with tabs** — browser-style tabs in each pane, `Tab` to switch panes,
-  `Ctrl+U` to swap them, drag and drop between panes and to/from Explorer (the wheel scrolls the list
-  under a drag).
-- **Transfers you can watch** — copy and move run through the Ferry engine: one scan up front
-  (totals and every conflict at once), one conflict decision per job, pause and cancel, a live
-  speed chart, one queue per destination drive. Same-drive moves are renames.
-- **Optional verification** — reads source and copy back and compares xxHash3 digests; on a move,
-  a source whose copy doesn't match is kept.
-- **Quick View** — `Space` previews images, video, audio, PDF and text without opening anything.
-- **Stash and Backup Labs backups** (`.stash`, `.bkl`, and their older `.zip` names) — the preview
-  shows what is inside without restoring anything: apps, profiles and mail folders with their message
-  counts, or files, size and where they came from. Enter opens one in its app when that is installed
-  (Stash 2.1+, Backup Labs 1.3.0+).
-- **Films from Reel** — with Reel (1.13.0+) installed, a video in its library gets a line above the
-  preview: poster, title and year (or series and episode), watched or not, and a link to Reel.
-- **Folder sizes** in the list, file versions for `.exe`/`.dll`, and a recency tint on dates.
-- **Views** — Details, List and three icon sizes with Explorer's own thumbnails (`Ctrl+Shift+1…5`).
-  Shortcuts to folders can be sorted with the folders (Settings → Files).
-- **The real right-click menu** when you want it — Send to, Open with, 7-Zip and other shell
-  extensions, with a View submenu on the folder's own menu — or a compact one that matches the app.
-  Paste on a folder, or on a shortcut to one, puts the files in it.
-- **Default file manager** (optional) — folders, drives and `Win+E` open in File Labs. Switching
-  it off (or uninstalling) hands them back to whatever had them before. "Win+E opens File Labs" can be
-  switched off on its own, to keep Win+E for File Explorer.
-- Acrylic, tint or solid backdrop, with an opacity floor so text stays readable.
+A Windows file-manager project forked from [File Labs](https://github.com/limburatorul/file-labs), bringing selected search, taskbar, preview and transfer capabilities into one maintained product.
 
-No account, no telemetry, nothing it talks to online.
+## Current state
 
-## Keys
+**Environment and specification established; product integration has not started.**
 
-| Key | Action |
-|---|---|
-| `Ctrl+F5` / `F6` | copy / move to the other pane |
-| `F5`, `Ctrl+R` | refresh |
-| `F7` | new folder |
-| `F2` | rename |
-| `F8`, `Del` | delete (to the Recycle Bin) |
-| `Space` | Quick View |
-| `Ctrl+T` / `Ctrl+W` / `Ctrl+Tab` | new / close / next tab |
-| `Ctrl+L` | edit the path |
-| `Ctrl+F` | filter the list |
-| `Ctrl+D` | pin to Quick access |
-| `Ctrl+H` | show hidden files |
-| `Ctrl+Shift+C` | copy the selected paths |
-| `` Ctrl+` `` | terminal here |
-| `Alt+Enter` | Properties |
-| `Ctrl+P` | one pane or two |
-| `F1` | every key and feature |
+The application source still uses the upstream File Labs name, settings, installer identity and update feed. Do not install or activate it as Pathweft yet. Inherited upstream releases are not Pathweft releases.
 
-## Building
+Starting snapshot: `a8d5a5ca81ab4b70d26e293e69b9cc402baa77b6` (upstream development version 1.0.62; latest published release observed at setup: v1.0.61). Local Release compilation is verified; application runtime and planned integrations are not.
 
-Needs the .NET 8 SDK; the installer needs [Inno Setup 6](https://jrsoftware.org/isinfo.php).
+## Direction
+
+- Reuse selected EverythingToolbar search clients, controls and taskbar integration.
+- Share one deliberately selected Everything index across panes and widget. The engine remains an external binary/API dependency.
+- Port selected QuickLook viewer and add-on source into internal modules, controlled by persisted enable/disable settings. Standalone QuickLook is not required.
+- Share file actions and one transfer queue across all surfaces.
+- Use **REA analysis of TeraCopy** and measured workflows to guide transfer development. Upstream changes are baseline context, not the transfer design authority.
+- Preserve responsive browsing and an uncluttered interface.
+
+These are planned capabilities, not integrations delivered by this setup.
+
+## Documents
+
+- [Authoritative specification](docs/SPECIFICATION.md)
+- [Stage plan and reconciliation](docs/IMPLEMENTATION-PLAN.md)
+- [Development environment](docs/DEVELOPMENT.md)
+- [Setup verification](docs/verification/2026-10-28-setup.md)
+
+## Development build
+
+Windows, PowerShell 7, Git and the .NET SDK selected by `global.json` are required.
 
 ```powershell
-.\build.ps1                 # dist\FileLabs-<version>-setup.exe
-.\build.ps1 -SkipInstaller  # self-contained app in dist\app
+pwsh -NoProfile -File scripts/Build-Development.ps1 -ScratchRoot D:/Temp/pathweft-development-build
 ```
 
-`FileLabs.exe --selftest` runs the copy engine on real files in a temp folder; exit code 0 = pass.
+Register exact generated scratch before creation where practical; clean it through the host's transactional-cleanup workflow after its last consumer exits. See the development notes for storage and runtime boundaries.
 
-The version lives only in `FileExplorer.csproj`.
+## Upstream and licensing
 
-## Licence
+The inherited File Labs source remains MIT licensed with its original [notice](LICENSE). EverythingToolbar and QuickLook source has not yet been imported. Preserve all imported notices/dependency terms and provide applicable GPL source/distribution materials when QuickLook code is incorporated; that future combination must not be described as MIT-only.
 
-MIT. Made by [Protagonist Labs](https://protagonistlabs.app/filelabs/).
-
-## More from Protagonist Labs
-
-- [Backup Labs](https://protagonistlabs.app/backuplabs/?utm_source=github&utm_medium=readme&utm_campaign=filelabs): scheduled, versioned folder backups, free.
-- [SpaceScan](https://protagonistlabs.app/spacescan/?utm_source=github&utm_medium=readme&utm_campaign=filelabs): shows what takes the space on a drive, free.
-- [All apps](https://protagonistlabs.app/?utm_source=github&utm_medium=readme&utm_campaign=filelabs): Windows apps that each do one job properly.
+**No Pathweft application release exists yet.**
