@@ -141,6 +141,8 @@ public partial class App : Application
             window.ContentRendered += async (_, _) => await S1Verification.Run(window, verification[12..]);
         if (e.Args.FirstOrDefault(a => a.StartsWith("--verify-s2=")) is { } widgetVerification)
             window.ContentRendered += async (_, _) => await window.VerifyS2(widgetVerification[12..]);
+        if (e.Args.FirstOrDefault(a => a.StartsWith("--verify-s3=")) is { } previewVerification)
+            window.ContentRendered += async (_, _) => await window.VerifyS3(previewVerification[12..]);
 #endif
     }
 

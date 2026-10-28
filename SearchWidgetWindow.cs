@@ -20,6 +20,7 @@ internal sealed class SearchWidgetWindow : Window
     internal Button CopyButton { get; }
     internal Button MoveButton { get; }
     internal Button OpenButton { get; }
+    internal Button PreviewButton { get; }
     readonly TextBox query;
     readonly DockPanel root;
     double appliedTextScale = 1;
@@ -51,9 +52,10 @@ internal sealed class SearchWidgetWindow : Window
         HandoffButton.SetResourceReference(ForegroundProperty, "Accent");
         RevealButton = Button("Reveal", Reveal);
         OpenButton = Button("Open", () => Pane.OpenSelected());
+        PreviewButton = Button("Preview", () => main.ToggleQuickView(Pane, this));
         CopyButton = Button("Copy to folder", () => Transfer(false));
         MoveButton = Button("Move to folder", () => Transfer(true));
-        foreach (var action in new[] { HandoffButton, RevealButton, OpenButton, CopyButton, MoveButton }) actions.Children.Add(action);
+        foreach (var action in new[] { HandoffButton, RevealButton, PreviewButton, OpenButton, CopyButton, MoveButton }) actions.Children.Add(action);
         DockPanel.SetDock(actions, Dock.Bottom); root.Children.Add(actions);
         DockPanel.SetDock(Notice, Dock.Bottom); root.Children.Add(Notice);
         var destination = new DockPanel();
@@ -144,8 +146,8 @@ internal sealed class SearchWidgetWindow : Window
     }
 
     bool IsOwnedWindowActive() => OwnedWindows.Cast<Window>().Any(w => w.IsActive);
-    internal void Dismiss() { if (IsVisible) Hide(); Pane.StopWidgetWork(); }
-    internal void Shutdown() { closing = true; Close(); }
+    internal void Dismiss() { main.CloseWidgetPreview(Pane); if (IsVisible) Hide(); Pane.StopWidgetWork(); }
+    internal void Shutdown() { main.CloseWidgetPreview(Pane); closing = true; Close(); }
     void Reveal() { if (Pane.Selected.FirstOrDefault() is { } entry) { main.Show(); main.ShowFile(entry.Path); Dismiss(); } }
     internal Job LastTransfer { get; private set; }
     void Transfer(bool move)
@@ -157,7 +159,7 @@ internal sealed class SearchWidgetWindow : Window
     void UpdateActions()
     {
         bool selected = Pane.Selected.Count > 0;
-        RevealButton.IsEnabled = CopyButton.IsEnabled = MoveButton.IsEnabled = selected;
+        RevealButton.IsEnabled = PreviewButton.IsEnabled = CopyButton.IsEnabled = MoveButton.IsEnabled = selected;
         HandoffButton.IsEnabled = !string.IsNullOrWhiteSpace(query.Text);
     }
     void OnWidgetKeyDown(object sender, KeyEventArgs e)
@@ -166,6 +168,7 @@ internal sealed class SearchWidgetWindow : Window
         else if (e.OriginalSource is ComboBoxItem or ComboBox) return;
         else if (query.IsKeyboardFocusWithin && e.Key == Key.Enter) { Pane.Search(query.Text); e.Handled = true; }
         else if (query.IsKeyboardFocusWithin && e.Key == Key.Down) { Pane.FocusList(); e.Handled = true; }
+        else if (e.Key == Key.Space && e.OriginalSource is not TextBox) { main.ToggleQuickView(Pane, this); e.Handled = true; }
         else if (Pane.IsKeyboardFocusWithin && e.OriginalSource is not TextBox && e.Key == Key.Enter) { Pane.OpenSelected(); e.Handled = true; }
     }
 }

@@ -1,0 +1,643 @@
+{
+  "version": "4.0.0",
+  "sourceCommit": "b72c7b5c9244e4a0c12975ce6546645c1a8b2680",
+  "nativeArchiveSha256": "98E3DB83A0E486D1A5D69F0D10D0B018432E9D200C8FECD0020AFC7DA26AB71E",
+  "consumer": "Pathweft S3 F3D preview module and final packaged verification",
+  "files": [
+    {
+      "path": "bin\\avcodec-63.dll",
+      "sha256": "A305BA3B1488B362DAA0F9C751810D437A6AA703B856EA46FBA7BDD005BE7F9C",
+      "bytes": 1154560
+    },
+    {
+      "path": "bin\\avutil-61.dll",
+      "sha256": "33D4121E77F215FFCF5E0FAFEE34FB0C27C6A5B34809BBA6AC1A150519DCC4BD",
+      "bytes": 2158080
+    },
+    {
+      "path": "bin\\blosc.dll",
+      "sha256": "9ACB43B0F968822FFCC579DE046DF4EA9BC7F5D19D4A63AC4A0344E28C2E96EB",
+      "bytes": 531968
+    },
+    {
+      "path": "bin\\concrt140.dll",
+      "sha256": "2405355F0A58067B258F8DF33C327E3A3D716EAAC5A3A5AEBB757842D85BD376",
+      "bytes": 324208
+    },
+    {
+      "path": "bin\\dbghelp.dll",
+      "sha256": "3EFE8206F444FC8F5DF99C9DA9C29F9BAA20FE01787957C9C35F37875F1EC792",
+      "bytes": 2254376
+    },
+    {
+      "path": "bin\\f3d_c_api.dll",
+      "sha256": "737745CDB233131C2222F74D8B310E2D9D9C1BD47FB60FE8171A7E1027B396E2",
+      "bytes": 187392
+    },
+    {
+      "path": "bin\\f3d.dll",
+      "sha256": "819E1E0EE88ECA2CB32D515B3CE69F2350658F149D71A51C3A332C59223C3933",
+      "bytes": 88704512
+    },
+    {
+      "path": "bin\\hdf5_hl.dll",
+      "sha256": "CF39D63021255BBCF15DDF9FECBFB0A523FB3ED71DFAA1780A20842CED2DE67E",
+      "bytes": 119808
+    },
+    {
+      "path": "bin\\hdf5.dll",
+      "sha256": "9FC6E278609085C460E9FC692D7C9D4982FECFE94476516A6D6549877B324069",
+      "bytes": 3526144
+    },
+    {
+      "path": "bin\\libcrypto-3-x64.dll",
+      "sha256": "88B1760DB84D724CF5BC40BE5DCBCD0A835E42C3ED239E397A61F73ACABBF4C8",
+      "bytes": 7387552
+    },
+    {
+      "path": "bin\\libssl-3-x64.dll",
+      "sha256": "5322D6D3186D171F8ED89731FB9D1A2D36269D32D14E37BDC19B237E770EAF21",
+      "bytes": 1443232
+    },
+    {
+      "path": "bin\\msvcp140_1.dll",
+      "sha256": "BFAD5AEF4C63A669E3C140655CDFDF395B6C979B400A447BD5DCB65ED8826C3D",
+      "bytes": 35952
+    },
+    {
+      "path": "bin\\msvcp140_2.dll",
+      "sha256": "3EA06F0EE098B4823CB79599DF3780E7F23CCE52C19AAC31D2A0D47EFE33A5E9",
+      "bytes": 280200
+    },
+    {
+      "path": "bin\\msvcp140_atomic_wait.dll",
+      "sha256": "640B2AEFCED484D0368EEA5BDD06ADDD0658A3A70A49256E560D6923B404A479",
+      "bytes": 50304
+    },
+    {
+      "path": "bin\\msvcp140_codecvt_ids.dll",
+      "sha256": "F2069A52880EC885EE7F0511186100EB7FADA0411A2B4948FAFEA7735B878A18",
+      "bytes": 31872
+    },
+    {
+      "path": "bin\\msvcp140.dll",
+      "sha256": "0F885B509A685D2BBFA652FED26B5FB31D88FBDAB0A978C641D1C7B8AA460AA9",
+      "bytes": 557728
+    },
+    {
+      "path": "bin\\netcdf.dll",
+      "sha256": "817729221F012A3B60D4FB540FA4DF3DE62E40F75BBE5789DCFD158EEF503C6E",
+      "bytes": 940032
+    },
+    {
+      "path": "bin\\openh264-7.dll",
+      "sha256": "DF7A63CBD64C9A2BA9AC88F364C85D896F119ADD4E436401CD4222333DCD4076",
+      "bytes": 804352
+    },
+    {
+      "path": "bin\\osmesa.dll",
+      "sha256": "A73144CF6F60AE8C8F822F11084210A005EDBDC4EE51AC24F624403524E686CE",
+      "bytes": 56345088
+    },
+    {
+      "path": "bin\\sqlite3.dll",
+      "sha256": "E5CA36492BB7F64C28150AAD544F913C988AC6F0A09014797AC53E6260FDB09B",
+      "bytes": 1391104
+    },
+    {
+      "path": "bin\\tbb12.dll",
+      "sha256": "C664084538051D3EAD6F5FEA1304D767C7391E01DCA33F615734332F558F06B9",
+      "bytes": 335872
+    },
+    {
+      "path": "bin\\tiff.dll",
+      "sha256": "CDB4F06192A1630F8362A3CDF900F6113265586426CBBD40DB82B4479033AA8C",
+      "bytes": 423424
+    },
+    {
+      "path": "bin\\usd_ms.dll",
+      "sha256": "7BD675C996452E63C0077EA68E50F246855CE252A51B39A0F987B51FEAF8A50B",
+      "bytes": 23384064
+    },
+    {
+      "path": "bin\\vcruntime140_1.dll",
+      "sha256": "1F2D41C4AA5DB0BC33EBF7B66D72943A817D7CE6CBE880502A9403823633093F",
+      "bytes": 49792
+    },
+    {
+      "path": "bin\\vcruntime140.dll",
+      "sha256": "D5E4D9A3E835FA679450145D6A7D94E36573A509317111904D9B3712C30D9066",
+      "bytes": 124544
+    },
+    {
+      "path": "bin\\zlib.dll",
+      "sha256": "1CA999F30C0007C41023F834C69F569335C5FD42C817640EA216FEF078312E10",
+      "bytes": 89600
+    },
+    {
+      "path": "share\\licenses\\alembic\\LICENSE.txt",
+      "sha256": "F432074FD6B2408C2E696CF0DC697B4E5EFB71C093BB9ACDD4DFEC4D492B35F9",
+      "bytes": 1757
+    },
+    {
+      "path": "share\\licenses\\assimp\\LICENSE",
+      "sha256": "21195D410708B82757D3E34C3A40C427F6E59339DA862E9480D4FCDC79B7A1BD",
+      "bytes": 3791
+    },
+    {
+      "path": "share\\licenses\\blosc\\LICENSE.txt",
+      "sha256": "22623131A9B9F6A86A4DC6B9BCCBB1D2AEB390DF86BCA00FC727AF24735C2FAE",
+      "bytes": 1644
+    },
+    {
+      "path": "share\\licenses\\blosc\\LICENSES\\LZ4.txt",
+      "sha256": "FE6DC1F27F68D9DD6B0192E39BE1A8F1FBED0FE86E13540F618A7133971B10B3",
+      "bytes": 1312
+    },
+    {
+      "path": "share\\licenses\\curl\\COPYING",
+      "sha256": "82F2F4427D6545EE5AAAC4F0B80428DA6CC8BA41C2CF5DA3A03680EC327B9681",
+      "bytes": 1088
+    },
+    {
+      "path": "share\\licenses\\draco\\LICENSE",
+      "sha256": "D3709B0FB4B8A94BBB1D02B8A2E484F258B0D9C5C5A01F940391F3FE662CD1A4",
+      "bytes": 13898
+    },
+    {
+      "path": "share\\licenses\\f3d\\LICENSE.md",
+      "sha256": "5CE0EF64B9CE694ED7E0BEC32204236E7EBDFC91B668DBA8E57975935A8BA88E",
+      "bytes": 1639
+    },
+    {
+      "path": "share\\licenses\\f3d\\THIRD_PARTY_LICENSES.md",
+      "sha256": "CE875F29F22B573D02FEE2829F6A2F496BECE9E1CDB03FA6D3F15E6EA9767CE6",
+      "bytes": 13841
+    },
+    {
+      "path": "share\\licenses\\ffmpeg\\COPYING.LGPLv2.1",
+      "sha256": "246041B6ECF9BC32D718A62C57877C78B5EB397B6467E74ED7AE2626AB189C30",
+      "bytes": 26517
+    },
+    {
+      "path": "share\\licenses\\ffmpeg\\LICENSE.md",
+      "sha256": "2E1D16C72FD74E12063776371DA757322F8B77589386532F4FD8634BDE7DE1AF",
+      "bytes": 4346
+    },
+    {
+      "path": "share\\licenses\\flexbison\\README.md",
+      "sha256": "D5C899A4CF51C37206B8525A667A67ED4F1FB3FF19BF8187D7F1A4969B10FFED",
+      "bytes": 1925
+    },
+    {
+      "path": "share\\licenses\\gdal\\LICENSE.TXT",
+      "sha256": "1DAE3468E81D00DA56E2936F74D33B8B3AD09D726437F19CE209A5DABEA41F77",
+      "bytes": 21841
+    },
+    {
+      "path": "share\\licenses\\geotiff\\LICENSE",
+      "sha256": "A822A731A7AC4BA7D8F18FA0DC29DB2E68A5DCFC315B46E4A4C8956720D55D93",
+      "bytes": 3634
+    },
+    {
+      "path": "share\\licenses\\hdf5\\COPYING",
+      "sha256": "CACFB8C9D891E4B0514396E319F626A55F74E43F9FB539EECD1AA52DACF8B7E7",
+      "bytes": 5515
+    },
+    {
+      "path": "share\\licenses\\hdf5\\COPYING_LBNL_HDF5",
+      "sha256": "B92BC72A342E6DBFA552439ADC80945A42168F6BC4A3D81C3618C3BFF780DB72",
+      "bytes": 3490
+    },
+    {
+      "path": "share\\licenses\\imath\\LICENSE.md",
+      "sha256": "C20236D3B39FD20EBA8E3D1FB3B892A5483DF2E7D8D61BF43F165D3FAC22F601",
+      "bytes": 1497
+    },
+    {
+      "path": "share\\licenses\\imgui\\LICENSE.txt",
+      "sha256": "C80C5789748D955C4A650562BAA0D750494E2C7128C2CA66AAEBE2E3C4E198BF",
+      "bytes": 1083
+    },
+    {
+      "path": "share\\licenses\\jsonc\\COPYING",
+      "sha256": "74C1E6CA5EBA76B54D0AD00D4815C8315C1B3BC45FF99DE61D103DC92486284C",
+      "bytes": 2205
+    },
+    {
+      "path": "share\\licenses\\llvm\\llvm\\LICENSE.TXT",
+      "sha256": "8D85C1057D742E597985C7D4E6320B015A9139385CFF4CBAE06FFC0EBE89AFEE",
+      "bytes": 15141
+    },
+    {
+      "path": "share\\licenses\\llvm\\llvm\\lib\\Support\\COPYRIGHT.regex",
+      "sha256": "0424E57D4303164DC59A8509C20DAE0518B853692E5C2B0E98B11816FDBC97C7",
+      "bytes": 2718
+    },
+    {
+      "path": "share\\licenses\\llvm\\llvm\\test\\YAMLParser\\LICENSE.txt",
+      "sha256": "D0D8B09800A45CD982E9568FC7669D9C1A4C330E275A821BBE24D54366D16FE9",
+      "bytes": 1058
+    },
+    {
+      "path": "share\\licenses\\lz4\\LICENSE",
+      "sha256": "2949FCF758D3C9BCB05F8393CA42CADFA15BE04EB4AE4B3327C4AD7957511E1B",
+      "bytes": 635
+    },
+    {
+      "path": "share\\licenses\\meson\\COPYING",
+      "sha256": "CFC7749B96F63BD31C3C42B5C471BF756814053E847C10F3EB003417BC523D30",
+      "bytes": 11358
+    },
+    {
+      "path": "share\\licenses\\nasm\\LICENSE",
+      "sha256": "222B65A5FAB7BA8ADE645970AD21BD5C2E2E6533897D59D1CA0914681C1F9DA6",
+      "bytes": 1585
+    },
+    {
+      "path": "share\\licenses\\netcdf\\COPYRIGHT",
+      "sha256": "D3B81BCBE2B4FD7057E7BC603F58DD0C855C5C9B5635966D2C22D9A13F384FB8",
+      "bytes": 1452
+    },
+    {
+      "path": "share\\licenses\\nlohmannjson\\LICENSE.MIT",
+      "sha256": "46A65CFFD1EA955132D95A8DD921640714A8D6B537D2E4E482D31145AE95B603",
+      "bytes": 1076
+    },
+    {
+      "path": "share\\licenses\\occt\\LICENSE_LGPL_21.txt",
+      "sha256": "E237FA56668030E928551DDD60F05DF5FE957F75EAB874BBD017E085ED722E7C",
+      "bytes": 26434
+    },
+    {
+      "path": "share\\licenses\\occt\\OCCT_LGPL_EXCEPTION.txt",
+      "sha256": "04580A884EA6CEA294402649FF7B5CBB167D47462D1340A4ED33E550DB10A81B",
+      "bytes": 663
+    },
+    {
+      "path": "share\\licenses\\openexr\\LICENSE.md",
+      "sha256": "84853C91D4C2E0310741D4773469D98BB93E61029608E0BA0882A3FFFDF330BD",
+      "bytes": 1501
+    },
+    {
+      "path": "share\\licenses\\openh264\\LICENSE",
+      "sha256": "DD5C1C9668512530FA5A96E4C29AC4033D70A7EEB0EED7A42FDDB6DD794EBDBB",
+      "bytes": 1295
+    },
+    {
+      "path": "share\\licenses\\openjph\\LICENSE",
+      "sha256": "5DDF5177863DFC9AB65FA129D587DB651241F00E21ED2427B218BEA997591F98",
+      "bytes": 1448
+    },
+    {
+      "path": "share\\licenses\\openusd\\LICENSE.txt",
+      "sha256": "4D6E8E3A9BD0104E10C48E3BC6AF2F0976448A70A377D20CEF674740F96F4452",
+      "bytes": 49827
+    },
+    {
+      "path": "share\\licenses\\openvdb\\LICENSE",
+      "sha256": "A6CBA85BC92E0CFF7A450B1D873C0EAA2E9FC96BF472DF0247A26BEC77BF3FF9",
+      "bytes": 10173
+    },
+    {
+      "path": "share\\licenses\\osmesa\\docs\\license.rst",
+      "sha256": "0D1A0472ECC81830E75C20D59B0EA02841E3DB21255E0EBAD97AB682C54D6615",
+      "bytes": 1816
+    },
+    {
+      "path": "share\\licenses\\pdal\\LICENSE.txt",
+      "sha256": "9AB1261B649806F4884539D5FD49D8F2C9A634762EE52F1DDD2330EF417F5CDF",
+      "bytes": 1896
+    },
+    {
+      "path": "share\\licenses\\pkgconf\\COPYING",
+      "sha256": "07EE94B50A41EE3FC4E13A9B9C60B26FC28488494C465639F7E5F07A3952EC04",
+      "bytes": 509
+    },
+    {
+      "path": "share\\licenses\\proj\\COPYING",
+      "sha256": "6A8F30793E877D32E3F88B972F0970A051A3B5A26CD057D3993CB51E21C43319",
+      "bytes": 1784
+    },
+    {
+      "path": "share\\licenses\\pythonflitcore\\LICENSE",
+      "sha256": "35B4F1DEC512E617077FD6980DBB43EF8C2887ADC5D0185EDB4C04DA175DD816",
+      "bytes": 1525
+    },
+    {
+      "path": "share\\licenses\\pythonmako\\LICENSE",
+      "sha256": "760F22B3E9EA4A50EB99201BD8DD118869F28108CFB64CCCE6D1B305CF9AE9FA",
+      "bytes": 1098
+    },
+    {
+      "path": "share\\licenses\\pythonmarkupsafe\\LICENSE.rst",
+      "sha256": "489A8E1108509ED98A37BB983E11E0F7E1D31F0BD8F99A79C8448E7FF37D07EA",
+      "bytes": 1475
+    },
+    {
+      "path": "share\\licenses\\pythonpyyaml\\LICENSE",
+      "sha256": "8D3928F9DC4490FD635707CB88EB26BD764102A7282954307D3E5167A577E8A4",
+      "bytes": 1101
+    },
+    {
+      "path": "share\\licenses\\pythonsetuptools\\LICENSE",
+      "sha256": "86DA0F01AEAE46348A3C3D465195DC1CECCDE79F79E87769A64B8DA04B2A4741",
+      "bytes": 1023
+    },
+    {
+      "path": "share\\licenses\\pythonwheel\\LICENSE.txt",
+      "sha256": "30C23618679108F3E8EA1D2A658C7CA417BDFC891C98EF1A89FA4FF0C9828654",
+      "bytes": 1107
+    },
+    {
+      "path": "share\\licenses\\pywin32\\License.txt",
+      "sha256": "C3BDFA1152A9B9D404DDC90B817E1B6945803879AC53A14D2DDE30D677F883BD",
+      "bytes": 1569
+    },
+    {
+      "path": "share\\licenses\\szip\\COPYING",
+      "sha256": "D322F2D678AAF12221FFD902F0FE8854ACAD08180906B22A478E09021092F939",
+      "bytes": 1359
+    },
+    {
+      "path": "share\\licenses\\tbb\\LICENSE.txt",
+      "sha256": "C71D239DF91726FC519C6EB72D318EC65820627232B2F796219E87DCF35D0AB4",
+      "bytes": 11357
+    },
+    {
+      "path": "share\\licenses\\tiff\\LICENSE.md",
+      "sha256": "0E27C2382D7B8147972BBB746E04059A1152C8D0FDA9D03EF1399D1A433C4ADE",
+      "bytes": 2416
+    },
+    {
+      "path": "share\\licenses\\vtk\\Copyright.txt",
+      "sha256": "FB3C1D41B57425CF3026C4BB4CD244C982A7A9475596424DE5D1B7F32EA78285",
+      "bytes": 1795
+    },
+    {
+      "path": "share\\licenses\\vtk\\vtkCommonCore\\LICENSE",
+      "sha256": "04A4FE62943BA1877492C58DFCF59A733D820BE0D8E4EFE07E56D7780A798F86",
+      "bytes": 1811
+    },
+    {
+      "path": "share\\licenses\\vtk\\vtkCommonDataModel\\LICENSE",
+      "sha256": "04A4FE62943BA1877492C58DFCF59A733D820BE0D8E4EFE07E56D7780A798F86",
+      "bytes": 1811
+    },
+    {
+      "path": "share\\licenses\\vtk\\vtkCommonExecutionModel\\LICENSE",
+      "sha256": "04A4FE62943BA1877492C58DFCF59A733D820BE0D8E4EFE07E56D7780A798F86",
+      "bytes": 1811
+    },
+    {
+      "path": "share\\licenses\\vtk\\vtkCommonMath\\LICENSE",
+      "sha256": "04A4FE62943BA1877492C58DFCF59A733D820BE0D8E4EFE07E56D7780A798F86",
+      "bytes": 1811
+    },
+    {
+      "path": "share\\licenses\\vtk\\vtkDICOMParser\\Copyright.txt",
+      "sha256": "A9AD3334D142BC1DCCF95879080EBC904F1C73F72F694C7B787FBAB2578A6192",
+      "bytes": 1861
+    },
+    {
+      "path": "share\\licenses\\vtk\\vtkdiy2\\LEGAL.txt",
+      "sha256": "93ABB64C3C8300A43C1863F14826A5BE4506A5EFD106B18E1B7BCE14B0D3A15A",
+      "bytes": 1183
+    },
+    {
+      "path": "share\\licenses\\vtk\\vtkdiy2\\LICENSE.txt",
+      "sha256": "28C833DBD85A1843A489FE25DB5C27258A58F2369DA206CA658EEF80AE82ABEA",
+      "bytes": 2459
+    },
+    {
+      "path": "share\\licenses\\vtk\\vtkeigen\\COPYING.BSD",
+      "sha256": "EE73DE74A1980F7F1667F874473393F13BC6A74C87FCEE4CC9732BCE96BC60CC",
+      "bytes": 1543
+    },
+    {
+      "path": "share\\licenses\\vtk\\vtkexodusII\\COPYRIGHT",
+      "sha256": "17B7B9E397E780FF9F7A49AD14E30CA748449262DDA271D8DDFC98E36ADD6B69",
+      "bytes": 1698
+    },
+    {
+      "path": "share\\licenses\\vtk\\vtkexpat\\COPYING",
+      "sha256": "122F2C27000472A201D337B9B31F7EB2B52D091B02857061A8880371612D9534",
+      "bytes": 1144
+    },
+    {
+      "path": "share\\licenses\\vtk\\vtkexprtk\\license.txt",
+      "sha256": "8ACEC4BBA5DD4CBFC86AD4D2C551E4E71C0916122A0514B1694A27D5E88647D7",
+      "bytes": 1199
+    },
+    {
+      "path": "share\\licenses\\vtk\\vtkfast_float\\LICENSE-MIT",
+      "sha256": "BF1B57355FECA8FCE77EE95F48002F8D4789FB71B30EC7599C06CDA4901FBB2B",
+      "bytes": 1106
+    },
+    {
+      "path": "share\\licenses\\vtk\\vtkFiltersCore\\LICENSE",
+      "sha256": "04A4FE62943BA1877492C58DFCF59A733D820BE0D8E4EFE07E56D7780A798F86",
+      "bytes": 1811
+    },
+    {
+      "path": "share\\licenses\\vtk\\vtkFiltersExtraction\\LICENSE",
+      "sha256": "04A4FE62943BA1877492C58DFCF59A733D820BE0D8E4EFE07E56D7780A798F86",
+      "bytes": 1811
+    },
+    {
+      "path": "share\\licenses\\vtk\\vtkFiltersGeneral\\LICENSE",
+      "sha256": "965A9A32E4245DC34587C315F196FDD97027C6C56EBBB3CD960066A00B4B95BA",
+      "bytes": 3511
+    },
+    {
+      "path": "share\\licenses\\vtk\\vtkFiltersGeometry\\LICENSE",
+      "sha256": "04A4FE62943BA1877492C58DFCF59A733D820BE0D8E4EFE07E56D7780A798F86",
+      "bytes": 1811
+    },
+    {
+      "path": "share\\licenses\\vtk\\vtkFiltersHybrid\\LICENSE",
+      "sha256": "04A4FE62943BA1877492C58DFCF59A733D820BE0D8E4EFE07E56D7780A798F86",
+      "bytes": 1811
+    },
+    {
+      "path": "share\\licenses\\vtk\\vtkFiltersSources\\LICENSE",
+      "sha256": "04A4FE62943BA1877492C58DFCF59A733D820BE0D8E4EFE07E56D7780A798F86",
+      "bytes": 1811
+    },
+    {
+      "path": "share\\licenses\\vtk\\vtkFiltersStatistics\\LICENSE",
+      "sha256": "04A4FE62943BA1877492C58DFCF59A733D820BE0D8E4EFE07E56D7780A798F86",
+      "bytes": 1811
+    },
+    {
+      "path": "share\\licenses\\vtk\\vtkFiltersVerdict\\LICENSE",
+      "sha256": "04A4FE62943BA1877492C58DFCF59A733D820BE0D8E4EFE07E56D7780A798F86",
+      "bytes": 1811
+    },
+    {
+      "path": "share\\licenses\\vtk\\vtkfmt\\LICENSE",
+      "sha256": "25B5DB04AA6070C12AC518B91CBD0A59725C050ECB091456E6EBC3D3EEB369CF",
+      "bytes": 1458
+    },
+    {
+      "path": "share\\licenses\\vtk\\vtkfreetype\\FTL.TXT",
+      "sha256": "308DCA54B5AAA4A6BA0880621FE3BCF287956821AA948430263062A8333625C0",
+      "bytes": 6912
+    },
+    {
+      "path": "share\\licenses\\vtk\\vtkfreetype\\LICENSE.TXT",
+      "sha256": "84F47DC7F0887DD56B05F2F218060581C055E443BD7AF18E46677BEC3DCC2473",
+      "bytes": 2196
+    },
+    {
+      "path": "share\\licenses\\vtk\\vtkglad\\LICENSE",
+      "sha256": "EC2B8BBF86D22622B9BBADF36A6CB7032C0F5B8C4A1766D4DB05BF41B4DC451D",
+      "bytes": 3077
+    },
+    {
+      "path": "share\\licenses\\vtk\\vtkImagingCore\\LICENSE",
+      "sha256": "04A4FE62943BA1877492C58DFCF59A733D820BE0D8E4EFE07E56D7780A798F86",
+      "bytes": 1811
+    },
+    {
+      "path": "share\\licenses\\vtk\\vtkInfovisCore\\LICENSE",
+      "sha256": "04A4FE62943BA1877492C58DFCF59A733D820BE0D8E4EFE07E56D7780A798F86",
+      "bytes": 1811
+    },
+    {
+      "path": "share\\licenses\\vtk\\vtkInteractionStyle\\LICENSE",
+      "sha256": "04A4FE62943BA1877492C58DFCF59A733D820BE0D8E4EFE07E56D7780A798F86",
+      "bytes": 1811
+    },
+    {
+      "path": "share\\licenses\\vtk\\vtkInteractionWidgets\\LICENSE",
+      "sha256": "04A4FE62943BA1877492C58DFCF59A733D820BE0D8E4EFE07E56D7780A798F86",
+      "bytes": 1811
+    },
+    {
+      "path": "share\\licenses\\vtk\\vtkIOCore\\LICENSE",
+      "sha256": "04A4FE62943BA1877492C58DFCF59A733D820BE0D8E4EFE07E56D7780A798F86",
+      "bytes": 1811
+    },
+    {
+      "path": "share\\licenses\\vtk\\vtkIONetCDF\\LICENSE",
+      "sha256": "9DCEF93EA12297CF69399578B2C722344B5021DC01FE82525FE8F170D32954BB",
+      "bytes": 3083
+    },
+    {
+      "path": "share\\licenses\\vtk\\vtkIOPLY\\Copyright.txt",
+      "sha256": "5FED3007D0C0053E4121673F4FE7BDD85B3FE60A68048C9A7D0C16B633508ED9",
+      "bytes": 744
+    },
+    {
+      "path": "share\\licenses\\vtk\\vtkjpeg\\LICENSE.md",
+      "sha256": "E10114E6E40F3D0311C401CA25245AC5EF459A43C20F976FD63F03E816F5741F",
+      "bytes": 5622
+    },
+    {
+      "path": "share\\licenses\\vtk\\vtkjsoncpp\\LICENSE",
+      "sha256": "ECF1A272AF5D660ED0054701B5662E6A9F208B56502DC67983FCE60A657D58B2",
+      "bytes": 2769
+    },
+    {
+      "path": "share\\licenses\\vtk\\vtkkissfft\\COPYING",
+      "sha256": "655A089086AF62664AC16FF6A0EEF27CCCB02D13E0378FBF3E80FDBC64BFDD34",
+      "bytes": 257
+    },
+    {
+      "path": "share\\licenses\\vtk\\vtkkwiml\\Copyright.txt",
+      "sha256": "4B143EC3C297F909B9BC866EC9261229DC0B8D19193E7A2D43ADE0C68A85BABA",
+      "bytes": 1548
+    },
+    {
+      "path": "share\\licenses\\vtk\\vtklzma\\COPYING",
+      "sha256": "4DBE5CDB52DAD9399C88936770AEA0D59198F1BD35A0031FBDCC7C151C4B1CF1",
+      "bytes": 3189
+    },
+    {
+      "path": "share\\licenses\\vtk\\vtkmetaio\\License.txt",
+      "sha256": "B9EBAD4838BE5837242A7141C107ADDC632C9024C2A2964A5367677417422276",
+      "bytes": 3685
+    },
+    {
+      "path": "share\\licenses\\vtk\\vtknanoflann\\COPYING",
+      "sha256": "BF23C5542B0D73FD122E5C61566A13BEFE282D508C34D1D605330EA8680DD4F3",
+      "bytes": 1517
+    },
+    {
+      "path": "share\\licenses\\vtk\\vtkpegtl\\LICENSE",
+      "sha256": "B9C5714917A92EA73645DC10598BD58465730E88D7486ECAA859D6F49579B687",
+      "bytes": 1125
+    },
+    {
+      "path": "share\\licenses\\vtk\\vtkpugixml\\LICENSE.md",
+      "sha256": "0D0B3772AF2FA45628A548A3B34583707EBCC68BB6F83EC48CA273AAB4A510F1",
+      "bytes": 1079
+    },
+    {
+      "path": "share\\licenses\\vtk\\vtkRenderingCore\\LICENSE",
+      "sha256": "04A4FE62943BA1877492C58DFCF59A733D820BE0D8E4EFE07E56D7780A798F86",
+      "bytes": 1811
+    },
+    {
+      "path": "share\\licenses\\vtk\\vtkRenderingLabel\\LICENSE",
+      "sha256": "04A4FE62943BA1877492C58DFCF59A733D820BE0D8E4EFE07E56D7780A798F86",
+      "bytes": 1811
+    },
+    {
+      "path": "share\\licenses\\vtk\\vtkRenderingVolume\\LICENSE",
+      "sha256": "04A4FE62943BA1877492C58DFCF59A733D820BE0D8E4EFE07E56D7780A798F86",
+      "bytes": 1811
+    },
+    {
+      "path": "share\\licenses\\vtk\\vtkscn\\LICENSE",
+      "sha256": "1EB85FC97224598DAD1852B5D6483BBCF0AA8608790DCC657A5A2A761AE9C8C6",
+      "bytes": 11558
+    },
+    {
+      "path": "share\\licenses\\vtk\\vtkscn\\LICENSE.nanorange",
+      "sha256": "BEB8E42E9D6B4284E03304D05A81A0755200A965FC8D0A5E0AEA1E84CF805D6E",
+      "bytes": 1361
+    },
+    {
+      "path": "share\\licenses\\vtk\\vtksys\\Copyright.txt",
+      "sha256": "0998690E8DC877E5D9D79D852F85630BA42B4061962BAEFC9651675ECF972082",
+      "bytes": 1851
+    },
+    {
+      "path": "share\\licenses\\vtk\\vtktoken\\license.md",
+      "sha256": "2153F6031E7BEB4A69EAF701C061187F134281EF1B52B63EDDFAF3C1498E91D2",
+      "bytes": 1462
+    },
+    {
+      "path": "share\\licenses\\vtk\\vtkutf8\\LICENSE",
+      "sha256": "BEB8E42E9D6B4284E03304D05A81A0755200A965FC8D0A5E0AEA1E84CF805D6E",
+      "bytes": 1361
+    },
+    {
+      "path": "share\\licenses\\vtk\\vtkverdict\\LICENSE",
+      "sha256": "C5145609F2B70450768237EEE7C3D3308E7C64B12AA546565DB1A7A3D8DFFA68",
+      "bytes": 1700
+    },
+    {
+      "path": "share\\licenses\\webifc\\LICENSE.md",
+      "sha256": "1F256ECAD192880510E84AD60474EAB7589218784B9A50BC7CEEE34C2B91F1D5",
+      "bytes": 16725
+    },
+    {
+      "path": "share\\licenses\\webp\\COPYING",
+      "sha256": "5AEC868F669E384A22372A4E8A1A6CD7D44C64CD451F960CA69CC170D1E13ACF",
+      "bytes": 1496
+    },
+    {
+      "path": "share\\licenses\\zlib\\README",
+      "sha256": "D106DCDB2A0B3087CB3A2380B9F00A0BBADC7EB835CD80408F94A2D78D69727D",
+      "bytes": 5317
+    },
+    {
+      "path": "share\\licenses\\zstd\\LICENSE",
+      "sha256": "7055266497633C9025B777C78EB7235AF13922117480ED5C674677ADC381C9D8",
+      "bytes": 1549
+    }
+  ]
+}

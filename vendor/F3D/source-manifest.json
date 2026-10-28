@@ -1,0 +1,37 @@
+[
+  {
+    "file": "c/engine_c_api.h",
+    "sha256": "C10FE77C207577FCDF75A4DA40DAE4CCCDDF91F5171F8551357EFA8B4D17F323",
+    "sourceCommit": "b72c7b5c9244e4a0c12975ce6546645c1a8b2680"
+  },
+  {
+    "file": "c/window_c_api.h",
+    "sha256": "0BB53F8FD7A3094A0BA870A19B520349918314C4099C2549BF99A85D300C39B0",
+    "sourceCommit": "b72c7b5c9244e4a0c12975ce6546645c1a8b2680"
+  },
+  {
+    "file": "c/camera_c_api.h",
+    "sha256": "DE3ADDFA5A5813755CA37EC44E572A6F04C6C2CB71403717F3C14E711B617840",
+    "sourceCommit": "b72c7b5c9244e4a0c12975ce6546645c1a8b2680"
+  },
+  {
+    "file": "c/image_c_api.h",
+    "sha256": "2459FBECA243BD9728045F8E08F2310233C2D90D33DF635CFB47AFC3AA8573F7",
+    "sourceCommit": "b72c7b5c9244e4a0c12975ce6546645c1a8b2680"
+  },
+  {
+    "file": "c/options_c_api.h",
+    "sha256": "A1C61E90671CFE3F57274585B16E3E6BA727823FEF78E7787826C04BEEE4945D",
+    "sourceCommit": "b72c7b5c9244e4a0c12975ce6546645c1a8b2680"
+  },
+  {
+    "file": "c/scene_c_api.h",
+    "sha256": "F210310574ACDE696E6611340C3144130DA0DAE7B7B1557812F35493893C0CF1",
+    "sourceCommit": "b72c7b5c9244e4a0c12975ce6546645c1a8b2680"
+  },
+  {
+    "file": "examples/libf3d/cpp/offscreen-thumbnail/main.cxx",
+    "sha256": "3A89C235EF2BFB74CDD8CB6D4F4C34105D4B7E01EC3D79F8C99552265D7A9977",
+    "sourceCommit": "b72c7b5c9244e4a0c12975ce6546645c1a8b2680"
+  }
+]

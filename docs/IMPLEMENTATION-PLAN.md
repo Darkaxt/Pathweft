@@ -1,9 +1,11 @@
 # Implementation and reconciliation
 
-Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.1, 2026-10-28.
+Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.2, 2026-10-29.
 
-Current authorization: S2 implementation/verification, requested by the user on
-2026-10-28 after S1 completion. S1 and S2 are COMPLETE; S3-S5 remain NOT STARTED. This
+Current authorization: S3 implementation/verification, requested by the user on
+2026-10-29 after S2 completion. The user also added the F3D prototype and a separate
+archive-browsing/editing stage. S1-S3 are COMPLETE; S4-S6 remain
+NOT STARTED. Native source/SDK integration is preferred. This
 plan neither authorizes itself nor adds approval checkpoints.
 
 ## Stage map
@@ -12,9 +14,10 @@ plan neither authorizes itself nor adds approval checkpoints.
 | --- | --- | --- | --- | --- |
 | S1 - Isolated product and real pane search | COMPLETE | CORE-01..03, SEARCH-01..04, applicable LIFE-01/DELIVERY-03 | Implementation authorized, setup available | Real index/search/coverage, isolation, rendered UI, browsing, physical OLE drag and OS clipboard copy/paste/restoration pass; see S1 evidence |
 | S2 - Connected taskbar workflow | COMPLETE | WIDGET-01..03, affected CORE-02/03, LIFE-01/DELIVERY-03 | S1 COMPLETE | Real widget query/handoff/reveal, shared actions/queue, actual native hotkey/typing before and after Explorer restart, hidden real mixed-DPI transitions and inspected File Labs layouts; see S2 evidence |
-| S3 - Internal selectable previews | NOT STARTED | PREVIEW-01..04, affected CORE-03, LIFE-01/DELIVERY-03 | S2 COMPLETE | Ported source/module inventory; preview with QuickLook absent; persisted toggles; selection correctness and resource release across all surfaces |
-| S4 - REA-driven transfer improvements | NOT STARTED | TRANSFER-01..06, WIDGET-02 revalidation, affected CORE-02/03, LIFE-01/DELIVERY-03 | S3 COMPLETE; identify TeraCopy artifact before analysis | Required REA Evidence -> adoption table -> integrated transfer behavior; data/failure/recovery checks and comparable measured workloads |
-| S5 - Final integration and delivery | NOT STARTED | SHELL-01, DELIVERY-01..03; reconcile every product requirement | S1..S4 COMPLETE; prerequisite blockers/deferrals resolved | Reversible optional shell integration; install/update/uninstall; final criteria review, source verification/commit, normal installer/portable release independently retrieved and verified |
+| S3 - Internal selectable previews | COMPLETE | PREVIEW-01..05, affected CORE-03, LIFE-01/DELIVERY-03 | S2 COMPLETE | Selected source/native inventory; complete real preview/toggle/file-release workflow with QuickLook absent; separate-process persistence; F3D model/camera/native teardown; hidden rendered acceptance and source self-test; see S3 evidence |
+| S4 - Native archive browsing and editing | NOT STARTED | ARCHIVE-01..05, affected CORE-02/03, PREVIEW-04, LIFE-01/DELIVERY-03 | S3 COMPLETE | Native 7-Zip library/source inventory; real archive navigation/open/preview and rename/copy/cut/paste; transactional edits/data preservation; consumer-bound extraction cleanup |
+| S5 - REA-driven transfer improvements | NOT STARTED | TRANSFER-01..06, archive/caller and WIDGET-02 revalidation, affected CORE-02/03, LIFE-01/DELIVERY-03 | S4 COMPLETE; identify TeraCopy artifact before analysis | Required REA Evidence -> adoption table -> integrated transfer behavior; data/failure/recovery checks and comparable measured workloads |
+| S6 - Final integration and delivery | NOT STARTED | SHELL-01, DELIVERY-01..03; reconcile every product requirement | S1..S5 COMPLETE; prerequisite blockers/deferrals resolved | Reversible optional shell integration; install/update/uninstall; final criteria review, source verification/commit, normal installer/portable release independently retrieved and verified |
 
 ENV-01..04 belong to the current setup deliverable, not an artificial product
 implementation stage. See [setup evidence](verification/2026-10-28-setup.md).
@@ -24,22 +27,23 @@ implementation stage. See [setup evidence](verification/2026-10-28-setup.md).
 | Requirements | Owner | Later boundary |
 | --- | --- | --- |
 | ENV-01..04 | Setup | Committed/remote document and head readback at setup delivery |
-| CORE-01 | S1 | Installer/update isolation S5 |
-| CORE-02 | S1, affected actions S2/S4 | Integrated package S5 |
-| CORE-03 | Each changed interface in S1..S4 | Full changed-interface review S5 |
-| SEARCH-01..04 | S1 | Widget S2, packaged engine S5 |
-| WIDGET-01..03 | S2 | Preview S3, transfer S4, package S5 |
-| PREVIEW-01..04 | S3 | Packaged dependencies S5 |
-| TRANSFER-01..06 | S4 | Final package S5 |
-| LIFE-01 | Each implementing stage | Final lifecycle reconciliation S5 |
-| SHELL-01 | S5 | Actual disable/uninstall readback |
-| DELIVERY-01..02 | S5 | Release retrieval/verification |
-| DELIVERY-03 | Each import stage; final S5 | Public source/asset review |
+| CORE-01 | S1 | Installer/update isolation S6 |
+| CORE-02 | S1, affected actions S2/S4/S5 | Integrated package S6 |
+| CORE-03 | Each changed interface in S1..S5 | Full changed-interface review S6 |
+| SEARCH-01..04 | S1 | Widget S2, packaged engine S6 |
+| WIDGET-01..03 | S2 | Preview S3, archive S4, transfer S5, package S6 |
+| PREVIEW-01..05 | S3; archive paths S4 | Packaged dependencies S6 |
+| ARCHIVE-01..05 | S4 | Transfer revalidation S5; final package S6 |
+| TRANSFER-01..06 | S5 | Final package S6 |
+| LIFE-01 | Each implementing stage | Final lifecycle reconciliation S6 |
+| SHELL-01 | S6 | Actual disable/uninstall readback |
+| DELIVERY-01..02 | S6 | Release retrieval/verification |
+| DELIVERY-03 | Each import stage; final S6 | Public source/asset review |
 
 Later packaging verification checks a different boundary; it does not defer
 required current-stage wiring or real behavior.
 
-## Required S4 sequence
+## Required S5 sequence
 
 1. Identify actual installed/official TeraCopy artifact and configuration; record
    version, origin, signature/hash and preserve its installation.
@@ -55,7 +59,7 @@ required current-stage wiring or real behavior.
 6. Reconstruct/integrate required behaviors through the shared queue/callers;
    verify data preservation before comparisons. Reconcile all TRANSFER criteria.
 
-This is future S4 work, not permission to begin it during setup.
+This is future S5 work; it does not begin during S3 or the archive stage.
 
 ## Current reconciliation ledger
 
@@ -63,17 +67,19 @@ This is future S4 work, not permission to begin it during setup.
 | --- | --- | --- | --- | --- |
 | S1 | All assigned S1 criteria: CORE-01 identity/side-by-side/handoff; CORE-02 navigation/tabs/keyboard/large listing/copy, routed drop, physical source -> OLE -> destination transfer, actual OS clipboard copy/paste, independent process readback and prior-text restoration; CORE-03 rendered controls/settings; SEARCH-01..04 real index/paging/sort/cancellation/coverage/virtual origins; applicable LIFE-01/DELIVERY-03. See [evidence](verification/2026-10-28-s1.md). | None within S1 | None | None |
 | S2 | All assigned WIDGET-01..03 and affected CORE-02/03, LIFE-01/DELIVERY-03: complete real query/handoff/reveal/file-action workflow; selected hotkey mode and native input before/after real Explorer restart; original Explorer location restored and Everything processes preserved; actual 96/144-DPI transitions; inspected 100%/150% text layouts; final hidden workflow recorded zero foreground events; Debug/Release builds and source self-test passed. See [evidence](verification/2026-10-29-s2.md). | None within S2 | None | None |
-| S3 | None | All assigned criteria | S2 prerequisite complete; S3 remains outside the current next-stage execution | None |
-| S4 | None | All assigned criteria including REA | S3 prerequisite not complete; target identity not selected | None |
-| S5 | None | All assigned criteria including final release | S1..S4 prerequisites not complete | None |
+| S3 | All PREVIEW-01..05 and affected CORE-03/LIFE-01/DELIVERY-03: eight internal modules, actual decoding/paging, all active toggles and separate-process persistence; independent widget/Space/side selection; malformed/large/unsupported/inert inputs; actual file release; F3D real model/camera/native teardown and unchanged original; complete final QuickLook-absent run and verified restoration, zero foreground events; Debug/Release builds and Release source self-test. See [evidence](verification/2026-10-29-s3.md). | None within S3 | None | None |
+| S4 | None | ARCHIVE-01..05, including supported rename/copy/cut/paste | S3 prerequisite satisfied; implementation not started | None |
+| S5 | None | All assigned criteria including REA | S4 prerequisite not complete; target identity not selected | None |
+| S6 | None | All assigned criteria including final release | S1..S5 prerequisites not complete | None |
 
 S1 and S2 are COMPLETE. The user confirmed normal unlock; real physical drag and
 clipboard checks subsequently passed. A separate STA process read the Windows
 file list/copy effect, paste delivered matching contents through the existing
 queue, and an independent post-exit read confirmed prior-text restoration.
-S2 passed following the user's next-stage request. S3-S5 remain NOT STARTED.
-S1 and S2 have no remaining blocker or tracked deferral. Installer/update/
-uninstall and packaged integration retain their explicitly assigned S5 boundary.
+S2 passed following the user's next-stage request. S3 passed after the next
+2026-10-29 request and its user-added F3D prototype. S4-S6 remain NOT STARTED.
+S1-S3 have no remaining blocker or tracked deferral. Installer/update/
+uninstall and packaged integration retain their explicitly assigned S6 boundary.
 
 Source review found one SDK dispatcher/queue owner and independent pane query
 generations, with no new timeout-driven search path or external helper product.
@@ -97,7 +103,7 @@ The final complete hidden run verified the current source, layouts, actions and
 mixed-DPI notifications together with no foreground events.
 
 S2 scratch `D:\Temp\pathweft-s2-native` used the native/small-file I/O storage
-exception. All owned processes exited and required S5 comparison evidence was
+exception. All owned processes exited and required final-package comparison evidence was
 retained under ignored project evidence storage before cleanup. Transaction
 `30901f2e0f6fbb6ab9035fb1ee0bcc91` inspected all 4,660 frozen members and removed
 4,659 ordinary candidates (297,611,120 file bytes). Its sole excluded self-test
@@ -109,7 +115,61 @@ These are helper-reported deleted file bytes, not measured free-space growth.
 During implementation, update this ledger at meaningful integrated-feature/stage
 checkpoints. Record concrete evidence and exact blockers/deferrals. At closure,
 assess actual debt within the changed scope without inventing infrastructure or
-consolidation stages. No intermediate product publication; final delivery is S5.
+consolidation stages. No intermediate product publication; final delivery is S6.
+
+The 2026-10-29 archive-stage addition shifted REA transfers from S4 to S5 and final
+delivery from S5 to S6. Earlier dated verification documents retain their original
+stage labels; the current requirement/stage ownership above is authoritative.
+
+At S3 closure, one settings owner and per-surface generation/lifecycle host serve
+the fixed eight-module inventory; F3D's queue exists for actual OpenGL thread
+affinity. No duplicate action owner, dynamic plugin infrastructure or required
+consolidation was identified. The final real workflow passed with QuickLook
+absent and restored its configuration unchanged. See S3 evidence for the bounded
+prototype/codec limits and diagnostic corrections; no acceptance was weakened.
+
+S3 scratch `D:\Temp\pathweft-s3-native` used the native/build I/O exception.
+Required private evidence was retained for S6 before cleanup. Transaction
+`a9ce1f29c4b59e39ce0bfa27f3176eed` inspected all 8,286 frozen members and removed
+8,285 ordinary candidates (1,055,048,193 helper-reported file bytes). The sole
+excluded self-test junction was independently reviewed and removed as an exact
+leaf in transaction `806a28e9dfd03055c51e58306c1f7115`, without traversing its
+target. Both transactions are applied; independent readback confirms the scratch
+root is absent. Persistent pinned build dependencies remain ongoing consumers.
+
+## S3 execution and design contract
+
+1. Port the pinned QuickLook viewer contract, context/lifecycle and selected
+   viewer source into fixed, built-in modules. Keep a per-surface generation and
+   cancellation owner; initialize only the selected enabled module. Use a stable
+   documented priority for Markdown versus text and all other overlaps.
+2. Integrate text/code, native Markdown, image, PDF and archive listing; preserve
+   media/audio and font previews as selectable modules using existing renderers.
+   Record exact formats, dependency/source pins, limits and applicable GPL source
+   materials. Replace standalone QuickLook dispatch and unsafe shell-preview
+   fallback in the governed preview path; these cannot bypass disabled modules.
+3. Reuse the existing side preview and Space window; add widget Preview/Space
+   through the same host. Changes of selection/settings/visibility cancel obsolete
+   work and release content/resources. Use actual completion for loads/cleanup;
+   retain display-only playback position updates where needed, not settling timers.
+4. Put module toggles in the existing Settings window using its dark cards, Segoe
+   UI and blue accent. Preview window defaults to 1000x720 DIP; side pane retains
+   its 200-DIP minimum; controls wrap/scroll at narrow widths and 100%/150% text.
+   Native Markdown is read-only; no embedded HTML, scripts, macro handlers or
+   automatic link/network navigation. Inspect real WPF renders at these sizes.
+   Huashu is reference guidance within the established File Labs design system.
+5. Verify complete selected-file -> preview workflows from Space, side pane and
+   widget with standalone QuickLook absent. Exercise persisted toggles/restart,
+   active-disable, priority, rapid changes, malformed/large/unsupported inputs,
+   playback release and post-close rename/delete. Reuse hidden trial presentation,
+   collect readiness/rendered evidence, reconcile, clean scratch and commit/push.
+   S3 does not publish an intermediate product release or begin S4.
+6. User addition on 2026-10-29: PREVIEW-05 includes an opt-in F3D-backed GLB
+   prototype, using source/API inspection and a real user-selected model held
+   read-only. Pin the F3D source/native dependency; integrate camera controls,
+   settings and actual resource cleanup into the same host. Generic source/UI
+   diagnostics leave installed QuickLook untouched; its absence is a separate
+   final dependency verification boundary.
 
 ## S2 execution and design contract
 

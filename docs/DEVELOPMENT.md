@@ -42,11 +42,11 @@ I/O exception. Clean D: output immediately after verified last use.
 The executable now uses Pathweft identities, `PATHWEFT_PROFILE`, its own normal
 AppData directory and fork update URLs. Runtime trials use an isolated profile;
 they never change the user's default file manager, startup or Windows Search.
-Installer/update/uninstall execution is still an S5 boundary.
+Installer/update/uninstall execution is still an S6 boundary.
 
 Inherited `build.ps1` still writes/removes staging directly. Its identity strings
 and installer AppId are isolated, but packaging has not been executed/accepted.
-Adapt its lifecycle, outputs and cleanup in S5. The new launcher is a bounded
+Adapt its lifecycle, outputs and cleanup in S6. The new launcher is a bounded
 development compile, not an alternate release engine.
 
 `Pathweft.exe --selftest` is the inherited source/filesystem regression entry
@@ -109,6 +109,45 @@ runtime donor-product dependency. `Test-SearchContracts.ps1` also checks safe
 taskbar coordinates and occupied-space constraints. No packaging/release is
 performed by these development scripts.
 
+## S3 local scenario
+
+Use one registered `D:\Temp\pathweft-s3-...` root for source/SDK downloads,
+fixtures, isolated profiles, native renders and builds. D: is required here for
+native libraries, dependency/build trees and small-file I/O. Selected source and
+provenance are committed; generated runtime output is disposable after preserving
+the required private evidence.
+
+Run `Get-S3DonorSources.ps1`, `Get-S3F3DInputs.ps1` and
+`Prepare-F3DDependency.ps1` before `Build-Development.ps1`. The latter prepares a
+pinned persistent native dependency in the development cache; it is an ongoing
+build consumer, separate from scratch. `Import-S3Provenance.ps1` and
+`Import-F3DProvenance.ps1` record the selected donor files and notices. Follow
+their explicit input parameters; no installed donor GUI supplies runtime code.
+
+`Prepare-S3Fixtures.py` creates the bounded test corpus. The optional private F3D
+input JSON contains `path`, `sha256` and `bytes` for a user-owned GLB; `Prepare-S3F3DFixture.ps1`
+records its hash and creates a controlled copy without editing the original.
+The MP4 fixture is encoded from the generated Y4M through the installed media
+helper (H.264, yuv420p, two threads, no audio). Do not commit private input,
+user-owned models or raw machine screenshots.
+
+`Invoke-S3Verification.ps1 -DiagnosticsOnly` runs the complete hidden preview
+workflow and a new-process settings readback while leaving QuickLook untouched.
+`-F3dOnly` checks the model/camera/native teardown; `-PdfOnly` diagnoses actual
+page rendering. These focused diagnostics do not prove standalone absence.
+For final PREVIEW-01 acceptance, `Invoke-S3QuickLookAbsence.ps1` temporarily
+stops the exact user-authorized QuickLook process, runs the complete scenario,
+then restores its original invocation and verifies configuration hashes/readiness.
+Never use that stop/restore wrapper as a routine debugging loop.
+
+All trial windows render offscreen and measure foreground events. The harness
+uses real controls, actual decoder/render completion and native thread exit;
+folder refresh can replace a preview generation, so it drains the actual owned
+generation chain. Each process has a distinct report directory, and its report
+must match the original process exit. Release excludes these finite Debug entry
+points. Run `Invoke-SourceSelfTest.ps1` on the Release build for existing source
+behavior, including settings reset and preserved File Labs metadata helpers.
+
 ## Evidence
 
 Private machine notes/receipts go in ignored `.local/` or explicit private storage.
@@ -119,4 +158,4 @@ TeraCopy research uses the installed `reverse-engineer-anything` skill through
 Coordinator; preserve version pins/legacy bindings. New persistent findings and
 validation assets belong on D:, disposable generation on E: except native D:
 scratch. Authenticate/deliver Evidence and verify provider exit before cleanup.
-No REA analysis ran during setup; it is required in S4.
+No REA analysis ran during setup; it is required in S5 after the native archive stage.

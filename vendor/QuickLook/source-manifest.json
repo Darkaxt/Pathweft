@@ -1,0 +1,62 @@
+[
+  {
+    "file": "QuickLook.Common/Plugin/IViewer.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Common/Plugin/IViewer.cs",
+    "sha256": "AAE7378F5DC8566CAC1922CF671A0424EED25F6551E1A15F1F8C76BC806C3F52"
+  },
+  {
+    "file": "QuickLook.Common/Plugin/ContextObject.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Common/Plugin/ContextObject.cs",
+    "sha256": "0883BD88A238C28EDF041B02DD227504A21121E8AA8905BF421DCBBF9C74EE20"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.TextViewer/Plugin.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.TextViewer/Plugin.cs",
+    "sha256": "50CCB6525E1E904E4746B00A9A1F9DE3BCB5FF3F348EBFEC9AFE6DE575F2034E"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.MarkdownViewer/Plugin.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.MarkdownViewer/Plugin.cs",
+    "sha256": "80F7E3D33730C2B5C8BDED3BA63326C397DB7FFFDFE00F560FC139AE64EAD2F3"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.MarkdownViewer/MarkdownPanel.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.MarkdownViewer/MarkdownPanel.cs",
+    "sha256": "8CB3D0E3CA46ACED4FA2C53D118947999F06ED22A23417E7560F28E3DD72423C"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.ImageViewer/Plugin.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.ImageViewer/Plugin.cs",
+    "sha256": "BA8EC8E858AE1E5DDE4E99613962471BD49E4733669EB435B7B8126CA03AF3B4"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.ArchiveViewer/Plugin.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.ArchiveViewer/Plugin.cs",
+    "sha256": "4B0429837E0E290404D98D30D656FC811410347FD232073D38107AAC2AFA0D70"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.FontViewer/Plugin.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.FontViewer/Plugin.cs",
+    "sha256": "BADFE9453FEADEAE3725890AD30F87E17744A3CF8DDC34BD55568A28988A9E74"
+  },
+  {
+    "file": "QuickLook.Common/LICENSE",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Common/LICENSE",
+    "sha256": "17CB9518AC690B27E0662873FFD02C382003EECFAA37A8E3E7545264DE9D0845"
+  },
+  {
+    "file": "LICENSE-GPL.txt",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/LICENSE-GPL.txt",
+    "sha256": "B3D1EAE7F524FC9DDD48562A4652EFD2BCD848E38B03F05E388BCCE943E73DF2"
+  }
+]

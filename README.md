@@ -6,9 +6,9 @@ A Windows file-manager project forked from [File Labs](https://github.com/limbur
 
 ## Current state
 
-**S1 and S2 are complete: isolated pane search and the connected taskbar workflow are verified in the development branch.**
+**S1-S3 are complete: isolated pane search, the connected taskbar workflow and internal selectable previews are verified in the development branch.**
 
-Pathweft has independent executable, profile, IPC, startup, shell, installer and update identities. Pane search reuses the existing default Everything instance, with explicit folder/all-index scopes and a separate live-filesystem mode. It never starts another indexer or changes Windows Search. Installer/update execution remains an S5 acceptance boundary; do not treat this development branch as an installable release.
+Pathweft has independent executable, profile, IPC, startup, shell, installer and update identities. Pane search reuses the existing default Everything instance, with explicit folder/all-index scopes and a separate live-filesystem mode. It never starts another indexer or changes Windows Search. Installer/update execution remains an S6 acceptance boundary; do not treat this development branch as an installable release.
 
 Starting snapshot: `a8d5a5ca81ab4b70d26e293e69b9cc402baa77b6` (upstream development version 1.0.62; latest published release observed at setup: v1.0.61). See [S1 evidence](docs/verification/2026-10-28-s1.md) and [S2 evidence](docs/verification/2026-10-29-s2.md). Inherited upstream releases are not Pathweft releases.
 
@@ -23,7 +23,7 @@ Enable taskbar search in Settings → Windows integration. Ctrl+Alt+Space opens 
 - Use **REA analysis of TeraCopy** and measured workflows to guide transfer development. Upstream changes are baseline context, not the transfer design authority.
 - Preserve responsive browsing and an uncluttered interface.
 
-Internal preview modules and REA-driven transfer improvements belong to S3-S4 and remain unstarted. The final installer/portable release belongs to S5.
+S3 integrates eight selectable preview modules across the side pane, Space and widget, including an opt-in native F3D GLB prototype with camera controls. See the [module inventory](docs/PREVIEW-MODULES.md) and [S3 evidence](docs/verification/2026-10-29-s3.md). Native 7-Zip-backed archive browsing/editing is scheduled in S4, REA-driven transfer improvements in S5, and the final installer/portable release in S6.
 
 ## Documents
 

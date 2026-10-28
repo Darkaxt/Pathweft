@@ -37,7 +37,8 @@ internal static class HiddenTrialPresentation
         return !display.IntersectsWith(System.Drawing.Rectangle.FromLTRB(rect.Left, rect.Top, rect.Right, rect.Bottom));
     }
     internal static bool Enabled => Environment.GetEnvironmentVariable("PATHWEFT_TEST_HIDDEN") == "1" &&
-        Settings.Profile?.StartsWith(@"D:\Temp\pathweft-s2-", StringComparison.OrdinalIgnoreCase) == true;
+        (Settings.Profile?.StartsWith(@"D:\Temp\pathweft-s2-", StringComparison.OrdinalIgnoreCase) == true ||
+         Settings.Profile?.StartsWith(@"D:\Temp\pathweft-s3-", StringComparison.OrdinalIgnoreCase) == true);
     internal static bool SuppressFocus(Window window) => Enabled && !(window is SearchWidgetWindow && Environment.GetEnvironmentVariable("PATHWEFT_S2_NATIVE_ONLY") == "1");
 
     internal static void Prepare(Window window)

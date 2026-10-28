@@ -1,0 +1,30 @@
+Pathweft internal preview source integration
+
+QuickLook revision: 2ec219aa18416c6e3b89d6aad3d82d10610f917f
+https://github.com/QL-Win/QuickLook/tree/2ec219aa18416c6e3b89d6aad3d82d10610f917f
+Copyright (c) 2017-2026 QL-Win Contributors
+
+Selected source files and SHA256 values: source-manifest.json.
+Unmodified inspection sources: original/ (plain .cs.txt, not compiled).
+Adapted, compiled source: Preview/IViewer.cs, Preview/PreviewSession.cs,
+Preview/PreviewModules.cs, Preview/BuiltinViewer.cs, Preview/MarkdownContent.cs.
+
+IViewer/ContextObject: prepare/view/cleanup lifecycle and per-viewer context.
+TextViewer/Plugin.cs: bounded text/binary detection and low-priority text choice.
+MarkdownViewer/Plugin.cs: Markdown extension inventory, priority/selection and cleanup.
+MarkdownPanel.cs: selected-content -> formatted-view flow; the browser/template,
+script resources and network/file resource bridge are replaced with native WPF.
+ImageViewer/ArchiveViewer/FontViewer Plugin.cs: selected format and lifecycle
+contracts; existing File Labs WPF/Windows renderers serve the bounded inventory.
+Donor scope is selective; see docs/PREVIEW-MODULES.md for exact included formats.
+
+The selected source files carry GPL-3.0-or-later headers, including IViewer.cs,
+despite the directory-level Common MIT license. Preserve both notices. The
+combined derived application is distributed under GPL-3.0-or-later, with the
+original File Labs MIT license and attribution preserved. Full GPL text is in
+COPYING-GPL-3.0.txt. The public Pathweft repository contains the adapted source,
+build scripts, dependency pins and original reference text; S6 must include the
+matching complete corresponding source with its versioned binary distribution.
+
+No standalone QuickLook process, installer, global input hook, tray, updater,
+plugin downloads, reflection discovery or legacy .NET Framework host is used.

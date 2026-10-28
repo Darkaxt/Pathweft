@@ -1,0 +1,24 @@
+Pathweft F3D GLB preview prototype
+
+F3D/libf3d 4.0.0, source b72c7b5c9244e4a0c12975ce6546645c1a8b2680
+https://github.com/f3d-app/f3d/tree/b72c7b5c9244e4a0c12975ce6546645c1a8b2680
+Copyright F3D contributors / Kitware contributors. BSD-3-Clause.
+Full source terms: LICENSE.md.txt and THIRD_PARTY_LICENSES.md.txt.
+
+The selected C API headers and offscreen-thumbnail example are retained under
+reference/ as original text, with hashes in source-manifest.json. Their API and
+rendering sequence are adapted in Preview/F3dNative.cs and Preview/F3dViewer.cs.
+The C API library is called directly; no F3D executable or shell extension runs.
+Only the bundled native GLB reader is selected. The preview uses an owned render
+thread and offscreen context, presents frames in WPF, and exposes camera actions.
+
+Native Windows package:
+https://github.com/f3d-app/f3d/releases/download/v4.0.0/F3D-4.0.0-Windows-x86_64.zip
+Official GitHub asset SHA256:
+98E3DB83A0E486D1A5D69F0D10D0B018432E9D200C8FECD0020AFC7DA26AB71E
+Selected shared-library and dependency-license inventory: runtime-manifest.json.
+The versioned SDK-derived library bundle is a persistent development dependency;
+the project build copies its libraries and license files beside Pathweft.
+S6 must package those same pinned dependencies and applicable source/license
+materials. No application installer, global PATH, file association or shell
+registration is changed by the prototype.

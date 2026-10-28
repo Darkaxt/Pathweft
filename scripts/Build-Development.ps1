@@ -57,6 +57,7 @@ try {
             '--artifacts-path', (Join-Path $scratch 'artifacts'),
             '--disable-build-servers', '--nologo', '--verbosity', 'minimal',
             '-maxcpucount:2', '-nodeReuse:false', '-p:UseSharedCompilation=false'
+            ('-p:F3DRuntimeRoot=' + (Join-Path $cache 'f3d/4.0.0'))
         )
         & dotnet @buildArguments
         $exitCode = $LASTEXITCODE

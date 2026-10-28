@@ -1,6 +1,6 @@
 # Pathweft specification
 
-Version 0.1 - 2026-10-28. Owner: Darkaxt.
+Version 0.2 - 2026-10-29. Owner: Darkaxt.
 
 This is the authoritative specification. The derived plan must preserve every
 requirement and acceptance criterion. Material scope changes require explicit
@@ -16,13 +16,22 @@ The setup request established the environment, public fork and specification.
 On 2026-10-28 the user authorized **implementation of S1 using Specification-Gated
 Implementation**. This includes independent identity, real pane search and its
 required verification. After S1 completion, the user authorized **S2, the connected
-taskbar workflow**, by requesting the next stage. S3-S5 remain unstarted; no
+taskbar workflow**, by requesting the next stage. On 2026-10-29 the user requested
+the next stage again, authorizing **S3, internal selectable previews**. The same
+day the user added an F3D GLB prototype to S3 and requested a separate **S4 archive
+browsing/editing stage**, including rename/copy/cut/paste. REA-driven transfers
+and final delivery are now S5/S6. S4-S6 remain unstarted; no
 intermediate product release is authorized. User default-handler and Windows
-Search changes are not part of the S1/S2 trials.
+Search changes are not part of the S1-S3 trials.
 
 Source integration is selective: port useful modules and add-on source rather
 than requiring the complete donor applications. The 2026-10-28 clarification
 makes REA analysis of TeraCopy a required basis for transfer development.
+The 2026-10-29 clarification prefers native integration: use source/native SDK
+libraries inside the application wherever practical, with Pathweft owning the
+interface, settings and resource lifecycle. Do not make standalone viewer or
+archive utility windows the default integration. Record an unavoidable external
+process boundary explicitly rather than presenting it as an embedded module.
 
 ## 2. Source baseline and provenance
 
@@ -32,7 +41,9 @@ makes REA analysis of TeraCopy a required basis for transfer development.
 | [EverythingToolbar](https://github.com/srwi/EverythingToolbar/tree/a4379f181ea8e9b4d3ff8b0e5178d8d39491830c) | `a4379f181ea8e9b4d3ff8b0e5178d8d39491830c` | Selected search clients, controls and taskbar integration |
 | [QuickLook](https://github.com/QL-Win/QuickLook/tree/2ec219aa18416c6e3b89d6aad3d82d10610f917f) | `2ec219aa18416c6e3b89d6aad3d82d10610f917f` | Viewer host/contract, selected viewers and add-ons; .NET Framework 4.6.2 donor |
 | Everything engine | 1.4.1.1032, SHA-256 `F191F756996A14A11E5445FA7103D302EFD510CF2FBF920E6C0C8ED51D512E36` | Existing default instance; official SDK API 2. See `vendor/EverythingSDK/NOTICES.txt`; engine source is not imported. |
-| TeraCopy | Identify actual artifact version/hash in S4 | Required REA target; not yet analyzed |
+| F3D | 4.0.0, b72c7b5c9244e4a0c12975ce6546645c1a8b2680 | Source-derived C API/offscreen rendering for the S3 GLB prototype |
+| 7-Zip | Pin source/SDK/runtime in S4 | Native archive browsing and supported edit operations |
+| TeraCopy | Identify actual artifact version/hash in S5 | Required REA target; not yet analyzed |
 
 File Labs currently targets .NET 8/WPF. It uses recursive filesystem search
 capped at 10,000 results, implements its own previews plus an external QuickLook
@@ -94,11 +105,22 @@ changing Outlook indexing or modifying the existing engine configuration.
 | PREVIEW-02 | Initial source-integration scope: text/code, Markdown, images, PDF and archive listing. Preserve media/audio and font previews as internal selectable modules, reusing current code where suitable. Record the exact shipped module/source/dependency/format inventory before S3 acceptance. Importing every plugin is not required. |
 | PREVIEW-03 | Persist per-module enable/disable settings. Disabled modules are not selected or initialized; disabling the current module releases its preview resources. Resolve overlaps by deterministic priority or explicit preference. Show an eligible alternative or honest unsupported/disabled state. Verify toggles, active-disable and restart persistence. |
 | PREVIEW-04 | Space, side-pane and widget previews share selection/lifecycle rules. Rapid navigation cannot show obsolete content. Close/change releases documents, playback and native resources. Previewing must not execute a selected executable or run document macros/scripts. Verify representative formats, malformed/large/unsupported inputs and file release by rename/delete after closing. |
+| PREVIEW-05 | User-authorized S3 prototype addition (2026-10-29): add an opt-in F3D-backed GLB preview module and verify the user-specified Castlevania GLB inside Pathweft. Inspect/adapt F3D source and its supported library API. Keep module settings and resource lifetime under the internal preview host; verify a real model render, camera controls, disable/close cleanup and unchanged original asset. The private asset path/hash belongs in ignored trial input, not public source. This adds a bounded 3D prototype, not arbitrary 3D format parity or editing. |
 
 Compiled-in modules with on-demand initialization are sufficient. Assembly
 unloading, a dynamic plugin marketplace and a general extension framework are not
-requirements. Office, 3D and specialist viewers are possible separately scoped
-additions, not implied first-release commitments.
+requirements. The explicitly requested F3D GLB prototype is included in S3;
+Office and other specialist viewers remain separately scoped additions.
+
+### Native archive browsing and editing
+
+| ID | Requirement and acceptance |
+| --- | --- |
+| ARCHIVE-01 | Integrate a pinned 7-Zip-backed library/SDK into the file manager. Record exact read/write format capabilities, selected source/native dependencies and terms. Verify real ZIP/7z and representative additional supported formats without requiring a standalone archive utility window. |
+| ARCHIVE-02 | Browse archive paths/folders through normal panes, tabs, breadcrumbs, selection and sorting, as virtual folders. Open an archive directly and navigate its tree without extracting the whole archive first. Preserve ordinary ZIP browsing and existing file-manager behavior. Verify representative nested paths and honest unsupported/corrupt/encrypted/multipart states. |
+| ARCHIVE-03 | Provide rename/copy/cut/paste for writable formats, including filesystem-to-archive, archive-to-filesystem and archive-to-archive workflows. Keep one application action/transfer owner and explicit conflict decisions. Read-only formats expose their actual capabilities; do not imply write support where the backend lacks it. Verify real operations and destination contents through the integrated UI. |
+| ARCHIVE-04 | Stage and verify archive edits before publishing a replacement. Failed/canceled writes preserve the original archive; a cut removes its source only after the destination operation is verified. Detect concurrent source changes before replacement. Verify conflicts, interrupted writes, invalid/traversal entry paths and data preservation; never silently extract an entry outside its selected destination. |
+| ARCHIVE-05 | Open selected archive entries and integrate eligible internal previews through controlled, entry-bound extraction where needed. Own temporary content until its actual consumer is finished; do not delete files merely because a launcher exited or a delay elapsed. Passwords remain ephemeral/private. Verify opening/previewing actual entries, resource release and reviewed cleanup without executing content during preview. |
 
 ### REA-driven transfer improvements
 
@@ -164,5 +186,5 @@ current implementation authorization and reconciliation are recorded in the plan
   Search/Outlook change, desktop-shell replacement or unrelated feature expansion.
 - Existing application identity stays unchanged during setup; S1 must isolate it
   before runtime trials. No claim that the inherited installer is ready.
-- No implementation-stage releases. The final release belongs to S5 after all
+- No implementation-stage releases. The final release belongs to S6 after all
   prerequisite criteria pass under actual implementation authorization.

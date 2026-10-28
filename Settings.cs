@@ -31,7 +31,7 @@ public static class Settings
     public static double PreviewWidth = 380;
     public static int Stats = 2;             // the cards below the panes: 2 full, 1 compact (one line each), 0 hidden
     public static double SidebarScale = 1, TabsScale = 1, PathScale = 1, ListScale = 1; // per area, on top of TextScale: 0.8–1.5
-    public static bool QuickLook;            // Space asks QuickLook (QL-Win) for the preview when it is running
+    public static HashSet<string> DisabledPreviewModules = new(new[] { "f3d" }, StringComparer.Ordinal);
     public static bool TaskbarSearch;        // explicit opt-in; lifetime belongs to the running application
     public static bool TaskbarSearchBox = true;
     public static bool ItemTips = true;      // hovering a file shows its full name, type, size and date
@@ -137,7 +137,7 @@ public static class Settings
                 case "scale.tabs" when double.TryParse(v, CultureInfo.InvariantCulture, out var s2) && double.IsFinite(s2): TabsScale = Math.Clamp(s2, 0.8, 1.5); break;
                 case "scale.path" when double.TryParse(v, CultureInfo.InvariantCulture, out var s3) && double.IsFinite(s3): PathScale = Math.Clamp(s3, 0.8, 1.5); break;
                 case "scale.list" when double.TryParse(v, CultureInfo.InvariantCulture, out var s4) && double.IsFinite(s4): ListScale = Math.Clamp(s4, 0.8, 1.5); break;
-                case "quicklook": QuickLook = v == "1"; break;
+                case "preview.modules.disabled": DisabledPreviewModules = new(v.Split(',', StringSplitOptions.RemoveEmptyEntries), StringComparer.Ordinal); break;
                 case "taskbarsearch": TaskbarSearch = v == "1"; break;
                 case "taskbarsearchbox": TaskbarSearchBox = v == "1"; break;
                 case "itemtips": ItemTips = v == "1"; break;
@@ -214,7 +214,7 @@ public static class Settings
             $"scale.tabs={TabsScale.ToString(CultureInfo.InvariantCulture)}",
             $"scale.path={PathScale.ToString(CultureInfo.InvariantCulture)}",
             $"scale.list={ListScale.ToString(CultureInfo.InvariantCulture)}",
-            $"quicklook={(QuickLook ? 1 : 0)}",
+            $"preview.modules.disabled={string.Join(",", DisabledPreviewModules.OrderBy(id => id, StringComparer.Ordinal))}",
             $"taskbarsearch={(TaskbarSearch ? 1 : 0)}",
             $"taskbarsearchbox={(TaskbarSearchBox ? 1 : 0)}",
             $"itemtips={(ItemTips ? 1 : 0)}",

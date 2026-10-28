@@ -25,14 +25,19 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
   <ItemGroup>
+    <None Include="$(F3DRuntimeRoot)\bin\*.dll" Link="F3D\bin\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="$(F3DRuntimeRoot)\share\licenses\**\*" Link="F3D\licenses\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <Compile Remove="tests\**\*.cs" />
     <None Include="vendor\EverythingSDK\Everything64.dll" CopyToOutputDirectory="PreserveNewest" Link="Everything64.dll" />
     <None Include="vendor\**\*.txt" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="COPYING-GPL-3.0.txt" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="LICENSE" CopyToOutputDirectory="PreserveNewest" />
     <Using Remove="System.Windows.Forms" />
     <Using Remove="System.Drawing" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="System.IO.Hashing" Version="10.0.12" />
+    <PackageReference Include="Markdig" Version="1.5.0" />
     <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4258.31" />
   </ItemGroup>
   <ItemGroup>

@@ -17,6 +17,7 @@ public partial class SettingsWindow : Window
         // its cards took 130-200 ms to lay out before the first frame: the window comes up empty, they follow on the next
         ContentRendered += (_, _) => Body.Visibility = Visibility.Visible;
         ApplyTextSize();
+        BuildPreviewModuleControls();
         ShowValues();
         // A double-click on a slider's handle puts it back to its default (Settings.cs), as in Frostpane: one
         // setting can be tried out and undone without a reset of them all.
@@ -67,7 +68,7 @@ public partial class SettingsWindow : Window
         StatsCompactBox.IsEnabled = Settings.Stats > 0;
         ScaleSidebar.Value = Settings.SidebarScale * 100; ScaleTabs.Value = Settings.TabsScale * 100;
         ScalePath.Value = Settings.PathScale * 100; ScaleList.Value = Settings.ListScale * 100;
-        QuickLookBox.IsChecked = Settings.QuickLook;
+        foreach (var toggle in previewModuleControls) toggle.IsChecked = !Settings.DisabledPreviewModules.Contains((string)toggle.Tag);
         TaskbarSearchBox.IsChecked = Settings.TaskbarSearch;
         TaskbarEmbedBox.IsChecked = Settings.TaskbarSearchBox;
         ItemTipsBox.IsChecked = Settings.ItemTips;
@@ -89,7 +90,7 @@ public partial class SettingsWindow : Window
         "scale.sidebar", "scale.tabs", "scale.path", "scale.list", "singlepane", "closeemptypane", "stats", "animations", "smoothscroll",
         "autoscroll", "autoscrollx",
     };
-    internal static readonly string[] FilesKeys = { "hidden", "shortcutfolders", "internaleditor", "quicklook", "itemtips", "tipdelay", "deletesound", "nativemenu" };
+    internal static readonly string[] FilesKeys = { "hidden", "shortcutfolders", "internaleditor", "preview.modules.disabled", "itemtips", "tipdelay", "deletesound", "nativemenu" };
     internal static readonly string[] TransfersKeys = { "verify", "parallel" };
     /// What Pathweft keeps that isn't a choice in these cards: Windows integration, and what it remembers by itself.
     internal static readonly string[] NotReset =
@@ -120,6 +121,7 @@ public partial class SettingsWindow : Window
         main.ApplyCloseEmptyPane();
         main.RefreshPanes(); // hidden files
         main.ResortPanes(); // shortcuts with the folders
+        main.RefreshPreviewModules();
         MainWindow.SetBackdrop(this);
         loading = true; // the controls take the defaults without each one saving and repainting again
         ShowValues();
@@ -490,7 +492,22 @@ public partial class SettingsWindow : Window
     void Hidden_Click(object s, RoutedEventArgs e) { Settings.ShowHidden = HiddenBox.IsChecked == true; Settings.Save(); main.RefreshPanes(); }
     void ShortcutFolders_Click(object s, RoutedEventArgs e) { Settings.ShortcutsWithFolders = ShortcutFoldersBox.IsChecked == true; Settings.Save(); main.ResortPanes(); }
     void Editor_Click(object s, RoutedEventArgs e) { Settings.InternalEditor = EditorBox.IsChecked == true; Settings.Save(); }
-    void QuickLook_Click(object s, RoutedEventArgs e) { Settings.QuickLook = QuickLookBox.IsChecked == true; Settings.Save(); }
+    readonly List<System.Windows.Controls.CheckBox> previewModuleControls = new();
+    void BuildPreviewModuleControls()
+    {
+        foreach (var module in FileExplorer.Preview.PreviewModules.All)
+        {
+            var toggle = new System.Windows.Controls.CheckBox { Name = "PreviewModule_" + module.Id, Content = module.Name, Tag = module.Id, Margin = new(0, 4, 0, 0) };
+            System.Windows.Automation.AutomationProperties.SetAutomationId(toggle, toggle.Name);
+            toggle.Click += (_, _) =>
+            {
+                if (toggle.IsChecked == true) Settings.DisabledPreviewModules.Remove(module.Id); else Settings.DisabledPreviewModules.Add(module.Id);
+                Settings.Save(); main.RefreshPreviewModules();
+            };
+            previewModuleControls.Add(toggle); PreviewModulesPanel.Children.Add(toggle);
+            PreviewModulesPanel.Children.Add(new System.Windows.Controls.TextBlock { Text = module.Description, TextWrapping = TextWrapping.Wrap, Foreground = MainWindow.Hex("#8A97AA"), Margin = new(22, 0, 0, 5), FontSize = 11 });
+        }
+    }
 
     void TaskbarSearch_Click(object sender, RoutedEventArgs e)
     {

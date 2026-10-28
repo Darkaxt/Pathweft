@@ -1,0 +1,6 @@
+Markdig 1.5.0 (net8.0 assembly)
+Copyright Alexandre Mutel; BSD-2-Clause, full terms in LICENSE.txt.
+Source revision: 9900e46eacd9e17ba32f1b441a349bcab61777af
+https://github.com/xoofx/markdig/tree/9900e46eacd9e17ba32f1b441a349bcab61777af
+https://www.nuget.org/packages/Markdig/1.5.0
+Used only as a native Markdown parser. No HTML/browser renderer or scripts run.

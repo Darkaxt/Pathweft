@@ -340,7 +340,7 @@
                     ToolTip="Close the preview (Alt+P)" Click="Preview_Click"/>
             <TextBlock x:Name="PreviewTitle" Foreground="{StaticResource Muted}" FontSize="11" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
           </DockPanel>
-          <ContentControl x:Name="PreviewBody" Focusable="False"/>
+          <ContentControl x:Name="PreviewBody" Focusable="False" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"/>
         </DockPanel>
       </Border>
       </Grid>

@@ -28,7 +28,6 @@ public partial class MainWindow : Window
         SetUpChrome();
         ApplyPanes();
         ApplyStats();
-        previewDelay.Tick += PreviewTick;
         Activated += (_, _) => PaneView.WindowActivatedAt = Environment.TickCount64; // that click doesn't rename
         // restore size/position only if it's still on a connected screen
         if (Settings.WindowBounds is { } wb && new Rect(SystemParameters.VirtualScreenLeft, SystemParameters.VirtualScreenTop,
@@ -55,12 +54,13 @@ public partial class MainWindow : Window
         };
         Closed += (_, _) => { taskbarSearch?.Dispose(); tray?.Dispose(); }; // or the icon lingers until the pointer passes over it
         SourceInitialized += (_, _) => { ApplyAcrylic(this); WatchShellChanges(); taskbarSearch = new(this); taskbarSearch.ApplySettings(); };
+        InitializePreviews();
         if (Settings.Profile == null) StartUpdateChecks();
 
         foreach (var p in new[] { Left, Right })
         {
             p.Activated += () => SetActive(p);
-            p.StatsChanged += () => { if (p == active) { UpdateStats(); PreviewFollow(); } QuickLookFollow(p); FilesShown(); };
+            p.StatsChanged += () => { if (p == active) { UpdateStats(); PreviewFollow(); } FilesShown(); };
             p.Error += msg => Status.Text = msg;
             p.FilesDropped += (files, dest, move) => { if (PaneView.ArchiveOf(dest) != null) AddToArchive(p, files, dest); else Submit(files, dest, move); };
             p.OpenArchived += e => OpenFromArchive(p, e);
@@ -276,6 +276,7 @@ public partial class MainWindow : Window
         SidebarPanel.LayoutTransform = Settings.SidebarScale != 1 ? new ScaleTransform(Settings.SidebarScale, Settings.SidebarScale) : null;
         Left.ApplyScales(); Right.ApplyScales();
         taskbarSearch?.Widget?.ApplyTextScale();
+        ApplyPreviewAppearance();
         BgImage.Source = BackgroundPicture(Settings.BackgroundImage);
         BgLayer.Visibility = BgImage.Source != null ? Visibility.Visible : Visibility.Collapsed;
         BgLayer.Opacity = Settings.ImageOpacity / 100;

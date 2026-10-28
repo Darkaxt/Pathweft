@@ -187,8 +187,9 @@
             <TextBlock Style="{StaticResource Hint}" Text="A shortcut that opens a folder is listed among the folders, at the top, instead of among the files."/>
             <CheckBox x:Name="EditorBox" Content="Open code and text files in the Pathweft editor" Click="Editor_Click"/>
             <TextBlock Style="{StaticResource Hint}" Text="Enter or double-click on a .txt, .json, .py, .php, .html, .ps1 and every other code or text file opens it in the built-in editor. Off: it opens in the app Windows has for it. F4 always opens the built-in editor."/>
-            <CheckBox x:Name="QuickLookBox" Content="Space opens QuickLook" Click="QuickLook_Click"/>
-            <TextBlock Style="{StaticResource Hint}" Text="For QuickLook users: when it is running, Space previews in QuickLook instead of Quick View, and the preview follows the selection. When it is not running, Quick View opens as usual."/>
+            <TextBlock Text="Preview modules" FontWeight="SemiBold" Margin="0,14,0,4"/>
+            <TextBlock Style="{StaticResource Hint}" Text="Space, the preview pane and taskbar previews use these built-in modules. Changes apply to open previews immediately. Markdown takes priority over plain text; a disabled format may still have a readable text alternative."/>
+            <StackPanel x:Name="PreviewModulesPanel" Margin="0,4,0,8"/>
             <CheckBox x:Name="ItemTipsBox" Content="Show details when hovering a file" Click="ItemTips_Click"/>
             <TextBlock Style="{StaticResource Hint}" Text="A tooltip with the full name, type, size and date, as in Explorer."/>
             <DockPanel Margin="0,2,0,0">
