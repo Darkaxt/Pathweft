@@ -6,6 +6,8 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 
+using Clipboard = System.Windows.Forms.Clipboard;
+
 namespace FileExplorer;
 
 // Right-click: Pathweft' own menu, or the real Windows one (Settings → Files → Context menu).

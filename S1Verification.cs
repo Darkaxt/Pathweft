@@ -8,6 +8,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
+using Clipboard = System.Windows.Forms.Clipboard;
 
 namespace FileExplorer;
 
@@ -21,6 +22,15 @@ internal static class S1Verification
     {
         evidence.Add(new { criterion, passed = condition, elapsedMs = clock.Elapsed.TotalMilliseconds });
         if (!condition) throw new InvalidOperationException(criterion);
+    }
+    internal static int ReadClipboard(string expected)
+    {
+        if (Environment.GetEnvironmentVariable("PATHWEFT_PROFILE") == null ||
+            !Path.GetFullPath(expected).StartsWith(@"D:\Temp\pathweft-s1-", StringComparison.OrdinalIgnoreCase)) return 1;
+        var files = Clipboard.GetFileDropList();
+        return files.Count == 1 && files[0] == expected &&
+            Clipboard.GetData("Preferred DropEffect") is MemoryStream effect &&
+            effect.ToArray().SequenceEqual(BitConverter.GetBytes(5)) ? 0 : 1;
     }
     internal static async Task Run(MainWindow window, string root)
     {
@@ -57,6 +67,16 @@ internal static class S1Verification
             if (Environment.GetEnvironmentVariable("PATHWEFT_S1_VIRTUAL_ONLY") == "1")
             {
                 await VerifyVirtualOrigins(window, left, root);
+                result = 0;
+                return;
+            }
+            // Focused OS-boundary retry reuses unchanged, retained search evidence.
+            // It remains a finite local scenario compiled out of Release.
+            if (Environment.GetEnvironmentVariable("PATHWEFT_S1_INTERACTIONS_ONLY") == "1" || Environment.GetEnvironmentVariable("PATHWEFT_S1_CLIPBOARD_ONLY") == "1")
+            {
+                bool clipboardOnly = Environment.GetEnvironmentVariable("PATHWEFT_S1_CLIPBOARD_ONLY") == "1";
+                bool verified = clipboardOnly ? await window.VerifyClipboard(left, right, output) : await window.VerifyBrowsingActions(left, right, output);
+                Check(verified, clipboardOnly ? "CORE-02 OS clipboard cross-process copy/paste and restoration" : "CORE-02 OS clipboard and physical source -> OLE -> destination drag");
                 result = 0;
                 return;
             }
@@ -191,7 +211,7 @@ internal static class S1Verification
                 File.WriteAllLines(Path.Combine(output, "query-transitions.txt"), transitions);
             File.WriteAllText(Path.Combine(output, "s1-results.json"), JsonSerializer.Serialize(new
             {
-                result, scenario = Environment.GetEnvironmentVariable("PATHWEFT_S1_VIRTUAL_ONLY") == "1" ? "virtual-origin-only" : "full-s1",
+                result, scenario = Environment.GetEnvironmentVariable("PATHWEFT_S1_VIRTUAL_ONLY") == "1" ? "virtual-origin-only" : Environment.GetEnvironmentVariable("PATHWEFT_S1_CLIPBOARD_ONLY") == "1" ? "clipboard-only" : Environment.GetEnvironmentVariable("PATHWEFT_S1_INTERACTIONS_ONLY") == "1" ? "interactions-only" : "full-s1",
                 pid = Environment.ProcessId, executable = Environment.ProcessPath,
                 assembly = typeof(App).Assembly.GetName().Version.ToString(), evidence,
                 measurementLimits = "WPF RenderTargetBitmap and measured visual tree; physical display presentation is not timed. Backend comparisons are separate evidence."
@@ -303,6 +323,7 @@ public partial class PaneView
 {
     internal FileList ListForVerification => List;
     internal Action<Exception> VerificationDragFailure;
+    internal Action VerificationDragEnded;
     internal List<string> VerificationQueryEvents;
     internal async Task ArmWatchBeforeVerificationSearch()
     {
@@ -421,12 +442,43 @@ public partial class MainWindow
         finally { Ferry.Finished -= DropFinished; }
         File.WriteAllText(Path.Combine(evidenceFolder, "browsing-actions.txt"), "Real cross-pane Copy button and destination routed Drop handler completed through Ferry; destinations verified. OLE source drag loop is a separate boundary.\n");
         bool physicalDragVerified = await VerifyOleDrag(left, right, evidenceFolder);
+        return await VerifyClipboard(left, right, evidenceFolder) && physicalDragVerified;
+    }
+
+    internal async Task<bool> VerifyClipboard(PaneView left, PaneView right, string evidenceFolder)
+    {
+        // The drag selects its own fixture; restore the intended copy selection.
+        left.ListForVerification.SelectedItem = left.Items.Single(e => e.Name == "pwfts1_clipboard.txt");
+        SetActive(left);
 
         // Clipboard format is a real OS boundary; preserve the prior object.
         // A blocked external boundary is recorded without preventing independent
         // UI verification, and without changing application behavior.
-        IDataObject prior;
-        try { prior = Clipboard.GetDataObject(); }
+        System.Windows.Forms.DataObject prior = null;
+        string priorText = null;
+        try
+        {
+            // GetDataObject returns a live OLE proxy, not a snapshot. Materialize
+            // every advertised format while its original owner still serves it.
+            var original = Clipboard.GetDataObject();
+            if (original != null)
+            {
+                prior = new System.Windows.Forms.DataObject();
+                foreach (string format in original.GetFormats(false))
+                {
+                    object value = original.GetData(format, false)
+                        ?? throw new InvalidOperationException("Cannot preserve clipboard format: " + format);
+                    if (value is MemoryStream stream) value = new MemoryStream(stream.ToArray());
+                    else if (value is Array array) value = array.Clone();
+                    prior.SetData(format, false, value);
+                }
+                if (prior.GetDataPresent(DataFormats.UnicodeText, false))
+                    priorText = (string)prior.GetData(DataFormats.UnicodeText, false);
+            }
+            File.AppendAllText(Path.Combine(evidenceFolder, "browsing-actions.txt"), "Prior clipboard formats materialized before replacement; contents excluded from evidence.\n");
+            if (priorText != null)
+                File.WriteAllText(Path.Combine(Settings.Dir, "clipboard-recovery.txt"), priorText);
+        }
         catch (System.Runtime.InteropServices.COMException ex) when ((uint)ex.HResult == 0x800401D0)
         {
             File.WriteAllText(Path.Combine(evidenceFolder, "clipboard-blocker.txt"), ex.ToString());
@@ -436,10 +488,39 @@ public partial class MainWindow
         {
             ClipboardPut(false);
             if (!Clipboard.GetFileDropList().Contains(Path.Combine(left.Dir, "pwfts1_clipboard.txt"))) throw new IOException("Clipboard file format failed.");
+            object effectData = Clipboard.GetData("Preferred DropEffect");
+            string effectBytes = effectData is MemoryStream effect ? Convert.ToHexString(effect.ToArray()) : null;
+            File.AppendAllText(Path.Combine(evidenceFolder, "browsing-actions.txt"), $"Copy effect type={effectData?.GetType().FullName ?? "null"}; bytes={effectBytes ?? "null"}.\n");
+            if (effectBytes != "05000000") throw new IOException("Clipboard copy effect was not preserved: " + effectBytes);
+            File.AppendAllText(Path.Combine(evidenceFolder, "browsing-actions.txt"), "OS clipboard CF_HDROP readback matches selected fixture.\n");
+            var readerStart = new ProcessStartInfo(Environment.ProcessPath) { UseShellExecute = false, CreateNoWindow = true };
+            readerStart.ArgumentList.Add("--verify-s1-clipboard=" + Path.Combine(left.Dir, "pwfts1_clipboard.txt"));
+            using (var reader = Process.Start(readerStart))
+            {
+                await reader.WaitForExitAsync();
+                if (reader.ExitCode != 0) throw new IOException("Independent clipboard reader rejected the file list/effect.");
+            }
+            File.AppendAllText(Path.Combine(evidenceFolder, "browsing-actions.txt"), "Independent STA process read the actual Windows file list and copy effect; exited 0.\n");
+            string pastedFolder = Directory.CreateDirectory(Path.Combine(right.Dir, "clipboard-paste")).FullName;
+            var pasted = new TaskCompletionSource<Job>(TaskCreationOptions.RunContinuationsAsynchronously);
+            void Pasted(Job job) => pasted.TrySetResult(job);
+            Ferry.Finished += Pasted;
+            try
+            {
+                SetActive(right);
+                ClipboardPaste(pastedFolder);
+                var job = await pasted.Task;
+                if (job.Phase != Phase.Done || File.ReadAllText(Path.Combine(pastedFolder, "pwfts1_clipboard.txt")) != File.ReadAllText(Path.Combine(left.Dir, "pwfts1_clipboard.txt")))
+                    throw new IOException("OS clipboard paste did not deliver the selected fixture contents.");
+            }
+            finally { Ferry.Finished -= Pasted; }
+            File.AppendAllText(Path.Combine(evidenceFolder, "browsing-actions.txt"), "Actual clipboard copy -> paste -> Ferry completion -> destination contents verified.\n");
         }
-        finally { if (prior != null) Clipboard.SetDataObject(prior, true); else Clipboard.Clear(); }
+        finally { if (prior != null) System.Windows.Forms.Clipboard.SetDataObject(prior, true); else System.Windows.Forms.Clipboard.Clear(); }
+        if (priorText != null && Clipboard.GetText(System.Windows.Forms.TextDataFormat.UnicodeText) != priorText)
+            throw new IOException("Prior clipboard text was not restored.");
         File.AppendAllText(Path.Combine(evidenceFolder, "browsing-actions.txt"), "OS clipboard CF_HDROP round trip verified and prior clipboard restored.\n");
-        return physicalDragVerified;
+        return true;
     }
 
     [System.Runtime.InteropServices.DllImport("user32.dll")] static extern bool SetCursorPos(int x, int y);
@@ -479,11 +560,13 @@ public partial class MainWindow
         var dragging = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var finished = new TaskCompletionSource<Job>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var sourceEnded = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         MouseButtonEventHandler down = (_, _) => pressed.TrySetResult();
         GiveFeedbackEventHandler feedback = (_, _) => dragging.TrySetResult();
         DragEventHandler enter = (_, _) => entered.TrySetResult();
         void JobFinished(Job job) => finished.TrySetResult(job);
-        left.VerificationDragFailure = ex => { dragging.TrySetException(ex); entered.TrySetException(ex); };
+        left.VerificationDragFailure = ex => { dragging.TrySetException(ex); entered.TrySetException(ex); finished.TrySetException(ex); };
+        left.VerificationDragEnded = () => sourceEnded.TrySetResult();
         left.ListForVerification.AddHandler(PreviewMouseLeftButtonDownEvent, down, true);
         left.ListForVerification.GiveFeedback += feedback;
         right.ListForVerification.AddHandler(DragEnterEvent, enter, true);
@@ -515,6 +598,8 @@ public partial class MainWindow
                 Trace("destination DragEnter observed");
                 Mouse(4);
             });
+            await sourceEnded.Task;
+            Trace("source DoDragDrop returned");
             var job = await finished.Task;
             Trace("transfer finished");
             if (job.Phase != Phase.Done || !File.Exists(Path.Combine(right.Dir, entry.Name))) throw new IOException("Native OLE drag did not deliver its fixture.");
@@ -528,6 +613,7 @@ public partial class MainWindow
             left.ListForVerification.GiveFeedback -= feedback;
             right.ListForVerification.RemoveHandler(DragEnterEvent, enter);
             left.VerificationDragFailure = null;
+            left.VerificationDragEnded = null;
             Ferry.Finished -= JobFinished;
         }
     }

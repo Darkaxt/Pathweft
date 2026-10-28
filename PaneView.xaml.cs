@@ -2671,7 +2671,13 @@ public partial class PaneView : UserControl
             VerificationDragFailure?.Invoke(ex);
 #endif
         }
-        finally { WheelWhileDragging(null); ScrollAtEdge(null); } // however the drag ended
+        finally
+        {
+            WheelWhileDragging(null); ScrollAtEdge(null); // however the drag ended
+#if DEBUG
+            VerificationDragEnded?.Invoke();
+#endif
+        }
     }
 
     // Drop on a folder row, or on a shortcut to a folder → into that folder; anywhere else → the folder this pane shows.

@@ -8,6 +8,9 @@ using System.Windows.Interop;
 using System.Windows.Media;
 using Microsoft.VisualBasic.FileIO;
 using VbFs = Microsoft.VisualBasic.FileIO.FileSystem;
+// .NET 8 WPF's OLE clipboard path failed real round trips. Use the existing
+// WinForms desktop clipboard API consistently; see the S1 verification record.
+using Clipboard = System.Windows.Forms.Clipboard;
 
 namespace FileExplorer;
 
@@ -1201,7 +1204,7 @@ public partial class MainWindow : Window
         if (sel.Count == 0) return;
         var files = new System.Collections.Specialized.StringCollection();
         files.AddRange(sel.Select(x => x.Path).ToArray());
-        var data = new DataObject();
+        var data = new System.Windows.Forms.DataObject();
         data.SetFileDropList(files);
         data.SetData("Preferred DropEffect", new MemoryStream(BitConverter.GetBytes(cut ? 2 : 5)));
         Clipboard.SetDataObject(data, true);

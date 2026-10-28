@@ -6,6 +6,8 @@ using System.Security.Cryptography;
 using System.Windows;
 using Microsoft.VisualBasic.FileIO;
 
+using Clipboard = System.Windows.Forms.Clipboard;
+
 namespace FileExplorer;
 
 // Commands beyond copy/move/delete: undo, zip, compare, rename many, checksum, shortcuts, run as admin.

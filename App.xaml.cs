@@ -24,6 +24,14 @@ static class Program
     [STAThread]
     static void Main(string[] args)
     {
+#if DEBUG
+        const string clipboardCheck = "--verify-s1-clipboard=";
+        if (args.FirstOrDefault(a => a.StartsWith(clipboardCheck)) is { } expected)
+        {
+            Environment.ExitCode = S1Verification.ReadClipboard(expected[clipboardCheck.Length..]);
+            return;
+        }
+#endif
         if (!args.Any(a => a.StartsWith("--")) && Running)
         {
             AllowSetForegroundWindow(-1); // we were just launched by the user, so we may pass focus on

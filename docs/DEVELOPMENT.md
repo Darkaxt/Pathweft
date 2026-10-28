@@ -63,7 +63,9 @@ It invokes the real WPF actions, queries the real existing index, records
 completion predicates and captures rendered trees/PNGs. Physical mouse testing
 requires an unlocked input desktop and restores the pointer/button state.
 Run the complementary `-VirtualOnly` scenario to verify This PC/archive origins;
-its result is explicitly tagged as a focused scenario, not overall S1 acceptance.
+use `-InteractionsOnly` for real OLE/clipboard checks or `-ClipboardOnly` for the
+complete clipboard copy/paste/restoration workflow, including an independent STA
+reader. These focused reports are labelled and do not replace other S1 evidence.
 
 The coverage input `.local/s1-coverage-case.json` must identify a readable,
 bounded, unindexed non-NTFS leaf folder with its `path`, existing `sample` filename

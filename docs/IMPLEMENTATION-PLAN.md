@@ -3,14 +3,14 @@
 Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.1, 2026-10-28.
 
 Current authorization: S1 implementation/verification, requested by the user on
-2026-10-28. S1 is parked BLOCKED on the locked input desktop; later stages remain NOT STARTED. This
+2026-10-28. S1 is COMPLETE; later stages remain NOT STARTED. This
 plan neither authorizes itself nor adds approval checkpoints.
 
 ## Stage map
 
 | Stage | Status | Requirements / complete outcome | Prerequisites | Acceptance evidence |
 | --- | --- | --- | --- | --- |
-| S1 - Isolated product and real pane search | BLOCKED | CORE-01..03, SEARCH-01..04, applicable LIFE-01/DELIVERY-03 | Implementation authorized, setup available | Search/identity/rendered/virtual-origin checks pass; final OS clipboard and physical OLE drag require an unlocked input desktop |
+| S1 - Isolated product and real pane search | COMPLETE | CORE-01..03, SEARCH-01..04, applicable LIFE-01/DELIVERY-03 | Implementation authorized, setup available | Real index/search/coverage, isolation, rendered UI, browsing, physical OLE drag and OS clipboard copy/paste/restoration pass; see S1 evidence |
 | S2 - Connected taskbar workflow | NOT STARTED | WIDGET-01..03, affected CORE-02/03, LIFE-01/DELIVERY-03 | S1 COMPLETE | Widget -> query -> full pane handoff -> shared actions/queue; independent view state; taskbar restart/display/focus evidence |
 | S3 - Internal selectable previews | NOT STARTED | PREVIEW-01..04, affected CORE-03, LIFE-01/DELIVERY-03 | S2 COMPLETE | Ported source/module inventory; preview with QuickLook absent; persisted toggles; selection correctness and resource release across all surfaces |
 | S4 - REA-driven transfer improvements | NOT STARTED | TRANSFER-01..06, WIDGET-02 revalidation, affected CORE-02/03, LIFE-01/DELIVERY-03 | S3 COMPLETE; identify TeraCopy artifact before analysis | Required REA Evidence -> adoption table -> integrated transfer behavior; data/failure/recovery checks and comparable measured workloads |
@@ -61,23 +61,29 @@ This is future S4 work, not permission to begin it during setup.
 
 | Stage | Satisfied product criteria | Remaining | Dependency / blocker state | Tracked deferrals |
 | --- | --- | --- | --- | --- |
-| S1 | CORE-01 identity/side-by-side/handoff; CORE-03 rendered controls/settings/keyboard; SEARCH-01..04 real index, paging/sort/cancellation/coverage/virtual origins; applicable LIFE-01/DELIVERY-03, including the queued-watcher regression. See [evidence](verification/2026-10-28-s1.md). CORE-02 navigation/tabs/keyboard/large listing/copy/routed drop pass. | CORE-02 OS clipboard round trip and physical source -> OLE -> destination drag | External advancement blocker: Windows LockApp owns the input desktop; OLE clipboard returns CLIPBRD_E_CANT_OPEN. Resolve by unlocking normally and rerunning the actual interaction checks. S1 acceptance and S2 progression depend on this. | None |
-| S2 | None | All assigned criteria | S1 prerequisite not complete | None |
+| S1 | All assigned S1 criteria: CORE-01 identity/side-by-side/handoff; CORE-02 navigation/tabs/keyboard/large listing/copy, routed drop, physical source -> OLE -> destination transfer, actual OS clipboard copy/paste, independent process readback and prior-text restoration; CORE-03 rendered controls/settings; SEARCH-01..04 real index/paging/sort/cancellation/coverage/virtual origins; applicable LIFE-01/DELIVERY-03. See [evidence](verification/2026-10-28-s1.md). | None within S1 | None | None |
+| S2 | None | All assigned criteria | S1 prerequisite satisfied; S2 implementation not requested | None |
 | S3 | None | All assigned criteria | S2 prerequisite not complete | None |
 | S4 | None | All assigned criteria including REA | S3 prerequisite not complete; target identity not selected | None |
 | S5 | None | All assigned criteria including final release | S1..S4 prerequisites not complete | None |
 
-S1 is parked BLOCKED because its remaining acceptance work requires an unlocked
-input desktop. No stage is ACTIVE. Later stages remain NOT STARTED; their S1
-prerequisite is unresolved and implementation was not requested. There are no
-tracked deferrals; the OS interaction criterion remains in S1.
+Only S1 is COMPLETE. The user confirmed normal unlock; real physical drag and
+clipboard checks subsequently passed. A separate STA process read the Windows
+file list/copy effect, paste delivered matching contents through the existing
+queue, and an independent post-exit read confirmed prior-text restoration.
+No stage is ACTIVE. S2-S5 remain NOT STARTED; their implementation was not
+requested. S1 has no remaining blocker or tracked deferral. Installer/update/
+uninstall and packaged integration retain their explicitly assigned S5 boundary.
 
 Source review found one SDK dispatcher/queue owner and independent pane query
 generations, with no new timeout-driven search path or external helper product.
-No required consolidation was identified in the implemented scope. This is not
-stage closure: CORE-02 and final S1 reconciliation still require real interaction
-evidence. The development commit/branch is an intermediate deliverable, not a
-completed stage or product release.
+Clipboard operations consistently use the already-referenced WinForms API after
+an isolated .NET 8 WPF flush/read failure was reproduced; this adds no fallback,
+retry mechanism, package or competing clipboard owner. The finite Debug harness
+waits for the actual source OLE loop to return. No required consolidation was
+identified at S1 closure. All assigned S1 criteria are reconciled with actual
+evidence; unchanged real-search/rendered/side-by-side evidence remains applicable.
+The development branch is a completed S1 source deliverable, not a product release.
 
 During implementation, update this ledger at meaningful integrated-feature/stage
 checkpoints. Record concrete evidence and exact blockers/deferrals. At closure,

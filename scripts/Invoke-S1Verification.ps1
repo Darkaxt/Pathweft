@@ -1,11 +1,14 @@
 [CmdletBinding()]
-param([Parameter(Mandatory)][string]$ScratchRoot, [switch]$VirtualOnly)
+param([Parameter(Mandatory)][string]$ScratchRoot, [switch]$VirtualOnly, [switch]$InteractionsOnly, [switch]$ClipboardOnly)
 $ErrorActionPreference = 'Stop'
+if ((@($VirtualOnly,$InteractionsOnly,$ClipboardOnly) | Where-Object { $_ }).Count -gt 1) { throw 'Select only one focused scenario.' }
 $scratch = [IO.Path]::GetFullPath($ScratchRoot)
 if ($scratch -notmatch '^D:\\Temp\\pathweft-s1-[^\\]+$') { throw 'Use the registered S1 scratch directory.' }
 $env:TEMP = $env:TMP = Join-Path $scratch 'temp'
 $env:PATHWEFT_PROFILE = Join-Path $scratch 'profile'
 $env:PATHWEFT_S1_VIRTUAL_ONLY = if ($VirtualOnly) { '1' } else { '0' }
+$env:PATHWEFT_S1_INTERACTIONS_ONLY = if ($InteractionsOnly) { '1' } else { '0' }
+$env:PATHWEFT_S1_CLIPBOARD_ONLY = if ($ClipboardOnly) { '1' } else { '0' }
 $env:PATHWEFT_S1_COVERAGE_FILE = Join-Path (Split-Path -Parent $PSScriptRoot) '.local/s1-coverage-case.json'
 [void][IO.Directory]::CreateDirectory($env:PATHWEFT_PROFILE)
 $fixture = Join-Path $scratch 'fixture'
