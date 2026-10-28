@@ -463,6 +463,15 @@ static class Archive
         return list;
     }
 
+    /// An entry's path without the "./" tar puts in front ("./docs/a.txt" → "docs/a.txt"), or a leading slash; a name that
+    /// itself starts with a dot (.gitignore) keeps it. "." alone is the archive's top: "".
+    internal static string Clean(string path)
+    {
+        while (path.StartsWith("./")) path = path[2..];
+        path = path.TrimStart('/').TrimEnd('/');
+        return path == "." ? "" : path;
+    }
+
     /// Every entry, in order; `open` gives its content (null for a folder). Stops when the callback says so.
     static void Visit(string archive, Func<string, bool, long, DateTime, Func<Stream>, bool> each)
     {
@@ -473,7 +482,9 @@ static class Archive
             {
                 var name = e.FullName.Replace('\\', '/');
                 bool dir = name.EndsWith('/');
-                if (each(name.TrimEnd('/'), dir, e.Length, e.LastWriteTime.LocalDateTime, dir ? null : e.Open)) return;
+                name = Clean(name);
+                if (name == "") continue; // the "./" a tar-made ZIP starts with
+                if (each(name, dir, e.Length, e.LastWriteTime.LocalDateTime, dir ? null : e.Open)) return;
             }
             return;
         }
@@ -485,7 +496,7 @@ static class Archive
             bool dir = e.EntryType == System.Formats.Tar.TarEntryType.Directory;
             bool regular = e.EntryType is System.Formats.Tar.TarEntryType.RegularFile or System.Formats.Tar.TarEntryType.V7RegularFile or System.Formats.Tar.TarEntryType.ContiguousFile;
             if (!dir && !regular) continue; // links, devices: nothing to show or extract
-            var name = e.Name.Replace('\\', '/').TrimStart('.', '/').TrimEnd('/');
+            var name = Clean(e.Name.Replace('\\', '/'));
             if (name == "") continue;
             if (each(name, dir, e.Length, e.ModificationTime.LocalDateTime, dir ? null : () => e.DataStream ?? Stream.Null)) return;
         }
@@ -542,7 +553,7 @@ static class Archive
         using (var zip = ZipFile.Open(archive, ZipArchiveMode.Update))
             foreach (var e in zip.Entries.ToList())
             {
-                var path = e.FullName.Replace('\\', '/').TrimEnd('/');
+                var path = Clean(e.FullName.Replace('\\', '/'));
                 if (picked.Any(p => path.Equals(p, StringComparison.OrdinalIgnoreCase) || path.StartsWith(p + "/", StringComparison.OrdinalIgnoreCase))) e.Delete();
             }
         lock (read) read.Remove(archive);
@@ -555,7 +566,7 @@ static class Archive
         int added = 0, skipped = 0;
         using (var zip = ZipFile.Open(archive, ZipArchiveMode.Update))
         {
-            var have = zip.Entries.Select(e => e.FullName.Replace('\\', '/').TrimEnd('/')).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var have = zip.Entries.Select(e => Clean(e.FullName.Replace('\\', '/'))).ToHashSet(StringComparer.OrdinalIgnoreCase);
             void One(string file, string name)
             {
                 if (have.Contains(name)) { skipped++; return; }

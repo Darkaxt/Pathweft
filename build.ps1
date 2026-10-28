@@ -51,7 +51,8 @@ Copy-Item $publishDir (Join-Path $stage 'File Labs') -Recurse
 Set-Content (Join-Path $stage 'File Labs\portable.txt') "This copy of File Labs is portable: its settings live in the Data folder beside it, and nothing is installed. Delete this file to have it use the installed copy's settings instead." -Encoding utf8
 $portable = Join-Path $root "dist\FileLabs-$version-portable.zip"
 if (Test-Path $portable) { Remove-Item $portable -Force }
-Add-Type -AssemblyName System.IO.Compression.FileSystem
-[IO.Compression.ZipFile]::CreateFromDirectory($stage, $portable, [IO.Compression.CompressionLevel]::Optimal, $false)
+# Windows' own tar writes "File Labs/…"; Windows PowerShell's ZipFile wrote "File Labs\…", which some unzippers don't take
+& "$env:SystemRoot\System32\tar.exe" -a -c -f $portable -C $stage 'File Labs'
+if ($LASTEXITCODE -ne 0) { throw "portable zip failed" }
 Remove-Item $stage -Recurse -Force
 Write-Host ("  portable:  {0} ({1:N1} MB)" -f $portable, ((Get-Item $portable).Length / 1MB)) -ForegroundColor Green

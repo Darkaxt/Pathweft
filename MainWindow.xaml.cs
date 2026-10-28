@@ -1059,6 +1059,7 @@ public partial class MainWindow : Window
     readonly HashSet<Job> askedForward = new(); // a job's conflicts bring the window forward once
     TotalChart totalChart;
     TextBlock totalSpeed, totalLegend;
+    FrameworkElement transfersTop;
     System.Windows.Data.ListCollectionView jobView;
     readonly Dictionary<Job, int> shownState = new();
     int jobSeq;
@@ -1089,10 +1090,14 @@ public partial class MainWindow : Window
             var root = new DockPanel { Background = Tint() };
             DockPanel.SetDock(top, Dock.Top); DockPanel.SetDock(totalChart, Dock.Top);
             root.Children.Add(top); root.Children.Add(totalChart);
-            root.Children.Add(new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Content = list, Padding = new(14, 0, 14, 6) });
+            root.Children.Add(new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Content = list, Padding = new(14, 6, 14, 8) });
+            transfersTop = top;
             var w = transfersWindow = new Window
             {
-                Title = "Transfers — File Labs", Owner = this, Width = 640, Height = 560, MinWidth = 460, MinHeight = 300,
+                // as tall as its cards: one copy, one card's height; it grows as more come, up to most of the screen, then scrolls
+                // (Rico and the user, 1.0.61: a big empty window around one card looked wrong). Resizing it by hand keeps that size.
+                Title = "Transfers — File Labs", Owner = this, Width = 640, SizeToContent = SizeToContent.Height, MinWidth = 460, MinHeight = 120,
+                MaxHeight = SystemParameters.WorkArea.Height * 0.8,
                 WindowStartupLocation = WindowStartupLocation.CenterOwner, ShowInTaskbar = true, Background = Brushes.Transparent,
                 Foreground = Hex("#E8EEF6"), FontFamily = FontFamily, FontSize = 12, Content = root,
             };
@@ -1121,6 +1126,10 @@ public partial class MainWindow : Window
         var running = jobs.Where(j => j.Copying).ToList();
         if (running.Count > 0) totalChart.Add(Environment.TickCount64, running);
         double total = running.Sum(j => j.Rate);
+        // the speed and its chart while something runs (and the chart once it has something to draw); after that just the cards
+        bool busy = jobs.Any(j => j.Active);
+        transfersTop.Visibility = busy ? Visibility.Visible : Visibility.Collapsed;
+        totalChart.Visibility = busy && totalChart.HasData ? Visibility.Visible : Visibility.Collapsed;
         totalSpeed.Text = running.Count > 0 ? $"{Fmt((long)total)}/s" : jobs.Any(j => j.HasConflicts) ? "Waiting for you" : jobs.Any(j => j.Active) ? "Waiting" : "Done";
         totalLegend.Inlines.Clear();
         foreach (var j in running)
@@ -1188,6 +1197,16 @@ public partial class MainWindow : Window
     // Clipboard in Explorer's own format (CF_HDROP + Preferred DropEffect), so copy/paste works both ways.
     void ClipboardPut(bool cut)
     {
+        // inside an archive, Ctrl+C copies what is selected, taken out to a temp folder (as a drag out does); never Ctrl+X
+        if (active.ArchiveRoot != null)
+        {
+            if (cut || active.ExtractForDrag() is not { Length: > 0 } copies) return;
+            var list = new System.Collections.Specialized.StringCollection();
+            list.AddRange(copies);
+            Clipboard.SetFileDropList(list);
+            Status.Text = $"Copied {copies.Length} item(s) out of the archive";
+            return;
+        }
         var sel = active.Selected;
         if (sel.Count == 0) return;
         var files = new System.Collections.Specialized.StringCollection();

@@ -10,6 +10,10 @@ A long-time tester's newest notes: everything File Labs should keep track of for
 **The selection rectangle**
 - Holding it past the top or bottom of the list now scrolls smoothly to the end. Before, the list kept jumping back to where you started, and the count went 50, 100, 50, 100.
 - It no longer runs over the column headers, and it doesn't flicker while the list scrolls.
+**Transfers and archives**
+- The Transfers window is **as tall as its cards**: one copy, one card, and it grows as more start. The speed and its chart show only while something runs.
+- **Drag files out of a ZIP or TAR** to the other pane, or to any app, and Ctrl+C copies them too. They are copied, and the archive keeps them.
+- A ZIP made with tar, whose paths start with "./", now shows its files instead of a folder called ".", and a name that starts with a dot keeps it.
 **Also**
 - **Drag a folder, a shortcut to one, or a tab onto Quick access** to pin it there.
 - Text size in Settings now applies to the Settings window too.

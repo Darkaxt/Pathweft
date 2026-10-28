@@ -710,6 +710,36 @@ public partial class PaneView : UserControl
         StatsChanged?.Invoke();
     }
 
+    /// Dragging out of an archive (the user, 1.0.61: three files from a ZIP to the other pane did nothing): what is
+    /// selected is extracted to a temp folder first and those copies are dragged, to the other pane or any app, as Explorer
+    /// does with a ZIP. ponytail: extracted before the drag starts, so a big selection waits a moment with the wait cursor;
+    /// delayed rendering (the data written only on drop) would remove that wait.
+    internal string[] ExtractForDrag()
+    {
+        if (ArchiveRoot is not var (archive, inner)) return Array.Empty<string>();
+        var names = List.SelectedItems.Cast<Entry>().Where(e => !e.IsUp).Select(e => e.Name).ToList();
+        if (names.Count == 0) return Array.Empty<string>();
+        var drags = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "FileLabs", "drag");
+        var temp = System.IO.Path.Combine(drags, Guid.NewGuid().ToString("N")[..8]);
+        try
+        {
+            // the copies of earlier drags, once they're an hour old (a drop that is still copying from one is long done)
+            if (Directory.Exists(drags))
+                foreach (var old in new DirectoryInfo(drags).EnumerateDirectories().Where(d => d.CreationTimeUtc < DateTime.UtcNow.AddHours(-1)))
+                    try { old.Delete(true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+            Mouse.OverrideCursor = Cursors.Wait;
+            Directory.CreateDirectory(temp);
+            Archive.Extract(archive, names, inner, temp);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException or FormatException)
+        {
+            Error?.Invoke($"Couldn't take them out of {System.IO.Path.GetFileName(archive)}: {ex.Message}");
+            return Array.Empty<string>();
+        }
+        finally { Mouse.OverrideCursor = null; }
+        return names.Select(n => System.IO.Path.Combine(temp, n)).Where(p => File.Exists(p) || Directory.Exists(p)).ToArray();
+    }
+
     // ---- after a paste or drop: the new arrivals selected once the folder has been read again ----
     // (also a tab coming back: its selection, the row the keyboard was on, and how far it was scrolled)
     HashSet<string> pendingSelect;
@@ -2576,12 +2606,13 @@ public partial class PaneView : UserControl
         var d = e.GetPosition(List) - dragStart;
         if (Math.Abs(d.X) < SystemParameters.MinimumHorizontalDragDistance && Math.Abs(d.Y) < SystemParameters.MinimumVerticalDragDistance) return;
         dragArmed = false; keepSelection = null; deselectOnUp = null; renameCandidate = null;
-        var paths = Selected.Select(x => x.Path).ToArray();
+        var paths = ArchiveRoot != null ? ExtractForDrag() : Selected.Select(x => x.Path).ToArray();
         if (paths.Length == 0) return;
         var data = new DataObject(DataFormats.FileDrop, paths);
         // Windows can refuse to start a drag ("a drag operation is already in progress"): 1.0.36 died of it
         // once in testing. Then there is simply no drag, as if the mouse hadn't moved far enough.
-        try { DragDrop.DoDragDrop(List, data, DragDropEffects.Copy | DragDropEffects.Move); }
+        // out of an archive it is a copy, whatever the drive: the card says Copied, and the ZIP keeps its files
+        try { DragDrop.DoDragDrop(List, data, ArchiveRoot != null ? DragDropEffects.Copy : DragDropEffects.Copy | DragDropEffects.Move); }
         catch (System.Runtime.InteropServices.COMException) { }
         finally { WheelWhileDragging(null); ScrollAtEdge(null); } // however the drag ended
     }

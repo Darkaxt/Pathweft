@@ -629,6 +629,8 @@ public partial class App : Application
             Archive.Delete(zipPath, new[] { "inner" }, "docs");
             Check(addedOnce == (1, 0) && addedTwice == (0, 1) && string.Join(",", Archive.List(zipPath, "docs").Select(i => i.Name)) == "add me.txt",
                   "archives: added to a ZIP once, a folder taken out of it");
+            Check(Archive.Clean("./docs/.gitignore") == "docs/.gitignore" && Archive.Clean("./") == "" && Archive.Clean(".hidden/") == ".hidden"
+                  && Archive.Clean("../out.txt") == "../out.txt", "archives: tar's ./ dropped, a leading dot in a name kept, ../ left for the guard");
             Check(PaneView.ArchiveOf(Path.Combine(zipPath, "docs")) is ({ } za, "docs") && za == zipPath && PaneView.ArchiveOf(arch) == null,
                   "archives: a path running through a ZIP is found, a plain folder isn't");
 

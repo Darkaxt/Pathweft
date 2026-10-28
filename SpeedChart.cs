@@ -119,6 +119,7 @@ public class TotalChart : FrameworkElement
     }
 
     public void Clear() { samples.Clear(); peak = 0; InvalidateVisual(); }
+    public bool HasData => samples.Count >= 2;
 
     const double PadL = 58, PadR = 6, PadT = 6, PadB = 16;
 
