@@ -225,6 +225,11 @@
         <Border Style="{StaticResource Card}">
           <StackPanel>
             <TextBlock Text="Windows integration" Style="{StaticResource H}"/>
+            <CheckBox x:Name="TaskbarSearchBox" Content="Enable Pathweft taskbar search" Click="TaskbarSearch_Click"/>
+            <CheckBox x:Name="TaskbarEmbedBox" Content="Show the search box when the taskbar has room" Margin="22,0,0,0" Click="TaskbarSearch_Click"/>
+            <TextBlock x:Name="TaskbarSearchStatus" Style="{StaticResource Hint}" TextWrapping="Wrap"/>
+            <Button Content="Open search" Style="{StaticResource Tab}" HorizontalAlignment="Left" Click="OpenTaskbarSearch_Click"/>
+            <TextBlock Style="{StaticResource Hint}" Text="Ctrl+Alt+Space opens search while Pathweft is running. If the box cannot attach safely, the mode above reports why. No Windows Search, default file manager or sign-in setting is changed."/>
             <CheckBox x:Name="DefaultBox" Content="Use Pathweft as the default file manager" Click="Default_Click"/>
             <TextBlock Style="{StaticResource Hint}">
               Opening a folder or drive (desktop, Start, other apps) and Win+E open Pathweft instead of File Explorer.

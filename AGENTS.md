@@ -3,9 +3,9 @@
 Read `docs/SPECIFICATION.md` first. It is authoritative; the plan and this file
 do not change its requirements or the user's standing instructions.
 
-- Current authorization includes S1 implementation and verification (2026-10-28
-  user request). S1 is COMPLETE with OS clipboard and physical OLE drag verified;
-  later stages remain NOT STARTED. A plan does not
+- Current authorization includes S2 implementation and verification (2026-10-28
+  user request for the next stage). S1 and S2 are COMPLETE;
+  S3-S5 remain NOT STARTED. A plan does not
   authorize itself or intermediate product releases.
 - Keep one ACTIVE stage during authorized implementation. Reconcile complete
   features and actual integration evidence in the existing implementation plan.
@@ -23,3 +23,6 @@ do not change its requirements or the user's standing instructions.
 - Preserve donor provenance/notices. Do not add dynamic plugin infrastructure
   without a current requirement. A build is not runtime/delivery verification.
 - No intermediate product releases; final delivery belongs to S5.
+- Use Huashu design as a reference for new interfaces, aligned with the File Labs
+  theme already in Pathweft. Run test windows hidden where possible; keep native
+  physical focus/hotkey/shell claims separate from hidden rendered/action checks.

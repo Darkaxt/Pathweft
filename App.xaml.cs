@@ -131,11 +131,16 @@ public partial class App : Application
         sizeSaver.Start();
         base.OnStartup(e);
         var window = new MainWindow(); // opened here, not via StartupUri, so --agent etc. never build it
+#if DEBUG
+        HiddenTrialPresentation.Prepare(window);
+#endif
         if (hidden) window.PrepareHiddenStart();
         window.Show();
 #if DEBUG
         if (e.Args.FirstOrDefault(a => a.StartsWith("--verify-s1=")) is { } verification)
             window.ContentRendered += async (_, _) => await S1Verification.Run(window, verification[12..]);
+        if (e.Args.FirstOrDefault(a => a.StartsWith("--verify-s2=")) is { } widgetVerification)
+            window.ContentRendered += async (_, _) => await window.VerifyS2(widgetVerification[12..]);
 #endif
     }
 
@@ -145,6 +150,9 @@ public partial class App : Application
 
     protected override void OnExit(ExitEventArgs e)
     {
+#if DEBUG
+        HiddenTrialPresentation.StopObserver();
+#endif
         listenCancellation.Cancel();
         listening?.GetAwaiter().GetResult();
         Search.EverythingSearchClient.StopIfStartedAsync().GetAwaiter().GetResult();

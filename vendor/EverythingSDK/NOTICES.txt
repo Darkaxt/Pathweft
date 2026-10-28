@@ -7,6 +7,18 @@ asynchronous WM_COPYDATA replies, indexed result metadata and sorting.
 Pathweft uses a dedicated STA dispatcher and WPF HwndSource, omits NLog,
 CsWin32, highlighted fields, synchronous UI calls and donor product services.
 
+S2 selected taskbar/search integration, same pinned EverythingToolbar revision:
+EverythingToolbar/Services/TaskbarLayoutProbe.cs: UI Automation obstacle measurement.
+EverythingToolbar/TaskbarWindow.xaml.cs: native child attachment and safe layout.
+EverythingToolbar/Controls/ToolbarControl.xaml.cs and Controls/SearchBox.xaml.cs:
+search entry, focus, Enter/Escape and keyboard movement behavior.
+EverythingToolbar.Launcher/Launcher.cs: registered Explorer TaskbarCreated message.
+EverythingToolbar.Launcher/TaskbarWindowHost.cs: explicit box/hotkey mode ownership.
+Adapted into TaskbarSearchHost.cs, SearchWidgetWindow.cs and Search/TaskbarLayout.cs.
+No donor updater, setup assistant, separate tray product, forced foreground hook,
+timer-driven attach retries, settling deadline or animation polling is imported.
+Pathweft's existing PaneView, settings owner, SDK dispatcher and Ferry queue are reused.
+
 MIT License
 Copyright (c) 2023 Stephan Rumswinkel
 

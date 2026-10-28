@@ -384,9 +384,9 @@ public partial class PaneView : UserControl
             // widths survive restarts (saved with the other settings on exit)
             if (Settings.ColumnWidths.TryGetValue(colKey[c], out var w)) c.Width = w;
             if (c == NameColumn)
-                widthProp.AddValueChanged(c, (_, _) => { if (double.IsNaN(c.Width)) { Settings.ColumnWidths.Remove("Name"); FitName(); } });
+                widthProp.AddValueChanged(c, (_, _) => { if (double.IsNaN(c.Width)) { if (!IsWidget) Settings.ColumnWidths.Remove("Name"); FitName(); } });
             else
-                widthProp.AddValueChanged(c, (_, _) => { Settings.ColumnWidths[colKey[c]] = c.Width; if (!ResizingColumn) FitName(); });
+                widthProp.AddValueChanged(c, (_, _) => { if (!IsWidget) Settings.ColumnWidths[colKey[c]] = c.Width; if (!ResizingColumn) FitName(); });
         }
         // The line where Name ends follows its width, the sideways scroll and the list's height.
         ((System.ComponentModel.INotifyPropertyChanged)NameColumn).PropertyChanged += (_, e) => { if (e.PropertyName == "ActualWidth") PlaceNameEdge(); };
@@ -407,7 +407,7 @@ public partial class PaneView : UserControl
                 if (Mode != ViewMode.Details) return;
                 if (e.OriginalSource is System.Windows.Controls.Primitives.Thumb { TemplatedParent: GridViewColumnHeader { Column: var col } } && col == NameColumn)
                 {   // a double-click on the edge also ends a "drag" of 0 px; that one gives Name back to the pane
-                    if (e.HorizontalChange != 0) Settings.ColumnWidths["Name"] = NameColumn.Width;
+                    if (e.HorizontalChange != 0 && !IsWidget) Settings.ColumnWidths["Name"] = NameColumn.Width;
                 }
                 else FitName();
             }), handledEventsToo: true); // the header marks it handled
@@ -2093,8 +2093,9 @@ public partial class PaneView : UserControl
     void FitName()
     {
         // gutter: a strip of empty space kept right of the last column, to click on (see RowAt)
-        if (Settings.ColumnWidths.ContainsKey("Name")) return; // dragged by the user: theirs, not the pane's
-        const double scrollbar = 14, padding = 14, gutter = 110;
+        if (!IsWidget && Settings.ColumnWidths.ContainsKey("Name")) return; // dragged by the user: theirs, not the pane's
+        const double scrollbar = 14, padding = 14;
+        double gutter = IsWidget ? 16 : 110;
         var others = ((GridView)List.View).Columns.Where(c => c != NameColumn).Sum(c => double.IsNaN(c.Width) ? c.ActualWidth : c.Width);
         NameColumn.Width = Math.Max(120, List.ActualWidth - others - scrollbar - padding - gutter);
     }

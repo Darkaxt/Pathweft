@@ -4,8 +4,10 @@
     <TargetFramework>net8.0-windows</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>disable</Nullable>
+    <UseWPF>true</UseWPF>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="../../Search/IndexedQuery.cs" Link="IndexedQuery.cs" />
+    <Compile Include="../../Search/TaskbarLayout.cs" Link="TaskbarLayout.cs" />
   </ItemGroup>
 </Project>

@@ -12,6 +12,11 @@
     <Version>1.0.62</Version>
     <!-- WPF windows without their own Icon use this one, so every window gets it -->
     <ApplicationIcon>app.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <!-- WPF owns startup and requires manifest DPI awareness. The WinForms
+         analyzer assumes a Forms ApplicationConfiguration entry point; Forms
+         is referenced only for desktop clipboard/tray APIs in this WPF host. -->
+    <NoWarn>$(NoWarn);WFAC010</NoWarn>
     <DefaultItemExcludes>$(DefaultItemExcludes);dist\**;installer\**</DefaultItemExcludes>
     <Nullable>disable</Nullable>
     <PlatformTarget>x64</PlatformTarget>

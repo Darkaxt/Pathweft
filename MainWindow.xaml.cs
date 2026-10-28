@@ -53,8 +53,8 @@ public partial class MainWindow : Window
             // with the notification-area icon on, closing only hides: the next open is instant
             if (tray != null && !quitting) { e.Cancel = true; Hide(); }
         };
-        Closed += (_, _) => tray?.Dispose(); // or the icon lingers until the pointer passes over it
-        SourceInitialized += (_, _) => { ApplyAcrylic(this); WatchShellChanges(); };
+        Closed += (_, _) => { taskbarSearch?.Dispose(); tray?.Dispose(); }; // or the icon lingers until the pointer passes over it
+        SourceInitialized += (_, _) => { ApplyAcrylic(this); WatchShellChanges(); taskbarSearch = new(this); taskbarSearch.ApplySettings(); };
         if (Settings.Profile == null) StartUpdateChecks();
 
         foreach (var p in new[] { Left, Right })
@@ -130,7 +130,13 @@ public partial class MainWindow : Window
         var arg = Program.PathArg(Environment.GetCommandLineArgs().Skip(1));
         if (arg != "") OpenPath(Left, arg);
         ApplyPreview();
-        Loaded += (_, _) => active.FocusList();
+        Loaded += (_, _) =>
+        {
+#if DEBUG
+            if (HiddenTrialPresentation.Enabled) return;
+#endif
+            active.FocusList();
+        };
         // started from the Win+E agent or a folder double-click: make sure we open in front.
         // After the first paint — on Loaded the window isn't on screen yet and the flip does nothing.
         ContentRendered += (_, _) =>
@@ -145,7 +151,10 @@ public partial class MainWindow : Window
             // Started by the Win+E agent (--front): Windows' foreground lock keeps a freshly started
             // background-launched window behind the current one.
             if (Environment.GetCommandLineArgs().Contains("--front")) TakeForeground();
-            Topmost = true; Topmost = false; Activate(); active.FocusList();
+#if DEBUG
+            if (!HiddenTrialPresentation.Enabled)
+#endif
+            { Topmost = true; Topmost = false; Activate(); active.FocusList(); }
         };
     }
 
@@ -266,6 +275,7 @@ public partial class MainWindow : Window
         Root.LayoutTransform = Settings.TextScale > 1 ? new ScaleTransform(Settings.TextScale, Settings.TextScale) : null;
         SidebarPanel.LayoutTransform = Settings.SidebarScale != 1 ? new ScaleTransform(Settings.SidebarScale, Settings.SidebarScale) : null;
         Left.ApplyScales(); Right.ApplyScales();
+        taskbarSearch?.Widget?.ApplyTextScale();
         BgImage.Source = BackgroundPicture(Settings.BackgroundImage);
         BgLayer.Visibility = BgImage.Source != null ? Visibility.Visible : Visibility.Collapsed;
         BgLayer.Opacity = Settings.ImageOpacity / 100;
@@ -495,8 +505,10 @@ public partial class MainWindow : Window
     internal void ShowFile(string path)
     {
         OpenPath(active, path);
-        active.FocusList();
-        Activate();
+#if DEBUG
+        if (!HiddenTrialPresentation.Enabled)
+#endif
+        { active.FocusList(); Activate(); }
     }
 
     /// Find duplicates in this folder (and its subfolders, if asked in the window), in a window of its own.
@@ -1095,6 +1107,9 @@ public partial class MainWindow : Window
                 Foreground = Hex("#E8EEF6"), FontFamily = FontFamily, FontSize = 12, Content = root,
             };
             w.SourceInitialized += (_, _) => ApplyAcrylic(w);
+#if DEBUG
+            HiddenTrialPresentation.Prepare(w);
+#endif
             // closing only hides it: the jobs go on, and the Transfers button or the next copy brings it back
             w.Closing += (_, e) => { if (!quitting && IsLoaded) { e.Cancel = true; w.Hide(); } };
             w.PreviewKeyDown += (_, e) => { if (e.Key == Key.Escape) { w.Hide(); e.Handled = true; } };

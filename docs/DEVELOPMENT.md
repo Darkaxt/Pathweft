@@ -51,7 +51,7 @@ development compile, not an alternate release engine.
 
 `Pathweft.exe --selftest` is the inherited source/filesystem regression entry
 point. `scripts/Invoke-SourceSelfTest.ps1` binds its profile/temp to the registered
-S1 scratch root, waits for process exit and returns its result. Fixtures are
+S1/S2 scratch root, waits for process exit and returns its result. Fixtures are
 retained for reviewed cleanup, including its exact generated junction leaf.
 
 ## S1 local scenario
@@ -84,6 +84,30 @@ The official SDK API 2 supports the existing default instance in this build.
 Search again to reconnect after readiness changes; choose Filesystem · Folder
 explicitly for live coverage. There is no hidden engine launch/fallback crawl.
 See [Everything's native search syntax](https://www.voidtools.com/support/everything/searching/).
+
+## S2 local scenario
+
+Use `Prepare-S2Fixtures.ps1`, a Debug build and `Invoke-S2Verification.ps1` with
+the same registered `D:\Temp\pathweft-s2-...` native/small-file I/O root. Prepare
+fixtures before repeating the complete workflow because it includes a real move.
+Normal trial windows render offscreen; native monitor measurements stay hidden.
+Each process writes a separate evidence directory and the launcher requires its
+scenario result to match the original process exit. There is no control server.
+
+`-PresentationOnly` diagnoses hidden placement. `-DpiOnly` exercises actual
+mixed-DPI monitors without file mutations. `-NativeLifecycleOnly` intentionally
+allows the search popup to receive actual shortcut/typing focus and waits for an
+actual Explorer TaskbarCreated message. That boundary requires an unlocked input
+desktop and coordinated timing with the user. `Invoke-S2ExplorerRestart.ps1`
+inspects by default; `-Restart` validates the waiting trial's process identity and
+uses graceful Restart Manager shutdown/restart, preserving a private folder
+restoration snapshot. Do not run this disruptive check as a routine build step.
+
+The selected EverythingToolbar sources can be reproduced with
+`Get-S2DonorSources.ps1` at the pinned revision. They are inspection input, not a
+runtime donor-product dependency. `Test-SearchContracts.ps1` also checks safe
+taskbar coordinates and occupied-space constraints. No packaging/release is
+performed by these development scripts.
 
 ## Evidence
 

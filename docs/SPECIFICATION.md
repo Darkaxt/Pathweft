@@ -15,9 +15,10 @@ product. Keep normal views uncluttered and expose advanced controls in settings.
 The setup request established the environment, public fork and specification.
 On 2026-10-28 the user authorized **implementation of S1 using Specification-Gated
 Implementation**. This includes independent identity, real pane search and its
-required verification. Later stages remain unstarted; no intermediate product
-release is authorized. User default-handler and Windows Search changes are not
-part of the S1 trial.
+required verification. After S1 completion, the user authorized **S2, the connected
+taskbar workflow**, by requesting the next stage. S3-S5 remain unstarted; no
+intermediate product release is authorized. User default-handler and Windows
+Search changes are not part of the S1/S2 trials.
 
 Source integration is selective: port useful modules and add-on source rather
 than requiring the complete donor applications. The 2026-10-28 clarification

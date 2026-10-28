@@ -279,7 +279,7 @@ internal static class S1Verification
         ((Button)pane.FindName("SearchSubmit")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
     }
     static async Task Query(PaneView pane, string text, int scope) { StartQuery(pane, text, scope); await pane.SearchCompletion; }
-    static async Task Navigate(PaneView pane, string path)
+    internal static async Task Navigate(PaneView pane, string path)
     {
         var complete = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         bool requested = false;
@@ -290,7 +290,7 @@ internal static class S1Verification
         finally { pane.StatsChanged -= Done; pane.Error -= Failed; }
     }
 
-    static async Task Snapshot(Window window, string folder, string label)
+    internal static async Task Snapshot(Window window, string folder, string label)
     {
         await window.Dispatcher.InvokeAsync(() => { window.UpdateLayout(); }, DispatcherPriority.ApplicationIdle);
         var dpi = VisualTreeHelper.GetDpi(window);

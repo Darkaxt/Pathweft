@@ -10,6 +10,9 @@ public partial class SettingsWindow : Window
     {
         InitializeComponent();
         Owner = main = owner;
+#if DEBUG
+        HiddenTrialPresentation.Prepare(this);
+#endif
         SourceInitialized += (_, _) => MainWindow.ApplyAcrylic(this);
         // its cards took 130-200 ms to lay out before the first frame: the window comes up empty, they follow on the next
         ContentRendered += (_, _) => Body.Visibility = Visibility.Visible;
@@ -34,6 +37,9 @@ public partial class SettingsWindow : Window
                          "Transfers run on the Ferry engine. Settings live in " + Settings.Dir;
         BuildWorksWith();
         Refresh();
+        if (main.taskbarSearch != null) main.taskbarSearch.StatusChanged += UpdateTaskbarStatus;
+        Closed += (_, _) => { if (main.taskbarSearch != null) main.taskbarSearch.StatusChanged -= UpdateTaskbarStatus; };
+        UpdateTaskbarStatus();
     }
 
     /// Every control set from what is in use: at opening, and after a reset.
@@ -62,6 +68,8 @@ public partial class SettingsWindow : Window
         ScaleSidebar.Value = Settings.SidebarScale * 100; ScaleTabs.Value = Settings.TabsScale * 100;
         ScalePath.Value = Settings.PathScale * 100; ScaleList.Value = Settings.ListScale * 100;
         QuickLookBox.IsChecked = Settings.QuickLook;
+        TaskbarSearchBox.IsChecked = Settings.TaskbarSearch;
+        TaskbarEmbedBox.IsChecked = Settings.TaskbarSearchBox;
         ItemTipsBox.IsChecked = Settings.ItemTips;
         DeleteSoundBox.IsChecked = Settings.DeleteSound;
         StrengthSlider.Value = Settings.AccentStrength * 100;
@@ -86,7 +94,7 @@ public partial class SettingsWindow : Window
     /// What Pathweft keeps that isn't a choice in these cards: Windows integration, and what it remembers by itself.
     internal static readonly string[] NotReset =
     {
-        "wine", "tray", "preview", "previewwidth", "lastseen", "recent", "destinations", "sidebar", "sidebarorder", "sidebarcollapsed", "split", "maximized", "window", "quicklist",
+        "wine", "tray", "taskbarsearch", "taskbarsearchbox", "preview", "previewwidth", "lastseen", "recent", "destinations", "sidebar", "sidebarorder", "sidebarcollapsed", "split", "maximized", "window", "quicklist",
     };
 
     void ResetAll_Click(object s, RoutedEventArgs e) =>
@@ -483,6 +491,23 @@ public partial class SettingsWindow : Window
     void ShortcutFolders_Click(object s, RoutedEventArgs e) { Settings.ShortcutsWithFolders = ShortcutFoldersBox.IsChecked == true; Settings.Save(); main.ResortPanes(); }
     void Editor_Click(object s, RoutedEventArgs e) { Settings.InternalEditor = EditorBox.IsChecked == true; Settings.Save(); }
     void QuickLook_Click(object s, RoutedEventArgs e) { Settings.QuickLook = QuickLookBox.IsChecked == true; Settings.Save(); }
+
+    void TaskbarSearch_Click(object sender, RoutedEventArgs e)
+    {
+        Settings.TaskbarSearch = TaskbarSearchBox.IsChecked == true;
+        Settings.TaskbarSearchBox = TaskbarEmbedBox.IsChecked == true;
+        Settings.Save(); main.ApplyTaskbarSearch(); UpdateTaskbarStatus();
+    }
+    void UpdateTaskbarStatus()
+    {
+        TaskbarEmbedBox.IsEnabled = Settings.TaskbarSearch;
+        TaskbarSearchStatus.Text = main.taskbarSearch?.Status ?? "Taskbar search is off.";
+    }
+    void OpenTaskbarSearch_Click(object sender, RoutedEventArgs e)
+    {
+        if (Settings.TaskbarSearch) main.taskbarSearch?.ShowSearch();
+        else TaskbarSearchStatus.Text = "Enable taskbar search first.";
+    }
     void ItemTips_Click(object s, RoutedEventArgs e)
     {
         Settings.ItemTips = ItemTipsBox.IsChecked == true; Settings.Save();

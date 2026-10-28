@@ -20,6 +20,35 @@ public partial class PaneView
     internal uint IndexedTotal => indexedTotal;
     internal string SearchNotice => searchNotice;
     internal string SearchInstance = ""; // default existing instance; diagnostics can exercise an unavailable selection
+    internal bool IsWidget { get; set; }
+    internal void ConfigureWidgetColumns()
+    {
+        if (details is not GridView grid) return;
+        foreach (var column in grid.Columns.Where(c => colKey.GetValueOrDefault(c) == "Version").ToArray())
+            grid.Columns.Remove(column);
+        FitName();
+    }
+
+    internal PaneSearchRequest SearchRequest => new(Dir, FilterBox.Text, SearchScope.SelectedIndex, sortKey, sortDesc);
+
+    internal void ApplySearchRequest(PaneSearchRequest request)
+    {
+        LeaveSearch();
+        searchQuery = null;
+        if (Dir != request.Folder) Navigate(request.Folder);
+        SearchScope.SelectedIndex = request.Scope;
+        ShowSort(request.Sort, request.Descending);
+        FilterBox.Text = request.Query;
+        Search(request.Query);
+    }
+
+    internal void StopWidgetWork()
+    {
+        ++navVersion;
+        indexedCancellation?.Cancel();
+        sizing?.Cancel(); icons?.Cancel(); thumbs?.Cancel(); prefetching?.Cancel();
+        StopFolderWatch();
+    }
 
     public void Search(string query)
     {
