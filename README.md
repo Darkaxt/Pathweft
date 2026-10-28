@@ -6,11 +6,11 @@ A Windows file-manager project forked from [File Labs](https://github.com/limbur
 
 ## Current state
 
-**Environment and specification established; product integration has not started.**
+**S1 development: isolated identity and paged Everything pane search implemented; acceptance remains open.**
 
-The application source still uses the upstream File Labs name, settings, installer identity and update feed. Do not install or activate it as Pathweft yet. Inherited upstream releases are not Pathweft releases.
+Pathweft has independent executable, profile, IPC, startup, shell, installer and update identities. Pane search reuses the existing default Everything instance, with explicit folder/all-index scopes and a separate live-filesystem mode. It never starts another indexer or changes Windows Search. Installer/update execution remains an S5 acceptance boundary; do not treat this development branch as an installable release.
 
-Starting snapshot: `a8d5a5ca81ab4b70d26e293e69b9cc402baa77b6` (upstream development version 1.0.62; latest published release observed at setup: v1.0.61). Local Release compilation is verified; application runtime and planned integrations are not.
+Starting snapshot: `a8d5a5ca81ab4b70d26e293e69b9cc402baa77b6` (upstream development version 1.0.62; latest published release observed at setup: v1.0.61). See the [S1 evidence and remaining criteria](docs/verification/2026-10-28-s1.md). Inherited upstream releases are not Pathweft releases.
 
 ## Direction
 
@@ -21,7 +21,7 @@ Starting snapshot: `a8d5a5ca81ab4b70d26e293e69b9cc402baa77b6` (upstream developm
 - Use **REA analysis of TeraCopy** and measured workflows to guide transfer development. Upstream changes are baseline context, not the transfer design authority.
 - Preserve responsive browsing and an uncluttered interface.
 
-These are planned capabilities, not integrations delivered by this setup.
+Taskbar, internal preview modules and REA-driven transfers belong to S2-S4 and remain unstarted.
 
 ## Documents
 
@@ -42,6 +42,6 @@ Register exact generated scratch before creation where practical; clean it throu
 
 ## Upstream and licensing
 
-The inherited File Labs source remains MIT licensed with its original [notice](LICENSE). EverythingToolbar and QuickLook source has not yet been imported. Preserve all imported notices/dependency terms and provide applicable GPL source/distribution materials when QuickLook code is incorporated; that future combination must not be described as MIT-only.
+The inherited File Labs source retains its original [MIT notice](LICENSE). Selected EverythingToolbar client code and the official native Everything SDK retain their [MIT notices and pins](vendor/EverythingSDK/NOTICES.txt). QuickLook source has not yet been imported. Preserve applicable GPL source/distribution materials when that source is incorporated in S3; that future combination must not be described as MIT-only.
 
 **No Pathweft application release exists yet.**

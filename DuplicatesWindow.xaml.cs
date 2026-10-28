@@ -336,6 +336,6 @@ public partial class DuplicatesWindow : Window
     {
         var d = e.OriginalSource as DependencyObject;
         while (d != null && d is not System.Windows.Controls.ListViewItem) d = d is System.Windows.Media.Visual ? System.Windows.Media.VisualTreeHelper.GetParent(d) : LogicalTreeHelper.GetParent(d);
-        if ((d as FrameworkElement)?.DataContext is Row r) main.ShowFile(r.File.Path); // in File Labs, selected
+        if ((d as FrameworkElement)?.DataContext is Row r) main.ShowFile(r.File.Path); // in Pathweft, selected
     }
 }

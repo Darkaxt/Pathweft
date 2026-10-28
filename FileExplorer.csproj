@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
@@ -6,19 +6,23 @@
     <!-- only for the notification-area icon (Settings → close to the notification area); WinForms ships with the
          desktop runtime already, so the app gets no bigger. Its namespace stays out of the global usings. -->
     <UseWindowsForms>true</UseWindowsForms>
-    <AssemblyName>FileLabs</AssemblyName>
-    <Product>File Labs</Product>
-    <Company>Protagonist Labs</Company>
+    <AssemblyName>Pathweft</AssemblyName>
+    <Product>Pathweft</Product>
+    <Company>Darkaxt</Company>
     <Version>1.0.62</Version>
     <!-- WPF windows without their own Icon use this one, so every window gets it -->
     <ApplicationIcon>app.ico</ApplicationIcon>
     <DefaultItemExcludes>$(DefaultItemExcludes);dist\**;installer\**</DefaultItemExcludes>
     <Nullable>disable</Nullable>
+    <PlatformTarget>x64</PlatformTarget>
     <!-- Program.Main: a second launch hands off before WPF loads (App.xaml.cs) -->
     <StartupObject>FileExplorer.Program</StartupObject>
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Remove="tests\**\*.cs" />
+    <None Include="vendor\EverythingSDK\Everything64.dll" CopyToOutputDirectory="PreserveNewest" Link="Everything64.dll" />
+    <None Include="vendor\**\*.txt" CopyToOutputDirectory="PreserveNewest" />
     <Using Remove="System.Windows.Forms" />
     <Using Remove="System.Drawing" />
   </ItemGroup>

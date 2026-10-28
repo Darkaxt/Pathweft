@@ -190,7 +190,7 @@ public partial class MainWindow
             var d = e.GetPosition(SidebarHost) - dragFrom;
             if (Math.Abs(d.Y) < SystemParameters.MinimumVerticalDragDistance) return;
             dragKey = null;
-            DragDrop.DoDragDrop(wrapper, new DataObject("FileLabsSection", section.Key), DragDropEffects.Move);
+            DragDrop.DoDragDrop(wrapper, new DataObject("PathweftSection", section.Key), DragDropEffects.Move);
         };
         if (section.Key == "quick") header.MouseRightButtonUp += (_, e) => { e.Handled = true; var m = QuickListsMenu(); m.PlacementTarget = header; m.IsOpen = true; };
         header.MouseLeftButtonUp += (_, e) =>
@@ -220,10 +220,10 @@ public partial class MainWindow
 
     void Sidebar_DragOver(object s, DragEventArgs e)
     {
-        if (e.Data.GetDataPresent("FileLabsPin")) { e.Effects = DragDropEffects.Move; e.Handled = true; PinDropAt(e); return; }
+        if (e.Data.GetDataPresent("PathweftPin")) { e.Effects = DragDropEffects.Move; e.Handled = true; PinDropAt(e); return; }
         // a folder, a shortcut to one, or a tab, over Quick access: pinned where the line shows (Rico, 1.0.61)
         if (OverQuickAccess(e) && FoldersToPin(e).Count > 0) { e.Effects = DragDropEffects.Link; e.Handled = true; PinDropAt(e); return; }
-        e.Effects = e.Data.GetDataPresent("FileLabsSection") ? DragDropEffects.Move : DragDropEffects.None;
+        e.Effects = e.Data.GetDataPresent("PathweftSection") ? DragDropEffects.Move : DragDropEffects.None;
         e.Handled = true;
         if (e.Effects == DragDropEffects.None) { Highlight(null); return; }
         var (target, after) = SectionAt(e);
@@ -275,11 +275,11 @@ public partial class MainWindow
         SidebarHost.Children.OfType<Border>().FirstOrDefault(b => b.Tag as string == "quick") is { } section
         && new Rect(section.RenderSize).Contains(e.GetPosition(section));
 
-    /// The folders a drag carries that aren't pinned yet: folders, the folders shortcuts open, a File Labs tab's folder.
+    /// The folders a drag carries that aren't pinned yet: folders, the folders shortcuts open, a Pathweft tab's folder.
     List<string> FoldersToPin(DragEventArgs e)
     {
         var found = new List<string>();
-        if (e.Data.GetData("FileLabsFolder") is string tab && !PaneView.IsVirtual(tab)) found.Add(tab);
+        if (e.Data.GetData("PathweftFolder") is string tab && !PaneView.IsVirtual(tab)) found.Add(tab);
         if (e.Data.GetData(DataFormats.FileDrop) is string[] files)
             foreach (var f in files.Take(50))
                 if (Directory.Exists(f)) found.Add(f);
@@ -289,7 +289,7 @@ public partial class MainWindow
 
     void Sidebar_Drop(object s, DragEventArgs e)
     {
-        if (!e.Data.GetDataPresent("FileLabsPin") && OverQuickAccess(e) && FoldersToPin(e) is { Count: > 0 } add)
+        if (!e.Data.GetDataPresent("PathweftPin") && OverQuickAccess(e) && FoldersToPin(e) is { Count: > 0 } add)
         {
             int place = pinDrop < 0 ? pinned.Count : Math.Min(pinDrop, pinned.Count);
             pinDrop = -1;
@@ -301,7 +301,7 @@ public partial class MainWindow
             Status.Text = $"Pinned {string.Join(", ", add.Select(a => Path.GetFileName(a.TrimEnd('\\')) is { Length: > 0 } n ? n : a))} to {CurrentQuickList.Name}";
             return;
         }
-        if (e.Data.GetData("FileLabsPin") is string pin)
+        if (e.Data.GetData("PathweftPin") is string pin)
         {
             int to = pinDrop, from = pinned.IndexOf(pin);
             pinDrop = -1;
@@ -316,7 +316,7 @@ public partial class MainWindow
         var target = dropTarget;
         bool after = dropAfter;
         Highlight(null);
-        if (e.Data.GetData("FileLabsSection") is not string moved || target?.Tag is not string onto || moved == onto) return;
+        if (e.Data.GetData("PathweftSection") is not string moved || target?.Tag is not string onto || moved == onto) return;
         Settings.SidebarOrder.Remove(moved);
         int at = Settings.SidebarOrder.IndexOf(onto) + (after ? 1 : 0);
         Settings.SidebarOrder.Insert(Math.Clamp(at, 0, Settings.SidebarOrder.Count), moved);

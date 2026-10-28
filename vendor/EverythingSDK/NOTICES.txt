@@ -1,0 +1,43 @@
+Pathweft selective search integration
+
+EverythingToolbar source: a4379f181ea8e9b4d3ff8b0e5178d8d39491830c
+https://github.com/srwi/EverythingToolbar/blob/a4379f181ea8e9b4d3ff8b0e5178d8d39491830c/EverythingToolbar.Platform/Search/EverythingIpcClient.cs
+Adapted: serialized pending queries, cancellation, unique reply IDs,
+asynchronous WM_COPYDATA replies, indexed result metadata and sorting.
+Pathweft uses a dedicated STA dispatcher and WPF HwndSource, omits NLog,
+CsWin32, highlighted fields, synchronous UI calls and donor product services.
+
+MIT License
+Copyright (c) 2023 Stephan Rumswinkel
+
+Everything SDK x64 native dependency:
+https://www.voidtools.com/Everything-SDK.zip (retrieved 2026-10-28)
+ZIP SHA256 F5716D9513CCE6B462B5170A0A2E7E081E191D9BCAC6774F5DECC061497DF443
+Everything64.dll, 91304 bytes, no file-version resource
+DLL SHA256 81B5BE18126ACD2C2B913F8F4A821E476B18393CDD3DEBD03387C50AFD8DB88F
+SDK API version 2; default-instance IPC; minimum engine 1.4.1.
+The indexer is external, reused, and never started/reconfigured by Pathweft.
+Validated engine 1.4.1.1032:
+SHA256 F191F756996A14A11E5445FA7103D302EFD510CF2FBF920E6C0C8ED51D512E36
+
+Copyright (C) 2016 David Carpenter (official SDK source notice)
+
+The following permission and disclaimer apply to both MIT components above:
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.

@@ -8,13 +8,13 @@ namespace FileExplorer;
 
 // Win+E on Windows 11 25H2 no longer goes through the shell registry keys a file manager can take
 // over (tested: both the {52205fd8…} launcher and This PC's opennewwindow are ignored). So, like
-// OneCommander's connector, a small window-less File Labs process catches the key itself:
-// `FileLabs.exe --agent`, started at sign-in only while File Labs is the default file manager.
+// OneCommander's connector, a small window-less Pathweft process catches the key itself:
+// `Pathweft.exe --agent`, started at sign-in only while Pathweft is the default file manager.
 public static class Agent
 {
-    const string RunKey = @"Software\Microsoft\Windows\CurrentVersion\Run", RunValue = "File Labs Agent";
-    static string StopEventName => "FileLabs-AgentStop-" + Environment.UserName;
-    static string MutexName => "FileLabs-Agent-" + Environment.UserName;
+    const string RunKey = @"Software\Microsoft\Windows\CurrentVersion\Run", RunValue = "Pathweft Agent";
+    static string StopEventName => "Pathweft-AgentStop-" + Environment.UserName;
+    static string MutexName => "Pathweft-Agent-" + Environment.UserName;
 
     // ---- turned on/off together with the default-file-manager setting ----
     public static void Enable(string exe)
@@ -65,12 +65,12 @@ public static class Agent
                 // an unassigned key in between tells it Win was used as a modifier.
                 TapUnassignedKey();
                 swallowUp = true;
-                System.Windows.Application.Current.Dispatcher.BeginInvoke(LaunchFileLabs); // keep the hook fast
+                System.Windows.Application.Current.Dispatcher.BeginInvoke(LaunchPathweft); // keep the hook fast
                 return (IntPtr)1;
             }
             if (vk == VK_E && !down && swallowUp) { swallowUp = false; return (IntPtr)1; }
 
-            // Ctrl+G in an Open/Save dialog: jump it to the folder File Labs is showing (Listary's
+            // Ctrl+G in an Open/Save dialog: jump it to the folder Pathweft is showing (Listary's
             // "quick switch"). Only the cheap checks happen here; the dialog is driven afterwards.
             if (vk == VK_G && down && Held(VK_CONTROL) && !Held(VK_MENU) && !Held(VK_SHIFT) && !WinHeld()
                 && FileNameBox(GetForegroundWindow()) is var (dialog, box) && box != IntPtr.Zero && CurrentFolder() is { } folder)
@@ -84,8 +84,8 @@ public static class Agent
         return CallNextHookEx(hook, code, wParam, lParam);
     }
 
-    /// Settings → "Win+E opens File Labs" off: the key goes on to Windows, and the Explorer window it opens is
-    /// left alone (the watcher below would otherwise hand a folder on disk, say OneDrive, over to File Labs).
+    /// Settings → "Win+E opens Pathweft" off: the key goes on to Windows, and the Explorer window it opens is
+    /// left alone (the watcher below would otherwise hand a folder on disk, say OneDrive, over to Pathweft).
     /// Read from the settings file at the press: the user changes it while the agent runs, and a press is rare.
     internal static bool ReleasedWinE()
     {
@@ -100,11 +100,11 @@ public static class Agent
         return true;
     }
 
-    // A plain launch: the running File Labs comes to the front, or a new one starts.
-    static void LaunchFileLabs()
+    // A plain launch: the running Pathweft comes to the front, or a new one starts.
+    static void LaunchPathweft()
     {
         // We just handled the user's key press, so Windows lets us hand the right to take focus on;
-        // without this File Labs opens (or is asked to come forward) behind the current window.
+        // without this Pathweft opens (or is asked to come forward) behind the current window.
         AllowSetForegroundWindow(-1);
         // Off this thread: it also runs the keyboard hook, and Windows drops a hook that stops answering.
         ThreadPool.QueueUserWorkItem(_ =>
@@ -119,11 +119,11 @@ public static class Agent
     // ---- Explorer windows that other programs open ----
     // "Open destination folder" in qBittorrent, "Show in folder" in browsers, `explorer.exe /select` and
     // SHOpenFolderAndSelectItems all open Explorer directly: none of them goes through the Directory
-    // verb that makes File Labs the default. So every new Explorer window is looked at once the shell
+    // verb that makes Pathweft the default. So every new Explorer window is looked at once the shell
     // has registered it; if it shows a folder on disk, its folder and selected file are opened in File
     // Labs and the Explorer window is closed. Virtual places (Home, This PC, Control Panel, the Recycle
     // Bin, a zip) stay in Explorer, the only thing that can show them.
-    public const string ExplorerWantedValue = "ExplorerWanted"; // File Labs' own "Open in File Explorer" sets it
+    public const string ExplorerWantedValue = "ExplorerWanted"; // Pathweft' own "Open in File Explorer" sets it
 
     delegate void WinEventProc(IntPtr hook, uint ev, IntPtr hwnd, int idObject, int idChild, uint thread, uint time);
     static WinEventProc shown; // held so the GC can't collect the callback Windows calls
@@ -179,32 +179,32 @@ public static class Agent
                 if (folder == null) { poll.Stop(); GiveBack(hwnd); return; } // a virtual place, or never registered: Explorer keeps it
             }
             var (open, done) = watch.Look(folder, selected);
-            if (open != null) { OpenInFileLabs(open); handed = true; }
+            if (open != null) { OpenInPathweft(open); handed = true; }
             if (!done)
             {
-                if (open != null) HideFromTaskbar(hwnd); // the folder went to File Labs; the window stays out of sight a little longer
+                if (open != null) HideFromTaskbar(hwnd); // the folder went to Pathweft; the window stays out of sight a little longer
                 return;
             }
             poll.Stop();
             hidden.Remove(hwnd);
             try { last?.Quit(); } catch (COMException) { }
             // The Explorer window, out of sight, could still be the active one (the browser or Everything handed it the
-            // right); closing it gave the keyboard back to them, not to File Labs, and the file selected there wasn't
-            // focused (Rico, 1.0.61). Once it's gone, File Labs is brought forward once more, its selected row focused.
-            if (handed) OpenInFileLabsLater("", 300);
+            // right); closing it gave the keyboard back to them, not to Pathweft, and the file selected there wasn't
+            // focused (Rico, 1.0.61). Once it's gone, Pathweft is brought forward once more, its selected row focused.
+            if (handed) OpenInPathweftLater("", 300);
         };
         poll.Start();
     }
 
-    /// What an Explorer window that other programs opened hands to File Labs, look by look (every 50 ms). "Show in folder"
+    /// What an Explorer window that other programs opened hands to Pathweft, look by look (every 50 ms). "Show in folder"
     /// selects the file a moment after the folder shows: ~0.5 s are given for it. Open path in Everything, in a big folder,
-    /// selects it later still, and before 1.0.51 File Labs then got the folder alone, with its first file selected. Now the
-    /// folder goes at 0.5 s, and the file follows if Explorer selects it within 2 s more (File Labs selects it in the tab it
+    /// selects it later still, and before 1.0.51 Pathweft then got the folder alone, with its first file selected. Now the
+    /// folder goes at 0.5 s, and the file follows if Explorer selects it within 2 s more (Pathweft selects it in the tab it
     /// has just opened).
     internal sealed class SelectionWatch
     {
         int waited;
-        public string Handed { get; private set; } // the folder File Labs was given while nothing was selected
+        public string Handed { get; private set; } // the folder Pathweft was given while nothing was selected
 
         /// `folder`: on disk, as Explorer shows it now; `selected`: its one selected item, or null.
         public (string Open, bool Done) Look(string folder, string selected)
@@ -290,9 +290,9 @@ public static class Agent
         return key?.GetValue(ExplorerWantedValue) is long ticks && DateTime.UtcNow.Ticks - ticks < TimeSpan.FromSeconds(10).Ticks;
     }
 
-    static void OpenInFileLabsLater(string path, int ms) => ThreadPool.QueueUserWorkItem(_ => { Thread.Sleep(ms); OpenInFileLabs(path); });
+    static void OpenInPathweftLater(string path, int ms) => ThreadPool.QueueUserWorkItem(_ => { Thread.Sleep(ms); OpenInPathweft(path); });
 
-    static void OpenInFileLabs(string path) => ThreadPool.QueueUserWorkItem(_ =>
+    static void OpenInPathweft(string path) => ThreadPool.QueueUserWorkItem(_ =>
     {
         if (Program.Running && Program.HandOff(path)) return;
         try { Process.Start(new ProcessStartInfo(Environment.ProcessPath) { ArgumentList = { "--front", path }, UseShellExecute = false }); }
@@ -301,9 +301,9 @@ public static class Agent
 
     // ---- quick switch ----
     static bool swallowG;
-    public const string StateKey = @"Software\Protagonist Labs\File Labs";
+    public const string StateKey = @"Software\Darkaxt\Pathweft";
 
-    /// The folder in File Labs' active pane, which the app writes whenever it changes.
+    /// The folder in Pathweft' active pane, which the app writes whenever it changes.
     static string CurrentFolder()
     {
         using var key = Registry.CurrentUser.OpenSubKey(StateKey);

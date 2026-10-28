@@ -1,7 +1,7 @@
 <Window x:Class="FileExplorer.UpdateDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Update — File Labs" Width="520" Height="440" MinWidth="380" MinHeight="300"
+        Title="Update — Pathweft" Width="520" Height="440" MinWidth="380" MinHeight="300"
         WindowStartupLocation="CenterOwner" ShowInTaskbar="True" Background="Transparent"
         Foreground="#E8EEF6" FontFamily="Segoe UI Variable Text, Segoe UI" FontSize="12">
   <Grid x:Name="Root" Background="#B30A0D13">

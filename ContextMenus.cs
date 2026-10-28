@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.IO;
 using Microsoft.Win32;
 using System.Runtime.InteropServices;
@@ -8,7 +8,7 @@ using System.Windows.Media;
 
 namespace FileExplorer;
 
-// Right-click: File Labs' own menu, or the real Windows one (Settings → Files → Context menu).
+// Right-click: Pathweft' own menu, or the real Windows one (Settings → Files → Context menu).
 public partial class MainWindow
 {
     void HookContextMenu(PaneView p)
@@ -30,7 +30,7 @@ public partial class MainWindow
     async void ShowMenu(PaneView p)
     {
         // This PC: Windows' menu for the drive (Properties, Eject, Format…), or for This PC itself (Map network drive…)
-        if (p.Dir == PaneView.ThisPC)
+        if (p.Dir == PaneView.ThisPC && !p.InSearch)
         {
             var drive = p.List.SelectedItem as Entry;
             // Explorer adds these two to This PC's menu from its own window, so the shell's menu has neither: Windows' dialogs
@@ -65,7 +65,7 @@ public partial class MainWindow
         var sel = p.Selected;
         if (Settings.NativeMenu)
         {
-            // the folder's menu gets File Labs' View submenu; Paste on a folder, or a shortcut to one, is Windows' own here
+            // the folder's menu gets Pathweft' View submenu; Paste on a folder, or a shortcut to one, is Windows' own here
             if (ShellMenu.Show(this, p.Dir, sel.Select(x => x.Path).ToList(), sel.Count == 0 ? p.ViewChoices() : null) == "rename") Rename();
             p.Refresh();
             return;
@@ -85,7 +85,7 @@ public partial class MainWindow
     }
 
     // SpaceScan (sister app) publishes where it is installed (before its ecosystem card); without it the menu item sends the user to its page.
-    const string SpaceScanPage = "https://protagonistlabs.app/spacescan/?utm_source=filelabs&utm_medium=app&utm_campaign=scan-with-spacescan";
+    const string SpaceScanPage = "https://protagonistlabs.app/spacescan/?utm_source=pathweft&utm_medium=app&utm_campaign=scan-with-spacescan";
 
     static string SpaceScanExe
     {
@@ -104,9 +104,9 @@ public partial class MainWindow
     // the menu item sends the user to the app's page.
     const string ShelfKey = "93869666-a03d-5775-ba3a-19dde48e73bc", ReelKey = "95693626-e8c4-5132-9e4f-6f4a12169be6";
     const string BackupKey = "{3B9E6A12-8C4D-4F7B-A1E5-6D2F0B8C9E34}_is1";
-    const string BackupPage = "https://protagonistlabs.app/backuplabs/?utm_source=filelabs&utm_medium=app&utm_campaign=back-up-with-backuplabs";
-    const string ShelfPage = "https://protagonistlabs.app/shelf/?utm_source=filelabs&utm_medium=app&utm_campaign=add-to-shelf";
-    const string ReelPage = "https://protagonistlabs.app/reel/?utm_source=filelabs&utm_medium=app&utm_campaign=add-to-reel";
+    const string BackupPage = "https://protagonistlabs.app/backuplabs/?utm_source=pathweft&utm_medium=app&utm_campaign=back-up-with-backuplabs";
+    const string ShelfPage = "https://protagonistlabs.app/shelf/?utm_source=pathweft&utm_medium=app&utm_campaign=add-to-shelf";
+    const string ReelPage = "https://protagonistlabs.app/reel/?utm_source=pathweft&utm_medium=app&utm_campaign=add-to-reel";
     // the extensions Reel takes as a film
     static readonly HashSet<string> ReelVideo = Set(".mkv", ".mp4", ".avi", ".mov", ".wmv", ".m4v", ".ts", ".m2ts", ".mpg", ".mpeg", ".webm");
 
@@ -156,8 +156,8 @@ public partial class MainWindow
     // below these counts as not installed and the button opens the app's page.
     static readonly Dictionary<string, (string Switch, Version Min, string Page)> BackupApps = new()
     {
-        ["stash"] = ("--browse", new(2, 1, 0), "https://protagonistlabs.app/stash/?utm_source=filelabs&utm_medium=app&utm_campaign=open-backup"),
-        ["backuplabs"] = ("--open", new(1, 3, 0), "https://protagonistlabs.app/backuplabs/?utm_source=filelabs&utm_medium=app&utm_campaign=open-backup"),
+        ["stash"] = ("--browse", new(2, 1, 0), "https://protagonistlabs.app/stash/?utm_source=pathweft&utm_medium=app&utm_campaign=open-backup"),
+        ["backuplabs"] = ("--open", new(1, 3, 0), "https://protagonistlabs.app/backuplabs/?utm_source=pathweft&utm_medium=app&utm_campaign=open-backup"),
     };
 
     /// The command that opens this backup in its app, or null when it isn't one, can't be read, or the app is missing or too old.

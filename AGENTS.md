@@ -3,8 +3,10 @@
 Read `docs/SPECIFICATION.md` first. It is authoritative; the plan and this file
 do not change its requirements or the user's standing instructions.
 
-- Current authorization is environment/public-fork/specification setup. Product
-  implementation stages have not started; a plan does not authorize itself.
+- Current authorization includes S1 implementation and verification (2026-10-28
+  user request). S1 is BLOCKED on OS interaction verification while Windows is locked;
+  later stages remain NOT STARTED. A plan does not
+  authorize itself or intermediate product releases.
 - Keep one ACTIVE stage during authorized implementation. Reconcile complete
   features and actual integration evidence in the existing implementation plan.
 - Reuse selected source components. Do not substitute standalone QuickLook or

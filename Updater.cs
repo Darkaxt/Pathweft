@@ -16,10 +16,10 @@ namespace FileExplorer;
 //   • updating downloads the release's installer, checks its size and SHA-256 against the GitHub asset,
 //     starts it through UAC (per machine since 1.0.48) and quits: nothing in this process can outlive
 //     the installer that is about to overwrite it. The installer waits for us to go and starts the app
-//     again itself (a [Run] entry for silent installs in FileLabs.iss, as the signed-in user).
+//     again itself (a [Run] entry for silent installs in Pathweft.iss, as the signed-in user).
 public static class Updater
 {
-    public const string Repo = "limburatorul/file-labs";
+    public const string Repo = "Darkaxt/Pathweft";
 
     public record Release(Version Version, string Tag, string Notes, string AssetUrl, long AssetSize, string Sha256);
 
@@ -53,7 +53,7 @@ public static class Updater
     public static async Task<Release> Latest()
     {
         var request = new HttpRequestMessage(HttpMethod.Get, Feed);
-        request.Headers.UserAgent.ParseAdd("FileLabs");
+        request.Headers.UserAgent.ParseAdd("Pathweft");
         using var response = await http.SendAsync(request);
         response.EnsureSuccessStatusCode(); // 403 (rate limit) and 5xx are failures, not "nothing new"
         using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
@@ -75,7 +75,7 @@ public static class Updater
     /// Downloads the installer, reporting 0..1 progress. Returns its path.
     public static async Task<string> Download(Release release, IProgress<double> progress, CancellationToken token)
     {
-        var path = Path.Combine(Path.GetTempPath(), $"FileLabs-{release.Version}-setup.exe");
+        var path = Path.Combine(Path.GetTempPath(), $"Pathweft-{release.Version}-setup.exe");
         using (var response = await http.GetAsync(release.AssetUrl, HttpCompletionOption.ResponseHeadersRead, token))
         {
             response.EnsureSuccessStatusCode();
@@ -116,14 +116,14 @@ public static class Updater
 
     /// Starts the installer and returns true; the caller then quits so it can replace us. Since 1.0.48 it installs per
     /// machine, so it goes through ShellExecute and the UAC prompt (CreateProcess would fail with error 740). It waits for
-    /// this window to close, closes the agent itself and starts File Labs again ([Run] with WizardSilent, FileLabs.iss).
+    /// this window to close, closes the agent itself and starts Pathweft again ([Run] with WizardSilent, Pathweft.iss).
     /// False when the user said no to the prompt: nothing changed, the app carries on.
     public static bool InstallAndRestart(string installer)
     {
         try
         {
             // Not Verb = "runas": started elevated, Setup has no un-elevated user to go back to, and its runasoriginaluser restart
-            // brought the app back as administrator (26.10.2026: File Labs, whose pipe then refused every hand-off). Setup asks for
+            // brought the app back as administrator (26.10.2026: Pathweft, whose pipe then refused every hand-off). Setup asks for
             // elevation itself (PrivilegesRequired=admin, asInvoker manifest) and restarts the app as the user.
             Process.Start(new ProcessStartInfo(installer, "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART") { UseShellExecute = true })?.Dispose();
             return true;

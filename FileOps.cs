@@ -107,7 +107,7 @@ public partial class MainWindow
         {
             for (int i = 0; i < plan.Count; i++)
             {
-                var tmp = Path.Combine(Path.GetDirectoryName(plan[i].Path), $".filelabs-{Guid.NewGuid():N}");
+                var tmp = Path.Combine(Path.GetDirectoryName(plan[i].Path), $".pathweft-{Guid.NewGuid():N}");
                 MovePath(at[i], tmp);
                 at[i] = tmp;
             }
@@ -229,7 +229,7 @@ public partial class MainWindow
     async void OpenFromArchive(PaneView p, Entry e)
     {
         if (p.ArchiveRoot is not var (archive, inner)) return;
-        var temp = Path.Combine(Path.GetTempPath(), "FileLabs", "open", $"{(uint)archive.ToLowerInvariant().GetHashCode():x8}", inner.Replace('/', '\\'));
+        var temp = Path.Combine(Path.GetTempPath(), "Pathweft", "open", $"{(uint)archive.ToLowerInvariant().GetHashCode():x8}", inner.Replace('/', '\\'));
         string error = null;
         try { await Task.Run(() => { Directory.CreateDirectory(temp); var f = Path.Combine(temp, e.Name); if (File.Exists(f)) File.Delete(f); Archive.Extract(archive, new[] { e.Name }, inner, temp); }); }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException or FormatException) { error = ex.Message; }

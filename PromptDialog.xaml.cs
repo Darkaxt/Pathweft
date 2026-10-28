@@ -42,7 +42,7 @@ public partial class PromptDialog : Window
     {
         var w = new Window
         {
-            Owner = owner, Title = "File Labs", Width = 440, SizeToContent = SizeToContent.Height, ResizeMode = ResizeMode.NoResize,
+            Owner = owner, Title = "Pathweft", Width = 440, SizeToContent = SizeToContent.Height, ResizeMode = ResizeMode.NoResize,
             WindowStartupLocation = owner != null ? WindowStartupLocation.CenterOwner : WindowStartupLocation.CenterScreen,
             ShowInTaskbar = false, Background = System.Windows.Media.Brushes.Transparent,
             Foreground = MainWindow.Hex("#E8EEF6"), FontFamily = new System.Windows.Media.FontFamily("Segoe UI Variable Text, Segoe UI"), FontSize = 12,

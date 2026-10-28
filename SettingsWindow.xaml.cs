@@ -1,4 +1,4 @@
-﻿using System.Windows;
+using System.Windows;
 
 namespace FileExplorer;
 
@@ -30,7 +30,7 @@ public partial class SettingsWindow : Window
             };
         BuildSwatches();
         BuildWheel();
-        AboutText.Text = $"File Labs {typeof(App).Assembly.GetName().Version?.ToString(3)} · Protagonist Labs\n" +
+        AboutText.Text = $"Pathweft {typeof(App).Assembly.GetName().Version?.ToString(3)} · Darkaxt · based on File Labs\n" +
                          "Transfers run on the Ferry engine. Settings live in " + Settings.Dir;
         BuildWorksWith();
         Refresh();
@@ -73,8 +73,8 @@ public partial class SettingsWindow : Window
         TipDelayText.Text = $"{Settings.TipDelay / 1000.0:0.0} s";
     }
 
-    // ---- Reset to defaults: a card's settings, or all three cards, as File Labs comes (Settings.Reset) ----
-    // Windows integration is left out: it changes Windows (the default file manager, Win+E, sign-in), not File Labs.
+    // ---- Reset to defaults: a card's settings, or all three cards, as Pathweft comes (Settings.Reset) ----
+    // Windows integration is left out: it changes Windows (the default file manager, Win+E, sign-in), not Pathweft.
     internal static readonly string[] AppearanceKeys =
     {
         "backdrop", "opacity", "bgimage", "bgopacity", "bgblur", "bgbright", "accent", "accentstrength", "rowpad", "textscale",
@@ -83,7 +83,7 @@ public partial class SettingsWindow : Window
     };
     internal static readonly string[] FilesKeys = { "hidden", "shortcutfolders", "internaleditor", "quicklook", "itemtips", "tipdelay", "deletesound", "nativemenu" };
     internal static readonly string[] TransfersKeys = { "verify", "parallel" };
-    /// What File Labs keeps that isn't a choice in these cards: Windows integration, and what it remembers by itself.
+    /// What Pathweft keeps that isn't a choice in these cards: Windows integration, and what it remembers by itself.
     internal static readonly string[] NotReset =
     {
         "wine", "tray", "preview", "previewwidth", "lastseen", "recent", "destinations", "sidebar", "sidebarorder", "sidebarcollapsed", "split", "maximized", "window", "quicklist",
@@ -91,7 +91,7 @@ public partial class SettingsWindow : Window
 
     void ResetAll_Click(object s, RoutedEventArgs e) =>
         Reset(AppearanceKeys.Concat(FilesKeys).Concat(TransfersKeys), "Reset every setting to its default?",
-              "Appearance, Files and Transfers go back to how File Labs comes. Windows integration stays as it is, and so do your tabs, Quick access lists and folder sizes.");
+              "Appearance, Files and Transfers go back to how Pathweft comes. Windows integration stays as it is, and so do your tabs, Quick access lists and folder sizes.");
 
     void ResetSection_Click(object s, RoutedEventArgs e)
     {
@@ -139,7 +139,7 @@ public partial class SettingsWindow : Window
         ("spacescan", "SpaceScan", "shows what fills a folder, from the right-click menu", "would show what fills a folder, from the right-click menu"),
         ("lume", "Lume", "finds your Quick access folders and opens them here", "would find your Quick access folders and open them here"),
     };
-    const string WorksUtm = "utm_source=filelabs&utm_medium=app&utm_campaign=works-with";
+    const string WorksUtm = "utm_source=pathweft&utm_medium=app&utm_campaign=works-with";
 
     void BuildWorksWith()
     {
@@ -523,7 +523,7 @@ public partial class SettingsWindow : Window
     {
         Settings.TakeWinE = WinEBox.IsChecked == true;
         Settings.Save(); // the agent reads it from the file at each Win+E
-        if (!Settings.IsDefaultFileManager) return; // taken or not when File Labs becomes the default
+        if (!Settings.IsDefaultFileManager) return; // taken or not when Pathweft becomes the default
         try { Settings.SetWinE(Settings.TakeWinE); }
         catch (Exception ex) when (ex is UnauthorizedAccessException or System.Security.SecurityException or System.IO.IOException)
         {

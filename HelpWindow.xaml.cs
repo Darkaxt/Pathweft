@@ -5,7 +5,7 @@ using System.Windows.Media;
 
 namespace FileExplorer;
 
-// F1: everything File Labs does, by topic, searchable — keys, and the features that have no key. The text is
+// F1: everything Pathweft does, by topic, searchable — keys, and the features that have no key. The text is
 // kept here and nowhere else, so a new shortcut in MainWindow.OnPreviewKeyDown or a new feature needs a line here too.
 public partial class HelpWindow : Window
 {
@@ -14,7 +14,7 @@ public partial class HelpWindow : Window
         ("The window", new[]
         {
             ("Two panes", "Two folders side by side, each with its own tabs. The active pane has the lighter surface and the accent edge; Tab switches. Ctrl+P shows one pane or two"),
-            ("Top row", "The tabs. Drag its empty part (or File Labs' name at the top of the sidebar) to move the window, double-click it to maximize, right-click it for the window menu. Resting on the maximize button shows Windows' snap layouts"),
+            ("Top row", "The tabs. Drag its empty part (or Pathweft' name at the top of the sidebar) to move the window, double-click it to maximize, right-click it for the window menu. Resting on the maximize button shows Windows' snap layouts"),
             ("Sidebar", "Quick access (the folders you pin), Favorites (Home, Desktop, Documents, Downloads, Pictures, Music, Videos, Recycle Bin), Drives with how full each one is, and a Folders tree. Click a section's header to fold it, drag a header to reorder; drag the sidebar's edge to widen it"),
             ("Bottom of the sidebar", "The Drop bin, then Check for updates, What's new, Help and Settings. Hover a button for its name"),
             ("Summary cards", "Under the panes: the drive (free space, how full), this folder (its size, folders and files, and a bar of what it holds by kind: images, video, code…), and the selection — or, with nothing selected, the latest change in the folder"),
@@ -35,10 +35,10 @@ public partial class HelpWindow : Window
             ("Right-click a tab", "Pin or unpin it, or close the other tabs. Pinned tabs sit at the left, have no close button, are remembered and stay open"),
             ("Drag a tab", "Reorder, or drop it on the other pane to move it there"),
             ("Many tabs", "Below 120 px each they wrap into more rows, which stay where they are when you switch tabs"),
-            ("A folder opened from outside", "From Explorer, another app, a shortcut or Win+E: if a tab already shows it, File Labs switches to that tab instead of opening a second one"),
+            ("A folder opened from outside", "From Explorer, another app, a shortcut or Win+E: if a tab already shows it, Pathweft switches to that tab instead of opening a second one"),
             ("Double-click the splitter", "Make the two panes equal again"),
             ("Settings → Close the second pane with its last tab", "Closing the right pane's last tab (its ×, Ctrl+W or a middle click) hides the pane; Ctrl+P brings it back with that tab"),
-            ("Tabs are remembered", "Every pane's tabs come back the next time File Labs starts"),
+            ("Tabs are remembered", "Every pane's tabs come back the next time Pathweft starts"),
         }),
         ("Moving around", new[]
         {
@@ -137,12 +137,12 @@ public partial class HelpWindow : Window
         }),
         ("Windows integration", new[]
         {
-            ("Settings → Use File Labs as the default file manager", "Folders and drives you open anywhere in Windows open in File Labs; switching it off gives them back to what had them before"),
-            ("Win+E", "Opens File Labs, or brings it forward, while it is the default file manager. Settings can leave Win+E to File Explorer"),
-            ("Show in folder", "When another app asks Explorer to show a file (Open path in Everything, Show in folder in a browser), File Labs opens its folder with the file selected"),
+            ("Settings → Use Pathweft as the default file manager", "Folders and drives you open anywhere in Windows open in Pathweft; switching it off gives them back to what had them before"),
+            ("Win+E", "Opens Pathweft, or brings it forward, while it is the default file manager. Settings can leave Win+E to File Explorer"),
+            ("Show in folder", "When another app asks Explorer to show a file (Open path in Everything, Show in folder in a browser), Pathweft opens its folder with the file selected"),
             ("Right-click a drive or a folder in the sidebar", "Windows' own menu for it: Properties, Eject, Format, BitLocker and what other apps add"),
-            ("Ctrl+G in an Open or Save dialog", "Takes the dialog to the folder File Labs is showing (while File Labs is the default file manager)"),
-            ("Settings → Close to the notification area", "Closing hides File Labs next to the clock instead of quitting, so it opens again at once. Click the icon to bring it back; right-click it → Quit to really close"),
+            ("Ctrl+G in an Open or Save dialog", "Takes the dialog to the folder Pathweft is showing (while Pathweft is the default file manager)"),
+            ("Settings → Close to the notification area", "Closing hides Pathweft next to the clock instead of quitting, so it opens again at once. Click the icon to bring it back; right-click it → Quit to really close"),
         }),
         ("Works with other apps", new[]
         {
@@ -156,9 +156,9 @@ public partial class HelpWindow : Window
         ("Settings and updates", new[]
         {
             ("Ctrl+,", "Settings: appearance (backdrop, opacity, background picture, accent colour, row height, text size per area, summary cards, animations), files, the right-click menu, transfers, Windows integration, about"),
-            ("Updates", "File Labs checks every hour and asks before updating; the update downloads, is checked against GitHub's published SHA-256, installs and restarts in about ten seconds"),
+            ("Updates", "Pathweft checks every hour and asks before updating; the update downloads, is checked against GitHub's published SHA-256, installs and restarts in about ten seconds"),
             ("What's new", "Every release's notes, by month, from the button at the bottom of the sidebar. It opens by itself after an update"),
-            ("Settings → Reset to defaults", "Every setting back to how File Labs comes, after asking; each card has its own Reset. Windows integration, tabs and Quick access stay. A double-click on a slider's handle resets just that slider"),
+            ("Settings → Reset to defaults", "Every setting back to how Pathweft comes, after asking; each card has its own Reset. Windows integration, tabs and Quick access stay. A double-click on a slider's handle resets just that slider"),
             ("Tooltips", "Wait 1.5 s before they show, each one; Settings → Files → Tooltip delay changes that, from the next start"),
             ("F1", "This help"),
         }),

@@ -19,7 +19,7 @@ public partial class UpdateDialog : Window
         Root.Background = MainWindow.Tint();
         Notes.Text = release.Notes.Trim() == "" ? "No release notes." : release.Notes.Trim();
 
-        Heading.Text = $"File Labs {release.Version} is available";
+        Heading.Text = $"Pathweft {release.Version} is available";
         Sub.Text = $"You have {Updater.Current}. The installer is {MainWindow.Fmt(release.AssetSize)}.";
         Closed += (_, _) => cancel.Cancel();
     }
@@ -31,7 +31,7 @@ public partial class UpdateDialog : Window
         // a portable copy isn't installed: its update is the new zip, unpacked over this folder (Data stays as it is)
         if (Settings.Portable != null)
         {
-            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo($"https://github.com/limburatorul/file-labs/releases/tag/{release.Tag}") { UseShellExecute = true });
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo($"https://github.com/{Updater.Repo}/releases/tag/{release.Tag}") { UseShellExecute = true });
             Status.Text = "This copy is portable: download the portable zip from the page that just opened and unpack it over this folder. Your settings in Data stay.";
             return;
         }
@@ -42,7 +42,7 @@ public partial class UpdateDialog : Window
         {
             var progress = new Progress<double>(p => { Progress.Value = p; Status.Text = $"Downloading… {p * 100:0}%"; });
             var installer = await Updater.Download(release, progress, cancel.Token);
-            Status.Text = "Installing — File Labs will restart.";
+            Status.Text = "Installing — Pathweft will restart.";
             if (!Updater.InstallAndRestart(installer))
             {
                 Progress.Visibility = Visibility.Collapsed;

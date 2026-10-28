@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using System.IO.Pipes;
 using System.Windows;
 
@@ -13,12 +13,12 @@ static class Program
     /// Before PipeName, which reads it: static fields start in the order they are written.
     internal static readonly string PortableDir = File.Exists(Path.Combine(AppContext.BaseDirectory, "portable.txt")) ? AppContext.BaseDirectory.TrimEnd('\\') : null;
 
-    // a test copy (FILELABS_PROFILE) gets a single instance per profile folder, so two test copies don't hand off to each
+    // a test copy (PATHWEFT_PROFILE) gets a single instance per profile folder, so two test copies don't hand off to each
     // other. Read from the environment here, not from Settings, whose types would load WPF.
     // A portable copy (portable.txt beside the exe) is its own instance too: started while the installed one runs, it
     // would otherwise hand its start over and never open.
-    internal static readonly string PipeName = "FileLabs-" + Environment.UserName
-        + ((Environment.GetEnvironmentVariable("FILELABS_PROFILE") is { Length: > 0 } p ? p : PortableDir) is { } own
+    internal static readonly string PipeName = "Pathweft-" + Environment.UserName
+        + ((Environment.GetEnvironmentVariable("PATHWEFT_PROFILE") is { Length: > 0 } p ? p : PortableDir) is { } own
             ? "-profile-" + System.IO.Hashing.XxHash32.HashToUInt32(System.Text.Encoding.UTF8.GetBytes(own.ToLowerInvariant())).ToString("x8") : "");
 
     [STAThread]
@@ -27,13 +27,13 @@ static class Program
         if (!args.Any(a => a.StartsWith("--")) && Running)
         {
             AllowSetForegroundWindow(-1); // we were just launched by the user, so we may pass focus on
-            if (HandOff(PathArg(args))) return;
-            // the running window didn't answer (hung or closing): start normally
+            if (!HandOff(PathArg(args))) Environment.ExitCode = 1;
+            return; // the mutex owner stays authoritative; never create a duplicate window
         }
         App.Main();
     }
 
-    /// True while a File Labs window is open for this user (it holds the single-instance mutex).
+    /// True while a Pathweft window is open for this user (it holds the single-instance mutex).
     internal static bool Running
     {
         get
@@ -61,12 +61,12 @@ static class Program
         try
         {
             using var pipe = new NamedPipeClientStream(".", PipeName, PipeDirection.Out);
-            pipe.Connect(3000);
+            pipe.Connect(); // wait for the owning listener, without a timeout-driven second instance
             using var w = new StreamWriter(pipe);
             w.WriteLine(path);
             return true;
         }
-        catch (Exception ex) when (ex is TimeoutException or IOException) { return false; }
+        catch (IOException) { return false; }
     }
 
     [System.Runtime.InteropServices.DllImport("user32.dll")] internal static extern bool AllowSetForegroundWindow(int pid);
@@ -76,7 +76,7 @@ public partial class App : Application
 {
     public App() => Motion.Hook(); // before any window is made
 
-    // `FileLabs.exe --selftest`: runs the Ferry engine on real files in a temp dir, exit code 0 = pass.
+    // `Pathweft.exe --selftest`: runs the Ferry engine on real files in a temp dir, exit code 0 = pass.
     protected override void OnStartup(StartupEventArgs e)
     {
         if (e.Args.Contains("--selftest")) { Shutdown(SelfTest()); return; }
@@ -92,20 +92,9 @@ public partial class App : Application
         // Called by the installer / uninstaller: same code path as the switch in Settings.
         if (e.Args.Contains("--set-default") || e.Args.Contains("--unset-default"))
         {
-            Settings.Load(); // "Win+E opens File Labs" may be off
+            Settings.Load(); // "Win+E opens Pathweft" may be off
             try { Settings.SetDefaultFileManager(e.Args.Contains("--set-default")); Shutdown(0); }
             catch (Exception ex) when (ex is UnauthorizedAccessException or System.Security.SecurityException or IOException) { Shutdown(1); }
-            return;
-        }
-
-        // Run by the installer as the signed-in user after the files are in place (runasoriginaluser): the data from
-        // before 1.0.48 moved if the installer couldn't, the HKCU entries pointed at this exe, the card for the sisters.
-        if (e.Args.Contains("--installed"))
-        {
-            if (!Program.Running) DataFolder.Migrate();
-            DataFolder.Repoint();
-            Sisters.WriteCard();
-            Shutdown(0);
             return;
         }
 
@@ -117,18 +106,16 @@ public partial class App : Application
         if (!first)
         {
             Program.AllowSetForegroundWindow(-1); // we were just launched by the user, so we may pass focus on
-            if (Program.HandOff(Program.PathArg(e.Args))) { Shutdown(); return; }
-            // first instance hung or closing: just start normally
+            Shutdown(Program.HandOff(Program.PathArg(e.Args)) ? 0 : 1);
+            return;
         }
         else
         {
-            DataFolder.Migrate(); // the data from before 1.0.48, before anything reads it (Settings.cs)
-            _ = Listen();
+            listening = Listen();
         }
         Settings.Load(); // before any window: the panes read column widths while being built
         UseTipDelay();
         ShellMenu.FollowSystemTheme(); // the Windows right-click menu dark in dark mode
-        Task.Run(() => { DataFolder.Repoint(); Sisters.WriteCard(); }); // the ecosystem card, so sister apps find this copy (Sisters.cs)
         // folder sizes from previous sessions are read after the first frame, or on first need (SizeCache.StartLoading)
         Exit += (_, _) => SizeCache.Save();
         var sizeSaver = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMinutes(2) };
@@ -138,9 +125,25 @@ public partial class App : Application
         var window = new MainWindow(); // opened here, not via StartupUri, so --agent etc. never build it
         if (hidden) window.PrepareHiddenStart();
         window.Show();
+#if DEBUG
+        if (e.Args.FirstOrDefault(a => a.StartsWith("--verify-s1=")) is { } verification)
+            window.ContentRendered += async (_, _) => await S1Verification.Run(window, verification[12..]);
+#endif
     }
 
     Mutex instance;
+    readonly CancellationTokenSource listenCancellation = new();
+    Task listening;
+
+    protected override void OnExit(ExitEventArgs e)
+    {
+        listenCancellation.Cancel();
+        listening?.GetAwaiter().GetResult();
+        Search.EverythingSearchClient.StopIfStartedAsync().GetAwaiter().GetResult();
+        instance?.Dispose();
+        listenCancellation.Dispose();
+        base.OnExit(e);
+    }
 
     /// Settings: every tooltip waits this long, 1.5 s unless changed. Up to 1.0.50 it was WPF's own 1 s, and once one tooltip
     /// had shown, the next came after 0.1 s (BetweenShowDelay): running the pointer down a list, every row popped one. Now
@@ -157,20 +160,34 @@ public partial class App : Application
 
     async Task Listen()
     {
-        while (true)
+        try
         {
-            using var server = new NamedPipeServerStream(Program.PipeName, PipeDirection.In, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
-            await server.WaitForConnectionAsync();
-            string path;
-            try { path = await new StreamReader(server).ReadLineAsync(); }
-            catch (IOException) { continue; } // client went away
-            if (MainWindow is MainWindow w) w.OpenFromOutside(path);
+            while (!listenCancellation.IsCancellationRequested)
+            {
+                using var server = new NamedPipeServerStream(Program.PipeName, PipeDirection.In, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
+                await server.WaitForConnectionAsync(listenCancellation.Token).ConfigureAwait(false);
+                string path;
+                try { path = await new StreamReader(server).ReadLineAsync(listenCancellation.Token).ConfigureAwait(false); }
+                catch (IOException) { continue; }
+                _ = Dispatcher.BeginInvoke(() => { if (MainWindow is MainWindow w) w.OpenFromOutside(path); });
+            }
         }
+        catch (OperationCanceledException) when (listenCancellation.IsCancellationRequested) { }
     }
 
     static int SelfTest()
     {
-        var root = Path.Combine(Path.GetTempPath(), "filelabs-test-" + Guid.NewGuid().ToString("N")[..8]);
+        var root = Path.Combine(Path.GetTempPath(), "pathweft-test-" + Guid.NewGuid().ToString("N")[..8]);
+        static bool Junction(string link, string target)
+        {
+            using var process = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("cmd.exe")
+            {
+                ArgumentList = { "/d", "/c", "mklink", "/J", link, target },
+                CreateNoWindow = true, UseShellExecute = false,
+            });
+            process.WaitForExit();
+            return process.ExitCode == 0 && Directory.Exists(link);
+        }
         try
         {
             var src = Directory.CreateDirectory(Path.Combine(root, "src", "tree", "sub")).Parent.Parent.FullName;
@@ -208,8 +225,7 @@ public partial class App : Application
             // a junction inside the moved folder, pointing at a folder with an empty subfolder
             var outside = Directory.CreateDirectory(Path.Combine(root, "outside", "empty")).Parent.FullName;
             var link = Path.Combine(incoming, "link");
-            bool junction = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("cmd.exe", $"/c mklink /J \"{link}\" \"{outside}\"")
-                { CreateNoWindow = true, UseShellExecute = false })!.WaitForExit(5000) && Directory.Exists(link);
+            bool junction = Junction(link, outside);
             j = Run(Ferry.Submit(new[] { incoming }, merge, move: true));
             Check(j.Phase == Phase.Done && j.Merged && j.Errors.IsEmpty, "merge move finished");
             Check(File.Exists(Path.Combine(merge, "tree", "kept.txt")) && File.Exists(Path.Combine(merge, "tree", "new.txt")), "merge keeps both folders' files");
@@ -217,7 +233,7 @@ public partial class App : Application
             {
                 Check(Directory.Exists(Path.Combine(outside, "empty")), "a junction's target is never emptied");
                 Check(Directory.Exists(link), "the junction itself stays where it was");
-                Directory.Delete(link); // the link only, so the clean-up below has plain folders to remove
+                // Retained for the helper's exact leaf-reparse cleanup contract.
             }
 
             // folder sizes: every folder a scan passes through is remembered, and a change drops the
@@ -300,7 +316,7 @@ public partial class App : Application
             // the Windows menu brings forward the app that took the file: its title has to name the file
             Check(ShellMenu.ShowsFile("note.txt - Notepad", new[] { "note.txt" }) && ShellMenu.ShowsFile("*NOTE.TXT - Notepad", new[] { "x.png", "note.txt" })
                 && !ShellMenu.ShowsFile("Untitled - Notepad", new[] { "note.txt" }), "a window showing the file");
-            // 7-Zip / WinRAR / Open with items in File Labs' menu: their access keys in WPF's form, stray separators dropped
+            // 7-Zip / WinRAR / Open with items in Pathweft' menu: their access keys in WPF's form, stray separators dropped
             Check(ShellMenu.Label("Add &to \"a_b.rar\"\tCtrl+T") == ("Add _to \"a__b.rar\"", "Ctrl+T") && ShellMenu.Label("Tom && Jerry").Label == "Tom & Jerry", "shell menu labels");
             ShellMenu.Node Sep() => new(null, null, null, null, null);
             ShellMenu.Node Cmd(string t) => new(t, null, null, null, () => { });
@@ -314,8 +330,7 @@ public partial class App : Application
             File.SetAttributes(ro, FileAttributes.ReadOnly);
             var kept = Directory.CreateDirectory(Path.Combine(root, "kept")).FullName;
             File.WriteAllText(Path.Combine(kept, "stays.txt"), "here");
-            bool doomedLink = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("cmd.exe", $"/c mklink /J \"{Path.Combine(doomed, "link")}\" \"{kept}\"")
-                { CreateNoWindow = true, UseShellExecute = false })!.WaitForExit(5000) && Directory.Exists(Path.Combine(doomed, "link"));
+            bool doomedLink = Junction(Path.Combine(doomed, "link"), kept);
             FileExplorer.MainWindow.DeleteQuietly(doomed);
             Check(!Directory.Exists(doomed), "silent delete removes the folder, read-only file included");
             Check(!doomedLink || File.Exists(Path.Combine(kept, "stays.txt")), "silent delete never empties a junction's target");
@@ -326,7 +341,7 @@ public partial class App : Application
             Check(UpdateCheckFails(Serve(403, "{\"message\":\"API rate limit exceeded\"}")), "update check 403 fails");
             Check(UpdateCheckFails(Serve(502, "")), "update check 5xx fails");
             Check(UpdateCheckFails(Serve(200, "<html>")), "update check unreadable answer fails");
-            Updater.Feed = Serve(200, "{\"tag_name\":\"v0.0.1\",\"body\":\"\",\"assets\":[{\"name\":\"FileLabs-0.0.1-setup.exe\",\"browser_download_url\":\"x\",\"size\":1}]}");
+            Updater.Feed = Serve(200, "{\"tag_name\":\"v0.0.1\",\"body\":\"\",\"assets\":[{\"name\":\"Pathweft-0.0.1-setup.exe\",\"browser_download_url\":\"x\",\"size\":1}]}");
             Check(Task.Run(() => Updater.Check(manual: true)).GetAwaiter().GetResult() == null, "update check: nothing newer is not a failure");
 
             // a copy into the folder it is in duplicates beside it, as in Explorer; folders keep their dots
@@ -497,33 +512,7 @@ public partial class App : Application
             Check(Sisters.ReelFiles(v3, postersV3, posters) is { } m3 && m3[@"D:\new.mkv"].Poster == postersV3 + "n.jpg" && m3[@"D:\old.mkv"].Poster == posters + "o.jpg"
                 && Sisters.ReelPosters.Length == 2 && Sisters.ReelPosters.All(p => p.EndsWith(@"\posters\")), "Reel posters from the new and the old folder");
 
-            // ecosystem v3: the data folder moves once, by rename, never mixed, never half (DataFolder in Settings.cs)
-            var mig = Directory.CreateDirectory(Path.Combine(root, "migrate")).FullName;
-            string oldR = Path.Combine(mig, "Roaming", "FileLabs"), oldL = Path.Combine(mig, "Local", "FileLabs"), newR = Path.Combine(mig, "Roaming", "ProtagonistLabs", "File Labs");
-            Directory.CreateDirectory(Path.Combine(oldL, "WebView2", "EBWebView"));
-            File.WriteAllText(Path.Combine(oldL, "WebView2", "EBWebView", "Local State"), "{}");
-            Directory.CreateDirectory(oldR);
-            File.WriteAllText(Path.Combine(oldR, "settings.txt"), "accent=#FF0000");
-            Directory.CreateDirectory(newR); // an empty new folder (a sister wrote nothing yet) doesn't block the move
-            DataFolder.Migrate(oldR, oldL, newR);
-            Check(File.ReadAllText(Path.Combine(newR, "settings.txt")) == "accent=#FF0000" && File.Exists(Path.Combine(newR, "WebView2", "EBWebView", "Local State"))
-                && !Directory.Exists(oldR) && !Directory.Exists(oldL) && File.ReadAllText(Path.Combine(newR, "migration.log")).Contains("moved"), "data: both old folders moved into the new one, logged");
-            var logLength = new FileInfo(Path.Combine(newR, "migration.log")).Length;
-            DataFolder.Migrate(oldR, oldL, newR);
-            Check(new FileInfo(Path.Combine(newR, "migration.log")).Length == logLength && File.Exists(Path.Combine(newR, "settings.txt")), "data: a second run does nothing");
-            Directory.CreateDirectory(oldR);
-            File.WriteAllText(Path.Combine(oldR, "settings.txt"), "accent=#00FF00");
-            DataFolder.Migrate(oldR, oldL, newR);
-            Check(File.ReadAllText(Path.Combine(oldR, "settings.txt")) == "accent=#00FF00" && File.ReadAllText(Path.Combine(newR, "settings.txt")) == "accent=#FF0000"
-                && File.ReadAllText(Path.Combine(newR, "migration.log")).Contains("left in place"), "data: the new folder has data, so the old one is left alone, not mixed in");
-            var newB = Path.Combine(mig, "Roaming", "ProtagonistLabs", "File Labs B");
-            using (new FileStream(Path.Combine(oldR, "settings.txt"), FileMode.Open, FileAccess.Read, FileShare.None))
-                DataFolder.Migrate(oldR, oldL, newB);
-            Check(File.Exists(Path.Combine(oldR, "settings.txt")) && !Directory.Exists(newB) && File.ReadAllText(Path.Combine(oldR, "migration.log")).Contains("could not move"),
-                "data: a locked file stops the move whole, the old folder stays in use and says why");
-            DataFolder.Migrate(oldR, oldL, newB);
-            Check(File.ReadAllText(Path.Combine(newB, "settings.txt")) == "accent=#00FF00" && File.Exists(Path.Combine(newB, "migration.log")) && !Directory.Exists(oldR),
-                "data: moved at the next start, its log with it");
+            // Legacy File Labs migration is intentionally absent from Pathweft.
 
             // What's new: every release parses, newest first, with notes, the running version included (a release
             // without its entry in whatsnew.txt fails here)
@@ -635,7 +624,7 @@ public partial class App : Application
                   "archives: a path running through a ZIP is found, a plain folder isn't");
 
             // 1.0.51 Reset to defaults: every setting belongs to a card that resets it, or is knowingly kept (Windows
-            // integration, what File Labs remembers by itself); a reset puts back the defaults and touches nothing else
+            // integration, what Pathweft remembers by itself); a reset puts back the defaults and touches nothing else
             var resettable = SettingsWindow.AppearanceKeys.Concat(SettingsWindow.FilesKeys).Concat(SettingsWindow.TransfersKeys).ToList();
             var defaults = Settings.DefaultKeys.ToHashSet();
             Check(defaults.All(k => resettable.Contains(k) || SettingsWindow.NotReset.Contains(k)), "reset: every setting is in a card or kept on purpose, missing "
@@ -703,7 +692,7 @@ public partial class App : Application
                   && !byBytes.Any(g => g.Files.Any(f => f.Path.EndsWith("same name.txt"))) && byName.First(g => g.Name == "same name.txt").Wasted == 5,
                   "duplicates: by name finds the two, by name and size and by content don't: " + Shape(byName));
 
-            // 1.0.51 Open path through the agent: the file Explorer selects late still reaches File Labs, after its folder
+            // 1.0.51 Open path through the agent: the file Explorer selects late still reaches Pathweft, after its folder
             (string, bool)[] Watch(params (string Folder, string Selected)[] looks)
             {
                 var w = new Agent.SelectionWatch();
@@ -727,10 +716,10 @@ public partial class App : Application
         }
         catch (Exception ex)
         {
-            File.WriteAllText(Path.Combine(Path.GetTempPath(), "filelabs-selftest.txt"), ex.ToString());
+            File.WriteAllText(Path.Combine(Path.GetTempPath(), "pathweft-selftest.txt"), ex.ToString());
             return 1;
         }
-        finally { try { Directory.Delete(root, true); } catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { } }
+        finally { Console.WriteLine("Selftest fixtures retained for reviewed transactional cleanup: " + root); }
     }
 
     static bool UpdateCheckFails(string feed)

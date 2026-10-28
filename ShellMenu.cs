@@ -13,12 +13,12 @@ namespace FileExplorer;
 public static class ShellMenu
 {
     /// Shows the menu for items (all in one folder) or, with none, the folder's background menu.
-    /// Returns the verb the user picked when File Labs should handle it itself (e.g. "rename"), else null.
-    /// `view`: File Labs' View modes, as a View submenu at the top of the folder's menu, where Explorer has its own
+    /// Returns the verb the user picked when Pathweft should handle it itself (e.g. "rename"), else null.
+    /// `view`: Pathweft' View modes, as a View submenu at the top of the folder's menu, where Explorer has its own
     /// (the folder's menu from the shell has none: Explorer adds it from its window).
-    /// `rename`: false where File Labs has no in-place rename to offer (the sidebar's drives and folders), so Windows
+    /// `rename`: false where Pathweft has no in-place rename to offer (the sidebar's drives and folders), so Windows
     /// leaves Rename out instead of showing an item that does nothing.
-    /// `top`: File Labs' own commands above Windows' (a Quick access folder's Move up, Move down and Remove).
+    /// `top`: Pathweft' own commands above Windows' (a Quick access folder's Move up, Move down and Remove).
     public static string Show(Window owner, string folder, IReadOnlyList<string> items, IReadOnlyList<(string Text, bool On, Action Run)> view = null, bool rename = true,
         IReadOnlyList<(string Text, Action Run)> top = null)
     {
@@ -37,7 +37,7 @@ public static class ShellMenu
             uint flags = CMF_NORMAL | CMF_EXPLORE | (rename ? CMF_CANRENAME : 0);
             if (System.Windows.Input.Keyboard.Modifiers.HasFlag(System.Windows.Input.ModifierKeys.Shift)) flags |= CMF_EXTENDEDVERBS;
             ctx.QueryContextMenu(menu, 0, FirstId, LastId, flags);
-            var own = new List<Action>(); // File Labs' own items: ids OwnFirst, OwnFirst + 1, ... past the shell's range
+            var own = new List<Action>(); // Pathweft' own items: ids OwnFirst, OwnFirst + 1, ... past the shell's range
             if (view != null)
             {
                 var sub = CreatePopupMenu(); // destroyed with the menu
@@ -101,7 +101,7 @@ public static class ShellMenu
         };
         // The app a command starts (Open with → Notepad) has to take the foreground, which Windows grants only
         // when the foreground process allows it. A packaged app (Notepad on Windows 11) is started, or an open one
-        // given the file, by other processes on our behalf; a report had Notepad opening behind File Labs. The
+        // given the file, by other processes on our behalf; a report had Notepad opening behind Pathweft. The
         // user just picked the command, so the right to come forward is passed on to whoever needs it.
         AllowSetForegroundWindow(ASFW_ANY);
         var before = items.Count > 0 ? Titles() : null;
@@ -129,8 +129,8 @@ public static class ShellMenu
         return obj;
     }
 
-    // ---- some extensions' own commands, in File Labs' menu (1.0.50) ----
-    // Explorer's whole menu takes 0.5–1.4 s to build here (every extension on the PC loads), so File Labs asks only the
+    // ---- some extensions' own commands, in Pathweft' menu (1.0.50) ----
+    // Explorer's whole menu takes 0.5–1.4 s to build here (every extension on the PC loads), so Pathweft asks only the
     // ones it shows, each on its own, the way Explorer itself calls an extension: IShellExtInit.Initialize with the
     // selection, then QueryContextMenu into a menu of its own, so everything in that menu is that extension's. Picking
     // one runs the extension's own InvokeCommand, through the same path as the Windows menu, so it behaves exactly as
@@ -390,12 +390,12 @@ public static class ShellMenu
         return (IContextMenu)obj;
     }
 
-    /// Still not enough for "Open with -> Notepad" when Notepad was already open, minimized or behind File Labs (1.0.39
+    /// Still not enough for "Open with -> Notepad" when Notepad was already open, minimized or behind Pathweft (1.0.39
     /// report; "Open" at the top was fine): the handler gives it the file after the menu has returned, Notepad asks to
     /// come forward, Windows refuses and flashes its taskbar button instead (1.0.48 report: "highlighted but not brought
     /// to the front"). So for 3 s, as long as the window that was in front when the command ran still is (the user
-    /// hasn't moved on), File Labs does it for the app: a window of another process that flashes, or whose title has
-    /// just changed to name one of these files, is restored and brought forward. File Labs, in front, is allowed to.
+    /// hasn't moved on), Pathweft does it for the app: a window of another process that flashes, or whose title has
+    /// just changed to name one of these files, is restored and brought forward. Pathweft, in front, is allowed to.
     /// 1.0.42 only watched titles, and a Notepad that already showed the file, or named it a moment later, slipped by.
     static void BringForward(Window owner, IReadOnlyList<string> items, Dictionary<IntPtr, string> before)
     {

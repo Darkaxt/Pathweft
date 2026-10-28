@@ -4,11 +4,13 @@ param(
     [string]$ScratchRoot,
     [string]$CacheRoot = 'D:\BuildCache\Pathweft',
     [ValidateSet('Debug', 'Release')]
-    [string]$Configuration = 'Release'
+    [string]$Configuration = 'Release',
+    [string]$ProjectFile
 )
 
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
+if (!$ProjectFile) { $ProjectFile = Join-Path $projectRoot 'FileExplorer.csproj' }
 $scratch = [IO.Path]::GetFullPath($ScratchRoot)
 $cache = [IO.Path]::GetFullPath($CacheRoot)
 if ($scratch -notmatch '^[DE]:\\Temp\\[^\\]+(?:\\.*)?$') {
@@ -50,7 +52,7 @@ try {
         & dotnet --version
         if ($LASTEXITCODE -ne 0) { throw 'The SDK selected by global.json is unavailable.' }
         $buildArguments = @(
-            'build', (Join-Path $projectRoot 'FileExplorer.csproj'),
+            'build', ([IO.Path]::GetFullPath($ProjectFile)),
             '--configuration', $Configuration,
             '--artifacts-path', (Join-Path $scratch 'artifacts'),
             '--disable-build-servers', '--nologo', '--verbosity', 'minimal',

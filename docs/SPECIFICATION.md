@@ -12,10 +12,12 @@ Create a responsive Windows folder browser with connected Everything search,
 taskbar search, internal previews and improved transfers in one maintained
 product. Keep normal views uncluttered and expose advanced controls in settings.
 
-The present request authorizes **working-environment setup, a public fork and
-this specification**. It does not request product integration implementation,
-installation, default-handler changes or an application release. The future
-stages below describe the product outcome; they do not authorize themselves.
+The setup request established the environment, public fork and specification.
+On 2026-10-28 the user authorized **implementation of S1 using Specification-Gated
+Implementation**. This includes independent identity, real pane search and its
+required verification. Later stages remain unstarted; no intermediate product
+release is authorized. User default-handler and Windows Search changes are not
+part of the S1 trial.
 
 Source integration is selective: port useful modules and add-on source rather
 than requiring the complete donor applications. The 2026-10-28 clarification
@@ -28,7 +30,7 @@ makes REA analysis of TeraCopy a required basis for transfer development.
 | [File Labs](https://github.com/limburatorul/file-labs/tree/a8d5a5ca81ab4b70d26e293e69b9cc402baa77b6) | `a8d5a5ca81ab4b70d26e293e69b9cc402baa77b6` | Fork source, development version 1.0.62; latest published release observed v1.0.61 |
 | [EverythingToolbar](https://github.com/srwi/EverythingToolbar/tree/a4379f181ea8e9b4d3ff8b0e5178d8d39491830c) | `a4379f181ea8e9b4d3ff8b0e5178d8d39491830c` | Selected search clients, controls and taskbar integration |
 | [QuickLook](https://github.com/QL-Win/QuickLook/tree/2ec219aa18416c6e3b89d6aad3d82d10610f917f) | `2ec219aa18416c6e3b89d6aad3d82d10610f917f` | Viewer host/contract, selected viewers and add-ons; .NET Framework 4.6.2 donor |
-| Everything engine | Pin binary version/hash in S1 | External engine/API dependency, not imported engine source |
+| Everything engine | 1.4.1.1032, SHA-256 `F191F756996A14A11E5445FA7103D302EFD510CF2FBF920E6C0C8ED51D512E36` | Existing default instance; official SDK API 2. See `vendor/EverythingSDK/NOTICES.txt`; engine source is not imported. |
 | TeraCopy | Identify actual artifact version/hash in S4 | Required REA target; not yet analyzed |
 
 File Labs currently targets .NET 8/WPF. It uses recursive filesystem search
@@ -148,7 +150,8 @@ overall completion. Do not silently narrow requirements to close a stage.
 No performance/memory-saving claim without measured attributable evidence. No
 installed/runtime claim from the setup build. Overall product completion requires
 every criterion, integration, blocker, deferral and final release verification
-resolved. This setup delivers the environment/repository/documents only.
+resolved. Initial setup delivered the environment/repository/documents; the
+current implementation authorization and reconciliation are recorded in the plan.
 
 ## 6. Decisions and limits
 

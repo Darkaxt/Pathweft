@@ -6,71 +6,19 @@ namespace FileExplorer;
 
 // The Protagonist Labs ecosystem (contract v1, vault Proiecte/Ecosistem.md): every app leaves a card in
 // %AppData%\ProtagonistLabs\apps\<id>.json at each start, sisters find each other through those cards,
-// and File Labs shares its Quick access folders and Lume pins with Lume as data\filelabs.items.json.
+// Pathweft only reads optional third-party cards; it publishes no upstream product card.
 static class Sisters
 {
     static readonly string Root = Path.Combine(Settings.Profile ?? Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "ProtagonistLabs");
-
-    /// Whether this copy speaks for File Labs to the sisters. A portable copy does only on a PC where File Labs isn't
-    /// installed: otherwise its card and Quick access would replace the installed copy's, and Shelf, Lume and Launchpad
-    /// would open the copy on the stick.
-    static bool Speaks
-    {
-        get
-        {
-            if (Settings.Portable == null) return true;
-            using var hklm = Microsoft.Win32.RegistryKey.OpenBaseKey(Microsoft.Win32.RegistryHive.LocalMachine, Microsoft.Win32.RegistryView.Registry64);
-            using var installed = hklm.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Uninstall\{7E4C2B9A-3F1D-4C8E-9A6B-51D0C2E8F4A7}_is1");
-            return installed == null;
-        }
-    }
-    static string Now => DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ");
 
     // the paid apps and their page names, for the discount line in Works with
     internal static readonly (string Id, string Name)[] Paid =
         { ("shelf", "Shelf"), ("stash", "Stash"), ("frostpane", "Frostpane"), ("reel", "Reel"), ("planner", "Planner"), ("reminder", "Reminder") };
 
-    internal static void WriteCard() => Write(Path.Combine(Root, "apps", "filelabs.json"), new
-    {
-        schema = 1, updated = Now,
-        id = "filelabs", name = "File Labs", version = typeof(App).Assembly.GetName().Version?.ToString(3),
-        exe = Environment.ProcessPath, data = Settings.Dir, edition = "free", paid = false,
-        page = "https://protagonistlabs.app/filelabs/",
-        commands = new Dictionary<string, string[]> { ["open"] = new[] { "{path}" } }, // a folder → new tab (single instance)
-    });
-
-    // Quick access folders and what was pinned to Lume (1.0.50) as Lume launcher entries: a folder opens in File Labs, a
-    // file or shortcut as a double-click would (explorer.exe), with its own icon (`icon`, read by Lume 0.5.2). A pin that
-    // is gone is left out of the file, not out of lume.txt (a drive may be unplugged). Runs off the UI thread.
-    internal static void WriteItems(List<string> folders, List<string> pins) => Write(Path.Combine(Root, "data", "filelabs.items.json"), new
-    {
-        schema = 1, updated = Now,
-        items = folders.Select(Folder).Concat(pins.Where(p => !folders.Contains(p, StringComparer.OrdinalIgnoreCase)).Select(Pin).Where(i => i != null)),
-    });
-
-    static object Folder(string f) => new
-    {
-        title = Path.GetFileName(f.TrimEnd('\\')) is { Length: > 0 } n ? n : f, subtitle = f, kind = "folder",
-        run = new { exe = Environment.ProcessPath, args = new[] { f } },
-    };
-
-    static object Pin(string path)
-    {
-        if (Directory.Exists(path)) return Folder(path);
-        if (!File.Exists(path)) return null;
-        bool link = Path.GetExtension(path).Equals(".lnk", StringComparison.OrdinalIgnoreCase);
-        return new
-        {
-            title = link ? Path.GetFileNameWithoutExtension(path) : Path.GetFileName(path), subtitle = path, kind = link ? "shortcut" : "file", icon = path,
-            run = new { exe = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "explorer.exe"), args = new[] { path } },
-        };
-    }
-
     // UTF-8 without BOM, through a .tmp so a reader never sees half a file. Runs off the UI thread; a
     // locked or full disk only leaves the previous file in place.
     internal static void Write(string path, object body)
     {
-        if (!Speaks && path.StartsWith(Root, StringComparison.OrdinalIgnoreCase)) return; // a portable copy beside an installed one
         try
         {
             Directory.CreateDirectory(Path.GetDirectoryName(path));

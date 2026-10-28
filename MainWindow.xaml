@@ -1,8 +1,8 @@
-﻿<Window x:Class="FileExplorer.MainWindow"
+<Window x:Class="FileExplorer.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:FileExplorer"
-        Title="File Labs" Width="1400" Height="860" Background="Transparent"
+        Title="Pathweft" Width="1400" Height="860" Background="Transparent"
         Foreground="#E8E8E8" FontFamily="Segoe UI Variable Text, Segoe UI" FontSize="12">
   <!-- No Windows title bar: the tabs take the top row, the window's buttons sit at its right end, and the
        empty part of the tab row (and the sidebar's name) moves the window. GlassFrameThickness -1 keeps the
@@ -184,12 +184,12 @@
       <!-- the app's name, where the title bar used to say it; it moves the window like one -->
       <DockPanel DockPanel.Dock="Top" Margin="18,13,8,0" Height="26" Background="Transparent" MouseDown="Caption_MouseDown">
         <Image Source="/app.ico" Width="16" Height="16" Margin="0,0,10,0" RenderOptions.BitmapScalingMode="HighQuality"/>
-        <TextBlock Text="File Labs" FontWeight="SemiBold" FontSize="13" VerticalAlignment="Center"/>
+        <TextBlock Text="Pathweft" FontWeight="SemiBold" FontSize="13" VerticalAlignment="Center"/>
         <TextBlock x:Name="VersionText" Foreground="{StaticResource Muted}" FontSize="11" Margin="8,1,0,0" VerticalAlignment="Center"/>
       </DockPanel>
       <DockPanel DockPanel.Dock="Bottom" Margin="8,4,8,8">
         <Button DockPanel.Dock="Right" Style="{StaticResource IconButton}" Content="&#xE713;" Click="Settings_Click" ToolTip="Settings (Ctrl+,)" AutomationProperties.Name="Settings"/>
-        <Button DockPanel.Dock="Right" Style="{StaticResource IconButton}" Content="&#xE897;" Click="Help_Click" ToolTip="Help: everything File Labs does (F1)" AutomationProperties.Name="Help"/>
+        <Button DockPanel.Dock="Right" Style="{StaticResource IconButton}" Content="&#xE897;" Click="Help_Click" ToolTip="Help: everything Pathweft does (F1)" AutomationProperties.Name="Help"/>
         <Button DockPanel.Dock="Right" Style="{StaticResource IconButton}" Content="&#xE789;" Click="WhatsNew_Click" ToolTip="What&#x2019;s new" AutomationProperties.Name="What&#x2019;s new"/>
         <Button x:Name="UpdateButton" DockPanel.Dock="Right" Style="{StaticResource IconButton}" Content="&#xE895;" Click="CheckUpdates_Click"
                 ToolTip="Check for updates (it also checks by itself every hour)" AutomationProperties.Name="Check for updates"/>
@@ -353,7 +353,7 @@
         <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" TextElement.FontSize="11">
           <Button Style="{StaticResource Ghost}" Click="Rename_Click"><TextBlock><Run Foreground="{StaticResource Muted}">F2</Run> Rename</TextBlock></Button>
           <Button Style="{StaticResource Ghost}" Click="Open_Click"><TextBlock><Run Foreground="{StaticResource Muted}">F3</Run> Open</TextBlock></Button>
-          <Button Style="{StaticResource Ghost}" Click="Copy_Click" ToolTip="Copy to the other pane (Ctrl+F5). F5 refreshes."><TextBlock><Run Foreground="{StaticResource Muted}">Ctrl+F5</Run> Copy</TextBlock></Button>
+          <Button x:Name="CopyButton" Style="{StaticResource Ghost}" Click="Copy_Click" ToolTip="Copy to the other pane (Ctrl+F5). F5 refreshes."><TextBlock><Run Foreground="{StaticResource Muted}">Ctrl+F5</Run> Copy</TextBlock></Button>
           <Button Style="{StaticResource Ghost}" Click="Move_Click"><TextBlock><Run Foreground="{StaticResource Muted}">F6</Run> Move</TextBlock></Button>
           <Button Style="{StaticResource Ghost}" Click="MkDir_Click" ToolTip="New folder (F7 or Ctrl+Shift+N)"><TextBlock><Run Foreground="{StaticResource Muted}">F7</Run> New folder</TextBlock></Button>
           <Button Style="{StaticResource Ghost}" Click="NewFile_Click" ToolTip="New file (Ctrl+N)"><TextBlock><Run Foreground="{StaticResource Muted}">Ctrl+N</Run> New file</TextBlock></Button>

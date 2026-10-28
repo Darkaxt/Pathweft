@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Concurrent;
 using System.ComponentModel;
 using System.IO;
@@ -367,8 +367,8 @@ public partial class PaneView : UserControl
             if (tabDragIndex >= tabs.Count) return;
             dragTab = (this, tabs[tabDragIndex]);
             tabDragIndex = -1;
-            var data = new DataObject("FileLabsTab", "");
-            data.SetData("FileLabsFolder", dragTab.Value.Path); // dropped on Quick access, the tab's folder is pinned there
+            var data = new DataObject("PathweftTab", "");
+            data.SetData("PathweftFolder", dragTab.Value.Path); // dropped on Quick access, the tab's folder is pinned there
             try { DragDrop.DoDragDrop(TabStrip, data, DragDropEffects.Move | DragDropEffects.Link); }
             finally { dragTab = null; }
         };
@@ -393,6 +393,7 @@ public partial class PaneView : UserControl
         List.AddHandler(ScrollViewer.ScrollChangedEvent, new ScrollChangedEventHandler((_, _) =>
         {
             PlaceNameEdge();
+            QueueVisibleSearchAssets();
             if (Marqueeing) MarqueeMove(Mouse.GetPosition(List)); // a wheel or the edge moved the rows under a rectangle
         }));
         MarqueeLayer.SizeChanged += (_, _) => PlaceNameEdge();
@@ -415,7 +416,7 @@ public partial class PaneView : UserControl
     public IEnumerable<Entry> Items => items.Where(e => !e.IsUp);
     // This PC's rows are drive roots: nothing that copies, moves, deletes, renames or drags them may get them, so in
     // This PC the selection is empty to every command (the menu there is Windows' own, MainWindow.ShowMenu).
-    public List<Entry> Selected => Dir == ThisPC || ArchiveRoot != null ? new() : List.SelectedItems.Cast<Entry>().Where(e => !e.IsUp).ToList();
+    public List<Entry> Selected => !InSearch && (Dir == ThisPC || ArchiveRoot != null) ? new() : List.SelectedItems.Cast<Entry>().Where(e => !e.IsUp).ToList();
     public long FolderTotal => Items.Sum(e => Math.Max(0, e.Size));
     public bool SizesPending => Items.Any(e => e.Size == -1);
 
@@ -655,6 +656,11 @@ public partial class PaneView : UserControl
     /// Returns the navigation number that later results must still match.
     int GoTo(string path, bool record)
     {
+#if DEBUG
+        VerificationQueryEvents?.Add("NAVIGATE " + path + "\n" + Environment.StackTrace);
+#endif
+        LeaveSearch();
+        if (!Dir.Equals(path, StringComparison.OrdinalIgnoreCase) || searchQuery != null) StopFolderWatch();
         if (record && tabs[tab] != "" && !tabs[tab].Equals(path, StringComparison.OrdinalIgnoreCase)) { back.Push(tabs[tab]); fwd.Clear(); }
         tabs[tab] = path;
         ArchiveRoot = null; // NavigateArchive sets it again right after
@@ -680,7 +686,7 @@ public partial class PaneView : UserControl
         int firstSelected = keep && view != null && List.SelectedItems.Count > 0 ? List.SelectedItems.Cast<object>().Min(view.IndexOf) : -1;
         var left = items;
         items = list;
-        view = new ListCollectionView((IList)items) { CustomSort = new EntrySort(sortKey, sortDesc) };
+        view = new ListCollectionView((IList)items) { CustomSort = indexedSearch ? null : new EntrySort(sortKey, sortDesc) };
         ApplyGrouping();
         ApplyFilter();
         List.ItemsSource = view;
@@ -719,7 +725,7 @@ public partial class PaneView : UserControl
         if (ArchiveRoot is not var (archive, inner)) return Array.Empty<string>();
         var names = List.SelectedItems.Cast<Entry>().Where(e => !e.IsUp).Select(e => e.Name).ToList();
         if (names.Count == 0) return Array.Empty<string>();
-        var drags = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "FileLabs", "drag");
+        var drags = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "Pathweft", "drag");
         var temp = System.IO.Path.Combine(drags, Guid.NewGuid().ToString("N")[..8]);
         try
         {
@@ -918,6 +924,7 @@ public partial class PaneView : UserControl
             DriveInfoText.Text = $"Inside {System.IO.Path.GetFileName(at.Archive)}";
             UsedBar.Width = 0;
             StartIcons();
+            Listed = true; StatsChanged?.Invoke();
         }));
     }
 
@@ -941,6 +948,7 @@ public partial class PaneView : UserControl
             DriveInfoText.Text = "";
             UsedBar.Width = 0;
             StartIcons();
+            Listed = true; StatsChanged?.Invoke();
         }));
     }
 
@@ -977,7 +985,7 @@ public partial class PaneView : UserControl
     /// What the filter box asks for: words of the name (with * and ?), and terms for the rest —
     /// size:>10MB · size:<1KB · size:10MB-1GB · within:7d (d, w, m, y, or today) · after:2026-10-01 · before:2026-01-01 ·
     /// re:^IMG_\d+ (a regular expression on the name) · content:"some text" (inside files, on Enter only).
-    /// Quotes keep spaces in a term. Sizes count in 1000s, like every size in File Labs.
+    /// Quotes keep spaces in a term. Sizes count in 1000s, like every size in Pathweft.
     internal sealed class SearchQuery
     {
         public string Name = "";
@@ -1067,21 +1075,21 @@ public partial class PaneView : UserControl
         }
     }
 
-    public void Search(string query)
+    async Task SearchFileSystem(string query)
     {
-        if (IsServer(Dir) || Dir == ThisPC || ArchiveRoot != null) { if (ArchiveRoot != null) Error?.Invoke("Search works in folders, not inside an archive; the filter still narrows this one"); return; }
+        if (IsServer(Dir) || IsVirtual(Dir)) { Error?.Invoke("Filesystem search needs a real folder. Choose Everything · All, or leave this virtual location."); return; }
         var find = SearchQuery.Parse(query, DateTime.Now);
         if (find.Error != null) { Error?.Invoke(find.Error); return; }
         searchQuery = query;
         searching = true;
         int v = ++navVersion;
         sizing?.Cancel();
-        watcher?.Dispose(); watcher = null; // results span the whole subtree; a refresh runs the search again
+        StopFolderWatch(); // results span the whole subtree; refresh is explicit
         var results = new System.Collections.ObjectModel.ObservableCollection<Entry>();
         ShowItems(results, null);
         string root = Dir;
         bool hidden = ShowHidden;
-        Task.Run(() =>
+        await Task.Run(() =>
         {
             var opts = new EnumerationOptions
             {
@@ -1115,16 +1123,17 @@ public partial class PaneView : UserControl
                     if (clock.ElapsedMilliseconds > 150) { Flush(); clock.Restart(); }
                 }
             }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { } // what was found so far still shows
-            Flush();
-            Dispatcher.BeginInvoke(() =>
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
-                if (v != navVersion) return;
-                searching = false;
-                UpdateFooter();
-                StartSizing(); StartVersions(); StartIcons(); StartThumbs();
-            });
+                Dispatcher.BeginInvoke(() => { if (v == navVersion) { searchNotice += " Partial results: " + ex.Message; SearchCoverage.Text = searchNotice; } });
+            }
+            Flush();
         });
+        if (v != navVersion) return;
+        searching = false;
+        UpdateFooter();
+        StartSizing(); StartVersions(); StartIcons(); StartThumbs();
+        StatsChanged?.Invoke();
     }
 
     // ---- the search options button: each choice writes its term into the filter box, replacing one of the same kind ----
@@ -1201,6 +1210,7 @@ public partial class PaneView : UserControl
     void StartSizing()
     {
         sizing?.Cancel();
+        if (indexedSearch) return; // indexed metadata only; never crawl result folders
         var cts = sizing = new CancellationTokenSource();
         var todo = items.Where(e => e.IsDir && !e.IsUp && e.Size == -1).ToList();
         if (todo.Count == 0) return;
@@ -1245,6 +1255,7 @@ public partial class PaneView : UserControl
     static readonly HashSet<string> Versioned = new(StringComparer.OrdinalIgnoreCase) { ".exe", ".dll", ".sys", ".ocx", ".msi" };
     void StartVersions()
     {
+        if (indexedSearch) return; // Version is not indexed by this SDK
         var todo = items.Where(e => !e.IsDir && Versioned.Contains(System.IO.Path.GetExtension(e.Name))).ToList();
         if (todo.Count == 0) return;
         var token = sizing.Token; // same lifetime as the folder listing
@@ -1265,22 +1276,41 @@ public partial class PaneView : UserControl
         }, token);
     }
 
+    void StopFolderWatch()
+    {
+        debounce.Stop();
+        var previous = watcher;
+        watcher = null;
+        previous?.Dispose();
+    }
+
     void Watch()
     {
-        watcher?.Dispose();
+        StopFolderWatch();
         try
         {
-            watcher = new FileSystemWatcher(Dir) { NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName | NotifyFilters.LastWrite | NotifyFilters.Size };
-            FileSystemEventHandler h = (_, _) => Dispatcher.BeginInvoke(() => { debounce.Stop(); debounce.Start(); });
-            watcher.Created += h; watcher.Deleted += h; watcher.Changed += h;
-            watcher.Renamed += (_, _) => Dispatcher.BeginInvoke(() => { debounce.Stop(); debounce.Start(); });
-            watcher.EnableRaisingEvents = true;
+            var owner = watcher = new FileSystemWatcher(Dir) { NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName | NotifyFilters.LastWrite | NotifyFilters.Size };
+            void QueueRefresh(object sender, FileSystemEventArgs args) => Dispatcher.BeginInvoke(() =>
+            {
+                // Disposed watchers can already have a callback queued on WPF.
+                // That callback no longer owns the view after navigation/search.
+                if (watcher != owner || searchQuery != null) return;
+                debounce.Stop(); debounce.Start();
+            });
+            owner.Created += QueueRefresh; owner.Deleted += QueueRefresh; owner.Changed += QueueRefresh;
+            owner.Renamed += (sender, args) => QueueRefresh(sender, args);
+            owner.EnableRaisingEvents = true;
         }
         catch (Exception ex) when (ex is IOException or ArgumentException or UnauthorizedAccessException) { watcher = null; } // some drives can't be watched; manual refresh still works
     }
 
     void UpdateFooter()
     {
+        if (indexedSearch)
+        {
+            Footer.Text = $"{items.Count:N0} loaded / {indexedTotal:N0} indexed matches{(searching ? " · searching…" : "")} · Esc returns";
+            return;
+        }
         var sel = Selected;
         int folders = Items.Count(e => e.IsDir), files = Items.Count() - folders;
         Footer.Text = sel.Count > 0
@@ -1426,7 +1456,7 @@ public partial class PaneView : UserControl
     void Tabs_DragOver(object s, DragEventArgs e)
     {
         e.Handled = true;
-        e.Effects = dragTab != null && e.Data.GetDataPresent("FileLabsTab") ? DragDropEffects.Move : DragDropEffects.None;
+        e.Effects = dragTab != null && e.Data.GetDataPresent("PathweftTab") ? DragDropEffects.Move : DragDropEffects.None;
         if (e.Effects == DragDropEffects.None) { ShowTabDropLine(-1); return; }
         ShowTabDropLine(InsertIndexAt(e));
     }
@@ -1792,6 +1822,19 @@ public partial class PaneView : UserControl
     public async void OpenSelected()
     {
         if (List.SelectedItem is not Entry e) return;
+        if (indexedSearch && !e.IsUp)
+        {
+            int generation = navVersion;
+            bool available = await Task.Run(() => e.IsDir ? Directory.Exists(e.Path) : File.Exists(e.Path));
+            if (generation != navVersion || List.SelectedItem != e) return;
+            if (!available)
+            {
+                searchNotice = "This indexed path is unavailable or was removed. Refresh the search after the location or index updates.";
+                SearchCoverage.Text = searchNotice;
+                StatsChanged?.Invoke();
+                return;
+            }
+        }
         // a Stash or Backup Labs backup opens in its app when that is installed (1.0.40), otherwise as before;
         // read off the UI thread, the file may be on a share that is asleep
         var backup = !e.IsUp && !e.IsDir && Backups.Named(e.Path) ? await Task.Run(() => MainWindow.BackupStart(e.Path)) : null;
@@ -1844,6 +1887,7 @@ public partial class PaneView : UserControl
         static Transform Scale(double s) => s == 1 ? null : new ScaleTransform(s, s);
         TabsArea.LayoutTransform = Scale(Settings.TabsScale);
         PathBar.LayoutTransform = Scale(Settings.PathScale);
+        SearchBar.LayoutTransform = Scale(Settings.PathScale);
         List.LayoutTransform = Scale(Settings.ListScale);
         PlaceNameEdge();
     }
@@ -1953,6 +1997,13 @@ public partial class PaneView : UserControl
     /// The user's choice: applied, and remembered for this folder (Name ascending is the default, kept as nothing).
     public void SetSort(string key, bool desc)
     {
+        if (indexedSearch)
+        {
+            if (key == "Version") { SearchCoverage.Text = "Everything does not index file versions. Choose Name, Size, Type or Modified."; return; }
+            ShowSort(key, desc);
+            Search(searchQuery);
+            return;
+        }
         if (Dir != "")
         {
             if (key == "Name" && !desc) Settings.FolderSorts.Remove(Dir);
@@ -2257,7 +2308,7 @@ public partial class PaneView : UserControl
     {
         icons?.Cancel();
         var cts = icons = new CancellationTokenSource();
-        var todo = view?.Cast<Entry>().Where(e => !e.IsUp).Take(5000).ToList() ?? new();
+        var todo = AssetEntries().Where(e => !e.IsUp).Take(5000).ToList();
         var t = new Thread(() =>
         {
             foreach (var e in todo)
@@ -2329,7 +2380,7 @@ public partial class PaneView : UserControl
         // Two sizes only, not one per mode: zooming between L and XL then costs no new thumbnails, and
         // an image already fetched at a larger size is kept instead of being asked for again.
         int size = iconSize <= 96 ? 128 : 256;
-        var todo = view?.Cast<Entry>().Where(e => !e.IsUp).Take(3000).ToList() ?? new();
+        var todo = AssetEntries().Where(e => !e.IsUp).Take(3000).ToList();
         var t = new Thread(() =>
         {
             foreach (var e in todo)
@@ -2613,7 +2664,13 @@ public partial class PaneView : UserControl
         // once in testing. Then there is simply no drag, as if the mouse hadn't moved far enough.
         // out of an archive it is a copy, whatever the drive: the card says Copied, and the ZIP keeps its files
         try { DragDrop.DoDragDrop(List, data, ArchiveRoot != null ? DragDropEffects.Copy : DragDropEffects.Copy | DragDropEffects.Move); }
-        catch (System.Runtime.InteropServices.COMException) { }
+        catch (System.Runtime.InteropServices.COMException ex)
+        {
+            _ = ex;
+#if DEBUG
+            VerificationDragFailure?.Invoke(ex);
+#endif
+        }
         finally { WheelWhileDragging(null); ScrollAtEdge(null); } // however the drag ended
     }
 

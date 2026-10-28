@@ -40,7 +40,7 @@ public class WhatsNewWindow : Window
     public WhatsNewWindow(Window owner)
     {
         Owner = owner;
-        Title = "What's new — File Labs";
+        Title = "What's new — Pathweft";
         Width = 1240; Height = 720; MinWidth = 700; MinHeight = 420; // room for the list and a 960 x 170 banner
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
         ShowInTaskbar = true; // minimized, it goes to the taskbar like Settings, not a stub above it (Rico, 1.0.61)

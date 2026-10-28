@@ -260,12 +260,12 @@ public partial class MainWindow
         if (Settings.CloseToTray && tray == null)
         {
             var menu = new System.Windows.Forms.ContextMenuStrip();
-            menu.Items.Add("Open File Labs", null, (_, _) => ShowFromTray());
+            menu.Items.Add("Open Pathweft", null, (_, _) => ShowFromTray());
             menu.Items.Add("Quit", null, (_, _) => Quit());
             tray = new System.Windows.Forms.NotifyIcon
             {
                 Icon = System.Drawing.Icon.ExtractAssociatedIcon(Environment.ProcessPath!),
-                Text = "File Labs",
+                Text = "Pathweft",
                 ContextMenuStrip = menu,
                 Visible = true,
             };

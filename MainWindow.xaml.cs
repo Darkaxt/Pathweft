@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Windows;
@@ -19,7 +19,7 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
-        Title = $"File Labs {Updater.Current}";
+        Title = $"Pathweft {Updater.Current}";
         PaneView.ShowHidden = Settings.ShowHidden;
         SidebarColumn.Width = new GridLength(Settings.SidebarWidth);
         SetUpChrome();
@@ -52,7 +52,7 @@ public partial class MainWindow : Window
         };
         Closed += (_, _) => tray?.Dispose(); // or the icon lingers until the pointer passes over it
         SourceInitialized += (_, _) => { ApplyAcrylic(this); WatchShellChanges(); };
-        StartUpdateChecks();
+        if (Settings.Profile == null) StartUpdateChecks();
 
         foreach (var p in new[] { Left, Right })
         {
@@ -374,7 +374,7 @@ public partial class MainWindow : Window
         {
             return manual ? Updater.CheckFailed : null; // the automatic check stays quiet and tries again next hour
         }
-        if (release == null) return manual ? $"File Labs {Updater.Current} is the latest version." : null;
+        if (release == null) return manual ? $"Pathweft {Updater.Current} is the latest version." : null;
 
         updateDialog = new UpdateDialog(this, release);
         updateDialog.Closed += (_, _) => { Updater.Dismiss(release); updateDialog = null; };
@@ -442,7 +442,7 @@ public partial class MainWindow : Window
         UpdateButton.IsEnabled = true;
         // The status line is the folder's and is rewritten when the folder changes, which is fine for an answer
         // read at once; the button's tooltip keeps it until the next check.
-        var text = answer == null ? "" : answer == Updater.CheckFailed ? "Couldn't check for updates · try later" : $"Up to date · File Labs {Updater.Current}";
+        var text = answer == null ? "" : answer == Updater.CheckFailed ? "Couldn't check for updates · try later" : $"Up to date · Pathweft {Updater.Current}";
         Status.Text = text;
         UpdateButton.ToolTip = answer == null ? "Check for updates (it also checks by itself every hour)" : text;
     }
@@ -488,7 +488,7 @@ public partial class MainWindow : Window
         pane.Navigate(folder, select);
     }
 
-    /// A file found elsewhere in File Labs (Find duplicates): its folder, with it selected, in the active pane.
+    /// A file found elsewhere in Pathweft (Find duplicates): its folder, with it selected, in the active pane.
     internal void ShowFile(string path)
     {
         OpenPath(active, path);
@@ -707,20 +707,12 @@ public partial class MainWindow : Window
         if (File.Exists(QuickFile)) quickLists = ParseQuickLists(File.ReadAllLines(QuickFile));
         if (File.Exists(LumeFile)) lumePins = File.ReadAllLines(LumeFile).Where(l => l.Trim() != "").ToList();
         BuildQuickAccess();
-        ShareQuickAccess();
     }
 
     // Lume (sister app) lists these folders, from every Quick access list, and what was pinned to it, in its search; copies,
     // since the write runs off the UI thread
-    void ShareQuickAccess()
-    {
-        var folders = quickLists.SelectMany(q => q.Folders).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
-        var lume = lumePins.ToList();
-        Task.Run(() => Sisters.WriteItems(folders, lume));
-    }
-
     // Pin to Lume (1.0.50): files, folders and shortcuts that Lume then finds by name, one path per line in lume.txt in
-    // the data folder. They reach Lume with Quick access, in data\filelabs.items.json (Sisters.WriteItems).
+    // the data folder. They reach Lume with Quick access, in data\pathweft.items.json (Sisters.WriteItems).
     static string LumeFile => Path.Combine(Settings.Dir, "lume.txt");
     List<string> lumePins = new();
 
@@ -735,8 +727,7 @@ public partial class MainWindow : Window
             else lumePins.AddRange(paths.Where(x => !lumePins.Contains(x, StringComparer.OrdinalIgnoreCase)));
             Directory.CreateDirectory(Path.GetDirectoryName(LumeFile));
             Settings.WriteAllLines(LumeFile, lumePins);
-            ShareQuickAccess();
-            var names = string.Join(", ", paths.Select(x => Path.GetFileName(x.TrimEnd('\\')) is { Length: > 0 } n ? n : x));
+                var names = string.Join(", ", paths.Select(x => Path.GetFileName(x.TrimEnd('\\')) is { Length: > 0 } n ? n : x));
             Status.Text = all ? $"Unpinned {names} from Lume" : $"Pinned {names} to Lume";
         });
     }
@@ -769,7 +760,7 @@ public partial class MainWindow : Window
                 if (pinDrag != path || e.LeftButton != MouseButtonState.Pressed) return;
                 if (Math.Abs((e.GetPosition(QuickAccess) - pinDragFrom).Y) < SystemParameters.MinimumVerticalDragDistance) return;
                 pinDrag = null;
-                DragDrop.DoDragDrop(b, new DataObject("FileLabsPin", path), DragDropEffects.Move);
+                DragDrop.DoDragDrop(b, new DataObject("PathweftPin", path), DragDropEffects.Move);
             };
             QuickAccess.Children.Add(b);
         }
@@ -781,7 +772,6 @@ public partial class MainWindow : Window
         Directory.CreateDirectory(Path.GetDirectoryName(QuickFile));
         Settings.WriteAllLines(QuickFile, QuickListLines(quickLists));
         BuildQuickAccess();
-        ShareQuickAccess();
     }
 
     // ---- the lists themselves: from the button and the right-click on Quick access' header (SidebarSections.cs) ----
@@ -1096,7 +1086,7 @@ public partial class MainWindow : Window
             {
                 // as tall as its cards: one copy, one card's height; it grows as more come, up to most of the screen, then scrolls
                 // (Rico and the user, 1.0.61: a big empty window around one card looked wrong). Resizing it by hand keeps that size.
-                Title = "Transfers — File Labs", Owner = this, Width = 640, SizeToContent = SizeToContent.Height, MinWidth = 460, MinHeight = 120,
+                Title = "Transfers — Pathweft", Owner = this, Width = 640, SizeToContent = SizeToContent.Height, MinWidth = 460, MinHeight = 120,
                 MaxHeight = SystemParameters.WorkArea.Height * 0.8,
                 WindowStartupLocation = WindowStartupLocation.CenterOwner, ShowInTaskbar = true, Background = Brushes.Transparent,
                 Foreground = Hex("#E8EEF6"), FontFamily = FontFamily, FontSize = 12, Content = root,
@@ -1243,7 +1233,7 @@ public partial class MainWindow : Window
         const string detail = "They will not go to the Recycle Bin.";
         // Shift+Delete, Enter deletes, as in Explorer: Yes is the default button, and the shell is not
         // asked to confirm a second time what was just confirmed here. With the sound off (Settings →
-        // Files) the question is File Labs' own dialog, which is silent, not a box that plays a warning.
+        // Files) the question is Pathweft' own dialog, which is silent, not a box that plays a warning.
         if (permanent && !(Settings.DeleteSound
                 ? MessageBox.Show(this, question + "\n\n" + detail, "Delete permanently", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.Yes) == MessageBoxResult.Yes
                 : PromptDialog.Choose(this, question, detail, "Delete", "Cancel") == 0)) return;
@@ -1291,7 +1281,7 @@ public partial class MainWindow : Window
     }
 
     // Shift+Delete with the sound on: the shell's delete with its progress window and error prompts, but not
-    // its own confirmation (FOF_NOCONFIRMATION) — File Labs has just asked. Without FOF_ALLOWUNDO it's permanent.
+    // its own confirmation (FOF_NOCONFIRMATION) — Pathweft has just asked. Without FOF_ALLOWUNDO it's permanent.
     static string ShellDelete(IntPtr owner, List<string> paths)
     {
         var op = new SHFILEOPSTRUCT { hwnd = owner, wFunc = FO_DELETE, pFrom = string.Join("\0", paths) + "\0", fFlags = FOF_NOCONFIRMATION };
@@ -1448,6 +1438,9 @@ public partial class MainWindow : Window
 
     protected override void OnPreviewKeyDown(KeyEventArgs e)
     {
+        // Scope selection owns its Enter/arrows/Escape; global file commands
+        // must not open a selected file while this control has the keyboard.
+        if (e.OriginalSource is ComboBox or ComboBoxItem) { base.OnPreviewKeyDown(e); return; }
         var ctrl = Keyboard.Modifiers.HasFlag(ModifierKeys.Control);
         var shift = Keyboard.Modifiers.HasFlag(ModifierKeys.Shift);
         var alt = Keyboard.Modifiers.HasFlag(ModifierKeys.Alt);

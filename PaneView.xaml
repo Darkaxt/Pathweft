@@ -1,8 +1,35 @@
-﻿<UserControl x:Class="FileExplorer.PaneView"
+<UserControl x:Class="FileExplorer.PaneView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:FileExplorer">
   <UserControl.Resources>
+    <Style x:Key="SearchScopeStyle" TargetType="ComboBox">
+      <Setter Property="Foreground" Value="#E8EEF6"/>
+      <Setter Property="Background" Value="#252830"/>
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="ComboBox">
+            <Grid>
+              <ToggleButton Focusable="False" IsChecked="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}">
+                <ToggleButton.Template>
+                  <ControlTemplate TargetType="ToggleButton">
+                    <Border Background="#252830" BorderBrush="#36FFFFFF" BorderThickness="1" CornerRadius="5">
+                      <TextBlock Text="⌄" Foreground="#B3FFFFFF" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                    </Border>
+                  </ControlTemplate>
+                </ToggleButton.Template>
+              </ToggleButton>
+              <ContentPresenter Content="{TemplateBinding SelectionBoxItem}" IsHitTestVisible="False" Margin="7,3,20,3" VerticalAlignment="Center"/>
+              <Popup x:Name="PART_Popup" IsOpen="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}" StaysOpen="False" Placement="Bottom" AllowsTransparency="True" Focusable="False">
+                <Border Background="#252830" BorderBrush="#50FFFFFF" BorderThickness="1" CornerRadius="5" MinWidth="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}" Padding="3">
+                  <StackPanel IsItemsHost="True"/>
+                </Border>
+              </Popup>
+            </Grid>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
     <!-- the chevrons between path segments: a Ghost button with less room around the glyph -->
     <Style x:Key="Chevron" TargetType="Button" BasedOn="{StaticResource Ghost}">
       <Setter Property="Template">
@@ -145,18 +172,6 @@
         <Button DockPanel.Dock="Left" Style="{StaticResource Ghost}" Content="&#xE72B;" FontFamily="Segoe Fluent Icons" FontSize="10" ToolTip="Back (Alt+Left) · middle-click: in a new tab" Click="Back_Click" Tag="back" PreviewMouseDown="Nav_MiddleClick"/>
         <Button DockPanel.Dock="Left" Style="{StaticResource Ghost}" Content="&#xE72A;" FontFamily="Segoe Fluent Icons" FontSize="10" ToolTip="Forward (Alt+Right) · middle-click: in a new tab" Click="Fwd_Click" Tag="fwd" PreviewMouseDown="Nav_MiddleClick"/>
         <Button DockPanel.Dock="Left" Style="{StaticResource Ghost}" Content="&#xE74A;" FontFamily="Segoe Fluent Icons" FontSize="10" ToolTip="Up (Backspace) · middle-click: in a new tab" Click="Up_Click" Tag="up" PreviewMouseDown="Nav_MiddleClick"/>
-        <Border DockPanel.Dock="Right" Width="200" Background="#12FFFFFF" CornerRadius="5" Margin="6,0,0,0"
-                ToolTip="Typing filters this folder. Enter searches every subfolder. * and ? work as wildcards; size:, within:, re: and content: narrow it (the button beside sets them)">
-          <DockPanel>
-            <!-- size, date, a regular expression, text inside files: written into the box as terms -->
-            <Button x:Name="SearchOptions" DockPanel.Dock="Right" Style="{StaticResource Ghost}" Content="&#xE71C;" FontFamily="Segoe Fluent Icons" FontSize="11"
-                    ToolTip="Search by size, date, a regular expression or text inside files" Click="SearchOptions_Click"/>
-            <Grid>
-              <TextBlock x:Name="FilterHint" Text="Filter · Enter searches" Foreground="#66FFFFFF" Margin="8,0" VerticalAlignment="Center" IsHitTestVisible="False"/>
-              <TextBox x:Name="FilterBox" Style="{StaticResource Bare}" Margin="6,3" TextChanged="Filter_Changed"/>
-            </Grid>
-          </DockPanel>
-        </Border>
         <Grid>
           <Border Background="Transparent" MouseLeftButtonDown="Crumbs_Click" PreviewMouseDown="Crumbs_MiddleClick">
             <StackPanel x:Name="Crumbs" Orientation="Horizontal" VerticalAlignment="Center"/>
@@ -191,6 +206,27 @@
           </Popup>
         </Grid>
       </DockPanel>
+
+      <DockPanel x:Name="SearchBar" DockPanel.Dock="Top" Margin="10,6,10,4" LastChildFill="True">
+        <ComboBox x:Name="SearchScope" Style="{StaticResource SearchScopeStyle}" DockPanel.Dock="Left" Width="158" Margin="0,0,6,0" SelectedIndex="0"
+                  SelectionChanged="Scope_Changed" AutomationProperties.Name="Search scope" ToolTip="Choose indexed search or an explicit live filesystem search">
+          <ComboBoxItem Content="Everything · Folder"/>
+          <ComboBoxItem Content="Everything · All"/>
+          <ComboBoxItem Content="Filesystem · Folder"/>
+        </ComboBox>
+        <Button x:Name="SearchSubmit" DockPanel.Dock="Right" Style="{StaticResource Ghost}" Content="&#xE721;" FontFamily="Segoe Fluent Icons"
+                Click="Search_Click" ToolTip="Search (Enter)" AutomationProperties.Name="Search"/>
+        <Button x:Name="SearchOptions" DockPanel.Dock="Right" Style="{StaticResource Ghost}" Content="&#xE71C;" FontFamily="Segoe Fluent Icons" IsEnabled="False"
+                ToolTip="Filesystem search options (size, date, regex or contents)" Click="SearchOptions_Click" AutomationProperties.Name="Filesystem search options"/>
+        <Border Background="#12FFFFFF" CornerRadius="5" MinWidth="50" ToolTip="Typing filters the current listing. Enter runs the selected search. Indexed search accepts native Everything syntax including wildcards and regex:.">
+          <Grid>
+            <TextBlock x:Name="FilterHint" Text="Filter · Enter searches" Foreground="#99FFFFFF" Margin="8,0" VerticalAlignment="Center" IsHitTestVisible="False"/>
+            <TextBox x:Name="FilterBox" Style="{StaticResource Bare}" Margin="6,3" TextChanged="Filter_Changed" AutomationProperties.Name="Filter or search query"/>
+          </Grid>
+        </Border>
+      </DockPanel>
+      <TextBlock x:Name="SearchCoverage" DockPanel.Dock="Top" Visibility="Collapsed" Margin="14,0,14,5" Foreground="#B3FFFFFF" FontSize="11" TextWrapping="Wrap"/>
+      <Button x:Name="MoreResults" DockPanel.Dock="Bottom" Visibility="Collapsed" Margin="10,3" Content="Load next 200 results" Style="{StaticResource Ghost}" Click="MoreResults_Click"/>
 
       <!-- Drive usage. Also a place for the current folder itself, between the address bar and the files:
            drop here and it goes into this folder whatever is selected, click here and the selection clears. -->

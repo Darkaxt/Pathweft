@@ -39,17 +39,49 @@ I/O exception. Clean D: output immediately after verified last use.
 
 ## Runtime and packaging boundaries
 
-The executable still uses File Labs identities, settings and upstream updates.
-Do not launch it against ordinary user state or install it as Pathweft before S1
-isolation. No installed-parity claim follows from a successful compile.
+The executable now uses Pathweft identities, `PATHWEFT_PROFILE`, its own normal
+AppData directory and fork update URLs. Runtime trials use an isolated profile;
+they never change the user's default file manager, startup or Windows Search.
+Installer/update/uninstall execution is still an S5 boundary.
 
-Inherited `build.ps1` writes/removes staging directly and packages upstream
-identities. It was inspected, not invoked. Reuse/adapt its packaging path in S5
-with proper identity, outputs and cleanup. The new launcher is a bounded
+Inherited `build.ps1` still writes/removes staging directly. Its identity strings
+and installer AppId are isolated, but packaging has not been executed/accepted.
+Adapt its lifecycle, outputs and cleanup in S5. The new launcher is a bounded
 development compile, not an alternate release engine.
 
-Inherited `FileLabs.exe --selftest` is a runtime entry point. It was not executed
-during setup. Review its current side effects, storage and identity before use.
+`Pathweft.exe --selftest` is the inherited source/filesystem regression entry
+point. `scripts/Invoke-SourceSelfTest.ps1` binds its profile/temp to the registered
+S1 scratch root, waits for process exit and returns its result. Fixtures are
+retained for reviewed cleanup, including its exact generated junction leaf.
+
+## S1 local scenario
+
+Use `Prepare-S1Fixtures.ps1`, a Debug build and `Invoke-S1Verification.ps1`, all
+with the same registered `D:\Temp\pathweft-s1-...` root. The finite diagnostic
+entry point is compiled out of Release; it is not a remote control service.
+It invokes the real WPF actions, queries the real existing index, records
+completion predicates and captures rendered trees/PNGs. Physical mouse testing
+requires an unlocked input desktop and restores the pointer/button state.
+Run the complementary `-VirtualOnly` scenario to verify This PC/archive origins;
+its result is explicitly tagged as a focused scenario, not overall S1 acceptance.
+
+The coverage input `.local/s1-coverage-case.json` must identify a readable,
+bounded, unindexed non-NTFS leaf folder with its `path`, existing `sample` filename
+and actual file `count` inside `nonNtfs`. It is private, read-only input; do not
+publish real paths or filenames. Missing coverage input fails acceptance. The
+scenario also uses the local D$ UNC view of its own fixtures; an inaccessible
+share is a real environment limitation, not permission to bypass networking.
+
+For side-by-side testing, `Build-S1Baseline.ps1` exports the exact original
+baseline into disposable scratch and reuses the build launcher. Then
+`Invoke-S1SideBySide.ps1` runs original/fork profiles, verifies coexistence and
+preserves the original sentinel. It closes its own baseline process afterward.
+Never substitute an installed user's live File Labs profile.
+
+The official SDK API 2 supports the existing default instance in this build.
+Search again to reconnect after readiness changes; choose Filesystem · Folder
+explicitly for live coverage. There is no hidden engine launch/fallback crawl.
+See [Everything's native search syntax](https://www.voidtools.com/support/everything/searching/).
 
 ## Evidence
 

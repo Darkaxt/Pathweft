@@ -1,17 +1,17 @@
-﻿using System.Globalization;
+using System.Globalization;
 using System.IO;
 using System.Windows;
 using Microsoft.Win32;
 
 namespace FileExplorer;
 
-// key=value lines in %AppData%\ProtagonistLabs\File Labs\settings.txt (%AppData%\FileLabs up to 1.0.47, see DataFolder)
+// key=value lines in %AppData%\Pathweft\settings.txt, or an explicit isolated profile.
 public static class Settings
 {
-    // FILELABS_PROFILE=<folder>: a copy for testing beside the installed one, with its own settings and
+    // PATHWEFT_PROFILE=<folder>: a copy for testing beside the installed one, with its own settings and
     // its own single instance, writing nothing the installed copy or the sister apps read
-    public static readonly string Profile = Environment.GetEnvironmentVariable("FILELABS_PROFILE") is { Length: > 0 } p ? p : null;
-    // Decided at the first call, not when the class loads: the start moves the old folder first (DataFolder.Migrate), and
+    public static readonly string Profile = Environment.GetEnvironmentVariable("PATHWEFT_PROFILE") is { Length: > 0 } p ? p : null;
+    // Decided at the first call, not when the class loads: an explicit profile wins, and
     // .NET may load this class before that line runs. Every path below the data folder is derived at call time too.
     public static string Dir => dir ??= Profile ?? Portable ?? DataFolder.Current;
     /// A portable copy keeps everything in Data beside the exe, so the folder can travel on a stick (Rico, 1.0.61).
@@ -46,7 +46,7 @@ public static class Settings
     public static bool ShortcutsWithFolders;     // shortcuts to folders sort among the folders, not the files
     public static string LastSeenVersion = "";   // What's new is shown once per version
     public static bool NativeMenu;          // right-click shows the Windows menu instead of ours
-    public static bool TakeWinE = true;         // with Windows integration on, Win+E opens File Labs; off = File Explorer
+    public static bool TakeWinE = true;         // with Windows integration on, Win+E opens Pathweft; off = File Explorer
     public static bool CloseToTray;             // closing hides the window to the notification area; the next open is instant
     public static bool CloseEmptyPane;          // closing the second pane's last tab hides that pane (one pane), as Ctrl+P does
     public static int TipDelay = 1500;          // ms before a tooltip shows; WPF's own wait was 1000 (1.0.51: "a little slower")
@@ -55,8 +55,8 @@ public static class Settings
     public static int QuickList;                // which Quick access list the sidebar shows (MainWindow.QuickLists)
 
     // Started at sign-in, hidden in the notification area (needs CloseToTray). The Run value is the truth; a test
-    // copy (FILELABS_PROFILE) never writes it.
-    const string RunKey = @"Software\Microsoft\Windows\CurrentVersion\Run", RunValue = "File Labs";
+    // copy (PATHWEFT_PROFILE) never writes it.
+    const string RunKey = @"Software\Microsoft\Windows\CurrentVersion\Run", RunValue = "Pathweft";
     public static bool StartWithWindows
     {
         get { using var k = Registry.CurrentUser.OpenSubKey(RunKey); return k?.GetValue(RunValue) is string; }
@@ -103,7 +103,7 @@ public static class Settings
         if (File.Exists(FilePath)) Apply(File.ReadAllLines(FilePath));
     }
 
-    /// Settings → Reset to defaults: these keys back to how File Labs comes. Not saved here.
+    /// Settings → Reset to defaults: these keys back to how Pathweft comes. Not saved here.
     public static void Reset(IEnumerable<string> keys)
     {
         var set = keys.ToHashSet();
@@ -251,19 +251,20 @@ public static class Settings
     // ---- Default file manager (per user, HKCU only; turning it off removes every key it added) ----
     // Folder/drive double-clicks go through the Directory/Drive default verb; Win+E through the
     // "This PC" launcher CLSID. Explorer's own window navigation is unaffected.
-    const string Verb = "filelabs";
+    const string Verb = "pathweft";
     const string WinE = @"Software\Classes\CLSID\{52205fd8-5dfb-447d-801a-d0b52f2e83e1}";
     static readonly string[] Types = { "Directory", "Drive" };
 
     public static bool IsDefaultFileManager =>
         (Registry.CurrentUser.OpenSubKey(@"Software\Classes\Directory\shell")?.GetValue("") as string) == Verb;
 
-    // Whatever was the default before File Labs (e.g. another file manager's verb, or a Win+E
-    // override), so switching File Labs off hands folders back to it instead of to nothing.
-    const string Backup = @"Software\Protagonist Labs\File Labs\PreviousDefault";
+    // Whatever was the default before Pathweft (e.g. another file manager's verb, or a Win+E
+    // override), so switching Pathweft off hands folders back to it instead of to nothing.
+    const string Backup = @"Software\Darkaxt\Pathweft\PreviousDefault";
 
     public static void SetDefaultFileManager(bool on)
     {
+        if (Profile != null) throw new InvalidOperationException("An isolated test profile cannot change Windows integration.");
         var exe = Environment.ProcessPath;
         var hk = Registry.CurrentUser;
         using var backup = hk.CreateSubKey(Backup);
@@ -276,7 +277,7 @@ public static class Settings
                 if (shell.GetValue("") is string prev && prev != Verb) backup.SetValue(t, prev);
                 shell.SetValue("", Verb);
                 using var verb = shell.CreateSubKey(Verb);
-                verb.SetValue("", "Open in File Labs");
+                verb.SetValue("", "Open in Pathweft");
                 verb.SetValue("Icon", exe);
                 using var cmd = verb.CreateSubKey("command");
                 cmd.SetValue("", $"\"{exe}\" \"%1\"");
@@ -299,7 +300,7 @@ public static class Settings
         SetWinE(on && TakeWinE);
 
         // Win+E itself: the key above is ignored on recent Windows 11, so a background agent catches it.
-        // With Win+E released the agent stays on: it also hands Explorer windows other apps open to File Labs.
+        // With Win+E released the agent stays on: it also hands Explorer windows other apps open to Pathweft.
         if (on) Agent.Enable(exe); else Agent.Disable();
     }
 
@@ -313,15 +314,15 @@ public static class Settings
         var winEPath = WinE + @"\shell\opennewwindow\command";
         if (!on)
             using (var cur = hk.OpenSubKey(winEPath))
-                // not ours (never taken, or Win+E was off when File Labs became the default): nothing to give back
-                if ((cur?.GetValue("") as string)?.Contains("FileLabs.exe", StringComparison.OrdinalIgnoreCase) != true) return;
+                // not ours (never taken, or Win+E was off when Pathweft became the default): nothing to give back
+                if ((cur?.GetValue("") as string)?.Contains("Pathweft.exe", StringComparison.OrdinalIgnoreCase) != true) return;
         if (on)
         {
             using var cmd = hk.CreateSubKey(winEPath);
             var prev = cmd.GetValue("") as string;
-            // any File Labs build counts as ours: a dev build's path was once kept as "the previous
-            // Win+E", which switching File Labs off would then have restored instead of Explorer
-            if (!string.IsNullOrEmpty(prev) && !prev.Contains("FileLabs.exe", StringComparison.OrdinalIgnoreCase))
+            // any Pathweft build counts as ours: a dev build's path was once kept as "the previous
+            // Win+E", which switching Pathweft off would then have restored instead of Explorer
+            if (!string.IsNullOrEmpty(prev) && !prev.Contains("Pathweft.exe", StringComparison.OrdinalIgnoreCase))
             {
                 backup.SetValue("WinE", prev);
                 backup.SetValue("WinEDelegate", cmd.GetValue("DelegateExecute") as string ?? "");
@@ -340,100 +341,10 @@ public static class Settings
     }
 }
 
-// Ecosystem v3 (vault Proiecte/Ecosistem-v3-foldere.md): since 1.0.48 File Labs installs per machine to Program
-// Files\ProtagonistLabs\File Labs and keeps all its data in %AppData%\ProtagonistLabs\File Labs. Up to 1.0.47 the data was
-// in %AppData%\FileLabs (settings, folder sizes, Quick access, editor state, startup log) and %LocalAppData%\FileLabs\WebView2
-// (the editor's browser data, now a WebView2 subfolder). The installer moves both (FileLabs.iss, same rule); the start
-// does it too, for an install that couldn't (a locked file) or ran from another admin account.
+// Pathweft never discovers or migrates an upstream application's profile.
 static class DataFolder
 {
-    static readonly string Roaming = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-    static readonly string LocalData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-    internal static readonly string New = Path.Combine(Roaming, "ProtagonistLabs", "File Labs");
-    static readonly string Old = Path.Combine(Roaming, "FileLabs"), OldLocal = Path.Combine(LocalData, "FileLabs");
-
-    /// The data folder for this session: the old one only while its move is still pending (it failed, or hasn't run).
-    internal static string Current => Directory.Exists(Old) && !HasEntries(New) ? Old : New;
-
-    /// The editor's WebView2 data: in the data folder, unless the old one is still waiting to be moved.
-    internal static string WebView2 =>
-        Path.Combine(Settings.Dir, "WebView2") is var mine && Settings.Profile == null && !Directory.Exists(mine) && Directory.Exists(Path.Combine(OldLocal, "WebView2"))
-            ? Path.Combine(OldLocal, "WebView2") : mine;
-
-    /// Run before anything reads the data, and never while another File Labs window is open. A test copy
-    /// (FILELABS_PROFILE) keeps its data in the profile and moves nothing. Doesn't touch Settings, which would fix Dir.
-    internal static void Migrate()
-    {
-        if (Environment.GetEnvironmentVariable("FILELABS_PROFILE") is not { Length: > 0 } && Program.PortableDir == null) Migrate(Old, OldLocal, New);
-    }
-
-    internal static void Migrate(string old, string oldLocal, string @new)
-    {
-        var (moved, log) = Move(old, @new);
-        if (moved)
-        {
-            var (webMoved, webLog) = Move(Path.Combine(oldLocal, "WebView2"), Path.Combine(@new, "WebView2"));
-            log += webLog;
-            // ponytail: a Local folder that can't be renamed into Roaming (Roaming redirected to another drive) is retried
-            // and logged at every start; fine until someone has that setup
-            if (webMoved) try { if (Directory.Exists(oldLocal) && !HasEntries(oldLocal)) Directory.Delete(oldLocal); }
-                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
-        }
-        if (log == "") return;
-        try { File.AppendAllText(Path.Combine(moved ? @new : old, "migration.log"), log); }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
-    }
-
-    /// The rule (spec §2): `from` is renamed to `to` when `to` is missing or empty — one rename on the same drive, never
-    /// a partial copy. `to` with data already: nothing is mixed, `from` stays where it is. A failed rename (a locked
-    /// file) leaves everything in `from`, used from there this session and tried again at the next start.
-    /// Moved = `to` is the folder to use.
-    static (bool Moved, string Log) Move(string from, string to)
-    {
-        if (!Directory.Exists(from)) return (true, "");
-        var now = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
-        if (HasEntries(to)) return (true, $"{now}  {from} left in place: {to} already has data\r\n");
-        try
-        {
-            Directory.CreateDirectory(Path.GetDirectoryName(to));
-            if (Directory.Exists(to)) Directory.Delete(to);
-            Directory.Move(from, to);
-            return (true, $"{now}  moved {from} to {to}\r\n");
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-            return (false, $"{now}  could not move {from} to {to}, used where it is and tried again next start: {ex.Message}\r\n");
-        }
-    }
-
-    static bool HasEntries(string dir) => Directory.Exists(dir) && Directory.EnumerateFileSystemEntries(dir).Any();
-
-    // The HKCU values that name the exe: started at sign-in (the tray, the Win+E agent), and folders and Win+E opened in
-    // File Labs as the default file manager. Up to 1.0.47 they named the per-user exe the new installer removes.
-    const string Run = @"Software\Microsoft\Windows\CurrentVersion\Run";
-    static readonly (string Key, string Value)[] ExeValues =
-    {
-        (Run, "File Labs"), (Run, "File Labs Agent"),
-        (@"Software\Classes\Directory\shell\filelabs", "Icon"), (@"Software\Classes\Directory\shell\filelabs\command", ""),
-        (@"Software\Classes\Drive\shell\filelabs", "Icon"), (@"Software\Classes\Drive\shell\filelabs\command", ""),
-        (@"Software\Classes\CLSID\{52205fd8-5dfb-447d-801a-d0b52f2e83e1}\shell\opennewwindow\command", ""),
-    };
-
-    /// Points those values at this exe: only from the per-machine install (never a dev build or a test copy), and only
-    /// the ones that still name the old per-user exe.
-    internal static void Repoint()
-    {
-        var exe = Environment.ProcessPath;
-        var oldExe = Path.Combine(LocalData, "Programs", "File Labs", "FileLabs.exe");
-        if (Settings.Profile != null || exe == null
-            || !exe.StartsWith(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "ProtagonistLabs") + "\\", StringComparison.OrdinalIgnoreCase)) return;
-        foreach (var (key, value) in ExeValues)
-            try
-            {
-                using var k = Registry.CurrentUser.OpenSubKey(key, writable: true);
-                if (k?.GetValue(value) is string v && v.Contains(oldExe, StringComparison.OrdinalIgnoreCase))
-                    k.SetValue(value, v.Replace(oldExe, exe, StringComparison.OrdinalIgnoreCase));
-            }
-            catch (Exception ex) when (ex is UnauthorizedAccessException or System.Security.SecurityException or IOException) { } // a locked key keeps its value
-    }
+    internal static readonly string New = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Pathweft");
+    internal static string Current => New;
+    internal static string WebView2 => Path.Combine(Settings.Dir, "WebView2");
 }

@@ -14,14 +14,14 @@ namespace FileExplorer;
 // each one's encoding, asks before losing changes, and remembers the open files and the settings.
 public sealed class EditorWindow : Window
 {
-    const string Host = "filelabs.editor";
+    const string Host = "pathweft.editor";
     const long MaxBytes = 20 * 1024 * 1024; // Monaco copes, but past this it's a log, not something to edit
     static readonly string EditorDir = Path.Combine(AppContext.BaseDirectory, "Editor");
     static string StateFile => Path.Combine(Settings.Dir, "editor.json");
     static Task<CoreWebView2Environment> env;
     static EditorWindow instance;
 
-    // What Enter opens in the editor (Settings → "Open code and text files in the File Labs editor"):
+    // What Enter opens in the editor (Settings → "Open code and text files in the Pathweft editor"):
     // every extension Monaco colours, plus plain-text formats it shows uncoloured. F4 opens anything.
     static readonly HashSet<string> TextExt = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -73,7 +73,7 @@ public sealed class EditorWindow : Window
         Width = 1200; Height = 800;
         WindowStartupLocation = WindowStartupLocation.CenterScreen;
         Background = MainWindow.Hex("#0f131b");
-        Title = "File Labs editor";
+        Title = "Pathweft editor";
         Content = web;
         SourceInitialized += (_, _) => MainWindow.ApplyAcrylic(this);
         Loaded += async (_, _) => await Start();
@@ -262,7 +262,7 @@ public sealed class EditorWindow : Window
                 if (docs.TryGetValue(Id(), out var d)) d.Dirty = m.GetProperty("value").GetBoolean();
                 break;
             case "active":
-                Title = m.GetProperty("title").GetString() is { Length: > 0 } t ? $"{Path.GetFileName(t)}  ·  {Path.GetDirectoryName(t)}" : "File Labs editor";
+                Title = m.GetProperty("title").GetString() is { Length: > 0 } t ? $"{Path.GetFileName(t)}  ·  {Path.GetDirectoryName(t)}" : "Pathweft editor";
                 break;
             case "save":
                 SaveTab(Id(), m.GetProperty("text").GetString(), m.GetProperty("encoding").GetString(), m.GetProperty("version").GetInt32());
@@ -299,7 +299,7 @@ public sealed class EditorWindow : Window
     // (hosts, anything under Program Files) can be saved through an elevated copy instead.
     bool Write(string path, byte[] bytes)
     {
-        var temp = path + ".filelabs-tmp";
+        var temp = path + ".pathweft-tmp";
         try
         {
             File.WriteAllBytes(temp, bytes);
@@ -325,7 +325,7 @@ public sealed class EditorWindow : Window
     // file's own permissions. Windows shows its UAC prompt for it.
     bool WriteElevated(string path, byte[] bytes)
     {
-        var temp = Path.Combine(Path.GetTempPath(), $"filelabs-save-{Guid.NewGuid():N}");
+        var temp = Path.Combine(Path.GetTempPath(), $"pathweft-save-{Guid.NewGuid():N}");
         try
         {
             File.WriteAllBytes(temp, bytes);
