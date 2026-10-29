@@ -1,5 +1,5 @@
 [CmdletBinding()]
-param()
+param([string]$ReceiptDirectory=(Join-Path $PSScriptRoot '../.local/research/teracopy-4.0.5'))
 $ErrorActionPreference = 'Stop'
 $root = 'D:\Temp\pathweft-s5-native'
 $package = Join-Path $root 'official-teracopy-4.0.5.exe'
@@ -21,5 +21,6 @@ $receipt = [ordered]@{
     signature = $signature.Status.ToString(); signer = $signature.SignerCertificate.Subject
     archiveListing = $listing; installerExecuted = $false; extracted = $false
 }
-$receipt | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $PSScriptRoot '../.local/research/teracopy-4.0.5/official-versioned-reference.json') -Encoding utf8
+[void][IO.Directory]::CreateDirectory($ReceiptDirectory)
+$receipt | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $ReceiptDirectory 'official-versioned-reference.json') -Encoding utf8
 $receipt | ConvertTo-Json

@@ -164,15 +164,18 @@ internal static class TransferChecks
             string source=Folder("metadata-input"), target=Folder("metadata-target");
             string file=Write(source,"nested/文件 ç.txt","payload · Unicode");
             File.WriteAllText(file+":fixture","named stream content");
-            Directory.CreateDirectory(Path.Combine(source,"empty"));
-            var created=new DateTime(2020,2,3,4,5,6,DateTimeKind.Utc); var modified=created.AddDays(1);
-            File.SetCreationTimeUtc(file,created); File.SetLastWriteTimeUtc(file,modified);
+            string empty=Directory.CreateDirectory(Path.Combine(source,"empty")).FullName;
+            var created=new DateTime(2020,2,3,4,5,6,DateTimeKind.Utc); var modified=created.AddDays(1);var accessed=created.AddDays(2);
+            File.SetCreationTimeUtc(file,created); File.SetLastWriteTimeUtc(file,modified);File.SetLastAccessTimeUtc(file,accessed);
+            Directory.SetCreationTimeUtc(empty,created);Directory.SetLastWriteTimeUtc(empty,modified);Directory.SetLastAccessTimeUtc(empty,accessed);
             File.SetAttributes(file,FileAttributes.ReadOnly|FileAttributes.Hidden|FileAttributes.Archive);
             Directory.SetLastWriteTimeUtc(source,modified);
             var job=await Copy(source,target); Complete(job);
             string output=Path.Combine(target,"metadata-input","nested","文件 ç.txt");
+            string emptyOutput=Path.Combine(target,"metadata-input","empty");
+            Check(File.GetCreationTimeUtc(output)==created && File.GetLastWriteTimeUtc(output)==modified && File.GetLastAccessTimeUtc(output)==accessed,"File's creation/access/write timestamps differ.");
+            Check(Directory.GetCreationTimeUtc(emptyOutput)==created && Directory.GetLastWriteTimeUtc(emptyOutput)==modified && Directory.GetLastAccessTimeUtc(emptyOutput)==accessed,"Empty folder's creation/access/write timestamps differ.");
             Check(File.ReadAllText(output)=="payload · Unicode" && File.ReadAllText(output+":fixture")=="named stream content","Main/named stream differs.");
-            Check(File.GetCreationTimeUtc(output)==created && File.GetLastWriteTimeUtc(output)==modified,"File timestamps differ.");
             Check((File.GetAttributes(output)&(FileAttributes.ReadOnly|FileAttributes.Hidden))==(FileAttributes.ReadOnly|FileAttributes.Hidden),"File attributes differ.");
             Check(Directory.Exists(Path.Combine(target,"metadata-input","empty")) && Directory.GetLastWriteTimeUtc(Path.Combine(target,"metadata-input"))==modified,"Directory metadata/empty folder differs.");
             Check(job.VerifiedFiles==1 && job.DoneFiles==1 && job.DoneBytes==job.TotalBytes && job.VerificationBytes==2*job.TotalBytes && NoStages(target),"Stream-aware progress/verification/staging contract differs.");
@@ -198,6 +201,18 @@ internal static class TransferChecks
                 Check(job.Verify && job.VerifiedFiles==1 && !File.Exists(file) && File.ReadAllText(Path.Combine(cross,"move.txt"))=="cross volume data" && File.ReadAllText(Path.Combine(cross,"move.txt")+":fixture")=="ADS survives","Mandatory move verification/source removal differs.");
             }
             finally { Settings.Verify=true; }
+        });
+        await Case("Destination links are refused before mutation without changing their targets",async()=>
+        {
+            string source=Folder("destination-link-input"),target=Folder("destination-link-target"),outside=Folder("destination-link-outside");
+            string file=Write(source,"nested/item.txt","source must remain"),sentinel=Write(outside,"sentinel.txt","outside must remain");
+            string parent=Directory.CreateDirectory(Path.Combine(target,"destination-link-input")).FullName;
+            string directoryLink=Path.Combine(parent,"nested");Directory.CreateSymbolicLink(directoryLink,outside);
+            var directoryJob=await Copy(source,target,true);
+            Check(directoryJob.Phase==Phase.Failed&&File.ReadAllText(file)=="source must remain"&&File.ReadAllText(sentinel)=="outside must remain"&&!File.Exists(Path.Combine(outside,"item.txt")),"Directory-link destination was followed or source data was consumed.");
+            string plain=Write(source,"plain.txt","new input"),external=Write(outside,"existing.txt","existing outside content"),fileLink=Path.Combine(target,"plain.txt");
+            File.CreateSymbolicLink(fileLink,external);var fileJob=await Copy(plain,target,true);
+            Check(fileJob.Phase==Phase.Failed&&File.ReadAllText(plain)=="new input"&&File.ReadAllText(external)=="existing outside content"&&File.GetAttributes(fileLink).HasFlag(FileAttributes.ReparsePoint),"File-link overwrite followed its target or removed its source.");
         });
         await Case("Merge and overwrite retain unrelated existing members",async()=>
         {

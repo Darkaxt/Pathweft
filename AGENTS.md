@@ -3,12 +3,14 @@
 Read `docs/SPECIFICATION.md` first. It is authoritative; the plan and this file
 do not change its requirements or the user's standing instructions.
 
-- Current authorized implementation through S5 is COMPLETE. S1-S4 are COMPLETE;
+- S1-S4 are COMPLETE;
   S4R is COMPLETE, authorized by the user's 2026-10-29 request to try bitplane/rars
   with the integration choice delegated. A plan does not
   authorize itself or intermediate product releases. S4U is now COMPLETE, authorized
   by approval of grayscale/lock icons and Ctrl+H with dot-name visibility; see
-  FILEUI-01..03. The user's next-stage request authorized S5, now COMPLETE;
+  FILEUI-01..03. Initial S5 acceptance closed at e478986. The user's continued
+  comparison/implementation goal reopens S5 as the sole ACTIVE stage under
+  TRANSFER-07;
   see `docs/verification/2026-10-29-s5.md` for the direct-write contract,
   measured performance limits and actual caller/preservation/recovery evidence.
   S6-S8 remain NOT STARTED. Identify TeraCopy and derive adoption from REA

@@ -1,8 +1,9 @@
 # S5 transfer adoption contract
 
-Authority: SPECIFICATION.md TRANSFER-01..06. S5 is COMPLETE after integrated
-transfer behavior, real callers, preservation fixtures and measured comparison
-pass; see the [verification record](verification/2026-10-29-s5.md).
+Authority: SPECIFICATION.md TRANSFER-01..07. Initial acceptance passed at e478986;
+the user's continued comparison/implementation goal reopens S5 as ACTIVE. See
+the [verification record](verification/2026-10-29-s5.md), including the subsequent
+operation-count reductions and unresolved pipeline findings.
 This document selects implementation details within that scope;
 it does not replace acceptance or authorize a later stage.
 

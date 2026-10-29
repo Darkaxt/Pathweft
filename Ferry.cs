@@ -274,7 +274,6 @@ public static class Ferry
             string target = Path.Combine(job.Destination, rel);
             if (!Path.GetFullPath(target).StartsWith(Path.TrimEndingDirectorySeparator(job.Destination) + "\\", StringComparison.OrdinalIgnoreCase))
                 throw new IOException("A transfer item cannot replace its destination root: " + rel);
-            TransferFile.RequirePlainDestination(target);
             if (fsi is DirectoryInfo)
             {
                 if (File.Exists(target)) throw new IOException("A file occupies the destination folder: " + rel);

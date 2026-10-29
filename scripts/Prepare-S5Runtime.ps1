@@ -1,5 +1,5 @@
 [CmdletBinding()]
-param()
+param([string]$ReceiptDirectory=(Join-Path $PSScriptRoot '../.local/research/teracopy-4.0.5'))
 $ErrorActionPreference = 'Stop'
 $root = 'D:\Temp\pathweft-s5-native'
 $official = Join-Path $root 'official-4.0.5-extracted\15E018F'
@@ -41,5 +41,6 @@ $receipt = [ordered]@{
     officialPackageContainsDeniedModule=$false; targetExecuted=$false
     installedSettingsCopied=$false; shellRegistration=$false; scriptsCopied=$false
 }
-$receipt | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $PSScriptRoot '../.local/research/teracopy-4.0.5/runtime-qualification.json') -Encoding utf8
+[void][IO.Directory]::CreateDirectory($ReceiptDirectory)
+$receipt | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $ReceiptDirectory 'runtime-qualification.json') -Encoding utf8
 Write-Output "Qualified clean official TeraCopy 4.0.5, hash $expected; private portable profile at $runtime; no target execution yet."

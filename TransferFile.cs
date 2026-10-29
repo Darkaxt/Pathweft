@@ -66,13 +66,15 @@ internal sealed class TransferFile : IDisposable
 
     internal static IReadOnlyList<StreamEntry> Streams(string path, bool directory = false)
     {
-        if (!NamedStreams(path)) return directory ? Array.Empty<StreamEntry>() : new[] { new StreamEntry("::$DATA", new FileInfo(path).Length) };
         var entries = new List<StreamEntry>();
         IntPtr find = FindFirstStreamW(Long(path), 0, out var data, 0);
         if (find == new IntPtr(-1))
         {
             int error = Marshal.GetLastWin32Error();
             if (error == 38) return entries;
+            // FindFirstStreamW reports ERROR_INVALID_PARAMETER for a filesystem
+            // without streams. Successful inventories need no volume discovery.
+            if (error == 87) return directory ? Array.Empty<StreamEntry>() : new[] { new StreamEntry("::$DATA", new FileInfo(path).Length) };
             throw Error(path + " (stream inventory)", error);
         }
         try
@@ -117,17 +119,11 @@ internal sealed class TransferFile : IDisposable
 
     internal static bool ApplyMetadata(string target, Stamp source)
     {
-        if (source.Attributes.HasFlag(FileAttributes.Directory))
+        using (var handle = CreateFileW(Long(target), 0x100 /* FILE_WRITE_ATTRIBUTES */, 7, IntPtr.Zero, 3, OpenReparse | Backup, IntPtr.Zero))
         {
-            Directory.SetCreationTimeUtc(target, DateTime.FromFileTimeUtc(source.Created));
-            Directory.SetLastWriteTimeUtc(target, DateTime.FromFileTimeUtc(source.Modified));
-            Directory.SetLastAccessTimeUtc(target, DateTime.FromFileTimeUtc(source.Accessed));
-        }
-        else
-        {
-            File.SetCreationTimeUtc(target, DateTime.FromFileTimeUtc(source.Created));
-            File.SetLastWriteTimeUtc(target, DateTime.FromFileTimeUtc(source.Modified));
-            File.SetLastAccessTimeUtc(target, DateTime.FromFileTimeUtc(source.Accessed));
+            if (handle.IsInvalid) throw Error(target, Marshal.GetLastWin32Error());
+            long created = source.Created, accessed = source.Accessed, modified = source.Modified;
+            if (!SetFileTime(handle, ref created, ref accessed, ref modified)) throw Error(target, Marshal.GetLastWin32Error());
         }
         const FileAttributes writable = FileAttributes.ReadOnly | FileAttributes.Hidden | FileAttributes.System | FileAttributes.Archive | FileAttributes.NotContentIndexed | FileAttributes.Temporary;
         File.SetAttributes(target, (File.GetAttributes(target) & ~writable) | (source.Attributes & writable));
@@ -210,6 +206,7 @@ internal sealed class TransferFile : IDisposable
     }
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)] static extern SafeFileHandle CreateFileW(string path, uint access, uint share, IntPtr security, uint disposition, uint flags, IntPtr template);
     [DllImport("kernel32.dll", SetLastError = true)] static extern bool GetFileInformationByHandle(SafeFileHandle handle, out FileInfoNative info);
+    [DllImport("kernel32.dll", SetLastError = true)] static extern bool SetFileTime(SafeFileHandle handle, ref long created, ref long accessed, ref long modified);
     [DllImport("kernel32.dll", SetLastError = true)] static extern bool SetFileInformationByHandle(SafeFileHandle handle, int kind, IntPtr data, uint bytes);
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)] static extern IntPtr FindFirstStreamW(string path, int level, out StreamData data, uint flags);
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)] static extern bool FindNextStreamW(IntPtr find, out StreamData data);

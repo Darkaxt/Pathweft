@@ -25,7 +25,9 @@ for(const api of ['NtReadFile','NtWriteFile'])hook(api,{
     onEnter(args){this.item=handles.get(args[0].toString());this.status=args[4];this.requested=args[6].toUInt32();},
     onLeave(result){if(this.item){const status=result.toUInt32();count(api,this.item.which,this.requested,status===0?Number(this.status.add(8).readU64().toString()):0,status===0x103?1:0);}}
 });
-hook('NtClose',{onEnter(args){this.key=args[0].toString();this.item=handles.get(this.key);},onLeave(result){if(this.item){count('NtClose',this.item.which);if(result.toInt32()>=0)handles.delete(this.key);}}});
+// Windows may reuse a closed handle on another thread before onLeave runs.
+// Remove only the same tracked instance, never its new owner's mapping.
+hook('NtClose',{onEnter(args){this.key=args[0].toString();this.item=handles.get(this.key);},onLeave(result){if(this.item){count('NtClose',this.item.which);if(result.toInt32()>=0&&handles.get(this.key)===this.item)handles.delete(this.key);}}});
 for(const api of ['NtQueryInformationFile','NtSetInformationFile'])hook(api,{onEnter(args){const item=handles.get(args[0].toString());if(item)count(api+'[class='+args[4].toUInt32()+']',item.which);}});
 for(const api of ['GetFileInformationByHandle','SetFileTime','SetFileInformationByHandle'])hook(api,{onEnter(args){const item=handles.get(args[0].toString());if(item)count(api,item.which);}});
 for(const api of ['GetFileAttributesW','GetFileAttributesExW','FindFirstStreamW','GetVolumePathNameW'])hook(api,{onEnter(args){count(api,role(stringAt(args[0])));}});

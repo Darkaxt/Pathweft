@@ -192,6 +192,15 @@ they are not required tracked deferrals. Source preservation, correct conflict
 decisions, verification before copied-move source removal, truthful outcomes and
 the metadata/filesystem criteria below still apply.
 
+The user then requested continued comparison and implementation: **"keep
+comparing our pipeline against TeraCopy, and implementing the findings, until
+there are no more lessons to be learned."** This reopens S5 after its initial
+verified closure. Maintain the complete comparison/findings inventory, implement
+useful supported findings, and continue investigation when evidence exposes
+another actionable difference. Do not treat one faster sample or completion of
+the first two optimizations as exhaustion of the objective. Preserve the existing
+behavioral contract and record unsupported inferences and rejected experiments.
+
 | ID | Requirement and acceptance |
 | --- | --- |
 | TRANSFER-01 | Use the installed `reverse-engineer-anything` (REA) skill on an exactly identified TeraCopy artifact before selecting transfer changes. Record version, origin, signature/hash and relevant configuration. Trace scheduling, copy/verification, conflicts, pause/cancel, failure/recovery and progress with retained Evidence IDs. Separate static findings, runtime observations, inferences and unknowns. Neither marketing nor upstream changelogs satisfies this criterion. |
@@ -200,6 +209,7 @@ the metadata/filesystem criteria below still apply.
 | TRANSFER-04 | Preserve source data on failed/cancelled operations and failed verification; remove moved sources only after required copy/verification succeeds. Use direct destination writes with normal source sharing. Cancellation cleans up the current incomplete/unverified copied output; completed outputs remain and overwritten old destination contents are not restored. Define and verify links/reparse points, timestamps, attributes, alternate streams and filesystem limitations. Report unsupported preservation. Use disposable fixtures for denied access, destination-full/disappearing and changing-source cases. |
 | TRANSFER-05 | Compare many-small-file and large-file workloads across the identified TeraCopy version, inherited baseline and changed implementation under equivalent conditions. Record files/bytes, storage/filesystems, caching/verification, wall time, CPU and memory. Choose concurrency/buffering/scheduling from evidence; no invented speedup promise or unmeasured aggregation mechanism. Adopted performance changes need measured benefit without correctness regression. |
 | TRANSFER-06 | State and verify the recovery guarantee precisely. Live pause/resume, device interruption and process-restart recovery differ. Select the required behavior from REA findings in the adoption table; never call an in-memory queue durably resumable. Keep user data outside fixtures untouched. |
+| TRANSFER-07 | Continue comparing the complete transfer pipeline with the qualified TeraCopy reference and implement evidence-backed lessons. Maintain findings for enumeration/metadata/streams, copy/hash/verification, scheduling/buffers, conflicts/progress/control and failure/recovery. Cover representative small, large and mixed workloads and applicable volume paths. Separate I/O profiles from timing; compare relevant before/after and donor samples under matched conditions, repeat measurements to assess variability, and reverify affected integrated behavior. Every discovered candidate must be implemented and verified, experimentally rejected with evidence, or remain explicitly unresolved; do not declare exhaustion while actionable findings or uninvestigated pipeline differences remain. No new donor runtime dependency, optional protective workflow or later-stage implementation is implied. |
 
 TeraCopy evidence drives transfer design. Read inherited source only for actual
 integration points/gaps and preservation of valid behavior; repeated upstream
