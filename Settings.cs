@@ -42,7 +42,7 @@ public static class Settings
     public static double ImageBrightness;    // −100 (black) … 0 … +100 (white)
     public static double AccentStrength = 1.0; // how opaque the accent tints are, 1 = as designed
     public static bool InternalEditor = true; // Enter on a code/text file opens the F4 editor, not its app
-    public static bool Verify;               // xxHash3 check after copying
+    public static bool Verify;               // xxHash3 after native copying; copied moves always verify before source removal
     public static bool ParallelCopy = true;  // small files several at once on SSDs and network shares (Ferry.Fast)
     public static bool ShowHidden;
     public static bool ShortcutsWithFolders;     // shortcuts to folders sort among the folders, not the files

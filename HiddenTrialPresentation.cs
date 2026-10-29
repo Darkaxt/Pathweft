@@ -40,6 +40,7 @@ internal static class HiddenTrialPresentation
         (Settings.Profile?.StartsWith(@"D:\Temp\pathweft-s2-", StringComparison.OrdinalIgnoreCase) == true ||
          Settings.Profile?.StartsWith(@"D:\Temp\pathweft-s3-", StringComparison.OrdinalIgnoreCase) == true ||
          Settings.Profile?.StartsWith(@"D:\Temp\pathweft-s4-", StringComparison.OrdinalIgnoreCase) == true ||
+         Settings.Profile?.StartsWith(@"D:\Temp\pathweft-s5-native\", StringComparison.OrdinalIgnoreCase) == true ||
          Settings.Profile?.StartsWith(@"D:\Temp\pathweft-rars-native\", StringComparison.OrdinalIgnoreCase) == true);
     internal static bool SuppressFocus(Window window) => Enabled && !(window is SearchWidgetWindow && Environment.GetEnvironmentVariable("PATHWEFT_S2_NATIVE_ONLY") == "1");
 

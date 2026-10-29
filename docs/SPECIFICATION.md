@@ -56,7 +56,7 @@ process boundary explicitly rather than presenting it as an embedded module.
 | F3D | 4.0.0, b72c7b5c9244e4a0c12975ce6546645c1a8b2680 | Source-derived C API/offscreen rendering for the S3 GLB prototype |
 | 7-Zip | Pin source/SDK/runtime in S4 | Native archive browsing and supported edit operations |
 | rars | `e2415a2eb12e6b62deaa0cca919864eabe4671b1`, crate 0.12.3 | S4R embedded RAR encoder/rewrite API; Apache-2.0; independently qualify before enabling edits |
-| TeraCopy | Identify actual artifact version/hash in S5 | Required REA target; not yet analyzed |
+| TeraCopy | 4.0.5.0 x64, signed main SHA-256 `1f0cca0be4e6a22e856c3b0de6655a1af8059a06cc66133398307de335098c6f` | Required REA reference, not a product runtime dependency. Evidence and bounded behavior adoption: [S5 transfer contract](S5-TRANSFER-ADOPTION.md). |
 | StartAllBack | Installed DLL file metadata observed 3.9.25 on 2026-10-29; pin exact artifact/hash and Windows dependencies in S6 | Proprietary host for a version-bound native search adapter; no donor binary redistribution or provider-hook feasibility claimed |
 
 File Labs currently targets .NET 8/WPF. It uses recursive filesystem search
@@ -177,12 +177,27 @@ must be detected and reported rather than silently converting or losing data.
 
 ### REA-driven transfer improvements
 
+After S4U closure, the user requested the next stage on 2026-10-29, authorizing
+S5 investigation, evidence-backed adoption and integrated transfer implementation.
+No later stage is activated and final product packaging/publication remains S8.
+
+The user clarified S5 on 2026-10-29: reconstruct the observed TeraCopy workflow
+inside Pathweft, without the additional staged overwrites or source locks held
+across copying/verification. Copies write directly to their selected destination
+using normal native sharing. Cancellation removes the current incomplete or
+unverified copied output and retains the source; completed outputs remain, and
+the previous contents of an overwritten destination are not restored. Extra
+protections may be considered only if a later demonstrated need warrants them;
+they are not required tracked deferrals. Source preservation, correct conflict
+decisions, verification before copied-move source removal, truthful outcomes and
+the metadata/filesystem criteria below still apply.
+
 | ID | Requirement and acceptance |
 | --- | --- |
 | TRANSFER-01 | Use the installed `reverse-engineer-anything` (REA) skill on an exactly identified TeraCopy artifact before selecting transfer changes. Record version, origin, signature/hash and relevant configuration. Trace scheduling, copy/verification, conflicts, pause/cancel, failure/recovery and progress with retained Evidence IDs. Separate static findings, runtime observations, inferences and unknowns. Neither marketing nor upstream changelogs satisfies this criterion. |
 | TRANSFER-02 | Derive a bounded adoption table: TeraCopy behavior, evidence, current gap, implementation decision and acceptance check. Reconstruct useful behavior in Pathweft-owned code without a TeraCopy runtime dependency. Resolve design-critical unknowns before dependent implementation; decompiled pseudocode is not original buildable source. Full TeraCopy feature parity is not implied. |
 | TRANSFER-03 | Integrate one queue with coherent conflict decisions, truthful progress/outcomes, pause/resume and cancellation. Failed/skipped/unverified/incomplete members must not be presented as wholly successful. Verify copy, same-volume move, cross-volume move, merge and overwrite through real callers. |
-| TRANSFER-04 | Preserve source data on failed/cancelled operations and failed verification; remove moved sources only after required copy/verification succeeds. Define and verify links/reparse points, timestamps, attributes, alternate streams and filesystem limitations. Report unsupported preservation. Use disposable fixtures for denied access, destination-full/disappearing and changing-source cases. |
+| TRANSFER-04 | Preserve source data on failed/cancelled operations and failed verification; remove moved sources only after required copy/verification succeeds. Use direct destination writes with normal source sharing. Cancellation cleans up the current incomplete/unverified copied output; completed outputs remain and overwritten old destination contents are not restored. Define and verify links/reparse points, timestamps, attributes, alternate streams and filesystem limitations. Report unsupported preservation. Use disposable fixtures for denied access, destination-full/disappearing and changing-source cases. |
 | TRANSFER-05 | Compare many-small-file and large-file workloads across the identified TeraCopy version, inherited baseline and changed implementation under equivalent conditions. Record files/bytes, storage/filesystems, caching/verification, wall time, CPU and memory. Choose concurrency/buffering/scheduling from evidence; no invented speedup promise or unmeasured aggregation mechanism. Adopted performance changes need measured benefit without correctness regression. |
 | TRANSFER-06 | State and verify the recovery guarantee precisely. Live pause/resume, device interruption and process-restart recovery differ. Select the required behavior from REA findings in the adoption table; never call an in-memory queue durably resumable. Keep user data outside fixtures untouched. |
 

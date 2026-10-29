@@ -1197,9 +1197,9 @@ public partial class MainWindow : Window
         RememberJob(job);
         // what was pasted or dropped is selected where it arrived, the first of it in sight with the keyboard on it,
         // instead of somewhere among the folder's other hundred files (Rico, 1.0.61)
-        if (job.Phase == Phase.Done)
+        if (job.Finished)
         {
-            var arrived = job.Arrivals ?? job.Sources.Select(s => Path.GetFileName(job.Duplicates.GetValueOrDefault(s) ?? s.TrimEnd('\\'))).Where(n => n != "").ToList();
+            var arrived = job.Arrivals ?? (job.Successful ? job.Sources.Select(s => Path.GetFileName(job.Duplicates.GetValueOrDefault(s) ?? s.TrimEnd('\\'))).Where(n => n != "").ToList() : new List<string>());
             foreach (var pane in new[] { Left, Right })
                 if (pane.Dir.TrimEnd('\\').Equals(job.Destination.TrimEnd('\\'), StringComparison.OrdinalIgnoreCase)) pane.SelectAfterRefresh(arrived, focus: pane == active);
         }
@@ -1293,7 +1293,7 @@ public partial class MainWindow : Window
     async Task CompleteCut(Job job, uint sequence)
     {
         await job.Completion;
-        if (job.Phase == Phase.Done && job.Errors.IsEmpty && job.SkippedFiles == 0 && job.DoneFiles == job.TotalFiles && sequence == GetClipboardSequenceNumber())
+        if (job.Successful && sequence == GetClipboardSequenceNumber())
         {
             try
             {

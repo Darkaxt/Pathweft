@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <PlatformTarget>x64</PlatformTarget>
+    <PathweftAssembly Condition="'$(PathweftAssembly)' == ''">../../bin/Debug/net8.0-windows10.0.19041.0/Pathweft.dll</PathweftAssembly>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Pathweft"><HintPath>$(PathweftAssembly)</HintPath><Private>true</Private></Reference>
+    <PackageReference Include="System.IO.Hashing" Version="10.0.12" />
+    <Using Remove="System.Windows.Forms" />
+    <Using Remove="System.Drawing" />
+  </ItemGroup>
+</Project>

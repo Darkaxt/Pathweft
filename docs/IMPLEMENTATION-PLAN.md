@@ -2,16 +2,16 @@
 
 Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.5, 2026-10-29.
 
-Current authorization: S4U implementation/verification, the approved read-only
-icon treatment and Ctrl+H/dot-name visibility. Earlier S3 work was requested on
+Current authorization: S5 REA-driven transfer implementation, requested after
+S4U closure. Earlier S3 work was requested on
 2026-10-29 after S2 completion. The user also added the F3D prototype and a separate
 archive-browsing/editing stage. On 2026-10-29 the user added native StartAllBack
 search integration and the long-term all-Everything/Windows Search retirement
 goal, then authorized proceeding to the next stage after plan review.
-S1-S4, S4R and S4U are COMPLETE; S5-S8 remain NOT STARTED.
+S1-S5, S4R and S4U are COMPLETE; S6-S8 remain NOT STARTED.
 The user authorized trying rars on 2026-10-29 and delegated its integration
 choice. The user approved read-only icon cues and Ctrl+H/dot-name visibility;
-S4U is COMPLETE; no stage is ACTIVE. A wider Rust port is not in scope.
+No implementation stage is ACTIVE. A wider Rust port is not in scope.
 Native source/SDK integration is preferred. This
 plan neither authorizes itself nor adds approval checkpoints.
 
@@ -25,7 +25,7 @@ plan neither authorizes itself nor adds approval checkpoints.
 | S4 - Native archive browsing and editing | COMPLETE | ARCHIVE-01..05, affected CORE-02/03, PREVIEW-04, LIFE-01/DELIVERY-03 | S3 COMPLETE | Pinned native library/source/terms, real pane/clipboard/edit/open/preview workflows, source/destination volume ownership, preservation and actual consumer cleanup verified; see S4 evidence |
 | S4R - Embedded writable RAR | COMPLETE | RAR-01..05, affected ARCHIVE-02..05/CORE/LIFE/DELIVERY-03 | S4 COMPLETE | Pinned loaded Rust DLL, real hidden pane/actions/queue, qualified solid/encrypted preservation and refusals, independent 7-Zip/UnRAR extraction, original/cut-source protection, clipboard rollback, cleanup and source commit/remote readback; see S4R evidence |
 | S4U - Read-only cues and hidden visibility | COMPLETE | FILEUI-01..03, affected CORE/SEARCH/ARCHIVE/LIFE | S4R COMPLETE; user-approved icon direction | Real hidden browser/widget/tree/archives and native index workflow, persisted global toggle, grayscale/lock rendering, preservation, focused regressions, exact cleanup and source commit/remote readback; see S4U evidence |
-| S5 - REA-driven transfer improvements | NOT STARTED | TRANSFER-01..06, archive/caller and WIDGET-02 revalidation, affected CORE-02/03, LIFE-01/DELIVERY-03 | S4U COMPLETE; identify TeraCopy artifact before analysis | Required REA Evidence -> adoption table -> integrated transfer behavior; data/failure/recovery checks and comparable measured workloads |
+| S5 - REA-driven transfer improvements | COMPLETE | TRANSFER-01..06, archive/caller and WIDGET-02 revalidation, affected CORE-02/03, LIFE-01/DELIVERY-03 | S4U COMPLETE; exact reference identified before analysis | Required REA Evidence/adoption, integrated direct-write behavior/callers, preservation/failure/restart checks and measured comparisons pass; see [evidence](verification/2026-10-29-s5.md) |
 | S6 - Native StartAllBack search | NOT STARTED | SAB-01..05, affected SEARCH/CORE/LIFE/DELIVERY criteria | S5 COMPLETE; exact host identified before hook selection | REA evidence -> version-bound native adapter -> actual Everything results inside the existing Start menu; preserved app/settings actions, lifecycle/compatibility/disable/recovery |
 | S7 - Everything everywhere and WSearch retirement | NOT STARTED | EVERYWHERE-01..05, affected SEARCH/CORE/LIFE/SHELL criteria | S6 COMPLETE; finite consumer/semantics inventory before migration | Actual per-surface Everything replacement, resolved content/property/mail dependencies, isolated WSearch-off workflows, reversible service Disabled state and reboot/recovery verification |
 | S8 - Final integration and delivery | NOT STARTED | SHELL-01, DELIVERY-01..03; reconcile every product requirement | S1..S7 COMPLETE; prerequisite blockers/deferrals resolved | Reversible optional shell integration; all delivered search/migration/recovery boundaries; install/update/uninstall; final criteria review, source verification/commit, normal installer/portable release independently retrieved and verified |
@@ -58,6 +58,58 @@ implementation stage. See [setup evidence](verification/2026-10-28-setup.md).
 Later packaging verification checks a different boundary; it does not defer
 required current-stage wiring or real behavior.
 
+## S5 execution and reconciliation
+
+S5 is COMPLETE, authorized by the next-stage request. TRANSFER-01..06
+are reconciled to the user's explicit TeraCopy-behavior clarification:
+direct writes, no long-lived source locks, and cancellation cleanup of the current
+incomplete/unverified output. Former staging/locking assertions are historical
+diagnostics, not acceptance for this revised behavior. Extra protections are not
+required deferrals. The integrated revised path and affected verification pass;
+no later stage is active.
+
+The [adoption contract](S5-TRANSFER-ADOPTION.md) and
+[verification record](verification/2026-10-29-s5.md) reconcile TRANSFER-01..06.
+The exact signed official 4.0.5 reference is qualified; scoped REA evidence is
+retained/authenticated and every owned analysis/gate/trial has exited. Packed
+static code did not reveal its algorithm. No donor binary becomes a dependency.
+The unrelated installed antivirus-blocked module was not retried, and installed
+settings/history/activation and protection remain unchanged.
+
+The revised direct path passes native preservation/adverse contracts, actual
+hidden pane/widget/archive actions, Resume/Cancel controls and 100%/150% card
+review with zero foreground acquisitions. Real FAT32 error 112, ADS refusal and
+timestamp rounding are verified, followed by actual VHD detachment. Actual crash
+testing preserves sources and verifies fresh full resubmission; no automatic
+restart/offset recovery is claimed. Previous staging/locking results are historical.
+
+Equivalent inherited/TeraCopy/current small/large samples are retained with
+wall/CPU/peak working set, cache/verification/storage and native-exit boundaries.
+TeraCopy remains faster for 3,000 small files (4,025 ms versus 5,366 ms); the direct
+engine is faster in this 512 MiB sample (1,262 ms versus 2,789 ms). These are single
+warm-cache measurements with the same presentation instrumentation, not a general
+speed promise. Separate I/O profiles show excess per-file opens, repeated volume
+queries and timestamp updates; future optional optimization is not a required
+deferral. No donor internal algorithm is inferred as recovered source.
+
+Final Release build/self-test and the actual Release assembly/assets audit pass;
+diagnostic hooks and donor dependencies are absent. Required receipts/captures
+are hash-verified in persistent private evidence. Final source reconciliation and
+exact transactional scratch cleanup pass. All 43,732 reviewed members were removed
+(4,446,987,153 non-directory bytes), with no residuals in the two exact task roots.
+Read-only test attributes on two retained cancellation inputs were restored before
+resuming the same ticket; no alternate deletion mechanism was used. There is no
+remaining S5 advancement blocker or tracked deferral. Verified source synchronization
+accompanies stage delivery; final product packaging/release remains S8.
+S6-S8 are NOT STARTED. No intermediate product release.
+
+New persistent analysis, reports and snapshots: `.local/research/teracopy-4.0.5/`
+on D:, private because donor binaries/configuration are not public deliverables.
+Native staging/build/benchmark scratch: `D:\Temp\pathweft-s5-native` (native and
+sustained small-file I/O exception); preflight data: `E:\Temp\pathweft-s5-review`.
+Use exact helper cleanup after last consumers, preserve shared REA runtime and
+existing Skyrim/legacy E: bindings. New persistent destinations follow D: policy.
+
 ## S4U execution and reconciliation
 
 S4U is COMPLETE after S4R and before S5, owning FILEUI-01..03 and affected CORE,
@@ -69,8 +121,8 @@ see [S4U evidence](verification/2026-10-29-s4u.md). Current acceptance has no
 implementation gap. Exact scratch cleanup and source delivery are verified:
 `a8a5d9aadb25d20c63da8c172d6cf3d85ee631f3` matches independent remote readback on
 `origin/codex/s4u-file-visibility`. No blocker or tracked deferral remains in S4U.
-Closure assessment found no material consolidation requirement. S5 has not
-started. Final package/release verification remains S8.
+Closure assessment found no material consolidation requirement. S5 had not
+started at that closure. Final package/release verification remains S8.
 Scratch: `D:\Temp\pathweft-s4-ui` for native WPF/build small-file I/O;
 `E:\Temp\pathweft-s4-ui-review` for preflight data. Retain only defined S8 evidence
 in the project; helper-clean scratch after its actual last consumer exits.
@@ -90,7 +142,8 @@ in the project; helper-clean scratch after its actual last consumer exits.
 - RAR-05 passes: verification, exact cleanup and source delivery are complete.
   Source commit `3517b8aea1ceadd6955b07f327e96b37f5eaeccf` was pushed to
   `origin/codex/s4r-native-rar`; independent `ls-remote` readback matches.
-  S4R has no remaining advancement blocker or tracked deferral. S5 has not started.
+  S4R has no remaining advancement blocker or tracked deferral. S5 had not started
+  at that closure.
 - Closure assessment found no material design debt requiring consolidation;
   native ownership and the existing queue/publication owners remain explicit.
 - Native build/output scratch: `D:\Temp\pathweft-rars-native` (native compilation
@@ -192,7 +245,7 @@ silently change the goal to filename-only search or leave a hidden WSearch owner
 6. Reconstruct/integrate required behaviors through the shared queue/callers;
    verify data preservation before comparisons. Reconcile all TRANSFER criteria.
 
-This is future S5 work; it does not begin during S3 or the archive stage.
+This sequence belongs only to S5, after S4U; it does not authorize later stages.
 
 ## Current reconciliation ledger
 
@@ -202,7 +255,7 @@ This is future S5 work; it does not begin during S3 or the archive stage.
 | S2 | All assigned WIDGET-01..03 and affected CORE-02/03, LIFE-01/DELIVERY-03: complete real query/handoff/reveal/file-action workflow; selected hotkey mode and native input before/after real Explorer restart; original Explorer location restored and Everything processes preserved; actual 96/144-DPI transitions; inspected 100%/150% text layouts; final hidden workflow recorded zero foreground events; Debug/Release builds and source self-test passed. See [evidence](verification/2026-10-29-s2.md). | None within S2 | None | None |
 | S3 | All PREVIEW-01..05 and affected CORE-03/LIFE-01/DELIVERY-03: eight internal modules, actual decoding/paging, all active toggles and separate-process persistence; independent widget/Space/side selection; malformed/large/unsupported/inert inputs; actual file release; F3D real model/camera/native teardown and unchanged original; complete final QuickLook-absent run and verified restoration, zero foreground events; Debug/Release builds and Release source self-test. See [evidence](verification/2026-10-29-s3.md). | None within S3 | None | None |
 | S4 | All ARCHIVE-01..05 and affected criteria: final integrated PID32156, actual native ZIP/7z/TAR/CAB/RAR5, normal archive-file handling, real clipboard/conflicts/rename/copy/cut/paste/Compress/Extract, cancellation/concurrency and D/E source-volume reservation, actual viewer/consumer release, read-only/encrypted/unsafe states, inspected 100%/150% layouts, zero foreground events and independent clipboard restoration; Debug/Release, archive contracts and updated source self-test pass. See [S4 evidence](verification/2026-10-29-s4.md). | None within S4 | None | None |
-| S5 | None | All assigned criteria including REA | S4 prerequisite complete; TeraCopy target identity/evidence not selected yet | None |
+| S5 | All TRANSFER-01..06 and affected caller/UI/lifecycle/source-notice checks, final Release/self-test/assets audit and exact cleanup; see [evidence](verification/2026-10-29-s5.md) | None within S5 | COMPLETE; no blocker | None |
 | S6 | None | SAB-01..05 | S5 prerequisite not complete. Native hook/ABI feasibility is unresolved, not a verified implementation. | None |
 | S7 | None | EVERYWHERE-01..05 | S6 prerequisite not complete. Consumer inventory and non-file semantic compatibility unresolved; these must close before service retirement. | None |
 | S8 | None | All assigned criteria including final release | S1..S7 prerequisites not complete | None |
@@ -214,7 +267,7 @@ queue, and an independent post-exit read confirmed prior-text restoration.
 S2 passed following the user's next-stage request. S3 passed after the next
 2026-10-29 request and its user-added F3D prototype. S4 is COMPLETE following the
 user's instruction to continue with the next stage after the search-plan update.
-S5-S8 remain NOT STARTED; no later stage is ACTIVE.
+S4R, S4U and S5 are also COMPLETE. S6-S8 remain NOT STARTED; no stage is ACTIVE.
 S1-S4 have no remaining blocker or tracked deferral. Installer/update/
 uninstall and packaged integration retain their explicitly assigned S8 boundary.
 

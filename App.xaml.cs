@@ -25,6 +25,9 @@ static class Program
     static void Main(string[] args)
     {
 #if DEBUG
+        const string transferBenchmark = "--benchmark-s5=";
+        if (args.FirstOrDefault(a => a.StartsWith(transferBenchmark)) is { } benchmarkRequest)
+        { Environment.ExitCode = S5Benchmark.Run(benchmarkRequest[transferBenchmark.Length..]); return; }
         const string fileUiSettings = "--verify-fileui-settings=";
         if (args.FirstOrDefault(a => a.StartsWith(fileUiSettings)) is { } settingsReceipt)
         {
@@ -145,7 +148,7 @@ public partial class App : Application
         }
         Settings.Load(); // before any window: the panes read column widths while being built
 #if DEBUG
-        if (e.Args.Any(a => a.StartsWith("--verify-s4=") || a.StartsWith("--verify-fileui=")) && Environment.GetEnvironmentVariable("PATHWEFT_TEST_HIDDEN") == "1" && !HiddenTrialPresentation.Enabled)
+        if (e.Args.Any(a => a.StartsWith("--verify-s4=") || a.StartsWith("--verify-fileui=") || a.StartsWith("--verify-s5=")) && Environment.GetEnvironmentVariable("PATHWEFT_TEST_HIDDEN") == "1" && !HiddenTrialPresentation.Enabled)
         { Shutdown(2); return; } // fail before constructing a window when a hidden trial profile is unrecognized
 #endif
         UseTipDelay();
@@ -160,6 +163,8 @@ public partial class App : Application
 #if DEBUG
         if (e.Args.FirstOrDefault(a => a.StartsWith("--verify-fileui=")) is { } fileUiVerification)
             window.ContentRendered += async (_, _) => await window.VerifyFileUi(fileUiVerification["--verify-fileui=".Length..]);
+        if (e.Args.FirstOrDefault(a => a.StartsWith("--verify-s5=")) is { } transferVerification)
+            window.ContentRendered += async (_, _) => await window.VerifyS5(transferVerification["--verify-s5=".Length..]);
         HiddenTrialPresentation.Prepare(window);
 #endif
         if (hidden) window.PrepareHiddenStart();
@@ -251,17 +256,16 @@ public partial class App : Application
 
             // same copy again → conflicts; "keep both" renames
             j = Ferry.Submit(new[] { Path.Combine(src, "tree") }, dst, move: false);
-            Wait(() => j.Phase == Phase.Conflicts);
-            Check(j.Conflicts.Count == 2, "two conflicts found in one pass");
             j.Resolve(Choice.Rename);
             Run(j);
+            Check(j.Conflicts.Count == 2, "two conflicts found in one pass");
             Check(File.Exists(Path.Combine(dst, "tree", "a (2).txt")), "keep both → a (2).txt");
 
             // move within the same volume is a rename; source is gone afterwards
             var mv = Directory.CreateDirectory(Path.Combine(root, "moved")).FullName;
             j = Run(Ferry.Submit(new[] { Path.Combine(src, "tree") }, mv, move: true));
             Check(j.Phase == Phase.Done && !Directory.Exists(Path.Combine(src, "tree")) && File.Exists(Path.Combine(mv, "tree", "a.txt")), "same-volume move");
-            Check(j.Notes.Contains("Moved within the same drive"), "move took the rename path");
+            Check(j.RenamedFiles == j.TotalFiles && j.CopiedFiles == 0 && j.VerifiedFiles == 0, "move preserves identity through the native rename path without claiming copied/hash-verified bytes");
 
             // move a folder onto a folder of the same name: merged file by file, never renamed over it,
             // and not undoable (undo would take the files that were already there with it)
@@ -308,7 +312,7 @@ public partial class App : Application
             var vdst = Directory.CreateDirectory(Path.Combine(root, "verified")).FullName;
             j = Run(Ferry.Submit(new[] { Path.Combine(mv, "tree") }, vdst, move: false));
             Settings.Verify = false;
-            Check(j.Phase == Phase.Done && j.Errors.IsEmpty && j.DoneBytes == j.TotalBytes && j.TotalBytes == 2 * (5 + 3_000_000), "verify pass reads both copies");
+            Check(j.Phase == Phase.Done && j.Errors.IsEmpty && j.DoneBytes == j.TotalBytes && j.TotalBytes == 5 + 3_000_000 && j.VerificationBytes == 2 * j.TotalBytes && j.VerifiedFiles == j.TotalFiles, "verified copies keep payload and verification accounting separate");
 
             // cancel before it starts
             j = Ferry.Submit(new[] { Path.Combine(mv, "tree") }, dst, move: false);
@@ -799,7 +803,6 @@ public partial class App : Application
         return $"http://localhost:{p}/";
     }
 
-    static Job Run(Job j) { Wait(() => !j.Active); return j; }
-    static void Wait(Func<bool> done) { for (int i = 0; i < 300 && !done(); i++) Thread.Sleep(50); if (!done()) throw new TimeoutException("job did not finish"); }
+    static Job Run(Job j) { j.Completion.GetAwaiter().GetResult(); return j; }
     static void Check(bool ok, string what) { if (!ok) throw new Exception("FAILED: " + what); }
 }

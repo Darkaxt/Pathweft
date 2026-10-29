@@ -219,7 +219,7 @@
               <TextBlock Text="Transfers" Style="{StaticResource H}"/>
             </DockPanel>
             <CheckBox x:Name="VerifyBox" Content="Verify copies after transfer" Click="Verify_Click"/>
-            <TextBlock Style="{StaticResource Hint}" Text="Reads source and copy back and compares xxHash3 digests. Catches a disk or cable that dropped bytes, at the cost of a second full read. On a move, a source whose copy doesn't match is kept."/>
+            <TextBlock Style="{StaticResource Hint}" Text="Checks copied data and alternate streams with xxHash3. Moves always verify copied data before removing the source. Cancelling removes the current incomplete copy. Same-volume renames preserve file identity without a byte-copy check."/>
             <CheckBox x:Name="ParallelBox" Content="Copy small files several at once" Margin="0,10,0,0" Click="Parallel_Click"/>
             <TextBlock Style="{StaticResource Hint}" Text="Files under 16 MB go four at a time when both drives are SSDs or network shares, where a small file is mostly waiting. To or from a spinning disk they still go one by one, and big files always do."/>
           </StackPanel>

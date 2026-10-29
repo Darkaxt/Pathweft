@@ -38,7 +38,7 @@ public partial class MainWindow
     // Called when a Ferry job ends.
     void RememberJob(Job job)
     {
-        if (undoJobs.Remove(job) || job.ArchiveOperation || job.Phase != Phase.Done || job.Conflicts.Count > 0 || job.Merged || !job.Errors.IsEmpty) return;
+        if (undoJobs.Remove(job) || job.ArchiveOperation || !job.Successful || job.Conflicts.Count > 0 || job.Merged) return;
         var made = job.Sources.Select(s => (Source: s, Target: job.Duplicates.GetValueOrDefault(s) ?? Path.Combine(job.Destination, Path.GetFileName(s.TrimEnd('\\')))))
                               .Where(x => Path.GetFileName(x.Target) != "").ToList();
         if (made.Count == 0) return;

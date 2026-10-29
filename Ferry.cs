@@ -5,13 +5,12 @@ using System.Runtime.InteropServices;
 
 namespace FileExplorer;
 
-// Port of Ferry's transfer engine (Ferry: src-tauri/src/engine):
-// scan first (totals + all conflicts in one pass), one conflict decision per job,
-// CopyFileExW per file with pause/cancel in the progress callback, same-volume
-// moves as renames, and one lane per destination volume.
-// Optional xxHash3 verification after copying, as in Ferry (verify.rs).
+// Ferry's shared queue, strengthened under S5's REA-derived adoption contract:
+// scan/conflict ownership, native direct copying, complete stream verification
+// and verified source removal. Moves always verify copied data;
+// same-volume renames preserve file identity without claiming a hash pass.
 
-public enum Phase { Queued, Scanning, Conflicts, Copying, Verifying, Done, Cancelled }
+public enum Phase { Queued, Scanning, Conflicts, Copying, Verifying, Done, Cancelled, Failed }
 public enum Choice { Skip, Overwrite, Rename, Newer }
 
 public record Conflict(int File, string Name, long SourceSize, DateTime SourceModified, long TargetSize, DateTime TargetModified)
@@ -29,6 +28,9 @@ public class Job : INotifyPropertyChanged
     public bool ArchiveOperation { get; init; }
     public string Description { get; init; }
     public int SkippedFiles { get; internal set; }
+    public int ExcludedItems { get; internal set; }
+    public int CopiedFiles, VerifiedFiles, RenamedFiles;
+    public long VerificationBytes;
     public List<string> Arrivals { get; internal set; }
     readonly TaskCompletionSource completed = new(TaskCreationOptions.RunContinuationsAsynchronously);
     public Task Completion => completed.Task;
@@ -37,24 +39,24 @@ public class Job : INotifyPropertyChanged
     // 0 running, 1 paused, 2 cancelled — read from the CopyFileExW callback, so kept lock-free.
     volatile int state;
     readonly ManualResetEventSlim resumed = new(true);
-    public bool Paused => state == 1;
+    public bool Paused => state == 1 && Active;
     public bool IsCancelled => state == 2;
-    public void Pause() { lock (resumed) { if (state == 0) { state = 1; resumed.Reset(); } } Refresh(); }
+    public void Pause() { lock (resumed) { if (Active && state == 0) { state = 1; resumed.Reset(); } } Refresh(); }
     public void Resume() { lock (resumed) { if (state == 1) { state = 0; resumed.Set(); } } Refresh(); }
-    public void Cancel() { lock (resumed) { state = 2; resumed.Set(); } resolved.TrySetResult(null); Refresh(); }
+    public void Cancel() { lock (resumed) { if (!Active) return; state = 2; resumed.Set(); } resolved.TrySetResult(null); Refresh(); }
     internal void WaitUntilResumed() => resumed.Wait();
 
     public Phase Phase { get; internal set; }
     public long TotalBytes, DoneBytes, CurrentSize, CurrentDone;
     public int TotalFiles, DoneFiles;
-    public string Current = "";
+    public string Current { get; internal set; } = "";
     public List<Conflict> Conflicts { get; internal set; } = new();
     public bool Merged { get; internal set; } // a folder went into a folder of the same name that was already there
     public readonly Dictionary<string, string> Duplicates = new(StringComparer.OrdinalIgnoreCase); // source → its "- Copy" beside it, which Undo removes
     public readonly System.Collections.Concurrent.ConcurrentQueue<string> Errors = new(); // written by the worker, read by the UI
     public readonly System.Collections.Concurrent.ConcurrentQueue<string> Notes = new();
 
-    readonly TaskCompletionSource<Choice?> resolved = new();
+    readonly TaskCompletionSource<Choice?> resolved = new(TaskCreationOptions.RunContinuationsAsynchronously);
     public void Resolve(Choice c) => resolved.TrySetResult(c);
     internal Choice? WaitForResolution() => resolved.Task.Result;
 
@@ -67,6 +69,12 @@ public class Job : INotifyPropertyChanged
     {
         Interlocked.Add(ref DoneBytes, delta);
         Interlocked.Add(ref CurrentDone, delta);
+        lock (clock) AddRate(delta);
+    }
+    internal void AddVerificationBytes(long delta)
+    {
+        Interlocked.Add(ref VerificationBytes, delta);
+        if (!Concurrent) Interlocked.Add(ref CurrentDone, delta);
         lock (clock) AddRate(delta);
     }
 
@@ -99,23 +107,32 @@ public class Job : INotifyPropertyChanged
     }
 
     string Verb => IsMove ? "Moving" : "Copying";
-    public string Title => Description != null ? Description + (Phase == Phase.Done ? SkippedFiles > 0 ? $" · finished, {SkippedFiles} skipped" : " · complete" : Phase == Phase.Cancelled ? " · cancelled" : Paused ? " · paused" : "") : Phase switch
+    public bool Partial => SkippedFiles > 0 || ExcludedItems > 0;
+    public bool Successful => Phase == Phase.Done && !Partial && Errors.IsEmpty && DoneFiles == TotalFiles;
+    string ResultDetail => $"{DoneFiles}/{TotalFiles} completed" + (SkippedFiles > 0 ? $", {SkippedFiles} skipped" : "") + (ExcludedItems > 0 ? $", {ExcludedItems} unsupported" : "");
+    public string Title => Description != null ? Description + (Phase == Phase.Done ? Partial ? " · " + ResultDetail : " · complete" : Phase == Phase.Cancelled ? " · cancelled, " + ResultDetail : Phase == Phase.Failed ? " · failed, " + ResultDetail : Paused ? " · paused" : "") : Phase switch
     {
-        Phase.Done => $"{(IsMove ? "Moved" : "Copied")} {TotalFiles} file(s) to {Destination}",
+        Phase.Done when Partial => $"Finished — {ResultDetail} to {Destination}",
+        Phase.Done => $"{(IsMove ? "Moved" : "Copied")} {DoneFiles} file(s) to {Destination}" + (RenamedFiles == TotalFiles && TotalFiles > 0 ? " · renamed" : $" · {VerifiedFiles} verified" + (VerifiedFiles < CopiedFiles ? ", unchecked copies" : "")),
+        Phase.Failed => $"Failed — {ResultDetail} to {Destination}",
         Phase.Cancelled => $"Cancelled — {DoneFiles} of {TotalFiles} file(s) to {Destination}",
         Phase.Scanning => $"Scanning {Sources.Count} item(s)…",
-        Phase.Verifying => $"Verifying {TotalFiles} file(s) in {Destination}",
+        Phase.Verifying => $"Checking transferred data in {Destination}",
         _ => $"{Verb} {TotalFiles} file(s) to {Destination}",
     } + (Paused ? "  (paused)" : "");
-    public double Fraction => TotalBytes > 0 ? (double)DoneBytes / TotalBytes : Phase == Phase.Done ? 1 : 0;
-    public double CurrentFraction => CurrentSize > 0 ? (double)CurrentDone / CurrentSize : 0;
+    public double Fraction => Math.Clamp(Finished ? TotalFiles > 0 ? (double)DoneFiles / TotalFiles : Successful ? 1 : 0 : TotalBytes > 0 ? (double)DoneBytes / TotalBytes : 0, 0, 1);
+    public double CurrentFraction => Concurrent ? 0 : CurrentSize > 0 ? Math.Clamp((double)CurrentDone / CurrentSize, 0, 1) : 0;
+    internal int ParallelWorkers;
+    internal bool Concurrent;
     public string Stats
     {
         get
         {
-            var s = $"{DoneFiles}/{TotalFiles} files · {MainWindow.Fmt(DoneBytes)} of {MainWindow.Fmt(TotalBytes)}";
-            if (Copying && rate > 0)
-                s += $" · {MainWindow.Fmt((long)rate)}/s · {TimeSpan.FromSeconds((TotalBytes - DoneBytes) / rate):hh\\:mm\\:ss} left";
+            var s = $"{DoneFiles}/{TotalFiles} files · {MainWindow.Fmt(DoneBytes)} processed";
+            if (ArchiveOperation) { if (SkippedFiles > 0) s += $" · {SkippedFiles} skipped"; }
+            else s += $" · {VerifiedFiles} verified" + (RenamedFiles > 0 ? $" · {RenamedFiles} renamed" : "") + (SkippedFiles > 0 ? $" · {SkippedFiles} skipped" : "");
+            if (Copying && !Paused && rate > 0)
+                s += $" · {MainWindow.Fmt((long)rate)}/s I/O";
             return s;
         }
     }
@@ -133,9 +150,9 @@ public class Job : INotifyPropertyChanged
     // ---- the Transfers window: a colour per job (its card and its band in the total chart), and the section it sits in ----
     public System.Windows.Media.Brush Hue { get; set; } = System.Windows.Media.Brushes.CornflowerBlue;
     public int Seq { get; set; } // newest first within a section
-    public int StateOrder => HasConflicts ? 0 : Active ? 1 : 2;
-    public string StateGroup => StateOrder switch { 0 => "Needs you", 1 => "Running", _ => "Done" };
-    public string PercentText => $"{Fraction * 100:0}%";
+    public int StateOrder => HasConflicts || Phase == Phase.Failed || Finished && !Errors.IsEmpty ? 0 : Active ? 1 : 2;
+    public string StateGroup => HasConflicts ? "Needs you" : Phase == Phase.Failed || Finished && !Errors.IsEmpty ? "Needs attention" : Active ? "Running" : "Done";
+    public string PercentText => Phase == Phase.Failed ? "Failed" : Phase == Phase.Cancelled ? "Cancelled" : Phase == Phase.Done && Partial ? "Partial" : $"{Fraction * 100:0}%";
     public double Rate => Copying && !Paused ? rate : 0; // what this job adds to the total chart right now
     public string Where => System.IO.Path.GetFileName(Destination.TrimEnd('\\')) is { Length: > 0 } n ? n : Destination;
 
@@ -155,8 +172,11 @@ public static class Ferry
     // Archive cuts also edit their source container after destination verification.
     public static Job Submit(IEnumerable<string> sources, string destination, bool move, Action<Job> operation = null, string description = null)
     {
-        var job = new Job { Sources = sources.ToList(), Destination = destination, IsMove = move, Verify = Settings.Verify, Parallel = Settings.ParallelCopy, ArchiveOperation = operation != null, Description = description };
-        var volumes = (move ? job.Sources.Select(Path.GetPathRoot).Append(Path.GetPathRoot(destination)) : new[] { Path.GetPathRoot(destination) })
+        var selected = sources.Select(Path.GetFullPath).Distinct(StringComparer.Ordinal).ToList();
+        selected = selected.Where(source => !selected.Any(parent => parent != source && Directory.Exists(parent)
+            && source.StartsWith(Path.TrimEndingDirectorySeparator(parent) + "\\", StringComparison.Ordinal))).ToList();
+        var job = new Job { Sources = selected, Destination = Path.GetFullPath(destination), IsMove = move, Verify = Settings.Verify || move, Parallel = Settings.ParallelCopy, ArchiveOperation = operation != null, Description = description };
+        var volumes = (move ? job.Sources.Select(Path.GetPathRoot).Append(Path.GetPathRoot(job.Destination)) : new[] { Path.GetPathRoot(job.Destination) })
             .Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
         lock (lanes)
         {
@@ -171,12 +191,13 @@ public static class Ferry
     {
         try
         {
+            job.WaitUntilResumed();
             if (job.IsCancelled) { job.Phase = Phase.Cancelled; return; }
             job.Phase = Phase.Scanning;
             if (operation != null)
             {
                 operation(job);
-                job.Phase = job.IsCancelled ? Phase.Cancelled : Phase.Done;
+                job.Phase = job.IsCancelled ? Phase.Cancelled : job.Errors.IsEmpty ? Phase.Done : Phase.Failed;
                 return;
             }
             var plan = Scan(job);
@@ -187,19 +208,20 @@ public static class Ferry
             {
                 job.Conflicts = plan.Conflicts;
                 job.Phase = Phase.Conflicts;
+                Boundary("conflicts", job, null, null);
                 if (job.WaitForResolution() is not { } c) { job.Phase = Phase.Cancelled; return; }
                 choice = c;
             }
             job.Phase = Phase.Copying;
             Transfer(job, plan, choice);
-            job.Phase = job.IsCancelled ? Phase.Cancelled : Phase.Done;
+            job.Phase = job.IsCancelled ? Phase.Cancelled : job.Errors.IsEmpty ? Phase.Done : Phase.Failed;
         }
         catch (OperationCanceledException) { job.Phase = Phase.Cancelled; }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException or System.Security.SecurityException)
         {
             // e.g. destination vanished mid-job: stop, and say why on the card
             job.Errors.Enqueue(ex.Message);
-            job.Phase = Phase.Cancelled;
+            job.Phase = Phase.Failed;
         }
         finally
         {
@@ -208,11 +230,18 @@ public static class Ferry
         }
     }
 
-    record FileEntry(string Source, string Relative, long Size);
+    record FileEntry(string Source, string Relative, TransferFile.Stamp Snapshot, IReadOnlyList<TransferFile.StreamEntry> Streams)
+    {
+        public long Size => Streams.Sum(stream => stream.Size);
+    }
+    record DirectoryEntry(string Source, string Relative, TransferFile.Stamp Snapshot)
+    {
+        public HashSet<string> Children = new(StringComparer.OrdinalIgnoreCase);
+    }
     class Plan
     {
         public List<FileEntry> Files = new();
-        public List<string> Dirs = new();
+        public List<DirectoryEntry> Dirs = new();
         public List<Conflict> Conflicts = new();
     }
 
@@ -220,33 +249,59 @@ public static class Ferry
     {
         var plan = new Plan();
         int links = 0;
+        var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        TransferFile.RequirePlainDestination(job.Destination);
+        if (!Directory.Exists(job.Destination)) throw new IOException("The destination folder is unavailable.");
         void Walk(string dir, string rel)
         {
             IEnumerable<FileSystemInfo> children;
             try { children = new DirectoryInfo(dir).EnumerateFileSystemInfos().ToList(); }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { job.Errors.Enqueue($"{dir}: {ex.Message}"); return; }
+            plan.Dirs[^1].Children.UnionWith(children.Select(child => child.Name));
             foreach (var c in children)
             {
                 if (job.IsCancelled) return;
+                job.WaitUntilResumed();
                 Add(c, Path.Combine(rel, c.Name));
             }
         }
         void Add(FileSystemInfo fsi, string rel)
         {
             if (fsi.Attributes.HasFlag(FileAttributes.ReparsePoint)) { links++; return; } // Ferry: links reported, not reproduced
-            if (fsi is DirectoryInfo) { plan.Dirs.Add(rel); Walk(fsi.FullName, rel); }
+            if (!names.Add(rel)) throw new IOException("Selected inputs map to the same destination name: " + rel);
+            var snapshot = TransferFile.Inspect(fsi.FullName);
+            if (snapshot.Attributes.HasFlag(FileAttributes.ReparsePoint)) { links++; return; }
+            string target = Path.Combine(job.Destination, rel);
+            if (!Path.GetFullPath(target).StartsWith(Path.TrimEndingDirectorySeparator(job.Destination) + "\\", StringComparison.OrdinalIgnoreCase))
+                throw new IOException("A transfer item cannot replace its destination root: " + rel);
+            TransferFile.RequirePlainDestination(target);
+            if (fsi is DirectoryInfo)
+            {
+                if (File.Exists(target)) throw new IOException("A file occupies the destination folder: " + rel);
+                if (TransferFile.Streams(fsi.FullName, directory: true).Any(s => s.Name != "::$DATA"))
+                    throw new IOException("Folder alternate streams cannot be preserved by this transfer; the source is retained: " + rel);
+                if ((snapshot.Attributes & (FileAttributes.Encrypted | FileAttributes.Compressed)) != 0)
+                    throw new IOException("Directory encryption/compression policy cannot be reproduced by this transfer; the source is retained: " + rel);
+                plan.Dirs.Add(new(fsi.FullName, rel, snapshot)); Walk(fsi.FullName, rel);
+            }
             else
             {
                 var f = (FileInfo)fsi;
-                plan.Files.Add(new FileEntry(f.FullName, rel, f.Length));
-                job.TotalBytes += f.Length; job.TotalFiles++;
+                if (Directory.Exists(target)) throw new IOException("A folder occupies the destination file: " + rel);
+                var streams = TransferFile.Streams(f.FullName);
+                if (snapshot.Links > 1 && !job.Notes.Contains("Copies of hard links are independent files; link relationships are not cloned."))
+                    job.Notes.Enqueue("Copies of hard links are independent files; link relationships are not cloned.");
+                plan.Files.Add(new FileEntry(f.FullName, rel, snapshot, streams));
+                job.TotalBytes += streams.Sum(s => s.Size); job.TotalFiles++;
             }
         }
         foreach (var s in job.Sources)
         {
             if (job.IsCancelled) break;
+            job.WaitUntilResumed();
             FileSystemInfo fsi = Directory.Exists(s) ? new DirectoryInfo(s) : new FileInfo(s);
             if (!fsi.Exists) { job.Errors.Enqueue($"{s}: cannot be read"); continue; }
+            if (fsi is DirectoryInfo { Parent: null }) { job.Errors.Enqueue("Select files or folders inside the volume; transferring a volume root is unsupported: " + s); continue; }
             bool here = Path.GetDirectoryName(s.TrimEnd('\\'))?.Equals(job.Destination.TrimEnd('\\'), StringComparison.OrdinalIgnoreCase) == true;
             if (here && job.IsMove) { job.Errors.Enqueue($"{fsi.Name}: already in this folder"); continue; }
             if (fsi is DirectoryInfo && (job.Destination + "\\").StartsWith(fsi.FullName.TrimEnd('\\') + "\\", StringComparison.OrdinalIgnoreCase))
@@ -260,38 +315,31 @@ public static class Ferry
         {
             var target = new FileInfo(Path.Combine(job.Destination, plan.Files[i].Relative));
             if (target.Exists)
-                plan.Conflicts.Add(new Conflict(i, plan.Files[i].Relative, plan.Files[i].Size, File.GetLastWriteTime(plan.Files[i].Source), target.Length, target.LastWriteTime));
+            {
+                var existing = TransferFile.Inspect(target.FullName);
+                plan.Conflicts.Add(new Conflict(i, plan.Files[i].Relative, plan.Files[i].Snapshot.Size, DateTime.FromFileTimeUtc(plan.Files[i].Snapshot.Modified).ToLocalTime(), existing.Size, DateTime.FromFileTimeUtc(existing.Modified).ToLocalTime()));
+            }
         }
-        if (links > 0) job.Notes.Enqueue($"{links} shortcut(s) or junction(s) were left alone");
+        job.ExcludedItems = links;
+        if (links > 0) job.Notes.Enqueue($"{links} reparse point(s) were left alone");
         return plan;
     }
 
-    static bool SameVolume(string a, string b) => string.Equals(Path.GetPathRoot(a), Path.GetPathRoot(b), StringComparison.OrdinalIgnoreCase);
-
     static void Transfer(Job job, Plan plan, Choice choice)
     {
-        // A move inside one volume is a rename: no bytes travel.
-        if (job.IsMove && plan.Conflicts.Count == 0 && !job.Merged && job.Sources.All(s => SameVolume(s, job.Destination)))
+        var conflicts = plan.Conflicts.ToDictionary(c => c.File);
+        var arrivals = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        void Arrived(string relative) { lock (arrivals) arrivals.Add(relative.Split(Path.DirectorySeparatorChar)[0]); }
+        foreach (var directory in plan.Dirs)
         {
-            foreach (var s in job.Sources)
-            {
-                var name = Path.GetFileName(s.TrimEnd('\\'));
-                if (!MoveFileEx(Long(s), Long(Path.Combine(job.Destination, name)), MOVEFILE_COPY_ALLOWED | MOVEFILE_WRITE_THROUGH))
-                    job.Errors.Enqueue($"{name}: {LastError()}");
-            }
-            job.DoneBytes = job.TotalBytes; job.DoneFiles = job.TotalFiles;
-            job.Notes.Enqueue("Moved within the same drive");
-            return;
+            Check(job);
+            string target = Path.Combine(job.Destination, directory.Relative);
+            TransferFile.RequirePlainDestination(target);
+            if (!Directory.Exists(target)) { Directory.CreateDirectory(target); Arrived(directory.Relative); }
         }
 
-        var conflicts = plan.Conflicts.ToDictionary(c => c.File);
-        foreach (var d in plan.Dirs)
-            try { Directory.CreateDirectory(Path.Combine(job.Destination, d)); }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { job.Errors.Enqueue($"{d}: {ex.Message}"); }
-
-        var copied = new List<(string Source, string Target, long Size, string Relative)>();
-        // where each file goes, decided first: a "Rename" target is picked before any copy runs beside it
         var work = new List<(FileEntry File, string Target, bool Overwrite)>();
+        var reserved = plan.Files.Select(file => Path.Combine(job.Destination, file.Relative)).ToHashSet(StringComparer.OrdinalIgnoreCase);
         for (int i = 0; i < plan.Files.Count; i++)
         {
             var e = plan.Files[i];
@@ -300,124 +348,197 @@ public static class Ferry
             if (conflicts.TryGetValue(i, out var c))
             {
                 var ch = choice == Choice.Newer && c.SourceModified <= c.TargetModified ? Choice.Skip : choice;
-                if (ch == Choice.Skip) { job.TotalBytes -= e.Size; job.TotalFiles--; continue; }
-                if (ch == Choice.Rename) target = UniqueName(target); else overwrite = true;
+                if (ch == Choice.Skip) { job.SkippedFiles++; continue; }
+                if (ch == Choice.Rename) target = UniqueName(target, reserved);
+                else overwrite = true;
             }
             work.Add((e, target, overwrite));
         }
+        bool together = job.Parallel && Fast(job.Destination) && job.Sources.All(Fast);
+        var small = together ? work.Where(w => w.File.Size < ParallelBelow).ToList() : new();
+        job.Concurrent = small.Count > 1;
 
         void One((FileEntry File, string Target, bool Overwrite) w)
         {
             var e = w.File;
-            job.WaitUntilResumed();
-            if (job.IsCancelled) return;
-            job.Current = e.Relative; job.CurrentSize = e.Size; job.CurrentDone = 0;
-            Directory.CreateDirectory(Path.GetDirectoryName(w.Target));
-            bool sameDiskMove = job.IsMove && SameVolume(e.Source, w.Target);
-            string error = null;
-            if (sameDiskMove)
+            TransferFile.Stamp? copiedOutput = null;
+            bool succeeded = false, acceptedOutput = false, countedCopy = false;
+            Interlocked.Increment(ref job.ParallelWorkers);
+            try
             {
-                if (MoveFileEx(Long(e.Source), Long(w.Target), MOVEFILE_COPY_ALLOWED | MOVEFILE_WRITE_THROUGH | (w.Overwrite ? MOVEFILE_REPLACE_EXISTING : 0)))
-                    job.AddBytes(e.Size);
-                else error = LastError();
+                Check(job);
+                Boundary("before-source-open", job, e.Source, w.Target);
+                TransferFile.RequireCurrent(e.Source, e.Snapshot);
+                if (e.Streams.Any(stream => stream.Name != "::$DATA") && !TransferFile.NamedStreams(job.Destination))
+                    throw new IOException("The destination filesystem cannot preserve alternate streams: " + e.Relative);
+                CheckTarget(w.Target, w.Overwrite);
+                job.Current = job.Concurrent ? $"{job.ParallelWorkers} active files" : e.Relative;
+                if (!job.Concurrent) { job.CurrentSize = e.Size; job.CurrentDone = 0; }
+                bool renamed = false;
+                if (job.IsMove)
+                {
+                    Boundary("before-rename", job, e.Source, w.Target); Check(job);
+                    TransferFile.RequireCurrent(e.Source, e.Snapshot);
+                    renamed = MoveFileEx(Long(e.Source), Long(w.Target), w.Overwrite ? 1u : 0u);
+                    if (!renamed && Marshal.GetLastWin32Error() != 17)
+                        throw TransferFile.Error(e.Source, Marshal.GetLastWin32Error());
+                    // Only native ERROR_NOT_SAME_DEVICE selects verified copy.
+                    // Drive-letter/root comparisons cannot identify mounts.
+                }
+                if (renamed)
+                {
+                    Interlocked.Add(ref job.DoneBytes, e.Size);
+                    Interlocked.Increment(ref job.RenamedFiles);
+                    succeeded = true;
+                }
+                else
+                {
+                    Boundary("before-copy", job, e.Source, w.Target); Check(job);
+                    string error = CopyOne(job, e.Source, w.Target, e.Size, w.Overwrite, out copiedOutput);
+                    Check(job);
+                    if (error != null) throw new IOException(error);
+                    countedCopy = true; Interlocked.Increment(ref job.CopiedFiles);
+                    Boundary("copy-written", job, e.Source, w.Target); Check(job);
+                    if (job.Verify)
+                    {
+                        if (!job.Concurrent) { job.Phase = Phase.Verifying; job.Current = "Verifying " + e.Relative; job.CurrentSize = e.Size * 2; job.CurrentDone = 0; }
+                        RequireStreams(w.Target, e.Streams);
+                        foreach (var stream in e.Streams)
+                        {
+                            Check(job);
+                            var original = Digest(job, TransferFile.StreamPath(e.Source, stream.Name));
+                            Check(job);
+                            var transferred = Digest(job, TransferFile.StreamPath(w.Target, stream.Name));
+                            Check(job);
+                            if (original == null || transferred == null || original != transferred)
+                                throw new IOException("Transferred stream does not match its source: " + e.Relative + stream.Name);
+                        }
+                    }
+                    TransferFile.RequireCurrent(e.Source, e.Snapshot);
+                    if (TransferFile.ApplyMetadata(w.Target, e.Snapshot)) MetadataPrecision(job);
+                    Check(job);
+                    if (job.Verify) Interlocked.Increment(ref job.VerifiedFiles);
+                    acceptedOutput = true;
+                    if (job.IsMove)
+                    {
+                        Boundary("before-source-removal", job, e.Source, w.Target); Check(job);
+                        TransferFile.RemoveCopiedSource(e.Source, e.Snapshot, e.Streams, job);
+                    }
+                    succeeded = true;
+                }
             }
-            else error = CopyOne(job, e.Source, w.Target, e.Size, w.Overwrite);
-            if (job.IsCancelled) return;
-            if (error == null) { Interlocked.Increment(ref job.DoneFiles); if (!sameDiskMove) lock (copied) copied.Add((e.Source, w.Target, e.Size, e.Relative)); }
-            else job.Errors.Enqueue($"{e.Relative}: {error}"); // one bad file doesn't stop the other thousand
+            catch (OperationCanceledException) { if (!job.IsCancelled) job.Cancel(); }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException or System.Security.SecurityException)
+            { job.Errors.Enqueue($"{e.Relative}: {ex.Message}"); }
+            finally
+            {
+                if (job.IsCancelled && !acceptedOutput && copiedOutput is { } output)
+                {
+                    try
+                    {
+                        TransferFile.RemoveIncompleteCopy(w.Target, output);
+                        if (countedCopy) Interlocked.Decrement(ref job.CopiedFiles);
+                    }
+                    catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                    { job.Errors.Enqueue("Incomplete copy could not be removed at " + w.Target + ": " + ex.Message); }
+                }
+                Interlocked.Decrement(ref job.ParallelWorkers);
+                if (job.Concurrent) job.Current = $"{job.ParallelWorkers} active files";
+                else if (!job.IsCancelled) job.Phase = Phase.Copying;
+            }
+            if (succeeded) Interlocked.Increment(ref job.DoneFiles);
+            if (succeeded || (copiedOutput != null && File.Exists(w.Target))) Arrived(e.Relative);
         }
 
-        // 1.0.61: small files several at a time where both ends take it well (SSDs, network shares: a small file is mostly
-        // waiting, on the drive or the network); on a spinning disk the heads would only jump between them, so one by one.
-        // Big files always one by one: each already keeps the drive busy.
-        bool together = job.Parallel && Fast(job.Destination) && job.Sources.All(Fast);
-        var small = together ? work.Where(w => w.File.Size < ParallelBelow).ToList() : new();
         if (small.Count > 1)
             System.Threading.Tasks.Parallel.ForEach(small, new ParallelOptions { MaxDegreeOfParallelism = ParallelWays }, (w, state) => { if (job.IsCancelled) state.Stop(); else One(w); });
         foreach (var w in small.Count > 1 ? work.Except(small) : work)
         {
-            if (job.IsCancelled) return;
+            if (job.IsCancelled) break;
             One(w);
         }
+        job.Arrivals = arrivals.ToList();
         if (job.IsCancelled) return;
-
-        var bad = job.Verify && !job.IsCancelled ? VerifyAll(job, copied) : new HashSet<string>();
-
-        // Only now, with everything on the far side, does a cross-volume move delete anything —
-        // and never a source whose copy failed verification.
-        if (job.IsMove && !job.IsCancelled)
+        foreach (var directory in plan.Dirs.OrderByDescending(directory => directory.Relative.Length))
         {
-            foreach (var s in copied.Select(c => c.Source).Where(x => !bad.Contains(x))) try { File.Delete(s); } catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { job.Errors.Enqueue($"{s}: not removed, {ex.Message}"); }
-            foreach (var s in job.Sources.Where(Directory.Exists)) RemoveEmptyTree(s);
-        }
-    }
-
-    // Reads both copies back and compares xxHash3 digests. Returns the sources that don't match.
-    static HashSet<string> VerifyAll(Job job, List<(string Source, string Target, long Size, string Relative)> files)
-    {
-        var bad = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        job.Phase = Phase.Verifying;
-        job.DoneBytes = 0;
-        job.TotalBytes = files.Sum(f => f.Size) * 2; // both copies are read
-        foreach (var f in files)
-        {
-            if (job.IsCancelled) break;
-            job.Current = f.Relative; job.CurrentSize = f.Size * 2; job.CurrentDone = 0;
+            Check(job);
             try
             {
-                var a = Digest(job, f.Source);
-                var b = Digest(job, f.Target);
-                if (a == null || b == null) break; // cancelled midway: says nothing either way
-                if (a != b) { bad.Add(f.Source); job.Errors.Enqueue($"{f.Relative}: copy does not match the source"); }
+                string target = Path.Combine(job.Destination, directory.Relative);
+                TransferFile.RequirePlainDestination(target);
+                if (TransferFile.ApplyMetadata(target, directory.Snapshot)) MetadataPrecision(job);
+                if (!job.IsMove) continue;
+                var current = TransferFile.Inspect(directory.Source);
+                if (current.Volume != directory.Snapshot.Volume || current.Id != directory.Snapshot.Id || current.Attributes.HasFlag(FileAttributes.ReparsePoint))
+                    throw new IOException("A source folder changed identity; it was retained: " + directory.Source);
+                string[] remaining = Directory.GetFileSystemEntries(directory.Source);
+                if (remaining.Any(path => !directory.Children.Contains(Path.GetFileName(path))))
+                    throw new IOException("New source-folder members remain; the folder was retained: " + directory.Source);
+                if (remaining.Length == 0) Directory.Delete(directory.Source);
             }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-            {
-                bad.Add(f.Source);
-                job.Errors.Enqueue($"{f.Relative}: could not verify, {ex.Message}");
-            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { job.Errors.Enqueue(ex.Message); }
         }
-        return bad;
     }
-
+    static void Check(Job job)
+    {
+        job.WaitUntilResumed();
+        if (job.IsCancelled) throw new OperationCanceledException();
+    }
+    static void MetadataPrecision(Job job)
+    {
+        const string note = "Destination filesystem timestamp precision differs; stored timestamps were rounded.";
+        if (!job.Notes.Contains(note)) job.Notes.Enqueue(note);
+    }
+    static void RequireStreams(string source, IReadOnlyList<TransferFile.StreamEntry> expected)
+    {
+        if (!TransferFile.Streams(source).SequenceEqual(expected)) throw new IOException("A file's stream set changed; publication/source removal was refused: " + source);
+    }
+    static void CheckTarget(string target, bool overwrite)
+    {
+        TransferFile.RequirePlainDestination(target);
+        if (Directory.Exists(target)) throw new IOException("A folder occupies the destination file: " + target);
+        if (!overwrite && File.Exists(target)) throw new IOException("A destination appeared after planning: " + target);
+    }
+#if DEBUG
+    internal static Action<string, Job, string, string> VerificationBoundary;
+#endif
+    static void Boundary(string phase, Job job, string source, string target)
+    {
+#if DEBUG
+        VerificationBoundary?.Invoke(phase, job, source, target);
+#endif
+    }
     static ulong? Digest(Job job, string path)
     {
         var hasher = new System.IO.Hashing.XxHash3();
-        var buffer = new byte[1024 * 1024];
-        using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read, 1, FileOptions.SequentialScan);
-        int n;
-        while ((n = fs.Read(buffer, 0, buffer.Length)) > 0)
-        {
-            if (job.IsCancelled) return null;
-            job.WaitUntilResumed();
-            hasher.Append(buffer.AsSpan(0, n));
-            job.AddBytes(n);
-        }
-        return hasher.GetCurrentHashAsUInt64();
-    }
-
-    static void RemoveEmptyTree(string root)
-    {
+        var buffer = System.Buffers.ArrayPool<byte>.Shared.Rent(1024 * 1024);
         try
         {
-            // A junction or folder link was left alone by the copy. Walking into it would delete empty
-            // folders in whatever it points to, and deleting it would lose the link: it stays, and so
-            // does the folder holding it.
-            if (File.GetAttributes(root).HasFlag(FileAttributes.ReparsePoint)) return;
-            foreach (var d in Directory.GetDirectories(root)) RemoveEmptyTree(d);
-            Directory.Delete(root); // throws if something was left (skipped/failed files) — then it stays
+            using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, 1, FileOptions.SequentialScan);
+            while (true)
+            {
+                job.WaitUntilResumed();
+                if (job.IsCancelled) return null;
+                int n = fs.Read(buffer, 0, 1024 * 1024);
+                if (n == 0) break;
+                hasher.Append(buffer.AsSpan(0, n));
+                job.AddVerificationBytes(n);
+                Boundary("verification-chunk", job, path, null);
+            }
+            return hasher.GetCurrentHashAsUInt64();
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
+        finally { System.Buffers.ArrayPool<byte>.Shared.Return(buffer); }
     }
 
-    static string UniqueName(string target)
+    static string UniqueName(string target, HashSet<string> reserved)
     {
         string dir = Path.GetDirectoryName(target), stem = Path.GetFileNameWithoutExtension(target), ext = Path.GetExtension(target);
         for (int n = 2; n < 10000; n++)
         {
             var candidate = Path.Combine(dir, $"{stem} ({n}){ext}");
-            if (!File.Exists(candidate) && !Directory.Exists(candidate)) return candidate;
+            if (!File.Exists(candidate) && !Directory.Exists(candidate) && reserved.Add(candidate)) return candidate;
         }
-        return target;
+        throw new IOException("No unoccupied destination name is available: " + target);
     }
 
     /// Explorer's name for a duplicate beside the original: "a - Copy.txt", then "a - Copy (2).txt"; a folder keeps
@@ -431,7 +552,7 @@ public static class Ferry
             var candidate = Path.Combine(dir, $"{stem} - Copy{(n > 1 ? $" ({n})" : "")}{ext}");
             if (!File.Exists(candidate) && !Directory.Exists(candidate)) return candidate;
         }
-        return path;
+        throw new IOException("No unoccupied duplicate name is available: " + path);
     }
 
     // ---- several at once: on which drives ----
@@ -469,23 +590,34 @@ public static class Ferry
     const uint COPY_FILE_FAIL_IF_EXISTS = 0x1, COPY_FILE_NO_BUFFERING = 0x1000;
     const long UnbufferedThreshold = 64L * 1024 * 1024; // big files bypass the cache instead of evicting everything else
     const uint PROGRESS_CONTINUE = 0, PROGRESS_CANCEL = 1;
-    const uint MOVEFILE_REPLACE_EXISTING = 0x1, MOVEFILE_COPY_ALLOWED = 0x2, MOVEFILE_WRITE_THROUGH = 0x8;
 
     delegate uint ProgressRoutine(long total, long transferred, long streamSize, long streamTransferred, uint stream, uint reason, IntPtr src, IntPtr dst, IntPtr data);
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
     static extern bool CopyFileEx(string src, string dst, ProgressRoutine progress, IntPtr data, IntPtr cancel, uint flags);
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-    static extern bool MoveFileEx(string src, string dst, uint flags);
+    static extern bool MoveFileEx(string source, string destination, uint flags);
 
     static string Long(string p) => p.StartsWith(@"\\?\") ? p : p.StartsWith(@"\\") ? @"\\?\UNC\" + p[2..] : @"\\?\" + p;
     static string LastError() => new Win32Exception(Marshal.GetLastWin32Error()).Message;
 
-    static string CopyOne(Job job, string src, string dst, long size, bool overwrite)
+    static string CopyOne(Job job, string src, string dst, long size, bool overwrite, out TransferFile.Stamp? output)
     {
         long seen = 0;
-        ProgressRoutine cb = (_, transferred, _, _, _, _, _, _, _) =>
+        TransferFile.Stamp? copied = null;
+        Exception observationFailure = null;
+        ProgressRoutine cb = (_, transferred, _, _, _, _, _, destinationHandle, _) =>
         {
             if (transferred > seen) { job.AddBytes(transferred - seen); seen = transferred; }
+            try
+            {
+                if (copied == null)
+                {
+                    using var borrowed = new Microsoft.Win32.SafeHandles.SafeFileHandle(destinationHandle, ownsHandle: false);
+                    copied = TransferFile.ReadStamp(borrowed, dst);
+                }
+                if (transferred > 0) Boundary("copy-chunk", job, src, dst);
+            }
+            catch (Exception ex) { observationFailure = ex; return PROGRESS_CANCEL; } // never unwind a managed exception across the native callback
             // Pause blocks inside the copy with both handles open; resume continues exactly here.
             job.WaitUntilResumed();
             return job.IsCancelled ? PROGRESS_CANCEL : PROGRESS_CONTINUE;
@@ -494,11 +626,10 @@ public static class Ferry
         bool ok = CopyFileEx(Long(src), Long(dst), cb, IntPtr.Zero, IntPtr.Zero, flags);
         var err = ok ? null : LastError();
         GC.KeepAlive(cb);
-        if (!ok && job.IsCancelled)
-        {
-            try { File.Delete(dst); } catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { } // partial file
-            return null;
-        }
+        output = copied;
+        if (ok && output == null) output = TransferFile.Inspect(dst); // a completed empty file may produce no data callback
+        if (observationFailure != null) return "Transfer observation failed: " + observationFailure.Message;
+        if (!ok && job.IsCancelled) return null; // native PROGRESS_CANCEL owns cancellation during copying
         return err;
     }
 }

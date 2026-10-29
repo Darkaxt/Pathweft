@@ -178,7 +178,7 @@ public partial class MainWindow
             try { pane.Listed = false; request(); await listed.Task; }
             finally { pane.StatsChanged -= Changed; pane.Error -= Failed; }
         }
-        async Task<Job> Paste(PaneView pane, Choice? choice = null, bool expectDone = true)
+        async Task<Job> Paste(PaneView pane, Choice? choice = null, bool expectDone = true, bool expectFailure = false)
         {
             pane.ListForVerification.SelectedItems.Clear(); // Paste into the viewed folder's background, not a selected child.
             var prior = jobs.ToHashSet(); Job job;
@@ -208,7 +208,7 @@ public partial class MainWindow
             }
             await job.Completion; await clipboardOperation;
             observations.Add(new { diagnostic = "Ferry archive outcome", phase = job.Phase.ToString(), errors = job.Errors.ToArray(), notes = job.Notes.ToArray(), job.DoneFiles, job.TotalFiles, job.SkippedFiles });
-            Check(expectDone ? job.Phase == Phase.Done && job.Errors.IsEmpty : job.Phase == Phase.Cancelled, expectDone ? "Actual paste finished in the one Ferry job owner" : "Interrupted paste terminates in the existing Ferry owner");
+            Check(expectDone ? job.Phase == Phase.Done && job.Errors.IsEmpty : expectFailure ? job.Phase == Phase.Failed && !job.Errors.IsEmpty : job.Phase == Phase.Cancelled, expectDone ? "Actual paste finished in the one Ferry job owner" : expectFailure ? "Failed paste reports failure in the existing Ferry owner" : "Cancelled paste reports cancellation in the existing Ferry owner");
             return job;
         }
         string Hash(string path) => Archive.Fingerprint(path);
@@ -450,7 +450,7 @@ public partial class MainWindow
             }
             Check(Hash(archive) == originalArchive && File.Exists(cancelSource), "ARCHIVE-04 real transfer-card cancellation before publication preserves archive and cut source");
             Archive.VerificationBoundary = phase => { if (phase == "before-source-removal") File.AppendAllText(cancelSource, " changed concurrently"); };
-            try { await Paste(Right, expectDone: false); }
+            try { await Paste(Right, expectDone: false, expectFailure: true); }
             finally { Archive.VerificationBoundary = null; }
             Check(File.ReadAllText(cancelSource).EndsWith(" changed concurrently") && Archive.Read(archive).Any(e => e.Path == "cancel.txt"), "ARCHIVE-04 concurrent source change retains the source after a verified destination was published");
             await S1Verification.Navigate(Left, Path.Combine(containers, "sample.rar")); await Select(Left, "helloworld.txt");

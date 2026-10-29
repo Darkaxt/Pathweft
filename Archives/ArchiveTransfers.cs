@@ -27,6 +27,8 @@ internal static partial class Archive
             Check(job); var attributes = File.GetAttributes(path);
             if ((attributes & FileAttributes.ReparsePoint) != 0) throw new IOException("Archive transfers do not follow links: " + path);
             bool dir = (attributes & FileAttributes.Directory) != 0;
+            if (TransferFile.Streams(path, dir).Any(stream => stream.Name != "::$DATA"))
+                throw new IOException("Archive transfers cannot preserve filesystem alternate streams; the source is retained: " + path);
             Add(new(path, name, dir, dir ? 0 : new FileInfo(path).Length, File.GetLastWriteTime(path), dir ? "directory" : Fingerprint(path)));
             if (dir)
             {
@@ -195,9 +197,7 @@ internal static partial class Archive
         foreach (var member in completed.Where(m => m.Container == null && !m.Directory))
         {
             Check(job);
-            using var source = new FileStream(member.Source, FileMode.Open, FileAccess.Read, FileShare.Read | FileShare.Delete);
-            if (Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(source)) != member.Hash) throw new IOException("A moved source changed; it was retained.");
-            File.Delete(member.Source);
+            TransferFile.RemoveVerifiedSource(member.Source, member.Hash, job);
         }
         foreach (var directory in completed.Where(m => m.Container == null && m.Directory).OrderByDescending(m => m.Source.Length))
         {
