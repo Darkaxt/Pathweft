@@ -41,7 +41,7 @@ internal static class S5Benchmark
                 phase = job.Phase.ToString(), job.TotalFiles, job.DoneFiles, job.TotalBytes, job.DoneBytes, job.VerificationBytes,
                 errors = job.Errors.ToArray(), notes = job.Notes.ToArray(), job.SkippedFiles,
                 request.Verify, request.Parallel,
-                copyPolicy = "Ordinary data: shared buffered 1 MiB copy with source hash captured during writes; named streams/storage: native CopyFileEx, unbuffered from 64 MiB",
+                copyPolicy = "Single-stream data including compressed/sparse: shared buffered 1 MiB copy with source hash captured during writes; named streams/encryption: native CopyFileEx, unbuffered from 64 MiB; compression/sparse destination policy reported",
                 assemblySha256 = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(typeof(Ferry).Assembly.Location))),
                 operatingSystem = Environment.OSVersion.ToString(), runtime = Environment.Version.ToString(),
                 source = request.Source, destination = request.Destination,

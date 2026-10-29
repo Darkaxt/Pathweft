@@ -215,6 +215,17 @@ TeraCopy evidence drives transfer design. Read inherited source only for actual
 integration points/gaps and preservation of valid behavior; repeated upstream
 review is not a substitute for REA.
 
+Implementation decision under the user's existing instruction to match TeraCopy
+without optional protective workflows: qualified NTFS fixtures show that the
+donor copies compressed and sparse contents into ordinary destination files.
+Compression policy and sparse allocation are filesystem limitations to report
+under TRANSFER-04, not reasons to reject an otherwise correct copy. Keep source
+data, verification, cancellation and basic attributes/timestamps unchanged;
+report compression-state differences and lack of a sparse-allocation guarantee.
+Encrypted files still require encryption preservation or explicit failure;
+encrypted directory policy remains unsupported. This decision replaces the
+derived adoption document's earlier blanket storage-attribute failure rule.
+
 Before REA use, read the installed skill, gate/reconstruction references and
 `E:/Tools/REA/STORAGE.md`. Use the installed Coordinator workflow and version-pinned
 launcher, retaining original sessions through completion. Preserve existing

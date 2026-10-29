@@ -75,9 +75,9 @@ new changes require affected revalidation before renewed closure.
 | --- | --- | --- |
 | Repeated volume discovery | Implemented direct stream enumeration with documented unsupported-filesystem result, without a cache. Matched profile: 201 capability queries to 0. Native NTFS/ADS/cancellation/error contracts and real FAT32 refusal/rounding/disk-full pass; VHD detached. | Implemented and verified; renewed caller/profile reconciliation continues |
 | Repeated timestamp opens | Implemented one normally shared native SetFileTime handle. Matched profile: 303 explicit timestamp opens to 101 for 100 files and one directory. File/folder creation/access/write checks and FAT32 precision reporting pass. | Implemented and verified; remaining source/hash and scheduling inventory keeps S5 ACTIVE |
-| Source hashing reread | Ordinary data now hashes from the pooled 1 MiB copy buffer and rereads only the target. Real NTFS, long Unicode paths, cross-volume moves, cancellation, changed/short sources and real callers pass. Matched source NtReadFile calls fall 200 to 100; verification accounting reflects actual target reads. Native CopyFileEx remains for source/target named streams or special storage. | Plain path implemented and verified; qualify remaining native/storage cases and their possible source-read reductions before exhaustion |
+| Source hashing reread | Single-stream data, including compressed/sparse contents, hashes from the pooled 1 MiB copy buffer and rereads only the target. Real NTFS, long Unicode paths, cross-volume moves, cancellation, changed/short sources and real callers pass. Native CopyFileEx remains for named streams/encryption. Storage fixtures match the donor's ordinary destination layout with explicit notes; compressed directory/cross-volume/ADS cases pass. | Implemented and verified for the qualified cases; remaining source stamp/target EOF overhead below prevents exhaustion |
 | Native metadata / repeated path validation | Removed duplicate read-only scan ancestry checks. Separate state probes establish that all 101 attribute writes already matched, while timestamp sets remained necessary. Skip only the already-matching attribute setter using its existing query. Final profile: 0 attribute writes and 1,107 native opens versus 101 / 1,208 at 730b31d. | Reductions verified; source stamp-handle reuse and target EOF-read differences remain actionable investigation |
-| Scheduling / buffers / workload sensitivity | Two matched small/large/mixed rounds and a serial mixed diagnostic pass independent contents. Four-worker mixed copying and Release self-test outperform their serial samples locally. Keep the pooled 1 MiB buffer and current worker policy; different engine cache/native-I/O policies and startup costs are explicit. | Repeated workloads verified; remaining native/storage and applicable volume comparisons unresolved, no universal timing claim |
+| Scheduling / buffers / workload sensitivity | Two matched small/large/mixed rounds and a serial mixed diagnostic pass independent contents. Qualified compressed/sparse donor/current contents and reported storage sizes match; both read the source once. Four-worker mixed copying and Release self-test outperform their serial samples locally. Keep the pooled 1 MiB buffer/current workers. | Storage decision verified; remaining applicable volume/buffer comparisons unresolved, no universal timing claim |
 | Conflict / progress / pause / failure / recovery | Current native contracts and actual hidden pane/widget/archive controls pass, including partial/failed outcomes, direct overwrites, cleanup, source sharing and no foreground events. Abrupt child exit preserves the source and fresh resubmission verifies the whole copy. Real FAT32 disk-full removes the partial output, retains the source and detaches its VHD. Release self-test/audit pass without test hooks or donor assets. | Affected workflows verified for this iteration; revalidate relevant paths after further pipeline changes |
 
 The user clarified that deterministic support-operation reduction takes priority
@@ -92,6 +92,18 @@ the user left and requested delaying additional administrator simulations. The
 already accepted FAT32 test finished and detached; further work remains hidden
 and unprivileged until the user returns. This is no permission to weaken a later
 admin-dependent acceptance check or trigger additional approval dialogs.
+
+The next iteration qualified native storage behavior. The donor normalizes
+compression/sparse allocation instead of preserving the flags; the former
+Pathweft blanket failure was not donor behavior. The specification/adoption
+decision now reports these filesystem limitations while preserving required
+contents/basic metadata and encryption constraints. Ordinary buffered copying
+also removes the extra source hash pass for these inputs. CopyFile2 sparse and
+callback-compression prototypes were experimentally rejected as additional
+storage behavior outside the selected workflow, not deferred requirements.
+Current real hidden notes use the existing neutral theme, wrap and expose full
+detail; actual errors retain their red treatment. S5 remains the only ACTIVE
+stage, with source stamp/EOF and applicable volume/buffer findings unresolved.
 
 The [adoption contract](S5-TRANSFER-ADOPTION.md) and
 [verification record](verification/2026-10-29-s5.md) reconcile TRANSFER-01..06.

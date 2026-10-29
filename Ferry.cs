@@ -142,8 +142,9 @@ public class Job : INotifyPropertyChanged
     public bool HasConflicts => Phase == Phase.Conflicts;
     public string ConflictTitle => $"{Conflicts.Count} file(s) already exist in the destination";
     public bool HasErrors => Errors.Count > 0 || Notes.Count > 0;
+    public bool HasTransferErrors => !Errors.IsEmpty;
     public string ErrorSummary => string.Join("  ·  ", new[] { Errors.Count > 0 ? $"{Errors.Count} error(s)" : null }.Concat(Notes).Where(x => x != null));
-    public string ErrorDetail => string.Join("\n", Errors.Take(50));
+    public string ErrorDetail => string.Join("\n", Errors.Take(50).Concat(Notes));
     public string PauseGlyph => Paused ? "\uE768" : "\uE769";
     public string PauseText => Paused ? "Resume" : "Pause";
 
@@ -279,8 +280,8 @@ public static class Ferry
                 if (File.Exists(target)) throw new IOException("A file occupies the destination folder: " + rel);
                 if (TransferFile.Streams(fsi.FullName, directory: true).Any(s => s.Name != "::$DATA"))
                     throw new IOException("Folder alternate streams cannot be preserved by this transfer; the source is retained: " + rel);
-                if ((snapshot.Attributes & (FileAttributes.Encrypted | FileAttributes.Compressed)) != 0)
-                    throw new IOException("Directory encryption/compression policy cannot be reproduced by this transfer; the source is retained: " + rel);
+                if (snapshot.Attributes.HasFlag(FileAttributes.Encrypted))
+                    throw new IOException("Directory encryption policy cannot be reproduced by this transfer; the source is retained: " + rel);
                 plan.Dirs.Add(new(fsi.FullName, rel, snapshot)); Walk(fsi.FullName, rel);
             }
             else
@@ -419,7 +420,8 @@ public static class Ferry
                         }
                     }
                     TransferFile.RequireCurrent(e.Source, e.Snapshot);
-                    if (TransferFile.ApplyMetadata(w.Target, e.Snapshot)) MetadataPrecision(job);
+                    if (TransferFile.ApplyMetadata(w.Target, e.Snapshot, out var storageChanges)) MetadataPrecision(job);
+                    StoragePolicy(job, storageChanges);
                     Check(job);
                     if (job.Verify) Interlocked.Increment(ref job.VerifiedFiles);
                     acceptedOutput = true;
@@ -470,7 +472,8 @@ public static class Ferry
             {
                 string target = Path.Combine(job.Destination, directory.Relative);
                 TransferFile.RequirePlainDestination(target);
-                if (TransferFile.ApplyMetadata(target, directory.Snapshot)) MetadataPrecision(job);
+                if (TransferFile.ApplyMetadata(target, directory.Snapshot, out var storageChanges)) MetadataPrecision(job);
+                StoragePolicy(job, storageChanges);
                 if (!job.IsMove) continue;
                 var current = TransferFile.Inspect(directory.Source);
                 if (current.Volume != directory.Snapshot.Volume || current.Id != directory.Snapshot.Id || current.Attributes.HasFlag(FileAttributes.ReparsePoint))
@@ -496,6 +499,12 @@ public static class Ferry
     static void RequireStreams(string source, IReadOnlyList<TransferFile.StreamEntry> expected)
     {
         if (!TransferFile.Streams(source).SequenceEqual(expected)) throw new IOException("A file's stream set changed; publication/source removal was refused: " + source);
+    }
+    static void StoragePolicy(Job job, FileAttributes changes)
+    {
+        void Note(string text) { lock (job.Notes) { if (!job.Notes.Contains(text)) job.Notes.Enqueue(text); } }
+        if (changes.HasFlag(FileAttributes.Compressed)) Note("Compression settings differ from the source.");
+        if (changes.HasFlag(FileAttributes.SparseFile)) Note("Sparse layout is not preserved; the copy may use more disk space.");
     }
     static void CheckTarget(string target, bool overwrite)
     {
@@ -606,10 +615,10 @@ public static class Ferry
 
     static bool StreamData(FileEntry source, string destination, bool overwrite)
     {
-        const FileAttributes storage = FileAttributes.Encrypted | FileAttributes.Compressed | FileAttributes.SparseFile;
+        const FileAttributes storage = FileAttributes.Encrypted;
         if (source.Streams.Count != 1 || source.Streams[0].Name != "::$DATA" || (source.Snapshot.Attributes & storage) != 0) return false;
-        // Native replacement handles existing streams/storage; truncating only
-        // the unnamed stream must not silently retain or lose that state.
+        // Native replacement handles existing streams/encryption; truncating
+        // only the unnamed stream must not silently retain or lose that state.
         if (overwrite && File.Exists(destination))
             return (File.GetAttributes(destination) & storage) == 0 && TransferFile.Streams(destination).All(stream => stream.Name == "::$DATA");
         return true;

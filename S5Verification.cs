@@ -46,7 +46,7 @@ public partial class MainWindow
                     Click(Children<Button>(transfersWindow).Single(b=>b.DataContext==job && b.CommandParameter?.ToString()==choice.ToString()));
                 }
                 await job.Completion;await Dispatcher.InvokeAsync(()=>{},DispatcherPriority.ApplicationIdle);
-                checks.Add(new{callerOutcome=job.Title,phase=job.Phase.ToString(),job.TotalFiles,job.DoneFiles,job.VerifiedFiles,job.RenamedFiles,job.SkippedFiles,errors=job.Errors.ToArray()});
+                checks.Add(new{callerOutcome=job.Title,phase=job.Phase.ToString(),job.TotalFiles,job.DoneFiles,job.VerifiedFiles,job.RenamedFiles,job.SkippedFiles,errors=job.Errors.ToArray(),notes=job.Notes.ToArray()});
                 return job;
             }
             finally{Ferry.VerificationBoundary=null;}
@@ -79,6 +79,14 @@ public partial class MainWindow
             string moving=Write(source,"cross.txt","cross caller");await S1Verification.Navigate(Left,source);await S1Verification.Navigate(Right,cross);await Select(Left,"cross.txt");Settings.Verify=false;
             var moved=await Action(()=>Click(MoveButton));Settings.Verify=true;
             Check(moved.Successful&&moved.Verify&&moved.VerifiedFiles==1&&!File.Exists(moving)&&File.ReadAllText(Path.Combine(cross,"cross.txt"))=="cross caller","Real pane cross-volume Move verifies even with optional copy verification off");
+
+            await S1Verification.Navigate(Left,root);await S1Verification.Navigate(Right,target);await Select(Left,"storage-source");var storageCopy=await Action(()=>Click(CopyButton));
+            Check(storageCopy.Successful&&storageCopy.VerifiedFiles==2&&storageCopy.Notes.Any(note=>note.Contains("Compression"))&&storageCopy.Notes.Any(note=>note.Contains("Sparse"))&&storageCopy.StateGroup=="Done","Pane storage copy verifies contents and reports destination policy without a false failure");
+            await Render();
+            var storageNote=Children<TextBlock>(transfersWindow).Single(text=>text.DataContext==storageCopy&&text.Text==storageCopy.ErrorSummary);
+            Check(!storageCopy.HasTransferErrors&&storageNote.TextWrapping==TextWrapping.Wrap&&storageNote.Foreground.ToString()==FindResource("Muted").ToString()&&storageNote.ToolTip.ToString().Contains("Sparse"),"Storage notes wrap in the existing neutral theme and expose their complete detail");
+            await S1Verification.Snapshot(transfersWindow,evidence,"storage-policy-card");
+            await S1Verification.Navigate(Left,source);
 
             Write(source,"widget.txt","widget data");widget=new SearchWidgetWindow(this);widget.ShowSearch(source);await S1Verification.Navigate(widget.Pane,source);await Select(widget.Pane,"widget.txt");widget.Destination.Text=target;
             var widgetCopy=await Action(()=>Click(widget.CopyButton));

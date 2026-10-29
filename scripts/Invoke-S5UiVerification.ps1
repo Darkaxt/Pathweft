@@ -4,6 +4,8 @@ $ErrorActionPreference='Stop'
 $root=Join-Path 'D:\Temp\pathweft-s5-native' ('ui-'+[guid]::NewGuid().ToString('N'))
 $profile=Join-Path $root 'profile';$temporary=Join-Path $root 'temp'
 foreach($path in @($root,$profile,$temporary,(Join-Path $root 'source'),(Join-Path $root 'target'))) {[void][IO.Directory]::CreateDirectory($path)}
+& 'D:\Temp\pathweft-s5-native\contracts-build\artifacts\bin\TransferContracts\debug\TransferContracts.exe' --storage-fixture (Join-Path $root 'storage-source')
+if($LASTEXITCODE -ne 0){throw 'Owned storage fixture creation failed.'}
 [IO.File]::WriteAllLines((Join-Path $profile 'settings.txt'),@('backdrop=1','animations=0','smoothscroll=0','textscale=1','hidden=1','singlepane=0','preview=0','tray=0','wine=0','nativemenu=0','lastseen=1.0.62','taskbarsearch=0',"tabs.Left=$root\source","tabs.Right=$root\target"))
 $start=[Diagnostics.ProcessStartInfo]::new('D:\Temp\pathweft-s5-native\changed-build\artifacts\bin\FileExplorer\debug\Pathweft.exe')
 $start.UseShellExecute=$false;$start.CreateNoWindow=$true;$start.WindowStyle='Hidden'

@@ -73,7 +73,7 @@ deliberately holds fixture I/O for control tests; its durations are not benchmar
 
 | Behavior and evidence | Inherited integration gap | Decision and acceptance check |
 | --- | --- | --- |
-| Two reader threads, 1 MiB requests, separate write activity and target reread; `ev_6fe930b1f48d1ee945c58cef91e97a99f59f005fcf44c054897237f95762da1a`. | Ferry already has optional small-file concurrency and native copying. Donor thread count alone does not prove a better setting. | Keep the native copier and existing queue. Compare inherited and changed paths with identical workloads; tune concurrency/buffering only for measured benefit without correctness loss. No invented small-file packing or speedup claim. |
+| Two reader threads, 1 MiB requests, separate write activity and target reread; `ev_6fe930b1f48d1ee945c58cef91e97a99f59f005fcf44c054897237f95762da1a`. | Ferry already has optional small-file concurrency and native copying. Donor thread count alone does not prove a better setting. | Keep the queue with the buffered/native path selection below. Compare inherited and changed paths with identical workloads; tune concurrency/buffering only for measured benefit without correctness loss. No invented small-file packing or speedup claim. |
 | Copied and Verified are distinct native counters; `ev_b05ac74bcc3cb5079c96df02cf08b837697a01a18a0b3202a7e226b1d436e909`. | Done currently says Copied/Moved even after member errors, and filesystem skips shrink totals without a skipped count. | Preserve planned totals; report successful, skipped, failed, cancelled and verified outcomes accurately. Never label a failed/unverified member fully successful. Verify cards, aggregate progress, selection and undo/cut completion through real callers. |
 | Cross-volume copy, target verification read, then source DeleteFile; `ev_f7b520faecddeb57302e58be9847bb81bb2e181826414c2924ec373c38ca0ab8`, UI `ev_4e8ef17258878218618c2558f65011d0bc1d3d32b908a8b81c8bf60047db8ce0`. | Optional verification can remove an unchecked copied source; changed-source removal must be refused. | Cross-volume moves always verify before source removal. Write directly with normal sharing. Check the verified source at final removal, without a source lock held across copy/hash phases. Test copied moves, changing sources and failed verification; do not restore overwritten old contents. |
 | Same-volume MoveFileEx rename, no observed copy; `ev_298b6d3d3d1bf8e3f17f9df5e7aa1c6090e6db4a5c64649b2cbc2c8610d22c88`. | A whole-folder shortcut can move members Scan excluded and falsely count failures as done. | Use native MoveFileEx for planned files. Only ERROR_NOT_SAME_DEVICE selects copied/verified moving, including aliases across volumes. Count actual successes; keep merge/skips/links in the shared plan. A rename preserves file identity and is not a hash-verification pass. |
@@ -90,8 +90,9 @@ Under TRANSFER-07, ordinary single-stream data will use one normally shared
 source reader and a pooled 1 MiB buffer, writing directly while feeding xxHash3.
 Verification rereads the destination against that captured hash. The source is
 not opened again merely to calculate its hash. Retain CopyFileEx for named streams
-and encrypted/compressed/sparse storage requirements, including existing target
-streams/storage that ordinary truncation cannot reproduce correctly. Keep native
+and encryption, including existing target streams/encryption that ordinary
+truncation cannot reproduce correctly. Compressed and sparse single-stream data
+use the same transparent read/hash/write path. Keep native
 MoveFileEx for same-volume moves. This is one bounded path inside the existing
 Ferry job and queue, not a provider framework or separate transfer service.
 
@@ -103,6 +104,24 @@ failures and real callers before accepting the change. Source/target stream-set
 changes must still be refused; stream discovery is part of preserving the native
 path's behavior, not an optional guard. Native storage cases remain explicit
 comparison work until their best supported path has evidence.
+
+The qualified storage fixture confirms that TeraCopy writes identical contents
+while dropping source compression/sparse flags. CopyFileEx behaves similarly.
+The earlier blanket rejection of these storage changes was an implementation
+restriction, not a recovered donor behavior. Follow the specification's existing
+filesystem-limit reporting: compression follows destination policy and sparse
+hole allocation is not promised; report these differences as notes. Copies/moves
+still require their selected data verification and source-retention rules.
+Compression policy is not encryption: missing required encryption still fails,
+and encrypted directory policy remains refused. No EFS key/certificate setup is
+performed for these trials.
+
+Standalone probes showed that callback compression control and CopyFile2 sparse
+flags could preserve additional storage state, but those are not adopted. Sparse
+CopyFile2 also denied a concurrent source writer in the probe. A new native
+callback path solely to preserve physical allocation would exceed the selected
+donor behavior; ordinary buffered data copying already satisfies this contract.
+The experiment is a rejected implementation candidate, not a deferred feature.
 
 The separate metadata-state probe found that the ordinary 100-file tree's 101
 attribute writes all requested the already stored value; timestamp writes were
@@ -127,10 +146,11 @@ audit/ACL cloning, every cloud placeholder or every remote filesystem semantic
 is not established by the donor's controls; support or refusal must be explicit.
 Destination permissions follow normal native inheritance. Reparse entries are
 reported as excluded; their targets are not recursively copied. Hard-link copies
-are independent files, with a note. Folder alternate streams and folder encryption/
-compression policies are refused. Named streams require destination support;
-FAT32 timestamp rounding is reported. Unsupported storage attributes produce an
-explicit failure. No physical power-loss durability guarantee is made.
+are independent files, with a note. Folder alternate streams and folder encryption
+policies are refused. Folder compression follows destination policy. Named streams
+require destination support; FAT32 timestamp rounding is reported. Unsupported
+encryption produces explicit failure; compression/sparse differences are notes,
+not a failed content transfer. No physical power-loss durability guarantee is made.
 Native copying and the ordinary direct path refuse existing ReadOnly, Hidden or
 System overwrite targets with a failed outcome and retain both files. Attribute
 preservation on new files and supported overwrites remains required; no implicit

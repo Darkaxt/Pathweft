@@ -11,10 +11,12 @@ using FileExplorer;
 // Diagnostic reproductions during implementation. Complete S5 acceptance also
 // requires the connected WPF/action/archive callers and preservation workflows.
 if(args.Length==2 && args[0]=="--crash-child") return TransferChecks.CrashChild(args[1]);
-if (args.Length != 2 || args[0] is not ("--probe-outcomes" or "--contracts" or "--full-volume" or "--restart" or "--allocation-probe" or "--volume-alias" or "--allocation-breakdown" or "--release-audit")) return 2;
+if (args.Length != 2 || args[0] is not ("--probe-outcomes" or "--contracts" or "--full-volume" or "--restart" or "--allocation-probe" or "--volume-alias" or "--allocation-breakdown" or "--release-audit" or "--storage-probe" or "--storage-fixture")) return 2;
 string root = Path.GetFullPath(args[1]);
 if (!root.StartsWith(@"D:\Temp\pathweft-s5-native\", StringComparison.OrdinalIgnoreCase) || Directory.Exists(root)) return 2;
 Directory.CreateDirectory(root);
+if(args[0]=="--storage-probe") return TransferChecks.StorageProbe(root);
+if(args[0]=="--storage-fixture"){TransferChecks.StorageFixture(root);return 0;}
 if(args[0]=="--restart") return await TransferChecks.Restart(root);
 if(args[0]=="--release-audit")
 {
@@ -81,6 +83,73 @@ return results.All(result=>result.passed)?0:1;
 internal static class TransferChecks
 {
     [DllImport("kernel32.dll",CharSet=CharSet.Unicode,SetLastError=true)] static extern bool CreateHardLinkW(string name,string existing,IntPtr security);
+    [DllImport("kernel32.dll",SetLastError=true)] static extern bool DeviceIoControl(Microsoft.Win32.SafeHandles.SafeFileHandle file,uint code,byte[] input,int inputBytes,IntPtr output,int outputBytes,out int returned,IntPtr overlapped);
+    [DllImport("kernel32.dll",CharSet=CharSet.Unicode,SetLastError=true)] static extern uint GetCompressedFileSizeW(string path,out uint high);
+    [DllImport("kernel32.dll",CharSet=CharSet.Unicode,SetLastError=true)] static extern Microsoft.Win32.SafeHandles.SafeFileHandle CreateFileW(string path,uint access,uint share,IntPtr security,uint disposition,uint flags,IntPtr template);
+    delegate uint CopyProgress(long total,long transferred,long streamSize,long streamTransferred,uint stream,uint reason,IntPtr source,IntPtr target,IntPtr state);
+    delegate uint Copy2Progress(IntPtr message,IntPtr context);
+    [DllImport("kernel32.dll",CharSet=CharSet.Unicode,SetLastError=true)] static extern bool CopyFileExW(string source,string target,CopyProgress progress,IntPtr state,IntPtr cancel,uint flags);
+    [DllImport("kernel32.dll",SetLastError=true)] static extern bool FlushFileBuffers(IntPtr file);
+    [StructLayout(LayoutKind.Sequential)] struct CopyParameters{internal uint Size,Flags;internal IntPtr Cancel,Callback,Context;}
+    [DllImport("kernel32.dll",CharSet=CharSet.Unicode)] static extern int CopyFile2(string source,string target,ref CopyParameters parameters);
+    static void StorageState(FileStream file,uint control,byte[] input)
+    {
+        if(!DeviceIoControl(file.SafeFileHandle,control,input,input?.Length??0,IntPtr.Zero,0,out _,IntPtr.Zero))throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error());
+    }
+    static long Allocated(string file){uint low=GetCompressedFileSizeW(file,out uint high);if(low==uint.MaxValue)throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error());return ((long)high<<32)|low;}
+    internal static (string Compressed,string Sparse) StorageFixture(string root)
+    {
+        string compressed=Path.Combine(root,"compressed.bin"),sparse=Path.Combine(root,"sparse.bin");
+        using(var file=new FileStream(compressed,FileMode.CreateNew,FileAccess.ReadWrite,FileShare.None)){StorageState(file,0x9c040,new byte[]{1,0});file.Write(Enumerable.Repeat((byte)73,2*1024*1024+17).ToArray());file.Flush(true);}
+        using(var file=new FileStream(sparse,FileMode.CreateNew,FileAccess.ReadWrite,FileShare.None)){StorageState(file,0x900c4,null!);file.SetLength(8*1024*1024+31);file.WriteByte(11);file.Position=file.Length-1;file.WriteByte(29);file.Flush(true);}
+        if(!File.GetAttributes(compressed).HasFlag(FileAttributes.Compressed)||!File.GetAttributes(sparse).HasFlag(FileAttributes.SparseFile)||Allocated(sparse)>=new FileInfo(sparse).Length/2)throw new IOException("Storage fixture was not qualified.");
+        return (compressed,sparse);
+    }
+    internal static int StorageProbe(string root)
+    {
+        string source=Directory.CreateDirectory(Path.Combine(root,"source")).FullName,target=Directory.CreateDirectory(Path.Combine(root,"target")).FullName;
+        var files=StorageFixture(source);string empty=Path.Combine(source,"empty.bin");
+        using(var file=new FileStream(empty,FileMode.CreateNew,FileAccess.ReadWrite,FileShare.None)){StorageState(file,0x9c040,new byte[]{1,0});}
+        File.SetAttributes(files.Compressed,File.GetAttributes(files.Compressed)|FileAttributes.ReadOnly);
+        var rows=new List<object>();
+        foreach(var item in new[]{("compressed-default",files.Compressed,1u,false),("compressed-callback",files.Compressed,1u,true),("compressed-empty",empty,1u,true),("sparse-default",files.Sparse,1u,false),("sparse-callback",files.Sparse,1u,true),("sparse-enabled",files.Sparse,0x20000001u,false),("sparse-copy2",files.Sparse,0x20000001u,false)})
+        {
+            string output=Path.Combine(target,item.Item1+".bin");int callbackError=0,callbacks=0,controls=0;bool configured=false;var messages=new List<object>();bool? sourceSharing=null;
+            CopyProgress callback=(total,transferred,streamSize,streamTransferred,stream,reason,src,dst,state)=>
+            {
+                callbacks++;
+                if(item.Item4&&stream==1&&!configured&&!dst.Equals(IntPtr.Zero))
+                {
+                    configured=true;controls++;
+                    using var handle=new Microsoft.Win32.SafeHandles.SafeFileHandle(dst,false);
+                    byte[] input=item.Item2==files.Sparse?null!:new byte[]{1,0};uint control=item.Item2==files.Sparse?0x900c4u:0x9c040u;
+                    if(!DeviceIoControl(handle,control,input,input?.Length??0,IntPtr.Zero,0,out _,IntPtr.Zero)){callbackError=Marshal.GetLastWin32Error();return 1;}
+                }
+                // Diagnostic allocation qualification only; never a product flush policy.
+                if(transferred==total&&!FlushFileBuffers(dst)){callbackError=Marshal.GetLastWin32Error();return 1;}
+                return 0;
+            };
+            bool ok;int error;
+            if(item.Item1=="sparse-copy2")
+            {
+                Copy2Progress progress=(message,_)=>
+                {
+                    int type=Marshal.ReadInt32(message);long total=type==2?Marshal.ReadInt64(message,72):type==4?Marshal.ReadInt64(message,56):-1;
+                    messages.Add(new{type,total,thread=Environment.CurrentManagedThreadId});callbacks++;
+                    if(type==3&&sourceSharing==null){try{using var shared=new FileStream(item.Item2,FileMode.Open,FileAccess.ReadWrite,FileShare.ReadWrite|FileShare.Delete);sourceSharing=true;}catch(IOException){sourceSharing=false;}}
+                    return 0;
+                };
+                var parameters=new CopyParameters{Size=(uint)Marshal.SizeOf<CopyParameters>(),Flags=item.Item3,Callback=Marshal.GetFunctionPointerForDelegate(progress)};
+                int result=CopyFile2(item.Item2,output,ref parameters);ok=result>=0;error=result;GC.KeepAlive(progress);
+                if(ok){using var flush=new FileStream(output,FileMode.Open,FileAccess.Write,FileShare.ReadWrite|FileShare.Delete);flush.Flush(true);}
+            }
+            else {ok=CopyFileExW(item.Item2,output,callback,IntPtr.Zero,IntPtr.Zero,item.Item3);error=ok?0:Marshal.GetLastWin32Error();}
+            GC.KeepAlive(callback);
+            bool exists=File.Exists(output),same=false;if(exists){using var input=File.OpenRead(item.Item2);using var result=File.OpenRead(output);same=SHA256.HashData(input).SequenceEqual(SHA256.HashData(result));}
+            rows.Add(new{test=item.Item1,ok,error,callbackError,callbacks,controls,sourceSharing,messages,sourceAttributes=File.GetAttributes(item.Item2).ToString(),sourceAllocated=Allocated(item.Item2),destinationAttributes=exists?File.GetAttributes(output).ToString():null,destinationAllocated=exists?Allocated(output):-1,dataMatches=same});
+        }
+        File.WriteAllText(Path.Combine(root,"storage-probe.json"),JsonSerializer.Serialize(rows,new JsonSerializerOptions{WriteIndented=true}));Console.WriteLine(JsonSerializer.Serialize(rows));return 0;
+    }
     sealed record Result(string Contract, bool Passed, string Error = null);
     internal static int CrashChild(string root)
     {
@@ -227,6 +296,60 @@ internal static class TransferChecks
             Check((File.GetAttributes(output)&(FileAttributes.ReadOnly|FileAttributes.Hidden))==(FileAttributes.ReadOnly|FileAttributes.Hidden),"File attributes differ.");
             Check(Directory.Exists(Path.Combine(target,"metadata-input","empty")) && Directory.GetLastWriteTimeUtc(Path.Combine(target,"metadata-input"))==modified,"Directory metadata/empty folder differs.");
             Check(job.VerifiedFiles==1 && job.DoneFiles==1 && job.DoneBytes==job.TotalBytes && job.VerificationBytes==2*job.TotalBytes && NoStages(target),"Stream-aware progress/verification/staging contract differs.");
+        });
+        await Case("Overwriting a target with an old alternate stream uses complete native replacement",async()=>
+        {
+            string source=Folder("old-stream-input"),target=Folder("old-stream-target"),file=Write(source,"item.txt","new main data"),output=Write(target,"item.txt","old main data");
+            File.WriteAllText(output+":stale","old alternate data");
+            var job=await Copy(file,target);Complete(job);
+            bool stale=true;try{using var old=File.OpenRead(output+":stale");}catch(FileNotFoundException){stale=false;}
+            Check(!stale&&Hash(file)==Hash(output)&&job.VerificationBytes==2*job.TotalBytes,"Native replacement retained an old stream or plain truncation bypassed stream preservation.");
+        });
+        await Case("Compressed and sparse contents verify while destination storage policy is reported",async()=>
+        {
+            string source=Folder("storage-input"),target=Folder("storage-target");var (compressed,sparse)=StorageFixture(source);
+            File.SetAttributes(compressed,File.GetAttributes(compressed)|FileAttributes.ReadOnly);
+            Check(File.GetAttributes(compressed).HasFlag(FileAttributes.Compressed)&&File.GetAttributes(sparse).HasFlag(FileAttributes.SparseFile)&&Allocated(sparse)<new FileInfo(sparse).Length/2,"Storage fixture was not qualified.");
+            var job=await Copy(source,target);Complete(job);
+            string copiedCompressed=Path.Combine(target,"storage-input","compressed.bin"),copiedSparse=Path.Combine(target,"storage-input","sparse.bin");
+            Check(!File.GetAttributes(copiedCompressed).HasFlag(FileAttributes.Compressed)&&!File.GetAttributes(copiedSparse).HasFlag(FileAttributes.SparseFile)&&File.GetAttributes(copiedCompressed).HasFlag(FileAttributes.ReadOnly),"Destination storage policy or basic read-only attribute differs.");
+            Check(Hash(compressed)==Hash(copiedCompressed)&&Hash(sparse)==Hash(copiedSparse)&&job.VerificationBytes==job.TotalBytes&&!job.HasTransferErrors&&job.ErrorDetail.Contains("Sparse")&&job.Notes.Any(note=>note.Contains("Compression"))&&job.Notes.Any(note=>note.Contains("Sparse")),"Storage contents, verification accounting or explicit notes differ.");
+        });
+        await Case("Compressed directory contents follow destination policy with explicit reporting",async()=>
+        {
+            string source=Folder("compressed-directory-input"),target=Folder("compressed-directory-target");
+            using(var handle=CreateFileW(source,0xc0000000,7,IntPtr.Zero,3,0x02200000,IntPtr.Zero)){Check(!handle.IsInvalid,"Could not open owned directory.");Check(DeviceIoControl(handle,0x9c040,new byte[]{1,0},2,IntPtr.Zero,0,out _,IntPtr.Zero),"Could not mark owned directory compressed.");}
+            string file=Write(source,"item.txt","compressed directory contents");Check(File.GetAttributes(source).HasFlag(FileAttributes.Compressed)&&File.GetAttributes(file).HasFlag(FileAttributes.Compressed),"Compressed inheritance fixture was not qualified.");
+            var job=await Copy(source,target);Complete(job);string output=Path.Combine(target,"compressed-directory-input","item.txt");
+            Check(Hash(file)==Hash(output)&&job.Notes.Any(note=>note.Contains("Compression"))&&!File.GetAttributes(output).HasFlag(FileAttributes.Compressed),"Compressed directory was refused, lost data or hid policy reporting.");
+        });
+        await Case("Cross-volume compressed and sparse moves verify contents before removing sources",async()=>
+        {
+            string source=Folder("storage-move-input"),target=Path.Combine(@"E:\Temp\pathweft-s5-review",Path.GetFileName(root)+"-storage-move");Directory.CreateDirectory(target);var (compressed,sparse)=StorageFixture(source);string first=Hash(compressed),second=Hash(sparse);
+            Settings.Verify=false;
+            try {var job=await Copy(source,target,true);Complete(job);Check(!Directory.Exists(source)&&Hash(Path.Combine(target,"storage-move-input","compressed.bin"))==first&&Hash(Path.Combine(target,"storage-move-input","sparse.bin"))==second&&job.Verify&&job.VerificationBytes==job.TotalBytes&&job.Notes.Count>=2,"Copied storage move removed unchecked sources or hid normalization.");}
+            finally{Settings.Verify=true;}
+        });
+        await Case("Compressed alternate streams use native preservation with storage-policy reporting",async()=>
+        {
+            string source=Folder("compressed-stream-input"),target=Folder("compressed-stream-target");var (compressed,_)=StorageFixture(source);File.WriteAllText(compressed+":fixture","named stream");
+            var job=await Copy(compressed,target);Complete(job);string output=Path.Combine(target,"compressed.bin");
+            Check(Hash(compressed)==Hash(output)&&File.ReadAllText(output+":fixture")=="named stream"&&job.VerificationBytes==2*job.TotalBytes&&job.Notes.Any(note=>note.Contains("Compression")),"Native stream preservation or storage note differs.");
+        });
+        await Case("A source replaced by a link to its original file is refused before overwriting",async()=>
+        {
+            string source=Folder("source-link-input"),target=Folder("source-link-target"),file=Write(source,"item.txt","source data"),saved=Path.Combine(source,"original.txt"),output=Write(target,"item.txt","existing data");bool linked=false;
+            Hook((phase,_,path,_)=>{if(phase=="before-source-open"&&path==file&&!linked){File.Move(file,saved);File.CreateSymbolicLink(file,saved);linked=true;}});
+            var job=await Copy(file,target);
+            Check(linked&&job.Phase==Phase.Failed&&job.DoneFiles==0&&File.ReadAllText(saved)=="source data"&&File.ReadAllText(output)=="existing data","A source link was followed or overwrote the old destination.");
+        });
+        foreach(bool append in new[]{false,true})
+        await Case(append?"Target growth during verification is refused":"Target truncation during verification is refused",async()=>
+        {
+            string source=Folder("verify-size-input-"+append),target=Folder("verify-size-target-"+append),file=Write(source,"item.bin",new string('z',2*1024*1024+31)),output=Path.Combine(target,"item.bin");string original=Hash(file);bool edited=false;
+            Hook((phase,_,path,_)=>{if(phase=="verification-chunk"&&path==output&&!edited){using var edit=new FileStream(output,FileMode.Open,FileAccess.Write,FileShare.ReadWrite|FileShare.Delete);edit.SetLength(append?3*1024*1024:1024*1024+1);edited=true;}});
+            var job=await Copy(file,target);
+            Check(edited&&job.Phase==Phase.Failed&&job.VerifiedFiles==0&&Hash(file)==original&&File.Exists(output),"Changed target length was accepted or changed the source.");
         });
         await Case("Same-volume move renames the exact file identity and preserves empty directories",async()=>
         {

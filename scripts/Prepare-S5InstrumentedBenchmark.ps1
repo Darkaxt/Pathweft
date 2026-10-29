@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param([Parameter(Mandatory)][ValidateSet('Baseline','Changed','TeraCopy')][string]$Implementation,
-      [Parameter(Mandatory)][ValidateSet('small','large','mixed','smoke','profile')][string]$Workload,
+      [Parameter(Mandatory)][ValidateSet('small','large','mixed','storage','smoke','profile')][string]$Workload,
       [Parameter(Mandatory)][ValidatePattern('^[a-z0-9-]+$')][string]$RunId,
       [switch]$Serial,[switch]$Metadata)
 $ErrorActionPreference='Stop'
@@ -8,6 +8,10 @@ if($Serial -and $Implementation -eq 'TeraCopy'){throw 'Serial is a Pathweft queu
 if($Metadata -and $Workload -ne 'profile'){throw 'Metadata diagnostics use the bounded profile workload.'}
 $root='D:\Temp\pathweft-s5-native'
 $source=Join-Path $root "workloads\$Workload"
+if($Workload -eq 'storage' -and !(Test-Path -LiteralPath $source)){
+    & (Join-Path $root 'contracts-build/artifacts/bin/TransferContracts/debug/TransferContracts.exe') --storage-fixture $source
+    if($LASTEXITCODE -ne 0){throw 'Native storage fixture creation failed.'}
+}
 if(!(Test-Path -LiteralPath $source)) {
     [void][IO.Directory]::CreateDirectory($source)
     $random=[Random]::new(5705)
@@ -48,7 +52,7 @@ if($Implementation -eq 'TeraCopy'){
 $config=[ordered]@{temporary=$temporary;profile=$profile;entryReceipt=(Join-Path $case 'entry.json')}|ConvertTo-Json -Compress
 $script=(Get-Content -LiteralPath (Join-Path $PSScriptRoot 'S5BenchmarkPresentation.js') -Raw).Replace('__CONFIG__',$config)
 [IO.File]::WriteAllText((Join-Path $case 'observer.js'),$script)
-if($Workload -eq 'profile') {
+if($Workload -in @('profile','storage')) {
     $receipt=if($Metadata){'metadata-profile.json'}else{'io-profile.json'}
     $template=if($Metadata){'S5MetadataProfile.js'}else{'S5IoProfile.js'}
     $profileConfig=[ordered]@{source=$source;target=$target;receipt=(Join-Path $case $receipt)}|ConvertTo-Json -Compress

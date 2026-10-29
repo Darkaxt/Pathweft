@@ -122,8 +122,15 @@
             <ProgressBar DockPanel.Dock="Right" Width="100" Height="3" Value="{Binding CurrentFraction, Mode=OneWay}" Foreground="#8A97AA" Margin="10,0,0,0"/>
             <TextBlock Text="{Binding Current}" Foreground="#8A97AA" FontSize="11" TextTrimming="CharacterEllipsis"/>
           </DockPanel>
-          <TextBlock Text="{Binding ErrorSummary}" ToolTip="{Binding ErrorDetail}" Foreground="#F87171" FontSize="11" Margin="0,0,0,4"
-                     Visibility="{Binding HasErrors, Converter={StaticResource Vis}}"/>
+          <TextBlock Text="{Binding ErrorSummary}" ToolTip="{Binding ErrorDetail}" TextWrapping="Wrap" FontSize="11" Margin="0,0,0,4"
+                     Visibility="{Binding HasErrors, Converter={StaticResource Vis}}">
+            <TextBlock.Style>
+              <Style TargetType="TextBlock">
+                <Setter Property="Foreground" Value="{StaticResource Muted}"/>
+                <Style.Triggers><DataTrigger Binding="{Binding HasTransferErrors}" Value="True"><Setter Property="Foreground" Value="#F87171"/></DataTrigger></Style.Triggers>
+              </Style>
+            </TextBlock.Style>
+          </TextBlock>
           <!-- figures on the left, its buttons on the right -->
           <DockPanel>
             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">

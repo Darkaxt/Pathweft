@@ -17,6 +17,38 @@ public static class TransferBenchmarkProcess
     [DllImport("psapi.dll",SetLastError=true)] static extern bool GetProcessMemoryInfo(IntPtr process,ref MemoryInfo info,uint size);
     [DllImport("kernel32.dll",SetLastError=true)] static extern bool CloseHandle(IntPtr handle);
     [DllImport("kernel32.dll",SetLastError=true)] static extern IntPtr OpenProcess(uint access,bool inherit,uint pid);
+    [DllImport("kernel32.dll",SetLastError=true)] static extern bool TerminateProcess(IntPtr process,uint exitCode);
+    [DllImport("kernel32.dll",CharSet=CharSet.Unicode,SetLastError=true)] static extern uint GetCompressedFileSizeW(string path,out uint high);
+    public static long ReportedStorageBytes(string path)
+    {
+        uint low=GetCompressedFileSizeW(path,out uint high);
+        if(low==uint.MaxValue)throw new Win32Exception(Marshal.GetLastWin32Error());
+        return ((long)high<<32)|low;
+    }
+    public static object InspectNativeProcess(uint pid)
+    {
+        IntPtr process=OpenProcess(0x101000,false,pid);
+        if(process==IntPtr.Zero)return new{pid,opened=false,error=Marshal.GetLastWin32Error()};
+        try
+        {
+            if(!GetExitCodeProcess(process,out uint code)||!GetProcessTimes(process,out long created,out long exited,out long kernel,out long user))throw new Win32Exception(Marshal.GetLastWin32Error());
+            return new{pid,opened=true,exitCode=code,created,exited,kernel,user,waitState=WaitForSingleObject(process,0)};
+        }
+        finally{CloseHandle(process);}
+    }
+    public static void StopExactFailedProbe(uint pid,long expectedCreated)
+    {
+        IntPtr process=OpenProcess(0x101001,false,pid);
+        if(process==IntPtr.Zero)throw new Win32Exception(Marshal.GetLastWin32Error());
+        try
+        {
+            if(!GetProcessTimes(process,out long created,out _,out _,out _))throw new Win32Exception(Marshal.GetLastWin32Error());
+            if(created!=expectedCreated)throw new InvalidOperationException("The failed probe's native creation identity changed.");
+            if(WaitForSingleObject(process,0)==0)return;
+            if(!TerminateProcess(process,90))throw new Win32Exception(Marshal.GetLastWin32Error());
+        }
+        finally{CloseHandle(process);}
+    }
     public sealed class Result
     {
         public uint Pid,ExitCode;

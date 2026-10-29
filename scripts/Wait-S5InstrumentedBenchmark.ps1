@@ -17,7 +17,7 @@ try{
         $output=Join-Path $configuration.target ((Split-Path -Leaf $configuration.source)+'\'+$file.Name)
         $expected=(Get-FileHash -LiteralPath $file.FullName).Hash;$actual=(Get-FileHash -LiteralPath $output).Hash
         if($expected -ne $actual){throw 'Independent benchmark content mismatch.'}
-        [ordered]@{file=$file.Name;bytes=$file.Length;sha256=$actual}
+        [ordered]@{file=$file.Name;bytes=$file.Length;sha256=$actual;sourceAttributes=$file.Attributes.ToString();destinationAttributes=([IO.File]::GetAttributes($output)).ToString();sourceReportedStorageBytes=[TransferBenchmarkProcess]::ReportedStorageBytes($file.FullName);destinationReportedStorageBytes=[TransferBenchmarkProcess]::ReportedStorageBytes($output)}
     }
     if(@(Get-ChildItem -LiteralPath $configuration.target -File -Recurse).Count -ne $configuration.files){throw 'Unexpected output membership.'}
     $limitations=if(Test-Path -LiteralPath (Join-Path $case 'metadata-profiler.js')){'Metadata state probe adds queries; neither timing nor operation counts qualify as performance comparison.'}elseif(Test-Path -LiteralPath (Join-Path $case 'profiler.js')){'Diagnostic file-I/O hooks enabled; timing is not a performance comparison. NT and Win32 counters are separate layers, not additive.'}else{'Same Frida 17.23.2 presentation script for all engines; first observed GetCommandLineW through native exit; earlier initialization/injection excluded; peak memory includes instrumentation; no file-I/O hooks. Local warm-cache samples, not a general speed promise.'}

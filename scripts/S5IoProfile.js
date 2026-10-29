@@ -32,6 +32,9 @@ for(const api of ['NtQueryInformationFile','NtSetInformationFile'])hook(api,{onE
 for(const api of ['GetFileInformationByHandle','SetFileTime','SetFileInformationByHandle'])hook(api,{onEnter(args){const item=handles.get(args[0].toString());if(item)count(api,item.which);}});
 for(const api of ['GetFileAttributesW','GetFileAttributesExW','FindFirstStreamW','GetVolumePathNameW'])hook(api,{onEnter(args){count(api,role(stringAt(args[0])));}});
 hook('CopyFileExW',{onEnter(args){count('CopyFileExW',role(stringAt(args[0])));}});
+hook('CopyFile2',{onEnter(args){count('CopyFile2',role(stringAt(args[0])));}});
+hook('DeviceIoControl',{onEnter(args){const item=handles.get(args[0].toString());if(item)count('DeviceIoControl[code=0x'+args[1].toUInt32().toString(16)+']',item.which);}});
+hook('FlushFileBuffers',{onEnter(args){const item=handles.get(args[0].toString());if(item)count('FlushFileBuffers',item.which);}});
 hook('SetFileAttributesW',{onEnter(args){count('SetFileAttributesW',role(stringAt(args[0])));}});
 hook('GetVolumeInformationW',{onEnter(args){const path=normalize(stringAt(args[0]));if(path==='d:\\')count('GetVolumeInformationW','process-D-volume');}});
 for(const api of ['NtQueryAttributesFile','NtQueryFullAttributesFile'])hook(api,{onEnter(args){count(api,role(objectPath(args[0])));}});

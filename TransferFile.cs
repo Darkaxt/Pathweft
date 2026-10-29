@@ -117,7 +117,7 @@ internal sealed class TransferFile : IDisposable
         }
     }
 
-    internal static bool ApplyMetadata(string target, Stamp source)
+    internal static bool ApplyMetadata(string target, Stamp source, out FileAttributes storageChanges)
     {
         using (var handle = CreateFileW(Long(target), 0x100 /* FILE_WRITE_ATTRIBUTES */, 7, IntPtr.Zero, 3, OpenReparse | Backup, IntPtr.Zero))
         {
@@ -131,9 +131,10 @@ internal sealed class TransferFile : IDisposable
         if (current != desired) File.SetAttributes(target, desired);
         var actual = Inspect(target);
         if ((actual.Attributes & writable) != (source.Attributes & writable)) throw new IOException("The destination could not preserve basic file attributes: " + target);
-        const FileAttributes storage = FileAttributes.Encrypted | FileAttributes.Compressed | FileAttributes.SparseFile;
-        if ((actual.Attributes & source.Attributes & storage) != (source.Attributes & storage))
-            throw new IOException("The destination could not preserve encrypted/compressed/sparse attributes: " + target);
+        if (source.Attributes.HasFlag(FileAttributes.Encrypted) && !actual.Attributes.HasFlag(FileAttributes.Encrypted))
+            throw new IOException("The destination could not preserve encryption: " + target);
+        storageChanges = (actual.Attributes ^ source.Attributes) & (FileAttributes.Compressed | FileAttributes.SparseFile);
+        if (source.Attributes.HasFlag(FileAttributes.SparseFile)) storageChanges |= FileAttributes.SparseFile;
         return actual.Created != source.Created || actual.Modified != source.Modified || actual.Accessed != source.Accessed;
     }
 
