@@ -13,7 +13,9 @@ do not change its requirements or the user's standing instructions.
   findings inventory and affected acceptance are now verified COMPLETE.
   see `docs/verification/2026-10-29-s5.md` for the direct-write contract,
   measured performance limits and actual caller/preservation/recovery evidence.
-  S6-S8 remain NOT STARTED. Identify TeraCopy and derive adoption from REA
+  S6 is BLOCKED awaiting the user-controlled Sandbox-enablement reboot and
+  isolated runtime contract probes; S7-S8 remain NOT STARTED.
+  Identify TeraCopy and derive adoption from REA
   evidence before transfer implementation.
 - Keep one ACTIVE stage during authorized implementation. Reconcile complete
   features and actual integration evidence in the existing implementation plan.
@@ -35,8 +37,9 @@ do not change its requirements or the user's standing instructions.
   belongs to S3; native 7-Zip-backed browsing and rename/copy/cut/paste belong to S4.
 - S6 targets Everything results inside the existing StartAllBack menu, allowing a
   version-bound native hook after REA evidence. S7 owns the user-requested long-term
-  all-Everything search migration and WSearch service retirement. Preserve explicit
-  consumer/content/mail compatibility gaps; no service shutdown during planning.
+  Everything filesystem migration and Outlook-preserving WSearch scope reduction.
+  The user superseded service retirement; preserve explicit consumer/content/mail
+  compatibility gaps and leave live indexing configuration unchanged during S6.
 - Use Huashu design as a reference for new interfaces, aligned with the File Labs
   theme already in Pathweft. Run test windows hidden where possible; keep native
   physical focus/hotkey/shell claims separate from hidden rendered/action checks.

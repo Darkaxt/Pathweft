@@ -1,6 +1,6 @@
 # Pathweft specification
 
-Version 0.5 - 2026-10-29. Owner: Darkaxt.
+Version 0.6 - 2026-10-29. Owner: Darkaxt.
 
 This is the authoritative specification. The derived plan must preserve every
 requirement and acceptance criterion. Material scope changes require explicit
@@ -25,7 +25,10 @@ Everything inside the existing StartAllBack search, explicitly anticipating a
 hook/hack because native support appears absent. This is **S6 StartAllBack search
 integration**. The user then explicitly expanded the long-term outcome to
 **Everything in every search location and the Windows Search service disabled**.
-That migration/retirement is **S7**, after the focused StartAllBack integration;
+The user subsequently revised that target: **retain WSearch for Outlook, reduce
+its filesystem indexing scope and use Everything for filesystem search**. This
+explicitly supersedes service retirement; unavoidable Windows-managed indexing
+exceptions must be identified. That scoped migration is **S7**, after S6;
 final delivery moves to **S8**. This request authorizes specification/plan review,
 not immediate service shutdown, hook activation or modification of installed
 applications. The user then authorized the next implementation stage, S4, after
@@ -253,26 +256,30 @@ If evidence shows that in-menu integration cannot be implemented safely in the
 available supported environment, retain the unmet criteria and record the exact
 blocker. Do not silently substitute another UI or redefine the task as a hotkey.
 S6 leaves Windows Search services and other consumers unchanged while proving the
-in-menu adapter. S7 owns the broader replacement and service retirement explicitly
-requested afterward. Do not modify licensing/activation code.
+in-menu adapter. S7 owns the broader filesystem replacement and the user's revised
+Outlook-preserving indexing-scope reduction. Do not modify licensing/activation code.
 
-### Everything everywhere and Windows Search retirement
+### Everything filesystem search and Outlook-preserving Windows indexing
 
 | ID | Requirement and acceptance |
 | --- | --- |
-| EVERYWHERE-01 | Establish a finite, evidence-backed inventory of search surfaces/consumers on the target installation before service retirement: Pathweft, StartAllBack, Explorer, search-capable common Open/Save dialogs, applicable native Start/taskbar surfaces, and applications using Windows Search such as classic Outlook/Office. For each, record actual host/version, entry point, backend, required query/result semantics, current coverage and acceptance workflow. Include discovered dependencies; no silent exclusions. An unanswered applicability/semantics question remains an explicit gap, not assumed coverage. |
-| EVERYWHERE-02 | Route the inventoried system/file-search surfaces to the selected Everything engine, retaining their native entry points/results/actions wherever feasible. Use bounded source/native adapters and REA for unavailable host contracts. Verify actual typed query -> Everything result -> correct selection/open/reveal in each applicable surface, with WSearch unavailable in an isolated environment. A shortcut to a separate popup does not satisfy replacement of an existing search location. Record exact supported versions and capability limits. |
-| EVERYWHERE-03 | Reconcile filename/path search separately from content, metadata/property, app/settings/command and mail-store search. Preserve required useful search behavior when Windows Search is removed; do not label a filename result set equivalent to message/content/property queries. Establish whether the selected Everything version and supported APIs can supply each required semantic contract. Missing capability is a real feasibility/advancement blocker. Do not silently introduce another indexing engine, retain a hidden Windows Search dependency, or narrow the user's all-Everything target to claim success; any necessary scope/backend change needs explicit user direction. |
-| EVERYWHERE-04 | Only after all inventoried replacement workflows pass, carry out a reversible, explicitly recorded Windows Search (WSearch) service shutdown/disable as the specified migration outcome. Preserve its actual prior startup/delayed-start/running state and recovery procedure; do not delete its index, change unrelated services/policies or alter mailbox/user data as a side effect. Use the required administrator broker for actual service control. Verify replacements with the service stopped and Disabled, and verify state/behavior after reboot/sign-in. Current planning does not authorize this live change. |
-| EVERYWHERE-05 | Verify the integrated system with WSearch disabled: all required consumer workflows, index freshness, scope/Unicode, unavailable Everything, host updates, exit/restart, rollback and uninstall. Unknown versions/unavailable adapters must report the real loss of coverage; no silent dependency on a stopped Windows Search service or unrequested service restart. Verify actual restoration of the prior service/search configuration through the documented recovery path. Final acceptance requires closure of every inventoried consumer gap; S8 verifies the delivered packages and migration/recovery materials. |
+| EVERYWHERE-01 | Establish a finite, evidence-backed inventory of search surfaces/consumers before changing indexing scope: Pathweft, StartAllBack, Explorer, search-capable common Open/Save dialogs, applicable native Start/taskbar surfaces, and classic Outlook/Office. Record actual host/version, entry point, backend, query/result semantics and acceptance workflow. Inventory current file/protocol crawl-scope rules, Classic/Enhanced mode, Outlook inclusion and relevant account/cache/store search behavior. Identify unavoidable Windows-managed indexing locations and their purpose; do not silently classify ordinary filesystem indexing as an Outlook exception. Unanswered applicability/semantics questions remain gaps. |
+| EVERYWHERE-02 | Route inventoried filesystem-search surfaces to the selected Everything engine while retaining native entry points/results/actions wherever feasible. Use bounded source/native adapters and REA for unavailable contracts. Verify typed query -> actual Everything result -> correct selection/open/reveal with the selected filesystem locations excluded from Windows indexing. A separate popup does not replace an existing search location. Record exact supported versions and capability limits; prove the file result backend rather than inferring it from WSearch still running. |
+| EVERYWHERE-03 | Reconcile filename/path search separately from file contents/properties, app/settings/commands and mail-store search. Everything owns filesystem search; Outlook retains its native local Windows Search and applicable server-assisted behavior. Do not promise Everything mailbox search or change Outlook account/search providers. Qualify required file-content/property capabilities against the actual Everything version/APIs. Missing required behavior remains a feasibility blocker; no silent substitute engine or new non-mail WSearch dependency. Report Windows-managed exceptions explicitly. |
+| EVERYWHERE-04 | After replacement workflows pass, apply a reversible, recorded reduction of WSearch filesystem indexing scope while keeping WSearch available and Microsoft Outlook included. Exclude development/document and other selected filesystem roots, minimize duplicated file indexing and preserve required Outlook protocol/store indexing plus identified Windows-managed exceptions. Preserve actual prior crawl-scope/mode/service configuration and a verified recovery procedure. Use supported configuration APIs/UI and the administrator broker where required. Do not disable the service, delete its catalog, rebuild it by default, change unrelated policies or alter mailbox/user data. This revised plan does not itself authorize an immediate live change during S6. |
+| EVERYWHERE-05 | Verify native Everything filesystem workflows and Outlook mail search under the reduced indexing scope: scope readback, actual backend ownership, file index freshness, Unicode, unavailable Everything, host/app restart, reboot/sign-in, updates, rollback and uninstall. Qualify local/offline Outlook search for applicable accounts rather than relying only on server results. Report actual residual filesystem indexing and resource effects without promising zero background work. Restore and verify the prior scope/configuration through the recovery path. Close every inventoried consumer gap; S8 verifies delivered packages and migration/recovery materials. |
 
-This long-term direction supersedes the earlier blanket exclusion of Windows
-Search/Outlook changes only within the explicitly specified S7 replacement
-outcome. It is not an instruction to stop the current service now. Outlook and
-other non-file consumers are assessed dependencies, not presumed compatible or
-silently sacrificed. Universal replacement is an unproven engineering goal;
-StartAllBack hook feasibility and broader consumer compatibility remain separate
-questions. The plan cannot turn those unknowns into completed integration.
+The user's revised direction supersedes the former S7 requirement to stop/disable
+WSearch. Microsoft documents both configurable indexed locations and Outlook's
+included-location/service requirements. Keep the distinction between local and
+server-assisted mail search; do not attribute every Outlook failure to indexing.
+This is a specification change, not live configuration authorization during S6.
+Native file-surface feasibility and account-specific Outlook compatibility remain
+separate questions. The plan cannot turn either into completed integration.
+
+Primary sources: [Windows indexing scope](https://support.microsoft.com/en-us/windows/experience/performance-optimization/search-indexing-in-windows),
+[Outlook indexing/service checks](https://support.microsoft.com/en-gb/outlook/troubleshooting-outlook-search-issues?nochrome=true),
+[local versus service search](https://support.microsoft.com/en-us/support/known-issues/outlook-search-might-not-display-recent-emails-on-windows-11).
 
 ### Lifecycle, shell integration and final delivery
 
@@ -312,8 +319,8 @@ current implementation authorization and reconciliation are recorded in the plan
   shipping an unsupported runtime.
 - No Everything indexer rewrite, standalone donor-product requirement,
   desktop-shell replacement or unrelated expansion. S6 targets StartAllBack;
-  S7 explicitly owns the user's system-wide search replacement/service-retirement
-  goal, subject to actual consumer/semantic coverage and verified recovery.
+  S7 explicitly owns filesystem search replacement and Outlook-preserving indexing
+  scope reduction, subject to actual consumer/semantic coverage and verified recovery.
 - Existing application identity stays unchanged during setup; S1 must isolate it
   before runtime trials. No claim that the inherited installer is ready.
 - No implementation-stage releases. The final release belongs to S8 after all

@@ -1,18 +1,21 @@
 # Implementation and reconciliation
 
-Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.5, 2026-10-29,
+Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.6, 2026-10-29,
 including the user-authorized continued comparison requirement TRANSFER-07.
 
-Current authorization: S5 REA-driven transfer implementation, requested after
+Current authorization: S6 native StartAllBack search, explicitly authorized after
+S5 closure. Earlier S5 REA-driven transfer implementation was requested after
 S4U closure. Earlier S3 work was requested on
 2026-10-29 after S2 completion. The user also added the F3D prototype and a separate
 archive-browsing/editing stage. On 2026-10-29 the user added native StartAllBack
 search integration and the long-term all-Everything/Windows Search retirement
-goal, then authorized proceeding to the next stage after plan review.
-S1-S5, S4R and S4U are COMPLETE; S6-S8 remain NOT STARTED.
+goal, then revised S7 to retain WSearch for Outlook while reducing filesystem
+indexing overlap. This authorized specification change does not alter live settings.
+S1-S5, S4R and S4U are COMPLETE; S6 is BLOCKED; S7-S8 remain NOT STARTED.
 The user authorized trying rars on 2026-10-29 and delegated its integration
 choice. The user approved read-only icon cues and Ctrl+H/dot-name visibility;
-No implementation stage is ACTIVE. A wider Rust port is not in scope.
+There is no ACTIVE implementation stage while S6 awaits the user-controlled
+Sandbox-enablement reboot. A wider Rust port is not in scope.
 Native source/SDK integration is preferred. This
 plan neither authorizes itself nor adds approval checkpoints.
 
@@ -27,8 +30,8 @@ plan neither authorizes itself nor adds approval checkpoints.
 | S4R - Embedded writable RAR | COMPLETE | RAR-01..05, affected ARCHIVE-02..05/CORE/LIFE/DELIVERY-03 | S4 COMPLETE | Pinned loaded Rust DLL, real hidden pane/actions/queue, qualified solid/encrypted preservation and refusals, independent 7-Zip/UnRAR extraction, original/cut-source protection, clipboard rollback, cleanup and source commit/remote readback; see S4R evidence |
 | S4U - Read-only cues and hidden visibility | COMPLETE | FILEUI-01..03, affected CORE/SEARCH/ARCHIVE/LIFE | S4R COMPLETE; user-approved icon direction | Real hidden browser/widget/tree/archives and native index workflow, persisted global toggle, grayscale/lock rendering, preservation, focused regressions, exact cleanup and source commit/remote readback; see S4U evidence |
 | S5 - REA-driven transfer improvements | COMPLETE | TRANSFER-01..07, archive/caller and WIDGET-02 revalidation, affected CORE-02/03, LIFE-01/DELIVERY-03 | Initial S5 criteria passed at e478986; user extended comparison/implementation | Finite findings inventory resolved; source/target handle reuse, copy-time hashing, metadata/EOF reductions, storage decisions, matched profiles, actual callers, adverse/preservation/cleanup and Release checks pass; see [evidence](verification/2026-10-29-s5.md) |
-| S6 - Native StartAllBack search | NOT STARTED | SAB-01..05, affected SEARCH/CORE/LIFE/DELIVERY criteria | S5 COMPLETE; exact host identified before hook selection | REA evidence -> version-bound native adapter -> actual Everything results inside the existing Start menu; preserved app/settings actions, lifecycle/compatibility/disable/recovery |
-| S7 - Everything everywhere and WSearch retirement | NOT STARTED | EVERYWHERE-01..05, affected SEARCH/CORE/LIFE/SHELL criteria | S6 COMPLETE; finite consumer/semantics inventory before migration | Actual per-surface Everything replacement, resolved content/property/mail dependencies, isolated WSearch-off workflows, reversible service Disabled state and reboot/recovery verification |
+| S6 - Native StartAllBack search | BLOCKED | SAB-01..05, affected SEARCH/CORE/LIFE/DELIVERY criteria | S5 COMPLETE; Sandbox enabled but reboot required; isolated ABI probes precede hook selection | REA evidence -> version-bound native adapter -> actual Everything results inside the existing Start menu; preserved app/settings actions, lifecycle/compatibility/disable/recovery |
+| S7 - Everything filesystem search and Outlook indexing scope | NOT STARTED | EVERYWHERE-01..05, affected SEARCH/CORE/LIFE/SHELL criteria | S6 COMPLETE; finite consumer/semantics/scope inventory before migration | Native Everything file results with selected filesystem roots excluded from Windows indexing; WSearch/Outlook retained, explicit Windows-managed exceptions, local/mail/reboot/recovery verification |
 | S8 - Final integration and delivery | NOT STARTED | SHELL-01, DELIVERY-01..03; reconcile every product requirement | S1..S7 COMPLETE; prerequisite blockers/deferrals resolved | Reversible optional shell integration; all delivered search/migration/recovery boundaries; install/update/uninstall; final criteria review, source verification/commit, normal installer/portable release independently retrieved and verified |
 
 ENV-01..04 belong to the current setup deliverable, not an artificial product
@@ -49,7 +52,7 @@ implementation stage. See [setup evidence](verification/2026-10-28-setup.md).
 | RAR-01..05 | S4R | Transfer revalidation S5; final package/source/license/install S8 |
 | FILEUI-01..03 | S4U | Delivered icon/visibility/settings package revalidation S8 |
 | TRANSFER-01..07 | S5 | Final package S8 |
-| SAB-01..05 | S6 | WSearch-off behavior S7; packaged adapter S8 |
+| SAB-01..05 | S6 | Reduced filesystem-index scope behavior S7; packaged adapter S8 |
 | EVERYWHERE-01..05 | S7 | Delivered migration/compatibility/recovery S8 |
 | LIFE-01 | Each implementing stage | Final lifecycle reconciliation S8 |
 | SHELL-01 | S7 for search migration, S8 for file-manager shell integration | Actual disable/uninstall readback |
@@ -148,7 +151,8 @@ Read-only test attributes on two retained cancellation inputs were restored befo
 resuming the same ticket; no alternate deletion mechanism was used. There is no
 remaining S5 advancement blocker or tracked deferral. Verified source synchronization
 accompanies stage delivery; final product packaging/release remains S8.
-S6-S8 are NOT STARTED. No intermediate product release.
+S6 was not started at that S5 closure; it is now BLOCKED under the subsequent
+user authorization. S7-S8 remain NOT STARTED. No intermediate product release.
 
 New persistent analysis, reports and snapshots: `.local/research/teracopy-4.0.5/`
 on D:, private because donor binaries/configuration are not public deliverables.
@@ -227,15 +231,17 @@ in the project; helper-clean scratch after its actual last consumer exits.
 
 ## S6/S7 integration direction and open feasibility
 
-User outcome: use Everything in the existing search locations, ultimately with
-Windows Search disabled. StartAllBack is the first new native host. A redirected
-hotkey/popup is not acceptance for its existing menu. No shell/service mutation
-or REA target execution occurred during this plan review.
+User outcome: use Everything for filesystem search in existing search locations,
+retain WSearch for Outlook and reduce duplicate filesystem indexing. This replaces
+the earlier service-disable target. StartAllBack is the first new native host.
+A redirected hotkey/popup is not acceptance for its existing menu. No live-shell
+hook or indexing-scope change has occurred.
 
-Read-only installed-file metadata reported StartAllBack 3.9.25. This is not a
-hash-bound analysis or proof of an available hook. S6 begins by pinning that
-actual artifact and Windows dependencies and using gated REA to trace the query
-and result boundary. Select the smallest native adapter supported by the evidence;
+The installed signed StartAllBack 3.9.25 x64 artifact is now hash-bound in private
+S6 evidence on Windows 25H2 build 26200.9711. Gated REA traces distinct search-box
+and results windows, ExplorerBrowser creation, query dispatch and view teardown.
+File-provider enumeration and cancellation ownership remain unresolved; no usable
+replacement hook is established. Select the smallest native adapter supported by the evidence;
 preserve host UI, application/settings commands and original files. Verify one
 complete in-menu query/result/open workflow before broadening required cases.
 Then finish version rejection, cancellation, backend loss and attach/detach/
@@ -254,8 +260,8 @@ Current primary-source evidence and its limits:
   additional integration work; this interface is not evidence of ABI compatibility.
 - [Everything's content options](https://www.voidtools.com/en-us/support/everything/options/)
   document 1.5 content indexing and the `si:` Windows-index query. Neither proves
-  mail-store search parity; a Windows-index dependency cannot satisfy WSearch-off
-  acceptance. S7 must qualify the actual selected engine/version and resource cost.
+  mail-store search parity. The revised S7 retains native Outlook indexing;
+  filesystem capabilities still require actual selected-engine/resource qualification.
 - [Microsoft's Outlook search guidance](https://support.microsoft.com/en-us/outlook/troubleshooting-outlook-search-issues)
   explicitly checks the Windows Search service for classic Outlook. The actual
   installed client's account/offline/search behavior must be inventoried, rather
@@ -264,17 +270,73 @@ Current primary-source evidence and its limits:
 S7 starts from a concrete consumer/semantic matrix, not a system-wide hook that
 claims all applications. Cover native file search, dialogs and non-file consumers
 under EVERYWHERE-01..03; keep genuine unsupported contracts explicit. No alternate
-engine or exclusion is authorized merely because a consumer is difficult. Prove
-each required workflow with WSearch absent in an isolated environment, then apply
-and verify the reversible service-retirement outcome under its actual stage
-authorization. Record service startup/running state and recovery before mutation;
-verify reboot, unavailable Everything, unsupported updates, uninstall and recovery.
+engine or exclusion is authorized merely because a consumer is difficult. Under
+the user's revised S7 direction, keep WSearch and Outlook indexing, remove selected
+filesystem locations from its scope, and prove native file queries use Everything.
+Inventory local/server-assisted Outlook behavior and unavoidable Windows-managed
+exceptions. Preserve scope/mode/service state and recovery before mutation;
+verify actual local mail search, reboot, unavailable Everything, updates, uninstall
+and rollback. Do not delete/rebuild the mail index by default or disable WSearch.
 Physical shell trials are coordinated; hidden diagnostics remain the default.
+
+The user authorized enabling Windows Sandbox with NoRestart on 2026-10-30. The
+broker command succeeded and readback reports Enabled with restartNeeded=true.
+No restart or Sandbox launch occurred. SAB-05's matching isolated runtime cannot
+be considered available until the user reboots and the guest build is verified.
+The static trace is retained and the owned native analysis has exited. The
+remaining data-provider replacement/cancellation contracts need observation of
+actual Shell objects in that guest before hook selection; static pseudocode does
+not establish those private runtime contracts. S6 is parked BLOCKED at this
+external dependency. Resume it after the user-controlled reboot, verify guest
+Windows/module identities and storage, then perform isolated query/result/teardown
+probes. This does not justify implementing later stages or a live-shell trial.
 
 This is a specified long-term target with unresolved feasibility, not a claim
 that Everything already replaces all Windows Search semantics. A requirement
 that cannot be met remains a blocker with an exact resolution condition. Do not
-silently change the goal to filename-only search or leave a hidden WSearch owner.
+silently change the required file-search semantics or leave an undeclared
+filesystem WSearch owner. Outlook's retained WSearch owner is explicit and authorized.
+
+## StartAllBack design review and future candidates
+
+Requested analysis, 2026-10-30. These are optional future candidates, not added
+specification requirements, implementation stages or tracked deferrals. Priority
+and effort below are engineering judgments; native feasibility remains conditional
+on the S6 host/view boundary. The installed menu has not received a pixel-level or
+physical keyboard audit, so this review does not assert visual or accessibility
+defects in the user's current configuration.
+
+Keep the native menu's compact keyboard-first launch workflow. The greatest
+potential is a connected file workflow: identify a result, inspect it, then hand
+the chosen action to Pathweft. Existing taskbar position/spacing/labels,
+translucency, menu styles and context-menu styling are already product features;
+reuse their controls before adding parallel styling. See the
+[official feature list and change history](https://www.startallback.com/).
+
+| Priority | Candidate | Useful behavior | Feasibility and limits |
+| --- | --- | --- | --- |
+| 1 | Preview the selected result | Space opens Pathweft's existing preview for a real file; Escape returns focus and selection to the same result. Reuse enabled viewer modules, including the qualified GLB prototype. | Medium. Reuses the existing preview host, but selection/PIDL resolution, key conflicts, menu dismissal and focus restoration need isolated native proof. Keep decoding outside Explorer. |
+| 2 | Make similar filenames distinguishable | Show a readable parent path and file type; expose full paths without crowding the name. Clearly distinguish unavailable locations from an empty query. | Medium for metadata in supported view modes; high if a new owner-drawn row is necessary. Determine what the current Shell view already exposes before changing layout. Native provider/backend readiness is already required by S6, not a new feature. |
+| 3 | Offer a few consistent result actions | Copy path, open containing location in Pathweft, open the location's terminal, and preview. Reuse existing Pathweft actions and native Shell verbs where applicable. | Low-to-medium once result identity is available; custom StartAllBack menu insertion remains conditional. Native open/reveal is already S6 scope. The installed search code filters rename/link verbs, so restoring every file-manager operation is not merely enabling an existing generic menu. |
+| 4 | Reuse saved search scopes | Select a project/folder/type scope while retaining predictable app/settings launching. Explicit scopes should be visible and removable with the keyboard. | Medium-to-high. Query routing and app/file ranking need design beyond a text prefix. Reuse Pathweft's scope state; do not create another indexing or history owner. Global hidden-file behavior must stay consistent. |
+| 5 | Align restrained theme details | Match Pathweft's dark surfaces, blue accent, selection, typography and spacing where StartAllBack's own styles allow it. Offer an opt-in coordinated preset rather than changing all Windows colors. | Low for existing settings/skin affordances; high for unsupported per-control repainting. Static code confirms native theme painting and Start_LargeSearchIcons. Actual contrast, focus indication, text scaling and monitor-DPI behavior need rendered review before any visual redesign. |
+| 6 | Clarify file capabilities consistently | Reuse the approved grayscale plus lock treatment for read-only results, with an accessible reason. Keep unavailable files, unsupported archive edits, hidden items and administrator-required operations distinguishable. | Medium-to-high. Capability semantics can be reused, but native icon composition/cache invalidation must be qualified. Grayscale alone must not imply a disabled or unopenable item, and administrator requirements cannot be inferred from an icon or file attribute. |
+
+The native evidence supports targeting Shell identities and existing view seams.
+SearchResults instantiates CLSID_ExplorerBrowser, sets its site, navigates to a
+search-folder PIDL and retrieves a private search-view interface. Microsoft's
+[ExplorerBrowser contract](https://learn.microsoft.com/en-us/windows/win32/api/shobjidl_core/nn-shobjidl_core-iexplorerbrowser)
+separates browser, view and data source; its public methods can host Shell items,
+but this does not make StartAllBack's private query/view interface a public SDK.
+The most economical extension point may be the data source or a result action;
+the exact hook must follow the S6 trace and isolated proof.
+
+Prioritize previews and modest result/action improvements after the required
+native search works. A broad Start-menu/taskbar rewrite, global recoloring, a
+second result renderer, or another generalized plugin system has no demonstrated
+need here. Taskbar transfer progress is another possible later integration, but
+first verify how StartAllBack renders the standard Windows taskbar progress API;
+it may need only a Pathweft-side call rather than a StartAllBack hook.
 
 ## Required S5 sequence
 
@@ -303,8 +365,8 @@ This sequence belongs only to S5, after S4U; it does not authorize later stages.
 | S3 | All PREVIEW-01..05 and affected CORE-03/LIFE-01/DELIVERY-03: eight internal modules, actual decoding/paging, all active toggles and separate-process persistence; independent widget/Space/side selection; malformed/large/unsupported/inert inputs; actual file release; F3D real model/camera/native teardown and unchanged original; complete final QuickLook-absent run and verified restoration, zero foreground events; Debug/Release builds and Release source self-test. See [evidence](verification/2026-10-29-s3.md). | None within S3 | None | None |
 | S4 | All ARCHIVE-01..05 and affected criteria: final integrated PID32156, actual native ZIP/7z/TAR/CAB/RAR5, normal archive-file handling, real clipboard/conflicts/rename/copy/cut/paste/Compress/Extract, cancellation/concurrency and D/E source-volume reservation, actual viewer/consumer release, read-only/encrypted/unsafe states, inspected 100%/150% layouts, zero foreground events and independent clipboard restoration; Debug/Release, archive contracts and updated source self-test pass. See [S4 evidence](verification/2026-10-29-s4.md). | None within S4 | None | None |
 | S5 | TRANSFER-01..07 and affected caller/CORE/LIFE criteria; final native/Release/FAT32 evidence and finite findings reconciliation | None within S5 | COMPLETE; no blocker | None |
-| S6 | None | SAB-01..05 | NOT STARTED; S5 prerequisite satisfied. Native hook/ABI feasibility still requires its own investigation. | None |
-| S7 | None | EVERYWHERE-01..05 | S6 prerequisite not complete. Consumer inventory and non-file semantic compatibility unresolved; these must close before service retirement. | None |
+| S6 | Exact signed host/Windows inventory and partial static query/view trace; no complete SAB criterion yet | SAB-01..05 | BLOCKED. SAB-01 file-provider/cancellation ABI requires isolated runtime probes before hook selection. SAB-05 has an external dependency: Sandbox enabled, OS reports reboot required; user explicitly requested no restart. Resolution: user reboot, verified matching guest, isolated contract probes, then implementation/native acceptance before live trial. S6 integration, lifecycle and closure depend on these outcomes. | None |
+| S7 | None | EVERYWHERE-01..05 | S6 prerequisite not complete. File-surface, indexing-scope and Outlook compatibility inventory remains unresolved; no live scope changes during S6. | None |
 | S8 | None | All assigned criteria including final release | S1..S7 prerequisites not complete | None |
 
 S1 and S2 are COMPLETE. The user confirmed normal unlock; real physical drag and
@@ -315,7 +377,8 @@ S2 passed following the user's next-stage request. S3 passed after the next
 2026-10-29 request and its user-added F3D prototype. S4 is COMPLETE following the
 user's instruction to continue with the next stage after the search-plan update.
 S4R and S4U are also COMPLETE. S5 is COMPLETE under the extended goal;
-S6-S8 remain NOT STARTED.
+S6 is BLOCKED awaiting the user-controlled Sandbox-enablement reboot and isolated
+runtime contract probes; S7-S8 remain NOT STARTED.
 S1-S4 have no remaining blocker or tracked deferral. Installer/update/
 uninstall and packaged integration retain their explicitly assigned S8 boundary.
 
