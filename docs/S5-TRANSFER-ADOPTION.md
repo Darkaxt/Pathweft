@@ -156,6 +156,30 @@ System overwrite targets with a failed outcome and retain both files. Attribute
 preservation on new files and supported overwrites remains required; no implicit
 clearing of these target protections is added.
 
+## Source-handle and bounded-read decision
+
+The qualified ordinary-file profile still shows a separate metadata open before
+the actual source reader, and two target reads per 4 KiB file versus one in the
+donor. Reuse the source data handle for the existing stamp check, opened with
+normal read/write/delete sharing and OPEN_REPARSE_POINT; validate it before
+creating/truncating the destination. Native copy and rename retain their own
+pre-operation source checks. This removes a redundant open without following a
+source link or introducing an exclusive pin.
+
+The initial RandomAccess reader removed the extra open but added one native
+file-mode query per source. Use synchronous ReadFile on the already synchronous
+source handle instead; the sequential copy needs neither mode discovery nor
+explicit offsets. Retain the intermediate profile and compare all support calls,
+not just opens.
+
+For the buffered single-stream verified path, read exactly the planned target
+length and reject premature EOF. Reuse the existing final metadata stamp to
+reject a changed target length, including growth after the last hashed byte.
+Named-stream/native digests retain EOF reads. No replacement metadata query,
+timeout, retry or optional protective workflow is added. Acceptance requires
+changed-source/link/length, sharing, pause/cancel, empty files, metadata, copied
+moves and real hidden callers, followed by matched native operation counts.
+
 ## Required final S5 evidence
 
 One connected Ferry/action owner; hidden real pane/widget/archive callers;

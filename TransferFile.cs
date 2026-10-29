@@ -44,6 +44,25 @@ internal sealed class TransferFile : IDisposable
         return ReadStamp(handle, path);
     }
 
+    internal static SafeFileHandle OpenCopySource(string path, Stamp expected)
+    {
+        var handle = CreateFileW(Long(path), Read, 7, IntPtr.Zero, 3, OpenReparse | 0x08000000 /* SEQUENTIAL_SCAN */, IntPtr.Zero);
+        if (handle.IsInvalid) { int error = Marshal.GetLastWin32Error(); handle.Dispose(); throw Error(path, error); }
+        try
+        {
+            if (!expected.Matches(ReadStamp(handle, path)))
+                throw new IOException("A source changed after planning; it was retained: " + path);
+            return handle;
+        }
+        catch { handle.Dispose(); throw; }
+    }
+
+    internal static int ReadCopySource(SafeFileHandle handle, string path, byte[] buffer, int count)
+    {
+        if (!ReadFile(handle, buffer, count, out int read, IntPtr.Zero)) throw Error(path, Marshal.GetLastWin32Error());
+        return read;
+    }
+
     internal void Require(Stamp expected)
     {
         if (!expected.Matches(ReadStamp(Handle, Path))) throw new IOException("A source changed after planning; it was retained: " + Path);
@@ -117,7 +136,7 @@ internal sealed class TransferFile : IDisposable
         }
     }
 
-    internal static bool ApplyMetadata(string target, Stamp source, out FileAttributes storageChanges)
+    internal static bool ApplyMetadata(string target, Stamp source, out FileAttributes storageChanges, bool requireSize = false)
     {
         using (var handle = CreateFileW(Long(target), 0x100 /* FILE_WRITE_ATTRIBUTES */, 7, IntPtr.Zero, 3, OpenReparse | Backup, IntPtr.Zero))
         {
@@ -130,6 +149,7 @@ internal sealed class TransferFile : IDisposable
         var desired = (current & ~writable) | (source.Attributes & writable);
         if (current != desired) File.SetAttributes(target, desired);
         var actual = Inspect(target);
+        if (requireSize && actual.Size != source.Size) throw new IOException("The destination length changed during verification: " + target);
         if ((actual.Attributes & writable) != (source.Attributes & writable)) throw new IOException("The destination could not preserve basic file attributes: " + target);
         if (source.Attributes.HasFlag(FileAttributes.Encrypted) && !actual.Attributes.HasFlag(FileAttributes.Encrypted))
             throw new IOException("The destination could not preserve encryption: " + target);
@@ -209,6 +229,7 @@ internal sealed class TransferFile : IDisposable
     }
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)] static extern SafeFileHandle CreateFileW(string path, uint access, uint share, IntPtr security, uint disposition, uint flags, IntPtr template);
     [DllImport("kernel32.dll", SetLastError = true)] static extern bool GetFileInformationByHandle(SafeFileHandle handle, out FileInfoNative info);
+    [DllImport("kernel32.dll", SetLastError = true)] static extern bool ReadFile(SafeFileHandle handle, [Out] byte[] buffer, int count, out int read, IntPtr overlapped);
     [DllImport("kernel32.dll", SetLastError = true)] static extern bool SetFileTime(SafeFileHandle handle, ref long created, ref long accessed, ref long modified);
     [DllImport("kernel32.dll", SetLastError = true)] static extern bool SetFileInformationByHandle(SafeFileHandle handle, int kind, IntPtr data, uint bytes);
     [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)] static extern IntPtr FindFirstStreamW(string path, int level, out StreamData data, uint flags);

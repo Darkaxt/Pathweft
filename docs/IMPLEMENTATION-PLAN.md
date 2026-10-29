@@ -75,8 +75,8 @@ new changes require affected revalidation before renewed closure.
 | --- | --- | --- |
 | Repeated volume discovery | Implemented direct stream enumeration with documented unsupported-filesystem result, without a cache. Matched profile: 201 capability queries to 0. Native NTFS/ADS/cancellation/error contracts and real FAT32 refusal/rounding/disk-full pass; VHD detached. | Implemented and verified; renewed caller/profile reconciliation continues |
 | Repeated timestamp opens | Implemented one normally shared native SetFileTime handle. Matched profile: 303 explicit timestamp opens to 101 for 100 files and one directory. File/folder creation/access/write checks and FAT32 precision reporting pass. | Implemented and verified; remaining source/hash and scheduling inventory keeps S5 ACTIVE |
-| Source hashing reread | Single-stream data, including compressed/sparse contents, hashes from the pooled 1 MiB copy buffer and rereads only the target. Real NTFS, long Unicode paths, cross-volume moves, cancellation, changed/short sources and real callers pass. Native CopyFileEx remains for named streams/encryption. Storage fixtures match the donor's ordinary destination layout with explicit notes; compressed directory/cross-volume/ADS cases pass. | Implemented and verified for the qualified cases; remaining source stamp/target EOF overhead below prevents exhaustion |
-| Native metadata / repeated path validation | Removed duplicate read-only scan ancestry checks. Separate state probes establish that all 101 attribute writes already matched, while timestamp sets remained necessary. Skip only the already-matching attribute setter using its existing query. Final profile: 0 attribute writes and 1,107 native opens versus 101 / 1,208 at 730b31d. | Reductions verified; source stamp-handle reuse and target EOF-read differences remain actionable investigation |
+| Source hashing reread | Single-stream data, including compressed/sparse contents, hashes from the pooled 1 MiB copy buffer and rereads only the target. The ordinary target digest now reads its planned length, detects premature EOF and uses the existing final metadata stamp to reject growth. Native CopyFileEx/named-stream digests retain EOF behavior. Current source/link/target-length, copying, cancellation and actual callers pass. | Implemented and verified; 100 target reads instead of 200 for 100 small files, and 12 instead of 14 for the storage pair |
+| Native metadata / repeated path validation | Removed duplicate read-only scan ancestry checks and already-matching attribute setters. Ordinary source stamp validation now reuses the normally shared no-follow data handle before creating the destination. Synchronous ReadFile avoids RandomAccess's measured extra mode query. Current profile: 0 attribute writes, 1,007 native opens/closes and 1,103 information queries, versus 1,107 opens/closes and the same queries before this change. | Source-handle/EOF reductions verified without replacing removed opens with queries; remaining applicable volume/buffer reconciliation below remains open |
 | Scheduling / buffers / workload sensitivity | Two matched small/large/mixed rounds and a serial mixed diagnostic pass independent contents. Qualified compressed/sparse donor/current contents and reported storage sizes match; both read the source once. Four-worker mixed copying and Release self-test outperform their serial samples locally. Keep the pooled 1 MiB buffer/current workers. | Storage decision verified; remaining applicable volume/buffer comparisons unresolved, no universal timing claim |
 | Conflict / progress / pause / failure / recovery | Current native contracts and actual hidden pane/widget/archive controls pass, including partial/failed outcomes, direct overwrites, cleanup, source sharing and no foreground events. Abrupt child exit preserves the source and fresh resubmission verifies the whole copy. Real FAT32 disk-full removes the partial output, retains the source and detaches its VHD. Release self-test/audit pass without test hooks or donor assets. | Affected workflows verified for this iteration; revalidate relevant paths after further pipeline changes |
 
@@ -103,7 +103,14 @@ callback-compression prototypes were experimentally rejected as additional
 storage behavior outside the selected workflow, not deferred requirements.
 Current real hidden notes use the existing neutral theme, wrap and expose full
 detail; actual errors retain their red treatment. S5 remains the only ACTIVE
-stage, with source stamp/EOF and applicable volume/buffer findings unresolved.
+stage. The subsequent source-handle/EOF iteration removes those redundant
+operations while preserving the full transfer contract. Current hidden callers,
+Release self-test/audit and the real FAT32 full-destination check pass; the
+disposable disk is detached. The user returned and authorized this administrator
+check after the earlier delay. Applicable volume/buffer reconciliation remains
+unresolved under TRANSFER-07; this is an internal advancement blocker, resolved
+by completing that bounded comparison and its adoption/rejection decisions.
+S5 closure and dependent S6 work remain incomplete. No required item is deferred.
 
 The [adoption contract](S5-TRANSFER-ADOPTION.md) and
 [verification record](verification/2026-10-29-s5.md) reconcile TRANSFER-01..06.
