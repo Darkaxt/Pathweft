@@ -393,19 +393,24 @@ public static class Ferry
                 else
                 {
                     Boundary("before-copy", job, e.Source, w.Target); Check(job);
-                    string error = CopyOne(job, e.Source, w.Target, e.Size, w.Overwrite, out copiedOutput);
+                    bool streamed = StreamData(e, w.Target, w.Overwrite);
+                    ulong? copiedHash = null;
+                    string error = streamed
+                        ? CopyData(job, e.Source, w.Target, e.Snapshot.Size, w.Overwrite, out copiedOutput, out copiedHash)
+                        : CopyOne(job, e.Source, w.Target, e.Size, w.Overwrite, out copiedOutput);
                     Check(job);
                     if (error != null) throw new IOException(error);
                     countedCopy = true; Interlocked.Increment(ref job.CopiedFiles);
                     Boundary("copy-written", job, e.Source, w.Target); Check(job);
+                    if (streamed) RequireStreams(e.Source, e.Streams);
                     if (job.Verify)
                     {
-                        if (!job.Concurrent) { job.Phase = Phase.Verifying; job.Current = "Verifying " + e.Relative; job.CurrentSize = e.Size * 2; job.CurrentDone = 0; }
+                        if (!job.Concurrent) { job.Phase = Phase.Verifying; job.Current = "Verifying " + e.Relative; job.CurrentSize = e.Size * (streamed ? 1 : 2); job.CurrentDone = 0; }
                         RequireStreams(w.Target, e.Streams);
                         foreach (var stream in e.Streams)
                         {
                             Check(job);
-                            var original = Digest(job, TransferFile.StreamPath(e.Source, stream.Name));
+                            var original = streamed ? copiedHash : Digest(job, TransferFile.StreamPath(e.Source, stream.Name));
                             Check(job);
                             var transferred = Digest(job, TransferFile.StreamPath(w.Target, stream.Name));
                             Check(job);
@@ -598,6 +603,55 @@ public static class Ferry
 
     static string Long(string p) => p.StartsWith(@"\\?\") ? p : p.StartsWith(@"\\") ? @"\\?\UNC\" + p[2..] : @"\\?\" + p;
     static string LastError() => new Win32Exception(Marshal.GetLastWin32Error()).Message;
+
+    static bool StreamData(FileEntry source, string destination, bool overwrite)
+    {
+        const FileAttributes storage = FileAttributes.Encrypted | FileAttributes.Compressed | FileAttributes.SparseFile;
+        if (source.Streams.Count != 1 || source.Streams[0].Name != "::$DATA" || (source.Snapshot.Attributes & storage) != 0) return false;
+        // Native replacement handles existing streams/storage; truncating only
+        // the unnamed stream must not silently retain or lose that state.
+        if (overwrite && File.Exists(destination))
+            return (File.GetAttributes(destination) & storage) == 0 && TransferFile.Streams(destination).All(stream => stream.Name == "::$DATA");
+        return true;
+    }
+
+    static string CopyData(Job job, string source, string destination, long size, bool overwrite, out TransferFile.Stamp? output, out ulong? copiedHash)
+    {
+        output = null; copiedHash = null;
+        byte[] buffer = null;
+        var hasher = job.Verify ? new System.IO.Hashing.XxHash3() : null;
+        try
+        {
+            using var input = new FileStream(Long(source), FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, 1, FileOptions.SequentialScan);
+            using var target = new FileStream(Long(destination), overwrite ? FileMode.Create : FileMode.CreateNew, FileAccess.Write, FileShare.None, 1, FileOptions.SequentialScan);
+            output = TransferFile.ReadStamp(target.SafeFileHandle, destination);
+            if (size > 0) buffer = System.Buffers.ArrayPool<byte>.Shared.Rent(1024 * 1024);
+            long transferred = 0;
+            while (transferred < size)
+            {
+                Check(job);
+                int count = input.Read(buffer, 0, (int)Math.Min(size - transferred, 1024 * 1024));
+                if (count == 0) throw new IOException("The source ended before its planned size: " + source);
+                target.Write(buffer, 0, count);
+                hasher?.Append(buffer.AsSpan(0, count));
+                transferred += count; job.AddBytes(count);
+                Boundary("copy-chunk", job, source, destination); Check(job);
+            }
+            copiedHash = hasher?.GetCurrentHashAsUInt64();
+            return null;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            // Match native copy's cleanup of a failed, incomplete write. The
+            // using scopes above have released the writer before removal.
+            if (output is { } owned)
+                try { TransferFile.RemoveIncompleteCopy(destination, owned); }
+                catch (Exception cleanup) when (cleanup is IOException or UnauthorizedAccessException)
+                { job.Errors.Enqueue("Incomplete copy could not be removed at " + destination + ": " + cleanup.Message); }
+            return ex.Message;
+        }
+        finally { if (buffer != null) System.Buffers.ArrayPool<byte>.Shared.Return(buffer); }
+    }
 
     static string CopyOne(Job job, string src, string dst, long size, bool overwrite, out TransferFile.Stamp? output)
     {

@@ -22,8 +22,8 @@ optional work requiring a demonstrated need, not current required deferrals.
 Observed reference source opens use GENERIC_READ with share READ|WRITE|DELETE;
 destination writes use CREATE_ALWAYS directly at the final path. Verification
 and source-preserving move completion, actual queue/conflict/pause/cancel behavior,
-metadata/streams and accurate outcomes remain required. The native CopyFileEx
-primitive remains Pathweft's own implementation choice; the packed donor's
+metadata/streams and accurate outcomes remain required. CopyFileEx and a bounded
+hash-during-copy path are Pathweft's own implementation choices; the packed donor's
 internal algorithm was not recovered. No TeraCopy binary becomes a dependency.
 
 ## Identified reference and evidence
@@ -86,7 +86,32 @@ deliberately holds fixture I/O for control tests; its durations are not benchmar
 
 ## Native integration boundary
 
-Use the existing metadata-preserving CopyFileEx primitive and native MoveFileEx.
+Under TRANSFER-07, ordinary single-stream data will use one normally shared
+source reader and a pooled 1 MiB buffer, writing directly while feeding xxHash3.
+Verification rereads the destination against that captured hash. The source is
+not opened again merely to calculate its hash. Retain CopyFileEx for named streams
+and encrypted/compressed/sparse storage requirements, including existing target
+streams/storage that ordinary truncation cannot reproduce correctly. Keep native
+MoveFileEx for same-volume moves. This is one bounded path inside the existing
+Ferry job and queue, not a provider framework or separate transfer service.
+
+Actual copy-time and verification I/O counters must reflect the selected path;
+do not retain the old two-read verification accounting or invent source-read
+events to satisfy old diagnostics. Compare operation counts, output contents,
+metadata/stream preservation, overwritten targets, sharing, pause/cancel,
+failures and real callers before accepting the change. Source/target stream-set
+changes must still be refused; stream discovery is part of preserving the native
+path's behavior, not an optional guard. Native storage cases remain explicit
+comparison work until their best supported path has evidence.
+
+The separate metadata-state probe found that the ordinary 100-file tree's 101
+attribute writes all requested the already stored value; timestamp writes were
+still necessary. Reuse the existing attribute query and skip SetAttributes only
+when the complete requested value already matches. Keep batched timestamp
+application and the final metadata readback; do not add a query or skip required
+attribute changes. The state probe adds diagnostic reads and is excluded from
+operation-count and timing comparisons.
+
 No exclusive source/stream handle spans copying or verification. Brief final
 removal operations verify identity and address their exact file handle, just at
 the point where source removal or cancellation cleanup is required. This does
@@ -106,6 +131,10 @@ are independent files, with a note. Folder alternate streams and folder encrypti
 compression policies are refused. Named streams require destination support;
 FAT32 timestamp rounding is reported. Unsupported storage attributes produce an
 explicit failure. No physical power-loss durability guarantee is made.
+Native copying and the ordinary direct path refuse existing ReadOnly, Hidden or
+System overwrite targets with a failed outcome and retain both files. Attribute
+preservation on new files and supported overwrites remains required; no implicit
+clearing of these target protections is added.
 
 ## Required final S5 evidence
 

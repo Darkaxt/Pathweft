@@ -312,7 +312,7 @@ public partial class App : Application
             var vdst = Directory.CreateDirectory(Path.Combine(root, "verified")).FullName;
             j = Run(Ferry.Submit(new[] { Path.Combine(mv, "tree") }, vdst, move: false));
             Settings.Verify = false;
-            Check(j.Phase == Phase.Done && j.Errors.IsEmpty && j.DoneBytes == j.TotalBytes && j.TotalBytes == 5 + 3_000_000 && j.VerificationBytes == 2 * j.TotalBytes && j.VerifiedFiles == j.TotalFiles, "verified copies keep payload and verification accounting separate");
+            Check(j.Phase == Phase.Done && j.Errors.IsEmpty && j.DoneBytes == j.TotalBytes && j.TotalBytes == 5 + 3_000_000 && j.VerificationBytes == j.TotalBytes && j.VerifiedFiles == j.TotalFiles, "hash-during-copy reads only the destination for verification and keeps payload accounting separate");
 
             // cancel before it starts
             j = Ferry.Submit(new[] { Path.Combine(mv, "tree") }, dst, move: false);

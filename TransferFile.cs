@@ -126,7 +126,9 @@ internal sealed class TransferFile : IDisposable
             if (!SetFileTime(handle, ref created, ref accessed, ref modified)) throw Error(target, Marshal.GetLastWin32Error());
         }
         const FileAttributes writable = FileAttributes.ReadOnly | FileAttributes.Hidden | FileAttributes.System | FileAttributes.Archive | FileAttributes.NotContentIndexed | FileAttributes.Temporary;
-        File.SetAttributes(target, (File.GetAttributes(target) & ~writable) | (source.Attributes & writable));
+        var current = File.GetAttributes(target);
+        var desired = (current & ~writable) | (source.Attributes & writable);
+        if (current != desired) File.SetAttributes(target, desired);
         var actual = Inspect(target);
         if ((actual.Attributes & writable) != (source.Attributes & writable)) throw new IOException("The destination could not preserve basic file attributes: " + target);
         const FileAttributes storage = FileAttributes.Encrypted | FileAttributes.Compressed | FileAttributes.SparseFile;

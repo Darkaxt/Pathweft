@@ -75,19 +75,23 @@ new changes require affected revalidation before renewed closure.
 | --- | --- | --- |
 | Repeated volume discovery | Implemented direct stream enumeration with documented unsupported-filesystem result, without a cache. Matched profile: 201 capability queries to 0. Native NTFS/ADS/cancellation/error contracts and real FAT32 refusal/rounding/disk-full pass; VHD detached. | Implemented and verified; renewed caller/profile reconciliation continues |
 | Repeated timestamp opens | Implemented one normally shared native SetFileTime handle. Matched profile: 303 explicit timestamp opens to 101 for 100 files and one directory. File/folder creation/access/write checks and FAT32 precision reporting pass. | Implemented and verified; remaining source/hash and scheduling inventory keeps S5 ACTIVE |
-| Source hashing reread | Pathweft hashes source after native copying; donor trace is consistent with hashing during copying. Recover enough scheduling/copy/hash evidence to select and test an appropriate implementation without losing native preservation or cancellation behavior. | Unresolved; not deferred |
-| Native metadata / repeated path validation | Removed duplicated destination-ancestry validation from read-only scanning; the destination root and every actual directory creation/file mutation retain validation. New file/directory destination-link regressions pass; matched target attribute queries fall 1,116 to 814. Native metadata writes followed by explicit application remain a separate candidate requiring a state probe. | Path reduction implemented and verified; metadata redundancy unresolved |
-| Scheduling / buffers / workload sensitivity | Earlier serial/four-worker and single small/large samples are insufficient for the expanded objective. Compare repeated before/after/donor and mixed cases; investigate resulting actionable differences. | Unresolved; not deferred |
-| Conflict / progress / pause / failure / recovery | Initial scoped observations and integrated direct-path checks establish the current contract. Review differences against new pipeline changes and investigate any remaining actionable behavior. | Existing evidence available; renewed reconciliation remains |
+| Source hashing reread | Ordinary data now hashes from the pooled 1 MiB copy buffer and rereads only the target. Real NTFS, long Unicode paths, cross-volume moves, cancellation, changed/short sources and real callers pass. Matched source NtReadFile calls fall 200 to 100; verification accounting reflects actual target reads. Native CopyFileEx remains for source/target named streams or special storage. | Plain path implemented and verified; qualify remaining native/storage cases and their possible source-read reductions before exhaustion |
+| Native metadata / repeated path validation | Removed duplicate read-only scan ancestry checks. Separate state probes establish that all 101 attribute writes already matched, while timestamp sets remained necessary. Skip only the already-matching attribute setter using its existing query. Final profile: 0 attribute writes and 1,107 native opens versus 101 / 1,208 at 730b31d. | Reductions verified; source stamp-handle reuse and target EOF-read differences remain actionable investigation |
+| Scheduling / buffers / workload sensitivity | Two matched small/large/mixed rounds and a serial mixed diagnostic pass independent contents. Four-worker mixed copying and Release self-test outperform their serial samples locally. Keep the pooled 1 MiB buffer and current worker policy; different engine cache/native-I/O policies and startup costs are explicit. | Repeated workloads verified; remaining native/storage and applicable volume comparisons unresolved, no universal timing claim |
+| Conflict / progress / pause / failure / recovery | Current native contracts and actual hidden pane/widget/archive controls pass, including partial/failed outcomes, direct overwrites, cleanup, source sharing and no foreground events. Abrupt child exit preserves the source and fresh resubmission verifies the whole copy. Real FAT32 disk-full removes the partial output, retains the source and detaches its VHD. Release self-test/audit pass without test hooks or donor assets. | Affected workflows verified for this iteration; revalidate relevant paths after further pipeline changes |
 
 The user clarified that deterministic support-operation reduction takes priority
 over noisy timing. Use matched scoped operation counts and correctness as primary
 evidence; keep repeated timings as secondary observations, not a stable speedup
 gate or a reason to run endless samples.
 
-Previous goal turn: progress — produced comparative I/O evidence, retained it,
-closed the initial direct-path checks and synchronized e478986. Current work
-implements those findings; this is not a no-progress wait or a later stage.
+Current goal iteration: progress — implemented and verified plain copy-time
+hashing and removal of redundant attribute writes. Exact receipts and authenticated
+REA observations are retained; the findings above keep S5 ACTIVE. On 2026-10-29
+the user left and requested delaying additional administrator simulations. The
+already accepted FAT32 test finished and detached; further work remains hidden
+and unprivileged until the user returns. This is no permission to weaken a later
+admin-dependent acceptance check or trigger additional approval dialogs.
 
 The [adoption contract](S5-TRANSFER-ADOPTION.md) and
 [verification record](verification/2026-10-29-s5.md) reconcile TRANSFER-01..06.

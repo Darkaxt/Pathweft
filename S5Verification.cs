@@ -97,10 +97,10 @@ public partial class MainWindow
             await S1Verification.Navigate(Right,target);string pause=Write(source,"pause.txt",new string('p',8*1024*1024));await S1Verification.Navigate(Left,source);await Select(Left,"pause.txt");
             var ready=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);int entered=0;
             Ferry.VerificationBoundary=(phase,job,path,_)=>{if(phase=="copy-chunk"&&path==pause&&Interlocked.CompareExchange(ref entered,1,0)==0){job.Pause();ready.TrySetResult();}};
-            Click(CopyButton);var paused=jobs[0];await Task.WhenAny(ready.Task,paused.Completion);Check(ready.Task.IsCompleted&&paused.Paused,"Native copy enters an actual paused callback");await Render();
+            Click(CopyButton);var paused=jobs[0];await Task.WhenAny(ready.Task,paused.Completion);Check(ready.Task.IsCompleted&&paused.Paused,"Copy enters an actual paused progress boundary");await Render();
             await S1Verification.Snapshot(transfersWindow,evidence,"paused-before-control");
             var resume=Children<Button>(transfersWindow).Single(b=>b.DataContext==paused&&Children<TextBlock>(b).Any(t=>new System.Windows.Documents.TextRange(t.ContentStart,t.ContentEnd).Text.Contains("Resume")));
-            Check(resume.IsVisible&&resume.IsEnabled&&paused.Rate==0&&!paused.Stats.Contains("/s"),"Actual card exposes Resume and suppresses stale throughput while paused");await S1Verification.Snapshot(transfersWindow,evidence,"paused-card");Click(resume);await paused.Completion;Check(paused.Successful,"Actual Resume control completes the paused native copy");Ferry.VerificationBoundary=null;
+            Check(resume.IsVisible&&resume.IsEnabled&&paused.Rate==0&&!paused.Stats.Contains("/s"),"Actual card exposes Resume and suppresses stale throughput while paused");await S1Verification.Snapshot(transfersWindow,evidence,"paused-card");Click(resume);await paused.Completion;Check(paused.Successful,"Actual Resume control completes the paused copy");Ferry.VerificationBoundary=null;
 
             string cancelling=Write(source,"cancel.txt",new string('c',8*1024*1024));await S1Verification.Navigate(Left,source);await Select(Left,"cancel.txt");
             var cancelReady=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);int cancelEntered=0;

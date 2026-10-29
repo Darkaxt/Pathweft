@@ -159,6 +159,54 @@ internal static class TransferChecks
             Console.WriteLine(JsonSerializer.Serialize(results[^1]));
         }
         Settings.Verify=true; Settings.ParallelCopy=true;
+        await Case("Plain copies hash during copying and read only the destination for verification",async()=>
+        {
+            string source=Folder("stream-copy-input"),target=Folder("stream-copy-target"),file=Write(source,"item.bin",new string('h',2*1024*1024+17));
+            var job=await Copy(file,target);Complete(job);
+            Check(Hash(file)==Hash(Path.Combine(target,"item.bin"))&&job.VerifiedFiles==1&&job.VerificationBytes==job.TotalBytes,"Plain copy used incorrect verification data/accounting.");
+            Settings.Verify=false;
+            try {var uncheckedJob=await Copy(file,Folder("stream-copy-unchecked"));Complete(uncheckedJob);Check(uncheckedJob.VerifiedFiles==0&&uncheckedJob.VerificationBytes==0,"Unchecked copy claimed or performed verification reads.");}
+            finally{Settings.Verify=true;}
+        });
+        await Case("Plain copies preserve timestamps and apply changed attributes on new and overwritten files",async()=>
+        {
+            string source=Folder("plain-metadata-input"),target=Folder("plain-metadata-target"),file=Write(source,"item.txt","plain metadata");
+            string output=Path.Combine(target,"item.txt");
+            var created=new DateTime(2020,3,4,5,6,8,DateTimeKind.Utc);var modified=created.AddDays(1);var accessed=created.AddDays(2);
+            File.SetCreationTimeUtc(file,created);File.SetLastWriteTimeUtc(file,modified);File.SetLastAccessTimeUtc(file,accessed);
+            const FileAttributes mask=FileAttributes.ReadOnly|FileAttributes.Hidden|FileAttributes.System|FileAttributes.Archive|FileAttributes.NotContentIndexed|FileAttributes.Temporary;
+            var wanted=FileAttributes.ReadOnly|FileAttributes.Hidden|FileAttributes.System|FileAttributes.Archive|FileAttributes.NotContentIndexed;
+            File.SetAttributes(file,wanted);
+            var job=await Copy(file,target);Complete(job);
+            Check((File.GetAttributes(output)&mask)==wanted&&File.GetCreationTimeUtc(output)==created&&File.GetLastWriteTimeUtc(output)==modified&&File.GetLastAccessTimeUtc(output)==accessed,"New plain file lost basic metadata.");
+            File.SetAttributes(file,FileAttributes.Archive);
+            File.SetAttributes(output,FileAttributes.NotContentIndexed|FileAttributes.Temporary|FileAttributes.Archive);
+            var overwritten=await Copy(file,target);Complete(overwritten);
+            Check((File.GetAttributes(output)&mask)==FileAttributes.Archive&&Hash(file)==Hash(output)&&File.GetCreationTimeUtc(output)==created&&File.GetLastWriteTimeUtc(output)==modified,"Plain overwrite retained old attributes or lost content/timestamps.");
+        });
+        await Case("Read-only, Hidden and System overwrite refusals retain both existing files",async()=>
+        {
+            foreach(var attribute in new[]{FileAttributes.ReadOnly,FileAttributes.Hidden,FileAttributes.System})
+            {
+                string source=Folder("refused-attribute-input-"+attribute),target=Folder("refused-attribute-target-"+attribute),file=Write(source,"item.txt","new data"),output=Write(target,"item.txt","existing data");
+                File.SetAttributes(output,attribute|FileAttributes.Archive);
+                var job=await Copy(file,target);
+                Check(job.Phase==Phase.Failed&&job.DoneFiles==0&&File.ReadAllText(file)=="new data"&&File.ReadAllText(output)=="existing data"&&File.GetAttributes(output).HasFlag(attribute),"Refused overwrite changed an input or claimed success.");
+            }
+        });
+        await Case("A source truncated during copying is retained and its incomplete output removed",async()=>
+        {
+            string source=Folder("short-copy-input"),target=Folder("short-copy-target"),file=Write(source,"item.bin",new string('t',2*1024*1024));bool changed=false;
+            Hook((phase,_,path,_)=>{if(phase=="copy-chunk"&&path==file&&!changed){changed=true;using var edit=new FileStream(file,FileMode.Open,FileAccess.Write,FileShare.ReadWrite|FileShare.Delete);edit.SetLength(0);}});
+            var job=await Copy(file,target);Check(changed&&job.Phase==Phase.Failed&&File.Exists(file)&&new FileInfo(file).Length==0&&!File.Exists(Path.Combine(target,"item.bin")),"A short source was accepted, removed or left an incomplete output.");
+        });
+        await Case("Ordinary Unicode copies preserve contents through long source and destination paths",async()=>
+        {
+            string source=Folder("long-input"),target=Folder("long-target");
+            for(int i=0;i<4;i++){source=Directory.CreateDirectory(Path.Combine(source,new string('s',70)+i)).FullName;target=Directory.CreateDirectory(Path.Combine(target,new string('d',70)+i)).FullName;}
+            string file=Write(source,"文件 ç.txt","long path content");var job=await Copy(file,target);Complete(job);
+            Check(Hash(file)==Hash(Path.Combine(target,"文件 ç.txt"))&&job.VerifiedFiles==1,"Long Unicode path changed or omitted copied content.");
+        });
         await Case("Native verified tree copy preserves named streams, timestamps, attributes and empty folders",async()=>
         {
             string source=Folder("metadata-input"), target=Folder("metadata-target");
@@ -201,6 +249,13 @@ internal static class TransferChecks
                 Check(job.Verify && job.VerifiedFiles==1 && !File.Exists(file) && File.ReadAllText(Path.Combine(cross,"move.txt"))=="cross volume data" && File.ReadAllText(Path.Combine(cross,"move.txt")+":fixture")=="ADS survives","Mandatory move verification/source removal differs.");
             }
             finally { Settings.Verify=true; }
+        });
+        await Case("Plain cross-volume moves reuse the copy digest before source removal",async()=>
+        {
+            string source=Folder("stream-move-input"),target=Path.Combine(@"E:\Temp\pathweft-s5-review",Path.GetFileName(root)+"-stream-move"),file=Write(source,"item.txt","plain verified move");Directory.CreateDirectory(target);
+            Settings.Verify=false;
+            try {var job=await Copy(file,target,true);Complete(job);Check(job.Verify&&job.VerifiedFiles==1&&job.VerificationBytes==job.TotalBytes&&!File.Exists(file)&&File.ReadAllText(Path.Combine(target,"item.txt"))=="plain verified move","Copied move did not verify its captured digest before removal.");}
+            finally{Settings.Verify=true;}
         });
         await Case("Destination links are refused before mutation without changing their targets",async()=>
         {
@@ -317,12 +372,12 @@ internal static class TransferChecks
         await Case("Cancellation during verification removes the unverified output and retains the source",async()=>
         {
             string source=Folder("verify-cancel-input"), target=Folder("verify-cancel-target"); string file=Write(source,"item.txt",new string('v',2*1024*1024)); string old=Write(target,"item.txt","existing");
-            Hook((phase,job,path,_)=>{if(phase=="verification-chunk" && path==file) job.Cancel();});
+            Hook((phase,job,path,_)=>{if(phase=="verification-chunk" && path==old) job.Cancel();});
             var job=await Copy(file,target,false);
             Check(job.Phase==Phase.Cancelled && job.VerificationBytes>0 && File.Exists(file) && !File.Exists(old) && NoStages(target),"Verification cancellation retained its incomplete output or removed source.");
         });
         foreach(bool cancel in new[]{false,true})
-        await Case(cancel?"Native copy cancellation releases an actual paused callback and removes incomplete output":"Native copy pauses/resumes through the actual progress callback",async()=>
+        await Case(cancel?"Copy cancellation releases actual paused progress and removes incomplete output":"Copy pauses/resumes through actual progress",async()=>
         {
             string label=cancel?"pause-cancel":"pause-resume", source=Folder(label+"-input"), target=Folder(label+"-target");
             string file=Write(source,"item.txt",new string('p',8*1024*1024)), old=Write(target,"item.txt","existing");
@@ -345,7 +400,8 @@ internal static class TransferChecks
         await Case("Verification cancellation cleans a read-only copied output without changing its source",async()=>
         {
             string source=Folder("readonly-cancel-input"),target=Folder("readonly-cancel-target"),file=Write(source,"item.txt",new string('r',2*1024*1024));File.SetAttributes(file,FileAttributes.ReadOnly);
-            Hook((phase,job,path,_)=>{if(phase=="verification-chunk"&&path==file)job.Cancel();});
+            string output=Path.Combine(target,"item.txt");
+            Hook((phase,job,path,_)=>{if(phase=="copy-written"&&path==file)File.SetAttributes(output,FileAttributes.ReadOnly);if(phase=="verification-chunk"&&path==output)job.Cancel();});
             var job=await Copy(file,target);Check(job.Phase==Phase.Cancelled&&File.GetAttributes(file).HasFlag(FileAttributes.ReadOnly)&&!File.Exists(Path.Combine(target,"item.txt"))&&job.Errors.IsEmpty,"Read-only cancellation cleanup failed or changed the source.");
         });
         await Case("Cancelling the current copy retains files already completed",async()=>
@@ -362,7 +418,7 @@ internal static class TransferChecks
         await Case("Cancellation never deletes a destination replaced by another owner",async()=>
         {
             string source=Folder("replaced-cancel-input"),target=Folder("replaced-cancel-target"),file=Write(source,"item.txt",new string('o',2*1024*1024)),output=Path.Combine(target,"item.txt"),retained=Path.Combine(target,"retained-copy.txt");bool changed=false;
-            Hook((phase,job,path,_)=>{if(phase=="verification-chunk"&&path==file&&!changed){changed=true;File.Move(output,retained);File.WriteAllText(output,"replacement belongs to another owner");job.Cancel();}});
+            Hook((phase,job,path,_)=>{if(phase=="verification-chunk"&&path==output&&!changed){changed=true;File.Move(output,retained);File.WriteAllText(output,"replacement belongs to another owner");job.Cancel();}});
             var job=await Copy(file,target);
             Check(changed&&job.Phase==Phase.Cancelled&&File.ReadAllText(output)=="replacement belongs to another owner"&&File.Exists(retained)&&File.Exists(file)&&!job.Errors.IsEmpty&&job.StateGroup=="Needs attention","Cleanup deleted a replacement or hid its refusal.");
         });
