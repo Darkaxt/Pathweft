@@ -5,7 +5,7 @@ do not change its requirements or the user's standing instructions.
 
 - Current authorization includes S4 implementation and verification (2026-10-29
   user request for the next stage after plan review). S1-S4 are COMPLETE;
-  S4R is ACTIVE, authorized by the user's 2026-10-29 request to try bitplane/rars
+  S4R is COMPLETE, authorized by the user's 2026-10-29 request to try bitplane/rars
   with the integration choice delegated. S5-S8 remain NOT STARTED. A plan does not
   authorize itself or intermediate product releases.
 - Keep one ACTIVE stage during authorized implementation. Reconcile complete

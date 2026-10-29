@@ -7,9 +7,9 @@ Current authorization: S3 implementation/verification, requested by the user on
 archive-browsing/editing stage. On 2026-10-29 the user added native StartAllBack
 search integration and the long-term all-Everything/Windows Search retirement
 goal, then authorized proceeding to the next stage after plan review.
-S1-S4 are COMPLETE; S4R is ACTIVE; S5-S8 remain NOT STARTED.
+S1-S4 and S4R are COMPLETE; S5-S8 remain NOT STARTED.
 The user authorized trying rars on 2026-10-29 and delegated its integration
-choice. This is the sole active stage; a wider Rust port is not in scope.
+choice. No implementation stage is currently ACTIVE; a wider Rust port is not in scope.
 Native source/SDK integration is preferred. This
 plan neither authorizes itself nor adds approval checkpoints.
 
@@ -21,7 +21,7 @@ plan neither authorizes itself nor adds approval checkpoints.
 | S2 - Connected taskbar workflow | COMPLETE | WIDGET-01..03, affected CORE-02/03, LIFE-01/DELIVERY-03 | S1 COMPLETE | Real widget query/handoff/reveal, shared actions/queue, actual native hotkey/typing before and after Explorer restart, hidden real mixed-DPI transitions and inspected File Labs layouts; see S2 evidence |
 | S3 - Internal selectable previews | COMPLETE | PREVIEW-01..05, affected CORE-03, LIFE-01/DELIVERY-03 | S2 COMPLETE | Selected source/native inventory; complete real preview/toggle/file-release workflow with QuickLook absent; separate-process persistence; F3D model/camera/native teardown; hidden rendered acceptance and source self-test; see S3 evidence |
 | S4 - Native archive browsing and editing | COMPLETE | ARCHIVE-01..05, affected CORE-02/03, PREVIEW-04, LIFE-01/DELIVERY-03 | S3 COMPLETE | Pinned native library/source/terms, real pane/clipboard/edit/open/preview workflows, source/destination volume ownership, preservation and actual consumer cleanup verified; see S4 evidence |
-| S4R - Embedded writable RAR | ACTIVE | RAR-01..05, affected ARCHIVE-02..05/CORE/LIFE/DELIVERY-03 | S4 COMPLETE | Pinned Rust DLL, integrated pane/actions/queue, preservation preflight, independently decoded edits and original/cut-source preservation, hidden WPF workflows; remaining until verified |
+| S4R - Embedded writable RAR | COMPLETE | RAR-01..05, affected ARCHIVE-02..05/CORE/LIFE/DELIVERY-03 | S4 COMPLETE | Pinned loaded Rust DLL, real hidden pane/actions/queue, qualified solid/encrypted preservation and refusals, independent 7-Zip/UnRAR extraction, original/cut-source protection, clipboard rollback, cleanup and source commit/remote readback; see S4R evidence |
 | S5 - REA-driven transfer improvements | NOT STARTED | TRANSFER-01..06, archive/caller and WIDGET-02 revalidation, affected CORE-02/03, LIFE-01/DELIVERY-03 | S4R COMPLETE; identify TeraCopy artifact before analysis | Required REA Evidence -> adoption table -> integrated transfer behavior; data/failure/recovery checks and comparable measured workloads |
 | S6 - Native StartAllBack search | NOT STARTED | SAB-01..05, affected SEARCH/CORE/LIFE/DELIVERY criteria | S5 COMPLETE; exact host identified before hook selection | REA evidence -> version-bound native adapter -> actual Everything results inside the existing Start menu; preserved app/settings actions, lifecycle/compatibility/disable/recovery |
 | S7 - Everything everywhere and WSearch retirement | NOT STARTED | EVERYWHERE-01..05, affected SEARCH/CORE/LIFE/SHELL criteria | S6 COMPLETE; finite consumer/semantics inventory before migration | Actual per-surface Everything replacement, resolved content/property/mail dependencies, isolated WSearch-off workflows, reversible service Disabled state and reboot/recovery verification |
@@ -66,15 +66,15 @@ required current-stage wiring or real behavior.
   solid/encrypted edits, preservation refusals, real transfers, independent
   7-Zip/UnRAR decoding and failure/cancellation/source preservation. See
   [S4R evidence](verification/2026-10-29-s4r.md).
-- RAR-05 remains an internal advancement blocker until commit/push/readback.
-  Verification, source review and exact cleanup are complete. Resolution: commit
-  and matching remote head. S5 cannot start until this closes. No external blocker
-  or tracked deferral is declared.
+- RAR-05 passes: verification, exact cleanup and source delivery are complete.
+  Source commit `3517b8aea1ceadd6955b07f327e96b37f5eaeccf` was pushed to
+  `origin/codex/s4r-native-rar`; independent `ls-remote` readback matches.
+  S4R has no remaining advancement blocker or tracked deferral. S5 has not started.
 - Closure assessment found no material design debt requiring consolidation;
   native ownership and the existing queue/publication owners remain explicit.
 - Native build/output scratch: `D:\Temp\pathweft-rars-native` (native compilation
   and sustained small-file I/O); diagnostics/review and small cross-volume fixture:
-  `E:\Temp\pathweft-rars-review`. Clean through transactional-cleanup after use.
+  `E:\Temp\pathweft-rars-review`. Both roots were helper-cleaned and absence verified.
 - Persistent source/tool dependency cache: `D:\BuildCache\Pathweft\cargo` and
   `D:\BuildCache\Pathweft\rars\0.12.3-pathweft.1`, retained for current development
   and reproducible S8 packaging. Native source/bridge/lock/notices remain in Git.
