@@ -345,7 +345,9 @@ public partial class MainWindow : Window
     public void RefreshPanes()
     {
         PaneView.ShowHidden = Settings.ShowHidden;
-        Left.Refresh(); Right.Refresh();
+        Left.RefreshVisibility(); Right.RefreshVisibility();
+        taskbarSearch?.Widget?.Pane.RefreshVisibility();
+        RefreshFolderTreeVisibility();
     }
 
     public void ResortPanes() { foreach (var p in new[] { Left, Right }) p.SetSort(p.SortKey, p.SortDescending); }
@@ -1510,10 +1512,18 @@ public partial class MainWindow : Window
 
     void ToggleHidden()
     {
-        PaneView.ShowHidden = Settings.ShowHidden = !Settings.ShowHidden;
+        Settings.ShowHidden = !Settings.ShowHidden;
         Settings.Save();
-        Left.Refresh(); Right.Refresh();
-        Status.Text = PaneView.ShowHidden ? "Showing hidden files" : "Hiding hidden files";
+        RefreshPanes();
+        Status.Text = PaneView.ShowHidden ? "Showing hidden and dot-prefixed files" : "Hiding hidden and dot-prefixed files";
+    }
+
+    internal bool HandleHiddenShortcut(Key key, ModifierKeys modifiers, bool repeat, object source)
+    {
+        if (key != Key.H || modifiers != ModifierKeys.Control) return false;
+        if (source is TextBox text && text.Name is not ("FilterBox" or "PathBox")) return false;
+        if (!repeat) ToggleHidden();
+        return true;
     }
 
     void SwapPanes()
@@ -1536,6 +1546,7 @@ public partial class MainWindow : Window
 
     protected override void OnPreviewKeyDown(KeyEventArgs e)
     {
+        if (HandleHiddenShortcut(e.Key, e.KeyboardDevice.Modifiers, e.IsRepeat, e.OriginalSource)) { e.Handled = true; return; }
         // Scope selection owns its Enter/arrows/Escape; global file commands
         // must not open a selected file while this control has the keyboard.
         if (e.OriginalSource is ComboBox or ComboBoxItem) { base.OnPreviewKeyDown(e); return; }
@@ -1570,7 +1581,6 @@ public partial class MainWindow : Window
             case Key.W when ctrl: active.CloseTab(); break;
             case Key.L when ctrl: active.EditPath(); break;
             case Key.F when ctrl: active.FocusFilter(); break;
-            case Key.H when ctrl: ToggleHidden(); break;
             case Key.U when ctrl: SwapPanes(); break;
             case >= Key.D1 and <= Key.D5 when ctrl && shift:
                 active.SetView(new[] { PaneView.ViewMode.Details, PaneView.ViewMode.List, PaneView.ViewMode.IconsM, PaneView.ViewMode.IconsL, PaneView.ViewMode.IconsXL }[key - Key.D1]); break;

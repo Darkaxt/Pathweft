@@ -1,15 +1,17 @@
 # Implementation and reconciliation
 
-Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.4, 2026-10-29.
+Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.5, 2026-10-29.
 
-Current authorization: S3 implementation/verification, requested by the user on
+Current authorization: S4U implementation/verification, the approved read-only
+icon treatment and Ctrl+H/dot-name visibility. Earlier S3 work was requested on
 2026-10-29 after S2 completion. The user also added the F3D prototype and a separate
 archive-browsing/editing stage. On 2026-10-29 the user added native StartAllBack
 search integration and the long-term all-Everything/Windows Search retirement
 goal, then authorized proceeding to the next stage after plan review.
 S1-S4 and S4R are COMPLETE; S5-S8 remain NOT STARTED.
 The user authorized trying rars on 2026-10-29 and delegated its integration
-choice. No implementation stage is currently ACTIVE; a wider Rust port is not in scope.
+choice. The user approved read-only icon cues and Ctrl+H/dot-name visibility;
+S4U is ACTIVE, the sole active stage. A wider Rust port is not in scope.
 Native source/SDK integration is preferred. This
 plan neither authorizes itself nor adds approval checkpoints.
 
@@ -22,7 +24,8 @@ plan neither authorizes itself nor adds approval checkpoints.
 | S3 - Internal selectable previews | COMPLETE | PREVIEW-01..05, affected CORE-03, LIFE-01/DELIVERY-03 | S2 COMPLETE | Selected source/native inventory; complete real preview/toggle/file-release workflow with QuickLook absent; separate-process persistence; F3D model/camera/native teardown; hidden rendered acceptance and source self-test; see S3 evidence |
 | S4 - Native archive browsing and editing | COMPLETE | ARCHIVE-01..05, affected CORE-02/03, PREVIEW-04, LIFE-01/DELIVERY-03 | S3 COMPLETE | Pinned native library/source/terms, real pane/clipboard/edit/open/preview workflows, source/destination volume ownership, preservation and actual consumer cleanup verified; see S4 evidence |
 | S4R - Embedded writable RAR | COMPLETE | RAR-01..05, affected ARCHIVE-02..05/CORE/LIFE/DELIVERY-03 | S4 COMPLETE | Pinned loaded Rust DLL, real hidden pane/actions/queue, qualified solid/encrypted preservation and refusals, independent 7-Zip/UnRAR extraction, original/cut-source protection, clipboard rollback, cleanup and source commit/remote readback; see S4R evidence |
-| S5 - REA-driven transfer improvements | NOT STARTED | TRANSFER-01..06, archive/caller and WIDGET-02 revalidation, affected CORE-02/03, LIFE-01/DELIVERY-03 | S4R COMPLETE; identify TeraCopy artifact before analysis | Required REA Evidence -> adoption table -> integrated transfer behavior; data/failure/recovery checks and comparable measured workloads |
+| S4U - Read-only cues and hidden visibility | ACTIVE | FILEUI-01..03, affected CORE/SEARCH/ARCHIVE/LIFE | S4R COMPLETE; user-approved icon direction | Real hidden browser/widget/tree/archives and native index workflow, persisted global toggle, grayscale/lock rendering, preservation and focused regressions |
+| S5 - REA-driven transfer improvements | NOT STARTED | TRANSFER-01..06, archive/caller and WIDGET-02 revalidation, affected CORE-02/03, LIFE-01/DELIVERY-03 | S4U COMPLETE; identify TeraCopy artifact before analysis | Required REA Evidence -> adoption table -> integrated transfer behavior; data/failure/recovery checks and comparable measured workloads |
 | S6 - Native StartAllBack search | NOT STARTED | SAB-01..05, affected SEARCH/CORE/LIFE/DELIVERY criteria | S5 COMPLETE; exact host identified before hook selection | REA evidence -> version-bound native adapter -> actual Everything results inside the existing Start menu; preserved app/settings actions, lifecycle/compatibility/disable/recovery |
 | S7 - Everything everywhere and WSearch retirement | NOT STARTED | EVERYWHERE-01..05, affected SEARCH/CORE/LIFE/SHELL criteria | S6 COMPLETE; finite consumer/semantics inventory before migration | Actual per-surface Everything replacement, resolved content/property/mail dependencies, isolated WSearch-off workflows, reversible service Disabled state and reboot/recovery verification |
 | S8 - Final integration and delivery | NOT STARTED | SHELL-01, DELIVERY-01..03; reconcile every product requirement | S1..S7 COMPLETE; prerequisite blockers/deferrals resolved | Reversible optional shell integration; all delivered search/migration/recovery boundaries; install/update/uninstall; final criteria review, source verification/commit, normal installer/portable release independently retrieved and verified |
@@ -43,6 +46,7 @@ implementation stage. See [setup evidence](verification/2026-10-28-setup.md).
 | PREVIEW-01..05 | S3; archive paths S4 | Packaged dependencies S8 |
 | ARCHIVE-01..05 | S4 | Transfer revalidation S5; final package S8 |
 | RAR-01..05 | S4R | Transfer revalidation S5; final package/source/license/install S8 |
+| FILEUI-01..03 | S4U | Delivered icon/visibility/settings package revalidation S8 |
 | TRANSFER-01..06 | S5 | Final package S8 |
 | SAB-01..05 | S6 | WSearch-off behavior S7; packaged adapter S8 |
 | EVERYWHERE-01..05 | S7 | Delivered migration/compatibility/recovery S8 |
@@ -53,6 +57,22 @@ implementation stage. See [setup evidence](verification/2026-10-28-setup.md).
 
 Later packaging verification checks a different boundary; it does not defer
 required current-stage wiring or real behavior.
+
+## S4U execution and reconciliation
+
+S4U is ACTIVE after S4R and before S5, owning FILEUI-01..03 and affected CORE,
+SEARCH, ARCHIVE and LIFE criteria. Finish one integrated outcome: read-only
+presentation plus consistent persisted hidden visibility across existing callers.
+Actual hidden WPF actions/layouts, native index visibility/counts, archive states,
+grayscale/cache/live attributes, widget/tree/settings and preservation checks pass;
+see [S4U evidence](verification/2026-10-29-s4u.md). Current acceptance has no
+implementation gap. Exact scratch cleanup is verified; source commit/remote
+readback is the remaining internal closure blocker. No external blocker or
+tracked deferral. Closure assessment found no material consolidation requirement.
+S5 cannot begin until S4U completes. Final package/release verification remains S8.
+Scratch: `D:\Temp\pathweft-s4-ui` for native WPF/build small-file I/O;
+`E:\Temp\pathweft-s4-ui-review` for preflight data. Retain only defined S8 evidence
+in the project; helper-clean scratch after its actual last consumer exits.
 
 ## S4R execution and reconciliation
 

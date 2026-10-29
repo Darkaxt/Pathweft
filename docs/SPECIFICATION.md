@@ -1,6 +1,6 @@
 # Pathweft specification
 
-Version 0.4 - 2026-10-29. Owner: Darkaxt.
+Version 0.5 - 2026-10-29. Owner: Darkaxt.
 
 This is the authoritative specification. The derived plan must preserve every
 requirement and acceptance criterion. Material scope changes require explicit
@@ -90,6 +90,29 @@ criteria apply within the implementing stage and again at the packaged boundary.
 | CORE-01 | Give Pathweft independent executable/product, settings, IPC/single-instance, agent/startup, shell, installer and updater identities. Verify side-by-side isolation from File Labs: no forwarding into, migrating, overwriting or uninstalling it. Establish isolation before ordinary-user-state runtime trials. |
 | CORE-02 | Preserve usable folder navigation, tabs, one/two panes, selection, keyboard actions, clipboard and drag/drop. Verify representative real folders and cross-pane operations, including a large listing. Inherited source is not proof of runtime correctness. |
 | CORE-03 | One settings interface owns integrations and module controls; normal views remain uncluttered. Before accepting UI changes, establish concrete layout/display-scale expectations and inspect current rendered screenshots at representative sizes. |
+
+### File visibility and read-only cues (S4U)
+
+On 2026-10-29 the user approved grayscale icons with a small lock and requested
+Ctrl+H plus Linux-style dot names. This authorizes S4U before S5.
+
+| ID | Requirement and acceptance |
+| --- | --- |
+| FILEUI-01 | Preserve icon shapes, filename brightness, selection and cloud/cut cues. Desaturate only icons/thumbnails and add a contrasting lower-right lock for confirmed read-only files or archive contents, in Details/List/icon views and physical unsupported containers/virtual entries. Give specific tooltip and accessible state. Directory ReadOnly customization bits do not prove access denial; do not infer ACL/admin rights or write user files to probe permission. Verify writable/read-only files, capability refusals, member states and refresh. |
+| FILEUI-02 | Ctrl+H and the Hidden button share one persisted setting across both panes and widget. Handle file-list/filter/path contexts while preserving text, location/query and usable selection. Preserve inline rename and separate editor shortcuts; ignore auto-repeat/additional modifiers. Verify routed input/actions, both directions and separate-process persistence in an isolated profile. |
+| FILEUI-03 | Hidden means Windows Hidden attribute or a basename starting '.', excluding navigation '.'/'..'. Apply the global setting to browsing/caches, breadcrumbs/path suggestions, recursive filesystem/Everything search and archives. Hide descendants of hidden directories from recursive search; direct navigation into a known hidden folder remains usable. Never alter filesystem attributes to implement visibility. Verify dot and Windows-hidden files/directories/descendants, ordinary dotted names, cache revisits, live attributes, paging/counts and real index behavior. |
+
+Design contract: retain File Labs tokens and row metrics. Small 16-DIP icons
+use an 8-DIP lock; tiles a 24-DIP lock. Keep icon opacity apart from existing
+cut/inactive styling. Inspect actual hidden WPF Details/List/icon output at
+100%/150% text scale. Approved generated concept supplies direction; production
+uses existing native icons. Final packaged delivery remains S8; no stage release.
+The expanded sidebar and new duplicate-finder scans use this same visibility
+rule, retaining the tools' other exclusion rules. Indexed results are filtered
+one requested page at a time; native match counts include filtered candidates,
+and the footer distinguishes visible rows from candidates checked. Inaccessible
+Windows attributes remain explicitly unknown; no writable/permission claim is
+made from them. Dot names remain detectable even on an unavailable indexed path.
 
 ### Everything search
 

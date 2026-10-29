@@ -11,8 +11,8 @@ namespace FileExplorer;
 // Native 7-Zip owns container IO. Pathweft owns virtual paths, verification and publication.
 internal static partial class Archive
 {
-    internal sealed record Raw(int Index, string Path, bool IsDir, long Size, DateTime Modified, bool Encrypted = false);
-    public sealed record Item(string Name, bool IsDir, long Size, DateTime Modified);
+    internal sealed record Raw(int Index, string Path, bool IsDir, long Size, DateTime Modified, bool Encrypted = false, FileAttributes Attributes = 0);
+    public sealed record Item(string Name, bool IsDir, long Size, DateTime Modified, FileAttributes Attributes = 0);
     static readonly Lazy<bool> native = new(() =>
     {
         SharpSevenZipBase.SetLibraryPath(System.IO.Path.Combine(AppContext.BaseDirectory, "SevenZip", "7z.dll"));
@@ -94,7 +94,7 @@ internal static partial class Archive
                     uint attributes = entry.Attributes;
                     if ((attributes & (uint)FileAttributes.ReparsePoint) != 0 || ((attributes >> 16) & 0xF000) == 0xA000)
                         throw new IOException("Links in archives are not extracted or edited: " + name);
-                    result.Add(new(entry.Index, name, entry.IsDirectory, checked((long)entry.Size), entry.LastWriteTime, entry.Encrypted));
+                    result.Add(new(entry.Index, name, entry.IsDirectory, checked((long)entry.Size), entry.LastWriteTime, entry.Encrypted, (FileAttributes)(attributes & 0xFFFF)));
                 }
             }
             catch (SharpSevenZipException ex) { throw new IOException("Cannot read archive metadata; enter its password or check its format/volumes.", ex); }
@@ -145,7 +145,7 @@ internal static partial class Archive
             if (!entry.Path.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) || entry.Path.Length == prefix.Length) continue;
             var rest = entry.Path[prefix.Length..]; int slash = rest.IndexOf('/');
             if (slash >= 0) { var name = rest[..slash]; items.TryAdd(name, new(name, true, -2, entry.Modified)); }
-            else items[rest] = new(rest, entry.IsDir, entry.IsDir ? -2 : entry.Size, entry.Modified);
+            else items[rest] = new(rest, entry.IsDir, entry.IsDir ? -2 : entry.Size, entry.Modified, entry.Attributes);
         }
         return items.Values.ToList();
     }

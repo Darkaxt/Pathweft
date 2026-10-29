@@ -181,7 +181,7 @@
                       ToolTip="Put this card's settings back to their defaults"/>
               <TextBlock Text="Files" Style="{StaticResource H}"/>
             </DockPanel>
-            <CheckBox x:Name="HiddenBox" Content="Show hidden files" Click="Hidden_Click"/>
+            <CheckBox x:Name="HiddenBox" Content="Show hidden and dot-prefixed files" Click="Hidden_Click"/>
             <TextBlock Style="{StaticResource Hint}" Text="Also Ctrl+H."/>
             <CheckBox x:Name="ShortcutFoldersBox" Content="Sort shortcuts to folders with the folders" Click="ShortcutFolders_Click"/>
             <TextBlock Style="{StaticResource Hint}" Text="A shortcut that opens a folder is listed among the folders, at the top, instead of among the files."/>

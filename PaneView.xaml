@@ -45,6 +45,23 @@
         </Setter.Value>
       </Setter>
     </Style>
+    <DataTemplate x:Key="ReadOnlyLock">
+      <Viewbox IsHitTestVisible="False">
+        <Grid Width="24" Height="24">
+          <Ellipse Fill="#20242A" Stroke="#D0D4DC" StrokeThickness="1.5"/>
+          <Path Stroke="#E8EEF6" StrokeThickness="2" Data="M8,11 L8,8 A4,4 0 0 1 16,8 L16,11"/>
+          <Path Fill="#E8EEF6" Data="M6,10 L18,10 18,19 6,19 Z"/>
+          <Path Stroke="#20242A" StrokeThickness="2" Data="M12,13 L12,16"/>
+        </Grid>
+      </Viewbox>
+    </DataTemplate>
+    <Style x:Key="ReadOnlyLockStyle" TargetType="ContentControl">
+      <Setter Property="ContentTemplate" Value="{StaticResource ReadOnlyLock}"/>
+      <Setter Property="HorizontalAlignment" Value="Right"/>
+      <Setter Property="VerticalAlignment" Value="Bottom"/>
+      <Setter Property="IsHitTestVisible" Value="False"/>
+      <Setter Property="Visibility"><Setter.Value><Binding Path="IsReadOnly"><Binding.Converter><BooleanToVisibilityConverter/></Binding.Converter></Binding></Setter.Value></Setter>
+    </Style>
     <DataTemplate x:Key="NameCell">
       <!-- a DockPanel, not a horizontal StackPanel: the name gets the column's width, so a long name is
            trimmed and the rename box scrolls to its end instead of running on, cut off, past the column -->
@@ -53,8 +70,9 @@
           <TextBlock Text="{Binding Icon}" FontFamily="Segoe Fluent Icons" Foreground="{Binding IconBrush}" VerticalAlignment="Center" Opacity="0.9">
             <TextBlock.Visibility><Binding Path="NoSmallIcon"><Binding.Converter><BooleanToVisibilityConverter/></Binding.Converter></Binding></TextBlock.Visibility>
           </TextBlock>
-          <Image Source="{Binding SmallIcon}" RenderOptions.BitmapScalingMode="HighQuality"/>
+          <Image Source="{Binding DisplaySmallIcon}" RenderOptions.BitmapScalingMode="HighQuality"/>
           <Image Source="{Binding Overlay}" RenderOptions.BitmapScalingMode="HighQuality"/> <!-- sync badge (Google Drive, Nextcloud, ...) -->
+          <ContentControl Tag="ReadOnlyLock" Content="{Binding}" Style="{StaticResource ReadOnlyLockStyle}" Width="8" Height="8"/>
         </Grid>
         <Grid>
           <!-- not hit-testable: a right-click landing on one of its Runs made the list drop a multi-selection -->
@@ -91,8 +109,9 @@
             </Viewbox.Visibility>
             <TextBlock Text="{Binding Icon}" FontFamily="Segoe Fluent Icons" Foreground="{Binding IconBrush}"/>
           </Viewbox>
-          <Image Source="{Binding Thumb}" Stretch="Uniform" StretchDirection="DownOnly" RenderOptions.BitmapScalingMode="HighQuality"/>
+          <Image Source="{Binding DisplayThumb}" Stretch="Uniform" StretchDirection="DownOnly" RenderOptions.BitmapScalingMode="HighQuality"/>
           <Image Source="{Binding Overlay}" Width="32" Height="32" HorizontalAlignment="Left" VerticalAlignment="Bottom" RenderOptions.BitmapScalingMode="HighQuality"/>
+          <ContentControl Tag="ReadOnlyLock" Content="{Binding}" Style="{StaticResource ReadOnlyLockStyle}" Width="24" Height="24" Margin="2"/>
         </Grid>
         <Border Height="5" Width="34" CornerRadius="2.5" Background="{Binding AgeBrush}" Margin="0,4,0,3" HorizontalAlignment="Center"/>
         <Grid>
@@ -113,8 +132,9 @@
           <TextBlock Text="{Binding Icon}" FontFamily="Segoe Fluent Icons" Foreground="{Binding IconBrush}" VerticalAlignment="Center" Opacity="0.9">
             <TextBlock.Visibility><Binding Path="NoSmallIcon"><Binding.Converter><BooleanToVisibilityConverter/></Binding.Converter></Binding></TextBlock.Visibility>
           </TextBlock>
-          <Image Source="{Binding SmallIcon}" RenderOptions.BitmapScalingMode="HighQuality"/>
+          <Image Source="{Binding DisplaySmallIcon}" RenderOptions.BitmapScalingMode="HighQuality"/>
           <Image Source="{Binding Overlay}" RenderOptions.BitmapScalingMode="HighQuality"/> <!-- sync badge (Google Drive, Nextcloud, ...) -->
+          <ContentControl Tag="ReadOnlyLock" Content="{Binding}" Style="{StaticResource ReadOnlyLockStyle}" Width="8" Height="8"/>
         </Grid>
         <Grid>
           <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"><TextBlock.Visibility><Binding Path="NotRenaming"><Binding.Converter><BooleanToVisibilityConverter/></Binding.Converter></Binding></TextBlock.Visibility></TextBlock>

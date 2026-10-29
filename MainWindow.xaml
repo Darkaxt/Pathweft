@@ -359,7 +359,7 @@
           <Button Style="{StaticResource Ghost}" Click="NewFile_Click" ToolTip="New file (Ctrl+N)"><TextBlock><Run Foreground="{StaticResource Muted}">Ctrl+N</Run> New file</TextBlock></Button>
           <Button Style="{StaticResource Ghost}" Click="Delete_Click"><TextBlock><Run Foreground="{StaticResource Muted}">F8</Run> Delete</TextBlock></Button>
           <Button Style="{StaticResource Ghost}" Click="Terminal_Click"><TextBlock><Run Foreground="{StaticResource Muted}">Ctrl+`</Run> Terminal</TextBlock></Button>
-          <Button Style="{StaticResource Ghost}" Click="Hidden_Click"><TextBlock><Run Foreground="{StaticResource Muted}">Ctrl+H</Run> Hidden</TextBlock></Button>
+          <Button x:Name="HiddenToggle" Style="{StaticResource Ghost}" Click="Hidden_Click" ToolTip="Show or hide Windows hidden and dot-prefixed files (Ctrl+H)"><TextBlock><Run Foreground="{StaticResource Muted}">Ctrl+H</Run> Hidden</TextBlock></Button>
           <!-- in screen order: first pane, second pane, preview -->
           <Button Style="{StaticResource Ghost}" Click="Panes_Click" ToolTip="One pane or two (Ctrl+P)"><TextBlock><Run Foreground="{StaticResource Muted}">Ctrl+P</Run> One / two panes</TextBlock></Button>
           <Button Style="{StaticResource Ghost}" Click="Preview_Click" ToolTip="Show the selected file beside the panes"><TextBlock><Run Foreground="{StaticResource Muted}">Alt+P</Run> Preview</TextBlock></Button>

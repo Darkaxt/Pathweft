@@ -13,6 +13,9 @@ public partial class PaneView
     CancellationTokenSource indexedCancellation;
     bool indexedSearch;
     uint indexedTotal;
+    uint indexedOffset;
+    bool indexedShowHidden;
+    Dictionary<string, bool> visibilityParents = new(StringComparer.OrdinalIgnoreCase);
     string searchNotice = "";
     string indexedExpression;
     ObservableCollection<Entry> indexedResults;
@@ -86,7 +89,8 @@ public partial class PaneView
         ++navVersion;
         sizing?.Cancel(); icons?.Cancel(); thumbs?.Cancel();
         StopFolderWatch();
-        indexedResults = new(); indexedTotal = 0;
+        indexedResults = new(); indexedTotal = indexedOffset = 0;
+        indexedShowHidden = ShowHidden; visibilityParents = new(StringComparer.OrdinalIgnoreCase);
         searchNotice = "Querying the selected Everything index…";
         SearchCoverage.Visibility = Visibility.Visible;
         ShowItems(indexedResults, null, animate: false);
@@ -102,16 +106,26 @@ public partial class PaneView
         try
         {
             var page = await EverythingSearchClient.Shared.QueryAsync(indexedExpression, SearchInstance,
-                (uint)indexedResults.Count, SearchPageSize, sortKey, sortDesc, token);
+                indexedOffset, SearchPageSize, sortKey, sortDesc, token);
             if (token.IsCancellationRequested || generation != navVersion) return;
+            // Inspect only the requested page. A separate raw cursor ensures a
+            // fully hidden page cannot repeat or make paging stop prematurely.
+            string visibilityRoot = SearchScope.SelectedIndex == 0 ? Dir : null;
+            var parents = visibilityParents;
+            var visibility = indexedShowHidden ? null : await Task.Run(() => page.Hits.Select(hit =>
+                FileVisibility.PathVisible(hit.Path, visibilityRoot, parents, token)).ToArray(), token);
+            if (token.IsCancellationRequested || generation != navVersion) return;
+            indexedOffset += (uint)page.Hits.Count;
             indexedTotal = page.Total;
             // The index can change between pages. Refresh is explicit; never
             // present a changing, deduplicated page set as a stable snapshot.
             var known = indexedResults.Select(e => e.Path).ToHashSet(StringComparer.OrdinalIgnoreCase);
             bool changed = false;
-            foreach (var hit in page.Hits)
+            for (int index = 0; index < page.Hits.Count; index++)
             {
+                var hit = page.Hits[index];
                 if (!known.Add(hit.Path)) { changed = true; continue; }
+                if (visibility != null && !visibility[index]) continue;
                 indexedResults.Add(new Entry
                 {
                     Name = System.IO.Path.GetFileName(hit.Path), Path = hit.Path, IsDir = hit.IsFolder,
@@ -120,9 +134,10 @@ public partial class PaneView
                 });
             }
             searchNotice = page.Engine + " · Index coverage only; excluded, unindexed or offline items may be absent. Filesystem · Folder searches the live subtree.";
+            if (!indexedShowHidden) searchNotice += " Hidden/dot paths are filtered per page; inaccessible attributes are unknown. Indexed match count includes filtered paths.";
             if (changed) searchNotice += " Index changed during paging; refresh to restart.";
             // A duplicate page must not repeatedly request the same offset.
-            MoreResults.Visibility = !changed && page.Hits.Count > 0 && indexedResults.Count < indexedTotal ? Visibility.Visible : Visibility.Collapsed;
+            MoreResults.Visibility = !changed && page.Hits.Count > 0 && indexedOffset < indexedTotal ? Visibility.Visible : Visibility.Collapsed;
             QueueVisibleSearchAssets();
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested) { }
@@ -150,7 +165,7 @@ public partial class PaneView
     void Search_Click(object sender, RoutedEventArgs e) { Search(FilterBox.Text.Trim()); FocusList(); }
     void MoreResults_Click(object sender, RoutedEventArgs e)
     {
-        if (indexedSearch && !searching && indexedResults.Count < indexedTotal)
+        if (indexedSearch && !searching && indexedOffset < indexedTotal)
             SearchCompletion = LoadIndexedPage(indexedCancellation.Token, navVersion);
     }
     void Scope_Changed(object sender, SelectionChangedEventArgs e)

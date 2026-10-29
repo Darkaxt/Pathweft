@@ -7,7 +7,9 @@ do not change its requirements or the user's standing instructions.
   user request for the next stage after plan review). S1-S4 are COMPLETE;
   S4R is COMPLETE, authorized by the user's 2026-10-29 request to try bitplane/rars
   with the integration choice delegated. S5-S8 remain NOT STARTED. A plan does not
-  authorize itself or intermediate product releases.
+  authorize itself or intermediate product releases. S4U is now ACTIVE, authorized
+  by approval of grayscale/lock icons and Ctrl+H with dot-name visibility; see
+  FILEUI-01..03. S5 waits for S4U closure.
 - Keep one ACTIVE stage during authorized implementation. Reconcile complete
   features and actual integration evidence in the existing implementation plan.
 - Reuse selected source components. Do not substitute standalone QuickLook or

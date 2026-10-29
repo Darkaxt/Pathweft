@@ -54,11 +54,29 @@ public class Entry : INotifyPropertyChanged
     long size = -1; // -1 = folder size still computing, -2 = not measured (network shares)
     public long Size { get => size; set { size = value; Changed(nameof(Size)); Changed(nameof(SizeText)); Changed(nameof(Tip)); } }
     ImageSource thumb;
-    public ImageSource Thumb { get => thumb; set { thumb = value; Changed(nameof(Thumb)); Changed(nameof(NoThumb)); } }
+    public ImageSource Thumb { get => thumb; set { thumb = value; grayThumb = null; Changed(nameof(Thumb)); Changed(nameof(DisplayThumb)); Changed(nameof(NoThumb)); } }
+    ImageSource grayThumb, graySmallIcon;
+    public ImageSource DisplayThumb => IsReadOnly ? grayThumb ??= ReadOnlyIcons.Gray(thumb) : thumb;
+    public ImageSource DisplaySmallIcon => IsReadOnly ? graySmallIcon ??= ReadOnlyIcons.Gray(smallIcon) : smallIcon;
+    string readOnlyReason = "";
+    public string ReadOnlyReason
+    {
+        get => readOnlyReason;
+        set
+        {
+            if (readOnlyReason == value) return;
+            readOnlyReason = value; grayThumb = graySmallIcon = null;
+            foreach (string property in new[] { nameof(ReadOnlyReason), nameof(IsReadOnly), nameof(DisplayThumb), nameof(DisplaySmallIcon), nameof(IconBrush), nameof(Tip), nameof(AccessibleName) }) Changed(property);
+        }
+    }
+    internal bool RestrictionChecked;
+    internal FileAttributes Attributes;
+    public bool IsReadOnly => readOnlyReason.Length > 0;
+    public string AccessibleName => IsReadOnly ? Name + ". " + ReadOnlyReason : Name;
     public bool NoThumb => thumb == null;
     public int ThumbSize; // what it was fetched at, so zooming in knows when a bigger one is needed
     ImageSource smallIcon;
-    public ImageSource SmallIcon { get => smallIcon; set { smallIcon = value; Changed(nameof(SmallIcon)); Changed(nameof(NoSmallIcon)); } }
+    public ImageSource SmallIcon { get => smallIcon; set { smallIcon = value; graySmallIcon = null; Changed(nameof(SmallIcon)); Changed(nameof(DisplaySmallIcon)); Changed(nameof(NoSmallIcon)); } }
     public bool NoSmallIcon => smallIcon == null;
     ImageSource overlay;
     public ImageSource Overlay { get => overlay; set { if (overlay != value) { overlay = value; Changed(nameof(Overlay)); } } } // sync badge
@@ -96,7 +114,7 @@ public class Entry : INotifyPropertyChanged
         : Kinds.TryGetValue(System.IO.Path.GetExtension(Name), out var k) ? k : ("", "#9CA3AF");
     public string Icon => Kind.icon;
     public string KindColor => Kind.color;
-    public Brush IconBrush => MainWindow.Hex(Kind.color);
+    public Brush IconBrush => MainWindow.Hex(IsReadOnly ? "#C0C4CA" : Kind.color);
 
     // Recency at a glance, OneCommander-style: hot red for minutes, fading through
     // orange/yellow/teal to neutral grey as the item gets older (log time scale).
@@ -146,7 +164,7 @@ public class Entry : INotifyPropertyChanged
     // The hover tooltip, as Explorer's: the whole name (a long one is cut off in the row), then type, size, date.
     public string Tip => IsUp ? null : string.Join("\n", new[]
     {
-        Name, Location != "" ? "In: " + Location : null, "Type: " + Thumbnails.TypeName(Name, IsDir),
+        Name, IsReadOnly ? ReadOnlyReason : null, Location != "" ? "In: " + Location : null, "Type: " + Thumbnails.TypeName(Name, IsDir),
         size >= 0 ? "Size: " + MainWindow.Fmt(size) : null, NoDate ? null : "Date modified: " + Modified.ToString("yyyy-MM-dd HH:mm:ss"),
     }.Where(line => line != null));
 }
@@ -215,7 +233,7 @@ public class FileList : ListView
     class RowPeer(object item, System.Windows.Automation.Peers.SelectorAutomationPeer list) : System.Windows.Automation.Peers.ListBoxItemAutomationPeer(item, list)
     {
         protected override List<System.Windows.Automation.Peers.AutomationPeer> GetChildrenCore() => null;
-        protected override string GetNameCore() => Item is Entry e ? e.Name : base.GetNameCore();
+        protected override string GetNameCore() => Item is Entry e ? e.AccessibleName : base.GetNameCore();
     }
 }
 
@@ -480,6 +498,7 @@ public partial class PaneView : UserControl
 
         // Show the folder as we last saw it, immediately; the read below replaces it a moment later.
         // Without this, every tab switch waits on the disk — measured at 1.2 s for a cold folder.
+        bool hidden = ShowHidden;
         var cached = Cached(di.FullName);
         // A refresh of the folder on screen: its rows are the cached ones, and showing them again would
         // rebuild the list, drop the selection and jump the scroll — every 400 ms in a busy folder.
@@ -496,7 +515,7 @@ public partial class PaneView : UserControl
             // Always read: a folder's timestamp moves when a child is added, removed or renamed, but not
             // when a file inside is rewritten — a growing download or log kept its old size forever.
             long stamp = Stamp(di.FullName);
-            var list = ReadFolder(di, ShowHidden, out var error);
+            var list = ReadFolder(di, hidden, out var error);
 
             Dispatcher.BeginInvoke(() =>
             {
@@ -512,7 +531,7 @@ public partial class PaneView : UserControl
                 bool shown = cached != null && cached.Items == items;
                 if (shown && Patch(list))
                 {
-                    Remember(di.FullName, cached.Items, stamp);
+                    Remember(di.FullName, cached.Items, stamp, hidden);
                     if (select != null && items.FirstOrDefault(e => e.Name.Equals(select, StringComparison.OrdinalIgnoreCase)) is { } row)
                     {
                         List.SelectedItem = row;
@@ -523,7 +542,7 @@ public partial class PaneView : UserControl
                 }
                 else
                 {
-                    Remember(di.FullName, list, stamp);
+                    Remember(di.FullName, list, stamp, hidden);
                     ShowItems(list, select, animate: cached == null, keep: shown);
                     StartPasses();
                 }
@@ -565,7 +584,7 @@ public partial class PaneView : UserControl
     }
 
     // ---- the folder cache: what makes tab switching and re-opening a folder instant ----
-    sealed class Listing { public List<Entry> Items; public long Stamp; public long UsedAt; }
+    sealed class Listing { public List<Entry> Items; public long Stamp; public long UsedAt; public bool Hidden; }
 
     // Per pane, so a rename in one pane can't dim rows in the other. 200 folders is a few MB.
     readonly Dictionary<string, Listing> listCache = new(StringComparer.OrdinalIgnoreCase);
@@ -581,17 +600,18 @@ public partial class PaneView : UserControl
     {
         lock (listCache)
         {
-            if (!listCache.TryGetValue(path, out var hit)) return null;
+            if (!listCache.TryGetValue(path, out var hit) || hit.Hidden != ShowHidden) return null;
             hit.UsedAt = DateTime.UtcNow.Ticks;
             return hit;
         }
     }
 
-    void Remember(string path, List<Entry> list, long stamp)
+    void Remember(string path, List<Entry> list, long stamp, bool hidden)
     {
         lock (listCache)
         {
-            listCache[path] = new Listing { Items = list, Stamp = stamp, UsedAt = DateTime.UtcNow.Ticks };
+            if (hidden != ShowHidden) return;
+            listCache[path] = new Listing { Items = list, Stamp = stamp, UsedAt = DateTime.UtcNow.Ticks, Hidden = hidden };
             while (listCache.Count > MaxFolders || listCache.Values.Sum(l => l.Items.Count) > MaxEntries)
             {
                 var oldest = listCache.OrderBy(kv => kv.Value.UsedAt).First().Key;
@@ -609,9 +629,9 @@ public partial class PaneView : UserControl
         {
             foreach (var fsi in di.EnumerateFileSystemInfos())
             {
-                if (!hidden && fsi.Attributes.HasFlag(FileAttributes.Hidden)) continue;
+                if (!FileVisibility.Visible(fsi.Name, fsi.Attributes, hidden)) continue;
                 bool isDir = fsi is DirectoryInfo;
-                var e = new Entry { Name = fsi.Name, Path = fsi.FullName, IsDir = isDir, Modified = fsi.LastWriteTime, IsCut = CutPaths.Contains(fsi.FullName) };
+                var e = new Entry { Name = fsi.Name, Path = fsi.FullName, IsDir = isDir, Modified = fsi.LastWriteTime, IsCut = CutPaths.Contains(fsi.FullName), Attributes = fsi.Attributes, ReadOnlyReason = ReadOnlyIcons.AttributeReason(isDir, fsi.Attributes) };
                 e.Size = isDir ? SizeCache.Peek(fsi.FullName, fsi.LastWriteTimeUtc) : ((FileInfo)fsi).Length; // never waits for the cache
                 list.Add(e);
             }
@@ -644,7 +664,7 @@ public partial class PaneView : UserControl
                 long stamp = Stamp(path);
                 if (stamp == 0 || Cached(path) is { } hit && hit.Stamp == stamp) continue; // already fresh
                 var list = ReadFolder(new DirectoryInfo(path), hidden, out var error);
-                if (error == null && !cts.IsCancellationRequested) Dispatcher.BeginInvoke(() => Remember(path, list, stamp));
+                if (error == null && !cts.IsCancellationRequested) Dispatcher.BeginInvoke(() => Remember(path, list, stamp, hidden));
             }
         }, cts.Token);
     }
@@ -802,6 +822,12 @@ public partial class PaneView : UserControl
         foreach (var f in fresh)
         {
             var e = rows[f.Name];
+            if (e.Attributes != f.Attributes)
+            {
+                e.Attributes = f.Attributes; e.RestrictionChecked = false;
+                e.ReadOnlyReason = f.ReadOnlyReason; reicon.Add(e);
+            }
+            if (e.ReadOnlyReason != f.ReadOnlyReason && !Archive.IsArchiveName(e.Path)) e.ReadOnlyReason = f.ReadOnlyReason;
             if (e.Modified != f.Modified)
             {
                 e.Modified = f.Modified;
@@ -810,6 +836,7 @@ public partial class PaneView : UserControl
                 // an installer still being written when it was first listed had no version or icon yet
                 if (!e.IsDir && Versioned.Contains(System.IO.Path.GetExtension(e.Name))) reversion = true;
                 if (!e.IsDir && OwnIcon.Contains(System.IO.Path.GetExtension(e.Name))) reicon.Add(e);
+                if (!e.IsDir && Archive.IsArchiveName(e.Path)) { e.RestrictionChecked = false; reicon.Add(e); }
             }
             if (!e.IsDir && e.Size != f.Size) e.Size = f.Size;
         }
@@ -915,8 +942,10 @@ public partial class PaneView : UserControl
                 DriveInfoText.Text = "Archive unavailable · " + error;
                 Listed = true; Error?.Invoke(DriveInfoText.Text); StatsChanged?.Invoke(); return;
             }
-            ShowItems(items.Select(i => new Entry { Name = i.Name, Path = dir + "\\" + i.Name, IsDir = i.IsDir, Size = i.Size, Modified = i.Modified }).ToList(), select);
             string changeReason = Archive.ChangeReason(at.Archive);
+            ShowItems(items.Where(i => FileVisibility.Visible(i.Name, i.Attributes, ShowHidden)).Select(i => new Entry { Name = i.Name, Path = dir + "\\" + i.Name, IsDir = i.IsDir, Size = i.Size, Modified = i.Modified,
+                ReadOnlyReason = changeReason.Length > 0 ? "Archive contents are read-only: " + changeReason : ReadOnlyIcons.AttributeReason(i.IsDir, i.Attributes), RestrictionChecked = true }).ToList(), select);
+            if (pendingSelect != null) ApplyPendingSelect();
             DriveInfoText.Text = $"Inside {System.IO.Path.GetFileName(at.Archive)} · " + (changeReason.Length == 0 ? "editable" : "read-only");
             DriveInfoText.ToolTip = changeReason.Length == 0 ? null : changeReason;
             UsedBar.Width = 0;
@@ -1088,11 +1117,6 @@ public partial class PaneView : UserControl
         bool hidden = ShowHidden;
         await Task.Run(() =>
         {
-            var opts = new EnumerationOptions
-            {
-                RecurseSubdirectories = true, IgnoreInaccessible = true,
-                AttributesToSkip = FileAttributes.ReparsePoint | (hidden ? 0 : FileAttributes.Hidden),
-            };
             var batch = new List<Entry>();
             var clock = System.Diagnostics.Stopwatch.StartNew();
             int found = 0;
@@ -1103,7 +1127,7 @@ public partial class PaneView : UserControl
             }
             try
             {
-                foreach (var fsi in new DirectoryInfo(root).EnumerateFileSystemInfos("*", opts))
+                foreach (var fsi in FileVisibility.Subtree(root, hidden))
                 {
                     if (v != navVersion) return;
                     bool isDir = fsi is DirectoryInfo;
@@ -1113,7 +1137,7 @@ public partial class PaneView : UserControl
                     batch.Add(new Entry
                     {
                         Name = fsi.Name, Path = fsi.FullName, IsDir = isDir, Modified = fsi.LastWriteTime, Location = where == "." ? "" : where,
-                        IsCut = CutPaths.Contains(fsi.FullName),
+                        IsCut = CutPaths.Contains(fsi.FullName), ReadOnlyReason = ReadOnlyIcons.AttributeReason(isDir, fsi.Attributes),
                         Size = isDir ? SizeCache.Get(fsi.FullName, fsi.LastWriteTimeUtc) : ((FileInfo)fsi).Length,
                     });
                     if (++found >= MaxResults) break;
@@ -1203,6 +1227,26 @@ public partial class PaneView : UserControl
         else Navigate(Dir, force ? (List.SelectedItem as Entry)?.Name : null, record: false);
     }
 
+    internal void RefreshVisibility()
+    {
+        prefetching?.Cancel();
+        var selected = Selected.Select(e => e.Name).ToArray();
+        if (searchQuery != null)
+        {
+            var paths = Selected.Select(e => e.Path).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            Search(searchQuery);
+            int generation = navVersion; var completed = SearchCompletion;
+            SearchCompletion = RestoreSelection();
+            async Task RestoreSelection()
+            {
+                await completed;
+                if (generation != navVersion) return;
+                foreach (var row in Items.Where(e => paths.Contains(e.Path))) List.SelectedItems.Add(row);
+            }
+        }
+        else { Navigate(Dir, selected.FirstOrDefault(), record: false); SelectAfterRefresh(selected, focus: false); }
+    }
+
     // Folder sizes: walk each subfolder in the background, fill cells as they finish.
     void StartSizing()
     {
@@ -1286,7 +1330,7 @@ public partial class PaneView : UserControl
         StopFolderWatch();
         try
         {
-            var owner = watcher = new FileSystemWatcher(Dir) { NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName | NotifyFilters.LastWrite | NotifyFilters.Size };
+            var owner = watcher = new FileSystemWatcher(Dir) { NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName | NotifyFilters.LastWrite | NotifyFilters.Size | NotifyFilters.Attributes };
             void QueueRefresh(object sender, FileSystemEventArgs args) => Dispatcher.BeginInvoke(() =>
             {
                 // Disposed watchers can already have a callback queued on WPF.
@@ -1305,7 +1349,7 @@ public partial class PaneView : UserControl
     {
         if (indexedSearch)
         {
-            Footer.Text = $"{items.Count:N0} loaded / {indexedTotal:N0} indexed matches{(searching ? " · searching…" : "")} · Esc returns";
+            Footer.Text = $"{items.Count:N0} visible · {indexedOffset:N0} / {indexedTotal:N0} indexed matches checked{(searching ? " · searching…" : "")} · Esc returns";
             return;
         }
         var sel = Selected;
@@ -1355,15 +1399,16 @@ public partial class PaneView : UserControl
 
     async void ShowSubfolders(Button anchor, string folder, string current)
     {
-        var opts = new EnumerationOptions { IgnoreInaccessible = true, AttributesToSkip = ShowHidden ? 0 : FileAttributes.Hidden };
+        bool hidden = ShowHidden;
+        var opts = new EnumerationOptions { IgnoreInaccessible = true, AttributesToSkip = hidden ? 0 : FileAttributes.Hidden };
         var dirs = await Task.Run(() =>
         {
             if (folder == ThisPC) return DriveInfo.GetDrives().Select(d => d.Name).ToList();
             if (IsServer(folder)) return NetShares(folder)?.Select(s => $@"{folder}\{s}").ToList() ?? new();
-            try { return Directory.EnumerateDirectories(folder, "*", opts).Take(500).ToList(); }
+            try { return Directory.EnumerateDirectories(folder, "*", opts).Where(d => FileVisibility.Visible(System.IO.Path.GetFileName(d), 0, hidden)).Take(500).ToList(); }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return new List<string>(); }
         });
-        if (dirs.Count == 0) return;
+        if (hidden != ShowHidden || dirs.Count == 0) return;
         var menu = new ContextMenu { PlacementTarget = anchor, Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom, MaxHeight = 480 };
         foreach (var d in dirs.OrderBy(d => d, ExplorerOrder.Instance))
         {
@@ -1918,7 +1963,8 @@ public partial class PaneView : UserControl
         if (PathBox.Visibility != Visibility.Visible) return;
         var text = TypedPath;
         int v = ++suggestVersion;
-        var opts = new EnumerationOptions { IgnoreInaccessible = true, AttributesToSkip = ShowHidden ? 0 : FileAttributes.Hidden };
+        bool hidden = ShowHidden;
+        var opts = new EnumerationOptions { IgnoreInaccessible = true, AttributesToSkip = hidden ? 0 : FileAttributes.Hidden };
         Task.Run(() =>
         {
             List<string> found = new();
@@ -1929,14 +1975,14 @@ public partial class PaneView : UserControl
                 try
                 {
                     if (IsServer(parent)) found = NetShares(parent.TrimEnd('\\'))?.Where(x => x.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)).Select(x => parent + x).ToList() ?? new();
-                    else if (Directory.Exists(parent)) found = Directory.EnumerateDirectories(parent, prefix + "*", opts).Take(12).ToList();
+                    else if (Directory.Exists(parent)) found = Directory.EnumerateDirectories(parent, prefix + "*", opts).Where(d => FileVisibility.Visible(System.IO.Path.GetFileName(d), 0, hidden)).Take(12).ToList();
                 }
                 catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException) { }
             }
             found.RemoveAll(f => f.Equals(text.TrimEnd('\\'), StringComparison.OrdinalIgnoreCase)); // already typed in full
             Dispatcher.BeginInvoke(() =>
             {
-                if (v != suggestVersion || PathBox.Visibility != Visibility.Visible) return;
+                if (v != suggestVersion || hidden != ShowHidden || PathBox.Visibility != Visibility.Visible) return;
                 SuggestList.ItemsSource = found;
                 Suggest.IsOpen = found.Count > 0;
             });
@@ -2302,6 +2348,10 @@ public partial class PaneView : UserControl
     static readonly System.Collections.Concurrent.ConcurrentDictionary<string, ImageSource> IconByExt = new(StringComparer.OrdinalIgnoreCase);
     static readonly HashSet<string> OwnIcon = new(StringComparer.OrdinalIgnoreCase) { ".exe", ".lnk", ".ico", ".url", ".cur", ".ani", ".msc", ".appref-ms" };
     CancellationTokenSource icons;
+#if DEBUG
+    internal Task IconsCompletionForVerification = Task.CompletedTask;
+    internal readonly List<Task> IconTasksForVerification = new();
+#endif
     /// stale: rows whose file was rewritten, asked again although they have an icon
     void StartIcons(ICollection<Entry> stale = null)
     {
@@ -2313,6 +2363,11 @@ public partial class PaneView : UserControl
             foreach (var e in todo)
             {
                 if (cts.IsCancellationRequested) return;
+                if (!e.RestrictionChecked)
+                {
+                    string reason = ReadOnlyIcons.Reason(e);
+                    Dispatcher.BeginInvoke(() => { if (!cts.IsCancellationRequested) { e.ReadOnlyReason = reason; e.RestrictionChecked = true; } });
+                }
                 if (e.SmallIcon != null && stale?.Contains(e) != true) continue; // kept from the last time this folder was shown
                 var ext = System.IO.Path.GetExtension(e.Name);
                 bool shared = !e.IsDir && !OwnIcon.Contains(ext);
@@ -2326,6 +2381,10 @@ public partial class PaneView : UserControl
         }) { IsBackground = true };
         t.SetApartmentState(ApartmentState.STA);
         t.Start();
+#if DEBUG
+        IconsCompletionForVerification = Task.Run(t.Join);
+        IconTasksForVerification.Add(IconsCompletionForVerification);
+#endif
     }
 
     // Sync badges. The shell asks every overlay handler about every file (~4 ms each), so this runs

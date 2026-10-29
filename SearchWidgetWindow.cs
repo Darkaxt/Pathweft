@@ -164,6 +164,7 @@ internal sealed class SearchWidgetWindow : Window
     }
     void OnWidgetKeyDown(object sender, KeyEventArgs e)
     {
+        if (main.HandleHiddenShortcut(e.Key, e.KeyboardDevice.Modifiers, e.IsRepeat, e.OriginalSource)) { e.Handled = true; return; }
         if (e.Key == Key.Escape) { Keyboard.ClearFocus(); Dismiss(); e.Handled = true; }
         else if (e.OriginalSource is ComboBoxItem or ComboBox) return;
         else if (query.IsKeyboardFocusWithin && e.Key == Key.Enter) { Pane.Search(query.Text); e.Handled = true; }

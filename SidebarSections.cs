@@ -62,14 +62,8 @@ public partial class MainWindow
         {
             e.Handled = true; // Expanded bubbles up to the parent nodes
             if (node.Items.Count != 1 || node.Items[0] is not string) return;
-            var skip = Settings.ShowHidden ? FileAttributes.System : FileAttributes.Hidden | FileAttributes.System;
-            var subs = await Task.Run(() =>
-            {
-                try { return Directory.EnumerateDirectories(path, "*", new EnumerationOptions { IgnoreInaccessible = true, AttributesToSkip = skip }).OrderBy(p => p, ExplorerOrder.Instance).Take(2000).ToList(); }
-                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return new List<string>(); }
-            });
-            node.Items.Clear();
-            foreach (var s in subs) node.Items.Add(TreeNode(s, Path.GetFileName(s)));
+            folderTreeVisibilityWork = LoadTreeNode(node);
+            await folderTreeVisibilityWork;
         };
         // clicking a row opens that folder in the active pane; the arrow only expands
         node.Selected += (_, e) => { e.Handled = true; if (node.IsSelected) active.Navigate(path); };
@@ -87,6 +81,41 @@ public partial class MainWindow
             ShellMenu.Show(this, Path.GetDirectoryName(path) ?? path, new[] { path }, rename: false);
         };
         return node;
+    }
+
+    int treeVisibilityVersion;
+    Task folderTreeVisibilityWork = Task.CompletedTask;
+    async Task LoadTreeNode(TreeViewItem node)
+    {
+        int version = treeVisibilityVersion; bool hidden = Settings.ShowHidden;
+        string path = (string)node.Tag;
+        var subs = await Task.Run(() =>
+        {
+            try { return Directory.EnumerateDirectories(path, "*", new EnumerationOptions { IgnoreInaccessible = true, AttributesToSkip = FileAttributes.System | (hidden ? 0 : FileAttributes.Hidden) })
+                .Where(p => FileVisibility.Visible(Path.GetFileName(p), 0, hidden)).OrderBy(p => p, ExplorerOrder.Instance).Take(2000).ToList(); }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return new List<string>(); }
+        });
+        if (version != treeVisibilityVersion) return;
+        var existing = node.Items.OfType<TreeViewItem>().ToDictionary(n => (string)n.Tag, StringComparer.OrdinalIgnoreCase);
+        var included = subs.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        foreach (var child in node.Items.Cast<object>().ToArray())
+            if (child is not TreeViewItem item || !included.Contains((string)item.Tag)) node.Items.Remove(child);
+        for (int i = 0; i < subs.Count; i++)
+        {
+            var child = existing.GetValueOrDefault(subs[i]) ?? TreeNode(subs[i], Path.GetFileName(subs[i]));
+            if (i < node.Items.Count && ReferenceEquals(node.Items[i], child)) continue;
+            node.Items.Remove(child); node.Items.Insert(i, child);
+        }
+    }
+    void RefreshFolderTreeVisibility()
+    {
+        ++treeVisibilityVersion;
+        IEnumerable<TreeViewItem> Expanded(ItemsControl parent)
+        {
+            foreach (var node in parent.Items.OfType<TreeViewItem>())
+                if (node.IsExpanded) { yield return node; foreach (var child in Expanded(node)) yield return child; }
+        }
+        folderTreeVisibilityWork = Task.WhenAll(Expanded(folderTree).ToArray().Select(LoadTreeNode));
     }
 
     static TreeViewItem FindNode(DependencyObject d)

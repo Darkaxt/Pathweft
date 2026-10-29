@@ -81,6 +81,7 @@
     <!-- every view's rows: the hover tooltip (Entry.Tip), which Settings → Files can turn off and which keeps
          out of the way of a rename -->
     <Style x:Key="ItemTip" TargetType="ListViewItem">
+      <Setter Property="AutomationProperties.Name" Value="{Binding AccessibleName}"/>
       <Setter Property="ToolTip" Value="{Binding Tip}"/>
       <Setter Property="ToolTipService.IsEnabled" Value="{DynamicResource ItemTips}"/>
       <Style.Triggers>

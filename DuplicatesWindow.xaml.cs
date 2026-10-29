@@ -53,8 +53,8 @@ public partial class DuplicatesWindow : Window
         {
             var all = new FileSystemEnumerable<DupFile>(folder, (ref FileSystemEntry e) => new DupFile(e.ToFullPath(), e.Length, e.LastWriteTimeUtc.LocalDateTime), options)
             {
-                ShouldIncludePredicate = (ref FileSystemEntry e) => !e.IsDirectory && (e.Attributes & InCloud) == 0,
-                ShouldRecursePredicate = (ref FileSystemEntry e) => (e.Attributes & FileAttributes.ReparsePoint) == 0,
+                ShouldIncludePredicate = (ref FileSystemEntry e) => !e.IsDirectory && (e.Attributes & InCloud) == 0 && FileVisibility.Visible(e.FileName, e.Attributes, hidden),
+                ShouldRecursePredicate = (ref FileSystemEntry e) => (e.Attributes & FileAttributes.ReparsePoint) == 0 && FileVisibility.Visible(e.FileName, e.Attributes, hidden),
             };
             foreach (var f in all)
             {

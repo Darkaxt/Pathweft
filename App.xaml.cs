@@ -25,6 +25,12 @@ static class Program
     static void Main(string[] args)
     {
 #if DEBUG
+        const string fileUiSettings = "--verify-fileui-settings=";
+        if (args.FirstOrDefault(a => a.StartsWith(fileUiSettings)) is { } settingsReceipt)
+        {
+            if (Settings.Profile?.StartsWith(@"D:\Temp\pathweft-s4-ui\", StringComparison.OrdinalIgnoreCase) != true || !Path.GetFullPath(settingsReceipt[fileUiSettings.Length..]).StartsWith(@"D:\Temp\pathweft-s4-ui\", StringComparison.OrdinalIgnoreCase)) { Environment.ExitCode = 2; return; }
+            Settings.Load(); File.WriteAllText(settingsReceipt[fileUiSettings.Length..], Settings.ShowHidden ? "shown" : "hidden"); return;
+        }
         if (args.Contains("--diagnose-s4-desktop")) { Console.WriteLine(S4Verification.DesktopDiagnostic()); return; }
         const string externalFile = "--verify-s4-external-file=";
         if (args.FirstOrDefault(a => a.StartsWith(externalFile)) is { } transferFile)
@@ -139,7 +145,7 @@ public partial class App : Application
         }
         Settings.Load(); // before any window: the panes read column widths while being built
 #if DEBUG
-        if (e.Args.Any(a => a.StartsWith("--verify-s4=")) && Environment.GetEnvironmentVariable("PATHWEFT_TEST_HIDDEN") == "1" && !HiddenTrialPresentation.Enabled)
+        if (e.Args.Any(a => a.StartsWith("--verify-s4=") || a.StartsWith("--verify-fileui=")) && Environment.GetEnvironmentVariable("PATHWEFT_TEST_HIDDEN") == "1" && !HiddenTrialPresentation.Enabled)
         { Shutdown(2); return; } // fail before constructing a window when a hidden trial profile is unrecognized
 #endif
         UseTipDelay();
@@ -152,6 +158,8 @@ public partial class App : Application
         base.OnStartup(e);
         var window = new MainWindow(); // opened here, not via StartupUri, so --agent etc. never build it
 #if DEBUG
+        if (e.Args.FirstOrDefault(a => a.StartsWith("--verify-fileui=")) is { } fileUiVerification)
+            window.ContentRendered += async (_, _) => await window.VerifyFileUi(fileUiVerification["--verify-fileui=".Length..]);
         HiddenTrialPresentation.Prepare(window);
 #endif
         if (hidden) window.PrepareHiddenStart();

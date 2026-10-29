@@ -114,7 +114,9 @@ try
 finally { directoryBoundary.SetValue(null, null); }
 bool rarQueue = Environment.GetEnvironmentVariable("PATHWEFT_VERIFY_RAR") == "1";
 string parallelArchive = Path.Combine(root, rarQueue ? "queued-moves.rar" : "queued-moves.7z"), firstDestination = Path.Combine(root, "first-destination");
-string secondDestination = Path.Combine(rarQueue ? @"E:\Temp\pathweft-rars-review" : @"E:\Temp\pathweft-s4-cleanup-review", "cross-volume-output-" + Guid.NewGuid().ToString("N"));
+string crossRoot = Environment.GetEnvironmentVariable("PATHWEFT_ARCHIVE_CROSS_ROOT") ?? (rarQueue ? @"E:\Temp\pathweft-rars-review" : @"E:\Temp\pathweft-s4-cleanup-review");
+if (crossRoot != @"E:\Temp\pathweft-s4-ui-review" && crossRoot != @"E:\Temp\pathweft-rars-review" && crossRoot != @"E:\Temp\pathweft-s4-cleanup-review") throw new IOException("Registered cross-volume scratch required.");
+string secondDestination = Path.Combine(crossRoot, "cross-volume-output-" + Guid.NewGuid().ToString("N"));
 Directory.CreateDirectory(firstDestination); Directory.CreateDirectory(secondDestination);
 Call("Create", parallelArchive, new Dictionary<string, string> { ["one.txt"] = alpha, ["two.txt"] = beta });
 using (var firstVerified = new ManualResetEventSlim())
