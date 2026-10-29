@@ -52,7 +52,7 @@ files/hashes are in vendor/QuickLook/source-manifest.json and corresponding
 viewer implementation live under Preview/. Ported QuickLook files carry
 GPL-3.0-or-later headers; preserve COPYING-GPL-3.0.txt and vendor notices. The
 original File Labs MIT license remains in LICENSE. The combined derived product
-is distributed under GPL-3.0-or-later; S6 owns matching binary/source packaging.
+is distributed under GPL-3.0-or-later; S8 owns matching binary/source packaging.
 
 Markdig is pinned to 1.5.0, source revision
 `9900e46eacd9e17ba32f1b441a349bcab61777af`, BSD-2-Clause. The restored package
@@ -69,5 +69,5 @@ SHA-256 is `98E3DB83A0E486D1A5D69F0D10D0B018432E9D200C8FECD0020AFC7DA26AB71E`.
 Selected original API headers/example, their hashes, BSD-3-Clause and dependency
 notices are in vendor/F3D. The pinned dependency cache contains native DLLs and
 licenses, excluding the shell-extension DLL and all executables. Build with
-`scripts/Build-Development.ps1` after preparing that dependency; S6 must verify
+`scripts/Build-Development.ps1` after preparing that dependency; S8 must verify
 the actual delivered native bundle and its corresponding notices.

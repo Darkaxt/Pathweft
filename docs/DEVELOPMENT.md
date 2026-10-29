@@ -41,17 +41,18 @@ I/O exception. Clean D: output immediately after verified last use.
 
 The executable now uses Pathweft identities, `PATHWEFT_PROFILE`, its own normal
 AppData directory and fork update URLs. Runtime trials use an isolated profile;
-they never change the user's default file manager, startup or Windows Search.
-Installer/update/uninstall execution is still an S6 boundary.
+S1-S3 trials leave the user's default file manager, startup and Windows Search
+unchanged. S6/S7 add explicitly planned shell/search migration boundaries;
+planning does not activate them. Installer/update/uninstall belongs to S8.
 
 Inherited `build.ps1` still writes/removes staging directly. Its identity strings
 and installer AppId are isolated, but packaging has not been executed/accepted.
-Adapt its lifecycle, outputs and cleanup in S6. The new launcher is a bounded
+Adapt its lifecycle, outputs and cleanup in S8. The new launcher is a bounded
 development compile, not an alternate release engine.
 
 `Pathweft.exe --selftest` is the inherited source/filesystem regression entry
 point. `scripts/Invoke-SourceSelfTest.ps1` binds its profile/temp to the registered
-S1/S2 scratch root, waits for process exit and returns its result. Fixtures are
+S1/S2/S3 scratch root, waits for process exit and returns its result. Fixtures are
 retained for reviewed cleanup, including its exact generated junction leaf.
 
 ## S1 local scenario

@@ -1,11 +1,14 @@
 # Implementation and reconciliation
 
-Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.2, 2026-10-29.
+Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.3, 2026-10-29.
 
 Current authorization: S3 implementation/verification, requested by the user on
 2026-10-29 after S2 completion. The user also added the F3D prototype and a separate
-archive-browsing/editing stage. S1-S3 are COMPLETE; S4-S6 remain
-NOT STARTED. Native source/SDK integration is preferred. This
+archive-browsing/editing stage. On 2026-10-29 the user added native StartAllBack
+search integration and the long-term all-Everything/Windows Search retirement
+goal, then authorized proceeding to the next stage after plan review.
+S1-S3 are COMPLETE; S4-S8 remain NOT STARTED until S4 implementation begins.
+Native source/SDK integration is preferred. This
 plan neither authorizes itself nor adds approval checkpoints.
 
 ## Stage map
@@ -17,7 +20,9 @@ plan neither authorizes itself nor adds approval checkpoints.
 | S3 - Internal selectable previews | COMPLETE | PREVIEW-01..05, affected CORE-03, LIFE-01/DELIVERY-03 | S2 COMPLETE | Selected source/native inventory; complete real preview/toggle/file-release workflow with QuickLook absent; separate-process persistence; F3D model/camera/native teardown; hidden rendered acceptance and source self-test; see S3 evidence |
 | S4 - Native archive browsing and editing | NOT STARTED | ARCHIVE-01..05, affected CORE-02/03, PREVIEW-04, LIFE-01/DELIVERY-03 | S3 COMPLETE | Native 7-Zip library/source inventory; real archive navigation/open/preview and rename/copy/cut/paste; transactional edits/data preservation; consumer-bound extraction cleanup |
 | S5 - REA-driven transfer improvements | NOT STARTED | TRANSFER-01..06, archive/caller and WIDGET-02 revalidation, affected CORE-02/03, LIFE-01/DELIVERY-03 | S4 COMPLETE; identify TeraCopy artifact before analysis | Required REA Evidence -> adoption table -> integrated transfer behavior; data/failure/recovery checks and comparable measured workloads |
-| S6 - Final integration and delivery | NOT STARTED | SHELL-01, DELIVERY-01..03; reconcile every product requirement | S1..S5 COMPLETE; prerequisite blockers/deferrals resolved | Reversible optional shell integration; install/update/uninstall; final criteria review, source verification/commit, normal installer/portable release independently retrieved and verified |
+| S6 - Native StartAllBack search | NOT STARTED | SAB-01..05, affected SEARCH/CORE/LIFE/DELIVERY criteria | S5 COMPLETE; exact host identified before hook selection | REA evidence -> version-bound native adapter -> actual Everything results inside the existing Start menu; preserved app/settings actions, lifecycle/compatibility/disable/recovery |
+| S7 - Everything everywhere and WSearch retirement | NOT STARTED | EVERYWHERE-01..05, affected SEARCH/CORE/LIFE/SHELL criteria | S6 COMPLETE; finite consumer/semantics inventory before migration | Actual per-surface Everything replacement, resolved content/property/mail dependencies, isolated WSearch-off workflows, reversible service Disabled state and reboot/recovery verification |
+| S8 - Final integration and delivery | NOT STARTED | SHELL-01, DELIVERY-01..03; reconcile every product requirement | S1..S7 COMPLETE; prerequisite blockers/deferrals resolved | Reversible optional shell integration; all delivered search/migration/recovery boundaries; install/update/uninstall; final criteria review, source verification/commit, normal installer/portable release independently retrieved and verified |
 
 ENV-01..04 belong to the current setup deliverable, not an artificial product
 implementation stage. See [setup evidence](verification/2026-10-28-setup.md).
@@ -27,21 +32,74 @@ implementation stage. See [setup evidence](verification/2026-10-28-setup.md).
 | Requirements | Owner | Later boundary |
 | --- | --- | --- |
 | ENV-01..04 | Setup | Committed/remote document and head readback at setup delivery |
-| CORE-01 | S1 | Installer/update isolation S6 |
-| CORE-02 | S1, affected actions S2/S4/S5 | Integrated package S6 |
-| CORE-03 | Each changed interface in S1..S5 | Full changed-interface review S6 |
-| SEARCH-01..04 | S1 | Widget S2, packaged engine S6 |
-| WIDGET-01..03 | S2 | Preview S3, archive S4, transfer S5, package S6 |
-| PREVIEW-01..05 | S3; archive paths S4 | Packaged dependencies S6 |
-| ARCHIVE-01..05 | S4 | Transfer revalidation S5; final package S6 |
-| TRANSFER-01..06 | S5 | Final package S6 |
-| LIFE-01 | Each implementing stage | Final lifecycle reconciliation S6 |
-| SHELL-01 | S6 | Actual disable/uninstall readback |
-| DELIVERY-01..02 | S6 | Release retrieval/verification |
-| DELIVERY-03 | Each import stage; final S6 | Public source/asset review |
+| CORE-01 | S1 | Installer/update isolation S8 |
+| CORE-02 | S1, affected actions S2/S4/S5/S6/S7 | Integrated package S8 |
+| CORE-03 | Each changed interface in S1..S7 | Full changed-interface review S8 |
+| SEARCH-01..04 | S1 | Widget S2, native adapters S6/S7, packaged engine S8 |
+| WIDGET-01..03 | S2 | Preview S3, archive S4, transfer S5, package S8 |
+| PREVIEW-01..05 | S3; archive paths S4 | Packaged dependencies S8 |
+| ARCHIVE-01..05 | S4 | Transfer revalidation S5; final package S8 |
+| TRANSFER-01..06 | S5 | Final package S8 |
+| SAB-01..05 | S6 | WSearch-off behavior S7; packaged adapter S8 |
+| EVERYWHERE-01..05 | S7 | Delivered migration/compatibility/recovery S8 |
+| LIFE-01 | Each implementing stage | Final lifecycle reconciliation S8 |
+| SHELL-01 | S7 for search migration, S8 for file-manager shell integration | Actual disable/uninstall readback |
+| DELIVERY-01..02 | S8 | Release retrieval/verification |
+| DELIVERY-03 | Each import stage; final S8 | Public source/asset review |
 
 Later packaging verification checks a different boundary; it does not defer
 required current-stage wiring or real behavior.
+
+## S6/S7 integration direction and open feasibility
+
+User outcome: use Everything in the existing search locations, ultimately with
+Windows Search disabled. StartAllBack is the first new native host. A redirected
+hotkey/popup is not acceptance for its existing menu. No shell/service mutation
+or REA target execution occurred during this plan review.
+
+Read-only installed-file metadata reported StartAllBack 3.9.25. This is not a
+hash-bound analysis or proof of an available hook. S6 begins by pinning that
+actual artifact and Windows dependencies and using gated REA to trace the query
+and result boundary. Select the smallest native adapter supported by the evidence;
+preserve host UI, application/settings commands and original files. Verify one
+complete in-menu query/result/open workflow before broadening required cases.
+Then finish version rejection, cancellation, backend loss and attach/detach/
+Explorer lifecycle before S6 closes. No activation/licensing changes.
+
+Current primary-source evidence and its limits:
+
+- [StartAllBack's official feature page](https://www.startallback.com/) describes
+  its restored Start menu/search; it does not establish a replacement-provider
+  SDK or usable native hook. No such API has been verified in this review.
+- [EverythingToolbar's FAQ](https://github.com/srwi/EverythingToolbar/blob/develop/FAQ.md)
+  describes a separate SDK-driven search UI and taskbar modes. Compatibility with
+  StartAllBack is not proof of integration into its own results list.
+- [Everything's SDK](https://www.voidtools.com/en-us/support/everything/sdk/)
+  supplies its own IPC query interface. Replacing Windows Search consumers is
+  additional integration work; this interface is not evidence of ABI compatibility.
+- [Everything's content options](https://www.voidtools.com/en-us/support/everything/options/)
+  document 1.5 content indexing and the `si:` Windows-index query. Neither proves
+  mail-store search parity; a Windows-index dependency cannot satisfy WSearch-off
+  acceptance. S7 must qualify the actual selected engine/version and resource cost.
+- [Microsoft's Outlook search guidance](https://support.microsoft.com/en-us/outlook/troubleshooting-outlook-search-issues)
+  explicitly checks the Windows Search service for classic Outlook. The actual
+  installed client's account/offline/search behavior must be inventoried, rather
+  than assuming either complete dependence or an unaffected cloud alternative.
+
+S7 starts from a concrete consumer/semantic matrix, not a system-wide hook that
+claims all applications. Cover native file search, dialogs and non-file consumers
+under EVERYWHERE-01..03; keep genuine unsupported contracts explicit. No alternate
+engine or exclusion is authorized merely because a consumer is difficult. Prove
+each required workflow with WSearch absent in an isolated environment, then apply
+and verify the reversible service-retirement outcome under its actual stage
+authorization. Record service startup/running state and recovery before mutation;
+verify reboot, unavailable Everything, unsupported updates, uninstall and recovery.
+Physical shell trials are coordinated; hidden diagnostics remain the default.
+
+This is a specified long-term target with unresolved feasibility, not a claim
+that Everything already replaces all Windows Search semantics. A requirement
+that cannot be met remains a blocker with an exact resolution condition. Do not
+silently change the goal to filename-only search or leave a hidden WSearch owner.
 
 ## Required S5 sequence
 
@@ -70,16 +128,19 @@ This is future S5 work; it does not begin during S3 or the archive stage.
 | S3 | All PREVIEW-01..05 and affected CORE-03/LIFE-01/DELIVERY-03: eight internal modules, actual decoding/paging, all active toggles and separate-process persistence; independent widget/Space/side selection; malformed/large/unsupported/inert inputs; actual file release; F3D real model/camera/native teardown and unchanged original; complete final QuickLook-absent run and verified restoration, zero foreground events; Debug/Release builds and Release source self-test. See [evidence](verification/2026-10-29-s3.md). | None within S3 | None | None |
 | S4 | None | ARCHIVE-01..05, including supported rename/copy/cut/paste | S3 prerequisite satisfied; implementation not started | None |
 | S5 | None | All assigned criteria including REA | S4 prerequisite not complete; target identity not selected | None |
-| S6 | None | All assigned criteria including final release | S1..S5 prerequisites not complete | None |
+| S6 | None | SAB-01..05 | S5 prerequisite not complete. Native hook/ABI feasibility is unresolved, not a verified implementation. | None |
+| S7 | None | EVERYWHERE-01..05 | S6 prerequisite not complete. Consumer inventory and non-file semantic compatibility unresolved; these must close before service retirement. | None |
+| S8 | None | All assigned criteria including final release | S1..S7 prerequisites not complete | None |
 
 S1 and S2 are COMPLETE. The user confirmed normal unlock; real physical drag and
 clipboard checks subsequently passed. A separate STA process read the Windows
 file list/copy effect, paste delivered matching contents through the existing
 queue, and an independent post-exit read confirmed prior-text restoration.
 S2 passed following the user's next-stage request. S3 passed after the next
-2026-10-29 request and its user-added F3D prototype. S4-S6 remain NOT STARTED.
+2026-10-29 request and its user-added F3D prototype. S4-S8 remain NOT STARTED
+until the next authorized stage begins; no later stage is ACTIVE.
 S1-S3 have no remaining blocker or tracked deferral. Installer/update/
-uninstall and packaged integration retain their explicitly assigned S6 boundary.
+uninstall and packaged integration retain their explicitly assigned S8 boundary.
 
 Source review found one SDK dispatcher/queue owner and independent pane query
 generations, with no new timeout-driven search path or external helper product.
@@ -115,11 +176,13 @@ These are helper-reported deleted file bytes, not measured free-space growth.
 During implementation, update this ledger at meaningful integrated-feature/stage
 checkpoints. Record concrete evidence and exact blockers/deferrals. At closure,
 assess actual debt within the changed scope without inventing infrastructure or
-consolidation stages. No intermediate product publication; final delivery is S6.
+consolidation stages. No intermediate product publication; final delivery is S8.
 
 The 2026-10-29 archive-stage addition shifted REA transfers from S4 to S5 and final
-delivery from S5 to S6. Earlier dated verification documents retain their original
-stage labels; the current requirement/stage ownership above is authoritative.
+delivery from S5 to S6. The subsequent StartAllBack and all-Everything migration
+requests added current S6/S7 and shifted final delivery to S8. Earlier dated
+verification documents retain their original stage labels; the current
+requirement/stage ownership above is authoritative.
 
 At S3 closure, one settings owner and per-surface generation/lifecycle host serve
 the fixed eight-module inventory; F3D's queue exists for actual OpenGL thread
@@ -129,7 +192,7 @@ absent and restored its configuration unchanged. See S3 evidence for the bounded
 prototype/codec limits and diagnostic corrections; no acceptance was weakened.
 
 S3 scratch `D:\Temp\pathweft-s3-native` used the native/build I/O exception.
-Required private evidence was retained for S6 before cleanup. Transaction
+Required private evidence was retained for final packaging comparison before cleanup. Transaction
 `a9ce1f29c4b59e39ce0bfa27f3176eed` inspected all 8,286 frozen members and removed
 8,285 ordinary candidates (1,055,048,193 helper-reported file bytes). The sole
 excluded self-test junction was independently reviewed and removed as an exact

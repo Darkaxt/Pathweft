@@ -1,6 +1,6 @@
 # Pathweft specification
 
-Version 0.2 - 2026-10-29. Owner: Darkaxt.
+Version 0.3 - 2026-10-29. Owner: Darkaxt.
 
 This is the authoritative specification. The derived plan must preserve every
 requirement and acceptance criterion. Material scope changes require explicit
@@ -20,7 +20,16 @@ taskbar workflow**, by requesting the next stage. On 2026-10-29 the user request
 the next stage again, authorizing **S3, internal selectable previews**. The same
 day the user added an F3D GLB prototype to S3 and requested a separate **S4 archive
 browsing/editing stage**, including rename/copy/cut/paste. REA-driven transfers
-and final delivery are now S5/S6. S4-S6 remain unstarted; no
+remain S5. The user subsequently requested plan review and a final integration task:
+Everything inside the existing StartAllBack search, explicitly anticipating a
+hook/hack because native support appears absent. This is **S6 StartAllBack search
+integration**. The user then explicitly expanded the long-term outcome to
+**Everything in every search location and the Windows Search service disabled**.
+That migration/retirement is **S7**, after the focused StartAllBack integration;
+final delivery moves to **S8**. This request authorizes specification/plan review,
+not immediate service shutdown, hook activation or modification of installed
+applications. The user then authorized the next implementation stage, S4, after
+this plan update. S4-S8 remain unstarted at this revision; no
 intermediate product release is authorized. User default-handler and Windows
 Search changes are not part of the S1-S3 trials.
 
@@ -44,6 +53,7 @@ process boundary explicitly rather than presenting it as an embedded module.
 | F3D | 4.0.0, b72c7b5c9244e4a0c12975ce6546645c1a8b2680 | Source-derived C API/offscreen rendering for the S3 GLB prototype |
 | 7-Zip | Pin source/SDK/runtime in S4 | Native archive browsing and supported edit operations |
 | TeraCopy | Identify actual artifact version/hash in S5 | Required REA target; not yet analyzed |
+| StartAllBack | Installed DLL file metadata observed 3.9.25 on 2026-10-29; pin exact artifact/hash and Windows dependencies in S6 | Proprietary host for a version-bound native search adapter; no donor binary redistribution or provider-hook feasibility claimed |
 
 File Labs currently targets .NET 8/WPF. It uses recursive filesystem search
 capped at 10,000 results, implements its own previews plus an external QuickLook
@@ -146,6 +156,45 @@ I/O on D:, and G: for long-term archives. Existing E: bindings are migration
 constraints, not permission to reconfigure the runtime. Authenticate exported
 Evidence, close owned analysis and verify worker exit before cleaning scratch.
 
+### StartAllBack in-menu Everything integration
+
+| ID | Requirement and acceptance |
+| --- | --- |
+| SAB-01 | Use the installed REA skill and Coordinator gate on an exactly identified StartAllBack artifact before selecting a hook. Record version, origin, signature/hash, Windows build and relevant loaded-module identities. Trace typed-query dispatch, file-result production/materialization, cancellation, selection/open/reveal and teardown, with retained Evidence IDs. Recheck documented extension points; distinguish static evidence, actual runtime observations, inference and unresolved ABI/ownership questions. Resolve design-critical unknowns before dependent implementation. |
+| SAB-02 | Provide an optional native integration that supplies Everything-backed file/folder results inside StartAllBack's existing Start-menu search and result UI. Preserve its app/shortcut, settings and command behavior. Verify Win -> type -> actual indexed result inside that menu -> keyboard/mouse selection -> correct open/reveal. Compare controlled queries/results with the same existing Everything index. A separate Pathweft/EverythingToolbar popup, taskbar deskband or search-protocol handoff does not satisfy this in-menu requirement. |
+| SAB-03 | Reuse the deliberately selected Everything instance and shared Pathweft search behavior; do not start a duplicate index. Keep the native shell adapter limited to the required query/result boundary and existing application ownership; do not host the full managed file manager inside Explorer. Own rapid-query cancellation, result identity, paging/bounds and thread/COM lifetimes through actual state/events. Verify Unicode/spaces, rapid typing, empty results, deleted/offline paths and real index unavailability; never label stale/partial results complete. The exact ABI/transport is selected from SAB-01 evidence, not assumed by this plan. |
+| SAB-04 | Version/hash-bind any runtime hook to the exact validated host/module/Windows combination and verify expected target identities before attachment. Keep integration opt-in under Pathweft settings, with visible compatibility/readiness state. Unknown updates, missing owners and failed attachment leave normal StartAllBack search usable and report the integration unavailable; no guessed offsets or automatic patch retries. Preserve original installed binaries, licensing state, settings and unrelated hooks. Supply verified disable/uninstall/recovery and actual attach/detach/Explorer-restart behavior. |
+| SAB-05 | Validate the complete integration in an isolated matching Windows/StartAllBack environment before a coordinated live-shell trial. Exercise enable/disable, actual native input, Explorer restart, relevant DPI/monitor/focus behavior, unavailable backend, host/app exit and an unsupported-version case. Verify restoration of normal StartAllBack search and absence of persistent orphan hooks. Use hidden diagnostics where possible; physical Start-menu acceptance requires actual visible input. S8 must package only Pathweft-owned adapter/source with exact supported-version notes and verify the delivered integration. |
+
+The user calls this "inject Everything"; the required outcome is native in-menu
+file/folder results. A version-bound runtime interception is an allowed design
+candidate for S6, not an established hook or a promise of universal compatibility.
+No documented replacement-provider API has been established during planning.
+If evidence shows that in-menu integration cannot be implemented safely in the
+available supported environment, retain the unmet criteria and record the exact
+blocker. Do not silently substitute another UI or redefine the task as a hotkey.
+S6 leaves Windows Search services and other consumers unchanged while proving the
+in-menu adapter. S7 owns the broader replacement and service retirement explicitly
+requested afterward. Do not modify licensing/activation code.
+
+### Everything everywhere and Windows Search retirement
+
+| ID | Requirement and acceptance |
+| --- | --- |
+| EVERYWHERE-01 | Establish a finite, evidence-backed inventory of search surfaces/consumers on the target installation before service retirement: Pathweft, StartAllBack, Explorer, search-capable common Open/Save dialogs, applicable native Start/taskbar surfaces, and applications using Windows Search such as classic Outlook/Office. For each, record actual host/version, entry point, backend, required query/result semantics, current coverage and acceptance workflow. Include discovered dependencies; no silent exclusions. An unanswered applicability/semantics question remains an explicit gap, not assumed coverage. |
+| EVERYWHERE-02 | Route the inventoried system/file-search surfaces to the selected Everything engine, retaining their native entry points/results/actions wherever feasible. Use bounded source/native adapters and REA for unavailable host contracts. Verify actual typed query -> Everything result -> correct selection/open/reveal in each applicable surface, with WSearch unavailable in an isolated environment. A shortcut to a separate popup does not satisfy replacement of an existing search location. Record exact supported versions and capability limits. |
+| EVERYWHERE-03 | Reconcile filename/path search separately from content, metadata/property, app/settings/command and mail-store search. Preserve required useful search behavior when Windows Search is removed; do not label a filename result set equivalent to message/content/property queries. Establish whether the selected Everything version and supported APIs can supply each required semantic contract. Missing capability is a real feasibility/advancement blocker. Do not silently introduce another indexing engine, retain a hidden Windows Search dependency, or narrow the user's all-Everything target to claim success; any necessary scope/backend change needs explicit user direction. |
+| EVERYWHERE-04 | Only after all inventoried replacement workflows pass, carry out a reversible, explicitly recorded Windows Search (WSearch) service shutdown/disable as the specified migration outcome. Preserve its actual prior startup/delayed-start/running state and recovery procedure; do not delete its index, change unrelated services/policies or alter mailbox/user data as a side effect. Use the required administrator broker for actual service control. Verify replacements with the service stopped and Disabled, and verify state/behavior after reboot/sign-in. Current planning does not authorize this live change. |
+| EVERYWHERE-05 | Verify the integrated system with WSearch disabled: all required consumer workflows, index freshness, scope/Unicode, unavailable Everything, host updates, exit/restart, rollback and uninstall. Unknown versions/unavailable adapters must report the real loss of coverage; no silent dependency on a stopped Windows Search service or unrequested service restart. Verify actual restoration of the prior service/search configuration through the documented recovery path. Final acceptance requires closure of every inventoried consumer gap; S8 verifies the delivered packages and migration/recovery materials. |
+
+This long-term direction supersedes the earlier blanket exclusion of Windows
+Search/Outlook changes only within the explicitly specified S7 replacement
+outcome. It is not an instruction to stop the current service now. Outlook and
+other non-file consumers are assessed dependencies, not presumed compatible or
+silently sacrificed. Universal replacement is an unproven engineering goal;
+StartAllBack hook feasibility and broader consumer compatibility remain separate
+questions. The plan cannot turn those unknowns into completed integration.
+
 ### Lifecycle, shell integration and final delivery
 
 | ID | Requirement and acceptance |
@@ -182,9 +231,11 @@ current implementation authorization and reconciliation are recorded in the plan
 - Initial development SDK: .NET 8 for baseline comparability. Select a supported
   runtime and verify donors before release; baseline preservation does not justify
   shipping an unsupported runtime.
-- No Everything indexer rewrite, standalone donor-product requirement, Windows
-  Search/Outlook change, desktop-shell replacement or unrelated feature expansion.
+- No Everything indexer rewrite, standalone donor-product requirement,
+  desktop-shell replacement or unrelated expansion. S6 targets StartAllBack;
+  S7 explicitly owns the user's system-wide search replacement/service-retirement
+  goal, subject to actual consumer/semantic coverage and verified recovery.
 - Existing application identity stays unchanged during setup; S1 must isolate it
   before runtime trials. No claim that the inherited installer is ready.
-- No implementation-stage releases. The final release belongs to S6 after all
+- No implementation-stage releases. The final release belongs to S8 after all
   prerequisite criteria pass under actual implementation authorization.

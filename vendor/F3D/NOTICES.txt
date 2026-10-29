@@ -19,6 +19,6 @@ Official GitHub asset SHA256:
 Selected shared-library and dependency-license inventory: runtime-manifest.json.
 The versioned SDK-derived library bundle is a persistent development dependency;
 the project build copies its libraries and license files beside Pathweft.
-S6 must package those same pinned dependencies and applicable source/license
+The final delivery stage must package those same pinned dependencies and applicable source/license
 materials. No application installer, global PATH, file association or shell
 registration is changed by the prototype.
