@@ -1,6 +1,6 @@
 # Pathweft specification
 
-Version 0.3 - 2026-10-29. Owner: Darkaxt.
+Version 0.4 - 2026-10-29. Owner: Darkaxt.
 
 This is the authoritative specification. The derived plan must preserve every
 requirement and acceptance criterion. Material scope changes require explicit
@@ -29,7 +29,10 @@ That migration/retirement is **S7**, after the focused StartAllBack integration;
 final delivery moves to **S8**. This request authorizes specification/plan review,
 not immediate service shutdown, hook activation or modification of installed
 applications. The user then authorized the next implementation stage, S4, after
-this plan update. S4-S8 remain unstarted at this revision; no
+this plan update. S1-S4 are complete. On 2026-10-29, after reviewing unarr and
+bitplane/rars, the user authorized trying rars and delegated the integration
+choice. S4R extends native archives with a pinned embedded Rust RAR writer;
+it precedes S5 and does not authorize a wider Rust port. No
 intermediate product release is authorized. User default-handler and Windows
 Search changes are not part of the S1-S3 trials.
 
@@ -52,6 +55,7 @@ process boundary explicitly rather than presenting it as an embedded module.
 | Everything engine | 1.4.1.1032, SHA-256 `F191F756996A14A11E5445FA7103D302EFD510CF2FBF920E6C0C8ED51D512E36` | Existing default instance; official SDK API 2. See `vendor/EverythingSDK/NOTICES.txt`; engine source is not imported. |
 | F3D | 4.0.0, b72c7b5c9244e4a0c12975ce6546645c1a8b2680 | Source-derived C API/offscreen rendering for the S3 GLB prototype |
 | 7-Zip | Pin source/SDK/runtime in S4 | Native archive browsing and supported edit operations |
+| rars | `e2415a2eb12e6b62deaa0cca919864eabe4671b1`, crate 0.12.3 | S4R embedded RAR encoder/rewrite API; Apache-2.0; independently qualify before enabling edits |
 | TeraCopy | Identify actual artifact version/hash in S5 | Required REA target; not yet analyzed |
 | StartAllBack | Installed DLL file metadata observed 3.9.25 on 2026-10-29; pin exact artifact/hash and Windows dependencies in S6 | Proprietary host for a version-bound native search adapter; no donor binary redistribution or provider-hook feasibility claimed |
 
@@ -131,6 +135,22 @@ Office and other specialist viewers remain separately scoped additions.
 | ARCHIVE-03 | Provide rename/copy/cut/paste for writable formats, including filesystem-to-archive, archive-to-filesystem and archive-to-archive workflows. Keep one application action/transfer owner and explicit conflict decisions. Read-only formats expose their actual capabilities; do not imply write support where the backend lacks it. Verify real operations and destination contents through the integrated UI. |
 | ARCHIVE-04 | Stage and verify archive edits before publishing a replacement. Failed/canceled writes preserve the original archive; a cut removes its source only after the destination operation is verified. Detect concurrent source changes before replacement. Verify conflicts, interrupted writes, invalid/traversal entry paths and data preservation; never silently extract an entry outside its selected destination. |
 | ARCHIVE-05 | Open selected archive entries and integrate eligible internal previews through controlled, entry-bound extraction where needed. Own temporary content until its actual consumer is finished; do not delete files merely because a launcher exited or a delay elapsed. Passwords remain ephemeral/private. Verify opening/previewing actual entries, resource release and reviewed cleanup without executing content during preview. |
+
+### Embedded writable RAR extension (S4R)
+
+User authorization: "Give it a try, you can ... choose how to better integrate
+it" (2026-10-29). Use the selected Rust library internally without deciding a
+whole-application Rust migration. Full compatibility with every historical RAR
+variant is not established by the upstream feature list; unsupported preservation
+must be detected and reported rather than silently converting or losing data.
+
+| ID | Requirement and acceptance |
+| --- | --- |
+| RAR-01 | Pin rars source and dependency lock, record licenses/provenance, and build a native library loaded in process by Pathweft. No WinRAR/rars executable dispatch for application operations. Missing/incompatible native support leaves RAR reading available and editing honestly unavailable. Verify actual loaded DLL identity and reproducible build inputs. |
+| RAR-02 | Integrate RAR creation and eligible existing-archive rename/delete/copy/cut/paste through existing panes, shared actions and Ferry queue. Include filesystem-to-RAR, RAR-to-filesystem and archive-to-archive transfers, nested/Unicode/empty directories, conflicts and delete-all. Existing ZIP/7z/TAR behavior must remain verified. New archives use an explicitly recorded modern RAR format. |
+| RAR-03 | Preflight source preservation through the pinned library before offering/publishing edits. Qualify supported solid and encrypted single-file archives; preserve their supported names, content, timestamps/attributes, comments and encryption settings. Refuse unsupported metadata, links, ambiguous names, codecs and multipart rewrites with a concrete reason. Do not claim every RAR variant writable; maintain an explicit capability table backed by fixtures. Passwords remain session-only and absent from logs. |
+| RAR-04 | Reuse staged verification and atomic replacement: independently decode the staged output with 7-Zip and compare all expected names/content before publication; exercise UnRAR interoperability independently on representative writer outputs. Source/input changes, native failure, cancellation and failed verification preserve originals and retain cut sources. Own native buffers, callbacks and scratch through actual completion; verify no orphan process or locked input/output. |
+| RAR-05 | Verify the complete integration through hidden real WPF pane/action/queue workflows, including preview and encrypted password handling, plus focused data-preservation and interoperability contracts. Retain actionable evidence, clean expendable scratch, reconcile RAR-01..05 and commit/push/read back. Final package/source/license/install and downloadable delivery remain S8; no intermediate product release. |
 
 ### REA-driven transfer improvements
 

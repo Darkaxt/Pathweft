@@ -54,18 +54,26 @@ public partial class MainWindow
         {
             var rows = ArchiveSelection(p);
             var am = new ContextMenu();
+            string changeReason = Archive.ChangeReason(archive);
+            bool writable = changeReason.Length == 0;
+            MenuItem WriteAction(string label, string key, Action action, bool enabled = true)
+            {
+                var item = Item(label, "", key, action, writable && enabled);
+                if (!writable) { item.ToolTip = changeReason; ToolTipService.SetShowOnDisabled(item, true); }
+                return item;
+            }
             if (rows.Count == 1) am.Items.Add(Item("Open", "", "Enter", p.OpenSelected));
             if (rows.Count == 1) am.Items.Add(Item("Preview", "", "Space", () => ToggleQuickView(p, this)));
             if (rows.Count > 0)
             {
                 am.Items.Add(Item("Copy", "", "Ctrl+C", () => ClipboardPut(false)));
-                am.Items.Add(Item("Cut", "", "Ctrl+X", () => ClipboardPut(true), Archive.CanChange(archive)));
-                if (rows.Count == 1) am.Items.Add(Item("Rename", "", "F2", p.BeginRename, Archive.CanChange(archive)));
+                am.Items.Add(WriteAction("Cut", "Ctrl+X", () => ClipboardPut(true)));
+                if (rows.Count == 1) am.Items.Add(WriteAction("Rename", "F2", p.BeginRename));
                 am.Items.Add(Item("Extract to other pane", "", "Ctrl+F5", () => ExtractFromArchive(p, Other.Dir), !Settings.SinglePane && !PaneView.IsVirtual(Other.Dir)));
                 am.Items.Add(Item("Extract to…", "", "", () => ExtractFromArchiveTo(p)));
-                if (Archive.CanChange(archive)) am.Items.Add(Item("Delete from archive", "", "Del", () => DeleteFromArchive(p)));
+                if (writable) am.Items.Add(Item("Delete from archive", "", "Del", () => DeleteFromArchive(p)));
             }
-            am.Items.Add(Item("Paste", "", "Ctrl+V", () => ClipboardPaste(), Archive.CanChange(archive) && HasTransferClipboard()));
+            am.Items.Add(WriteAction("Paste", "Ctrl+V", () => ClipboardPaste(), HasTransferClipboard()));
             am.Items.Add(Item("Enter archive password…", "", "", () => ArchivePassword(p)));
             am.Items.Add(Item("Forget archive password", "", "", () => { Archive.SetPassword(archive, null); p.Refresh(); }));
             am.Items.Add(Item("Archive working copies…", "", "", ShowArchiveWorkingCopies));
@@ -266,6 +274,10 @@ public partial class MainWindow
         m.Items.Add(Item("Delete permanently", "", "Shift+Del", () => Delete(permanent: true)));
         m.Items.Add(new Separator());
         m.Items.Add(Item("Compress to ZIP", "", "", Compress));
+        string rarUnavailable = RarNative.AvailabilityReason();
+        var rarCreate = Item("Compress to RAR", "", "", () => CompressArchive(".rar"), rarUnavailable.Length == 0);
+        if (rarUnavailable.Length > 0) { rarCreate.ToolTip = rarUnavailable; ToolTipService.SetShowOnDisabled(rarCreate, true); }
+        m.Items.Add(rarCreate);
         if (one && (ZipExt.Contains(ext) || Archive.IsArchiveName(first.Path)))
         {
             m.Items.Add(Item("Extract here", "", "", () => Extract(first, toFolder: false)));

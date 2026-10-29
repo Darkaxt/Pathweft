@@ -12,7 +12,7 @@ internal static partial class Archive
         Check(job);
         var destination = PaneView.ArchiveOf(job.Destination);
         if (destination == null && !Directory.Exists(job.Destination)) throw new IOException("The destination folder is unavailable.");
-        if (destination is { } writable && !CanChange(writable.Archive)) throw new IOException("The destination container is read-only.");
+        if (destination is { } writable && ChangeReason(writable.Archive) is { Length: > 0 } destinationReason) throw new IOException(destinationReason);
         string destinationHash = destination is { } d ? Fingerprint(d.Archive) : null;
         var containers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         var directories = new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase);

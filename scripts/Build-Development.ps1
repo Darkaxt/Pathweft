@@ -61,6 +61,7 @@ try {
             ('-p:F3DRuntimeRoot=' + (Join-Path $cache 'f3d/4.0.0'))
             ('-p:SevenZipRuntimeRoot=' + (Join-Path $cache 'sevenzip/26.05'))
             ('-p:SharpSevenZipRuntimeRoot=' + (Join-Path $cache 'sharpsevenzip/2.0.130-pathweft.1'))
+            ('-p:RarsRuntimeRoot=' + (Join-Path $cache 'rars/0.12.3-pathweft.1'))
         )
         foreach ($property in $BuildProperty) { $buildArguments += '-p:' + $property }
         & dotnet @buildArguments

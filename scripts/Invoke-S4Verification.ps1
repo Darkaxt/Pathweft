@@ -1,8 +1,8 @@
 [CmdletBinding()]
-param([Parameter(Mandatory)][string]$ScratchRoot)
+param([Parameter(Mandatory)][string]$ScratchRoot, [switch]$RarWriter)
 $ErrorActionPreference = 'Stop'
 $scratch = [IO.Path]::GetFullPath($ScratchRoot)
-if ($scratch -notmatch '^D:\\Temp\\pathweft-s4-[^\\]+$') { throw 'Use registered S4 native scratch.' }
+if ($scratch -notmatch '^D:\\Temp\\pathweft-s4-[^\\]+$' -and $scratch -ne 'D:\Temp\pathweft-rars-native') { throw 'Use registered archive native scratch.' }
 $key = [guid]::NewGuid().ToString('N')
 $run = Join-Path $scratch "runs/$key"
 $profile = Join-Path $scratch "profile-$key"
@@ -11,6 +11,8 @@ $profile = Join-Path $scratch "profile-$key"
 foreach ($name in @('source','containers','destination')) { Copy-Item -LiteralPath (Join-Path $scratch "fixture/$name") -Destination (Join-Path $run $name) -Recurse }
 $env:PATHWEFT_PROFILE = $profile
 $env:PATHWEFT_TEST_HIDDEN = '1'
+$env:PATHWEFT_VERIFY_RAR = $(if ($RarWriter) { '1' } else { '0' })
+if ($RarWriter -and !$profile.StartsWith('D:\Temp\pathweft-rars-native\', [StringComparison]::OrdinalIgnoreCase)) { throw 'RAR trial must use its admitted hidden profile root.' }
 $env:PATHWEFT_S2_NATIVE_ONLY = '0'
 $env:TEMP = $env:TMP = Join-Path $scratch 'temp'
 [IO.File]::WriteAllLines((Join-Path $profile 'settings.txt'), @('backdrop=3','animations=0','smoothscroll=0','textscale=1','singlepane=0','preview=0','tray=0','wine=0','nativemenu=0','lastseen=1.0.62','taskbarsearch=0',"tabs.Left=$run\containers","tabs.Right=$run\destination"))

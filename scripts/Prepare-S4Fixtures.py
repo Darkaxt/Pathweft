@@ -13,7 +13,7 @@ import zlib
 args = argparse.ArgumentParser()
 args.add_argument('--scratch-root', required=True)
 root = Path(args.parse_args().scratch_root)
-if not str(root.resolve()).lower().startswith('d:\\temp\\pathweft-s4-'):
+if not str(root.resolve()).lower().startswith('d:\\temp\\pathweft-s4-') and str(root.resolve()).lower() != 'd:\\temp\\pathweft-rars-native':
     raise ValueError('Use registered S4 native scratch')
 fixture = root / 'fixture'
 files = fixture / 'source'

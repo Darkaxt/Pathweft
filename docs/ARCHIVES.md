@@ -1,6 +1,6 @@
 # Native archive integration
 
-Pathweft uses the official 7-Zip 26.05 x64 `7z.dll` in process through
+Pathweft reads archives and writes ZIP/7z/TAR with the official 7-Zip 26.05 x64 `7z.dll` in process through
 SharpSevenZip 2.0.130, source commit
 `9b2379be603a9d4ebff06c56944f87f0c623f8db`, built as
 `2.0.130-pathweft.1`. It requires no installed 7-Zip/WinRAR application, shell
@@ -8,19 +8,28 @@ extension or archive utility window. Pins, original interface references,
 licenses and the reviewed interop patch are under `vendor/SevenZip` and
 `vendor/SharpSevenZip`.
 
+RAR writes use the Rust `rars` library, source commit
+`e2415a2eb12e6b62deaa0cca919864eabe4671b1` (actual crate 0.12.3), behind
+`native/pathweft-rars` and one synchronous C ABI. The source-built
+`Rars/pathweft_rars.dll` is loaded from the app directory. No rars/WinRAR
+executable is used for application operations. Source/lock/license/DLL provenance
+is under `vendor/rars`; Cargo.lock pins the transitive dependency graph.
+
 ## Capabilities
 
 | Container | Pathweft behavior |
 | --- | --- |
 | ZIP; ZIP-based .jar/.nupkg/.apk/.vsix/.whl | Browse, entry preview/open, copy, cut, rename, delete and paste. Package edits do not preserve or recreate package signatures. |
 | 7z, TAR | Browse and the same verified edit/transfer operations. |
-| RAR/RAR5, CAB, ISO, WIM, ARJ, CPIO, DEB, RPM, XAR, DMG | Native metadata/entry reading; Copy, extraction and eligible previews. Editing is disabled. RAR5 and CAB have real fixture verification; other formats delegate to the pinned native readers and are not all separately qualified. |
+| RAR/RAR5/RAR7 | Native reading, previews and extraction; eligible single-file archives also support rename/delete/copy/cut/paste through the same queue. Compress to RAR creates RAR5. See the preservation limits below. |
+| CAB, ISO, WIM, ARJ, CPIO, DEB, RPM, XAR, DMG | Native metadata/entry reading; Copy, extraction and eligible previews. Editing is disabled. CAB has real fixture verification; other formats delegate to the pinned native readers and are not all separately qualified. |
 | GZIP, BZIP2, XZ, LZMA, Zstandard | Read-only compressed member browsing; native codec recognition still determines availability. GZIP has real fixture verification. |
 | TGZ/.tar.gz | Existing streamed TAR/GZIP browsing retained; read-only. No whole-container extraction to browse. |
 | .001 split containers | Recognized, with an explicit unsupported virtual-browsing message. No claim of multipart support. |
-| Encrypted containers | Session password entry and eligible entry previews/copy; read-only. Verified with header-encrypted 7z. No password is saved in settings or verification reports. |
+| Encrypted containers | Session password entry and eligible entry previews/copy. Qualified single-file RAR4/RAR5 can be edited after unlock; other encrypted formats remain read-only. Header-encrypted 7z reading is verified. Passwords stay out of settings/logs. |
 
-The actual verified writable inventory is ZIP/7z/TAR. A recognized extension
+The writable inventory is ZIP/7z/TAR plus RAR archives accepted by preservation
+preflight. A recognized extension
 does not prove that a damaged file, every codec variant or every encryption /
 volume arrangement is supported. Native read errors produce an unavailable
 pane, never a fabricated empty success. Traversal, Windows-ambiguous names,
@@ -28,6 +37,29 @@ case-ambiguous paths, duplicate entries, archive links and special TAR entries
 are rejected. Filesystem transfer/extraction refuses unsafe reparse paths.
 The Windows read-only file attribute also disables archive editing while
 preserving browsing and Copy.
+
+## RAR preservation limits
+
+The writer preserves supported existing member data, names, directory markers,
+attributes, timestamps, archive/member comments, solid state and encryption.
+Every rewrite checks upstream preservation issues, then verifies retained metadata
+through rars and all expected names/content through independent 7-Zip decoding
+before atomic replacement. Existing legacy compression is reconstructed within the
+source family; byte-identical compressed output is not promised.
+
+Read-only layouts include multipart rewrites, SFX prefixes, recovery records,
+links/redirections, unknown/incomplete metadata or codecs, ambiguous paths,
+unqualified legacy encodings and embedded old-style legacy member comments.
+The latter can trigger UnRAR comment errors even in an untouched source; Pathweft
+does not accept an error exit as successful compatibility. Unsupported actions
+show the preservation reason in the pane/menu tooltip. Reader support remains
+independent when the optional writer DLL is missing or incompatible.
+
+Solid RAR4/5/7 and header-encrypted RAR4/5 are qualified using source-built
+fixtures and independent 7-Zip/official UnRAR decoding; this is a finite tested
+matrix, not universal RAR parity. Rewrites can stage plaintext payloads even for
+encrypted input; they are private operation-owned working files, not secure-erasure
+storage. They survive only through the actual write/verification operation.
 
 ## Actions and publication
 
@@ -42,6 +74,9 @@ decisions. Moves reserve their source and destination volumes in that same queue
 so a cross-volume archive cut retains its source owner through verified removal.
 Archive cut metadata preserves virtual source identity; ordinary
 Copy additionally exports selected real files for external CF_HDROP consumers.
+The file list, explicit UTF-8 archive selection and DWORD drop effect are
+published as native HGLOBAL data under the clipboard owner lock. Prepared older
+copies and completed cuts cannot overwrite a newer clipboard sequence.
 Cut from an archive is offered for Pathweft destinations; read-only sources
 offer Copy instead. Skipped members remain at their source and appear in the
 job's outcome.

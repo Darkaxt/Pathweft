@@ -2,7 +2,7 @@
 param([Parameter(Mandatory)][string]$ScratchRoot)
 $ErrorActionPreference = 'Stop'
 $scratch = [IO.Path]::GetFullPath($ScratchRoot)
-if ($scratch -notmatch '^D:\\Temp\\pathweft-s4-[^\\]+$') { throw 'Use registered S4 native scratch.' }
+if ($scratch -notmatch '^D:\\Temp\\pathweft-s4-[^\\]+$' -and $scratch -ne 'D:\Temp\pathweft-rars-native') { throw 'Use registered archive native scratch.' }
 $env:TEMP = $env:TMP = Join-Path $scratch 'temp'
 [void][IO.Directory]::CreateDirectory($env:TEMP)
 & python -B (Join-Path $PSScriptRoot 'Prepare-S4Fixtures.py') --scratch-root $scratch

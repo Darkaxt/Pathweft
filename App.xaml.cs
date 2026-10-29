@@ -25,6 +25,10 @@ static class Program
     static void Main(string[] args)
     {
 #if DEBUG
+        if (args.Contains("--diagnose-s4-desktop")) { Console.WriteLine(S4Verification.DesktopDiagnostic()); return; }
+        const string externalFile = "--verify-s4-external-file=";
+        if (args.FirstOrDefault(a => a.StartsWith(externalFile)) is { } transferFile)
+        { Environment.ExitCode = S4Verification.ReadExternalFileClipboard(transferFile[externalFile.Length..], args.Contains("--clipboard-cut")); return; }
         const string snapshotClipboard = "--snapshot-s4-clipboard=";
         if (args.FirstOrDefault(a => a.StartsWith(snapshotClipboard)) is { } capture)
         { const string expectedSnapshot = "--clipboard-expected="; Environment.ExitCode = S4Verification.CaptureClipboard(capture[snapshotClipboard.Length..], args.Single(a => a.StartsWith(expectedSnapshot))[expectedSnapshot.Length..]); return; }
@@ -134,6 +138,10 @@ public partial class App : Application
             listening = Listen();
         }
         Settings.Load(); // before any window: the panes read column widths while being built
+#if DEBUG
+        if (e.Args.Any(a => a.StartsWith("--verify-s4=")) && Environment.GetEnvironmentVariable("PATHWEFT_TEST_HIDDEN") == "1" && !HiddenTrialPresentation.Enabled)
+        { Shutdown(2); return; } // fail before constructing a window when a hidden trial profile is unrecognized
+#endif
         UseTipDelay();
         ShellMenu.FollowSystemTheme(); // the Windows right-click menu dark in dark mode
         // folder sizes from previous sessions are read after the first frame, or on first need (SizeCache.StartLoading)

@@ -130,16 +130,17 @@ public partial class MainWindow
         return plan.Select((p, i) => (at[i], Path.GetFileName(p.Path))).ToList();
     }
 
-    // ---- ZIP ----
-    void Compress()
+    // Native archive creation shares the existing queue and verified publisher.
+    void Compress() => CompressArchive(".zip");
+    void CompressArchive(string extension)
     {
         var sel = active.Selected;
         if (sel.Count == 0) return;
         var pane = active;
         var stem = sel.Count == 1 ? (sel[0].IsDir ? sel[0].Name : Path.GetFileNameWithoutExtension(sel[0].Name)) : Path.GetFileName(pane.Dir.TrimEnd('\\'));
-        var zip = Unique(Path.Combine(pane.Dir, (stem == "" ? "Archive" : stem) + ".zip"));
+        var zip = Unique(Path.Combine(pane.Dir, (stem == "" ? "Archive" : stem) + extension));
         var paths = sel.Select(e => e.Path).ToList();
-        SubmitArchiveEdit(paths, pane.Dir, "Create ZIP", job =>
+        SubmitArchiveEdit(paths, pane.Dir, "Create " + extension[1..].ToUpperInvariant(), job =>
         {
             Archive.Create(zip, Archive.Files(paths, ""), job);
             job.Arrivals = new() { Path.GetFileName(zip) };

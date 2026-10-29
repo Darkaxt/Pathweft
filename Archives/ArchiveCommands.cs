@@ -44,7 +44,7 @@ public partial class MainWindow
     void DeleteFromArchive(PaneView pane)
     {
         if (pane.ArchiveRoot is not { } at || pane.Selected.Count == 0) return;
-        if (!Archive.CanChange(at.Archive)) { Status.Text = "This container is read-only."; return; }
+        if (Archive.ChangeReason(at.Archive) is { Length: > 0 } reason) { Status.Text = reason; return; }
         if (PromptDialog.Choose(this, $"Delete {pane.Selected.Count} item(s) from {Path.GetFileName(at.Archive)}?", "The original archive is replaced only after the staged edit is verified. Deleted entries do not go to the Recycle Bin.", "Delete", "Cancel") != 0) return;
         var names = pane.Selected.Select(e => e.Name).ToArray();
         SubmitArchiveEdit(pane.Selected.Select(e => e.Path), pane.Dir, "Delete archive entries", job => Archive.Delete(at.Archive, names, at.Inner, job));
@@ -56,7 +56,7 @@ public partial class MainWindow
         var open = new Button { Name = "ArchivePasswordOpen", Content = "Open archive", Style = (Style)FindResource("Ghost"), IsDefault = true, Padding = new(12, 6, 12, 6) };
         var panel = new StackPanel { Margin = new(20), LayoutTransform = ArchiveTextScale() };
         panel.Children.Add(new TextBlock { Text = "Password for " + Path.GetFileName(at.Archive), TextWrapping = TextWrapping.Wrap });
-        panel.Children.Add(password); panel.Children.Add(new TextBlock { Text = "Kept only in memory for this session. Encrypted containers are read-only.", TextWrapping = TextWrapping.Wrap, Foreground = Hex("#8A97AA") }); panel.Children.Add(open);
+        panel.Children.Add(password); panel.Children.Add(new TextBlock { Text = "Kept only in memory for this session. Editing depends on the archive's preservation capabilities.", TextWrapping = TextWrapping.Wrap, Foreground = Hex("#8A97AA") }); panel.Children.Add(open);
         var dialog = new Window { Owner = this, Title = "Archive password", Content = panel, Width = 440, SizeToContent = SizeToContent.Height, Background = Hex("#161B24"), Foreground = Foreground, FontFamily = FontFamily, WindowStartupLocation = WindowStartupLocation.CenterOwner, ShowInTaskbar = false };
         System.Windows.Automation.AutomationProperties.SetName(password, "Archive password");
         dialog.Loaded += (_, _) =>

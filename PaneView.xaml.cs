@@ -664,6 +664,7 @@ public partial class PaneView : UserControl
         if (record && tabs[tab] != "" && !tabs[tab].Equals(path, StringComparison.OrdinalIgnoreCase)) { back.Push(tabs[tab]); fwd.Clear(); }
         tabs[tab] = path;
         ArchiveRoot = null; // NavigateArchive sets it again right after
+        DriveInfoText.ToolTip = null;
         Visited?.Invoke(path);
         // each folder keeps the order it was last sorted in; the rest are by name. Set before its rows are shown.
         var (key, desc) = Settings.FolderSorts.TryGetValue(path, out var sort) ? sort : ("Name", false);
@@ -915,7 +916,9 @@ public partial class PaneView : UserControl
                 Listed = true; Error?.Invoke(DriveInfoText.Text); StatsChanged?.Invoke(); return;
             }
             ShowItems(items.Select(i => new Entry { Name = i.Name, Path = dir + "\\" + i.Name, IsDir = i.IsDir, Size = i.Size, Modified = i.Modified }).ToList(), select);
-            DriveInfoText.Text = $"Inside {System.IO.Path.GetFileName(at.Archive)} · " + (Archive.CanChange(at.Archive) ? "editable" : "read-only");
+            string changeReason = Archive.ChangeReason(at.Archive);
+            DriveInfoText.Text = $"Inside {System.IO.Path.GetFileName(at.Archive)} · " + (changeReason.Length == 0 ? "editable" : "read-only");
+            DriveInfoText.ToolTip = changeReason.Length == 0 ? null : changeReason;
             UsedBar.Width = 0;
             StartIcons();
             Listed = true; StatsChanged?.Invoke();
@@ -1759,7 +1762,7 @@ public partial class PaneView : UserControl
 
     public void BeginRename()
     {
-        if (ArchiveRoot is { } archive && !Archive.CanChange(archive.Archive)) { Error?.Invoke("This archive is read-only."); return; }
+        if (ArchiveRoot is { } archive && Archive.ChangeReason(archive.Archive) is { Length: > 0 } reason) { Error?.Invoke(reason); return; }
         if (List.SelectedItem is not Entry e || renamingEntry != null || Dir == ThisPC) return;
         renamingEntry = e;
         List.ScrollIntoView(e); // its row has to exist for the box to appear

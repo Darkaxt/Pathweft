@@ -1,0 +1,18 @@
+rars - https://github.com/bitplane/rars
+Pinned source: e2415a2eb12e6b62deaa0cca919864eabe4671b1
+Actual crate version at this commit: 0.12.3 (cached GitHub pages showed 0.11.0).
+License: Apache-2.0; see LICENSE.txt.
+
+Pathweft builds the Rust library from source through native/pathweft-rars.
+Only the codec/rewrite library and its locked dependencies are used at runtime;
+no upstream CLI, Python, TypeScript, WebAssembly, installer or updater is shipped.
+The metadata-copy sequence in the Pathweft bridge is adapted from
+crates/rars-python/src/lib.rs; its legacy Unicode field encoder is adapted from
+crates/rars/src/filename.rs at the pinned commit. It omits link/redirection
+support, requires UTF-8 entry identity, uses upstream preservation preflight and
+keeps publication and independent decoding verification in Pathweft.
+Changes are Pathweft's; the upstream project does not endorse this integration.
+
+Rebuild: scripts/Build-RarsDependency.ps1 with registered native scratch.
+Cargo.lock pins the transitive graph. S8 must include matching source, bridge,
+lock, rebuild instructions and all applicable dependency notices in its release.

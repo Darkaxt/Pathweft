@@ -23,6 +23,7 @@ internal static partial class Archive
     { ".7z", ".zip", ".jar", ".nupkg", ".apk", ".vsix", ".whl", ".tar", ".tgz", ".gz", ".bz2", ".xz", ".lzma", ".zst", ".rar", ".cab", ".iso", ".wim", ".arj", ".cpio", ".deb", ".rpm", ".xar", ".dmg", ".001" };
     public static bool IsArchiveName(string path) => extensions.Contains(System.IO.Path.GetExtension(path));
     static bool TarGzip(string path) => path.EndsWith(".tgz", StringComparison.OrdinalIgnoreCase) || path.EndsWith(".tar.gz", StringComparison.OrdinalIgnoreCase);
+    static bool Rar(string path) => System.IO.Path.GetExtension(path).Equals(".rar", StringComparison.OrdinalIgnoreCase);
     static OutArchiveFormat Format(string path) => System.IO.Path.GetExtension(path).ToLowerInvariant() switch
     {
         ".7z" => OutArchiveFormat.SevenZip, ".tar" => OutArchiveFormat.Tar,
@@ -31,8 +32,19 @@ internal static partial class Archive
     };
     public static bool CanChange(string archive)
     {
-        try { _ = Format(archive); return (File.GetAttributes(archive) & FileAttributes.ReadOnly) == 0 && !passwords.ContainsKey(archive) && !Read(archive).Any(e => e.Encrypted); }
-        catch (IOException) { return false; }
+        return ChangeReason(archive) == "";
+    }
+    internal static string ChangeReason(string archive)
+    {
+        try
+        {
+            if ((File.GetAttributes(archive) & FileAttributes.ReadOnly) != 0) return "This archive file is read-only.";
+            var entries = Read(archive);
+            if (Rar(archive)) return RarNative.ChangeReason(archive, passwords.GetValueOrDefault(archive));
+            _ = Format(archive);
+            return passwords.ContainsKey(archive) || entries.Any(e => e.Encrypted) ? "Encrypted containers of this format are read-only." : "";
+        }
+        catch (IOException ex) { return ex.Message; }
     }
     internal static void SetPassword(string archive, string password)
     { if (string.IsNullOrEmpty(password)) passwords.TryRemove(archive, out _); else passwords[archive] = password; }
@@ -259,11 +271,11 @@ internal static partial class Archive
     }
     internal static void Edit(string archive, Dictionary<int, string> changes, Dictionary<string, string> additions, Job job = null, string expectedOriginal = null, Action validateSources = null)
     {
-        Check(job); _ = Format(archive);
+        Check(job); if (!Rar(archive)) _ = Format(archive);
         if ((File.GetAttributes(archive) & FileAttributes.ReadOnly) != 0) throw new IOException("This archive file is read-only.");
         string original = Fingerprint(archive); var before = Read(archive);
         if (expectedOriginal != null && original != expectedOriginal) throw new IOException("The destination changed after transfer planning; no archive edit was published.");
-        if (passwords.ContainsKey(archive) || before.Any(e => e.Encrypted)) throw new IOException("Encrypted containers are read-only; extract with the password before editing.");
+        if (ChangeReason(archive) is { Length: > 0 } reason) throw new IOException(reason);
         var expected = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         foreach (var entry in before)
         {
@@ -282,10 +294,19 @@ internal static partial class Archive
         string stage = System.IO.Path.Combine(temporaryDirectory, "stage" + System.IO.Path.GetExtension(archive));
         try
         {
-            File.Copy(archive, stage);
-            var compressor = Compressor(archive, temporaryDirectory, job);
-            if (changes.Count > 0) compressor.ModifyArchive(stage, changes);
-            if (additions.Count > 0) { compressor.CompressionMode = NativeCompressionMode.Append; compressor.CompressFileDictionary(additions, stage); }
+            if (Rar(archive))
+            {
+                RarNative.Write(archive, stage, temporaryDirectory, passwords.GetValueOrDefault(archive),
+                    changes.ToDictionary(c => before.Single(e => e.Index == c.Key).Path, c => c.Value), additions, job);
+                if (passwords.TryGetValue(archive, out string password)) passwords[stage] = password;
+            }
+            else
+            {
+                File.Copy(archive, stage);
+                var compressor = Compressor(archive, temporaryDirectory, job);
+                if (changes.Count > 0) compressor.ModifyArchive(stage, changes);
+                if (additions.Count > 0) { compressor.CompressionMode = NativeCompressionMode.Append; compressor.CompressFileDictionary(additions, stage); }
+            }
             Check(job); Boundary("stage-written");
             if (job != null) job.Phase = Phase.Verifying;
             var actual = Read(stage);
@@ -298,7 +319,7 @@ internal static partial class Archive
             File.Replace(stage, archive, null);
         }
         catch (SharpSevenZipException ex) { Check(job); throw new IOException("Native archive update failed; original preserved.", ex); }
-        finally { Directory.Delete(temporaryDirectory, recursive: true); }
+        finally { passwords.TryRemove(stage, out _); Directory.Delete(temporaryDirectory, recursive: true); }
     }
     public static void Delete(string archive, IReadOnlyCollection<string> names, string inner, Job job = null)
     {
@@ -337,8 +358,12 @@ internal static partial class Archive
                 job.TotalFiles = files.Count(e => e.Value != null); job.TotalBytes = files.Where(e => e.Value != null).Sum(e => new FileInfo(e.Value).Length);
                 job.Phase = Phase.Copying;
             }
-            var compressor = Compressor(archive, directory, job);
-            compressor.CompressFileDictionary(files, stage);
+            if (Rar(archive)) RarNative.Write(null, stage, directory, null, new(), files.ToDictionary(e => Clean(e.Key), e => e.Value), job);
+            else
+            {
+                var compressor = Compressor(archive, directory, job);
+                compressor.CompressFileDictionary(files, stage);
+            }
             Boundary("stage-written"); Check(job);
             if (job != null) job.Phase = Phase.Verifying;
             var actual = Read(stage);

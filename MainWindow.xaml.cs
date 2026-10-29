@@ -8,8 +8,8 @@ using System.Windows.Interop;
 using System.Windows.Media;
 using Microsoft.VisualBasic.FileIO;
 using VbFs = Microsoft.VisualBasic.FileIO.FileSystem;
-// .NET 8 WPF's OLE clipboard path failed real round trips. Use the existing
-// WinForms desktop clipboard API consistently; see the S1 verification record.
+// Text actions use WinForms; transfer formats use the native ownership boundary
+// in ArchiveClipboard.cs, with materialized handles and sequence protection.
 using Clipboard = System.Windows.Forms.Clipboard;
 
 namespace FileExplorer;
@@ -1215,6 +1215,7 @@ public partial class MainWindow : Window
 
     // Clipboard in Explorer's own format (CF_HDROP + Preferred DropEffect), so copy/paste works both ways.
     Task clipboardOperation = Task.CompletedTask;
+    int clipboardRequestVersion;
     const string ArchiveClipboardFormat = "Pathweft.ArchiveSelection.v1";
 #if DEBUG
     uint lastOwnedClipboardSequence;
@@ -1230,7 +1231,9 @@ public partial class MainWindow : Window
         var pane = active;
         var sel = pane.Selected;
         if (sel.Count == 0) return;
-        var data = new System.Windows.Forms.DataObject();
+        int request = ++clipboardRequestVersion;
+        uint expectedSequence = GetClipboardSequenceNumber();
+        string[] files = null; byte[] archiveSelection = null;
         if (pane.ArchiveRoot is { } at)
         {
             if (cut && !Archive.CanChange(at.Archive)) { Status.Text = "This archive is read-only; use Copy."; return; }
@@ -1238,22 +1241,18 @@ public partial class MainWindow : Window
             {
                 string[] names = sel.Select(e => e.Name).ToArray();
                 var copies = await Task.Run(() => ArchiveContent.Extract(at.Archive, names, at.Inner, "clipboard export"));
-                var list = new System.Collections.Specialized.StringCollection();
-                list.AddRange(names.Select(n => Path.Combine(copies.Directory, "data", n)).ToArray());
-                data.SetFileDropList(list);
+                files = names.Select(n => Path.Combine(copies.Directory, "data", n)).ToArray();
             }
-            // An explicit UTF-8 stream is interoperable OLE data, without managed-object serialization.
-            data.SetData(ArchiveClipboardFormat, false, new MemoryStream(System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(new ArchiveClipboard(Guid.NewGuid().ToString("N"), sel.Select(e => e.Path).ToArray(), cut))));
+            archiveSelection = System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(new ArchiveClipboard(Guid.NewGuid().ToString("N"), sel.Select(e => e.Path).ToArray(), cut));
         }
         else
         {
-            var files = new System.Collections.Specialized.StringCollection();
-            files.AddRange(sel.Select(x => x.Path).ToArray()); data.SetFileDropList(files);
+            files = sel.Select(x => x.Path).ToArray();
         }
-        data.SetData("Preferred DropEffect", new MemoryStream(BitConverter.GetBytes(cut ? 2 : 5)));
-        Clipboard.SetDataObject(data, true);
+        if (request != clipboardRequestVersion) return;
+        uint ownedSequence = WriteTransferClipboard(files, archiveSelection, cut, expectedSequence);
 #if DEBUG
-        lastOwnedClipboardSequence = GetClipboardSequenceNumber();
+        lastOwnedClipboardSequence = ownedSequence;
 #endif
         // FilePilot/Explorer-style: a cut item's icon stays dimmed until it's pasted or something else is cut/copied
         PaneView.SetCut(cut ? sel.Select(x => x.Path) : Array.Empty<string>(), Left, Right);
@@ -1266,18 +1265,18 @@ public partial class MainWindow : Window
     /// Into the folder shown, or into `folder` (right-click → Paste on a folder or a shortcut to one, as in Explorer).
     void ClipboardPaste(string folder = null)
     {
-        List<string> files; bool move;
+        List<string> files; bool move; uint sequence;
         if (HasArchiveClipboard())
         {
             ArchiveClipboard selection;
-            try { selection = ReadArchiveClipboard(); }
+            try { selection = ReadArchiveClipboard(out sequence); }
             catch (Exception ex) when (ex is System.Text.Json.JsonException or IOException) { Status.Text = "Invalid or unavailable archive clipboard data: " + ex.Message; return; }
             if (selection?.Paths is not { Length: > 0 }) return;
             files = selection.Paths.ToList(); move = selection.Move;
         }
         else
         {
-            try { (files, move) = ReadFileClipboard(); }
+            try { (files, move) = ReadFileClipboard(out sequence); }
             catch (IOException ex) { Status.Text = ex.Message; return; }
             if (files.Count == 0) return;
         }
@@ -1286,7 +1285,6 @@ public partial class MainWindow : Window
         if (s4ClipboardFixtureRoot != null && files.Any(path => !Path.GetFullPath(path).StartsWith(s4ClipboardFixtureRoot + "\\", StringComparison.OrdinalIgnoreCase)))
         { Status.Text = "Verification paste refused unrelated clipboard contents; current clipboard preserved."; return; }
 #endif
-        uint sequence = GetClipboardSequenceNumber();
         var job = Submit(files, into, move);
         if (move && job != null) clipboardOperation = CompleteCut(job, sequence);
     }
@@ -1297,12 +1295,13 @@ public partial class MainWindow : Window
         {
             try
             {
-                Clipboard.Clear(); PaneView.SetCut(Array.Empty<string>(), Left, Right);
+                if (!ClearTransferClipboard(sequence, out uint clearedSequence)) return;
+                PaneView.SetCut(Array.Empty<string>(), Left, Right);
 #if DEBUG
-                lastOwnedClipboardSequence = GetClipboardSequenceNumber();
+                lastOwnedClipboardSequence = clearedSequence;
 #endif
             }
-            catch (System.Runtime.InteropServices.ExternalException ex) { Status.Text = "Move finished, but the clipboard could not be cleared: " + ex.Message; }
+            catch (Exception ex) when (ex is IOException or System.Runtime.InteropServices.ExternalException) { Status.Text = "Move finished, but the clipboard could not be cleared: " + ex.Message; }
         }
     }
 

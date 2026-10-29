@@ -15,6 +15,23 @@ namespace FileExplorer;
 
 internal static class S4Verification
 {
+    [System.Runtime.InteropServices.DllImport("user32.dll", SetLastError = true)] static extern IntPtr OpenInputDesktop(uint flags, bool inherit, uint access);
+    [System.Runtime.InteropServices.DllImport("user32.dll")] static extern bool CloseDesktop(IntPtr desktop);
+    [System.Runtime.InteropServices.DllImport("user32.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode, SetLastError = true)] static extern bool GetUserObjectInformation(IntPtr handle, int index, System.Text.StringBuilder name, int length, out int required);
+    internal static string DesktopDiagnostic()
+    {
+        IntPtr desktop = OpenInputDesktop(0, false, 1);
+        int error = System.Runtime.InteropServices.Marshal.GetLastWin32Error();
+        string name = null;
+        if (desktop != IntPtr.Zero)
+        {
+            try { var buffer = new System.Text.StringBuilder(256); if (GetUserObjectInformation(desktop, 2, buffer, 512, out _)) name = buffer.ToString(); }
+            finally { CloseDesktop(desktop); }
+        }
+        return JsonSerializer.Serialize(new { inputDesktop = name, openInputDesktopError = desktop == IntPtr.Zero ? error : 0, clipboardAvailable = MainWindow.ProbeClipboard(), sequence = GetClipboardSequenceNumber(), formats = MainWindow.CountClipboardFormats() });
+    }
+    internal static bool OwnedRoot(string path) => Path.GetFullPath(path).StartsWith(@"D:\Temp\pathweft-s4-", StringComparison.OrdinalIgnoreCase)
+        || Path.GetFullPath(path).StartsWith(@"D:\Temp\pathweft-rars-native\", StringComparison.OrdinalIgnoreCase);
     internal sealed record ClipboardPart(string Format, string Kind, string Value);
     internal static ClipboardPart SavePart(string format, object value) => value switch
     {
@@ -27,19 +44,14 @@ internal static class S4Verification
     [System.Runtime.InteropServices.DllImport("user32.dll")] static extern uint GetClipboardSequenceNumber();
     internal static int CaptureClipboard(string snapshot, string expected)
     {
-        if (!Path.GetFullPath(snapshot).StartsWith(@"D:\Temp\pathweft-s4-", StringComparison.OrdinalIgnoreCase) || !Path.GetFullPath(expected).StartsWith(@"D:\Temp\pathweft-s4-", StringComparison.OrdinalIgnoreCase)) return 1;
+        if (!OwnedRoot(snapshot) || !OwnedRoot(expected)) return 1;
         try
         {
             if (!MainWindow.ProbeClipboard()) return 3;
             uint sequence = GetClipboardSequenceNumber();
-            var original = Clipboard.GetDataObject();
-            if ((original == null || original.GetFormats(false).Length == 0) && MainWindow.CountClipboardFormats() != 0) return 3;
-            var parts = new List<ClipboardPart>(); var hashes = new Dictionary<string, string>();
-            if (original != null) foreach (string format in original.GetFormats(false))
-            {
-                object value = original.GetData(format, false) ?? throw new IOException("Cannot materialize clipboard format.");
-                hashes[format] = ClipboardHash(value); parts.Add(SavePart(format, value));
-            }
+            var parts = S4NativeClipboard.Read();
+            var hashes = parts.ToDictionary(part => part.Format, part => Convert.ToHexString(SHA256.HashData(Convert.FromBase64String(part.Value))));
+            hashes["__native_hglobal_v1__"] = "";
             File.WriteAllText(snapshot, JsonSerializer.Serialize(parts));
             File.WriteAllText(expected, JsonSerializer.Serialize(hashes));
             if (GetClipboardSequenceNumber() != sequence) throw new IOException("Clipboard changed during snapshot; no trial mutation permitted.");
@@ -49,20 +61,9 @@ internal static class S4Verification
     }
     internal static int RestoreClipboard(string path, uint expectedSequence)
     {
-        if (!Path.GetFullPath(path).StartsWith(@"D:\Temp\pathweft-s4-", StringComparison.OrdinalIgnoreCase)) return 1;
+        if (!OwnedRoot(path)) return 1;
         var parts = JsonSerializer.Deserialize<ClipboardPart[]>(File.ReadAllText(path));
-        var data = new System.Windows.Forms.DataObject();
-        foreach (var part in parts)
-            data.SetData(part.Format, false, part.Kind switch
-            {
-                "text" => (object)part.Value,
-                "stream" => new MemoryStream(Convert.FromBase64String(part.Value)),
-                "bytes" => Convert.FromBase64String(part.Value),
-                "paths" => JsonSerializer.Deserialize<string[]>(part.Value),
-                _ => throw new IOException("Invalid snapshot type.")
-            });
-        if (GetClipboardSequenceNumber() != expectedSequence) return 2; // preserve a newer owner
-        try { if (parts.Length == 0) Clipboard.Clear(); else Clipboard.SetDataObject(data, true); return 0; }
+        try { return S4NativeClipboard.Restore(parts, expectedSequence); }
         catch (Exception ex) { File.WriteAllText(path + ".error.txt", ex.ToString()); return 1; }
     }
     internal static string ClipboardHash(object value) => value switch
@@ -75,16 +76,25 @@ internal static class S4Verification
     };
     internal static int ReadClipboard(string path)
     {
-        if (!Path.GetFullPath(path).StartsWith(@"D:\Temp\pathweft-s4-", StringComparison.OrdinalIgnoreCase)) return 1;
+        if (!OwnedRoot(path)) return 1;
         var expected = JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(path));
         if (!MainWindow.ProbeClipboard()) return 3;
+        if (expected.Remove("__native_hglobal_v1__"))
+        {
+            var parts = S4NativeClipboard.Read();
+            var hashes = parts.ToDictionary(part => part.Format, part => Convert.ToHexString(SHA256.HashData(Convert.FromBase64String(part.Value))));
+            var nativeMatches = expected.ToDictionary(item => item.Key, item => hashes.TryGetValue(item.Key, out string hash) && hash == item.Value);
+            File.WriteAllText(path + ".readback.json", JsonSerializer.Serialize(new { sequence = GetClipboardSequenceNumber(), ownerProcess = MainWindow.ClipboardOwnerProcess(), formatCount = hashes.Count, expectedCount = expected.Count, matches = nativeMatches }));
+            return hashes.Count == expected.Count && nativeMatches.Values.All(match => match) ? 0 : 1;
+        }
         var actual = Clipboard.GetDataObject();
         bool matches = expected.All(item => actual != null && actual.GetDataPresent(item.Key, false) && ClipboardHash(actual.GetData(item.Key, false)) == item.Value);
+        File.WriteAllText(path + ".readback.json", JsonSerializer.Serialize(new { sequence = GetClipboardSequenceNumber(), formats = actual?.GetFormats(false), matches = expected.ToDictionary(item => item.Key, item => actual != null && actual.GetDataPresent(item.Key, false) && ClipboardHash(actual.GetData(item.Key, false)) == item.Value) }));
         return matches ? 0 : !MainWindow.ProbeClipboard() || actual == null && MainWindow.CountClipboardFormats() != 0 ? 3 : 1;
     }
     internal static int RunConsumer(string path)
     {
-        if (!Path.GetFullPath(path).StartsWith(@"D:\Temp\pathweft-s4-", StringComparison.OrdinalIgnoreCase)) return 1;
+        if (!OwnedRoot(path)) return 1;
         using var ready = EventWaitHandle.OpenExisting(Environment.GetEnvironmentVariable("PATHWEFT_S4_READY"));
         using var release = EventWaitHandle.OpenExisting(Environment.GetEnvironmentVariable("PATHWEFT_S4_RELEASE"));
         using var file = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
@@ -92,6 +102,13 @@ internal static class S4Verification
         File.WriteAllText(Environment.GetEnvironmentVariable("PATHWEFT_S4_RECEIPT"), JsonSerializer.Serialize(new { hash, pid = Environment.ProcessId, readBytes = file.Length }));
         ready.Set(); release.WaitOne();
         return 0;
+    }
+    internal static int ReadExternalFileClipboard(string path, bool move)
+    {
+        if (!OwnedRoot(path)) return 1;
+        if (!MainWindow.ProbeClipboard()) return 3;
+        var files = Clipboard.GetFileDropList();
+        return files.Count == 1 && files[0] == path && Clipboard.GetData("Preferred DropEffect") is MemoryStream effect && effect.Length >= 4 && ((BitConverter.ToInt32(effect.ToArray(), 0) & 2) != 0) == move ? 0 : 1;
     }
 }
 
@@ -106,10 +123,12 @@ public partial class MainWindow
     internal async Task VerifyS4(string root)
     {
         root = Path.GetFullPath(root);
-        if (!root.StartsWith(@"D:\Temp\pathweft-s4-", StringComparison.OrdinalIgnoreCase) || Settings.Profile == null) throw new ArgumentException("Registered fixtures and an isolated profile are required.");
+        if (!S4Verification.OwnedRoot(root) || Settings.Profile == null) throw new ArgumentException("Registered fixtures and an isolated profile are required.");
+        bool rarWriterTrial = Environment.GetEnvironmentVariable("PATHWEFT_VERIFY_RAR") == "1";
         string evidence = Path.Combine(root, "evidence", Environment.ProcessId.ToString()); Directory.CreateDirectory(evidence);
         var observations = new List<object>(); var clock = Stopwatch.StartNew(); int result = 1;
         bool clipboardChanged = false, clipboardFinished = false, originalClipboardRestored = false;
+        uint restoredClipboardSequence = 0;
         EventWaitHandle consumerReady = null, consumerRelease = null; Process consumer = null;
         void Check(bool pass, string criterion)
         {
@@ -197,15 +216,45 @@ public partial class MainWindow
         {
             var paths = pane.Selected.Select(e => e.Path).ToArray();
             Action(pane, cut ? "Cut" : "Copy"); await clipboardOperation;
+            async Task<T> ReadClipboardWhenAvailable<T>(Func<T> read)
+            {
+                while (true)
+                {
+                    try { return read(); }
+                    catch (IOException ex) when (ex.InnerException is System.ComponentModel.Win32Exception { NativeErrorCode: 5 })
+                    {
+                        observations.Add(new { diagnostic = "Windows refused clipboard read before access; waiting for availability" });
+                        await ClipboardAvailable();
+                    }
+                }
+            }
             if (pane.ArchiveRoot != null)
             {
-                var selected = ReadArchiveClipboard();
+                var selected = await ReadClipboardWhenAvailable(() => ReadArchiveClipboard(out _));
+                if ((selected == null || selected.Move != cut || !selected.Paths.SequenceEqual(paths)) && GetClipboardSequenceNumber() == lastOwnedClipboardSequence)
+                    File.WriteAllText(Path.Combine(evidence, "clipboard-transfer-raw.json"), JsonSerializer.Serialize(new { expectedPaths = paths, readerDrop = ClipboardDropForVerification, parts = S4NativeClipboard.Read() }));
                 Check(selected != null && selected.Move == cut && selected.Paths.SequenceEqual(paths), "Actual OS archive clipboard read-back matches the fixture selection");
             }
             else
             {
-                var actual = ReadFileClipboard();
+                var actual = await ReadClipboardWhenAvailable(() => ReadFileClipboard(out _));
+                observations.Add(new { diagnostic = "Native clipboard copy readback", status = Status.Text, expectedCount = paths.Length, actualCount = actual.Paths.Count, actual.Move, cut, effect = ClipboardEffectForVerification, currentSequence = GetClipboardSequenceNumber(), ownedSequence = lastOwnedClipboardSequence });
+                if ((!actual.Paths.SequenceEqual(paths) || actual.Move != cut) && GetClipboardSequenceNumber() == lastOwnedClipboardSequence)
+                    File.WriteAllText(Path.Combine(evidence, "clipboard-transfer-raw.json"), JsonSerializer.Serialize(new { expectedPaths = paths, readerDrop = ClipboardDropForVerification, parts = S4NativeClipboard.Read() }));
                 Check(actual.Paths.SequenceEqual(paths) && actual.Move == cut, "Actual native OS CF_HDROP read-back matches the fixture selection");
+                if (paths.Length == 1)
+                {
+                    int code;
+                    do
+                    {
+                        await ClipboardAvailable();
+                        var start = new ProcessStartInfo(Environment.ProcessPath) { UseShellExecute = false, CreateNoWindow = true, WindowStyle = ProcessWindowStyle.Hidden };
+                        start.ArgumentList.Add("--verify-s4-external-file=" + paths[0]);
+                        if (cut) start.ArgumentList.Add("--clipboard-cut");
+                        using var reader = Process.Start(start); await reader.WaitForExitAsync(); code = reader.ExitCode;
+                    } while (code == 3);
+                    Check(code == 0, "Independent OLE consumer reads the actual file list and copy/cut DWORD");
+                }
             }
         }
         async Task RestoreClipboard()
@@ -219,9 +268,14 @@ public partial class MainWindow
             var restoreStart = new ProcessStartInfo(Environment.ProcessPath) { UseShellExecute = false, CreateNoWindow = true, WindowStyle = ProcessWindowStyle.Hidden };
             restoreStart.ArgumentList.Add("--restore-s4-clipboard=" + Path.Combine(Settings.Dir, "clipboard-snapshot.json"));
             restoreStart.ArgumentList.Add("--clipboard-sequence=" + lastOwnedClipboardSequence);
-            using var restorer = Process.Start(restoreStart); await restorer.WaitForExitAsync();
-            if (restorer.ExitCode == 2) { clipboardFinished = true; observations.Add(new { criterion = "Newer clipboard owner preserved at the independent restore boundary", passed = true }); return; }
-            if (restorer.ExitCode != 0) throw new IOException("Independent clipboard restoration failed; the complete private snapshot was retained.");
+            int restoreCode;
+            do
+            {
+                await ClipboardAvailable();
+                using var restorer = Process.Start(restoreStart); await restorer.WaitForExitAsync(); restoreCode = restorer.ExitCode;
+            } while (restoreCode == 3); // native OpenClipboard refused before mutation; wait for actual availability.
+            if (restoreCode == 2) { clipboardFinished = true; observations.Add(new { criterion = "Newer clipboard owner preserved at the independent restore boundary", passed = true }); return; }
+            if (restoreCode != 0) throw new IOException("Independent clipboard restoration failed; the complete private snapshot was retained.");
             int readerCode;
             do
             {
@@ -231,6 +285,7 @@ public partial class MainWindow
                 using var reader = Process.Start(start); await reader.WaitForExitAsync(); readerCode = reader.ExitCode;
             } while (readerCode == 3); // read-only retry at the observed Windows resource boundary
             Check(readerCode == 0, "Independent process verified original OS clipboard restoration against all captured format hashes");
+            restoredClipboardSequence = GetClipboardSequenceNumber();
             clipboardFinished = originalClipboardRestored = true;
         }
         try
@@ -253,7 +308,7 @@ public partial class MainWindow
                 Check(Left.ArchiveRoot != null && Left.Items.Any(e => e.Name == (extension == "rar" ? "helloworld.txt" : "image.png")), "ARCHIVE-01/02 real pane Open browses native " + extension + " metadata");
                 if (extension == "rar")
                 {
-                    Check(!Archive.CanChange(Left.Dir), "RAR exposes its native read-only capability");
+                    Check(!Archive.CanChange(Left.Dir), "The read-only RAR fixture disables editing without losing previews");
                     await Select(Left, "helloworld.txt"); Action(Left, "Preview"); await quickPreview.Completion;
                     Check(quickPreview.State == "ready" && quickPreview.ModuleId == "text", "Real RAR5 text entry renders without a standalone utility");
                     var content = ArchiveContent.Retained().Single(r => r.Purpose == "preview");
@@ -261,7 +316,7 @@ public partial class MainWindow
                     quick.Close(); await PreviewSession.DrainAsync();
                 }
             }
-            string archive = Path.Combine(containers, "sample.7z");
+            string archive = Path.Combine(containers, rarWriterTrial ? "writable.rar" : "sample.7z");
             await S1Verification.Navigate(Left, archive);
             int priorTabs = Left.OpenTabs.Count;
             await Listed(Left, archive, () => Click((Button)Left.FindName("NewTabButton")));
@@ -290,7 +345,7 @@ public partial class MainWindow
             Check(!ArchiveContent.Retained().Any(r => r.Purpose == "preview"), "ARCHIVE-05 closing internal previews releases their entry-bound copies");
             if (Settings.Preview) TogglePreview();
             var crumbs = (Panel)Left.FindName("Crumbs");
-            var rootCrumb = crumbs.Children.OfType<Button>().Single(b => b.Content is TextBlock text && text.Text == "sample.7z");
+            var rootCrumb = crumbs.Children.OfType<Button>().Single(b => b.Content is TextBlock text && text.Text == Path.GetFileName(archive));
             await Listed(Left, archive, () => Click(rootCrumb));
             Check(Left.Items.Any(e => e.Name == "nested"), "ARCHIVE-02 actual breadcrumb returns from nested entries to the archive root");
             await S1Verification.Navigate(Left, archive + "\\nested");
@@ -322,6 +377,13 @@ public partial class MainWindow
             Action(Left, "Compress to ZIP"); await lastArchiveJob.Completion;
             string createdZip = Path.Combine(source, "plain 子 spaced.zip");
             Check(lastArchiveJob.Phase == Phase.Done && lastArchiveJob.Errors.IsEmpty && Archive.EntryHash(createdZip, Archive.Read(createdZip).Single()) == Hash(Path.Combine(source, "plain 子 spaced.txt")), "ARCHIVE-01/03 Compress to ZIP uses the native backend and existing verified job owner");
+            if (rarWriterTrial)
+            {
+                await Select(Left, "plain 子 spaced.txt"); // ZIP creation selects its arrival; restore this test's input.
+                Action(Left, "Compress to RAR"); await lastArchiveJob.Completion;
+                string createdRar = Path.Combine(source, "plain 子 spaced.rar");
+                Check(lastArchiveJob.Phase == Phase.Done && lastArchiveJob.Errors.IsEmpty && Archive.EntryHash(createdRar, Archive.Read(createdRar).Single()) == Hash(Path.Combine(source, "plain 子 spaced.txt")), "RAR-01/02 real Compress to RAR uses the native DLL and shared queue");
+            }
             await S1Verification.Navigate(Right, archive + "\\nested"); await Paste(Right);
             Check(Archive.List(archive, "nested").Any(e => e.Name == "plain 子 spaced.txt"), "ARCHIVE-03 actual OS clipboard copies filesystem content into the viewed archive folder");
             await S1Verification.Navigate(Left, archive + "\\nested"); await Select(Left, "plain 子 spaced.txt"); await Copy(Left, true);
@@ -475,6 +537,50 @@ public partial class MainWindow
             Check(quickPreview.State == "ready" && quickPreview.ModuleId == "markdown", "ARCHIVE-05 encrypted entry previews with its ephemeral session password");
             quick.Close(); await PreviewSession.DrainAsync();
             Action(Left, "Forget archive password");
+            if (rarWriterTrial)
+            {
+                string protectedRar = Path.Combine(containers, "encrypted-rar5.rar");
+                bool needsPassword = false;
+                try { await S1Verification.Navigate(Left, protectedRar); } catch (IOException) { needsPassword = true; }
+                Check(needsPassword, "RAR-03 encrypted RAR headers require a session password");
+                var unlocked = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+                void RarListed() { if (Left.Listed && Left.Items.Any(e => e.Name == "second.txt")) unlocked.TrySetResult(); }
+                Left.StatsChanged += RarListed;
+                try
+                {
+                    _ = Dispatcher.BeginInvoke(() =>
+                    {
+                        var dialog = Application.Current.Windows.Cast<Window>().Single(w => w.Title == "Archive password");
+                        Descendants<PasswordBox>(dialog).Single().Password = "fixture-password";
+                        Click(Descendants<Button>(dialog).Single(b => b.Name == "ArchivePasswordOpen"));
+                    });
+                    Action(Left, "Enter archive password…"); await unlocked.Task;
+                }
+                finally { Left.StatsChanged -= RarListed; }
+                Check(Archive.CanChange(protectedRar), "RAR-03 qualified encrypted RAR exposes native edit actions after unlock");
+                await Select(Left, "second.txt"); Action(Left, "Preview"); await quickPreview.Completion;
+                Check(quickPreview.State == "ready" && quickPreview.ModuleId == "text", "RAR-05 encrypted RAR selection reaches the real internal text preview");
+                quick.Close(); await PreviewSession.DrainAsync();
+                Action(Left, "Rename");
+                var rename = Descendants<TextBox>(Left).Single(b => b.Tag is Entry { Renaming: true }); rename.Text = "secret 子.txt";
+                rename.RaiseEvent(new KeyEventArgs(Keyboard.PrimaryDevice, PresentationSource.FromVisual(this), Environment.TickCount, Key.Enter) { RoutedEvent = Keyboard.PreviewKeyDownEvent });
+                await lastArchiveJob.Completion;
+                Check(lastArchiveJob.Phase == Phase.Done && lastArchiveJob.Errors.IsEmpty && Archive.Read(protectedRar).Any(e => e.Path == "secret 子.txt"), "RAR-02/03 actual encrypted RAR inline rename preserves a verified readable container");
+                await S1Verification.Navigate(Left, protectedRar);
+                await S1Verification.Snapshot(this, evidence, "rar-encrypted-edited-pane");
+                Check(!File.ReadAllText(Settings.FilePath).Contains("fixture-password"), "RAR-03 session password never reaches settings");
+                Action(Left, "Forget archive password");
+                Check(!Archive.CanChange(protectedRar), "RAR-03 forgetting the password disables encrypted editing");
+                await S1Verification.Navigate(Left, Path.Combine(containers, "with_recovery.rar"));
+                await Select(Left, Left.Items.First(e => !e.IsUp).Name);
+                var unavailable = Menu(Left);
+                try
+                {
+                    var item = unavailable.Items.OfType<MenuItem>().Single(i => i.Header?.ToString() == "Rename");
+                    Check(!item.IsEnabled && item.ToolTip?.ToString()?.Contains("recovery") == true, "RAR-03 actual unsupported edit action exposes its preservation reason");
+                }
+                finally { unavailable.RaiseEvent(new RoutedEventArgs(ContextMenu.ClosedEvent)); }
+            }
             Check(HiddenTrialPresentation.ForegroundObserverActive && HiddenTrialPresentation.ForegroundViolations == 0, "Hidden archive verification generated zero foreground events");
             result = 0;
         }
@@ -498,7 +604,7 @@ public partial class MainWindow
             PreviewSession.ClearAll(); await PreviewSession.DrainAsync();
             if (!clipboardChanged || clipboardFinished)
                 foreach (var record in ArchiveContent.Retained()) ArchiveContent.Release(record);
-            File.WriteAllText(Path.Combine(evidence, "s4-results.json"), JsonSerializer.Serialize(new { result, pid = Environment.ProcessId, scenario = "complete-native-archive-workflow", originalClipboardRestored, foregroundViolations = HiddenTrialPresentation.ForegroundViolations, HiddenTrialPresentation.ForegroundEvents, HiddenTrialPresentation.ActivationMessages, observations }, new JsonSerializerOptions { WriteIndented = true }));
+            File.WriteAllText(Path.Combine(evidence, "s4-results.json"), JsonSerializer.Serialize(new { result, pid = Environment.ProcessId, scenario = rarWriterTrial ? "embedded-rar-native-archive-workflow" : "complete-native-archive-workflow", originalClipboardRestored, restoredClipboardSequence, foregroundViolations = HiddenTrialPresentation.ForegroundViolations, HiddenTrialPresentation.ForegroundEvents, HiddenTrialPresentation.ActivationMessages, observations }, new JsonSerializerOptions { WriteIndented = true }));
             quitting = true;
             Application.Current.Shutdown(result);
         }

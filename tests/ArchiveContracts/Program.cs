@@ -112,8 +112,9 @@ try
     Check(directoryRejected && Hash(guarded) == guardedBefore && File.Exists(Path.Combine(changing, "original.txt")) && File.Exists(Path.Combine(changing, "new.txt")), "Concurrent directory membership change preserves both source and original archive");
 }
 finally { directoryBoundary.SetValue(null, null); }
-string parallelArchive = Path.Combine(root, "queued-moves.7z"), firstDestination = Path.Combine(root, "first-destination");
-string secondDestination = Path.Combine(@"E:\Temp\pathweft-s4-cleanup-review", "cross-volume-output-" + Guid.NewGuid().ToString("N"));
+bool rarQueue = Environment.GetEnvironmentVariable("PATHWEFT_VERIFY_RAR") == "1";
+string parallelArchive = Path.Combine(root, rarQueue ? "queued-moves.rar" : "queued-moves.7z"), firstDestination = Path.Combine(root, "first-destination");
+string secondDestination = Path.Combine(rarQueue ? @"E:\Temp\pathweft-rars-review" : @"E:\Temp\pathweft-s4-cleanup-review", "cross-volume-output-" + Guid.NewGuid().ToString("N"));
 Directory.CreateDirectory(firstDestination); Directory.CreateDirectory(secondDestination);
 Call("Create", parallelArchive, new Dictionary<string, string> { ["one.txt"] = alpha, ["two.txt"] = beta });
 using (var firstVerified = new ManualResetEventSlim())
