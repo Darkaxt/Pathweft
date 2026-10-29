@@ -1,6 +1,6 @@
 # Pathweft specification
 
-Version 0.6 - 2026-10-29. Owner: Darkaxt.
+Version 0.7 - 2026-10-30. Owner: Darkaxt.
 
 This is the authoritative specification. The derived plan must preserve every
 requirement and acceptance criterion. Material scope changes require explicit
@@ -47,6 +47,19 @@ libraries inside the application wherever practical, with Pathweft owning the
 interface, settings and resource lifecycle. Do not make standalone viewer or
 archive utility windows the default integration. Record an unavoidable external
 process boundary explicitly rather than presenting it as an embedded module.
+
+On 2026-10-30 the user clarified S6's presentation: retain StartAllBack's grouped
+layout, show a reduced Everything-backed subset within each file category, and
+use See more results for the complete EverythingToolbar-derived view. A handoff
+that leaves Windows Search producing the compact file results is not the target.
+Preserve Programs and Settings functionality if technically achievable and qualify
+their actual backend dependencies. The user also requested StartAllBack folder
+launches to prefer Pathweft, and investigation of Directory Opus's Explorer
+replacement as the reference for replacing the inherited FileLabs window watcher.
+StartAllBack-specific routing belongs to S6; broader default-handler replacement
+and its final delivered recovery belong to the existing S8 SHELL-01 scope. The
+conditional discussion of WSearch being disabled does not authorize disabling the
+host service or remove the retained Outlook requirement.
 
 ## 2. Source baseline and provenance
 
@@ -242,14 +255,16 @@ Evidence, close owned analysis and verify worker exit before cleaning scratch.
 
 | ID | Requirement and acceptance |
 | --- | --- |
-| SAB-01 | Use the installed REA skill and Coordinator gate on an exactly identified StartAllBack artifact before selecting a hook. Record version, origin, signature/hash, Windows build and relevant loaded-module identities. Trace typed-query dispatch, file-result production/materialization, cancellation, selection/open/reveal and teardown, with retained Evidence IDs. Recheck documented extension points; distinguish static evidence, actual runtime observations, inference and unresolved ABI/ownership questions. Resolve design-critical unknowns before dependent implementation. |
-| SAB-02 | Provide an optional native integration that supplies Everything-backed file/folder results inside StartAllBack's existing Start-menu search and result UI. Preserve its app/shortcut, settings and command behavior. Verify Win -> type -> actual indexed result inside that menu -> keyboard/mouse selection -> correct open/reveal. Compare controlled queries/results with the same existing Everything index. A separate Pathweft/EverythingToolbar popup, taskbar deskband or search-protocol handoff does not satisfy this in-menu requirement. |
+| SAB-01 | Use the installed REA skill and Coordinator gate on an exactly identified StartAllBack artifact before selecting a hook. Record version, origin, signature/hash, Windows build and relevant loaded-module identities. Trace typed-query dispatch, grouped file-result production/materialization, cancellation, selection/open/reveal, See more results dispatch and teardown, with retained Evidence IDs. Independently trace Programs and Settings providers and qualify dependencies on filesystem indexing versus the running WSearch service. Recheck documented extension points; distinguish static evidence, actual runtime observations, inference and unresolved ABI/ownership questions. Resolve design-critical unknowns before dependent implementation. |
+| SAB-02 | Provide an optional native integration that supplies Everything-backed file/folder results inside StartAllBack's existing grouped Start-menu result UI. Retain category headings/dividers and show a bounded reduced subset in each applicable group; qualify the actual library/scope membership behind categories such as Documents, Games and Modding rather than assuming extension-only grouping. Preserve app/shortcut, Settings and command functionality; a missing independent provider remains a blocker, not silently omitted coverage. Verify Win -> type -> actual indexed results in compact native groups -> keyboard/mouse selection -> correct open/reveal. See more results opens the full Pathweft-owned EverythingToolbar-derived view with the query and applicable scope preserved. A separate view/handoff without Everything-backed compact in-menu results does not satisfy this requirement. Do not require the standalone EverythingToolbar binary. |
 | SAB-03 | Reuse the deliberately selected Everything instance and shared Pathweft search behavior; do not start a duplicate index. Keep the native shell adapter limited to the required query/result boundary and existing application ownership; do not host the full managed file manager inside Explorer. Own rapid-query cancellation, result identity, paging/bounds and thread/COM lifetimes through actual state/events. Verify Unicode/spaces, rapid typing, empty results, deleted/offline paths and real index unavailability; never label stale/partial results complete. The exact ABI/transport is selected from SAB-01 evidence, not assumed by this plan. |
 | SAB-04 | Version/hash-bind any runtime hook to the exact validated host/module/Windows combination and verify expected target identities before attachment. Keep integration opt-in under Pathweft settings, with visible compatibility/readiness state. Unknown updates, missing owners and failed attachment leave normal StartAllBack search usable and report the integration unavailable; no guessed offsets or automatic patch retries. Preserve original installed binaries, licensing state, settings and unrelated hooks. Supply verified disable/uninstall/recovery and actual attach/detach/Explorer-restart behavior. |
 | SAB-05 | Validate the complete integration in an isolated matching Windows/StartAllBack environment before a coordinated live-shell trial. Exercise enable/disable, actual native input, Explorer restart, relevant DPI/monitor/focus behavior, unavailable backend, host/app exit and an unsupported-version case. Verify restoration of normal StartAllBack search and absence of persistent orphan hooks. Use hidden diagnostics where possible; physical Start-menu acceptance requires actual visible input. S8 must package only Pathweft-owned adapter/source with exact supported-version notes and verify the delivered integration. |
+| SAB-06 | Route ordinary filesystem-folder links and folder-result open/reveal actions originating in StartAllBack directly to Pathweft, preserving the requested folder and selected file where applicable. Preserve app/Settings/command launches and explicitly inventory virtual Shell locations that Pathweft cannot render. Test cold/warm Pathweft, Unicode/quoted paths, native selection, no duplicate or transient Explorer window for covered routes, and disable/recovery. Reuse the application launch/selection boundary; do not activate the inherited timed Explorer-window hiding/polling/closing watcher. Broader system-wide default-folder registration belongs to SHELL-01 in S8. |
 
 The user calls this "inject Everything"; the required outcome is native in-menu
-file/folder results. A version-bound runtime interception is an allowed design
+grouped file/folder subsets plus a full-results view, not preserving Windows
+Search filesystem results and redirecting only See more results. A version-bound runtime interception is an allowed design
 candidate for S6, not an established hook or a promise of universal compatibility.
 No documented replacement-provider API has been established during planning.
 If evidence shows that in-menu integration cannot be implemented safely in the
@@ -286,7 +301,7 @@ Primary sources: [Windows indexing scope](https://support.microsoft.com/en-us/wi
 | ID | Requirement and acceptance |
 | --- | --- |
 | LIFE-01 | Own initialization, readiness, cancellation and cleanup through actual state/events. Do not copy fixed sleeps/retries or arbitrary timeout-driven synchronization from donors. Isolate unavoidable external timeouts at their boundary. Verify owned helper exit before scratch cleanup. |
-| SHELL-01 | Folder/default-handler and Win+E integration is optional, reversible and verified. Restore the actual prior owner/settings on disable/uninstall. Document actual virtual-location/dialog support. Folder-browser scope does not imply desktop-shell replacement. |
+| SHELL-01 | Folder/default-handler and Win+E integration is opt-in, reversible and verified. Investigate Directory Opus's native Explorer replacement behavior and replace the inherited timed hide/poll/close Explorer-window takeover for covered entry points with launch-boundary routing. Qualify normal folder/default and explore verbs, shortcuts, Win+E, StartAllBack links, and SHOpenFolderAndSelectItems-style folder-plus-selection requests, including applicable caller architectures and cold/warm application states. Keep unsupported virtual locations, explicit explorer.exe launches and common Open/Save dialog behavior explicit; do not claim universal interception. Preserve actual prior registrations/owners, respect another default manager, and verify disable/uninstall/restoration, no loops or duplicate/transient Explorer windows for covered routes. Native code stays limited to routing; do not host the managed file manager inside caller processes or substitute global process-creation interception. Folder-browser scope does not imply desktop-shell or common-dialog replacement. |
 | DELIVERY-01 | One installation, settings owner and update channel. Pin/package Everything and native preview dependencies; preserve external instances/data and prevent upstream updates replacing Pathweft. Verify install/update/uninstall in an isolated supported Windows environment. |
 | DELIVERY-02 | After all stages pass, publish one normal versioned Pathweft release here: usable Windows x64 installer and portable package, source/tag, checksums, accurate notes and required source/notices. State signing identity/status honestly. Independently retrieve both assets and verify hashes/version/commit and packaged search/preview/transfer behavior. No setup/intermediate commit is an application release. |
 | DELIVERY-03 | Preserve original notices, exact donor/dependency revisions and terms; provide applicable GPL source/distribution materials when QuickLook code is imported. Keep private traces, credentials, personal sample paths and machine records out of public source/assets. |

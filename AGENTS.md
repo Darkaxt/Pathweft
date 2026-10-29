@@ -36,7 +36,12 @@ do not change its requirements or the user's standing instructions.
 - Prefer source/native SDK integration inside Pathweft. The F3D GLB prototype
   belongs to S3; native 7-Zip-backed browsing and rename/copy/cut/paste belong to S4.
 - S6 targets Everything results inside the existing StartAllBack menu, allowing a
-  version-bound native hook after REA evidence. S7 owns the user-requested long-term
+  version-bound native hook after REA evidence. Keep native category dividers with
+  reduced Everything-backed subsets; See more results opens the full integrated
+  view. Qualify Programs/Settings independently of filesystem indexing and route
+  StartAllBack folder actions directly to Pathweft under SAB-06. S8 SHELL-01 owns
+  Directory Opus-informed default-handler routing replacing the inherited timed
+  Explorer-window takeover. S7 owns the user-requested long-term
   Everything filesystem migration and Outlook-preserving WSearch scope reduction.
   The user superseded service retirement; preserve explicit consumer/content/mail
   compatibility gaps and leave live indexing configuration unchanged during S6.
