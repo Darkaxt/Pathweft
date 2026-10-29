@@ -2,7 +2,7 @@
 param([Parameter(Mandatory)][string]$ScratchRoot)
 $ErrorActionPreference = 'Stop'
 $scratch = [IO.Path]::GetFullPath($ScratchRoot)
-if ($scratch -notmatch '^D:\\Temp\\pathweft-s[123]-[^\\]+$') { throw 'Use the registered stage scratch root.' }
+if ($scratch -notmatch '^D:\\Temp\\pathweft-s[1234]-[^\\]+$') { throw 'Use the registered stage scratch root.' }
 $env:TEMP = $env:TMP = Join-Path $scratch 'temp'
 $env:PATHWEFT_PROFILE = Join-Path $scratch 'selftest-profile'
 [void][IO.Directory]::CreateDirectory($env:PATHWEFT_PROFILE)

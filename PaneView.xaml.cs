@@ -416,7 +416,7 @@ public partial class PaneView : UserControl
     public IEnumerable<Entry> Items => items.Where(e => !e.IsUp);
     // This PC's rows are drive roots: nothing that copies, moves, deletes, renames or drags them may get them, so in
     // This PC the selection is empty to every command (the menu there is Windows' own, MainWindow.ShowMenu).
-    public List<Entry> Selected => !InSearch && (Dir == ThisPC || ArchiveRoot != null) ? new() : List.SelectedItems.Cast<Entry>().Where(e => !e.IsUp).ToList();
+    public List<Entry> Selected => !InSearch && Dir == ThisPC ? new() : List.SelectedItems.Cast<Entry>().Where(e => !e.IsUp).ToList();
     public long FolderTotal => Items.Sum(e => Math.Max(0, e.Size));
     public bool SizesPending => Items.Any(e => e.Size == -1);
 
@@ -722,28 +722,18 @@ public partial class PaneView : UserControl
     /// delayed rendering (the data written only on drop) would remove that wait.
     internal string[] ExtractForDrag()
     {
-        if (ArchiveRoot is not var (archive, inner)) return Array.Empty<string>();
-        var names = List.SelectedItems.Cast<Entry>().Where(e => !e.IsUp).Select(e => e.Name).ToList();
-        if (names.Count == 0) return Array.Empty<string>();
-        var drags = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "Pathweft", "drag");
-        var temp = System.IO.Path.Combine(drags, Guid.NewGuid().ToString("N")[..8]);
+        if (ArchiveRoot is not { } at) return Array.Empty<string>();
+        var names = Selected.Select(e => e.Name).ToArray();
+        if (names.Length == 0) return Array.Empty<string>();
         try
         {
-            // the copies of earlier drags, once they're an hour old (a drop that is still copying from one is long done)
-            if (Directory.Exists(drags))
-                foreach (var old in new DirectoryInfo(drags).EnumerateDirectories().Where(d => d.CreationTimeUtc < DateTime.UtcNow.AddHours(-1)))
-                    try { old.Delete(true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
             Mouse.OverrideCursor = Cursors.Wait;
-            Directory.CreateDirectory(temp);
-            Archive.Extract(archive, names, inner, temp);
+            var copy = ArchiveContent.Extract(at.Archive, names, at.Inner, "drag export");
+            return names.Select(n => System.IO.Path.Combine(copy.Directory, "data", n)).ToArray();
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException or FormatException)
-        {
-            Error?.Invoke($"Couldn't take them out of {System.IO.Path.GetFileName(archive)}: {ex.Message}");
-            return Array.Empty<string>();
-        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        { Error?.Invoke("Cannot prepare archive drag: " + ex.Message); return Array.Empty<string>(); }
         finally { Mouse.OverrideCursor = null; }
-        return names.Select(n => System.IO.Path.Combine(temp, n)).Where(p => File.Exists(p) || Directory.Exists(p)).ToArray();
     }
 
     // ---- after a paste or drop: the new arrivals selected once the folder has been read again ----
@@ -893,8 +883,7 @@ public partial class PaneView : UserControl
     /// The archive a path runs through, if any. Only paths that name one are looked at on disk.
     public static (string Archive, string Inner)? ArchiveOf(string path)
     {
-        if (string.IsNullOrEmpty(path) || !(path.Contains(".zip", StringComparison.OrdinalIgnoreCase) || path.Contains(".tar", StringComparison.OrdinalIgnoreCase)
-            || path.Contains(".tgz", StringComparison.OrdinalIgnoreCase))) return null;
+        if (string.IsNullOrEmpty(path)) return null;
         path = path.TrimEnd('\\');
         for (var at = path; at != null && at.Length > 3; at = System.IO.Path.GetDirectoryName(at))
             if (Archive.IsArchiveName(at) && File.Exists(at))
@@ -919,9 +908,14 @@ public partial class PaneView : UserControl
         {
             if (v != navVersion) return;
             var (items, error) = t.Result;
-            if (error != null) { Error?.Invoke($"Can't read {System.IO.Path.GetFileName(at.Archive)}: {error}"); return; }
+            if (error != null)
+            {
+                ShowItems(new List<Entry>(), null);
+                DriveInfoText.Text = "Archive unavailable · " + error;
+                Listed = true; Error?.Invoke(DriveInfoText.Text); StatsChanged?.Invoke(); return;
+            }
             ShowItems(items.Select(i => new Entry { Name = i.Name, Path = dir + "\\" + i.Name, IsDir = i.IsDir, Size = i.Size, Modified = i.Modified }).ToList(), select);
-            DriveInfoText.Text = $"Inside {System.IO.Path.GetFileName(at.Archive)}";
+            DriveInfoText.Text = $"Inside {System.IO.Path.GetFileName(at.Archive)} · " + (Archive.CanChange(at.Archive) ? "editable" : "read-only");
             UsedBar.Width = 0;
             StartIcons();
             Listed = true; StatsChanged?.Invoke();
@@ -1765,6 +1759,7 @@ public partial class PaneView : UserControl
 
     public void BeginRename()
     {
+        if (ArchiveRoot is { } archive && !Archive.CanChange(archive.Archive)) { Error?.Invoke("This archive is read-only."); return; }
         if (List.SelectedItem is not Entry e || renamingEntry != null || Dir == ThisPC) return;
         renamingEntry = e;
         List.ScrollIntoView(e); // its row has to exist for the box to appear

@@ -6,7 +6,7 @@ A Windows file-manager project forked from [File Labs](https://github.com/limbur
 
 ## Current state
 
-**S1-S3 are complete: isolated pane search, the connected taskbar workflow and internal selectable previews are verified in the development branch.**
+**S1-S4 are complete: isolated pane search, the connected taskbar workflow, internal selectable previews and native archive browsing/editing are verified in the development branch.**
 
 Pathweft has independent executable, profile, IPC, startup, shell, installer and update identities. Pane search reuses the existing default Everything instance, with explicit folder/all-index scopes and a separate live-filesystem mode. Current verified stages start no duplicate indexer and leave Windows Search unchanged. Installer/update execution remains an S8 acceptance boundary; do not treat this development branch as an installable release.
 
@@ -23,7 +23,7 @@ Enable taskbar search in Settings → Windows integration. Ctrl+Alt+Space opens 
 - Use **REA analysis of TeraCopy** and measured workflows to guide transfer development. Upstream changes are baseline context, not the transfer design authority.
 - Preserve responsive browsing and an uncluttered interface.
 
-S3 integrates eight selectable preview modules across the side pane, Space and widget, including an opt-in native F3D GLB prototype with camera controls. See the [module inventory](docs/PREVIEW-MODULES.md) and [S3 evidence](docs/verification/2026-10-29-s3.md). Next: S4 native 7-Zip archive browsing/editing, S5 REA-driven transfers, S6 native StartAllBack search, S7 all-Everything search migration/Windows Search retirement, and S8 final delivery. S6/S7 feasibility is unresolved: native host hooks and content/property/mail consumers require actual evidence before Windows Search can be disabled.
+S3 integrates eight selectable preview modules across the side pane, Space and widget, including an opt-in native F3D GLB prototype with camera controls. See the [module inventory](docs/PREVIEW-MODULES.md) and [S3 evidence](docs/verification/2026-10-29-s3.md). S4 adds [native archive browsing/editing](docs/ARCHIVES.md): verified ZIP/7z/TAR edits, read-only RAR5/CAB reading, entry previews and one transfer owner. See [S4 evidence](docs/verification/2026-10-29-s4.md). Next: S5 REA-driven transfers, S6 native StartAllBack search, S7 all-Everything search migration/Windows Search retirement, and S8 final delivery. S6/S7 feasibility is unresolved: native host hooks and content/property/mail consumers require actual evidence before Windows Search can be disabled.
 
 ## Documents
 
@@ -44,6 +44,6 @@ Register exact generated scratch before creation where practical; clean it throu
 
 ## Upstream and licensing
 
-The inherited File Labs source retains its original [MIT notice](LICENSE). Selected EverythingToolbar client code and the official native Everything SDK retain their [MIT notices and pins](vendor/EverythingSDK/NOTICES.txt). QuickLook source has not yet been imported. Preserve applicable GPL source/distribution materials when that source is incorporated in S3; that future combination must not be described as MIT-only.
+The inherited File Labs source retains its original [MIT notice](LICENSE). Selected EverythingToolbar client code and the official native Everything SDK retain their [MIT notices and pins](vendor/EverythingSDK/NOTICES.txt). Imported QuickLook-derived source retains its [GPL-3.0-or-later materials](COPYING-GPL-3.0.txt); the combined application must not be described as MIT-only. Native archive integration preserves the separate [7-Zip](vendor/SevenZip/NOTICES.txt) and [SharpSevenZip](vendor/SharpSevenZip/NOTICES.txt) terms and matching-source delivery requirements.
 
 **No Pathweft application release exists yet.**

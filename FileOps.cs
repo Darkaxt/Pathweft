@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using System.IO;
-using System.IO.Compression;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Windows;
@@ -39,7 +38,7 @@ public partial class MainWindow
     // Called when a Ferry job ends.
     void RememberJob(Job job)
     {
-        if (undoJobs.Remove(job) || job.Phase != Phase.Done || job.Conflicts.Count > 0 || job.Merged || !job.Errors.IsEmpty) return;
+        if (undoJobs.Remove(job) || job.ArchiveOperation || job.Phase != Phase.Done || job.Conflicts.Count > 0 || job.Merged || !job.Errors.IsEmpty) return;
         var made = job.Sources.Select(s => (Source: s, Target: job.Duplicates.GetValueOrDefault(s) ?? Path.Combine(job.Destination, Path.GetFileName(s.TrimEnd('\\')))))
                               .Where(x => Path.GetFileName(x.Target) != "").ToList();
         if (made.Count == 0) return;
@@ -132,7 +131,7 @@ public partial class MainWindow
     }
 
     // ---- ZIP ----
-    async void Compress()
+    void Compress()
     {
         var sel = active.Selected;
         if (sel.Count == 0) return;
@@ -140,133 +139,27 @@ public partial class MainWindow
         var stem = sel.Count == 1 ? (sel[0].IsDir ? sel[0].Name : Path.GetFileNameWithoutExtension(sel[0].Name)) : Path.GetFileName(pane.Dir.TrimEnd('\\'));
         var zip = Unique(Path.Combine(pane.Dir, (stem == "" ? "Archive" : stem) + ".zip"));
         var paths = sel.Select(e => e.Path).ToList();
-        Status.Text = $"Compressing to {Path.GetFileName(zip)}…";
-        var error = await Task.Run(() =>
+        SubmitArchiveEdit(paths, pane.Dir, "Create ZIP", job =>
         {
-            try
-            {
-                using var archive = ZipFile.Open(zip, ZipArchiveMode.Create);
-                foreach (var p in paths)
-                {
-                    if (File.Exists(p)) { archive.CreateEntryFromFile(p, Path.GetFileName(p)); continue; }
-                    var parent = Path.GetDirectoryName(p.TrimEnd('\\')) ?? p; // entries keep the folder's own name
-                    archive.CreateEntry(Path.GetRelativePath(parent, p).Replace('\\', '/') + "/");
-                    var opts = new EnumerationOptions { RecurseSubdirectories = true, AttributesToSkip = FileAttributes.ReparsePoint };
-                    foreach (var f in new DirectoryInfo(p).EnumerateFileSystemInfos("*", opts))
-                    {
-                        var name = Path.GetRelativePath(parent, f.FullName).Replace('\\', '/');
-                        if (f is DirectoryInfo) archive.CreateEntry(name + "/"); // keeps empty folders
-                        else archive.CreateEntryFromFile(f.FullName, name);
-                    }
-                }
-                return null;
-            }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-            {
-                try { File.Delete(zip); } catch (IOException) { } // no half-written archive left behind
-                return ex.Message;
-            }
+            Archive.Create(zip, Archive.Files(paths, ""), job);
+            job.Arrivals = new() { Path.GetFileName(zip) };
         });
-        if (error != null) { Status.Text = "Compress failed: " + error; return; }
-        Status.Text = $"Created {Path.GetFileName(zip)}";
-        Remember($"zip {Path.GetFileName(zip)}", () => Recycle(new() { zip }, UIOption.OnlyErrorDialogs));
-        ShowCreated(pane, zip);
     }
 
-    async void Extract(Entry e, bool toFolder)
+    void Extract(Entry e, bool toFolder)
     {
         var pane = active;
         var here = Path.GetDirectoryName(e.Path);
         var dest = toFolder ? Unique(Path.Combine(here, Path.GetFileNameWithoutExtension(e.Name))) : here;
-        Status.Text = $"Extracting {e.Name}…";
-        List<string> created = null;
-        var error = await Task.Run(() =>
+        Run(() =>
         {
-            try
-            {
-                // "Here" must not overwrite anything: check first rather than stop halfway through.
-                var top = Archive.List(e.Path, "").Select(x => x.Name).ToList();
-                var clash = top.FirstOrDefault(t => File.Exists(Path.Combine(dest, t)) || Directory.Exists(Path.Combine(dest, t)));
-                if (clash != null) return $"{clash} already exists here — use Extract to folder";
-                created = toFolder ? new() { dest } : top.Select(t => Path.Combine(dest, t)).ToList();
-                Directory.CreateDirectory(dest);
-                Archive.Extract(e.Path, top, "", dest); // refuses entries that would land outside dest
-                return null;
-            }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException or FormatException) { return ex.Message; }
+            var top = Archive.List(e.Path, "").Select(x => Path.Combine(e.Path, x.Name)).ToList();
+            if (top.Count == 0) { Status.Text = "The archive is empty."; return; }
+            Directory.CreateDirectory(dest);
+            Submit(top, dest, false);
         });
-        if (error != null) { Status.Text = "Extract failed: " + error; return; }
-        Status.Text = $"Extracted {e.Name}";
-        Remember($"extract {e.Name}", () => Recycle(created, UIOption.OnlyErrorDialogs));
-        ShowCreated(pane, toFolder ? dest : e.Path);
     }
 
-    // ---- Inside an archive (1.0.60): a ZIP or TAR opens in the pane like a folder ----
-    // Its rows aren't files on disk, so the usual commands don't get them (PaneView.Selected is empty there); these do.
-    List<Entry> ArchiveSelection(PaneView p) => p.List.SelectedItems.Cast<Entry>().Where(x => !x.IsUp).ToList();
-
-    async void ExtractFromArchive(PaneView p, string dest)
-    {
-        var sel = ArchiveSelection(p);
-        if (sel.Count == 0 || p.ArchiveRoot is not var (archive, inner)) return;
-        if (PaneView.IsVirtual(dest) || !Directory.Exists(dest)) { Status.Text = "Extract into a folder on disk"; return; }
-        Status.Text = $"Extracting {sel.Count} item(s)…";
-        var names = sel.Select(x => x.Name).ToList();
-        (int Written, int Skipped) n = default;
-        string error = null;
-        try { n = await Task.Run(() => Archive.Extract(archive, names, inner, dest)); }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException or FormatException) { error = ex.Message; }
-        Status.Text = error != null ? "Extract failed: " + error
-            : $"Extracted {n.Written} file(s) to {dest}" + (n.Skipped > 0 ? $"  ·  {n.Skipped} already there, left as they were" : "");
-        foreach (var pane in new[] { Left, Right }) if (pane.Dir.Equals(dest, StringComparison.OrdinalIgnoreCase)) pane.Refresh();
-    }
-
-    void ExtractFromArchiveTo(PaneView p)
-    {
-        var pick = new Microsoft.Win32.OpenFolderDialog { Title = "Extract to which folder?" };
-        if (pick.ShowDialog(this) == true) ExtractFromArchive(p, pick.FolderName);
-    }
-
-    /// A file in an archive opens from a copy in the temp folder (refreshed each time), as Explorer does.
-    async void OpenFromArchive(PaneView p, Entry e)
-    {
-        if (p.ArchiveRoot is not var (archive, inner)) return;
-        var temp = Path.Combine(Path.GetTempPath(), "Pathweft", "open", $"{(uint)archive.ToLowerInvariant().GetHashCode():x8}", inner.Replace('/', '\\'));
-        string error = null;
-        try { await Task.Run(() => { Directory.CreateDirectory(temp); var f = Path.Combine(temp, e.Name); if (File.Exists(f)) File.Delete(f); Archive.Extract(archive, new[] { e.Name }, inner, temp); }); }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException or FormatException) { error = ex.Message; }
-        if (error != null) { Status.Text = "Couldn't open it: " + error; return; }
-        try { Process.Start(new ProcessStartInfo(Path.Combine(temp, e.Name)) { UseShellExecute = true, WorkingDirectory = temp }); }
-        catch (System.ComponentModel.Win32Exception ex) { Status.Text = ex.Message; }
-    }
-
-    async void DeleteFromArchive(PaneView p)
-    {
-        var sel = ArchiveSelection(p);
-        if (sel.Count == 0 || p.ArchiveRoot is not var (archive, inner)) return;
-        if (!Archive.CanChange(archive)) { Status.Text = "Only a ZIP can be changed in place; extract from this one instead"; return; }
-        if (PromptDialog.Choose(this, $"Delete {sel.Count} item(s) from {Path.GetFileName(archive)}?", "They are taken out of the archive for good: the Recycle Bin doesn't hold them.", "Delete", "Cancel") != 0) return;
-        string error = null;
-        try { await Task.Run(() => Archive.Delete(archive, sel.Select(x => x.Name).ToList(), inner)); }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException) { error = ex.Message; }
-        Status.Text = error != null ? "Delete failed: " + error : $"Deleted {sel.Count} item(s) from {Path.GetFileName(archive)}";
-        p.Refresh();
-    }
-
-    /// Files dropped or pasted into a ZIP shown in a pane are added at the folder shown; names already there are left alone.
-    async void AddToArchive(PaneView p, List<string> files, string into)
-    {
-        if (PaneView.ArchiveOf(into) is not var (archive, inner)) return;
-        if (!Archive.CanChange(archive)) { Status.Text = "Only a ZIP can be added to; this archive can only be extracted from"; return; }
-        Status.Text = $"Adding to {Path.GetFileName(archive)}…";
-        (int Added, int Skipped) n = default;
-        string error = null;
-        try { n = await Task.Run(() => Archive.Add(archive, inner, files)); }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException) { error = ex.Message; }
-        Status.Text = error != null ? "Couldn't add: " + error
-            : $"Added {n.Added} file(s) to {Path.GetFileName(archive)}" + (n.Skipped > 0 ? $"  ·  {n.Skipped} already in it, left as they were" : "");
-        p.Refresh();
-    }
 
     // ---- Disk images: Windows mounts them (as Explorer's Mount does), and the pane opens the new drive ----
     internal static readonly HashSet<string> DiskImageExt = new(StringComparer.OrdinalIgnoreCase) { ".iso", ".img", ".vhd", ".vhdx" };
@@ -438,154 +331,3 @@ public partial class MainWindow
         catch (System.ComponentModel.Win32Exception) { } // the UAC prompt was declined
     }
 }
-
-/// ZIP and TAR (also .tar.gz / .tgz) without anything but .NET: listing a folder inside, extracting, and for a ZIP adding and
-/// deleting. Paths inside are '/'-separated, relative to the archive; `inner` is the folder shown ("" = its top).
-static class Archive
-{
-    public static bool IsArchiveName(string path) =>
-        path.EndsWith(".zip", StringComparison.OrdinalIgnoreCase) || path.EndsWith(".tar", StringComparison.OrdinalIgnoreCase)
-        || path.EndsWith(".tgz", StringComparison.OrdinalIgnoreCase) || path.EndsWith(".tar.gz", StringComparison.OrdinalIgnoreCase);
-
-    public static bool CanChange(string archive) => archive.EndsWith(".zip", StringComparison.OrdinalIgnoreCase);
-
-    public sealed record Item(string Name, bool IsDir, long Size, DateTime Modified);
-    record Raw(string Path, bool IsDir, long Size, DateTime Modified);
-
-    // the last archives read, by their write time: going in and out of folders in one doesn't read it again
-    static readonly Dictionary<string, (DateTime Stamp, List<Raw> Entries)> read = new(StringComparer.OrdinalIgnoreCase);
-
-    static List<Raw> Entries(string archive)
-    {
-        var stamp = File.GetLastWriteTimeUtc(archive);
-        lock (read) if (read.TryGetValue(archive, out var hit) && hit.Stamp == stamp) return hit.Entries;
-        var list = new List<Raw>();
-        Visit(archive, (path, isDir, size, modified, _) => { list.Add(new(path, isDir, size, modified)); return false; });
-        lock (read) { if (read.Count > 8) read.Clear(); read[archive] = (stamp, list); }
-        return list;
-    }
-
-    /// An entry's path without the "./" tar puts in front ("./docs/a.txt" → "docs/a.txt"), or a leading slash; a name that
-    /// itself starts with a dot (.gitignore) keeps it. "." alone is the archive's top: "".
-    internal static string Clean(string path)
-    {
-        while (path.StartsWith("./")) path = path[2..];
-        path = path.TrimStart('/').TrimEnd('/');
-        return path == "." ? "" : path;
-    }
-
-    /// Every entry, in order; `open` gives its content (null for a folder). Stops when the callback says so.
-    static void Visit(string archive, Func<string, bool, long, DateTime, Func<Stream>, bool> each)
-    {
-        if (CanChange(archive))
-        {
-            using var zip = ZipFile.OpenRead(archive);
-            foreach (var e in zip.Entries)
-            {
-                var name = e.FullName.Replace('\\', '/');
-                bool dir = name.EndsWith('/');
-                name = Clean(name);
-                if (name == "") continue; // the "./" a tar-made ZIP starts with
-                if (each(name, dir, e.Length, e.LastWriteTime.LocalDateTime, dir ? null : e.Open)) return;
-            }
-            return;
-        }
-        using var file = File.OpenRead(archive);
-        using Stream data = archive.EndsWith(".tar", StringComparison.OrdinalIgnoreCase) ? file : new GZipStream(file, CompressionMode.Decompress);
-        using var tar = new System.Formats.Tar.TarReader(data);
-        while (tar.GetNextEntry() is { } e)
-        {
-            bool dir = e.EntryType == System.Formats.Tar.TarEntryType.Directory;
-            bool regular = e.EntryType is System.Formats.Tar.TarEntryType.RegularFile or System.Formats.Tar.TarEntryType.V7RegularFile or System.Formats.Tar.TarEntryType.ContiguousFile;
-            if (!dir && !regular) continue; // links, devices: nothing to show or extract
-            var name = Clean(e.Name.Replace('\\', '/'));
-            if (name == "") continue;
-            if (each(name, dir, e.Length, e.ModificationTime.LocalDateTime, dir ? null : () => e.DataStream ?? Stream.Null)) return;
-        }
-    }
-
-    /// What is directly in `inner`: folders (also the ones only implied by a deeper path) and files.
-    public static List<Item> List(string archive, string inner)
-    {
-        var prefix = inner == "" ? "" : inner.TrimEnd('/') + "/";
-        var items = new Dictionary<string, Item>(StringComparer.OrdinalIgnoreCase);
-        foreach (var e in Entries(archive))
-        {
-            if (!e.Path.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) || e.Path.Length == prefix.Length) continue;
-            var rest = e.Path[prefix.Length..];
-            int slash = rest.IndexOf('/');
-            if (slash >= 0) { var dir = rest[..slash]; if (!items.ContainsKey(dir)) items[dir] = new(dir, true, -2, e.Modified); }
-            else if (e.IsDir) items[rest] = new(rest, true, -2, e.Modified);
-            else items[rest] = new(rest, false, e.Size, e.Modified);
-        }
-        return items.Values.ToList();
-    }
-
-    /// Writes `names` (files or folders in `inner`) into `dest`, keeping the folders under them. A file already there is left as
-    /// it was (counted as skipped); an entry whose path would end outside `dest` is refused.
-    public static (int Written, int Skipped) Extract(string archive, IReadOnlyCollection<string> names, string inner, string dest)
-    {
-        var prefix = inner == "" ? "" : inner.TrimEnd('/') + "/";
-        var picked = names.Select(n => prefix + n).ToList();
-        var root = Path.GetFullPath(dest).TrimEnd('\\') + "\\";
-        int written = 0, skipped = 0;
-        Visit(archive, (path, isDir, size, modified, open) =>
-        {
-            if (!picked.Any(p => path.Equals(p, StringComparison.OrdinalIgnoreCase) || path.StartsWith(p + "/", StringComparison.OrdinalIgnoreCase))) return false;
-            var target = Path.GetFullPath(Path.Combine(dest, path[prefix.Length..].Replace('/', '\\')));
-            if (!target.StartsWith(root, StringComparison.OrdinalIgnoreCase)) throw new IOException($"{path} would land outside the folder");
-            if (isDir) { Directory.CreateDirectory(target); return false; }
-            if (File.Exists(target)) { skipped++; return false; }
-            Directory.CreateDirectory(Path.GetDirectoryName(target));
-            var from = open();
-            try { using var to = File.Create(target); from.CopyTo(to); }
-            finally { if (CanChange(archive)) from.Dispose(); } // a TAR entry's stream belongs to the reader, which moves on past it
-            File.SetLastWriteTime(target, modified);
-            written++;
-            return false;
-        });
-        return (written, skipped);
-    }
-
-    /// Takes `names` (files or folders in `inner`) out of a ZIP.
-    public static void Delete(string archive, IReadOnlyCollection<string> names, string inner)
-    {
-        var prefix = inner == "" ? "" : inner.TrimEnd('/') + "/";
-        var picked = names.Select(n => prefix + n).ToList();
-        using (var zip = ZipFile.Open(archive, ZipArchiveMode.Update))
-            foreach (var e in zip.Entries.ToList())
-            {
-                var path = Clean(e.FullName.Replace('\\', '/'));
-                if (picked.Any(p => path.Equals(p, StringComparison.OrdinalIgnoreCase) || path.StartsWith(p + "/", StringComparison.OrdinalIgnoreCase))) e.Delete();
-            }
-        lock (read) read.Remove(archive);
-    }
-
-    /// Adds files and folders (with what is in them) to a ZIP at `inner`; a name already in it is left as it was.
-    public static (int Added, int Skipped) Add(string archive, string inner, IEnumerable<string> paths)
-    {
-        var prefix = inner == "" ? "" : inner.TrimEnd('/') + "/";
-        int added = 0, skipped = 0;
-        using (var zip = ZipFile.Open(archive, ZipArchiveMode.Update))
-        {
-            var have = zip.Entries.Select(e => Clean(e.FullName.Replace('\\', '/'))).ToHashSet(StringComparer.OrdinalIgnoreCase);
-            void One(string file, string name)
-            {
-                if (have.Contains(name)) { skipped++; return; }
-                zip.CreateEntryFromFile(file, name);
-                added++;
-            }
-            foreach (var p in paths)
-            {
-                if (File.Exists(p)) { One(p, prefix + Path.GetFileName(p)); continue; }
-                if (!Directory.Exists(p)) continue;
-                var parent = Path.GetDirectoryName(p.TrimEnd('\\')) ?? p;
-                foreach (var f in Directory.EnumerateFiles(p, "*", new EnumerationOptions { RecurseSubdirectories = true, AttributesToSkip = FileAttributes.ReparsePoint }))
-                    One(f, prefix + Path.GetRelativePath(parent, f).Replace('\\', '/'));
-            }
-        }
-        lock (read) read.Remove(archive);
-        return (added, skipped);
-    }
-}
-

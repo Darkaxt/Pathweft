@@ -64,6 +64,7 @@ public sealed class EditorWindow : Window
 
     readonly WebView2 web = new() { DefaultBackgroundColor = System.Drawing.Color.FromArgb(0x0f, 0x13, 0x1b) };
     readonly Dictionary<int, Doc> docs = new();
+    internal static bool OwnsArchiveCopy(string path) => instance?.docs.Values.Any(d => d.Path.Equals(path, StringComparison.OrdinalIgnoreCase)) == true;
     readonly List<string> queue = new(); // messages for the page, held until it is ready
     bool ready, closing;
     int nextId = 1;

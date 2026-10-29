@@ -62,7 +62,7 @@ public partial class MainWindow : Window
             p.Activated += () => SetActive(p);
             p.StatsChanged += () => { if (p == active) { UpdateStats(); PreviewFollow(); } FilesShown(); };
             p.Error += msg => Status.Text = msg;
-            p.FilesDropped += (files, dest, move) => { if (PaneView.ArchiveOf(dest) != null) AddToArchive(p, files, dest); else Submit(files, dest, move); };
+            p.FilesDropped += (files, dest, move) => Submit(files, dest, move);
             p.OpenArchived += e => OpenFromArchive(p, e);
             p.RenameCommitted += (entry, name) => RenameCommitted(p, entry, name);
         }
@@ -277,6 +277,7 @@ public partial class MainWindow : Window
         Left.ApplyScales(); Right.ApplyScales();
         taskbarSearch?.Widget?.ApplyTextScale();
         ApplyPreviewAppearance();
+        ApplyArchiveAppearance();
         BgImage.Source = BackgroundPicture(Settings.BackgroundImage);
         BgLayer.Visibility = BgImage.Source != null ? Visibility.Visible : Visibility.Collapsed;
         BgLayer.Opacity = Settings.ImageOpacity / 100;
@@ -1041,15 +1042,21 @@ public partial class MainWindow : Window
 
     void Transfer(bool move)
     {
-        if (active.ArchiveRoot != null) { if (!move) ExtractFromArchive(active, Other.Dir); return; } // Ctrl+F5 in an archive extracts to the other pane
         Submit(active.Selected.Select(e => e.Path).ToList(), Other.Dir, move);
     }
 
     internal Job Submit(List<string> sources, string dest, bool move)
     {
-        if (sources.Count == 0 || PaneView.IsVirtual(dest)) return null; // nothing goes "into" This PC, nor into an archive this way (AddToArchive)
+        if (closingPreviews || sources.Count == 0 || dest == PaneView.ThisPC) return null;
         Settings.Bump(Settings.RecentDestinations, dest, Settings.DestinationsMax); // for Copy to / Move to
-        var job = Ferry.Submit(sources, dest, move);
+        bool archive = PaneView.ArchiveOf(dest) != null || sources.Any(s => PaneView.ArchiveOf(s) is { Inner.Length: > 0 });
+        var job = Ferry.Submit(sources, dest, move, archive ? Archive.Transfer : null, archive ? (move ? "Move archive entries" : "Copy archive entries") : null);
+        return TrackSubmittedJob(job);
+    }
+
+    Job TrackSubmittedJob(Job job)
+    {
+        if (job.ArchiveOperation) lastArchiveJob = job;
         job.Seq = ++jobSeq;
         job.Hue = Hex(JobHues[(jobSeq - 1) % JobHues.Length]);
         jobs.Insert(0, job);
@@ -1073,6 +1080,9 @@ public partial class MainWindow : Window
 
     void ShowTransfers(bool activate)
     {
+#if DEBUG
+        if (HiddenTrialPresentation.Enabled) activate = false;
+#endif
         if (transfersWindow == null)
         {
             jobView = new System.Windows.Data.ListCollectionView(jobs);
@@ -1187,7 +1197,7 @@ public partial class MainWindow : Window
         // instead of somewhere among the folder's other hundred files (Rico, 1.0.61)
         if (job.Phase == Phase.Done)
         {
-            var arrived = job.Sources.Select(s => Path.GetFileName(job.Duplicates.GetValueOrDefault(s) ?? s.TrimEnd('\\'))).Where(n => n != "").ToList();
+            var arrived = job.Arrivals ?? job.Sources.Select(s => Path.GetFileName(job.Duplicates.GetValueOrDefault(s) ?? s.TrimEnd('\\'))).Where(n => n != "").ToList();
             foreach (var pane in new[] { Left, Right })
                 if (pane.Dir.TrimEnd('\\').Equals(job.Destination.TrimEnd('\\'), StringComparison.OrdinalIgnoreCase)) pane.SelectAfterRefresh(arrived, focus: pane == active);
         }
@@ -1204,41 +1214,96 @@ public partial class MainWindow : Window
     void JobResolve_Click(object s, RoutedEventArgs e) => JobOf(s).Resolve(Enum.Parse<Choice>((string)((Button)s).CommandParameter));
 
     // Clipboard in Explorer's own format (CF_HDROP + Preferred DropEffect), so copy/paste works both ways.
-    void ClipboardPut(bool cut)
+    Task clipboardOperation = Task.CompletedTask;
+    const string ArchiveClipboardFormat = "Pathweft.ArchiveSelection.v1";
+#if DEBUG
+    uint lastOwnedClipboardSequence;
+    string s4ClipboardFixtureRoot;
+#endif
+    sealed record ArchiveClipboard(string Token, string[] Paths, bool Move);
+    [DllImport("user32.dll")] static extern uint GetClipboardSequenceNumber();
+    void ClipboardPut(bool cut) => clipboardOperation = PutClipboard(cut);
+    async Task PutClipboard(bool cut)
     {
-        // inside an archive, Ctrl+C copies what is selected, taken out to a temp folder (as a drag out does); never Ctrl+X
-        if (active.ArchiveRoot != null)
+        try
         {
-            if (cut || active.ExtractForDrag() is not { Length: > 0 } copies) return;
-            var list = new System.Collections.Specialized.StringCollection();
-            list.AddRange(copies);
-            Clipboard.SetFileDropList(list);
-            Status.Text = $"Copied {copies.Length} item(s) out of the archive";
-            return;
-        }
-        var sel = active.Selected;
+        var pane = active;
+        var sel = pane.Selected;
         if (sel.Count == 0) return;
-        var files = new System.Collections.Specialized.StringCollection();
-        files.AddRange(sel.Select(x => x.Path).ToArray());
         var data = new System.Windows.Forms.DataObject();
-        data.SetFileDropList(files);
+        if (pane.ArchiveRoot is { } at)
+        {
+            if (cut && !Archive.CanChange(at.Archive)) { Status.Text = "This archive is read-only; use Copy."; return; }
+            if (!cut)
+            {
+                string[] names = sel.Select(e => e.Name).ToArray();
+                var copies = await Task.Run(() => ArchiveContent.Extract(at.Archive, names, at.Inner, "clipboard export"));
+                var list = new System.Collections.Specialized.StringCollection();
+                list.AddRange(names.Select(n => Path.Combine(copies.Directory, "data", n)).ToArray());
+                data.SetFileDropList(list);
+            }
+            // An explicit UTF-8 stream is interoperable OLE data, without managed-object serialization.
+            data.SetData(ArchiveClipboardFormat, false, new MemoryStream(System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(new ArchiveClipboard(Guid.NewGuid().ToString("N"), sel.Select(e => e.Path).ToArray(), cut))));
+        }
+        else
+        {
+            var files = new System.Collections.Specialized.StringCollection();
+            files.AddRange(sel.Select(x => x.Path).ToArray()); data.SetFileDropList(files);
+        }
         data.SetData("Preferred DropEffect", new MemoryStream(BitConverter.GetBytes(cut ? 2 : 5)));
         Clipboard.SetDataObject(data, true);
+#if DEBUG
+        lastOwnedClipboardSequence = GetClipboardSequenceNumber();
+#endif
         // FilePilot/Explorer-style: a cut item's icon stays dimmed until it's pasted or something else is cut/copied
         PaneView.SetCut(cut ? sel.Select(x => x.Path) : Array.Empty<string>(), Left, Right);
-        Status.Text = $"{(cut ? "Cut" : "Copied")} {sel.Count} item(s)";
+        Status.Text = $"{(cut ? "Cut" : "Copied")} {sel.Count} item(s)" + (cut && pane.ArchiveRoot != null ? " · paste into a Pathweft pane" : "");
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Runtime.InteropServices.ExternalException)
+        { Status.Text = "Clipboard copy failed: " + ex.Message; }
     }
 
     /// Into the folder shown, or into `folder` (right-click → Paste on a folder or a shortcut to one, as in Explorer).
     void ClipboardPaste(string folder = null)
     {
-        if (!Clipboard.ContainsFileDropList()) return;
-        var files = Clipboard.GetFileDropList().Cast<string>().ToList();
-        bool move = Clipboard.GetData("Preferred DropEffect") is MemoryStream ms && ms.Length >= 4 && (BitConverter.ToInt32(ms.ToArray(), 0) & 2) != 0;
+        List<string> files; bool move;
+        if (HasArchiveClipboard())
+        {
+            ArchiveClipboard selection;
+            try { selection = ReadArchiveClipboard(); }
+            catch (Exception ex) when (ex is System.Text.Json.JsonException or IOException) { Status.Text = "Invalid or unavailable archive clipboard data: " + ex.Message; return; }
+            if (selection?.Paths is not { Length: > 0 }) return;
+            files = selection.Paths.ToList(); move = selection.Move;
+        }
+        else
+        {
+            try { (files, move) = ReadFileClipboard(); }
+            catch (IOException ex) { Status.Text = ex.Message; return; }
+            if (files.Count == 0) return;
+        }
         var into = folder ?? active.Dir;
-        if (PaneView.ArchiveOf(into) != null) { AddToArchive(active, files, into); return; } // a paste into a ZIP adds to it
-        Submit(files, into, move);
-        if (move) { Clipboard.Clear(); PaneView.SetCut(Array.Empty<string>(), Left, Right); } // a cut is pasted once, like Explorer
+#if DEBUG
+        if (s4ClipboardFixtureRoot != null && files.Any(path => !Path.GetFullPath(path).StartsWith(s4ClipboardFixtureRoot + "\\", StringComparison.OrdinalIgnoreCase)))
+        { Status.Text = "Verification paste refused unrelated clipboard contents; current clipboard preserved."; return; }
+#endif
+        uint sequence = GetClipboardSequenceNumber();
+        var job = Submit(files, into, move);
+        if (move && job != null) clipboardOperation = CompleteCut(job, sequence);
+    }
+    async Task CompleteCut(Job job, uint sequence)
+    {
+        await job.Completion;
+        if (job.Phase == Phase.Done && job.Errors.IsEmpty && job.SkippedFiles == 0 && job.DoneFiles == job.TotalFiles && sequence == GetClipboardSequenceNumber())
+        {
+            try
+            {
+                Clipboard.Clear(); PaneView.SetCut(Array.Empty<string>(), Left, Right);
+#if DEBUG
+                lastOwnedClipboardSequence = GetClipboardSequenceNumber();
+#endif
+            }
+            catch (System.Runtime.InteropServices.ExternalException ex) { Status.Text = "Move finished, but the clipboard could not be cleared: " + ex.Message; }
+        }
     }
 
     // Shift+Delete skips the Recycle Bin. Always asked first: the shell only confirms when the user has
@@ -1397,13 +1462,28 @@ public partial class MainWindow : Window
 
     void EditSelected()
     {
+        if (active.ArchiveRoot != null)
+        {
+            if (active.Selected.FirstOrDefault(x => !x.IsDir && !x.IsUp) is { } entry)
+                archiveOpenCompletion = OpenArchiveEntry(active, entry, editor: true);
+            return;
+        }
         foreach (var e in active.Selected.Where(x => !x.IsDir && !x.IsUp).Take(10)) EditorWindow.Open(e.Path);
     }
 
-    void Rename() { if (active.Selected.Count > 1) RenameMany(); else active.BeginRename(); }
+    void Rename()
+    {
+        if (active.ArchiveRoot != null && active.Selected.Count > 1) { Status.Text = "Rename one archive entry at a time."; return; }
+        if (active.Selected.Count > 1) RenameMany(); else active.BeginRename();
+    }
 
     void RenameCommitted(PaneView pane, Entry entry, string name)
     {
+        if (pane.ArchiveRoot is { } location)
+        {
+            SubmitArchiveEdit(new[] { entry.Path }, pane.Dir, "Rename archive entry", job => { Archive.Rename(location.Archive, location.Inner, entry.Name, name, job); job.Arrivals = new() { name }; });
+            return;
+        }
         var renamed = Path.Combine(Path.GetDirectoryName(entry.Path), name);
         if (Run(() => RenamePath(entry.Path, name))) Remember($"rename to {name}", () => RenamePath(renamed, entry.Name));
         if (pane.InSearch) pane.Refresh();

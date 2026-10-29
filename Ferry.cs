@@ -26,14 +26,23 @@ public class Job : INotifyPropertyChanged
     public bool IsMove { get; init; }
     public bool Verify { get; init; }
     public bool Parallel { get; init; } // Settings → Transfers: small files several at once, where the drives take it well
+    public bool ArchiveOperation { get; init; }
+    public string Description { get; init; }
+    public int SkippedFiles { get; internal set; }
+    public List<string> Arrivals { get; internal set; }
+    readonly TaskCompletionSource completed = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    public Task Completion => completed.Task;
+    internal void Complete() => completed.TrySetResult();
 
     // 0 running, 1 paused, 2 cancelled — read from the CopyFileExW callback, so kept lock-free.
     volatile int state;
+    readonly ManualResetEventSlim resumed = new(true);
     public bool Paused => state == 1;
     public bool IsCancelled => state == 2;
-    public void Pause() { if (state == 0) state = 1; Refresh(); }
-    public void Resume() { if (state == 1) state = 0; Refresh(); }
-    public void Cancel() { state = 2; resolved.TrySetResult(null); Refresh(); }
+    public void Pause() { lock (resumed) { if (state == 0) { state = 1; resumed.Reset(); } } Refresh(); }
+    public void Resume() { lock (resumed) { if (state == 1) { state = 0; resumed.Set(); } } Refresh(); }
+    public void Cancel() { lock (resumed) { state = 2; resumed.Set(); } resolved.TrySetResult(null); Refresh(); }
+    internal void WaitUntilResumed() => resumed.Wait();
 
     public Phase Phase { get; internal set; }
     public long TotalBytes, DoneBytes, CurrentSize, CurrentDone;
@@ -90,7 +99,7 @@ public class Job : INotifyPropertyChanged
     }
 
     string Verb => IsMove ? "Moving" : "Copying";
-    public string Title => Phase switch
+    public string Title => Description != null ? Description + (Phase == Phase.Done ? SkippedFiles > 0 ? $" · finished, {SkippedFiles} skipped" : " · complete" : Phase == Phase.Cancelled ? " · cancelled" : Paused ? " · paused" : "") : Phase switch
     {
         Phase.Done => $"{(IsMove ? "Moved" : "Copied")} {TotalFiles} file(s) to {Destination}",
         Phase.Cancelled => $"Cancelled — {DoneFiles} of {TotalFiles} file(s) to {Destination}",
@@ -142,25 +151,34 @@ public static class Ferry
     static readonly Dictionary<string, Task> lanes = new(StringComparer.OrdinalIgnoreCase);
     public static event Action<Job> Finished;
 
-    // Same destination volume → runs after the previous job there; other volumes run in parallel.
-    public static Job Submit(IEnumerable<string> sources, string destination, bool move)
+    // Reserve the destination and every move-source volume through actual completion.
+    // Archive cuts also edit their source container after destination verification.
+    public static Job Submit(IEnumerable<string> sources, string destination, bool move, Action<Job> operation = null, string description = null)
     {
-        var job = new Job { Sources = sources.ToList(), Destination = destination, IsMove = move, Verify = Settings.Verify, Parallel = Settings.ParallelCopy };
-        var lane = Path.GetPathRoot(destination);
+        var job = new Job { Sources = sources.ToList(), Destination = destination, IsMove = move, Verify = Settings.Verify, Parallel = Settings.ParallelCopy, ArchiveOperation = operation != null, Description = description };
+        var volumes = (move ? job.Sources.Select(Path.GetPathRoot).Append(Path.GetPathRoot(destination)) : new[] { Path.GetPathRoot(destination) })
+            .Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
         lock (lanes)
         {
-            var prev = lanes.TryGetValue(lane, out var t) ? t : Task.CompletedTask;
-            lanes[lane] = prev.ContinueWith(_ => Run(job), TaskContinuationOptions.LongRunning);
+            var previous = Task.WhenAll(volumes.Select(volume => lanes.TryGetValue(volume, out var task) ? task : Task.CompletedTask));
+            var execution = previous.ContinueWith(_ => Run(job, operation), TaskContinuationOptions.LongRunning);
+            foreach (var volume in volumes) lanes[volume] = execution;
         }
         return job;
     }
 
-    static void Run(Job job)
+    static void Run(Job job, Action<Job> operation)
     {
         try
         {
             if (job.IsCancelled) { job.Phase = Phase.Cancelled; return; }
             job.Phase = Phase.Scanning;
+            if (operation != null)
+            {
+                operation(job);
+                job.Phase = job.IsCancelled ? Phase.Cancelled : Phase.Done;
+                return;
+            }
             var plan = Scan(job);
             if (job.IsCancelled) { job.Phase = Phase.Cancelled; return; }
 
@@ -176,6 +194,7 @@ public static class Ferry
             Transfer(job, plan, choice);
             job.Phase = job.IsCancelled ? Phase.Cancelled : Phase.Done;
         }
+        catch (OperationCanceledException) { job.Phase = Phase.Cancelled; }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException)
         {
             // e.g. destination vanished mid-job: stop, and say why on the card
@@ -185,7 +204,7 @@ public static class Ferry
         finally
         {
             job.Current = ""; job.CurrentSize = job.CurrentDone = 0;
-            Finished?.Invoke(job);
+            try { Finished?.Invoke(job); } finally { job.Complete(); }
         }
     }
 
@@ -290,7 +309,7 @@ public static class Ferry
         void One((FileEntry File, string Target, bool Overwrite) w)
         {
             var e = w.File;
-            while (job.Paused && !job.IsCancelled) Thread.Sleep(60);
+            job.WaitUntilResumed();
             if (job.IsCancelled) return;
             job.Current = e.Relative; job.CurrentSize = e.Size; job.CurrentDone = 0;
             Directory.CreateDirectory(Path.GetDirectoryName(w.Target));
@@ -369,7 +388,7 @@ public static class Ferry
         while ((n = fs.Read(buffer, 0, buffer.Length)) > 0)
         {
             if (job.IsCancelled) return null;
-            while (job.Paused) Thread.Sleep(60);
+            job.WaitUntilResumed();
             hasher.Append(buffer.AsSpan(0, n));
             job.AddBytes(n);
         }
@@ -468,7 +487,7 @@ public static class Ferry
         {
             if (transferred > seen) { job.AddBytes(transferred - seen); seen = transferred; }
             // Pause blocks inside the copy with both handles open; resume continues exactly here.
-            while (job.Paused) Thread.Sleep(60);
+            job.WaitUntilResumed();
             return job.IsCancelled ? PROGRESS_CANCEL : PROGRESS_CONTINUE;
         };
         uint flags = (overwrite ? 0 : COPY_FILE_FAIL_IF_EXISTS) | (size >= UnbufferedThreshold ? COPY_FILE_NO_BUFFERING : 0);

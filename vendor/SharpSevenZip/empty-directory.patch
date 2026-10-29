@@ -1,0 +1,60 @@
+diff --git a/SharpSevenZip/SharpSevenZip/SharpSevenZipCompressor.cs b/SharpSevenZip/SharpSevenZip/SharpSevenZipCompressor.cs
+--- a/SharpSevenZip/SharpSevenZip/SharpSevenZipCompressor.cs
++++ b/SharpSevenZip/SharpSevenZip/SharpSevenZipCompressor.cs
+@@ -1463,4 +1463,6 @@
+     {
+         var streamDict = new Dictionary<string, StreamWithAttributes?>(fileDictionary.Count);
+ 
++        try
++        {
+         foreach (var pair in fileDictionary)
+@@ -1494,4 +1496,10 @@
+         //The created streams will be automatically disposed inside.
+         CompressStreamDictionary(streamDict!, archiveStream, password);
++        }
++        finally
++        {
++            foreach (var stream in streamDict.Values)
++                stream?.Stream?.Dispose();
++        }
+     }
+ 
+@@ -1549,7 +1549,7 @@
+         UpdateCompressorPassword(password);
+ 
+         if (streamDictionary.Where(
+-            pair => pair.Value.Stream != null && (!pair.Value.Stream.CanSeek || !pair.Value.Stream.CanRead)).Any(
++            pair => pair.Value != null && pair.Value.Stream != null && (!pair.Value.Stream.CanSeek || !pair.Value.Stream.CanRead)).Any(
+             pair => !ThrowException(null,
+                 new ArgumentException(
+                     $"The specified stream dictionary contains an invalid stream corresponding to the archive entry \"{pair.Key}\".",
+diff --git a/SharpSevenZip/SharpSevenZip/ArchiveUpdateCallback.cs b/SharpSevenZip/SharpSevenZip/ArchiveUpdateCallback.cs
+--- a/SharpSevenZip/SharpSevenZip/ArchiveUpdateCallback.cs
++++ b/SharpSevenZip/SharpSevenZip/ArchiveUpdateCallback.cs
+@@ -537,3 +537,3 @@
+                     {
+-                        value.Int64Value = (_files is null ? _streams?[index].CreationTime ?? DateTime.Now
++                        value.Int64Value = (_files is null ? _streams?[index]?.CreationTime ?? DateTime.Now
+                                            : _files[index].CreationTime).ToFileTime();
+@@ -549,3 +549,3 @@
+                     {
+-                        value.Int64Value = (_files is null ? _streams?[index].LastAccessTime ?? DateTime.Now
++                        value.Int64Value = (_files is null ? _streams?[index]?.LastAccessTime ?? DateTime.Now
+                                            : _files[index].LastAccessTime).ToFileTime();
+@@ -561,3 +561,3 @@
+                     {
+-                        value.Int64Value = (_files is null ? _streams?[index].LastWriteTime ?? DateTime.Now
++                        value.Int64Value = (_files is null ? _streams?[index]?.LastWriteTime ?? DateTime.Now
+                                            : _files[index].LastWriteTime).ToFileTime();
+@@ -627,5 +627,11 @@
+     {
+         index -= _indexOffset;
+ 
++        if (_streams != null && _streams[index] is null)
++        {
++            inStream = null;
++            return 0;
++        }
++
+         if (_files != null)
+         {

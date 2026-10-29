@@ -492,6 +492,7 @@ public partial class SettingsWindow : Window
     void Hidden_Click(object s, RoutedEventArgs e) { Settings.ShowHidden = HiddenBox.IsChecked == true; Settings.Save(); main.RefreshPanes(); }
     void ShortcutFolders_Click(object s, RoutedEventArgs e) { Settings.ShortcutsWithFolders = ShortcutFoldersBox.IsChecked == true; Settings.Save(); main.ResortPanes(); }
     void Editor_Click(object s, RoutedEventArgs e) { Settings.InternalEditor = EditorBox.IsChecked == true; Settings.Save(); }
+    void ArchiveWorkingCopies_Click(object s, RoutedEventArgs e) => main.ShowArchiveWorkingCopies();
     readonly List<System.Windows.Controls.CheckBox> previewModuleControls = new();
     void BuildPreviewModuleControls()
     {

@@ -2,7 +2,6 @@
 // Copyright (c) 2017-2026 QL-Win Contributors. GPL-3.0-or-later.
 // Image/PDF/media/font/listing rendering reuses File Labs' MIT-licensed paths.
 using System.IO;
-using System.IO.Compression;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
@@ -47,6 +46,11 @@ internal sealed class BuiltinViewer(PreviewModule module, MainWindow owner, Entr
             case "image": content = await Image(path, context.Token); break;
             case "pdf": await Pdf(path, context); return;
             case "archive":
+                if (entry.IsDir && PaneView.ArchiveOf(entry.Path) is { } location)
+                {
+                    content = Text(string.Join("\n", await Task.Run(() => Archive.List(location.Archive, location.Inner).Select(i => i.Name + (i.IsDir ? "/" : "")).ToArray(), context.Token)));
+                    break;
+                }
                 if (!entry.IsDir && Backups.Named(path) && await Task.Run(() => Backups.Inspect(path, details: true, () => context.Token.IsCancellationRequested), context.Token) is { } backup)
                     content = owner.BackupView(entry, backup);
                 else content = Text(await Task.Run(() => Listing(path, entry.IsDir, context.Token), context.Token));
@@ -136,12 +140,11 @@ internal sealed class BuiltinViewer(PreviewModule module, MainWindow owner, Entr
             }
             return text.Length == 0 ? "(empty folder)" : text.ToString();
         }
-        using var file = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
-        using var zip = new ZipArchive(file, ZipArchiveMode.Read);
-        text.AppendLine($"{zip.Entries.Count} entries\n");
-        foreach (var item in zip.Entries.Take(5000))
-        { token.ThrowIfCancellationRequested(); text.AppendLine($"{MainWindow.Fmt(item.Length),10}  {item.FullName}"); }
-        if (zip.Entries.Count > 5000) text.AppendLine("… First 5,000 entries only; nothing extracted.");
+        var entries = Archive.Read(path);
+        text.AppendLine($"{entries.Count} entries\n");
+        foreach (var item in entries.Take(5000))
+        { token.ThrowIfCancellationRequested(); text.AppendLine($"{MainWindow.Fmt(item.Size),10}  {item.Path}" + (item.IsDir ? "/" : "")); }
+        if (entries.Count > 5000) text.AppendLine("… First 5,000 entries only; nothing extracted.");
         return text.ToString();
     }
     static UIElement Font(string path)

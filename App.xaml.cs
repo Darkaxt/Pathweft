@@ -25,6 +25,18 @@ static class Program
     static void Main(string[] args)
     {
 #if DEBUG
+        const string snapshotClipboard = "--snapshot-s4-clipboard=";
+        if (args.FirstOrDefault(a => a.StartsWith(snapshotClipboard)) is { } capture)
+        { const string expectedSnapshot = "--clipboard-expected="; Environment.ExitCode = S4Verification.CaptureClipboard(capture[snapshotClipboard.Length..], args.Single(a => a.StartsWith(expectedSnapshot))[expectedSnapshot.Length..]); return; }
+        const string restoreClipboard = "--restore-s4-clipboard=";
+        if (args.FirstOrDefault(a => a.StartsWith(restoreClipboard)) is { } snapshot)
+        { Environment.ExitCode = S4Verification.RestoreClipboard(snapshot[restoreClipboard.Length..], uint.Parse(args.Single(a => a.StartsWith("--clipboard-sequence="))[21..])); return; }
+        const string archiveClipboard = "--verify-s4-clipboard=";
+        if (args.FirstOrDefault(a => a.StartsWith(archiveClipboard)) is { } savedClipboard)
+        { Environment.ExitCode = S4Verification.ReadClipboard(savedClipboard[archiveClipboard.Length..]); return; }
+        const string archiveConsumer = "--archive-s4-consumer=";
+        if (args.FirstOrDefault(a => a.StartsWith(archiveConsumer)) is { } content)
+        { Environment.ExitCode = S4Verification.RunConsumer(content[archiveConsumer.Length..]); return; }
         const string clipboardCheck = "--verify-s1-clipboard=";
         if (args.FirstOrDefault(a => a.StartsWith(clipboardCheck)) is { } expected)
         {
@@ -143,6 +155,8 @@ public partial class App : Application
             window.ContentRendered += async (_, _) => await window.VerifyS2(widgetVerification[12..]);
         if (e.Args.FirstOrDefault(a => a.StartsWith("--verify-s3=")) is { } previewVerification)
             window.ContentRendered += async (_, _) => await window.VerifyS3(previewVerification[12..]);
+        if (e.Args.FirstOrDefault(a => a.StartsWith("--verify-s4=")) is { } archiveVerification)
+            window.ContentRendered += async (_, _) => await window.VerifyS4(archiveVerification[12..]);
 #endif
     }
 
@@ -636,8 +650,10 @@ public partial class App : Application
             Archive.Delete(zipPath, new[] { "inner" }, "docs");
             Check(addedOnce == (1, 0) && addedTwice == (0, 1) && string.Join(",", Archive.List(zipPath, "docs").Select(i => i.Name)) == "add me.txt",
                   "archives: added to a ZIP once, a folder taken out of it");
+            bool unsafeNameRejected = false;
+            try { Archive.Clean("../out.txt"); } catch (IOException) { unsafeNameRejected = true; }
             Check(Archive.Clean("./docs/.gitignore") == "docs/.gitignore" && Archive.Clean("./") == "" && Archive.Clean(".hidden/") == ".hidden"
-                  && Archive.Clean("../out.txt") == "../out.txt", "archives: tar's ./ dropped, a leading dot in a name kept, ../ left for the guard");
+                  && unsafeNameRejected, "archives: tar's ./ dropped, a leading dot kept, traversal rejected before planning");
             Check(PaneView.ArchiveOf(Path.Combine(zipPath, "docs")) is ({ } za, "docs") && za == zipPath && PaneView.ArchiveOf(arch) == null,
                   "archives: a path running through a ZIP is found, a plain folder isn't");
 

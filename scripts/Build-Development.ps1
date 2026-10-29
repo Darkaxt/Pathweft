@@ -5,7 +5,8 @@ param(
     [string]$CacheRoot = 'D:\BuildCache\Pathweft',
     [ValidateSet('Debug', 'Release')]
     [string]$Configuration = 'Release',
-    [string]$ProjectFile
+    [string]$ProjectFile,
+    [string[]]$BuildProperty = @()
 )
 
 $ErrorActionPreference = 'Stop'
@@ -58,7 +59,10 @@ try {
             '--disable-build-servers', '--nologo', '--verbosity', 'minimal',
             '-maxcpucount:2', '-nodeReuse:false', '-p:UseSharedCompilation=false'
             ('-p:F3DRuntimeRoot=' + (Join-Path $cache 'f3d/4.0.0'))
+            ('-p:SevenZipRuntimeRoot=' + (Join-Path $cache 'sevenzip/26.05'))
+            ('-p:SharpSevenZipRuntimeRoot=' + (Join-Path $cache 'sharpsevenzip/2.0.130-pathweft.1'))
         )
+        foreach ($property in $BuildProperty) { $buildArguments += '-p:' + $property }
         & dotnet @buildArguments
         $exitCode = $LASTEXITCODE
     }

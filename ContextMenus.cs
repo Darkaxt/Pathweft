@@ -13,6 +13,10 @@ namespace FileExplorer;
 // Right-click: Pathweft' own menu, or the real Windows one (Settings → Files → Context menu).
 public partial class MainWindow
 {
+#if DEBUG
+    ContextMenu archiveMenuForVerification;
+    bool captureS4Menu;
+#endif
     void HookContextMenu(PaneView p)
     {
         p.List.ContextMenuOpening += (_, e) =>
@@ -51,16 +55,27 @@ public partial class MainWindow
             var rows = ArchiveSelection(p);
             var am = new ContextMenu();
             if (rows.Count == 1) am.Items.Add(Item("Open", "", "Enter", p.OpenSelected));
+            if (rows.Count == 1) am.Items.Add(Item("Preview", "", "Space", () => ToggleQuickView(p, this)));
             if (rows.Count > 0)
             {
+                am.Items.Add(Item("Copy", "", "Ctrl+C", () => ClipboardPut(false)));
+                am.Items.Add(Item("Cut", "", "Ctrl+X", () => ClipboardPut(true), Archive.CanChange(archive)));
+                if (rows.Count == 1) am.Items.Add(Item("Rename", "", "F2", p.BeginRename, Archive.CanChange(archive)));
                 am.Items.Add(Item("Extract to other pane", "", "Ctrl+F5", () => ExtractFromArchive(p, Other.Dir), !Settings.SinglePane && !PaneView.IsVirtual(Other.Dir)));
                 am.Items.Add(Item("Extract to…", "", "", () => ExtractFromArchiveTo(p)));
-                if (Archive.CanChange(archive)) am.Items.Add(Item("Delete from the ZIP", "", "Del", () => DeleteFromArchive(p)));
+                if (Archive.CanChange(archive)) am.Items.Add(Item("Delete from archive", "", "Del", () => DeleteFromArchive(p)));
             }
-            else am.Items.Add(Item("Paste into the ZIP", "", "Ctrl+V", () => ClipboardPaste(), Archive.CanChange(archive) && Clipboard.ContainsFileDropList()));
+            am.Items.Add(Item("Paste", "", "Ctrl+V", () => ClipboardPaste(), Archive.CanChange(archive) && HasTransferClipboard()));
+            am.Items.Add(Item("Enter archive password…", "", "", () => ArchivePassword(p)));
+            am.Items.Add(Item("Forget archive password", "", "", () => { Archive.SetPassword(archive, null); p.Refresh(); }));
+            am.Items.Add(Item("Archive working copies…", "", "", ShowArchiveWorkingCopies));
             am.Items.Add(new Separator());
             am.Items.Add(Item("Show the archive", "", "", () => p.Navigate(Path.GetDirectoryName(archive), Path.GetFileName(archive))));
             am.PlacementTarget = p.List;
+#if DEBUG
+            archiveMenuForVerification = am;
+            if (captureS4Menu) return;
+#endif
             am.IsOpen = true;
             return;
         }
@@ -83,6 +98,10 @@ public partial class MainWindow
         }
         var menu = sel.Count > 0 ? ItemMenu(p, sel, backup) : FolderMenu(p);
         menu.PlacementTarget = p.List;
+#if DEBUG
+        archiveMenuForVerification = menu;
+        if (captureS4Menu) return;
+#endif
         menu.IsOpen = true;
     }
 
@@ -231,8 +250,8 @@ public partial class MainWindow
         m.Items.Add(Item("Copy", "", "Ctrl+C", () => ClipboardPut(cut: false)));
         // on a folder, or a shortcut to one, Paste goes into it (Explorer's rule); on a file, into the folder shown
         var into = one ? first.FolderTarget : null;
-        m.Items.Add(into != null ? Item("Paste into folder", "", "", () => ClipboardPaste(into), Clipboard.ContainsFileDropList())
-                                 : Item("Paste", "", "Ctrl+V", () => ClipboardPaste(), Clipboard.ContainsFileDropList()));
+        m.Items.Add(into != null ? Item("Paste into folder", "", "", () => ClipboardPaste(into), HasTransferClipboard())
+                                 : Item("Paste", "", "Ctrl+V", () => ClipboardPaste(), HasTransferClipboard()));
         m.Items.Add(Item("Copy to other pane", "", "Ctrl+F5", () => Transfer(false)));
         m.Items.Add(Item("Move to other pane", "", "F6", () => Transfer(true)));
         m.Items.Add(SendTo("Copy to", "\uE8C8", p, sel, move: false));
@@ -295,7 +314,7 @@ public partial class MainWindow
     {
         var m = new ContextMenu();
         if (undo.Count > 0) m.Items.Add(Item($"Undo {undo[^1].What}", "", "Ctrl+Z", Undo));
-        m.Items.Add(Item("Paste", "", "Ctrl+V", () => ClipboardPaste(), Clipboard.ContainsFileDropList()));
+        m.Items.Add(Item("Paste", "", "Ctrl+V", () => ClipboardPaste(), HasTransferClipboard()));
         m.Items.Add(new Separator());
         m.Items.Add(Item("New folder", "", "Ctrl+Shift+N", MkDir));
         m.Items.Add(Item("New file…", "", "Ctrl+N", NewFile));

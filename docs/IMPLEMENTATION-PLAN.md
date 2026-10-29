@@ -7,7 +7,7 @@ Current authorization: S3 implementation/verification, requested by the user on
 archive-browsing/editing stage. On 2026-10-29 the user added native StartAllBack
 search integration and the long-term all-Everything/Windows Search retirement
 goal, then authorized proceeding to the next stage after plan review.
-S1-S3 are COMPLETE; S4-S8 remain NOT STARTED until S4 implementation begins.
+S1-S4 are COMPLETE; S5-S8 remain NOT STARTED.
 Native source/SDK integration is preferred. This
 plan neither authorizes itself nor adds approval checkpoints.
 
@@ -18,7 +18,7 @@ plan neither authorizes itself nor adds approval checkpoints.
 | S1 - Isolated product and real pane search | COMPLETE | CORE-01..03, SEARCH-01..04, applicable LIFE-01/DELIVERY-03 | Implementation authorized, setup available | Real index/search/coverage, isolation, rendered UI, browsing, physical OLE drag and OS clipboard copy/paste/restoration pass; see S1 evidence |
 | S2 - Connected taskbar workflow | COMPLETE | WIDGET-01..03, affected CORE-02/03, LIFE-01/DELIVERY-03 | S1 COMPLETE | Real widget query/handoff/reveal, shared actions/queue, actual native hotkey/typing before and after Explorer restart, hidden real mixed-DPI transitions and inspected File Labs layouts; see S2 evidence |
 | S3 - Internal selectable previews | COMPLETE | PREVIEW-01..05, affected CORE-03, LIFE-01/DELIVERY-03 | S2 COMPLETE | Selected source/native inventory; complete real preview/toggle/file-release workflow with QuickLook absent; separate-process persistence; F3D model/camera/native teardown; hidden rendered acceptance and source self-test; see S3 evidence |
-| S4 - Native archive browsing and editing | NOT STARTED | ARCHIVE-01..05, affected CORE-02/03, PREVIEW-04, LIFE-01/DELIVERY-03 | S3 COMPLETE | Native 7-Zip library/source inventory; real archive navigation/open/preview and rename/copy/cut/paste; transactional edits/data preservation; consumer-bound extraction cleanup |
+| S4 - Native archive browsing and editing | COMPLETE | ARCHIVE-01..05, affected CORE-02/03, PREVIEW-04, LIFE-01/DELIVERY-03 | S3 COMPLETE | Pinned native library/source/terms, real pane/clipboard/edit/open/preview workflows, source/destination volume ownership, preservation and actual consumer cleanup verified; see S4 evidence |
 | S5 - REA-driven transfer improvements | NOT STARTED | TRANSFER-01..06, archive/caller and WIDGET-02 revalidation, affected CORE-02/03, LIFE-01/DELIVERY-03 | S4 COMPLETE; identify TeraCopy artifact before analysis | Required REA Evidence -> adoption table -> integrated transfer behavior; data/failure/recovery checks and comparable measured workloads |
 | S6 - Native StartAllBack search | NOT STARTED | SAB-01..05, affected SEARCH/CORE/LIFE/DELIVERY criteria | S5 COMPLETE; exact host identified before hook selection | REA evidence -> version-bound native adapter -> actual Everything results inside the existing Start menu; preserved app/settings actions, lifecycle/compatibility/disable/recovery |
 | S7 - Everything everywhere and WSearch retirement | NOT STARTED | EVERYWHERE-01..05, affected SEARCH/CORE/LIFE/SHELL criteria | S6 COMPLETE; finite consumer/semantics inventory before migration | Actual per-surface Everything replacement, resolved content/property/mail dependencies, isolated WSearch-off workflows, reversible service Disabled state and reboot/recovery verification |
@@ -49,6 +49,30 @@ implementation stage. See [setup evidence](verification/2026-10-28-setup.md).
 
 Later packaging verification checks a different boundary; it does not defer
 required current-stage wiring or real behavior.
+
+## S4 execution and design contract
+
+1. Pin a native 7-Zip DLL/SDK and its managed interop source/dependency. Record
+   actual read/write capabilities and terms; no standalone donor GUI or registry
+   installation. Prove normal pane -> native ZIP/7z listing -> selected entry
+   preview/open before broadening the remaining archive/edit cases.
+2. Keep virtual paths in existing panes/tabs/breadcrumbs and shared actions.
+   Route archive edits/transfers through the existing Ferry job owner, conflict
+   controls and progress surface. Rename/copy/cut/paste must serve filesystem and
+   archive sources/destinations; read-only formats expose honest capabilities.
+3. Stage edits beside the destination, verify resulting contents, detect source
+   changes and publish the replacement only after success. Cancellation/failure
+   preserves originals; a cut deletes only verified unchanged source members.
+   Reject ambiguous/traversal names and unsafe links before writing outside an
+   archive. Exercise the real failures using disposable fixtures.
+4. Entry-bound temporary extraction belongs to actual consumers: internal
+   previews release on close/change; an external open is retained until its real
+   consumer lifetime is established, not a launcher exit or delay. Passwords are
+   ephemeral. Use the existing File Labs UI styling and hidden finite diagnostics;
+   inspect 100%/150% layouts without introducing another design system.
+5. Verify the complete integrated feature against ARCHIVE-01..05, retain required
+   evidence for final delivery, clean task scratch with the installed helper,
+   assess required debt once, commit/push/read back. No S5 work or product release.
 
 ## S6/S7 integration direction and open feasibility
 
@@ -126,8 +150,8 @@ This is future S5 work; it does not begin during S3 or the archive stage.
 | S1 | All assigned S1 criteria: CORE-01 identity/side-by-side/handoff; CORE-02 navigation/tabs/keyboard/large listing/copy, routed drop, physical source -> OLE -> destination transfer, actual OS clipboard copy/paste, independent process readback and prior-text restoration; CORE-03 rendered controls/settings; SEARCH-01..04 real index/paging/sort/cancellation/coverage/virtual origins; applicable LIFE-01/DELIVERY-03. See [evidence](verification/2026-10-28-s1.md). | None within S1 | None | None |
 | S2 | All assigned WIDGET-01..03 and affected CORE-02/03, LIFE-01/DELIVERY-03: complete real query/handoff/reveal/file-action workflow; selected hotkey mode and native input before/after real Explorer restart; original Explorer location restored and Everything processes preserved; actual 96/144-DPI transitions; inspected 100%/150% text layouts; final hidden workflow recorded zero foreground events; Debug/Release builds and source self-test passed. See [evidence](verification/2026-10-29-s2.md). | None within S2 | None | None |
 | S3 | All PREVIEW-01..05 and affected CORE-03/LIFE-01/DELIVERY-03: eight internal modules, actual decoding/paging, all active toggles and separate-process persistence; independent widget/Space/side selection; malformed/large/unsupported/inert inputs; actual file release; F3D real model/camera/native teardown and unchanged original; complete final QuickLook-absent run and verified restoration, zero foreground events; Debug/Release builds and Release source self-test. See [evidence](verification/2026-10-29-s3.md). | None within S3 | None | None |
-| S4 | None | ARCHIVE-01..05, including supported rename/copy/cut/paste | S3 prerequisite satisfied; implementation not started | None |
-| S5 | None | All assigned criteria including REA | S4 prerequisite not complete; target identity not selected | None |
+| S4 | All ARCHIVE-01..05 and affected criteria: final integrated PID32156, actual native ZIP/7z/TAR/CAB/RAR5, normal archive-file handling, real clipboard/conflicts/rename/copy/cut/paste/Compress/Extract, cancellation/concurrency and D/E source-volume reservation, actual viewer/consumer release, read-only/encrypted/unsafe states, inspected 100%/150% layouts, zero foreground events and independent clipboard restoration; Debug/Release, archive contracts and updated source self-test pass. See [S4 evidence](verification/2026-10-29-s4.md). | None within S4 | None | None |
+| S5 | None | All assigned criteria including REA | S4 prerequisite complete; TeraCopy target identity/evidence not selected yet | None |
 | S6 | None | SAB-01..05 | S5 prerequisite not complete. Native hook/ABI feasibility is unresolved, not a verified implementation. | None |
 | S7 | None | EVERYWHERE-01..05 | S6 prerequisite not complete. Consumer inventory and non-file semantic compatibility unresolved; these must close before service retirement. | None |
 | S8 | None | All assigned criteria including final release | S1..S7 prerequisites not complete | None |
@@ -137,14 +161,15 @@ clipboard checks subsequently passed. A separate STA process read the Windows
 file list/copy effect, paste delivered matching contents through the existing
 queue, and an independent post-exit read confirmed prior-text restoration.
 S2 passed following the user's next-stage request. S3 passed after the next
-2026-10-29 request and its user-added F3D prototype. S4-S8 remain NOT STARTED
-until the next authorized stage begins; no later stage is ACTIVE.
-S1-S3 have no remaining blocker or tracked deferral. Installer/update/
+2026-10-29 request and its user-added F3D prototype. S4 is COMPLETE following the
+user's instruction to continue with the next stage after the search-plan update.
+S5-S8 remain NOT STARTED; no later stage is ACTIVE.
+S1-S4 have no remaining blocker or tracked deferral. Installer/update/
 uninstall and packaged integration retain their explicitly assigned S8 boundary.
 
 Source review found one SDK dispatcher/queue owner and independent pane query
 generations, with no new timeout-driven search path or external helper product.
-Clipboard operations consistently use the already-referenced WinForms API after
+At S1 closure, clipboard operations used the already-referenced WinForms API after
 an isolated .NET 8 WPF flush/read failure was reproduced; this adds no fallback,
 retry mechanism, package or competing clipboard owner. The finite Debug harness
 waits for the actual source OLE loop to return. No required consolidation was

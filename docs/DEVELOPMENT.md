@@ -52,7 +52,7 @@ development compile, not an alternate release engine.
 
 `Pathweft.exe --selftest` is the inherited source/filesystem regression entry
 point. `scripts/Invoke-SourceSelfTest.ps1` binds its profile/temp to the registered
-S1/S2/S3 scratch root, waits for process exit and returns its result. Fixtures are
+S1/S2/S3/S4 scratch root, waits for process exit and returns its result. Fixtures are
 retained for reviewed cleanup, including its exact generated junction leaf.
 
 ## S1 local scenario

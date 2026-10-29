@@ -3,10 +3,9 @@
 Read `docs/SPECIFICATION.md` first. It is authoritative; the plan and this file
 do not change its requirements or the user's standing instructions.
 
-- Current authorization includes S3 implementation and verification (2026-10-29
-  user request for the next stage). S1-S3 are COMPLETE;
-  S4 native archive browsing/editing is authorized next after plan review;
-  S4-S8 remain NOT STARTED until S4 implementation begins. A plan does not
+- Current authorization includes S4 implementation and verification (2026-10-29
+  user request for the next stage after plan review). S1-S4 are COMPLETE;
+  S5-S8 remain NOT STARTED. A plan does not
   authorize itself or intermediate product releases.
 - Keep one ACTIVE stage during authorized implementation. Reconcile complete
   features and actual integration evidence in the existing implementation plan.

@@ -190,6 +190,8 @@
             <TextBlock Text="Preview modules" FontWeight="SemiBold" Margin="0,14,0,4"/>
             <TextBlock Style="{StaticResource Hint}" Text="Space, the preview pane and taskbar previews use these built-in modules. Changes apply to open previews immediately. Markdown takes priority over plain text; a disabled format may still have a readable text alternative."/>
             <StackPanel x:Name="PreviewModulesPanel" Margin="0,4,0,8"/>
+            <Button x:Name="ArchiveWorkingCopiesButton" Content="Archive working copies…" Style="{StaticResource Ghost}" Click="ArchiveWorkingCopies_Click" HorizontalAlignment="Left" Padding="10,6" Margin="0,4,0,4"/>
+            <TextBlock Style="{StaticResource Hint}" Text="Release extracted files after their editor, player or clipboard consumer has finished. Copies opened outside Pathweft are retained until you mark them closed."/>
             <CheckBox x:Name="ItemTipsBox" Content="Show details when hovering a file" Click="ItemTips_Click"/>
             <TextBlock Style="{StaticResource Hint}" Text="A tooltip with the full name, type, size and date, as in Explorer."/>
             <DockPanel Margin="0,2,0,0">

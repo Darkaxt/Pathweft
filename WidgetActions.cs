@@ -13,8 +13,7 @@ public partial class MainWindow
     internal void OpenWidgetArchive(PaneView pane, Entry entry) => OpenFromArchive(pane, entry);
     internal void SubmitWidgetDrop(PaneView pane, List<string> paths, string destination, bool move)
     {
-        if (PaneView.ArchiveOf(destination) != null) AddToArchive(pane, paths, destination);
-        else Submit(paths, destination, move);
+        Submit(paths, destination, move);
     }
     internal void AcceptWidgetSearch(PaneSearchRequest request)
     {

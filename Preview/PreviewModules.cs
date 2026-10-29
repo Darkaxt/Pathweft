@@ -7,7 +7,7 @@ namespace FileExplorer.Preview;
 internal sealed record PreviewModule(string Id, string Name, string Description, int Priority, string[] Extensions)
 {
     internal bool Enabled => !Settings.DisabledPreviewModules.Contains(Id);
-    internal bool Matches(Entry entry) => Id == "archive" && entry.IsDir ||
+    internal bool Matches(Entry entry) => Id == "archive" && (entry.IsDir || Archive.IsArchiveName(entry.Path)) ||
         !entry.IsDir && (Id == "text" || Extensions.Contains(Path.GetExtension(entry.Path), StringComparer.OrdinalIgnoreCase));
 }
 
@@ -23,8 +23,7 @@ internal static class PreviewModules
         new("image", "Images", "WIC images, decoded to fit the preview without retaining the source file.", 90,
             new[] { ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".ico", ".tif", ".tiff", ".heic" }),
         new("pdf", "PDF", "Windows PDF rendering with page navigation; no document scripts.", 90, new[] { ".pdf" }),
-        new("archive", "Archive and folder listing", "Lists ZIP-family archives and folders without extracting or running entries.", 90,
-            new[] { ".zip", ".jar", ".nupkg", ".apk", ".vsix", ".whl" }),
+        new("archive", "Archive and folder listing", "Lists supported native archives and folders without extracting or running entries.", 90, Array.Empty<string>()),
         new("media", "Video and audio", "Built-in playback using installed Windows codecs.", 90,
             new[] { ".mp4", ".m4v", ".mov", ".wmv", ".avi", ".mkv", ".webm", ".mpg", ".mpeg", ".3gp", ".ts", ".mp3", ".wav", ".wma", ".m4a", ".aac", ".flac", ".ogg", ".opus" }),
         new("font", "Fonts", "TrueType and OpenType specimens; the font is not installed.", 90, new[] { ".ttf", ".otf" }),

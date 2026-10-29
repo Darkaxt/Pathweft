@@ -1,0 +1,24 @@
+Pathweft 7-Zip managed interop dependency
+
+SharpSevenZip source: 9b2379be603a9d4ebff06c56944f87f0c623f8db
+https://github.com/JeremyAnsel/SharpSevenZip/tree/9b2379be603a9d4ebff06c56944f87f0c623f8db
+This is the source commit embedded in NuGet SharpSevenZip 2.0.130 metadata.
+Copyright Markovtsev Vadim, Joel Ahlgren, Jeremy Ansel and contributors.
+License: LGPL-3.0-or-later; preserve LICENSE.txt and upstream attribution.
+
+Pathweft builds this source as 2.0.130-pathweft.1. The only source behavior change
+is empty-directory.patch: accept the documented null directory marker during
+stream validation, timestamp callbacks and native stream requests. This fixes an
+observed native archive creation failure without dropping empty directories.
+The same patch closes file streams created by CompressFileDictionary in its own
+finally block. The upstream stream callback deliberately borrows those streams;
+without this ownership fix, ZIP append leaves input files locked after publication.
+The native DLL supplied alongside it is separately pinned to official 7-Zip26.05;
+the wrapper's bundled native binaries are not the Pathweft runtime dependency.
+
+Reproduction: Get-S4InteropSources.ps1, Prepare-S4InteropDependency.ps1 and
+Build-Development.ps1. Runtime manifest records original/patched source hashes,
+patch hash and resulting library hash. The final delivery stage must include
+matching complete source, this patch and build instructions with applicable
+distribution materials. Selected .cs.txt files are reference text, not compiled
+copies or a second runtime implementation.
