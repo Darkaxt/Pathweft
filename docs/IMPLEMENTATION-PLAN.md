@@ -9,10 +9,10 @@ S4U closure. Earlier S3 work was requested on
 archive-browsing/editing stage. On 2026-10-29 the user added native StartAllBack
 search integration and the long-term all-Everything/Windows Search retirement
 goal, then authorized proceeding to the next stage after plan review.
-S1-S4, S4R and S4U are COMPLETE; S5 is ACTIVE; S6-S8 remain NOT STARTED.
+S1-S5, S4R and S4U are COMPLETE; S6-S8 remain NOT STARTED.
 The user authorized trying rars on 2026-10-29 and delegated its integration
 choice. The user approved read-only icon cues and Ctrl+H/dot-name visibility;
-S5 is the only ACTIVE stage. A wider Rust port is not in scope.
+No implementation stage is ACTIVE. A wider Rust port is not in scope.
 Native source/SDK integration is preferred. This
 plan neither authorizes itself nor adds approval checkpoints.
 
@@ -26,7 +26,7 @@ plan neither authorizes itself nor adds approval checkpoints.
 | S4 - Native archive browsing and editing | COMPLETE | ARCHIVE-01..05, affected CORE-02/03, PREVIEW-04, LIFE-01/DELIVERY-03 | S3 COMPLETE | Pinned native library/source/terms, real pane/clipboard/edit/open/preview workflows, source/destination volume ownership, preservation and actual consumer cleanup verified; see S4 evidence |
 | S4R - Embedded writable RAR | COMPLETE | RAR-01..05, affected ARCHIVE-02..05/CORE/LIFE/DELIVERY-03 | S4 COMPLETE | Pinned loaded Rust DLL, real hidden pane/actions/queue, qualified solid/encrypted preservation and refusals, independent 7-Zip/UnRAR extraction, original/cut-source protection, clipboard rollback, cleanup and source commit/remote readback; see S4R evidence |
 | S4U - Read-only cues and hidden visibility | COMPLETE | FILEUI-01..03, affected CORE/SEARCH/ARCHIVE/LIFE | S4R COMPLETE; user-approved icon direction | Real hidden browser/widget/tree/archives and native index workflow, persisted global toggle, grayscale/lock rendering, preservation, focused regressions, exact cleanup and source commit/remote readback; see S4U evidence |
-| S5 - REA-driven transfer improvements | ACTIVE | TRANSFER-01..07, archive/caller and WIDGET-02 revalidation, affected CORE-02/03, LIFE-01/DELIVERY-03 | Initial S5 criteria passed at e478986; user extended comparison/implementation | Continue from [initial evidence](verification/2026-10-29-s5.md), resolve the findings inventory below and verify affected integrated paths and matched comparisons |
+| S5 - REA-driven transfer improvements | COMPLETE | TRANSFER-01..07, archive/caller and WIDGET-02 revalidation, affected CORE-02/03, LIFE-01/DELIVERY-03 | Initial S5 criteria passed at e478986; user extended comparison/implementation | Finite findings inventory resolved; source/target handle reuse, copy-time hashing, metadata/EOF reductions, storage decisions, matched profiles, actual callers, adverse/preservation/cleanup and Release checks pass; see [evidence](verification/2026-10-29-s5.md) |
 | S6 - Native StartAllBack search | NOT STARTED | SAB-01..05, affected SEARCH/CORE/LIFE/DELIVERY criteria | S5 COMPLETE; exact host identified before hook selection | REA evidence -> version-bound native adapter -> actual Everything results inside the existing Start menu; preserved app/settings actions, lifecycle/compatibility/disable/recovery |
 | S7 - Everything everywhere and WSearch retirement | NOT STARTED | EVERYWHERE-01..05, affected SEARCH/CORE/LIFE/SHELL criteria | S6 COMPLETE; finite consumer/semantics inventory before migration | Actual per-surface Everything replacement, resolved content/property/mail dependencies, isolated WSearch-off workflows, reversible service Disabled state and reboot/recovery verification |
 | S8 - Final integration and delivery | NOT STARTED | SHELL-01, DELIVERY-01..03; reconcile every product requirement | S1..S7 COMPLETE; prerequisite blockers/deferrals resolved | Reversible optional shell integration; all delivered search/migration/recovery boundaries; install/update/uninstall; final criteria review, source verification/commit, normal installer/portable release independently retrieved and verified |
@@ -61,23 +61,23 @@ required current-stage wiring or real behavior.
 
 ## S5 execution and reconciliation
 
-Initial S5 criteria passed at e478986. S5 is now ACTIVE under the user's
-continued comparison/implementation goal, adding TRANSFER-07. TRANSFER-01..06
+Initial S5 criteria passed at e478986. The user's continued comparison/implementation
+goal reopened S5, adding TRANSFER-07; the extended stage is now COMPLETE. TRANSFER-01..06
 are reconciled to the user's explicit TeraCopy-behavior clarification:
 direct writes, no long-lived source locks, and cancellation cleanup of the current
 incomplete/unverified output. Former staging/locking assertions are historical
 diagnostics, not acceptance for this revised behavior. Extra protections are not
 required deferrals. The integrated revised path and affected verification pass;
 no later stage is active. The earlier closure evidence below remains historical;
-new changes require affected revalidation before renewed closure.
+subsequent changes were revalidated before this renewed closure.
 
 | Pipeline finding | Current evidence / action | State |
 | --- | --- | --- |
-| Repeated volume discovery | Implemented direct stream enumeration with documented unsupported-filesystem result, without a cache. Matched profile: 201 capability queries to 0. Native NTFS/ADS/cancellation/error contracts and real FAT32 refusal/rounding/disk-full pass; VHD detached. | Implemented and verified; renewed caller/profile reconciliation continues |
-| Repeated timestamp opens | Implemented one normally shared native SetFileTime handle. Matched profile: 303 explicit timestamp opens to 101 for 100 files and one directory. File/folder creation/access/write checks and FAT32 precision reporting pass. | Implemented and verified; remaining source/hash and scheduling inventory keeps S5 ACTIVE |
+| Repeated volume discovery | Implemented direct stream enumeration with documented unsupported-filesystem result, without a cache. Matched profile: 201 capability queries to 0. Native NTFS/ADS/cancellation/error contracts and real FAT32 refusal/rounding/disk-full pass; VHD detached. | Implemented and verified; no remaining candidate |
+| Repeated timestamp opens | Batch three times through SetFileTime. Plain verified copies reuse the target reader with FILE_WRITE_ATTRIBUTES. For 100 files and one directory, explicit timestamp-only opens are now one instead of the initial 303. File/folder creation/access/write checks and current FAT32 precision reporting pass. | Implemented and verified; native/unverified paths retain their existing metadata handling |
 | Source hashing reread | Single-stream data, including compressed/sparse contents, hashes from the pooled 1 MiB copy buffer and rereads only the target. The ordinary target digest now reads its planned length, detects premature EOF and uses the existing final metadata stamp to reject growth. Native CopyFileEx/named-stream digests retain EOF behavior. Current source/link/target-length, copying, cancellation and actual callers pass. | Implemented and verified; 100 target reads instead of 200 for 100 small files, and 12 instead of 14 for the storage pair |
-| Native metadata / repeated path validation | Removed duplicate read-only scan ancestry checks and already-matching attribute setters. Ordinary source stamp validation now reuses the normally shared no-follow data handle before creating the destination. Synchronous ReadFile avoids RandomAccess's measured extra mode query. Current profile: 0 attribute writes, 1,007 native opens/closes and 1,103 information queries, versus 1,107 opens/closes and the same queries before this change. | Source-handle/EOF reductions verified without replacing removed opens with queries; remaining applicable volume/buffer reconciliation below remains open |
-| Scheduling / buffers / workload sensitivity | Two matched small/large/mixed rounds and a serial mixed diagnostic pass independent contents. Qualified compressed/sparse donor/current contents and reported storage sizes match; both read the source once. Four-worker mixed copying and Release self-test outperform their serial samples locally. Keep the pooled 1 MiB buffer/current workers. | Storage decision verified; remaining applicable volume/buffer comparisons unresolved, no universal timing claim |
+| Native metadata / repeated path validation | Removed duplicate read-only scan ancestry checks and already-matching attribute setters. Source stamp validation reuses its normally shared no-follow reader before target creation; verified target timestamps reuse the target reader. Current profile: 0 attribute writes, 907 native opens/closes and 1,103 information queries, versus 1,107 opens/closes before both handle changes. Final path-based readback and required identity/streams/reparse checks remain. | Implemented and verified without replacing removed opens with queries; no remaining candidate |
+| Scheduling / buffers / workload sensitivity | Repeated small/large/mixed and serial controls pass independent contents. Current 512 MiB D: and mixed D: to E: workflows pass after the final reader changes. Qualified donor/current payload requests are already 1 MiB. Keep four workers/buffer size; explicitly retain the buffered/unbuffered verification difference and reject unsupported tuning/aligned-I/O expansion. Storage prototypes have documented non-adoption decisions. | Comparisons and adoption/rejection decisions closed; no universal timing or physical-media claim |
 | Conflict / progress / pause / failure / recovery | Current native contracts and actual hidden pane/widget/archive controls pass, including partial/failed outcomes, direct overwrites, cleanup, source sharing and no foreground events. Abrupt child exit preserves the source and fresh resubmission verifies the whole copy. Real FAT32 disk-full removes the partial output, retains the source and detaches its VHD. Release self-test/audit pass without test hooks or donor assets. | Affected workflows verified for this iteration; revalidate relevant paths after further pipeline changes |
 
 The user clarified that deterministic support-operation reduction takes priority
@@ -85,13 +85,13 @@ over noisy timing. Use matched scoped operation counts and correctness as primar
 evidence; keep repeated timings as secondary observations, not a stable speedup
 gate or a reason to run endless samples.
 
-Current goal iteration: progress — implemented and verified plain copy-time
-hashing and removal of redundant attribute writes. Exact receipts and authenticated
-REA observations are retained; the findings above keep S5 ACTIVE. On 2026-10-29
+Earlier goal iterations implemented and verified copy-time hashing and redundant
+attribute-write removal, followed by source/target handle and EOF reductions.
+Exact receipts and authenticated REA observations are retained. On 2026-10-29
 the user left and requested delaying additional administrator simulations. The
-already accepted FAT32 test finished and detached; further work remains hidden
-and unprivileged until the user returns. This is no permission to weaken a later
-admin-dependent acceptance check or trigger additional approval dialogs.
+already accepted FAT32 test finished and detached; administrator simulations were
+delayed until the user returned. The user subsequently authorized the affected
+FAT32 checks, which completed and detached their disposable disks.
 
 The next iteration qualified native storage behavior. The donor normalizes
 compression/sparse allocation instead of preserving the flags; the former
@@ -102,18 +102,21 @@ also removes the extra source hash pass for these inputs. CopyFile2 sparse and
 callback-compression prototypes were experimentally rejected as additional
 storage behavior outside the selected workflow, not deferred requirements.
 Current real hidden notes use the existing neutral theme, wrap and expose full
-detail; actual errors retain their red treatment. S5 remains the only ACTIVE
-stage. The subsequent source-handle/EOF iteration removes those redundant
+detail; actual errors retain their red treatment. The source-handle/EOF iteration removes those redundant
 operations while preserving the full transfer contract. Current hidden callers,
 Release self-test/audit and the real FAT32 full-destination check pass; the
 disposable disk is detached. The user returned and authorized this administrator
-check after the earlier delay. Applicable volume/buffer reconciliation remains
-unresolved under TRANSFER-07; this is an internal advancement blocker, resolved
-by completing that bounded comparison and its adoption/rejection decisions.
-S5 closure and dependent S6 work remain incomplete. No required item is deferred.
+check after the earlier delay. Applicable volume/buffer reconciliation and the
+final target metadata-handle reduction are now verified. The finite TRANSFER-07
+inventory has no unresolved implementation candidate, blocker or tracked deferral.
+Remaining identity/stream/path/readback checks serve existing acceptance criteria;
+no equivalent cheaper replacement was established by the comparison. Closure
+assessment found no material consolidation requirement. All original native/admin
+operations completed, VHDs detached, evidence was retained and exact scratch was
+transactionally removed. No intermediate product release; S8 owns delivery.
 
 The [adoption contract](S5-TRANSFER-ADOPTION.md) and
-[verification record](verification/2026-10-29-s5.md) reconcile TRANSFER-01..06.
+[verification record](verification/2026-10-29-s5.md) reconcile TRANSFER-01..07.
 The exact signed official 4.0.5 reference is qualified; scoped REA evidence is
 retained/authenticated and every owned analysis/gate/trial has exited. Packed
 static code did not reveal its algorithm. No donor binary becomes a dependency.
@@ -299,8 +302,8 @@ This sequence belongs only to S5, after S4U; it does not authorize later stages.
 | S2 | All assigned WIDGET-01..03 and affected CORE-02/03, LIFE-01/DELIVERY-03: complete real query/handoff/reveal/file-action workflow; selected hotkey mode and native input before/after real Explorer restart; original Explorer location restored and Everything processes preserved; actual 96/144-DPI transitions; inspected 100%/150% text layouts; final hidden workflow recorded zero foreground events; Debug/Release builds and source self-test passed. See [evidence](verification/2026-10-29-s2.md). | None within S2 | None | None |
 | S3 | All PREVIEW-01..05 and affected CORE-03/LIFE-01/DELIVERY-03: eight internal modules, actual decoding/paging, all active toggles and separate-process persistence; independent widget/Space/side selection; malformed/large/unsupported/inert inputs; actual file release; F3D real model/camera/native teardown and unchanged original; complete final QuickLook-absent run and verified restoration, zero foreground events; Debug/Release builds and Release source self-test. See [evidence](verification/2026-10-29-s3.md). | None within S3 | None | None |
 | S4 | All ARCHIVE-01..05 and affected criteria: final integrated PID32156, actual native ZIP/7z/TAR/CAB/RAR5, normal archive-file handling, real clipboard/conflicts/rename/copy/cut/paste/Compress/Extract, cancellation/concurrency and D/E source-volume reservation, actual viewer/consumer release, read-only/encrypted/unsafe states, inspected 100%/150% layouts, zero foreground events and independent clipboard restoration; Debug/Release, archive contracts and updated source self-test pass. See [S4 evidence](verification/2026-10-29-s4.md). | None within S4 | None | None |
-| S5 | Initial TRANSFER-01..06 evidence at e478986 | TRANSFER-07 findings inventory and affected revalidation | ACTIVE; implementable gaps block renewed acceptance; no external impediment | None |
-| S6 | None | SAB-01..05 | S5 prerequisite not complete. Native hook/ABI feasibility is unresolved, not a verified implementation. | None |
+| S5 | TRANSFER-01..07 and affected caller/CORE/LIFE criteria; final native/Release/FAT32 evidence and finite findings reconciliation | None within S5 | COMPLETE; no blocker | None |
+| S6 | None | SAB-01..05 | NOT STARTED; S5 prerequisite satisfied. Native hook/ABI feasibility still requires its own investigation. | None |
 | S7 | None | EVERYWHERE-01..05 | S6 prerequisite not complete. Consumer inventory and non-file semantic compatibility unresolved; these must close before service retirement. | None |
 | S8 | None | All assigned criteria including final release | S1..S7 prerequisites not complete | None |
 
@@ -311,7 +314,7 @@ queue, and an independent post-exit read confirmed prior-text restoration.
 S2 passed following the user's next-stage request. S3 passed after the next
 2026-10-29 request and its user-added F3D prototype. S4 is COMPLETE following the
 user's instruction to continue with the next stage after the search-plan update.
-S4R and S4U are also COMPLETE. S5 is ACTIVE under the extended goal;
+S4R and S4U are also COMPLETE. S5 is COMPLETE under the extended goal;
 S6-S8 remain NOT STARTED.
 S1-S4 have no remaining blocker or tracked deferral. Installer/update/
 uninstall and packaged integration retain their explicitly assigned S8 boundary.

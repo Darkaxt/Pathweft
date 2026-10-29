@@ -2,7 +2,8 @@
 param([Parameter(Mandatory)][ValidateSet('Baseline','Changed','TeraCopy')][string]$Implementation,
       [Parameter(Mandatory)][ValidateSet('small','large','mixed','storage','smoke','profile')][string]$Workload,
       [Parameter(Mandatory)][ValidatePattern('^[a-z0-9-]+$')][string]$RunId,
-      [switch]$Serial,[switch]$Metadata)
+      [switch]$Serial,[switch]$Metadata,[switch]$IoProfile,
+      [ValidateSet('D','E')][string]$DestinationDrive='D')
 $ErrorActionPreference='Stop'
 if($Serial -and $Implementation -eq 'TeraCopy'){throw 'Serial is a Pathweft queue diagnostic; donor settings remain qualified separately.'}
 if($Metadata -and $Workload -ne 'profile'){throw 'Metadata diagnostics use the bounded profile workload.'}
@@ -35,7 +36,9 @@ if(!(Test-Path -LiteralPath $source)) {
 }
 $case=Join-Path $root "instrumented-benchmarks\$Implementation-$RunId"
 if(Test-Path -LiteralPath $case){throw 'Preserve existing case.'}
-$target=Join-Path $case 'target';$temporary=Join-Path $case 'temp';$profile=Join-Path $case 'profile'
+$target=if($DestinationDrive -eq 'E'){Join-Path 'E:\Temp\pathweft-s5-review' ("benchmark-$Implementation-$RunId")}else{Join-Path $case 'target'}
+if(Test-Path -LiteralPath $target){throw 'Preserve existing benchmark destination.'}
+$temporary=Join-Path $case 'temp';$profile=Join-Path $case 'profile'
 foreach($path in @($case,$target,$temporary,$profile)){[void][IO.Directory]::CreateDirectory($path)}
 $files=@(Get-ChildItem -LiteralPath $source -File)
 foreach($file in $files){$stream=[IO.File]::OpenRead($file.FullName);try{$stream.CopyTo([IO.Stream]::Null)}finally{$stream.Dispose()}}
@@ -52,7 +55,7 @@ if($Implementation -eq 'TeraCopy'){
 $config=[ordered]@{temporary=$temporary;profile=$profile;entryReceipt=(Join-Path $case 'entry.json')}|ConvertTo-Json -Compress
 $script=(Get-Content -LiteralPath (Join-Path $PSScriptRoot 'S5BenchmarkPresentation.js') -Raw).Replace('__CONFIG__',$config)
 [IO.File]::WriteAllText((Join-Path $case 'observer.js'),$script)
-if($Workload -in @('profile','storage')) {
+if($IoProfile -or $Workload -in @('profile','storage')) {
     $receipt=if($Metadata){'metadata-profile.json'}else{'io-profile.json'}
     $template=if($Metadata){'S5MetadataProfile.js'}else{'S5IoProfile.js'}
     $profileConfig=[ordered]@{source=$source;target=$target;receipt=(Join-Path $case $receipt)}|ConvertTo-Json -Compress
@@ -60,5 +63,5 @@ if($Workload -in @('profile','storage')) {
     [IO.File]::WriteAllText((Join-Path $case $(if($Metadata){'metadata-profiler.js'}else{'profiler.js'})),$profiler)
 }
 $assemblySha256=if($Implementation -eq 'TeraCopy'){$null}else{(Get-FileHash -LiteralPath (Join-Path (Split-Path -Parent $program) 'Pathweft.dll')).Hash}
-[ordered]@{implementation=$Implementation;workload=$Workload;program=$program;arguments=$arguments;source=$source;target=$target;files=$files.Count;bytes=($files|Measure-Object Length -Sum).Sum;filesystem=([IO.DriveInfo]::new('D:\')).DriveFormat;cache='Source sequentially warmed before each invocation; no global eviction; each engine retains its own I/O policy';parallel=(!$Serial);verify='xxHash3-64 enabled in all engines; independent parent SHA-256 excluded from measurements';scriptSha256=(Get-FileHash -LiteralPath (Join-Path $case 'observer.js')).Hash;executableSha256=(Get-FileHash -LiteralPath $program).Hash;assemblySha256=$assemblySha256}|ConvertTo-Json -Depth 5|Set-Content -LiteralPath (Join-Path $case 'case.json') -Encoding utf8
+[ordered]@{implementation=$Implementation;workload=$Workload;program=$program;arguments=$arguments;source=$source;target=$target;files=$files.Count;bytes=($files|Measure-Object Length -Sum).Sum;filesystem=([IO.DriveInfo]::new($DestinationDrive+':\')).DriveFormat;sourceFilesystem=([IO.DriveInfo]::new('D:\')).DriveFormat;destinationDrive=$DestinationDrive;cache='Source sequentially warmed before each invocation; no global eviction; each engine retains its own I/O policy';parallel=(!$Serial);verify='xxHash3-64 enabled in all engines; independent parent SHA-256 excluded from measurements';scriptSha256=(Get-FileHash -LiteralPath (Join-Path $case 'observer.js')).Hash;executableSha256=(Get-FileHash -LiteralPath $program).Hash;assemblySha256=$assemblySha256}|ConvertTo-Json -Depth 5|Set-Content -LiteralPath (Join-Path $case 'case.json') -Encoding utf8
 Get-Content -LiteralPath (Join-Path $case 'case.json')

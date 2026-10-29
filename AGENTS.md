@@ -9,8 +9,8 @@ do not change its requirements or the user's standing instructions.
   authorize itself or intermediate product releases. S4U is now COMPLETE, authorized
   by approval of grayscale/lock icons and Ctrl+H with dot-name visibility; see
   FILEUI-01..03. Initial S5 acceptance closed at e478986. The user's continued
-  comparison/implementation goal reopens S5 as the sole ACTIVE stage under
-  TRANSFER-07;
+  comparison/implementation goal reopened S5 under TRANSFER-07; its finite
+  findings inventory and affected acceptance are now verified COMPLETE.
   see `docs/verification/2026-10-29-s5.md` for the direct-write contract,
   measured performance limits and actual caller/preservation/recovery evidence.
   S6-S8 remain NOT STARTED. Identify TeraCopy and derive adoption from REA

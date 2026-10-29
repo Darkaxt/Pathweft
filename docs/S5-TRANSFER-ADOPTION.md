@@ -1,9 +1,9 @@
 # S5 transfer adoption contract
 
 Authority: SPECIFICATION.md TRANSFER-01..07. Initial acceptance passed at e478986;
-the user's continued comparison/implementation goal reopens S5 as ACTIVE. See
+the user's continued comparison/implementation goal reopened S5. S5 is now COMPLETE. See
 the [verification record](verification/2026-10-29-s5.md), including the subsequent
-operation-count reductions and unresolved pipeline findings.
+operation-count reductions and final findings reconciliation.
 This document selects implementation details within that scope;
 it does not replace acceptance or authorize a later stage.
 
@@ -179,6 +179,42 @@ Named-stream/native digests retain EOF reads. No replacement metadata query,
 timeout, retry or optional protective workflow is added. Acceptance requires
 changed-source/link/length, sharing, pause/cancel, empty files, metadata, copied
 moves and real hidden callers, followed by matched native operation counts.
+
+The qualified open-policy comparison exposes one further reusable handle: plain
+target verification currently closes its reader, then opens a separate handle
+only to set timestamps. Reuse a normally shared verification reader with
+FILE_WRITE_ATTRIBUTES for that existing metadata operation. Keep source validation
+after digest comparison and retain the final path-based metadata/length readback;
+removing that readback could miss a destination name replaced during verification.
+Native/multi-stream and unverified copies keep their current path. This is a
+support-operation reduction, not a new preservation policy. Verify replacement
+ownership, length changes, metadata, cancellation, actual callers and FAT32 again,
+then count all native opens/queries rather than merely moving work between them.
+
+## Buffer, cache and remaining-check decisions
+
+Qualified large-file traces show 1 MiB payload requests in both engines. The
+donor issues an additional EOF request; increasing Pathweft's buffer or worker
+count is not supported by these results or the repeated small/large/mixed and
+serial/four-worker comparisons. Keep the measured 1 MiB/four-worker policy.
+
+The donor's verification reader requests NO_BUFFERING; Pathweft retains buffered
+logical-content verification. This is an explicit I/O-policy difference, not an
+identical-cache benchmark or a promise to reread physical media. In the qualified
+large-file comparison it provides no fewer payload requests and is not adopted
+solely to match flags: aligned native buffers and filesystem-specific restrictions
+would add work outside the selected logical verification contract without a
+demonstrated benefit. Warm-cache timings retain this limitation. No power-loss
+durability or physical-media assurance is claimed for either measured workflow.
+
+Source identity/stamp checks, late stream inventories, destination reparse checks
+and the final path-based size/metadata readback retain their required behavior.
+Changed-source, same-target source-link substitution, late-ADS, destination-link,
+target growth/truncation and replacement-owner cancellation fixtures demonstrate
+why simply deleting these checks is not an equivalent operation reduction. Full
+TeraCopy parity is not required; a lower donor counter alone does not authorize
+weakening TRANSFER-04. No unimplemented buffering, cache or preservation feature
+is deferred by these decisions.
 
 ## Required final S5 evidence
 

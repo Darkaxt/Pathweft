@@ -408,19 +408,27 @@ public static class Ferry
                     {
                         if (!job.Concurrent) { job.Phase = Phase.Verifying; job.Current = "Verifying " + e.Relative; job.CurrentSize = e.Size * (streamed ? 1 : 2); job.CurrentDone = 0; }
                         RequireStreams(w.Target, e.Streams);
-                        foreach (var stream in e.Streams)
+                    }
+                    FileAttributes storageChanges;
+                    if (job.Verify && streamed)
+                    {
+                        if (VerifyData(job, e.Source, w.Target, e.Snapshot, copiedHash, out storageChanges)) MetadataPrecision(job);
+                    }
+                    else
+                    {
+                        if (job.Verify) foreach (var stream in e.Streams)
                         {
                             Check(job);
-                            var original = streamed ? copiedHash : Digest(job, TransferFile.StreamPath(e.Source, stream.Name));
+                            var original = Digest(job, TransferFile.StreamPath(e.Source, stream.Name));
                             Check(job);
-                            var transferred = Digest(job, TransferFile.StreamPath(w.Target, stream.Name), streamed ? e.Snapshot.Size : null);
+                            var transferred = Digest(job, TransferFile.StreamPath(w.Target, stream.Name));
                             Check(job);
                             if (original == null || transferred == null || original != transferred)
                                 throw new IOException("Transferred stream does not match its source: " + e.Relative + stream.Name);
                         }
+                        TransferFile.RequireCurrent(e.Source, e.Snapshot);
+                        if (TransferFile.ApplyMetadata(w.Target, e.Snapshot, out storageChanges)) MetadataPrecision(job);
                     }
-                    TransferFile.RequireCurrent(e.Source, e.Snapshot);
-                    if (TransferFile.ApplyMetadata(w.Target, e.Snapshot, out var storageChanges, streamed && job.Verify)) MetadataPrecision(job);
                     StoragePolicy(job, storageChanges);
                     Check(job);
                     if (job.Verify) Interlocked.Increment(ref job.VerifiedFiles);
@@ -521,25 +529,44 @@ public static class Ferry
         VerificationBoundary?.Invoke(phase, job, source, target);
 #endif
     }
-    static ulong? Digest(Job job, string path, long? expectedSize = null)
+    static bool VerifyData(Job job, string source, string target, TransferFile.Stamp expected, ulong? original, out FileAttributes storageChanges)
+    {
+        using var input = TransferFile.OpenVerificationTarget(target);
+        var hasher = new System.IO.Hashing.XxHash3();
+        var buffer = System.Buffers.ArrayPool<byte>.Shared.Rent(1024 * 1024);
+        try
+        {
+            long read = 0;
+            while (read < expected.Size)
+            {
+                Check(job);
+                int count = TransferFile.ReadData(input, target, buffer, (int)Math.Min(expected.Size - read, 1024 * 1024));
+                if (count == 0) throw new IOException("The destination ended before its planned size: " + target);
+                hasher.Append(buffer.AsSpan(0, count));
+                read += count; job.AddVerificationBytes(count);
+                Boundary("verification-chunk", job, target, null);
+            }
+            Check(job);
+            if (original == null || original != hasher.GetCurrentHashAsUInt64()) throw new IOException("Transferred stream does not match its source: " + source);
+            TransferFile.RequireCurrent(source, expected);
+            return TransferFile.ApplyMetadata(target, expected, out storageChanges, requireSize: true, timestampHandle: input);
+        }
+        finally { System.Buffers.ArrayPool<byte>.Shared.Return(buffer); }
+    }
+
+    static ulong? Digest(Job job, string path)
     {
         var hasher = new System.IO.Hashing.XxHash3();
         var buffer = System.Buffers.ArrayPool<byte>.Shared.Rent(1024 * 1024);
         try
         {
             using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, 1, FileOptions.SequentialScan);
-            long read = 0;
-            while (expectedSize == null || read < expectedSize.Value)
+            while (true)
             {
                 job.WaitUntilResumed();
                 if (job.IsCancelled) return null;
-                int n = fs.Read(buffer, 0, expectedSize is { } size ? (int)Math.Min(size - read, 1024 * 1024) : 1024 * 1024);
-                if (n == 0)
-                {
-                    if (expectedSize != null) throw new IOException("The destination ended before its planned size: " + path);
-                    break;
-                }
-                read += n;
+                int n = fs.Read(buffer, 0, 1024 * 1024);
+                if (n == 0) break;
                 hasher.Append(buffer.AsSpan(0, n));
                 job.AddVerificationBytes(n);
                 Boundary("verification-chunk", job, path, null);
@@ -646,7 +673,7 @@ public static class Ferry
             while (transferred < size)
             {
                 Check(job);
-                int count = TransferFile.ReadCopySource(input, source, buffer, (int)Math.Min(size - transferred, 1024 * 1024));
+                int count = TransferFile.ReadData(input, source, buffer, (int)Math.Min(size - transferred, 1024 * 1024));
                 if (count == 0) throw new IOException("The source ended before its planned size: " + source);
                 target.Write(buffer, 0, count);
                 hasher?.Append(buffer.AsSpan(0, count));

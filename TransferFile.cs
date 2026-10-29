@@ -57,7 +57,14 @@ internal sealed class TransferFile : IDisposable
         catch { handle.Dispose(); throw; }
     }
 
-    internal static int ReadCopySource(SafeFileHandle handle, string path, byte[] buffer, int count)
+    internal static SafeFileHandle OpenVerificationTarget(string path)
+    {
+        var handle = CreateFileW(Long(path), Read | 0x100 /* FILE_WRITE_ATTRIBUTES */, 7, IntPtr.Zero, 3, OpenReparse | 0x08000000 /* SEQUENTIAL_SCAN */, IntPtr.Zero);
+        if (handle.IsInvalid) { int error = Marshal.GetLastWin32Error(); handle.Dispose(); throw Error(path, error); }
+        return handle;
+    }
+
+    internal static int ReadData(SafeFileHandle handle, string path, byte[] buffer, int count)
     {
         if (!ReadFile(handle, buffer, count, out int read, IntPtr.Zero)) throw Error(path, Marshal.GetLastWin32Error());
         return read;
@@ -136,13 +143,14 @@ internal sealed class TransferFile : IDisposable
         }
     }
 
-    internal static bool ApplyMetadata(string target, Stamp source, out FileAttributes storageChanges, bool requireSize = false)
+    internal static bool ApplyMetadata(string target, Stamp source, out FileAttributes storageChanges, bool requireSize = false, SafeFileHandle timestampHandle = null)
     {
-        using (var handle = CreateFileW(Long(target), 0x100 /* FILE_WRITE_ATTRIBUTES */, 7, IntPtr.Zero, 3, OpenReparse | Backup, IntPtr.Zero))
+        if (timestampHandle != null) SetTimes(timestampHandle, target, source);
+        else
         {
+            using var handle = CreateFileW(Long(target), 0x100 /* FILE_WRITE_ATTRIBUTES */, 7, IntPtr.Zero, 3, OpenReparse | Backup, IntPtr.Zero);
             if (handle.IsInvalid) throw Error(target, Marshal.GetLastWin32Error());
-            long created = source.Created, accessed = source.Accessed, modified = source.Modified;
-            if (!SetFileTime(handle, ref created, ref accessed, ref modified)) throw Error(target, Marshal.GetLastWin32Error());
+            SetTimes(handle, target, source);
         }
         const FileAttributes writable = FileAttributes.ReadOnly | FileAttributes.Hidden | FileAttributes.System | FileAttributes.Archive | FileAttributes.NotContentIndexed | FileAttributes.Temporary;
         var current = File.GetAttributes(target);
@@ -156,6 +164,12 @@ internal sealed class TransferFile : IDisposable
         storageChanges = (actual.Attributes ^ source.Attributes) & (FileAttributes.Compressed | FileAttributes.SparseFile);
         if (source.Attributes.HasFlag(FileAttributes.SparseFile)) storageChanges |= FileAttributes.SparseFile;
         return actual.Created != source.Created || actual.Modified != source.Modified || actual.Accessed != source.Accessed;
+    }
+
+    static void SetTimes(SafeFileHandle handle, string target, Stamp source)
+    {
+        long created = source.Created, accessed = source.Accessed, modified = source.Modified;
+        if (!SetFileTime(handle, ref created, ref accessed, ref modified)) throw Error(target, Marshal.GetLastWin32Error());
     }
 
     internal static void RemoveCopiedSource(string path, Stamp expected, IReadOnlyList<StreamEntry> streams, Job job)
