@@ -1,6 +1,6 @@
 # Implementation and reconciliation
 
-Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.7, 2026-10-30,
+Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.8, 2026-10-30,
 including the user-authorized continued comparison requirement TRANSFER-07.
 
 Current authorization: S6 native StartAllBack search, explicitly authorized after
@@ -19,9 +19,16 @@ indexing. Programs/Settings independence remains to be qualified, not assumed.
 S1-S5, S4R and S4U are COMPLETE; S6 is ACTIVE; S7-S8 remain NOT STARTED.
 The user authorized trying rars on 2026-10-29 and delegated its integration
 choice. The user approved read-only icon cues and Ctrl+H/dot-name visibility;
-S6 alone is ACTIVE following the user's reboot. The Windows build and analysed
-module hashes still match; isolated runtime identity and contracts remain to be
-verified. A wider Rust port is not in scope.
+S6 alone is ACTIVE following the user's reboot. The guest Windows kernel/build and
+relevant Shell DLL bytes match the host. Following the user's update clarification,
+current native qualification targets signed StartAllBack 3.9.28 rather than holding
+the guest on the host's 3.9.25. Earlier 3.9.25 evidence remains version-specific;
+updated private interfaces/offsets require qualification. There was no Windows
+downgrade. Native query/provider contracts remain under investigation.
+Programs/Settings baseline results and launches on 3.9.25 were observed with
+WSearch stopped, including real guest Win-key/typing input; running-service and
+indexing-exclusion comparisons remain unverified. See
+[current S6 evidence](verification/2026-10-30-s6.md). A wider Rust port is not in scope.
 Native source/SDK integration is preferred. This
 plan neither authorizes itself nor adds approval checkpoints.
 
@@ -448,7 +455,7 @@ This sequence belongs only to S5, after S4U; it does not authorize later stages.
 | S3 | All PREVIEW-01..05 and affected CORE-03/LIFE-01/DELIVERY-03: eight internal modules, actual decoding/paging, all active toggles and separate-process persistence; independent widget/Space/side selection; malformed/large/unsupported/inert inputs; actual file release; F3D real model/camera/native teardown and unchanged original; complete final QuickLook-absent run and verified restoration, zero foreground events; Debug/Release builds and Release source self-test. See [evidence](verification/2026-10-29-s3.md). | None within S3 | None | None |
 | S4 | All ARCHIVE-01..05 and affected criteria: final integrated PID32156, actual native ZIP/7z/TAR/CAB/RAR5, normal archive-file handling, real clipboard/conflicts/rename/copy/cut/paste/Compress/Extract, cancellation/concurrency and D/E source-volume reservation, actual viewer/consumer release, read-only/encrypted/unsafe states, inspected 100%/150% layouts, zero foreground events and independent clipboard restoration; Debug/Release, archive contracts and updated source self-test pass. See [S4 evidence](verification/2026-10-29-s4.md). | None within S4 | None | None |
 | S5 | TRANSFER-01..07 and affected caller/CORE/LIFE criteria; final native/Release/FAT32 evidence and finite findings reconciliation | None within S5 | COMPLETE; no blocker | None |
-| S6 | Exact signed host/Windows inventory, post-reboot identity/hash readback and partial static query/view trace; no complete SAB criterion yet | SAB-01..06, including clarified compact grouping/full-results dispatch, qualified Programs/Settings and direct folder routing | ACTIVE. Reboot dependency resolved. SAB-01 provider/cancellation ABI and SAB-05 matching guest/runtime proof remain advancement blockers under investigation before hook selection, implementation and live acceptance. | None |
+| S6 | Matching isolated Windows/Shell modules; current StartAllBack 3.9.28; native query/view trace and Programs/Settings groups with WSearch stopped; program launch and See more results URI dispatch observed on 3.9.28; earlier program/Settings launches on 3.9.25; no complete SAB criterion yet | SAB-01..06, including file-provider/cancellation ownership, remaining provider conditions, compact Everything groups/full-results handoff and direct folder routing | ACTIVE. Current-build qualification replaces downgrading. Native ABI/ownership and remaining service/indexing comparisons are advancement blockers before dependent implementation and integrated/live acceptance. Guest WSearch startup fails; its cause remains unresolved. See more reaches the native search URI but the guest reports it unavailable. Host configuration is unchanged. | None |
 | S7 | None | EVERYWHERE-01..05 | S6 prerequisite not complete. File-surface, indexing-scope and Outlook compatibility inventory remains unresolved; no live scope changes during S6. | None |
 | S8 | None | All assigned criteria including final release | S1..S7 prerequisites not complete | None |
 

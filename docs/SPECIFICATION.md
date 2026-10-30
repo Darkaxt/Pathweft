@@ -1,6 +1,6 @@
 # Pathweft specification
 
-Version 0.7 - 2026-10-30. Owner: Darkaxt.
+Version 0.8 - 2026-10-30. Owner: Darkaxt.
 
 This is the authoritative specification. The derived plan must preserve every
 requirement and acceptance criterion. Material scope changes require explicit
@@ -61,6 +61,13 @@ and its final delivered recovery belong to the existing S8 SHELL-01 scope. The
 conditional discussion of WSearch being disabled does not authorize disabling the
 host service or remove the retained Outlook requirement.
 
+The user's subsequent update clarification makes current-version qualification
+the S6 test direction. Do not downgrade Windows or StartAllBack merely to retain
+an earlier test baseline. Keep earlier-build findings as comparison evidence and
+qualify changed private interfaces on current builds. Exact artifact identities
+remain required for each capture and supported combination; they do not impose a
+product requirement to freeze updates or promise unverified update compatibility.
+
 ## 2. Source baseline and provenance
 
 | Source | Pinned baseline | Role |
@@ -73,7 +80,7 @@ host service or remove the retained Outlook requirement.
 | 7-Zip | Pin source/SDK/runtime in S4 | Native archive browsing and supported edit operations |
 | rars | `e2415a2eb12e6b62deaa0cca919864eabe4671b1`, crate 0.12.3 | S4R embedded RAR encoder/rewrite API; Apache-2.0; independently qualify before enabling edits |
 | TeraCopy | 4.0.5.0 x64, signed main SHA-256 `1f0cca0be4e6a22e856c3b0de6655a1af8059a06cc66133398307de335098c6f` | Required REA reference, not a product runtime dependency. Evidence and bounded behavior adoption: [S5 transfer contract](S5-TRANSFER-ADOPTION.md). |
-| StartAllBack | Installed DLL file metadata observed 3.9.25 on 2026-10-29; pin exact artifact/hash and Windows dependencies in S6 | Proprietary host for a version-bound native search adapter; no donor binary redistribution or provider-hook feasibility claimed |
+| StartAllBack | Host 3.9.25; current isolated qualification 3.9.28 on 2026-10-30; identify exact artifact/hash and Windows dependencies for each capture | Proprietary host for a version-bound native search adapter; current-build qualification replaces routine downgrades; no donor binary redistribution or provider-hook feasibility claimed |
 
 File Labs currently targets .NET 8/WPF. It uses recursive filesystem search
 capped at 10,000 results, implements its own previews plus an external QuickLook
