@@ -22,12 +22,22 @@ The public evaluation is [WinApp CLI](../../docs/WINAPP-CLI.md).
 
 ## Project routing
 
+Coordinator adaptation (2026-10-30): the project Sandbox entry point now routes
+host lifecycle/guest calls through installed `windows-sandbox-gate`. Upstream
+WinApp remains the signed guest UIA/runtime tool; Coordinator owns one complete
+guest workflow, exact-ID stop and recovery. This does not authorize restarting
+Sandbox or resuming S6/S7 while the project's current stage excludes them.
+The original imported references and MIT notice remain intact. Direct host
+Sandbox launch/adoption examples are retained as upstream context, not the
+current launch interface.
+
 Standing user instructions, the authoritative specification and existing managed
 execution gates take priority over the imported examples. They do not authorize
 host elevation, networking changes, host UI input, installing other skills, or
 new project stages. Keep the established build and package scripts.
 
-For host-invoked WinApp guest commands, always use `--on sandbox`. Its TCP agent
+The standalone upstream host transport uses `--on sandbox`; current host calls
+instead use the installed Coordinator gate above. The upstream TCP agent
 requires guest networking; do not silently recreate or reconfigure an offline
 Sandbox. `target snapshot` is inspection only and cannot adopt an unmanaged guest.
 The verified offline alternative is an explicit `wsb exec --id <owned-id>` of the

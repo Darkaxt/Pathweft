@@ -1,8 +1,16 @@
 ---
 name: winapp-sandbox
-description: Run, debug, and UI-automate a Windows app in a persistent Windows Sandbox rather than the user's desktop. Use for disposable app testing, guest diagnostics, file transfer, and app or whole-desktop evidence. Builds remain on the host; connection and reconnect can briefly take focus.
+description: Route disposable Windows Sandbox testing through LLM Coordinator and reuse the pinned WinApp CLI for guest UI diagnostics. Builds remain on the host; interactive guest desktop readiness is a separate requirement.
 ---
 ## Before acting
+
+- Host-side Sandbox lifecycle and guest calls use the installed
+  `windows-sandbox-gate` skill and its `invoke_sandbox_gate.py` helper. Hold one
+  complete Coordinator workflow; use `sandbox.exec` or `sandbox.winapp` inside
+  it. Direct `winapp --on sandbox`/`wsb` host commands below are upstream reference
+  examples, replaced by the Coordinator transport. Independent force-stop uses
+  its exact original ticket, never host UI automation. Preserve this project's
+  active-stage boundary; this routing does not resume paused S6/S7 work.
 
 - Confirm the user wants Sandbox execution. Do not drop `--on sandbox` to bypass an error.
 - Builds, project evaluation, and restore still run on the host. Do not build untrusted
@@ -23,8 +31,9 @@ description: Run, debug, and UI-automate a Windows app in a persistent Windows S
 - On `sandbox_setup_incomplete`, direct the user to open Windows Sandbox from Start
   and finish its client setup/update. Do not repeatedly retry an unchanged prerequisite.
 - Connection or reconnect may briefly take focus; do not promise zero desktop interruption.
-- Existing Sandbox instances are reused and changed, not discarded. Never close one
-  or run `wsb stop` without user consent.
+- Coordinator creates an explicitly owned guest and refuses implicit adoption of
+  an unrelated Sandbox. Stop only its original ticket through the helper; the
+  upstream reuse/adoption behavior below is not the managed lifecycle contract.
 
 ## Launch, inspect, act, verify
 
