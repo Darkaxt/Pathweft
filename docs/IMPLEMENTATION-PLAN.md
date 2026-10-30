@@ -1,6 +1,6 @@
 # Implementation and reconciliation
 
-Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.9, 2026-10-30,
+Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.10, 2026-10-31,
 including the user-authorized continued comparison requirement TRANSFER-07.
 
 Current authorization: S8 core file-explorer integration and delivery, explicitly
@@ -10,7 +10,7 @@ upstream changes before compilation; add an alternate Native theme/accent contro
 under Appearance using Huashu and the supplied Explorer screenshot as references.
 S6 is parked by this user-directed execution boundary, not technically complete;
 S7 stays unstarted. Their requirements remain later program work, outside this
-core release. S8 is the only ACTIVE stage. Historical authorization follows.
+core release. S8 is COMPLETE; no stage is currently ACTIVE. Historical authorization follows.
 S6 native StartAllBack search was authorized after S5 closure.
 Earlier S5 REA-driven transfer implementation was requested after
 S4U closure. Earlier S3 work was requested on
@@ -25,7 +25,7 @@ and requested Pathweft folder routing with Directory Opus as the Explorer
 replacement reference. Compact results must not depend on WSearch filesystem
 indexing. Programs/Settings independence remains to be qualified, not assumed.
 S1-S5, S4R and S4U are COMPLETE; S6 is BLOCKED by the user's reprioritization;
-S7 is NOT STARTED; S8 is ACTIVE.
+S7 is NOT STARTED; S8 is COMPLETE.
 The user authorized trying rars on 2026-10-29 and delegated its integration
 choice. The user approved read-only icon cues and Ctrl+H/dot-name visibility;
 Historical S6 investigation following the user's reboot: the guest Windows kernel/build and
@@ -54,7 +54,7 @@ plan neither authorizes itself nor adds approval checkpoints.
 | S5 - REA-driven transfer improvements | COMPLETE | TRANSFER-01..07, archive/caller and WIDGET-02 revalidation, affected CORE-02/03, LIFE-01/DELIVERY-03 | Initial S5 criteria passed at e478986; user extended comparison/implementation | Finite findings inventory resolved; source/target handle reuse, copy-time hashing, metadata/EOF reductions, storage decisions, matched profiles, actual callers, adverse/preservation/cleanup and Release checks pass; see [evidence](verification/2026-10-29-s5.md) |
 | S6 - Native StartAllBack search | BLOCKED | SAB-01..06, affected SEARCH/CORE/LIFE/DELIVERY criteria | Parked by explicit user-directed S8-first execution; resume only after reprioritization is lifted | Investigation only; no working patch or complete SAB criterion. All native groups/handoff/provider/lifecycle/routing criteria remain open. |
 | S7 - Everything filesystem search and Outlook indexing scope | NOT STARTED | EVERYWHERE-01..05, affected SEARCH/CORE/LIFE/SHELL criteria | S6 COMPLETE; finite consumer/semantics/scope inventory before migration | Native Everything file results with selected filesystem roots excluded from Windows indexing; WSearch/Outlook retained, explicit Windows-managed exceptions, local/mail/reboot/recovery verification |
-| S8 - Core integration and delivery | ACTIVE | SHELL-01, CORE-04..05, DELIVERY-01..03; reconcile core release scope | S1-S5/S4R/S4U COMPLETE; explicit user core-first delivery instruction supersedes S6/S7 prerequisites | Upstream adoption; optional native shell routing and settings; alternate Native theme/accent; integrated core behavior and recovery; install/update/uninstall; normal installer/portable release independently retrieved and verified. S6/S7 explicitly undelivered. |
+| S8 - Core integration and delivery | COMPLETE | SHELL-01, CORE-04..05, DELIVERY-01..03; reconcile core release scope | S1-S5/S4R/S4U COMPLETE; explicit user core-first delivery instruction supersedes S6/S7 prerequisites | Selected upstream fixes, opt-in shell routing/settings, Native theme/accent, hidden UI and integrated workflows, host install/update/uninstall passed. Normal v1.1.0 release at c20f9d7 independently downloaded and verified; installed at D:\Tools\Pathweft with installed app-host self-test passing. See [delivery ledger](S8-DELIVERY.md). S6/S7 explicitly undelivered. |
 
 ENV-01..04 belong to the current setup deliverable, not an artificial product
 implementation stage. See [setup evidence](verification/2026-10-28-setup.md).
@@ -467,7 +467,7 @@ This sequence belongs only to S5, after S4U; it does not authorize later stages.
 | S5 | TRANSFER-01..07 and affected caller/CORE/LIFE criteria; final native/Release/FAT32 evidence and finite findings reconciliation | None within S5 | COMPLETE; no blocker | None |
 | S6 | Matching isolated Windows/Shell modules; current StartAllBack 3.9.28; native query/view trace and Programs/Settings groups with WSearch stopped; program launch and See more results URI dispatch observed on 3.9.28; earlier program/Settings launches on 3.9.25; no complete SAB criterion yet | SAB-01..06, including file-provider/cancellation ownership, remaining provider conditions, compact Everything groups/full-results handoff and direct folder routing | BLOCKED by the user's explicit S8-first priority. Investigation is retained; Sandbox was shut down. Native ABI/ownership and remaining service/indexing comparisons are unresolved when this stage resumes. Host configuration is unchanged. | None |
 | S7 | None | EVERYWHERE-01..05 | S6 prerequisite not complete. File-surface, indexing-scope and Outlook compatibility inventory remains unresolved; no live scope changes during S6. | None |
-| S8 | Real hidden Native theme/editor/widget/actions and persistence; selected upstream fixes; actual 32/64-bit default/open/explore, shortcuts, drive roots and CLI selection; real Win+E input; exact prior-handler restoration; current candidate packaged search/preview/archive/transfer and actual install/update/uninstall including process identity waiting. See S8-DELIVERY.md. | Final source/notices reconciliation, clean committed package, normal release, independent delivered-asset verification and actual host installation | ACTIVE by explicit S8-first instruction. User explicitly stopped Sandbox work and directed host delivery, replacing the separate guest gate with completed host lifecycle trials and final installation verification. StartAllBack-specific checking/routing stays S6/SAB-06. Direct SHOpenFolderAndSelectItems is qualified as unsupported. S6/S7 do not gate this core release. | None |
+| S8 | CORE-04..05, SHELL-01 and DELIVERY-01..03 passed: hidden Native theme/editor/widget/persistence, selected upstream fixes, actual native routing/Win+E/restoration, packaged search/transfer/archive/preview, install/update/uninstall, complete source/notices. Normal v1.1.0 published from c20f9d7; all six assets independently retrieved and checked; actual installed member hashes/version/app-host self-test pass. See [delivery ledger](S8-DELIVERY.md). | None within authorized S8 core scope | COMPLETE; no blocker. User stopped Sandbox work and directed host delivery. StartAllBack-specific checking/routing stays S6/SAB-06. Direct SHOpenFolderAndSelectItems is disclosed as unsupported. S6/S7 do not gate this core release. | None |
 
 S1 and S2 are COMPLETE. The user confirmed normal unlock; real physical drag and
 clipboard checks subsequently passed. A separate STA process read the Windows
@@ -479,7 +479,9 @@ user's instruction to continue with the next stage after the search-plan update.
 S4R and S4U are also COMPLETE. S5 is COMPLETE under the extended goal;
 S6 was ACTIVE after the user-controlled reboot, establishing isolated runtime
 contract evidence. The later explicit core-first instruction parked S6 as BLOCKED
-and activated S8; S7 remains NOT STARTED.
+and activated S8; S7 remains NOT STARTED. S8 subsequently closed with the verified
+v1.1.0 release and actual host installation on 2026-10-31. This completes the
+authorized core delivery, not the unfinished S6/S7 program requirements.
 S1-S4 have no remaining blocker or tracked deferral. Installer/update/
 uninstall and packaged integration retain their explicitly assigned S8 boundary.
 

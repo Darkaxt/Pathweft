@@ -14,7 +14,8 @@ do not change its requirements or the user's standing instructions.
   see `docs/verification/2026-10-29-s5.md` for the direct-write contract,
   measured performance limits and actual caller/preservation/recovery evidence.
   The user explicitly reprioritized S8 core delivery ahead of Windows search work.
-  S8 alone is ACTIVE. S6 is BLOCKED by this user-directed execution boundary,
+  S8 is COMPLETE: v1.1.0 is published, independently retrieved and installed.
+  S6 is BLOCKED by this user-directed execution boundary,
   with investigation retained and no working patch; S7 remains NOT STARTED.
   Identify TeraCopy and derive adoption from REA
   evidence before transfer implementation.
@@ -27,8 +28,8 @@ do not change its requirements or the user's standing instructions.
   never a substitute for the required investigation.
 - Isolate settings, IPC, agent, shell, installer and updater identities from
   File Labs before application trials. This is S1 work, not completed setup.
-- Use `scripts/Build-Development.ps1` for compilation. The inherited packaging
-  script must be adapted in S8 before it can deliver Pathweft.
+- Use `scripts/Build-Development.ps1` for compilation and the adapted `build.ps1`
+  for clean-source Pathweft release packaging; see `docs/RELEASE-USAGE.md`.
 - Keep private traces, credentials and machine notes out of commits. `.local/`
   is ignored for machine-specific evidence.
 - Preserve donor provenance/notices. Do not add dynamic plugin infrastructure

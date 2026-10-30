@@ -1,7 +1,7 @@
 # S8 core delivery contract
 
 Authority: specification v0.10 and the user's explicit S8-first/delivery instructions.
-S8 is ACTIVE; S6 is parked by that instruction and S7 is NOT STARTED.
+S8 is COMPLETE as of 2026-10-31; S6 is BLOCKED by that instruction and S7 is NOT STARTED.
 This release covers the file explorer. StartAllBack and broader Windows Search
 replacement remain unfinished later work and will be identified as such.
 
@@ -69,10 +69,10 @@ The exact comparison report is retained privately; no donor whole-product upgrad
 
 | Requirement | Verified | Remaining advancement blockers |
 | --- | --- | --- |
-| CORE-04 Native theme | Actual offscreen dark/light, live editor and widget changes, Original switch, custom accent, settings at100/150%, single/split and separate-process persistence passed. Current hidden run records zero foreground activation. Open-editor updater guard passes. | Final package applicability remains open. |
-| CORE-05 upstream adoption | Pinned review and focused real filter, size-boundary and overlapping rename/rollback regressions passed. | Final integrated package verification. A real shutdown exposed a concurrent size-cache Count/CopyTo race; stable snapshots fixed the observed failure and the repeated native routing trial exited cleanly. |
-| SHELL-01 opt-in routing | Real32/64bit default/open/explore, Unicode/spaces, folder shortcut, CLI file selection, drive root, cold/warm singleton, no transient Explorer windows, actual Win+E input and exact prior-value/kind restoration passed. Windowless helper readiness/stop passed. Real32/64bit cold/warm SHOpenFolderAndSelectItems returns E_ABORT and loses selection: explicitly unsupported, disclosed in Settings/usage. Current candidate install/update/uninstall and matched/mismatched updater process identity checks passed. | Final delivered-package applicability. The user explicitly returned StartAllBack-specific caller qualification/routing to S6/SAB-06; it no longer gates S8. Its actual Documents/library and Downloads Shell links opened Explorer, with no Pathweft request; exact prior handlers were restored. Do not claim these links are covered. |
-| DELIVERY-01..03 | Current unpublished candidate's actual app-host self-test and real-index search, transfer, ZIP/7z/RAR, Markdown/F3D preview and native exit passed. Silent isolated-directory install/update/uninstall preserved settings/handlers/startup owners. Actual FFmpeg9.0.1 shared LGPL/OpenH264 configuration was read from native exports; matching source/notices corrected. | Final source/notices reconciliation, clean committed package, normal release, independently retrieved installer/portable verification and host installation. User explicitly stopped the separate Sandbox gate. |
+| CORE-04 Native theme | Actual offscreen dark/light, live editor and widget changes, Original switch, custom accent, settings at100/150%, single/split and separate-process persistence passed with zero foreground activation. Open-editor updater guard passes. Release member hashes bind these product changes to the delivered package; Native/System and Windows accent selected in the installed profile. | None. |
+| CORE-05 upstream adoption | Pinned review and focused real filter, size-boundary and overlapping rename/rollback regressions passed. A real shutdown exposed a concurrent size-cache Count/CopyTo race; stable snapshots fixed the cause and the repeated native routing trial exited cleanly. Final packaged app-host self-test and real integrated workflows pass. | None. |
+| SHELL-01 opt-in routing | Real32/64bit default/open/explore, Unicode/spaces, folder shortcut, CLI file selection, drive root, cold/warm singleton, no transient Explorer windows, actual Win+E input and exact prior-value/kind restoration passed. Windowless helper readiness/stop, install/update/uninstall and matched/mismatched updater identity checks passed. Final installation leaves routing unchanged. SHOpenFolderAndSelectItems returns E_ABORT and loses selection: explicitly unsupported in Settings/usage/release notes. | None within S8. StartAllBack-specific caller qualification/routing belongs to S6/SAB-06: actual Documents/library and Downloads links opened Explorer without a Pathweft request; prior handlers were restored. These links are not claimed as supported. |
+| DELIVERY-01..03 | Clean source c20f9d7 packaged and normally published as v1.1.0. All six published asset sizes/digests checked and independently downloaded. Retrieved package app-host self-test, real-index search, transfer, ZIP/7z/RAR editing/extraction, Markdown/F3D preview and native exit passed without showing WPF windows. Actual FFmpeg9.0.1 shared LGPL/OpenH264 native configuration matches shipped source/notices. Actual installed members/version/source/self-test and Start-menu shortcut verified at D:\Tools\Pathweft; existing preferences/handlers preserved before explicit theme selection. Host install/update/uninstall and recovery passed. | None. User explicitly stopped the separate Sandbox gate. |
 
 No release until all S8 criteria pass. S6/S7 stay parked. The user's 2026-10-31
 instruction stops Sandbox work and directs final release/host installation.
@@ -93,5 +93,44 @@ does not establish isolation. This does not reopen S6's search-provider work.
 Closure assessment: shell registration/recovery has one owner, Win+E has an
 independent owned helper, and appearance has one shared palette. The inherited
 Explorer-window takeover is removed. Current acceptance found no material
-consolidation requirement; no extra refactoring stage is introduced. Remaining
-work is final packaging, retrieval and installation verification.
+consolidation requirement; no extra refactoring stage is introduced. All assigned
+S8 criteria are satisfied with no S8 blocker or tracked deferral.
+
+## Final release and installed verification
+
+[Pathweft v1.1.0](https://github.com/Darkaxt/Pathweft/releases/tag/v1.1.0) is a normal
+published release, not a draft or pre-release. Its immutable source/tag commit is
+`c20f9d7f989a9d4b0c2985fe9945e6bffd641f3a`; remote main and delivery branch were
+read back at that source commit before publication. Later documentation closure
+does not move the release tag.
+
+The release contains installer, portable, application source, dependency source,
+release manifest and SHA256SUMS. All GitHub asset sizes and SHA-256 digests match
+the qualified originals. Independently retrieved copies passed checksum/member
+verification and actual packaged workflows. The final native integration receipt
+identifies original PID59344 and its unique fixture; the installed app-host
+self-test completed with exit0. Existing Everything intermittently became busy
+during extraction/build I/O; checks resumed after actual SDK database readiness
+and responsive-window observation, without restarting or reconfiguring it. This
+establishes real integration with the ready index, not a cold-start or timing claim.
+
+The installer was run silently with no restart or integration tasks, using the
+independently retrieved asset. `D:\Tools\Pathweft\Pathweft.exe`, version1.1.0, has
+the expected release manifest and every installed member hash. Its normal per-user
+uninstall registration and Start-menu shortcut point to that location. Installed
+verification used an isolated profile; existing settings and folder handlers were
+unchanged. Then only Native/System/Windows-accent appearance preferences were
+explicitly selected to follow the user's system-theme request. Routing remains
+opt-in under Windows integration. The executable/installer remain unsigned, as
+disclosed in the release notes and manifest.
+
+The earlier unexpected light window came from queued WPF normal startup in the
+verification harness. The final source cancels that exact startup operation before
+pumping the dispatcher and verifies all probe windows remain invisible. This is
+bound to the fresh final integration receipts; the old visible probe is not used
+as acceptance evidence.
+
+Retained private receipts include publication metadata, independent retrieval,
+final native integration, actual installation/self-test and cleanup manifests.
+Requested local release assets remain in `dist/1.1.0-c20f9d7f`. S6 is BLOCKED and
+S7 is NOT STARTED; this release does not claim their search or StartAllBack behavior.
