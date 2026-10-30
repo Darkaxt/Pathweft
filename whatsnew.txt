@@ -1,6 +1,25 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.0 | 2026-10-31 | Pathweft core integration
+Pathweft brings the file browser, indexed search, internal previews, native archives and shared transfer queue into one application.
+**Appearance and navigation**
+- Choose Original or Native in Settings > Appearance. Native supports Windows light/dark and accent colors, including the search widget and editor.
+- Use one or two panes with Ctrl+P. Ctrl+H toggles Windows-hidden files and Linux-style dot names globally.
+- Read-only entries keep readable names and show gray icons with a lock and a specific reason.
+**Integrated tools**
+- Search the existing Everything index in panes and the optional taskbar widget. Filesystem search remains an explicit scoped mode.
+- Internal preview modules include an opt-in F3D GLB prototype. No standalone QuickLook process is needed.
+- Browse and edit supported native archives; RAR editing depends on the variant and preservation preflight.
+- Copy and move through the shared REA-informed engine with direct-write cancellation cleanup and optional verification. No TeraCopy binary is dispatched.
+**Optional Windows integration**
+- Enable direct filesystem-folder routing and independent Win+E under Settings > Windows integration. Disabling restores registrations still owned by Pathweft.
+- Explicit Explorer launches, virtual Shell locations and Open/Save dialogs remain Windows behaviors. Direct Shell selection APIs are unsupported: a folder may open without selection and the calling application may receive an error.
+- StartAllBack's grouped Everything results and the broader Windows Search migration remain unfinished later stages. Windows Search is unchanged.
+**Maintenance**
+- Selected upstream filter navigation/count/clear, inclusive size-query and batch-rename rollback fixes are included.
+- .NET 10 delivery and a per-user installer preserve settings and avoid forced process termination.
+
 ## 1.0.62 | 2026-10-28 | Focus where you'd expect it, and a portable copy
 A long-time tester's newest notes: everything File Labs should keep track of for you, it now does.
 **Keeping your place**

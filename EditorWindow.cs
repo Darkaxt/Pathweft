@@ -20,6 +20,7 @@ public sealed class EditorWindow : Window
     static string StateFile => Path.Combine(Settings.Dir, "editor.json");
     static Task<CoreWebView2Environment> env;
     static EditorWindow instance;
+    internal static bool HasOpenWindow=>instance!=null;
 
     // What Enter opens in the editor (Settings → "Open code and text files in the Pathweft editor"):
     // every extension Monaco colours, plus plain-text formats it shows uncoloured. F4 opens anything.
@@ -71,11 +72,15 @@ public sealed class EditorWindow : Window
 
     EditorWindow()
     {
+#if DEBUG
+        HiddenTrialPresentation.Prepare(this);
+#endif
         Width = 1200; Height = 800;
         WindowStartupLocation = WindowStartupLocation.CenterScreen;
         Background = MainWindow.Hex("#0f131b");
         Title = "Pathweft editor";
         Content = web;
+        ApplyWebBackground();
         SourceInitialized += (_, _) => MainWindow.ApplyAcrylic(this);
         Loaded += async (_, _) => await Start();
     }
@@ -115,12 +120,73 @@ public sealed class EditorWindow : Window
     static void Show(bool fresh)
     {
         if (fresh) instance.Show();
+#if DEBUG
+        if(HiddenTrialPresentation.Enabled)return;
+#endif
         if (instance.WindowState == WindowState.Minimized) instance.WindowState = WindowState.Normal;
         instance.Activate();
     }
 
-    /// <summary>The accent changed in Settings.</summary>
-    public static void AccentChanged() => instance?.Post(new JsonObject { ["type"] = "accent", ["accent"] = Settings.Accent });
+    /// <summary>Apply the shared appearance to both the native host and Monaco.</summary>
+    public static void AccentChanged()
+    {
+        if(instance==null)return;
+        instance.ApplyWebBackground();
+        if(!instance.ready)return; // init reads the current palette, not stale queued themes
+#if DEBUG
+        instance.appearanceReady=new(TaskCreationOptions.RunContinuationsAsynchronously);
+#endif
+        instance.Post(instance.ThemeMessage("accent"));
+    }
+    void ApplyWebBackground()
+    {
+        var color=Appearance.Resolve("#0F131B");
+        web.DefaultBackgroundColor=System.Drawing.Color.FromArgb(color.R,color.G,color.B);
+    }
+    int themeRevision;
+    JsonObject ThemeMessage(string type)
+    {
+        string Hex(System.Windows.Media.Color color)=>$"#{color.R:X2}{color.G:X2}{color.B:X2}";
+        var accent=Appearance.Accent;
+        var foreground=MainWindow.Contrast(System.Windows.Media.Colors.White,accent)>=4.5?"#FFFFFF":"#000000";
+        return new JsonObject
+        {
+            ["type"]=type,["accent"]=Hex(accent),["revision"]=++themeRevision,
+            ["appearance"]=new JsonObject
+            {
+                ["base"]=SystemParameters.HighContrast?(Appearance.Background.R>128?"hc-light":"hc-black"):Appearance.Light?"vs":"vs-dark",
+                ["light"]=Appearance.Light,["bg"]=Hex(Appearance.Resolve("#0F131B")),["bar"]=Hex(Appearance.Resolve("#0B0E14")),
+                ["panel"]=Hex(Appearance.Resolve("#161B26")),["text"]=Hex(Appearance.Resolve("#E6E9EF")),["mute"]=Hex(Appearance.Resolve("#8B93A3")),
+                ["line"]=SystemParameters.HighContrast?Hex(SystemColors.WindowTextColor):Appearance.Light?"#CECECE":"#414141",
+                ["hover"]=Appearance.Light?"#E3E3E3":"#333333",["accentText"]=foreground
+            }
+        };
+    }
+#if DEBUG
+    TaskCompletionSource appearanceReady=new(TaskCreationOptions.RunContinuationsAsynchronously);
+    readonly TaskCompletionSource documentReady=new(TaskCreationOptions.RunContinuationsAsynchronously);
+    readonly TaskCompletionSource browserStopped=new(TaskCreationOptions.RunContinuationsAsynchronously);
+    internal static Task AppearanceReadyForVerification=>instance.appearanceReady.Task;
+    internal static Task BrowserStoppedForVerification=>instance.browserStopped.Task;
+    internal static async Task CaptureForVerification(string path,bool light)
+    {
+        await instance.appearanceReady.Task;
+        await instance.documentReady.Task;
+        var core=instance.web.CoreWebView2;
+        if(core.Source!="https://pathweft.editor/editor.html")throw new InvalidOperationException("The editor's actual served URL changed.");
+        string state=await core.ExecuteScriptAsync("JSON.stringify({background:getComputedStyle(document.body).backgroundColor,text:getComputedStyle(document.body).color,editor:getComputedStyle(document.querySelector('.monaco-editor-background')).backgroundColor,base:document.documentElement.dataset.themeBase})");
+        using var document=JsonDocument.Parse(JsonSerializer.Deserialize<string>(state));
+        if(document.RootElement.GetProperty("base").GetString()!=(light?"vs":"vs-dark"))throw new InvalidOperationException("Monaco did not apply the selected theme.");
+        if(light&&document.RootElement.GetProperty("editor").GetString()!="rgb(249, 249, 249)")throw new InvalidOperationException("Monaco's rendered background stayed dark.");
+        File.WriteAllText(path+".json",document.RootElement.GetRawText());
+        using var image=File.Create(path+".png");await core.CapturePreviewAsync(CoreWebView2CapturePreviewImageFormat.Png,image);
+    }
+    internal static async Task CloseForVerification()
+    {
+        var editor=instance;var done=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        editor.Closed+=(_,_)=>done.TrySetResult();editor.Close();await done.Task;await editor.browserStopped.Task;
+    }
+#endif
 
     void AddFile(string path, bool activate, int line, int column, bool quiet)
     {
@@ -223,12 +289,18 @@ public sealed class EditorWindow : Window
         catch (WebView2RuntimeNotFoundException)
         {
             env = null;
+#if DEBUG
+            if(HiddenTrialPresentation.Enabled){appearanceReady.TrySetException(new InvalidOperationException("The installed WebView2 runtime is unavailable."));closing=true;Close();return;}
+#endif
             PromptDialog.Choose(Application.Current.MainWindow, "The editor needs the Microsoft Edge WebView2 Runtime",
                 "It is part of Windows 11 but not installed here. Get it from https://go.microsoft.com/fwlink/p/?LinkId=2124703", "OK");
             closing = true; Close();
             return;
         }
         var core = web.CoreWebView2;
+#if DEBUG
+        (await env).BrowserProcessExited+=(_,_)=>browserStopped.TrySetResult();
+#endif
         core.Settings.AreDevToolsEnabled = false;
         core.Settings.IsStatusBarEnabled = false;
         // F5 would reload the page and drop every open tab; Ctrl+P would print it
@@ -255,14 +327,23 @@ public sealed class EditorWindow : Window
         {
             case "ready":
                 ready = true;
-                web.CoreWebView2.PostWebMessageAsJson(new JsonObject { ["type"] = "init", ["accent"] = Settings.Accent, ["settings"] = LoadState()?["settings"]?.DeepClone() }.ToJsonString());
+                var initial=ThemeMessage("init");initial["settings"]=LoadState()?["settings"]?.DeepClone();
+                web.CoreWebView2.PostWebMessageAsJson(initial.ToJsonString());
                 foreach (var json in queue) web.CoreWebView2.PostWebMessageAsJson(json);
                 queue.Clear();
+                break;
+            case "appearanceApplied":
+#if DEBUG
+                if(m.GetProperty("revision").GetInt32()==themeRevision)appearanceReady.TrySetResult();
+#endif
                 break;
             case "dirty":
                 if (docs.TryGetValue(Id(), out var d)) d.Dirty = m.GetProperty("value").GetBoolean();
                 break;
             case "active":
+#if DEBUG
+                if(Id()!=0)documentReady.TrySetResult();
+#endif
                 Title = m.GetProperty("title").GetString() is { Length: > 0 } t ? $"{Path.GetFileName(t)}  ·  {Path.GetDirectoryName(t)}" : "Pathweft editor";
                 break;
             case "save":

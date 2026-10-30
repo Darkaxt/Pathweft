@@ -2,391 +2,229 @@ using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
+using System.Text.Json;
+using System.Security.Principal;
 using Microsoft.Win32;
 
 namespace FileExplorer;
 
-// Win+E on Windows 11 25H2 no longer goes through the shell registry keys a file manager can take
-// over (tested: both the {52205fd8…} launcher and This PC's opennewwindow are ignored). So, like
-// OneCommander's connector, a small window-less Pathweft process catches the key itself:
-// `Pathweft.exe --agent`, started at sign-in only while Pathweft is the default file manager.
+// Optional, windowless Win+E ownership only. Folder requests use Shell verbs;
+// explicit Explorer launches, virtual locations and Open/Save dialogs stay native.
 public static class Agent
 {
-    const string RunKey = @"Software\Microsoft\Windows\CurrentVersion\Run", RunValue = "Pathweft Agent";
-    static string StopEventName => "Pathweft-AgentStop-" + Environment.UserName;
-    static string MutexName => "Pathweft-Agent-" + Environment.UserName;
-
-    // ---- turned on/off together with the default-file-manager setting ----
-    public static void Enable(string exe)
+    const string RunKey=@"Software\Microsoft\Windows\CurrentVersion\Run",RunValue="Pathweft Agent";
+    public const string StateKey=@"Software\Darkaxt\Pathweft";
+    static string Scope=>WindowsIdentity.GetCurrent().User.Value+TrialSuffix;
+    static string StopEventName=>"Local\\Pathweft-AgentStop-"+Scope;
+    static string ReadyEventName=>"Local\\Pathweft-AgentReady-"+Scope;
+    static string MutexName=>"Local\\Pathweft-Agent-"+Scope;
+    static string OwnerPath=>Path.Combine(Settings.Dir,"agent-owner.json");
+    static string TrialSuffix=>Trial?"-"+System.IO.Hashing.XxHash32.HashToUInt32(System.Text.Encoding.UTF8.GetBytes(Settings.Profile)).ToString("x8"):"";
+    static bool Trial
     {
-        using (var run = Registry.CurrentUser.CreateSubKey(RunKey)) run.SetValue(RunValue, $"\"{exe}\" --agent");
-        Process.Start(new ProcessStartInfo(exe, "--agent") { UseShellExecute = false });
+        get
+        {
+#if DEBUG
+            return Settings.Profile?.StartsWith(@"D:\Temp\pathweft-s8-delivery\trial-",StringComparison.OrdinalIgnoreCase)==true && Environment.GetEnvironmentVariable("PATHWEFT_S8_AGENT_TRIAL")=="1";
+#else
+            return false;
+#endif
+        }
     }
-
-    public static void Disable()
-    {
-        using (var run = Registry.CurrentUser.OpenSubKey(RunKey, writable: true)) run?.DeleteValue(RunValue, throwOnMissingValue: false);
-        if (EventWaitHandle.TryOpenExisting(StopEventName, out var stop)) using (stop) stop.Set();
-    }
-
-    // ---- the agent itself ----
+    static string StartupKey=>Trial?@"Software\Darkaxt\Pathweft\S8Verification\Agent"+TrialSuffix:RunKey;
+    sealed record Owner(int Pid,long Started,string Exe);
+    static string Command(string exe)=>$"\"{exe}\" --agent";
+    static Mutex single;
+    static EventWaitHandle stop;
+    static EventWaitHandle ready;
+    static RegisteredWaitHandle waiting;
     static IntPtr hook;
-    static LowLevelKeyboardProc proc; // held so the GC can't collect the callback Windows calls
+    static LowLevelKeyboardProc callback;
     static bool swallowUp;
 
-    /// Runs until Disable() signals it. Returns the process exit code.
+    static Process OwnedProcess()
+    {
+        if(!File.Exists(OwnerPath))return null;
+        Owner owner;
+        try{owner=JsonSerializer.Deserialize<Owner>(File.ReadAllText(OwnerPath));}
+        catch(JsonException ex){throw new InvalidDataException("The Win+E owner record is invalid.",ex);}
+        Process process;
+        try{process=Process.GetProcessById(owner.Pid);}
+        catch(ArgumentException){return null;}
+        try
+        {
+            // Retain the native process handle before requesting shutdown. A
+            // GetProcessById wrapper cannot recover an exit code after the PID
+            // has disappeared unless it already owns that handle.
+            _=process.Handle;
+            if(process.HasExited||process.StartTime.ToUniversalTime().Ticks!=owner.Started){process.Dispose();return null;}
+            if(!string.Equals(process.MainModule.FileName,owner.Exe,StringComparison.OrdinalIgnoreCase)||!string.Equals(owner.Exe,Environment.ProcessPath,StringComparison.OrdinalIgnoreCase))
+                throw new InvalidOperationException("A different Pathweft copy owns the Win+E helper.");
+            return process;
+        }
+        catch{process.Dispose();throw;}
+    }
+    internal static bool IsReady
+    {
+        get
+        {
+            using var process=OwnedProcess();
+            if(process==null||!EventWaitHandle.TryOpenExisting(ReadyEventName,out var signal))return false;
+            using(signal)return signal.WaitOne(0)&&!process.HasExited;
+        }
+    }
+    public static Task EnableAsync(string exe)=>Task.Run(()=>Enable(exe));
+    static void Enable(string exe)
+    {
+        if(Settings.Profile!=null&&!Trial)throw new InvalidOperationException("A test profile cannot register Win+E.");
+        using var run=Registry.CurrentUser.CreateSubKey(StartupKey);
+        var previous=run.GetValue(RunValue) as string;
+        if(previous!=null && previous!=Command(exe))
+            throw new InvalidOperationException("Another Pathweft copy owns Win+E. Disable its integration before choosing this copy.");
+        bool added=previous==null;
+        Process launched=null;
+        try
+        {
+            // Establish actual hook readiness before creating a sign-in entry.
+            if(!IsReady)
+            {
+                using var signal=new EventWaitHandle(false,EventResetMode.ManualReset,ReadyEventName);
+                var launch=new ProcessStartInfo(exe,"--agent")
+                {UseShellExecute=false,CreateNoWindow=true,WindowStyle=ProcessWindowStyle.Hidden,WorkingDirectory=Path.GetDirectoryName(exe)};
+                // Do not bind a continuing sign-in helper to a build/test's
+                // disposable TEMP. Normal startup inherits the user's runtime.
+                if(!Trial)
+                    foreach(var name in new[]{"TEMP","TMP"})
+                    {
+                        var value=Environment.GetEnvironmentVariable(name,EnvironmentVariableTarget.User)??Environment.GetEnvironmentVariable(name,EnvironmentVariableTarget.Machine);
+                        if(value!=null)launch.Environment[name]=Environment.ExpandEnvironmentVariables(value);else launch.Environment.Remove(name);
+                    }
+                var process=launched=Process.Start(launch)??throw new IOException("Win+E helper did not start.");
+                IntPtr[] handles={signal.SafeWaitHandle.DangerousGetHandle(),process.Handle};
+                uint result=WaitForMultipleObjects(2,handles,false,uint.MaxValue);
+                if(result==uint.MaxValue)throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error());
+                if(result!=0||!IsReady)
+                {
+                    process.WaitForExit();
+                    throw new IOException($"Win+E helper exited before hook readiness (exit {process.ExitCode}).");
+                }
+            }
+            run.SetValue(RunValue,Command(exe));
+        }
+        catch
+        {
+            if(launched!=null&&!launched.HasExited&&EventWaitHandle.TryOpenExisting(StopEventName,out var signal))
+            {using(signal)signal.Set();launched.WaitForExit();}
+            if(added && run.GetValue(RunValue) as string==Command(exe))run.DeleteValue(RunValue,false);
+            throw;
+        }
+        finally{launched?.Dispose();}
+    }
+
+    public static Task DisableAsync()=>Task.Run(Disable);
+    internal static bool OwnsStartup
+    {
+        get{using var key=Registry.CurrentUser.OpenSubKey(StartupKey);return key?.GetValue(RunValue) as string==Command(Environment.ProcessPath);}
+    }
+    internal static void StopForUpdate(){if(OwnsStartup)StopOwned();}
+    static void StopOwned()
+    {
+        using var process=OwnedProcess();
+        if(process==null)return;
+        if(!EventWaitHandle.TryOpenExisting(StopEventName,out var signal))throw new IOException("The Win+E helper has no shutdown signal.");
+        using(signal)signal.Set();
+        process.WaitForExit();
+        if(process.ExitCode!=0)throw new IOException($"The Win+E helper stopped with exit {process.ExitCode}.");
+    }
+    public static void Disable()
+    {
+        if(Settings.Profile!=null&&!Trial)throw new InvalidOperationException("A test profile cannot change Win+E.");
+        using var run=Registry.CurrentUser.OpenSubKey(StartupKey,true);
+        var current=run?.GetValue(RunValue) as string;
+        if(current!=null && current!=Command(Environment.ProcessPath))
+            throw new InvalidOperationException("Another Pathweft copy owns Win+E; its settings were left unchanged.");
+        StopOwned();
+        run?.DeleteValue(RunValue,false);
+    }
+
     public static int Run(System.Windows.Application app)
     {
-        using var single = new Mutex(true, MutexName, out bool first);
-        if (!first) return 0; // one agent per user is enough
-        using var stop = new EventWaitHandle(false, EventResetMode.AutoReset, StopEventName);
-
-        proc = Hook;
-        hook = SetWindowsHookEx(WH_KEYBOARD_LL, proc, GetModuleHandle(null), 0);
-        if (hook == IntPtr.Zero) return 1;
-
-        // the hook needs a message loop on this thread: WPF's dispatcher is one
-        WatchExplorerWindows();
-        ThreadPool.RegisterWaitForSingleObject(stop, (_, _) => app.Dispatcher.BeginInvoke(() => app.Shutdown()), null, -1, true);
-        app.ShutdownMode = System.Windows.ShutdownMode.OnExplicitShutdown;
-        app.Exit += (_, _) => UnhookWindowsHookEx(hook);
-        return -1; // keep running
-    }
-
-    static IntPtr Hook(int code, IntPtr wParam, IntPtr lParam)
-    {
-        if (code >= 0)
+        Settings.Load();
+        if(Settings.Profile!=null&&!Trial || !Settings.TakeWinE)return 0;
+        single=new Mutex(true,MutexName,out bool first);
+        if(!first){single.Dispose();single=null;return 0;}
+        stop=new EventWaitHandle(false,EventResetMode.AutoReset,StopEventName);
+        ready=new EventWaitHandle(false,EventResetMode.ManualReset,ReadyEventName);
+        callback=Hook;
+        hook=SetWindowsHookEx(13,callback,GetModuleHandle(null),0);
+        if(hook==IntPtr.Zero){ready.Dispose();stop.Dispose();single.ReleaseMutex();single.Dispose();return 1;}
+        waiting=ThreadPool.RegisterWaitForSingleObject(stop,(_,_)=>app.Dispatcher.BeginInvoke(()=>app.Shutdown()),null,-1,true);
+        app.ShutdownMode=System.Windows.ShutdownMode.OnExplicitShutdown;
+        app.Exit+=(_,_)=>
         {
-            int vk = Marshal.ReadInt32(lParam);
-            bool down = wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN;
-            if (vk == VK_E && down && WinHeld() && !Held(VK_CONTROL) && !Held(VK_MENU) && !Held(VK_SHIFT) && !ReleasedWinE())
-            {
-                // Swallowing E leaves Windows seeing a lone Win press, which opens Start on release;
-                // an unassigned key in between tells it Win was used as a modifier.
-                TapUnassignedKey();
-                swallowUp = true;
-                System.Windows.Application.Current.Dispatcher.BeginInvoke(LaunchPathweft); // keep the hook fast
-                return (IntPtr)1;
-            }
-            if (vk == VK_E && !down && swallowUp) { swallowUp = false; return (IntPtr)1; }
-
-            // Ctrl+G in an Open/Save dialog: jump it to the folder Pathweft is showing (Listary's
-            // "quick switch"). Only the cheap checks happen here; the dialog is driven afterwards.
-            if (vk == VK_G && down && Held(VK_CONTROL) && !Held(VK_MENU) && !Held(VK_SHIFT) && !WinHeld()
-                && FileNameBox(GetForegroundWindow()) is var (dialog, box) && box != IntPtr.Zero && CurrentFolder() is { } folder)
-            {
-                swallowG = true;
-                System.Windows.Application.Current.Dispatcher.BeginInvoke(() => QuickSwitch(dialog, box, folder));
-                return (IntPtr)1;
-            }
-            if (vk == VK_G && !down && swallowG) { swallowG = false; return (IntPtr)1; }
-        }
-        return CallNextHookEx(hook, code, wParam, lParam);
-    }
-
-    /// Settings → "Win+E opens Pathweft" off: the key goes on to Windows, and the Explorer window it opens is
-    /// left alone (the watcher below would otherwise hand a folder on disk, say OneDrive, over to Pathweft).
-    /// Read from the settings file at the press: the user changes it while the agent runs, and a press is rare.
-    internal static bool ReleasedWinE()
-    {
-        // ponytail: a file read inside the keyboard hook, Win+E presses only; cache with a watcher if it ever shows
-        try { if (!File.ReadLines(Settings.FilePath).Contains("wine=0")) return false; }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return false; } // no settings yet: the default, taken
-        System.Windows.Application.Current?.Dispatcher.BeginInvoke(() =>
-        {
-            using var key = Registry.CurrentUser.CreateSubKey(StateKey);
-            key.SetValue(ExplorerWantedValue, DateTime.UtcNow.Ticks, RegistryValueKind.QWord);
-        });
-        return true;
-    }
-
-    // A plain launch: the running Pathweft comes to the front, or a new one starts.
-    static void LaunchPathweft()
-    {
-        // We just handled the user's key press, so Windows lets us hand the right to take focus on;
-        // without this Pathweft opens (or is asked to come forward) behind the current window.
-        AllowSetForegroundWindow(-1);
-        // Off this thread: it also runs the keyboard hook, and Windows drops a hook that stops answering.
-        ThreadPool.QueueUserWorkItem(_ =>
-        {
-            // Already open: tell it directly. Starting a process only to pass that on cost ~175 ms a press.
-            if (Program.Running && Program.HandOff("")) return;
-            try { Process.Start(new ProcessStartInfo(Environment.ProcessPath, "--front") { UseShellExecute = false }); }
-            catch (System.ComponentModel.Win32Exception) { } // exe gone (e.g. mid-uninstall): nothing to open
-        });
-    }
-
-    // ---- Explorer windows that other programs open ----
-    // "Open destination folder" in qBittorrent, "Show in folder" in browsers, `explorer.exe /select` and
-    // SHOpenFolderAndSelectItems all open Explorer directly: none of them goes through the Directory
-    // verb that makes Pathweft the default. So every new Explorer window is looked at once the shell
-    // has registered it; if it shows a folder on disk, its folder and selected file are opened in File
-    // Labs and the Explorer window is closed. Virtual places (Home, This PC, Control Panel, the Recycle
-    // Bin, a zip) stay in Explorer, the only thing that can show them.
-    public const string ExplorerWantedValue = "ExplorerWanted"; // Pathweft' own "Open in File Explorer" sets it
-
-    delegate void WinEventProc(IntPtr hook, uint ev, IntPtr hwnd, int idObject, int idChild, uint thread, uint time);
-    static WinEventProc shown; // held so the GC can't collect the callback Windows calls
-    static readonly HashSet<IntPtr> looked = new();
-
-    static void WatchExplorerWindows()
-    {
-        shown = OnWindowEvent;
-        SetWinEventHook(EVENT_OBJECT_CREATE, EVENT_OBJECT_SHOW, IntPtr.Zero, shown, 0, 0, WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS);
-    }
-
-    // Out of sight while it is being looked at — an Explorer window flashing up and closing again looks
-    // broken. Two steps, because each alone was seen to fail:
-    //   • at creation it is moved off screen, asynchronously: Explorer's thread applies that before the
-    //     first paint. (Making it transparent at creation made Explorer abandon windows it keeps, This
-    //     PC among them; hiding it outright stopped them from ever opening.)
-    //   • at showing it is also made transparent, in case Explorer put it back on screen. (Alone, that
-    //     came ~150 ms late: a style change waits for Explorer's thread, busy right after showing.)
-    // A window Explorer keeps gets its place and opacity back.
-    sealed class Hidden { public RECT Place; public IntPtr? Style; }
-    static readonly Dictionary<IntPtr, Hidden> hidden = new();
-
-    static void OnWindowEvent(IntPtr hook, uint ev, IntPtr hwnd, int idObject, int idChild, uint thread, uint time)
-    {
-        if (ev == EVENT_OBJECT_DESTROY || idObject != 0 || idChild != 0) return; // the window itself, created or shown
-        if (ev == EVENT_OBJECT_SHOW)
-        {
-            if (hidden.TryGetValue(hwnd, out var h) && h.Style == null) h.Style = MakeTransparent(hwnd);
-            return;
-        }
-        var cls = new System.Text.StringBuilder(32);
-        if (GetClassName(hwnd, cls, cls.Capacity) == 0 || cls.ToString() != "CabinetWClass") return;
-        if (looked.Count > 500) looked.Clear();
-        if (!looked.Add(hwnd) || ExplorerWanted()) return;
-        GetWindowRect(hwnd, out var place);
-        hidden[hwnd] = new Hidden { Place = place };
-        SetWindowPos(hwnd, IntPtr.Zero, -32000, -32000, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_ASYNCWINDOWPOS);
-
-        // A fresh explorer.exe registers its window ~1.3 s after starting (measured); poll until then.
-        int tries = 0;
-        var watch = new SelectionWatch();
-        bool handed = false;
-        dynamic last = null;
-        var poll = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(50) };
-        poll.Tick += (_, _) =>
-        {
-            if (!IsWindow(hwnd)) { poll.Stop(); hidden.Remove(hwnd); return; }
-            var (window, folder, selected) = Locate(hwnd);
-            last = window ?? last;
-            if (watch.Handed == null)
-            {
-                if (window == null && ++tries < 100) return;
-                if (folder == null) { poll.Stop(); GiveBack(hwnd); return; } // a virtual place, or never registered: Explorer keeps it
-            }
-            var (open, done) = watch.Look(folder, selected);
-            if (open != null) { OpenInPathweft(open); handed = true; }
-            if (!done)
-            {
-                if (open != null) HideFromTaskbar(hwnd); // the folder went to Pathweft; the window stays out of sight a little longer
-                return;
-            }
-            poll.Stop();
-            hidden.Remove(hwnd);
-            try { last?.Quit(); } catch (COMException) { }
-            // The Explorer window, out of sight, could still be the active one (the browser or Everything handed it the
-            // right); closing it gave the keyboard back to them, not to Pathweft, and the file selected there wasn't
-            // focused (Rico, 1.0.61). Once it's gone, Pathweft is brought forward once more, its selected row focused.
-            if (handed) OpenInPathweftLater("", 300);
+            ready.Reset();UnhookWindowsHookEx(hook);waiting.Unregister(null);stop.Dispose();ready.Dispose();
+            File.Delete(OwnerPath);
+            single.ReleaseMutex();single.Dispose();Log("stopped");
         };
-        poll.Start();
+        Directory.CreateDirectory(Settings.Dir);
+        using(var self=Process.GetCurrentProcess())Settings.WriteAllLines(OwnerPath,new[]{JsonSerializer.Serialize(new Owner(self.Id,self.StartTime.ToUniversalTime().Ticks,Environment.ProcessPath))});
+        Log("started");ready.Set();
+        return -1; // ownership lasts until app.Exit, not until this method returns
     }
 
-    /// What an Explorer window that other programs opened hands to Pathweft, look by look (every 50 ms). "Show in folder"
-    /// selects the file a moment after the folder shows: ~0.5 s are given for it. Open path in Everything, in a big folder,
-    /// selects it later still, and before 1.0.51 Pathweft then got the folder alone, with its first file selected. Now the
-    /// folder goes at 0.5 s, and the file follows if Explorer selects it within 2 s more (Pathweft selects it in the tab it
-    /// has just opened).
-    internal sealed class SelectionWatch
+    internal static bool Matches(bool windows,bool control,bool alt,bool shift)=>windows&&!control&&!alt&&!shift;
+    static IntPtr Hook(int code,IntPtr message,IntPtr data)
     {
-        int waited;
-        public string Handed { get; private set; } // the folder Pathweft was given while nothing was selected
-
-        /// `folder`: on disk, as Explorer shows it now; `selected`: its one selected item, or null.
-        public (string Open, bool Done) Look(string folder, string selected)
+        if(code>=0 && Marshal.ReadInt32(data)==0x45)
         {
-            if (Handed != null)
+            bool down=message==(IntPtr)0x100||message==(IntPtr)0x104;
+            if(down && Matches(Held(0x5b)||Held(0x5c),Held(0x11),Held(0x12),Held(0x10)))
             {
-                if (selected == null && folder == Handed && ++waited < 40) return (null, false);
-                return (selected != null && folder == Handed ? selected : null, true);
+                if(!swallowUp)
+                {
+                    swallowUp=true;TapUnassigned();AllowSetForegroundWindow(-1);
+                    ThreadPool.QueueUserWorkItem(_=>
+                    {
+                        if(Program.Running&&Program.HandOff(""))return;
+                        try{using var p=Process.Start(new ProcessStartInfo(Environment.ProcessPath,"--front"){UseShellExecute=false});}
+                        catch(System.ComponentModel.Win32Exception ex){Log("launch failed: "+ex.NativeErrorCode);}
+                    });
+                }
+                return (IntPtr)1;
             }
-            if (selected != null) return (selected, true);
-            if (++waited < 10) return (null, false);
-            Handed = folder;
-            waited = 0;
-            return (folder, false);
+            if(!down&&swallowUp){swallowUp=false;return (IntPtr)1;}
         }
+        return CallNextHookEx(hook,code,message,data);
     }
-
-    /// The Explorer window being looked at has no taskbar button while it waits, out of sight, for a late selection.
-    static void HideFromTaskbar(IntPtr hwnd)
+    static bool Held(int key)=>(GetAsyncKeyState(key)&0x8000)!=0;
+    static void TapUnassigned()
+    {
+        var input=new INPUT[2];input[0].type=input[1].type=1;
+        input[0].key=input[1].key=0xe8;input[1].flags=2;
+        SendInput(2,input,Marshal.SizeOf<INPUT>());
+    }
+    static void Log(string state)
     {
         try
         {
-            var bar = (ITaskbarList)new TaskbarList();
-            bar.HrInit();
-            bar.DeleteTab(hwnd);
-            Marshal.ReleaseComObject(bar);
+            Directory.CreateDirectory(Settings.Dir);var path=Path.Combine(Settings.Dir,"agent.log");
+            if(File.Exists(path)&&new FileInfo(path).Length>65536)File.WriteAllText(path,"");
+            File.AppendAllText(path,$"{DateTime.UtcNow:O} pid={Environment.ProcessId} {state}\n");
         }
-        catch (COMException) { } // no taskbar (Explorer restarting): nothing to hide
+        catch(Exception ex)when(ex is IOException or UnauthorizedAccessException){ }
     }
-
-    [ComImport, Guid("56FDF342-FD6D-11d0-958A-006097C9A090"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
-    interface ITaskbarList { void HrInit(); void AddTab(IntPtr h); void DeleteTab(IntPtr h); void ActivateTab(IntPtr h); void SetActiveAlt(IntPtr h); }
-    [ComImport, Guid("56FDF344-FD6D-11d0-958A-006097C9A090")] class TaskbarList { }
-
-    /// Invisible and click-through: a layered window at alpha 0. Returns the style to restore.
-    static IntPtr MakeTransparent(IntPtr hwnd)
+    [StructLayout(LayoutKind.Explicit,Size=40)]struct INPUT
     {
-        var style = GetWindowLongPtr(hwnd, GWL_EXSTYLE);
-        SetWindowLongPtr(hwnd, GWL_EXSTYLE, (IntPtr)((long)style | WS_EX_LAYERED));
-        SetLayeredWindowAttributes(hwnd, 0, 0, LWA_ALPHA);
-        return style;
+        [FieldOffset(0)]public uint type;[FieldOffset(8)]public ushort key;
+        [FieldOffset(12)]public uint flags;
     }
-
-    /// The Explorer window's folder, and its selected item when there is exactly one ("show in folder").
-    /// Window null: not registered with the shell yet. Folder null: not a folder on disk.
-    static (dynamic Window, string Folder, string Selected) Locate(IntPtr hwnd)
-    {
-        try
-        {
-            dynamic shell = Activator.CreateInstance(Type.GetTypeFromProgID("Shell.Application"));
-            foreach (dynamic w in shell.Windows())
-            {
-                if (new IntPtr((long)w.HWND) != hwnd) continue;
-                string path = w.Document.Folder.Self.Path;
-                if (string.IsNullOrEmpty(path) || !System.IO.Directory.Exists(path)) return (w, null, null);
-                dynamic items = w.Document.SelectedItems();
-                return (w, path, items.Count == 1 ? (string)items.Item(0).Path : null);
-            }
-        }
-        // still navigating (no document yet), or the window went away between two calls
-        catch (Exception ex) when (ex is COMException or InvalidCastException or Microsoft.CSharp.RuntimeBinder.RuntimeBinderException) { }
-        return (null, null, null);
-    }
-
-    /// A window Explorer keeps: back in its place, opaque, and in front where the user expected it. An
-    /// empty mouse input first — Windows only lets a process that just had input take the foreground.
-    static void GiveBack(IntPtr hwnd)
-    {
-        if (!hidden.Remove(hwnd, out var h)) return;
-        if (h.Style is { } style)
-        {
-            SetLayeredWindowAttributes(hwnd, 0, 255, LWA_ALPHA);
-            SetWindowLongPtr(hwnd, GWL_EXSTYLE, style);
-        }
-        SetWindowPos(hwnd, IntPtr.Zero, h.Place.Left, h.Place.Top, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_ASYNCWINDOWPOS);
-        SendInput(1, new INPUT[1], Marshal.SizeOf<INPUT>()); // all zero = a mouse event that moves nothing
-        SetForegroundWindow(hwnd);
-    }
-
-    static bool ExplorerWanted()
-    {
-        using var key = Registry.CurrentUser.OpenSubKey(StateKey);
-        return key?.GetValue(ExplorerWantedValue) is long ticks && DateTime.UtcNow.Ticks - ticks < TimeSpan.FromSeconds(10).Ticks;
-    }
-
-    static void OpenInPathweftLater(string path, int ms) => ThreadPool.QueueUserWorkItem(_ => { Thread.Sleep(ms); OpenInPathweft(path); });
-
-    static void OpenInPathweft(string path) => ThreadPool.QueueUserWorkItem(_ =>
-    {
-        if (Program.Running && Program.HandOff(path)) return;
-        try { Process.Start(new ProcessStartInfo(Environment.ProcessPath) { ArgumentList = { "--front", path }, UseShellExecute = false }); }
-        catch (System.ComponentModel.Win32Exception) { } // exe gone (e.g. mid-uninstall)
-    });
-
-    // ---- quick switch ----
-    static bool swallowG;
-    public const string StateKey = @"Software\Darkaxt\Pathweft";
-
-    /// The folder in Pathweft' active pane, which the app writes whenever it changes.
-    static string CurrentFolder()
-    {
-        using var key = Registry.CurrentUser.OpenSubKey(StateKey);
-        return key?.GetValue("CurrentFolder") is string s && s != "" ? s : null;
-    }
-
-    /// For a common Open/Save dialog: the dialog and its file-name edit box (control 1148 or inside it).
-    static (IntPtr Dialog, IntPtr Box) FileNameBox(IntPtr window)
-    {
-        var cls = new System.Text.StringBuilder(64);
-        if (window == IntPtr.Zero || GetClassName(window, cls, cls.Capacity) == 0 || cls.ToString() != "#32770") return (window, IntPtr.Zero);
-        IntPtr found = IntPtr.Zero;
-        EnumChildWindows(window, (child, _) =>
-        {
-            var c = new System.Text.StringBuilder(64);
-            GetClassName(child, c, c.Capacity);
-            if (c.ToString() != "Edit") return true;
-            for (var h = child; h != IntPtr.Zero && h != window; h = GetParent(h))
-                if (GetDlgCtrlID(h) == 1148) { found = child; return false; }
-            return true;
-        }, IntPtr.Zero);
-        return (window, found);
-    }
-
-    // Typing a folder into the file name box and pressing Open makes the dialog go there instead of
-    // opening anything. The name that was in the box (a Save dialog's file name) is put back after.
-    static void QuickSwitch(IntPtr dialog, IntPtr box, string folder)
-    {
-        var old = new System.Text.StringBuilder(1024);
-        SendMessage(box, WM_GETTEXT, (IntPtr)old.Capacity, old);
-        SendMessage(box, WM_SETTEXT, IntPtr.Zero, new System.Text.StringBuilder(folder));
-        SendMessage(dialog, WM_COMMAND, (IntPtr)1 /* IDOK */, IntPtr.Zero);
-        SendMessage(box, WM_SETTEXT, IntPtr.Zero, old);
-    }
-
-    static bool WinHeld() => Held(VK_LWIN) || Held(VK_RWIN);
-    static bool Held(int vk) => (GetAsyncKeyState(vk) & 0x8000) != 0;
-
-    static void TapUnassignedKey()
-    {
-        var inputs = new INPUT[2];
-        inputs[0].type = inputs[1].type = 1; // keyboard
-        inputs[0].ki.wVk = inputs[1].ki.wVk = 0xE8;
-        inputs[1].ki.dwFlags = 2; // key up
-        SendInput(2, inputs, Marshal.SizeOf<INPUT>());
-    }
-
-    const int WM_GETTEXT = 0x0D, WM_SETTEXT = 0x0C, WM_COMMAND = 0x111, VK_G = 0x47;
-    delegate bool EnumProc(IntPtr h, IntPtr l);
-    [DllImport("user32.dll")] static extern IntPtr GetForegroundWindow();
-    const uint EVENT_OBJECT_CREATE = 0x8000, EVENT_OBJECT_DESTROY = 0x8001, EVENT_OBJECT_SHOW = 0x8002, WINEVENT_OUTOFCONTEXT = 0, WINEVENT_SKIPOWNPROCESS = 2;
-    [DllImport("user32.dll")] static extern IntPtr SetWinEventHook(uint min, uint max, IntPtr module, WinEventProc proc, uint pid, uint thread, uint flags);
-    [DllImport("user32.dll")] static extern bool IsWindow(IntPtr h);
-    const int GWL_EXSTYLE = -20, WS_EX_LAYERED = 0x80000;
-    const uint LWA_ALPHA = 2;
-    [DllImport("user32.dll", EntryPoint = "GetWindowLongPtrW")] static extern IntPtr GetWindowLongPtr(IntPtr h, int index);
-    [DllImport("user32.dll", EntryPoint = "SetWindowLongPtrW")] static extern IntPtr SetWindowLongPtr(IntPtr h, int index, IntPtr value);
-    [DllImport("user32.dll")] static extern bool SetLayeredWindowAttributes(IntPtr h, uint key, byte alpha, uint flags);
-    [DllImport("user32.dll")] static extern bool SetForegroundWindow(IntPtr h);
-    [StructLayout(LayoutKind.Sequential)] struct RECT { public int Left, Top, Right, Bottom; }
-    const uint SWP_NOSIZE = 0x1, SWP_NOZORDER = 0x4, SWP_NOACTIVATE = 0x10, SWP_ASYNCWINDOWPOS = 0x4000;
-    [DllImport("user32.dll")] static extern bool GetWindowRect(IntPtr h, out RECT r);
-    [DllImport("user32.dll")] static extern bool SetWindowPos(IntPtr h, IntPtr after, int x, int y, int cx, int cy, uint flags);
-    [DllImport("user32.dll", CharSet = CharSet.Unicode)] static extern int GetClassName(IntPtr h, System.Text.StringBuilder s, int n);
-    [DllImport("user32.dll")] static extern bool EnumChildWindows(IntPtr parent, EnumProc proc, IntPtr l);
-    [DllImport("user32.dll")] static extern IntPtr GetParent(IntPtr h);
-    [DllImport("user32.dll")] static extern int GetDlgCtrlID(IntPtr h);
-    [DllImport("user32.dll", CharSet = CharSet.Unicode)] static extern IntPtr SendMessage(IntPtr h, int msg, IntPtr w, System.Text.StringBuilder l);
-    [DllImport("user32.dll")] static extern IntPtr SendMessage(IntPtr h, int msg, IntPtr w, IntPtr l);
-
-    const int WH_KEYBOARD_LL = 13, VK_E = 0x45, VK_LWIN = 0x5B, VK_RWIN = 0x5C, VK_CONTROL = 0x11, VK_MENU = 0x12, VK_SHIFT = 0x10;
-    static readonly IntPtr WM_KEYDOWN = (IntPtr)0x100, WM_SYSKEYDOWN = (IntPtr)0x104;
-
-    delegate IntPtr LowLevelKeyboardProc(int code, IntPtr wParam, IntPtr lParam);
-    [StructLayout(LayoutKind.Sequential)] struct KEYBDINPUT { public ushort wVk, wScan; public uint dwFlags, time; public IntPtr dwExtraInfo; }
-    // INPUT is a union; pad to the size of its largest member (MOUSEINPUT) so SendInput accepts it
-    [StructLayout(LayoutKind.Explicit, Size = 40)] struct INPUT { [FieldOffset(0)] public uint type; [FieldOffset(8)] public KEYBDINPUT ki; }
-
-    [DllImport("user32.dll", SetLastError = true)] static extern IntPtr SetWindowsHookEx(int id, LowLevelKeyboardProc fn, IntPtr mod, uint thread);
-    [DllImport("user32.dll")] static extern bool UnhookWindowsHookEx(IntPtr h);
-    [DllImport("user32.dll")] static extern IntPtr CallNextHookEx(IntPtr h, int code, IntPtr w, IntPtr l);
-    [DllImport("user32.dll")] static extern short GetAsyncKeyState(int vk);
-    [DllImport("user32.dll")] static extern bool AllowSetForegroundWindow(int pid);
-    [DllImport("user32.dll")] static extern uint SendInput(uint n, INPUT[] inputs, int size);
-    [DllImport("kernel32.dll", CharSet = CharSet.Unicode)] static extern IntPtr GetModuleHandle(string name);
+    delegate IntPtr LowLevelKeyboardProc(int code,IntPtr message,IntPtr data);
+    [DllImport("user32.dll",SetLastError=true)]static extern IntPtr SetWindowsHookEx(int id,LowLevelKeyboardProc fn,IntPtr module,uint thread);
+    [DllImport("user32.dll")]static extern bool UnhookWindowsHookEx(IntPtr hook);
+    [DllImport("user32.dll")]static extern IntPtr CallNextHookEx(IntPtr hook,int code,IntPtr message,IntPtr data);
+    [DllImport("user32.dll")]static extern short GetAsyncKeyState(int key);
+    [DllImport("user32.dll")]static extern bool AllowSetForegroundWindow(int pid);
+    [DllImport("user32.dll")]static extern uint SendInput(uint count,INPUT[] input,int size);
+    [DllImport("kernel32.dll",CharSet=CharSet.Unicode)]static extern IntPtr GetModuleHandle(string name);
+    [DllImport("kernel32.dll",SetLastError=true)]static extern uint WaitForMultipleObjects(uint count,IntPtr[] handles,bool all,uint milliseconds);
 }

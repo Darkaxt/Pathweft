@@ -6,6 +6,8 @@ param(
     [ValidateSet('Debug', 'Release')]
     [string]$Configuration = 'Release',
     [string]$ProjectFile,
+    [ValidateSet('Build','Publish')][string]$Operation='Build',
+    [string]$PublishDirectory,
     [string[]]$BuildProperty = @()
 )
 
@@ -53,7 +55,7 @@ try {
         & dotnet --version
         if ($LASTEXITCODE -ne 0) { throw 'The SDK selected by global.json is unavailable.' }
         $buildArguments = @(
-            'build', ([IO.Path]::GetFullPath($ProjectFile)),
+            $Operation.ToLowerInvariant(), ([IO.Path]::GetFullPath($ProjectFile)),
             '--configuration', $Configuration,
             '--artifacts-path', (Join-Path $scratch 'artifacts'),
             '--disable-build-servers', '--nologo', '--verbosity', 'minimal',
@@ -62,7 +64,12 @@ try {
             ('-p:SevenZipRuntimeRoot=' + (Join-Path $cache 'sevenzip/26.05'))
             ('-p:SharpSevenZipRuntimeRoot=' + (Join-Path $cache 'sharpsevenzip/2.0.130-pathweft.1'))
             ('-p:RarsRuntimeRoot=' + (Join-Path $cache 'rars/0.12.3-pathweft.1'))
+            ('-p:EverythingRuntimeRoot=' + (Join-Path $cache 'everything/1.4.1.1032'))
         )
+        if($Operation -eq 'Publish'){
+            if(!$PublishDirectory -or ![IO.Path]::GetFullPath($PublishDirectory).StartsWith($scratch+'\',[StringComparison]::OrdinalIgnoreCase)){throw 'Publish output must remain inside this exact task scratch.'}
+            $buildArguments+=@('-r','win-x64','--self-contained','true','--output',([IO.Path]::GetFullPath($PublishDirectory)))
+        }
         foreach ($property in $BuildProperty) { $buildArguments += '-p:' + $property }
         & dotnet @buildArguments
         $exitCode = $LASTEXITCODE

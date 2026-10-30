@@ -148,7 +148,7 @@ public class WhatsNewWindow : Window
         var parts = text.Split("**");
         for (int i = 0; i < parts.Length; i++)
             if (parts[i] == "") continue;
-            else if (i % 2 == 1) t.Inlines.Add(new Run(parts[i]) { FontWeight = FontWeights.SemiBold, Foreground = Brushes.White });
+            else if (i % 2 == 1) t.Inlines.Add(new Run(parts[i]) { FontWeight = FontWeights.SemiBold, Foreground = MainWindow.Hex("#FFFFFF") });
             else t.Inlines.Add(new Run(parts[i])); // takes the block's colour
         return t;
     }

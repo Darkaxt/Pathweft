@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>File Labs editor</title>
+<title>Pathweft editor</title>
 <style>
   :root { --bg: #0f131b; --bar: #0b0e14; --line: rgba(255,255,255,.07); --text: #e6e9ef; --mute: #8b93a3; --accent: #4c8dff; }
   * { box-sizing: border-box; }
@@ -52,12 +52,15 @@
 
   /* settings */
   #settings { position: absolute; right: 8px; bottom: 30px; width: 260px; display: none; padding: 12px 14px; z-index: 10;
-    background: #161b26; border: 1px solid rgba(255,255,255,.12); border-radius: 8px; box-shadow: 0 12px 40px rgba(0,0,0,.5); }
+    background: var(--panel, #161b26); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 12px 40px rgba(0,0,0,.25); }
   #settings.show { display: block; }
   #settings h3 { margin: 0 0 8px; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--mute); font-weight: 600; }
   #settings label { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 6px 0; color: var(--text); }
   #settings input[type=checkbox] { accent-color: var(--accent); width: 16px; height: 16px; }
-  #settings select, #settings input[type=number] { font: inherit; color: var(--text); background: #0f131b; border: 1px solid rgba(255,255,255,.14); border-radius: 4px; padding: 2px 4px; width: 70px; }
+  #settings select, #settings input[type=number] { font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--line); border-radius: 4px; padding: 2px 4px; width: 70px; }
+  button { background: var(--hover); border-color: var(--line); }
+  button:hover, .tab:hover, .tab .x:hover, #status .pick:hover { background: var(--hover); }
+  button.primary { color: var(--accent-text, #fff); }
 </style>
 </head>
 <body class="none">
@@ -115,18 +118,24 @@
       renderSideBySide: true, mouseWheelZoom: true,
     });
 
-    function theme(accent) {
+    function theme(accent, appearance, revision) {
+      const p = appearance;
+      for (const name of ['bg','bar','panel','text','mute','line','hover']) document.documentElement.style.setProperty('--' + name, p[name]);
       document.documentElement.style.setProperty('--accent', accent);
-      monaco.editor.defineTheme('filelabs', {
-        base: 'vs-dark', inherit: true, rules: [],
+      document.documentElement.style.setProperty('--accent-text', p.accentText);
+      document.documentElement.style.colorScheme = p.light ? 'light' : 'dark';
+      document.documentElement.dataset.themeBase = p.base;
+      monaco.editor.defineTheme('pathweft', {
+        base: p.base, inherit: true, rules: [],
         colors: {
-          'editor.background': '#0f131b', 'editorGutter.background': '#0f131b', 'minimap.background': '#0f131b',
+          'editor.background': p.bg, 'editor.foreground': p.text, 'editorGutter.background': p.bg, 'minimap.background': p.bg,
           'editorCursor.foreground': accent, 'editor.selectionBackground': accent + '55',
           'editor.inactiveSelectionBackground': accent + '30', 'editorLineNumber.activeForeground': accent,
           'focusBorder': accent, 'editorLink.activeForeground': accent,
         },
       });
-      monaco.editor.setTheme('filelabs');
+      monaco.editor.setTheme('pathweft');
+      post({ type: 'appearanceApplied', revision });
     }
 
     function applySettings() {
@@ -330,7 +339,7 @@
       switch (m.type) {
         case 'init':
           settings = Object.assign(settings, m.settings || {});
-          theme(m.accent); applySettings();
+          theme(m.accent, m.appearance, m.revision); applySettings();
           break;
         case 'open': {
           const model = monaco.editor.createModel(m.text, language(m.name));
@@ -377,7 +386,7 @@
           break;
         }
         case 'close': { const t = find(m.id); if (t) closeTab(t); break; }
-        case 'accent': theme(m.accent); break;
+        case 'accent': theme(m.accent, m.appearance, m.revision); break;
       }
     });
     post({ type: 'ready' });

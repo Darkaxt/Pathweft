@@ -56,7 +56,14 @@ public partial class SettingsWindow : Window
         ParallelBox.IsChecked = Settings.ParallelCopy;
         EditorBox.IsChecked = Settings.InternalEditor;
         DefaultBox.IsChecked = Settings.IsDefaultFileManager;
+        DefaultBox.IsEnabled = WinEBox.IsEnabled = Settings.Profile == null;
+        RestoreFolderHandlers.Visibility = System.IO.File.Exists(WindowsIntegration.RecoveryPath) ? Visibility.Visible : Visibility.Collapsed;
+        FolderIntegrationStatus.Text = Settings.IsDefaultFileManager ? "Folder integration is enabled for this copy of Pathweft."
+            : System.IO.File.Exists(WindowsIntegration.RecoveryPath) ? "Folder handlers changed outside Pathweft. Restore the prior handlers or enable integration again."
+            : "Your current folder handlers are unchanged.";
         WinEBox.IsChecked = Settings.TakeWinE;
+        try{WinEStatus.Text=Agent.IsReady?"Win+E helper is running and its keyboard hook is ready.":Settings.TakeWinE?"Win+E is selected, but its helper is not running. Switch it off and on to start it.":"Win+E integration is off.";}
+        catch(Exception ex)when(ex is System.IO.IOException or InvalidOperationException or System.ComponentModel.Win32Exception){WinEStatus.Text=ex.Message;}
         TrayBox.IsChecked = Settings.CloseToTray;
         StartupBox.IsChecked = Settings.StartWithWindows; // off unless the user turns it on: nothing else writes it
         StartupText.Text = StartupClock.Last;
@@ -88,7 +95,7 @@ public partial class SettingsWindow : Window
     {
         "backdrop", "opacity", "bgimage", "bgopacity", "bgblur", "bgbright", "accent", "accentstrength", "rowpad", "textscale",
         "scale.sidebar", "scale.tabs", "scale.path", "scale.list", "singlepane", "closeemptypane", "stats", "animations", "smoothscroll",
-        "autoscroll", "autoscrollx",
+        "autoscroll", "autoscrollx", "theme.native", "theme.mode", "theme.windowsaccent",
     };
     internal static readonly string[] FilesKeys = { "hidden", "shortcutfolders", "internaleditor", "preview.modules.disabled", "itemtips", "tipdelay", "deletesound", "nativemenu" };
     internal static readonly string[] TransfersKeys = { "verify", "parallel" };
@@ -207,6 +214,7 @@ public partial class SettingsWindow : Window
     void SetAccent(string hex)
     {
         Settings.Accent = hex;
+        Settings.WindowsAccent = false;
         Changed();
     }
 
@@ -279,6 +287,8 @@ public partial class SettingsWindow : Window
     void Preview(System.Windows.Media.Color c)
     {
         Settings.Accent = ToHex(c);
+        Settings.WindowsAccent = false;
+        WindowsAccentBox.IsChecked = false;
         AccentHex.Text = Settings.Accent;
         main.ApplyAppearance();
         ShowAccentOnWheel();
@@ -310,6 +320,7 @@ public partial class SettingsWindow : Window
         if (!IsLoaded || syncing || loading) return;
         val = e.NewValue / 100;
         Settings.Accent = ToHex(FromHsv(hue, sat, val));
+        Settings.WindowsAccent = false;
         Changed();
     }
 
@@ -386,6 +397,14 @@ public partial class SettingsWindow : Window
 
     void Refresh()
     {
+        ThemeGlass.Tag = Settings.NativeTheme ? null : "on";
+        ThemeNative.Tag = Settings.NativeTheme ? "on" : null;
+        ThemeSystem.Tag = Settings.NativeMode == "system" ? "on" : null;
+        ThemeLight.Tag = Settings.NativeMode == "light" ? "on" : null;
+        ThemeDark.Tag = Settings.NativeMode == "dark" ? "on" : null;
+        NativeOptions.Visibility = Settings.NativeTheme ? Visibility.Visible : Visibility.Collapsed;
+        GlassOptions.Visibility = Settings.NativeTheme ? Visibility.Collapsed : Visibility.Visible;
+        WindowsAccentBox.IsChecked = Settings.WindowsAccent;
         BdAcrylic.Tag = Settings.Backdrop == 3 ? "on" : null;
         BdMica.Tag = Settings.Backdrop == 2 ? "on" : null;
         BdSolid.Tag = Settings.Backdrop == 1 ? "on" : null;
@@ -428,6 +447,10 @@ public partial class SettingsWindow : Window
         Settings.Backdrop = s == BdAcrylic ? 3 : s == BdMica ? 2 : 1;
         Changed();
     }
+
+    void Theme_Click(object s, RoutedEventArgs e) { Settings.NativeTheme = s == ThemeNative; Changed(); }
+    void NativeMode_Click(object s, RoutedEventArgs e) { Settings.NativeMode = s == ThemeLight ? "light" : s == ThemeDark ? "dark" : "system"; Changed(); }
+    void WindowsAccent_Click(object s, RoutedEventArgs e) { Settings.WindowsAccent = WindowsAccentBox.IsChecked == true; Changed(); }
 
     void BgChoose_Click(object s, RoutedEventArgs e)
     {
@@ -555,22 +578,32 @@ public partial class SettingsWindow : Window
     void Default_Click(object s, RoutedEventArgs e)
     {
         try { Settings.SetDefaultFileManager(DefaultBox.IsChecked == true); }
-        catch (Exception ex) when (ex is UnauthorizedAccessException or System.Security.SecurityException or System.IO.IOException)
+        catch (Exception ex) when (ex is UnauthorizedAccessException or System.Security.SecurityException or System.IO.IOException or InvalidOperationException)
         {
             MessageBox.Show(this, ex.Message, "Couldn't change the default file manager");
         }
         DefaultBox.IsChecked = Settings.IsDefaultFileManager; // show what actually happened
+        ShowValues();
     }
 
-    void WinE_Click(object s, RoutedEventArgs e)
+    void RestoreFolderHandlers_Click(object s, RoutedEventArgs e)
     {
+        DefaultBox.IsChecked = false;
+        Default_Click(s,e);
+    }
+
+    async void WinE_Click(object s, RoutedEventArgs e)
+    {
+        bool previous = Settings.TakeWinE;
         Settings.TakeWinE = WinEBox.IsChecked == true;
-        Settings.Save(); // the agent reads it from the file at each Win+E
-        if (!Settings.IsDefaultFileManager) return; // taken or not when Pathweft becomes the default
-        try { Settings.SetWinE(Settings.TakeWinE); }
-        catch (Exception ex) when (ex is UnauthorizedAccessException or System.Security.SecurityException or System.IO.IOException)
+        Settings.Save();
+        WinEBox.IsEnabled=false;
+        try { if(Settings.TakeWinE)await Agent.EnableAsync(Environment.ProcessPath);else await Agent.DisableAsync(); }
+        catch (Exception ex) when (ex is UnauthorizedAccessException or System.Security.SecurityException or System.IO.IOException or InvalidOperationException or System.ComponentModel.Win32Exception)
         {
+            Settings.TakeWinE = previous; Settings.Save(); WinEBox.IsChecked = previous;
             MessageBox.Show(this, ex.Message, "Couldn't change Win+E");
         }
+        finally{ShowValues();}
     }
 }

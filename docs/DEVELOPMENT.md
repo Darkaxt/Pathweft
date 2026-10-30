@@ -6,10 +6,10 @@ Maintain the active checkout on D:. `origin` is `Darkaxt/Pathweft`; `upstream` i
 `limburatorul/file-labs`. Select the fork as the GitHub CLI default. Preserve
 upstream history/notices and never publish project changes to upstream by mistake.
 
-Tools: Windows, PowerShell 7, Git, GitHub CLI, and SDK 8.0.427 (or compatible patch
-selected by `global.json`). No Android/MAUI workload is needed for this WPF project.
-Inno Setup belongs to packaging, not this compile. Select/verify the supported
-runtime before final release rather than silently upgrading the baseline now.
+Tools: Windows, PowerShell 7, Git, GitHub CLI, and SDK10.0.403 (or compatible patch
+selected by `global.json`). S8 targets .NET10 LTS for delivery; earlier stages
+used .NET8. No Android/MAUI workload is needed for this WPF project. Inno Setup
+belongs to packaging, not this compile. See S8-DELIVERY.md for dependency decisions.
 
 ## Compilation
 
@@ -45,10 +45,32 @@ S1-S3 trials leave the user's default file manager, startup and Windows Search
 unchanged. S6/S7 add explicitly planned shell/search migration boundaries;
 planning does not activate them. Installer/update/uninstall belongs to S8.
 
-Inherited `build.ps1` still writes/removes staging directly. Its identity strings
-and installer AppId are isolated, but packaging has not been executed/accepted.
-Adapt its lifecycle, outputs and cleanup in S8. The new launcher is a bounded
-development compile, not an alternate release engine.
+`build.ps1` now creates unique native/build staging without deleting output.
+`-Candidate` creates an explicitly unpublished qualification package from the
+current source. Final packaging requires a clean verified commit and writes
+versioned installer/portable/application-source/dependency-source assets and
+checksums under dist/. It uses the same required development compile launcher.
+Prepare pinned native inputs with `Prepare-S8ReleaseDependencies.ps1` and full
+corresponding source with `Prepare-S8ReleaseSources.ps1` before packaging.
+The pinned per-user Inno compiler is a build input, never a product dependency.
+
+`Invoke-S8Verification.ps1` uses app-owned hidden rendered/action diagnostics,
+isolated profile/registry roots and a foreground observer. It sends no desktop
+input. `Invoke-S8PackageChecks.ps1 -DeliveryRoot ... -InstallTrial` verifies an
+actual package and installs/updates/uninstalls in an exact owned directory using
+silent, non-elevated children. Folder handlers remain unchanged by default;
+the separately explicit `Invoke-S8InstallChecks.ps1 -LiveRoutingTrial` is for a
+coordinated native routing trial, not routine background validation. The latter
+has previous real restoration evidence; do not repeat live mutations merely
+because packaging changed. Test processes synchronize through owned events and
+actual native exit handles, including updater PID/creation-time identity.
+
+Do not activate the user's host windows or synthesize mouse/keyboard input for
+remaining caller qualification. App diagnostics and direct Shell calls provide
+specific automated evidence; the ordinary StartAllBack menu action needs a
+user-controlled action or a genuinely isolated supported environment. Keep that
+gap explicit. Candidate packaging and silent host-directory trials are not a
+published release or evidence of a separate Windows VM.
 
 `Pathweft.exe --selftest` is the inherited source/filesystem regression entry
 point. `scripts/Invoke-SourceSelfTest.ps1` binds its profile/temp to the registered

@@ -9,6 +9,10 @@ namespace FileExplorer;
 
 public partial class PaneView
 {
+    internal void RefreshAppearance()
+    {
+        foreach(var entry in Items)entry.RefreshAppearance();
+    }
     const uint SearchPageSize = 200;
     CancellationTokenSource indexedCancellation;
     bool indexedSearch;

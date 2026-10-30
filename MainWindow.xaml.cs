@@ -18,6 +18,8 @@ public partial class MainWindow : Window
 {
     PaneView active;
     PaneView Other => active == Left ? Right : Left;
+    internal string UpdateInstallationBlocker=>jobs.Any(job=>job.Active)?"Finish or cancel the active transfers before installing the update."
+        :EditorWindow.HasOpenWindow?"Close the editor after saving your work, then install the update.":null;
 
     public MainWindow()
     {
@@ -150,11 +152,10 @@ public partial class MainWindow : Window
             if (startHidden) { FinishHiddenStart(); return; } // started at sign-in: shown by the notification-area icon later
             // Started by the Win+E agent (--front): Windows' foreground lock keeps a freshly started
             // background-launched window behind the current one.
-            if (Environment.GetCommandLineArgs().Contains("--front")) TakeForeground();
 #if DEBUG
             if (!HiddenTrialPresentation.Enabled)
 #endif
-            { Topmost = true; Topmost = false; Activate(); active.FocusList(); }
+            { if (Environment.GetCommandLineArgs().Contains("--front")) TakeForeground(); Topmost = true; Topmost = false; Activate(); active.FocusList(); }
         };
     }
 
@@ -183,7 +184,7 @@ public partial class MainWindow : Window
         HwndSource.FromHwnd(hwnd).CompositionTarget.BackgroundColor = Colors.Transparent;
         var m = new Margins { L = -1, R = -1, T = -1, B = -1 };
         DwmExtendFrameIntoClientArea(hwnd, ref m);
-        int dark = 1, backdrop = Settings.Backdrop;
+        int dark = Appearance.Light ? 0 : 1, backdrop = Appearance.Native ? 1 : Settings.Backdrop;
         DwmSetWindowAttribute(hwnd, 20, ref dark, sizeof(int));     // dark title bar
         DwmSetWindowAttribute(hwnd, 38, ref backdrop, sizeof(int)); // DWMWA_SYSTEMBACKDROP_TYPE: 1 none, 2 mica, 3 acrylic
     }
@@ -250,19 +251,21 @@ public partial class MainWindow : Window
         return bgImage;
     }
 
-    public static Brush Tint() =>
-        new SolidColorBrush(Color.FromArgb((byte)(Settings.Backdrop == 1 ? 255 : Settings.Opacity * 2.55), 0x0A, 0x0D, 0x13));
+    public static Brush Tint() => Appearance.WindowBrush();
 
     public static void SetBackdrop(Window w)
     {
         var h = new WindowInteropHelper(w).Handle;
         if (h == IntPtr.Zero) return;
-        int b = Settings.Backdrop;
+        int b = Appearance.Native ? 1 : Settings.Backdrop;
         DwmSetWindowAttribute(h, 38, ref b, sizeof(int));
+        int dark = Appearance.Light ? 0 : 1;
+        DwmSetWindowAttribute(h, 20, ref dark, sizeof(int));
     }
 
     public void ApplyAppearance()
     {
+        Appearance.Apply();
         Root.Background = Tint();
         SetBackdrop(this);
         Application.Current.Resources["ItemTips"] = Settings.ItemTips; // the rows' tooltips (App.xaml)
@@ -275,11 +278,13 @@ public partial class MainWindow : Window
         Root.LayoutTransform = Settings.TextScale > 1 ? new ScaleTransform(Settings.TextScale, Settings.TextScale) : null;
         SidebarPanel.LayoutTransform = Settings.SidebarScale != 1 ? new ScaleTransform(Settings.SidebarScale, Settings.SidebarScale) : null;
         Left.ApplyScales(); Right.ApplyScales();
+        Left.RefreshAppearance(); Right.RefreshAppearance();
+        foreach(var widget in Application.Current.Windows.OfType<SearchWidgetWindow>()) widget.Pane.RefreshAppearance();
         taskbarSearch?.Widget?.ApplyTextScale();
         ApplyPreviewAppearance();
         ApplyArchiveAppearance();
         BgImage.Source = BackgroundPicture(Settings.BackgroundImage);
-        BgLayer.Visibility = BgImage.Source != null ? Visibility.Visible : Visibility.Collapsed;
+        BgLayer.Visibility = !Appearance.Native && BgImage.Source != null ? Visibility.Visible : Visibility.Collapsed;
         BgLayer.Opacity = Settings.ImageOpacity / 100;
         // a blur fades towards transparent at the picture's edges, so the picture is made larger by
         // the radius and the overflow clipped
@@ -298,7 +303,7 @@ public partial class MainWindow : Window
     {
         var c = AccentColor;
         Shade("Accent", 0xFF); Shade("AccentEdge", 0xA6); Shade("AccentSoft", 0x45);
-        var (fill, text) = Selection(c, Settings.AccentStrength);
+        var (fill, text) = Appearance.Selection(c);
         Put("AccentSelect", fill); Put("AccentSelectText", text);
         void Shade(string key, byte alpha)
         {
@@ -308,9 +313,7 @@ public partial class MainWindow : Window
         }
         static void Put(string key, Color color)
         {
-            var brush = new SolidColorBrush(color);
-            brush.Freeze();
-            Application.Current.Resources[key] = brush;
+            Appearance.SetBrush(key,color);
         }
     }
 
@@ -339,8 +342,7 @@ public partial class MainWindow : Window
         return (Math.Max(lx, ly) + 0.05) / (Math.Min(lx, ly) + 0.05);
     }
 
-    public static Color AccentColor =>
-        ((SolidColorBrush)Hex(Settings.Accent)).Color;
+    public static Color AccentColor => Appearance.Accent;
 
     public void RefreshPanes()
     {
@@ -469,9 +471,15 @@ public partial class MainWindow : Window
     // taskbar) → just bring the existing window to the front, like switching to it.
     public void OpenFromOutside(string path)
     {
+#if DEBUG
+        if(S8ShellTrial.Enabled&&path=="--s8-close"){Quit();return;}
+#endif
         if (startHidden) FinishHiddenStart(); // opened before the sign-in start finished drawing
         if (!IsVisible) Show(); // hidden to the notification area
         if (!string.IsNullOrEmpty(path)) OpenPath(active, path);
+#if DEBUG
+        if(S8ShellTrial.Enabled){CaptureShellRequest(path);return;}
+#endif
         if (WindowState == WindowState.Minimized) WindowState = WindowState.Normal;
         // Win+E arrives straight from the agent now, which can't pass on the right to take focus (a
         // process started only to relay it could, at ~175 ms a press).
@@ -518,13 +526,8 @@ public partial class MainWindow : Window
     /// Find duplicates in this folder (and its subfolders, if asked in the window), in a window of its own.
     void FindDuplicates(params string[] folders) => new DuplicatesWindow(this, folders).Show();
 
-    /// Explorer on purpose: the agent is told to leave the window alone instead of taking it over.
-    static void OpenInExplorer(string arguments)
-    {
-        using (var key = Microsoft.Win32.Registry.CurrentUser.CreateSubKey(Agent.StateKey))
-            key.SetValue(Agent.ExplorerWantedValue, DateTime.UtcNow.Ticks, Microsoft.Win32.RegistryValueKind.QWord);
-        Process.Start("explorer.exe", arguments);
-    }
+    // An explicit Explorer action bypasses the default folder verb; no watcher takes it over.
+    static void OpenInExplorer(string arguments) => Process.Start("explorer.exe", arguments);
 
     void SidebarSplitter_DragCompleted(object s, System.Windows.Controls.Primitives.DragCompletedEventArgs e)
     {
@@ -905,8 +908,7 @@ public partial class MainWindow : Window
 
     // Parsed once per colour and frozen: rows ask for their icon and age colours as they are built, and a fresh
     // parse per row was part of drawing the first lists (1.0.44). Frozen brushes are also cheaper to draw.
-    static readonly System.Collections.Concurrent.ConcurrentDictionary<string, Brush> hexBrushes = new();
-    public static Brush Hex(string c) => hexBrushes.GetOrAdd(c, k => { var b = (Brush)new BrushConverter().ConvertFrom(k); b.Freeze(); return b; });
+    public static Brush Hex(string c) => Appearance.Brush(c);
 
     public static string Fmt(long b)
     {

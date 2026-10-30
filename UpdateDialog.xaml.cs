@@ -35,6 +35,7 @@ public partial class UpdateDialog : Window
             Status.Text = "This copy is portable: download the portable zip from the page that just opened and unpack it over this folder. Your settings in Data stay.";
             return;
         }
+        if(Owner is MainWindow current&&current.UpdateInstallationBlocker is { } blocker){Status.Text=blocker;return;}
         UpdateButton.IsEnabled = LaterButton.IsEnabled = false;
         Progress.Visibility = Visibility.Visible;
         Status.Text = "Downloading…";
@@ -42,6 +43,11 @@ public partial class UpdateDialog : Window
         {
             var progress = new Progress<double>(p => { Progress.Value = p; Status.Text = $"Downloading… {p * 100:0}%"; });
             var installer = await Updater.Download(release, progress, cancel.Token);
+            if(Owner is MainWindow owner&&owner.UpdateInstallationBlocker is { } pending)
+            {
+                Status.Text=pending;Progress.Visibility=Visibility.Collapsed;
+                UpdateButton.IsEnabled=LaterButton.IsEnabled=true;return;
+            }
             Status.Text = "Installing — Pathweft will restart.";
             if (!Updater.InstallAndRestart(installer))
             {
@@ -52,7 +58,7 @@ public partial class UpdateDialog : Window
             }
             Application.Current.Shutdown(); // the installer replaces our files; nothing of ours may stay
         }
-        catch (Exception ex) when (ex is HttpRequestException or IOException or TaskCanceledException)
+        catch (Exception ex) when (ex is HttpRequestException or IOException or TaskCanceledException or System.ComponentModel.Win32Exception)
         {
             Progress.Visibility = Visibility.Collapsed;
             Status.Text = ex.Message;

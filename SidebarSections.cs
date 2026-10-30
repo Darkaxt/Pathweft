@@ -25,8 +25,8 @@ public partial class MainWindow
         var tree = new TreeView { Background = Brushes.Transparent, BorderThickness = new(0), Foreground = Hex("#E8EEF6"), Margin = new(2, 0, 0, 0) };
         // The default TreeViewItem paints its selection with the system colours — a white block on this
         // dark sidebar. These are the brushes its template asks for.
-        tree.Resources[SystemColors.HighlightBrushKey] = Hex("#404C8DFF");
-        tree.Resources[SystemColors.HighlightTextBrushKey] = Hex("#F2F6FB");
+        tree.Resources[SystemColors.HighlightBrushKey] = (Brush)FindResource("AccentSelect");
+        tree.Resources[SystemColors.HighlightTextBrushKey] = (Brush)FindResource("AccentSelectText");
         tree.Resources[SystemColors.InactiveSelectionHighlightBrushKey] = Hex("#26FFFFFF");
         tree.Resources[SystemColors.InactiveSelectionHighlightTextBrushKey] = Hex("#E8EEF6");
         // The tree's own ScrollViewer is never scrollable here (the tree is as tall as its content) but still

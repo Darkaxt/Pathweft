@@ -13,10 +13,9 @@ namespace FileExplorer;
 //     automatic one stays quiet and tries again next hour;
 //   • "Later" silences that one version for this session only, and the manual check in Settings
 //     ignores it, because asking explicitly deserves an answer;
-//   • updating downloads the release's installer, checks its size and SHA-256 against the GitHub asset,
-//     starts it through UAC (per machine since 1.0.48) and quits: nothing in this process can outlive
-//     the installer that is about to overwrite it. The installer waits for us to go and starts the app
-//     again itself (a [Run] entry for silent installs in Pathweft.iss, as the signed-in user).
+//   • updating verifies the installer size and published SHA-256, then starts
+//     the per-user installer with this process's identity and installation path.
+//     Setup waits for actual exit, stops only the owned helper, and restarts it.
 public static class Updater
 {
     public const string Repo = "Darkaxt/Pathweft";
@@ -114,18 +113,16 @@ public static class Updater
         return path;
     }
 
-    /// Starts the installer and returns true; the caller then quits so it can replace us. Since 1.0.48 it installs per
-    /// machine, so it goes through ShellExecute and the UAC prompt (CreateProcess would fail with error 740). It waits for
-    /// this window to close, closes the agent itself and starts Pathweft again ([Run] with WizardSilent, Pathweft.iss).
-    /// False when the user said no to the prompt: nothing changed, the app carries on.
+    /// Start the per-user update. Setup observes this exact process's exit;
+    /// manual installs do not force-close other windows or active transfers.
     public static bool InstallAndRestart(string installer)
     {
         try
         {
-            // Not Verb = "runas": started elevated, Setup has no un-elevated user to go back to, and its runasoriginaluser restart
-            // brought the app back as administrator (26.10.2026: Pathweft, whose pipe then refused every hand-off). Setup asks for
-            // elevation itself (PrivilegesRequired=admin, asInvoker manifest) and restarts the app as the user.
-            Process.Start(new ProcessStartInfo(installer, "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART") { UseShellExecute = true })?.Dispose();
+            var launch=new ProcessStartInfo(installer){UseShellExecute=false,CreateNoWindow=true,WindowStyle=ProcessWindowStyle.Hidden};
+            using var caller=Process.GetCurrentProcess();
+            foreach(var argument in new[]{"/VERYSILENT","/SUPPRESSMSGBOXES","/NORESTART","/RESTARTAPP=1","/WAITPID="+caller.Id,"/WAITCREATED="+caller.StartTime.ToUniversalTime().ToFileTimeUtc().ToString("X16"),"/DIR="+AppContext.BaseDirectory.TrimEnd('\\')})launch.ArgumentList.Add(argument);
+            using var process=Process.Start(launch)??throw new IOException("The installer did not start.");
             return true;
         }
         catch (System.ComponentModel.Win32Exception ex) when (ex.NativeErrorCode == 1223) { return false; } // ERROR_CANCELLED: UAC declined

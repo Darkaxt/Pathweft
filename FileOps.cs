@@ -101,7 +101,7 @@ public partial class MainWindow
     /// Renames in two steps (everything to a temporary name first), so new names may reuse old ones —
     /// renumbering 3,4,5 into 1,2,3 would otherwise collide with itself. Any failure puts every file
     /// back where it was and rethrows. Returns the plan that reverses it.
-    static List<(string Path, string NewName)> RenameAll(List<(string Path, string NewName)> plan)
+    internal static List<(string Path, string NewName)> RenameAll(List<(string Path, string NewName)> plan)
     {
         var at = plan.Select(p => p.Path).ToList(); // where each item is right now
         try
@@ -122,9 +122,22 @@ public partial class MainWindow
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
+            // Upstream 5fc2d5d: a final name may occupy another item's original
+            // name. Park completed renames before restoring any originals.
+            for (int i = 0; i < plan.Count; i++)
+                if (at[i] != plan[i].Path && !Path.GetFileName(at[i]).StartsWith(".pathweft-", StringComparison.Ordinal))
+                    try
+                    {
+                        var temporary = Path.Combine(Path.GetDirectoryName(plan[i].Path), $".pathweft-{Guid.NewGuid():N}");
+                        MovePath(at[i], temporary); at[i] = temporary;
+                    }
+                    catch (Exception park) when (park is IOException or UnauthorizedAccessException) { }
+            var notBack = new List<string>();
             for (int i = 0; i < plan.Count; i++)
                 if (at[i] != plan[i].Path)
-                    try { MovePath(at[i], plan[i].Path); } catch (Exception back) when (back is IOException or UnauthorizedAccessException) { }
+                    try { MovePath(at[i], plan[i].Path); }
+                    catch (Exception back) when (back is IOException or UnauthorizedAccessException) { notBack.Add($"{at[i]} → {plan[i].Path}: {back.Message}"); }
+            if (notBack.Count > 0) throw new IOException(ex.Message + "\nNames requiring recovery:\n" + string.Join("\n", notBack), ex);
             throw;
         }
         return plan.Select((p, i) => (at[i], Path.GetFileName(p.Path))).ToList();

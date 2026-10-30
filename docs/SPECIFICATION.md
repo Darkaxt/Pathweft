@@ -1,6 +1,6 @@
 # Pathweft specification
 
-Version 0.8 - 2026-10-30. Owner: Darkaxt.
+Version 0.10 - 2026-10-31. Owner: Darkaxt.
 
 This is the authoritative specification. The derived plan must preserve every
 requirement and acceptance criterion. Material scope changes require explicit
@@ -68,6 +68,44 @@ qualify changed private interfaces on current builds. Exact artifact identities
 remain required for each capture and supported combination; they do not impose a
 product requirement to freeze updates or promise unverified update compatibility.
 
+The user subsequently explicitly directed execution to **jump to S8** and deliver
+the file explorer before continuing the broader Windows search work. S8 now
+depends on completed S1-S5/S4R/S4U, not S6/S7. S6 is parked by this user-directed
+priority boundary and S7 remains unstarted; their requirements remain required
+later work, outside this core file-explorer release. They are not satisfied by
+S8 or removed from the program. Overall program completion remains distinct from
+this S8 core release. The Sandbox was shut down at the user's request.
+
+S8 must keep shell integration opt-in in its proper Windows integration settings
+section, review and selectively adopt useful upstream changes before compilation,
+and provide an alternate restrained Windows-style theme with accent support.
+Use the user's File Labs and Explorer screenshots plus Huashu design guidance as
+references; retain the existing appearance as a selectable option. This explicit
+core-first delivery instruction supersedes earlier all-stages-before-release
+ordering for this release only. It does not authorize resuming S6/S7 or changing
+live Windows Search/Outlook configuration.
+
+The user requires subsequent verification without taking over active host
+windows. Prefer the existing app-owned hidden diagnostics and direct native
+Shell callers. Do not activate their windows or synthesize desktop input.
+Keep any remaining actual menu-caller criterion explicit until user-controlled
+or genuinely isolated evidence qualifies it; hidden rendering alone does not
+prove StartAllBack's menu action. This execution constraint does not waive
+SHELL-01 or authorize restarting the parked Sandbox/S6 work.
+
+The user then explicitly confirmed that the StartAllBack-specific folder-link
+check belongs to postponed S6. Normal filesystem folder/shortcut routing has
+already been qualified independently; do not make further Start-menu actions
+an S8 core-release gate. SAB-06 owns the actual StartAllBack entry points,
+including their Shell/known-folder/library distinctions and direct routing.
+This preserves that requirement in S6 rather than waiving its eventual acceptance.
+
+On 2026-10-31 the user explicitly stopped all Sandbox work and directed S8
+delivery and installation on the host. Use the completed actual per-user host
+install/update/uninstall and preservation trials, then verify the final published
+and installed package. A separate Sandbox/guest acceptance run is no longer an
+S8 gate. Keep integration opt-in and preserve existing settings during installation.
+
 ## 2. Source baseline and provenance
 
 | Source | Pinned baseline | Role |
@@ -113,6 +151,8 @@ criteria apply within the implementing stage and again at the packaged boundary.
 | CORE-01 | Give Pathweft independent executable/product, settings, IPC/single-instance, agent/startup, shell, installer and updater identities. Verify side-by-side isolation from File Labs: no forwarding into, migrating, overwriting or uninstalling it. Establish isolation before ordinary-user-state runtime trials. |
 | CORE-02 | Preserve usable folder navigation, tabs, one/two panes, selection, keyboard actions, clipboard and drag/drop. Verify representative real folders and cross-pane operations, including a large listing. Inherited source is not proof of runtime correctness. |
 | CORE-03 | One settings interface owns integrations and module controls; normal views remain uncluttered. Before accepting UI changes, establish concrete layout/display-scale expectations and inspect current rendered screenshots at representative sizes. |
+| CORE-04 | S8 provides an alternate Native appearance with neutral surfaces, restrained selection/focus and Windows accent support. Appearance settings select the existing or Native theme and system/custom accent; persist the choice and apply it consistently to panes, settings, taskbar search and product dialogs. Follow Windows light/dark and high-contrast preferences where supported; retain readable text and keyboard focus. Inspect actual rendered single/split layouts and settings at 100%/150% scale and representative window widths, including live theme/accent changes and restart persistence. Keep the existing theme available. |
+| CORE-05 | Before S8 compilation, review upstream source/dependency drift against the imported revisions, record concrete adoption/non-adoption decisions and integrate applicable fixes. Preserve fork identity, implemented Everything/native archive/preview/transfer behavior, source provenance and notices. Adopted behavior receives focused regression checks and the final integrated release verification; do not blindly replace fork implementations or upgrade dependencies without a relevant benefit. |
 
 ### File visibility and read-only cues (S4U)
 
@@ -308,9 +348,9 @@ Primary sources: [Windows indexing scope](https://support.microsoft.com/en-us/wi
 | ID | Requirement and acceptance |
 | --- | --- |
 | LIFE-01 | Own initialization, readiness, cancellation and cleanup through actual state/events. Do not copy fixed sleeps/retries or arbitrary timeout-driven synchronization from donors. Isolate unavoidable external timeouts at their boundary. Verify owned helper exit before scratch cleanup. |
-| SHELL-01 | Folder/default-handler and Win+E integration is opt-in, reversible and verified. Investigate Directory Opus's native Explorer replacement behavior and replace the inherited timed hide/poll/close Explorer-window takeover for covered entry points with launch-boundary routing. Qualify normal folder/default and explore verbs, shortcuts, Win+E, StartAllBack links, and SHOpenFolderAndSelectItems-style folder-plus-selection requests, including applicable caller architectures and cold/warm application states. Keep unsupported virtual locations, explicit explorer.exe launches and common Open/Save dialog behavior explicit; do not claim universal interception. Preserve actual prior registrations/owners, respect another default manager, and verify disable/uninstall/restoration, no loops or duplicate/transient Explorer windows for covered routes. Native code stays limited to routing; do not host the managed file manager inside caller processes or substitute global process-creation interception. Folder-browser scope does not imply desktop-shell or common-dialog replacement. |
-| DELIVERY-01 | One installation, settings owner and update channel. Pin/package Everything and native preview dependencies; preserve external instances/data and prevent upstream updates replacing Pathweft. Verify install/update/uninstall in an isolated supported Windows environment. |
-| DELIVERY-02 | After all stages pass, publish one normal versioned Pathweft release here: usable Windows x64 installer and portable package, source/tag, checksums, accurate notes and required source/notices. State signing identity/status honestly. Independently retrieve both assets and verify hashes/version/commit and packaged search/preview/transfer behavior. No setup/intermediate commit is an application release. |
+| SHELL-01 | Folder/default-handler and Win+E integration is opt-in, reversible and verified. Investigate Directory Opus's native Explorer replacement behavior and replace the inherited timed hide/poll/close Explorer-window takeover for covered entry points with launch-boundary routing. Qualify normal folder/default and explore verbs, shortcuts, Win+E, and SHOpenFolderAndSelectItems-style folder-plus-selection requests, including applicable caller architectures and cold/warm application states. The user's explicit scope correction assigns StartAllBack-specific links and Shell/known-folder/library routing to postponed S6/SAB-06; they do not gate S8 core delivery. Keep unsupported virtual locations, explicit explorer.exe launches and common Open/Save dialog behavior explicit; do not claim universal interception. Preserve actual prior registrations/owners, respect another default manager, and verify disable/uninstall/restoration, no loops or duplicate/transient Explorer windows for covered routes. Native code stays limited to routing; do not host the managed file manager inside caller processes or substitute global process-creation interception. Folder-browser scope does not imply desktop-shell or common-dialog replacement. |
+| DELIVERY-01 | One installation, settings owner and update channel. Pin/package Everything and native preview dependencies; preserve external instances/data and prevent upstream updates replacing Pathweft. Under the user's 2026-10-31 instruction stopping Sandbox work, use the completed isolated-directory per-user host install/update/uninstall and preservation trials, then verify the final published and actual host-installed package. Do not reopen a guest environment as a delivery gate. |
+| DELIVERY-02 | After S8 core-release criteria pass under the user's core-first scope, publish one normal versioned Pathweft release here: usable Windows x64 installer and portable package, source/tag, checksums, accurate notes and required source/notices. State signing identity/status honestly. Independently retrieve both assets and verify hashes/version/commit and packaged search/preview/transfer behavior. Identify S6/S7 as undelivered later integration work. No setup/intermediate commit is an application release. |
 | DELIVERY-03 | Preserve original notices, exact donor/dependency revisions and terms; provide applicable GPL source/distribution materials when QuickLook code is imported. Keep private traces, credentials, personal sample paths and machine records out of public source/assets. |
 
 ## 5. Acceptance, stages and completion
@@ -345,5 +385,6 @@ current implementation authorization and reconciliation are recorded in the plan
   scope reduction, subject to actual consumer/semantic coverage and verified recovery.
 - Existing application identity stays unchanged during setup; S1 must isolate it
   before runtime trials. No claim that the inherited installer is ready.
-- No implementation-stage releases. The final release belongs to S8 after all
-  prerequisite criteria pass under actual implementation authorization.
+- No releases for intermediate edits or component work. The user-authorized core
+  release belongs to S8 after its revised prerequisites/criteria pass; S6/S7
+  remain later integration work and do not gate this core release.

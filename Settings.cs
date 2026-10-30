@@ -22,6 +22,9 @@ public static class Settings
     public static int Backdrop = 3;          // 1 solid, 2 mica, 3 acrylic
     public static double Opacity = 70;       // 30–100, floor keeps text readable
     public static string Accent = "#4C8DFF"; // Protagonist Labs blue by default
+    public static bool NativeTheme;          // alternate Windows-style appearance; existing profiles keep their theme
+    public static string NativeMode = "system";
+    public static bool WindowsAccent = true; // used by the Native theme; custom color remains stored independently
     public static double RowPad = 3;         // row height: 1 compact, 3 normal, 6 roomy
     public static bool Animations = true;
     public static bool SmoothScroll;         // the wheel glides the file list instead of jumping
@@ -48,7 +51,7 @@ public static class Settings
     public static bool ShortcutsWithFolders;     // shortcuts to folders sort among the folders, not the files
     public static string LastSeenVersion = "";   // What's new is shown once per version
     public static bool NativeMenu;          // right-click shows the Windows menu instead of ours
-    public static bool TakeWinE = true;         // with Windows integration on, Win+E opens Pathweft; off = File Explorer
+    public static bool TakeWinE;         // with Windows integration on, Win+E opens Pathweft; off = File Explorer
     public static bool CloseToTray;             // closing hides the window to the notification area; the next open is instant
     public static bool CloseEmptyPane;          // closing the second pane's last tab hides that pane (one pane), as Ctrl+P does
     public static int TipDelay = 1500;          // ms before a tooltip shows; WPF's own wait was 1000 (1.0.51: "a little slower")
@@ -69,6 +72,12 @@ public static class Settings
             if (value) k.SetValue(RunValue, $"\"{Environment.ProcessPath}\" --tray");
             else k.DeleteValue(RunValue, throwOnMissingValue: false);
         }
+    }
+    internal static void RemoveOwnedStartup()
+    {
+        if(Profile!=null)return;
+        using var key=Registry.CurrentUser.OpenSubKey(RunKey,true);
+        if(key?.GetValue(RunValue) as string==$"\"{Environment.ProcessPath}\" --tray")key.DeleteValue(RunValue,false);
     }
     public static List<string> RecentFolders = new();      // newest first, for the history menu
     public static List<string> RecentDestinations = new(); // where copies and moves went, newest first, for Copy to / Move to
@@ -125,6 +134,9 @@ public static class Settings
                 case "backdrop" when int.TryParse(v, out var b) && b is >= 1 and <= 3: Backdrop = b; break;
                 case "opacity" when double.TryParse(v, CultureInfo.InvariantCulture, out var o) && double.IsFinite(o): Opacity = Math.Clamp(o, 30, 100); break;
                 case "accent" when System.Text.RegularExpressions.Regex.IsMatch(v, "^#[0-9a-fA-F]{6}$"): Accent = v; break;
+                case "theme.native": NativeTheme = v == "1"; break;
+                case "theme.mode" when v is "system" or "light" or "dark": NativeMode = v; break;
+                case "theme.windowsaccent": WindowsAccent = v == "1"; break;
                 case "rowpad" when double.TryParse(v, CultureInfo.InvariantCulture, out var rp) && double.IsFinite(rp): RowPad = Math.Clamp(rp, 0, 10); break;
                 case "animations": Animations = v == "1"; break;
                 case "smoothscroll": SmoothScroll = v == "1"; break;
@@ -202,6 +214,9 @@ public static class Settings
             $"backdrop={Backdrop}",
             $"opacity={Opacity.ToString(CultureInfo.InvariantCulture)}",
             $"accent={Accent}",
+            $"theme.native={(NativeTheme ? 1 : 0)}",
+            $"theme.mode={NativeMode}",
+            $"theme.windowsaccent={(WindowsAccent ? 1 : 0)}",
             $"rowpad={RowPad.ToString(CultureInfo.InvariantCulture)}",
             $"animations={(Animations ? 1 : 0)}",
             $"smoothscroll={(SmoothScroll ? 1 : 0)}",
@@ -254,97 +269,14 @@ public static class Settings
          .Concat(FolderSorts.Select(s => $"sort={s.Value.Key}|{(s.Value.Desc ? 1 : 0)}|{s.Key}"))
          .Concat(DateGroupFolders.Select(f => $"groupdate={f}"));
 
-    // ---- Default file manager (per user, HKCU only; turning it off removes every key it added) ----
-    // Folder/drive double-clicks go through the Directory/Drive default verb; Win+E through the
-    // "This PC" launcher CLSID. Explorer's own window navigation is unaffected.
-    const string Verb = "pathweft";
-    const string WinE = @"Software\Classes\CLSID\{52205fd8-5dfb-447d-801a-d0b52f2e83e1}";
-    static readonly string[] Types = { "Directory", "Drive" };
-
-    public static bool IsDefaultFileManager =>
-        (Registry.CurrentUser.OpenSubKey(@"Software\Classes\Directory\shell")?.GetValue("") as string) == Verb;
-
-    // Whatever was the default before Pathweft (e.g. another file manager's verb, or a Win+E
-    // override), so switching Pathweft off hands folders back to it instead of to nothing.
-    const string Backup = @"Software\Darkaxt\Pathweft\PreviousDefault";
-
-    public static void SetDefaultFileManager(bool on)
-    {
-        if (Profile != null) throw new InvalidOperationException("An isolated test profile cannot change Windows integration.");
-        var exe = Environment.ProcessPath;
-        var hk = Registry.CurrentUser;
-        using var backup = hk.CreateSubKey(Backup);
-        foreach (var t in Types)
-        {
-            var shellPath = $@"Software\Classes\{t}\shell";
-            if (on)
-            {
-                using var shell = hk.CreateSubKey(shellPath);
-                if (shell.GetValue("") is string prev && prev != Verb) backup.SetValue(t, prev);
-                shell.SetValue("", Verb);
-                using var verb = shell.CreateSubKey(Verb);
-                verb.SetValue("", "Open in Pathweft");
-                verb.SetValue("Icon", exe);
-                using var cmd = verb.CreateSubKey("command");
-                cmd.SetValue("", $"\"{exe}\" \"%1\"");
-            }
-            else
-            {
-                using var shell = hk.OpenSubKey(shellPath, writable: true);
-                if (shell == null) continue;
-                if (shell.GetValue("") as string == Verb)
-                {
-                    // restore the previous default only if its verb is still there (the other app may be gone)
-                    if (backup.GetValue(t) is string prev && shell.OpenSubKey(prev) != null) shell.SetValue("", prev);
-                    else shell.DeleteValue("");
-                }
-                shell.DeleteSubKeyTree(Verb, throwOnMissingSubKey: false);
-                backup.DeleteValue(t, throwOnMissingValue: false);
-            }
-        }
-
-        SetWinE(on && TakeWinE);
-
-        // Win+E itself: the key above is ignored on recent Windows 11, so a background agent catches it.
-        // With Win+E released the agent stays on: it also hands Explorer windows other apps open to Pathweft.
-        if (on) Agent.Enable(exe); else Agent.Disable();
-    }
-
-    /// Win+E through the "This PC" launcher key; off gives it back to whatever had it (Explorer). The agent
-    /// reads TakeWinE itself, at each press.
+    // Explicit per-user launch-boundary integration. The two settings are independent.
+    public static bool IsDefaultFileManager => WindowsIntegration.Enabled;
+    public static void SetDefaultFileManager(bool on) => WindowsIntegration.SetEnabled(on);
     public static void SetWinE(bool on)
     {
-        var exe = Environment.ProcessPath;
-        var hk = Registry.CurrentUser;
-        using var backup = hk.CreateSubKey(Backup);
-        var winEPath = WinE + @"\shell\opennewwindow\command";
-        if (!on)
-            using (var cur = hk.OpenSubKey(winEPath))
-                // not ours (never taken, or Win+E was off when Pathweft became the default): nothing to give back
-                if ((cur?.GetValue("") as string)?.Contains("Pathweft.exe", StringComparison.OrdinalIgnoreCase) != true) return;
-        if (on)
-        {
-            using var cmd = hk.CreateSubKey(winEPath);
-            var prev = cmd.GetValue("") as string;
-            // any Pathweft build counts as ours: a dev build's path was once kept as "the previous
-            // Win+E", which switching Pathweft off would then have restored instead of Explorer
-            if (!string.IsNullOrEmpty(prev) && !prev.Contains("Pathweft.exe", StringComparison.OrdinalIgnoreCase))
-            {
-                backup.SetValue("WinE", prev);
-                backup.SetValue("WinEDelegate", cmd.GetValue("DelegateExecute") as string ?? "");
-            }
-            cmd.SetValue("", $"\"{exe}\"");
-            cmd.SetValue("DelegateExecute", "");
-        }
-        else if (backup.GetValue("WinE") is string prevWinE)
-        {
-            using var cmd = hk.CreateSubKey(winEPath);
-            cmd.SetValue("", prevWinE);
-            cmd.SetValue("DelegateExecute", backup.GetValue("WinEDelegate") as string ?? "");
-            backup.DeleteValue("WinE", false); backup.DeleteValue("WinEDelegate", false);
-        }
-        else hk.DeleteSubKeyTree(WinE + @"\shell\opennewwindow", throwOnMissingSubKey: false); // only what we added
+        if (on) Agent.EnableAsync(Environment.ProcessPath).GetAwaiter().GetResult(); else Agent.Disable();
     }
+
 }
 
 // Pathweft never discovers or migrates an upstream application's profile.

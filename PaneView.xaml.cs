@@ -140,10 +140,15 @@ public class Entry : INotifyPropertyChanged
             return Stops[^1].c;
         }
     }
-    public Brush AgeBrush { get { if (NoDate) return Brushes.Transparent; var b = new SolidColorBrush(AgeColor); b.Freeze(); return b; } }
+    public Brush AgeBrush { get { if (NoDate) return Brushes.Transparent; if(Appearance.Native)return (Brush)Application.Current.Resources["AgeBackground"]; var b = new SolidColorBrush(AgeColor); b.Freeze(); return b; } }
     public Brush AgeTextBrush
     {
-        get { var c = AgeColor; return 0.299 * c.R + 0.587 * c.G + 0.114 * c.B > 140 ? MainWindow.Hex("#E6111111") : MainWindow.Hex("#E6FFFFFF"); }
+        get { if(Appearance.Native)return (Brush)Application.Current.Resources["AgeForeground"]; var c = AgeColor; return 0.299 * c.R + 0.587 * c.G + 0.114 * c.B > 140 ? MainWindow.Hex("#E6111111") : MainWindow.Hex("#E6FFFFFF"); }
+    }
+    internal void RefreshAppearance()
+    {
+        PropertyChanged?.Invoke(this,new(nameof(AgeBrush)));
+        PropertyChanged?.Invoke(this,new(nameof(AgeTextBrush)));
     }
     public string Age
     {
@@ -451,13 +456,13 @@ public partial class PaneView : UserControl
         isActivePane = on;
         if (Card.Background != cardFill) { Card.Background = cardFill; Card.BorderBrush = cardEdge; Glow.BorderBrush = glowColor; }
         var accent = ((SolidColorBrush)Application.Current.Resources["AccentEdge"]).Color;
-        Animate(cardFill, ((SolidColorBrush)MainWindow.Hex(on ? "#12FFFFFF" : "#0A000000")).Color);
+        Animate(cardFill, Appearance.Native ? Appearance.Light ? Color.FromRgb(249,249,249) : Color.FromRgb(32,32,32) : ((SolidColorBrush)MainWindow.Hex(on ? "#12FFFFFF" : "#0A000000")).Color);
         Animate(cardEdge, on ? accent : Color.FromArgb(0x0F, 255, 255, 255));
         glowColor.Color = Color.FromRgb(accent.R, accent.G, accent.B); // a discreet glow around the active pane only
-        var glowTo = on ? 0.7 : 0;
+        var glowTo = on && !Appearance.Native ? 0.7 : 0;
         if (Motion.On) Glow.BeginAnimation(OpacityProperty, new DoubleAnimation(glowTo, Quick) { EasingFunction = Ease });
         else { Glow.BeginAnimation(OpacityProperty, null); Glow.Opacity = glowTo; }
-        var fade = on ? 1 : 0.88;
+        var fade = on || Appearance.Native ? 1 : 0.88;
         if (Motion.On) List.BeginAnimation(FileList.RowFadeProperty, new DoubleAnimation(fade, Quick) { EasingFunction = Ease });
         else { List.BeginAnimation(FileList.RowFadeProperty, null); List.RowFade = fade; }
     }
@@ -674,6 +679,7 @@ public partial class PaneView : UserControl
 
     /// Makes `path` the current tab's folder (history, crumbs, tabs) and leaves any search.
     /// Returns the navigation number that later results must still match.
+    string filteredFolder;
     int GoTo(string path, bool record)
     {
 #if DEBUG
@@ -690,6 +696,8 @@ public partial class PaneView : UserControl
         var (key, desc) = Settings.FolderSorts.TryGetValue(path, out var sort) ? sort : ("Name", false);
         if (key != sortKey || desc != sortDesc) ShowSort(key, desc);
         if (searchQuery != null) { searchQuery = null; FilterBox.Text = ""; } // the query would hide most of the new folder
+        else if (!path.Equals(filteredFolder, StringComparison.OrdinalIgnoreCase)) FilterBox.Text = "";
+        filteredFolder = path;
         BuildCrumbs();
         BuildTabs();
         return ++navVersion;
@@ -1052,6 +1060,8 @@ public partial class PaneView : UserControl
         static bool ReadSizes(string v, SearchQuery q)
         {
             if (v.Split('-') is [var lo, var hi] && Bytes(lo) is { } l && Bytes(hi) is { } h) { q.MinSize = l; q.MaxSize = h; return true; }
+            if (v.StartsWith(">=") && Bytes(v[2..]) is { } least) { q.MinSize = least; return true; }
+            if (v.StartsWith("<=") && Bytes(v[2..]) is { } most) { q.MaxSize = most; return true; }
             if (v.StartsWith('>') && Bytes(v[1..]) is { } min) { q.MinSize = min + 1; return true; }
             if (v.StartsWith('<') && Bytes(v[1..]) is { } max) { q.MaxSize = max - 1; return true; }
             if (Bytes(v) is { } at) { q.MinSize = at; return true; } // size:1GB = at least 1 GB
@@ -1358,6 +1368,8 @@ public partial class PaneView : UserControl
             ? $"{sel.Count} selected  ·  {MainWindow.Fmt(sel.Sum(e => Math.Max(0, e.Size)))}"
             : searchQuery != null
                 ? $"{items.Count} found for “{searchQuery}”{(searching ? "  ·  searching…" : items.Count >= MaxResults ? $"  ·  stopped at {MaxResults}" : "")}  ·  Esc goes back"
+            : view?.Filter != null
+                ? $"{view.Cast<Entry>().Count(e => !e.IsUp):N0} of {folders + files:N0} match “{FilterBox.Text.Trim()}”"
             : $"{folders} folders  ·  {files} files  ·  {MainWindow.Fmt(FolderTotal)}{Pending()}";
 
         string Pending()
@@ -2016,8 +2028,11 @@ public partial class PaneView : UserControl
     void Filter_Changed(object s, TextChangedEventArgs e)
     {
         FilterHint.Visibility = FilterBox.Text == "" ? Visibility.Visible : Visibility.Collapsed;
+        FilterClear.Visibility = FilterBox.Text == "" ? Visibility.Collapsed : Visibility.Visible;
         ApplyFilter();
+        if (view != null) UpdateFooter();
     }
+    void FilterClear_Click(object s, RoutedEventArgs e) { ClearFilter(); FilterBox.Focus(); }
     void ApplyFilter()
     {
         if (view == null) return;

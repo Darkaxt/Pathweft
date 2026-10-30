@@ -103,7 +103,10 @@ public static class SizeCache
         try
         {
             Directory.CreateDirectory(Settings.Dir);
-            var keep = map.OrderByDescending(kv => kv.Value.UsedAt).Take(MaxEntries);
+            // ConcurrentDictionary's own snapshot holds its collection locks.
+            // LINQ's ICollection fast path reads Count and later calls CopyTo;
+            // a sizing worker can add entries between those two operations.
+            var keep = map.ToArray().OrderByDescending(kv => kv.Value.UsedAt).Take(MaxEntries);
             Settings.WriteAllLines(FilePath, keep.Select(kv =>
                 string.Create(CultureInfo.InvariantCulture, $"{kv.Value.Size}|{kv.Value.Stamp}|{kv.Value.UsedAt}|{kv.Key}")));
         }

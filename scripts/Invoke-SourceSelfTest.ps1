@@ -1,12 +1,12 @@
 [CmdletBinding()]
-param([Parameter(Mandatory)][string]$ScratchRoot)
+param([Parameter(Mandatory)][string]$ScratchRoot,[string]$Executable)
 $ErrorActionPreference = 'Stop'
 $scratch = [IO.Path]::GetFullPath($ScratchRoot)
-if ($scratch -notmatch '^D:\\Temp\\pathweft-s[1234]-[^\\]+$' -and $scratch -ne 'D:\Temp\pathweft-rars-native') { throw 'Use the registered stage scratch root.' }
+if ($scratch -notmatch '^D:\\Temp\\pathweft-s[1234]-[^\\]+$' -and $scratch -ne 'D:\Temp\pathweft-rars-native' -and $scratch -ne 'D:\Temp\pathweft-s8-delivery') { throw 'Use the registered stage scratch root.' }
 $env:TEMP = $env:TMP = Join-Path $scratch 'temp'
 $env:PATHWEFT_PROFILE = Join-Path $scratch 'selftest-profile'
 [void][IO.Directory]::CreateDirectory($env:PATHWEFT_PROFILE)
-$executable = Join-Path $scratch 'artifacts/bin/FileExplorer/release/Pathweft.exe'
+if(!$Executable){$Executable=Join-Path $scratch 'artifacts/bin/FileExplorer/release/Pathweft.exe'}
 $process = Start-Process -FilePath $executable -ArgumentList '--selftest' -PassThru -Wait -WindowStyle Hidden -RedirectStandardOutput (Join-Path $scratch 'selftest-output.txt') -RedirectStandardError (Join-Path $scratch 'selftest-error.txt')
 Get-Content -LiteralPath (Join-Path $scratch 'selftest-output.txt')
 if ($process.ExitCode -ne 0) {

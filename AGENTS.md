@@ -13,8 +13,9 @@ do not change its requirements or the user's standing instructions.
   findings inventory and affected acceptance are now verified COMPLETE.
   see `docs/verification/2026-10-29-s5.md` for the direct-write contract,
   measured performance limits and actual caller/preservation/recovery evidence.
-  S6 is ACTIVE after the user's reboot, verifying the isolated runtime and native
-  contracts before implementation; S7-S8 remain NOT STARTED.
+  The user explicitly reprioritized S8 core delivery ahead of Windows search work.
+  S8 alone is ACTIVE. S6 is BLOCKED by this user-directed execution boundary,
+  with investigation retained and no working patch; S7 remains NOT STARTED.
   Identify TeraCopy and derive adoption from REA
   evidence before transfer implementation.
 - Keep one ACTIVE stage during authorized implementation. Reconcile complete
@@ -33,6 +34,13 @@ do not change its requirements or the user's standing instructions.
 - Preserve donor provenance/notices. Do not add dynamic plugin infrastructure
   without a current requirement. A build is not runtime/delivery verification.
 - No intermediate product releases; final delivery belongs to S8.
+- S8's authorized core release excludes unfinished S6/S7 integration; do not
+  restart Sandbox or resume those stages automatically. The user explicitly
+  stopped Sandbox work and directed final S8 release/host installation; use the
+  completed real host lifecycle evidence and verify final delivered/installed
+  packages. Review useful upstream
+  changes before compiling. Implement optional Native appearance/accent settings
+  under Appearance and opt-in shell routing under Windows integration.
 - Prefer source/native SDK integration inside Pathweft. The F3D GLB prototype
   belongs to S3; native 7-Zip-backed browsing and rename/copy/cut/paste belong to S4.
 - S6 targets Everything results inside the existing StartAllBack menu, allowing a

@@ -25,6 +25,12 @@ static class Program
     static void Main(string[] args)
     {
 #if DEBUG
+        if(S8ShellTrial.Enabled)
+        {
+            var scratch=Directory.CreateDirectory(Path.Combine(Program.PortableDir,"temp")).FullName;
+            Environment.SetEnvironmentVariable("TEMP",scratch);Environment.SetEnvironmentVariable("TMP",scratch);
+        }
+        if(S8ShellTrial.Enabled&&args.Contains("--s8-stop")){if(Running)HandOff("--s8-close");return;}
         const string transferBenchmark = "--benchmark-s5=";
         if (args.FirstOrDefault(a => a.StartsWith(transferBenchmark)) is { } benchmarkRequest)
         { Environment.ExitCode = S5Benchmark.Run(benchmarkRequest[transferBenchmark.Length..]); return; }
@@ -85,7 +91,10 @@ static class Program
     {
         var s = string.Join(" ", args.Where(a => !a.StartsWith("--"))).Trim();
         while (s.StartsWith('/') && s.IndexOf(',') is > 0 and var comma) s = s[(comma + 1)..].TrimStart();
-        return s.Trim('"').Trim();
+        s=s.Trim('"').Trim();
+        // A quoted drive root may arrive as D:" after Windows consumes the
+        // trailing backslash/quote. A Shell drive request always means its root.
+        return s.Length==2&&char.IsLetter(s[0])&&s[1]==':'?s+"\\":s;
     }
 
     /// Passes a folder to the running window ("" = just come to the front). False if it didn't answer.
@@ -123,11 +132,51 @@ public partial class App : Application
         }
 
         // Called by the installer / uninstaller: same code path as the switch in Settings.
+        if(e.Args.Contains("--prepare-update")||e.Args.Contains("--prepare-uninstall")||e.Args.Contains("--resume-agent"))
+        {
+            Settings.Load();
+            try
+            {
+                if(e.Args.Contains("--resume-agent"))
+                {
+                    if(Settings.TakeWinE&&Agent.OwnsStartup)Agent.EnableAsync(Environment.ProcessPath).GetAwaiter().GetResult();
+                }
+                else
+                {
+                    // Never force-close an app, active transfer or editor.
+                    // The updater supplies its actual caller PID to Setup;
+                    // manual installers report that the window must be closed.
+                    if(Program.Running){Shutdown(2);return;}
+                    Agent.StopForUpdate();
+                    if(e.Args.Contains("--prepare-uninstall"))
+                    {
+                        Settings.SetDefaultFileManager(false);
+                        if(Agent.OwnsStartup)Agent.Disable();
+                        Settings.RemoveOwnedStartup();
+                    }
+                }
+                Shutdown(0);
+            }
+            catch(Exception ex)when(ex is IOException or UnauthorizedAccessException or InvalidOperationException or System.Security.SecurityException or System.ComponentModel.Win32Exception){Shutdown(1);}
+            return;
+        }
+#if DEBUG
+        if(S8ShellTrial.Enabled&&(e.Args.Contains("--s8-wine-on")||e.Args.Contains("--s8-wine-off")))
+        {
+            Settings.Load();Settings.TakeWinE=e.Args.Contains("--s8-wine-on");Settings.Save();
+            Settings.SetWinE(Settings.TakeWinE);Shutdown(0);return;
+        }
+#endif
         if (e.Args.Contains("--set-default") || e.Args.Contains("--unset-default"))
         {
             Settings.Load(); // "Win+E opens Pathweft" may be off
-            try { Settings.SetDefaultFileManager(e.Args.Contains("--set-default")); Shutdown(0); }
-            catch (Exception ex) when (ex is UnauthorizedAccessException or System.Security.SecurityException or IOException) { Shutdown(1); }
+            try
+            {
+                Settings.SetDefaultFileManager(e.Args.Contains("--set-default"));
+                if(e.Args.Contains("--unset-default")) Agent.Disable();
+                Shutdown(0);
+            }
+            catch (Exception ex) when (ex is UnauthorizedAccessException or System.Security.SecurityException or IOException or InvalidOperationException) { Shutdown(1); }
             return;
         }
 
@@ -147,8 +196,9 @@ public partial class App : Application
             listening = Listen();
         }
         Settings.Load(); // before any window: the panes read column widths while being built
+        Appearance.Initialize();
 #if DEBUG
-        if (e.Args.Any(a => a.StartsWith("--verify-s4=") || a.StartsWith("--verify-fileui=") || a.StartsWith("--verify-s5=")) && Environment.GetEnvironmentVariable("PATHWEFT_TEST_HIDDEN") == "1" && !HiddenTrialPresentation.Enabled)
+        if (e.Args.Any(a => a.StartsWith("--verify-s4=") || a.StartsWith("--verify-fileui=") || a.StartsWith("--verify-s5=") || a.StartsWith("--verify-s8=")) && Environment.GetEnvironmentVariable("PATHWEFT_TEST_HIDDEN") == "1" && !HiddenTrialPresentation.Enabled)
         { Shutdown(2); return; } // fail before constructing a window when a hidden trial profile is unrecognized
 #endif
         UseTipDelay();
@@ -166,6 +216,10 @@ public partial class App : Application
         if (e.Args.FirstOrDefault(a => a.StartsWith("--verify-s5=")) is { } transferVerification)
             window.ContentRendered += async (_, _) => await window.VerifyS5(transferVerification["--verify-s5=".Length..]);
         HiddenTrialPresentation.Prepare(window);
+        if(S8ShellTrial.Enabled)
+            window.ContentRendered+=(_,_)=>window.CaptureShellRequest(Program.PathArg(e.Args));
+        if (e.Args.FirstOrDefault(a => a.StartsWith("--verify-s8=")) is { } coreVerification)
+            window.ContentRendered += async (_, _) => await window.VerifyS8(coreVerification["--verify-s8=".Length..]);
 #endif
         if (hidden) window.PrepareHiddenStart();
         window.Show();
@@ -411,6 +465,27 @@ public partial class App : Application
             Check(Program.PathArg(new[] { "/select,", @"C:\a", @"b\f.txt" }) == @"C:\a b\f.txt", "launch: /select, then a path in pieces");
             Check(Program.PathArg(new[] { @"/n,/select,C:\f.txt""" }) == @"C:\f.txt", "launch: two switches, a stray quote");
             Check(Program.PathArg(new[] { "--front", @"C:\Users" }) == @"C:\Users" && Program.PathArg(new[] { "--front" }) == "", "launch: plain path, none");
+            Check(Program.PathArg(new[]{"D:\""})==@"D:\", "launch: Windows-quoted drive root remains absolute");
+
+            // Real shutdown found a Count/CopyTo race while sizing workers
+            // added cache entries. Exercise Save while another worker mutates
+            // the actual cache; a snapshot must remain a valid persisted file.
+            using(var barrier=new Barrier(2))
+            {
+                var sizing=Task.Run(()=>
+                {
+                    for(int round=0;round<40;round++)
+                    {
+                        barrier.SignalAndWait();
+                        for(int item=0;item<100;item++)SizeCache.Set(Path.Combine(root,"concurrent-cache",round.ToString(),item.ToString()),DateTime.UtcNow,item);
+                        barrier.SignalAndWait();
+                    }
+                });
+                for(int round=0;round<40;round++){barrier.SignalAndWait();SizeCache.Save();barrier.SignalAndWait();}
+                sizing.GetAwaiter().GetResult();
+            }
+            SizeCache.Save();
+            Check(File.ReadLines(Path.Combine(Settings.Dir,"folder-sizes.txt")).All(line=>line.Split('|',4).Length==4),"size cache: concurrent sizing/shutdown save retains valid records");
 
             // selected text: white on the default accent at 8:1 or better (1.0.38's 6.97:1 still read as grey), and
             // readable on other accents and strengths
@@ -746,20 +821,9 @@ public partial class App : Application
                   && !byBytes.Any(g => g.Files.Any(f => f.Path.EndsWith("same name.txt"))) && byName.First(g => g.Name == "same name.txt").Wasted == 5,
                   "duplicates: by name finds the two, by name and size and by content don't: " + Shape(byName));
 
-            // 1.0.51 Open path through the agent: the file Explorer selects late still reaches Pathweft, after its folder
-            (string, bool)[] Watch(params (string Folder, string Selected)[] looks)
-            {
-                var w = new Agent.SelectionWatch();
-                var said = new List<(string, bool)>();
-                foreach (var (f, sel) in looks) { var r = w.Look(f, sel); if (r.Open != null || r.Done) said.Add(r); if (r.Done) break; }
-                return said.ToArray();
-            }
-            var none = Enumerable.Repeat((@"C:\D", (string)null), 9);
-            Check(Watch((@"C:\D", @"C:\D\f.txt")).SequenceEqual(new[] { (@"C:\D\f.txt", true) }), "agent: selected at once, the file");
-            Check(Watch(none.Append((@"C:\D", @"C:\D\f.txt")).ToArray()).SequenceEqual(new[] { (@"C:\D\f.txt", true) }), "agent: selected within 0.5 s, the file");
-            Check(Watch(none.Concat(none).Append((@"C:\D", @"C:\D\f.txt")).ToArray()).SequenceEqual(new[] { (@"C:\D", false), (@"C:\D\f.txt", true) }), "agent: selected late, the folder, then the file");
-            Check(Watch(Enumerable.Repeat((@"C:\D", (string)null), 200).ToArray()).SequenceEqual(new[] { (@"C:\D", false), ((string)null, true) }), "agent: never selected, the folder, then done");
-            Check(Watch(none.Concat(none).Append((@"C:\Other", @"C:\Other\x")).ToArray()).SequenceEqual(new[] { (@"C:\D", false), ((string)null, true) }), "agent: navigated elsewhere, nothing more");
+            Check(Agent.Matches(true, false, false, false) && !Agent.Matches(false, false, false, false)
+                && !Agent.Matches(true, true, false, false) && !Agent.Matches(true, false, true, false)
+                && !Agent.Matches(true, false, false, true), "Win+E: only the opted-in unmodified chord");
 
             // 1.0.51 middle-click autoscroll: still inside the dead zone, then faster the further away, either way
             Check(PaneView.AutoscrollSpeed(0) == 0 && PaneView.AutoscrollSpeed(-12) == 0 && PaneView.AutoscrollSpeed(30) > 0 && PaneView.AutoscrollSpeed(-30) == -PaneView.AutoscrollSpeed(30)

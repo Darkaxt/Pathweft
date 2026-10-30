@@ -3,11 +3,11 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Settings — Pathweft" Width="560" Height="640" MinWidth="440" MinHeight="400"
         WindowStartupLocation="CenterOwner" ShowInTaskbar="True" Background="Transparent"
-        Foreground="#E8EEF6" FontFamily="Segoe UI Variable Text, Segoe UI" FontSize="12">
+        Foreground="{DynamicResource Palette.E8EEF6}" FontFamily="Segoe UI Variable Text, Segoe UI" FontSize="12">
   <Window.Resources>
     <Style x:Key="Card" TargetType="Border">
-      <Setter Property="Background" Value="#0AFFFFFF"/>
-      <Setter Property="BorderBrush" Value="#16FFFFFF"/>
+      <Setter Property="Background" Value="{DynamicResource Palette.0AFFFFFF}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource Palette.16FFFFFF}"/>
       <Setter Property="BorderThickness" Value="1"/>
       <Setter Property="CornerRadius" Value="12"/>
       <Setter Property="Padding" Value="16,12"/>
@@ -19,14 +19,14 @@
       <Setter Property="Margin" Value="0,0,0,8"/>
     </Style>
     <Style x:Key="Hint" TargetType="TextBlock">
-      <Setter Property="Foreground" Value="#8A97AA"/>
+      <Setter Property="Foreground" Value="{DynamicResource Palette.8A97AA}"/>
       <Setter Property="FontSize" Value="11"/>
       <Setter Property="TextWrapping" Value="Wrap"/>
       <Setter Property="Margin" Value="0,2,0,10"/>
     </Style>
   </Window.Resources>
 
-  <Grid x:Name="Root" Background="#B30A0D13">
+  <Grid x:Name="Root" Background="{DynamicResource Palette.B30A0D13}">
     <!-- shown once the empty window is on screen (SettingsWindow.xaml.cs) -->
     <ScrollViewer x:Name="Body" VerticalScrollBarVisibility="Auto" Padding="18,16" Visibility="Collapsed">
       <StackPanel>
@@ -45,6 +45,22 @@
                       ToolTip="Put this card's settings back to their defaults"/>
               <TextBlock Text="Appearance" Style="{StaticResource H}"/>
             </DockPanel>
+            <TextBlock Text="Theme"/>
+            <StackPanel Orientation="Horizontal" Margin="0,6,0,2">
+              <Button x:Name="ThemeGlass" Content="Original" Style="{StaticResource Tab}" Click="Theme_Click" AutomationProperties.Name="Original theme"/>
+              <Button x:Name="ThemeNative" Content="Native" Style="{StaticResource Tab}" Click="Theme_Click" AutomationProperties.Name="Native Windows theme"/>
+            </StackPanel>
+            <StackPanel x:Name="NativeOptions" Margin="0,4,0,10">
+              <TextBlock Style="{StaticResource Hint}" Text="Neutral Windows surfaces without the pane glow or background effects. File colors and read-only indicators stay recognizable."/>
+              <StackPanel Orientation="Horizontal">
+                <Button x:Name="ThemeSystem" Content="Use Windows mode" Style="{StaticResource Tab}" Click="NativeMode_Click"/>
+                <Button x:Name="ThemeLight" Content="Light" Style="{StaticResource Tab}" Click="NativeMode_Click"/>
+                <Button x:Name="ThemeDark" Content="Dark" Style="{StaticResource Tab}" Click="NativeMode_Click"/>
+              </StackPanel>
+              <CheckBox x:Name="WindowsAccentBox" Content="Use Windows accent color" Margin="0,8,0,0" Click="WindowsAccent_Click"/>
+              <TextBlock Style="{StaticResource Hint}" Text="Follows the Windows accent, using a readable tone. Choosing a color below switches to a custom accent. Windows high contrast takes precedence."/>
+            </StackPanel>
+            <StackPanel x:Name="GlassOptions">
             <TextBlock Style="{StaticResource Hint}" Margin="0,-4,0,10" Text="Double-click a slider's handle to put it back to its default."/>
             <TextBlock Text="Backdrop"/>
             <StackPanel Orientation="Horizontal" Margin="0,6,0,2">
@@ -54,7 +70,7 @@
             </StackPanel>
             <TextBlock Style="{StaticResource Hint}" Text="Blur: frosted acrylic of whatever is behind the window. Tint: the wallpaper's colour, no blur. Solid: no transparency. Blur strength is set by Windows."/>
             <DockPanel>
-              <TextBlock x:Name="OpacityText" DockPanel.Dock="Right" Width="40" TextAlignment="Right" Foreground="#8A97AA" Typography.NumeralAlignment="Tabular"/>
+              <TextBlock x:Name="OpacityText" DockPanel.Dock="Right" Width="40" TextAlignment="Right" Foreground="{DynamicResource Palette.8A97AA}" Typography.NumeralAlignment="Tabular"/>
               <TextBlock Text="Opacity" Width="70" VerticalAlignment="Center"/>
               <Slider x:Name="OpacitySlider" Minimum="30" Maximum="100" VerticalAlignment="Center" ValueChanged="Opacity_Changed"/>
             </DockPanel>
@@ -66,25 +82,26 @@
               <Button x:Name="BgNone" Content="None" Style="{StaticResource Tab}" Click="BgNone_Click"/>
             </StackPanel>
             <DockPanel Margin="0,6,0,0">
-              <TextBlock x:Name="BgOpacityText" DockPanel.Dock="Right" Width="40" TextAlignment="Right" Foreground="#8A97AA" Typography.NumeralAlignment="Tabular"/>
+              <TextBlock x:Name="BgOpacityText" DockPanel.Dock="Right" Width="40" TextAlignment="Right" Foreground="{DynamicResource Palette.8A97AA}" Typography.NumeralAlignment="Tabular"/>
               <TextBlock Text="Strength" Width="70" VerticalAlignment="Center"/>
               <Slider x:Name="BgOpacitySlider" Minimum="5" Maximum="100" VerticalAlignment="Center" ValueChanged="BgOpacity_Changed"/>
             </DockPanel>
             <DockPanel Margin="0,6,0,0">
-              <TextBlock x:Name="BgBlurText" DockPanel.Dock="Right" Width="40" TextAlignment="Right" Foreground="#8A97AA" Typography.NumeralAlignment="Tabular"/>
+              <TextBlock x:Name="BgBlurText" DockPanel.Dock="Right" Width="40" TextAlignment="Right" Foreground="{DynamicResource Palette.8A97AA}" Typography.NumeralAlignment="Tabular"/>
               <TextBlock Text="Blur" Width="70" VerticalAlignment="Center"/>
               <Slider x:Name="BgBlurSlider" Minimum="0" Maximum="40" VerticalAlignment="Center" ValueChanged="BgBlur_Changed"/>
             </DockPanel>
             <DockPanel Margin="0,6,0,0">
-              <TextBlock x:Name="BgBrightText" DockPanel.Dock="Right" Width="40" TextAlignment="Right" Foreground="#8A97AA" Typography.NumeralAlignment="Tabular"/>
+              <TextBlock x:Name="BgBrightText" DockPanel.Dock="Right" Width="40" TextAlignment="Right" Foreground="{DynamicResource Palette.8A97AA}" Typography.NumeralAlignment="Tabular"/>
               <TextBlock Text="Brightness" Width="70" VerticalAlignment="Center"/>
               <Slider x:Name="BgBrightSlider" Minimum="-100" Maximum="100" VerticalAlignment="Center" ValueChanged="BgBright_Changed"/>
             </DockPanel>
             <TextBlock Style="{StaticResource Hint}" Text="A picture behind the panes, cropped to fill the window. Strength is how much of it shows, Blur softens it, Brightness darkens or lightens it. A darker, softer picture keeps the lists readable."/>
 
+            </StackPanel>
             <TextBlock Text="Accent colour"/>
             <DockPanel Margin="0,6,0,2">
-              <Border DockPanel.Dock="Right" Background="#12FFFFFF" CornerRadius="5" Padding="8,4" BorderBrush="#2EFFFFFF" BorderThickness="1" Margin="8,0,0,0">
+              <Border DockPanel.Dock="Right" Background="{DynamicResource Palette.12FFFFFF}" CornerRadius="5" Padding="8,4" BorderBrush="{DynamicResource Palette.2EFFFFFF}" BorderThickness="1" Margin="8,0,0,0">
                 <TextBox x:Name="AccentHex" Style="{StaticResource Bare}" Width="72" KeyDown="AccentHex_KeyDown" ToolTip="Any colour as #RRGGBB, then Enter"/>
               </Border>
               <WrapPanel x:Name="Swatches"/>
@@ -110,7 +127,7 @@
             <TextBlock Style="{StaticResource Hint}" Text="Used for the selection, the drive bars, the progress bars and the active pane's edge."/>
 
             <DockPanel Margin="0,10,0,2">
-              <TextBlock x:Name="StrengthText" DockPanel.Dock="Right" Foreground="{StaticResource Muted}" FontSize="11" Width="40" TextAlignment="Right" Typography.NumeralAlignment="Tabular"/>
+              <TextBlock x:Name="StrengthText" DockPanel.Dock="Right" Foreground="{DynamicResource Muted}" FontSize="11" Width="40" TextAlignment="Right" Typography.NumeralAlignment="Tabular"/>
               <TextBlock Text="Strength" FontSize="11" Width="60" VerticalAlignment="Center"/>
               <Slider x:Name="StrengthSlider" Minimum="30" Maximum="250" ValueChanged="Strength_Changed" VerticalAlignment="Center"/>
             </DockPanel>
@@ -133,22 +150,22 @@
             </StackPanel>
             <TextBlock Style="{StaticResource Hint}" Text="Makes the whole window larger, text, icons and rows together, on top of Windows' own scaling."/>
             <DockPanel Margin="0,4,0,0">
-              <TextBlock x:Name="ScaleSidebarText" DockPanel.Dock="Right" Width="40" TextAlignment="Right" Foreground="#8A97AA" Typography.NumeralAlignment="Tabular"/>
+              <TextBlock x:Name="ScaleSidebarText" DockPanel.Dock="Right" Width="40" TextAlignment="Right" Foreground="{DynamicResource Palette.8A97AA}" Typography.NumeralAlignment="Tabular"/>
               <TextBlock Text="Sidebar" Width="70" VerticalAlignment="Center"/>
               <Slider x:Name="ScaleSidebar" Minimum="80" Maximum="150" TickFrequency="5" IsSnapToTickEnabled="True" VerticalAlignment="Center" ValueChanged="Scale_Changed"/>
             </DockPanel>
             <DockPanel Margin="0,6,0,0">
-              <TextBlock x:Name="ScaleTabsText" DockPanel.Dock="Right" Width="40" TextAlignment="Right" Foreground="#8A97AA" Typography.NumeralAlignment="Tabular"/>
+              <TextBlock x:Name="ScaleTabsText" DockPanel.Dock="Right" Width="40" TextAlignment="Right" Foreground="{DynamicResource Palette.8A97AA}" Typography.NumeralAlignment="Tabular"/>
               <TextBlock Text="Tabs" Width="70" VerticalAlignment="Center"/>
               <Slider x:Name="ScaleTabs" Minimum="80" Maximum="150" TickFrequency="5" IsSnapToTickEnabled="True" VerticalAlignment="Center" ValueChanged="Scale_Changed"/>
             </DockPanel>
             <DockPanel Margin="0,6,0,0">
-              <TextBlock x:Name="ScalePathText" DockPanel.Dock="Right" Width="40" TextAlignment="Right" Foreground="#8A97AA" Typography.NumeralAlignment="Tabular"/>
+              <TextBlock x:Name="ScalePathText" DockPanel.Dock="Right" Width="40" TextAlignment="Right" Foreground="{DynamicResource Palette.8A97AA}" Typography.NumeralAlignment="Tabular"/>
               <TextBlock Text="Path bar" Width="70" VerticalAlignment="Center"/>
               <Slider x:Name="ScalePath" Minimum="80" Maximum="150" TickFrequency="5" IsSnapToTickEnabled="True" VerticalAlignment="Center" ValueChanged="Scale_Changed"/>
             </DockPanel>
             <DockPanel Margin="0,6,0,0">
-              <TextBlock x:Name="ScaleListText" DockPanel.Dock="Right" Width="40" TextAlignment="Right" Foreground="#8A97AA" Typography.NumeralAlignment="Tabular"/>
+              <TextBlock x:Name="ScaleListText" DockPanel.Dock="Right" Width="40" TextAlignment="Right" Foreground="{DynamicResource Palette.8A97AA}" Typography.NumeralAlignment="Tabular"/>
               <TextBlock Text="File list" Width="70" VerticalAlignment="Center"/>
               <Slider x:Name="ScaleList" Minimum="80" Maximum="150" TickFrequency="5" IsSnapToTickEnabled="True" VerticalAlignment="Center" ValueChanged="Scale_Changed"/>
             </DockPanel>
@@ -195,7 +212,7 @@
             <CheckBox x:Name="ItemTipsBox" Content="Show details when hovering a file" Click="ItemTips_Click"/>
             <TextBlock Style="{StaticResource Hint}" Text="A tooltip with the full name, type, size and date, as in Explorer."/>
             <DockPanel Margin="0,2,0,0">
-              <TextBlock x:Name="TipDelayText" DockPanel.Dock="Right" Width="40" TextAlignment="Right" Foreground="#8A97AA" Typography.NumeralAlignment="Tabular"/>
+              <TextBlock x:Name="TipDelayText" DockPanel.Dock="Right" Width="40" TextAlignment="Right" Foreground="{DynamicResource Palette.8A97AA}" Typography.NumeralAlignment="Tabular"/>
               <TextBlock Text="Tooltip delay" Width="90" VerticalAlignment="Center"/>
               <Slider x:Name="TipDelaySlider" Minimum="0" Maximum="3000" TickFrequency="100" IsSnapToTickEnabled="True" VerticalAlignment="Center" ValueChanged="TipDelay_Changed"/>
             </DockPanel>
@@ -228,19 +245,27 @@
         <Border Style="{StaticResource Card}">
           <StackPanel>
             <TextBlock Text="Windows integration" Style="{StaticResource H}"/>
+            <TextBlock Text="Taskbar search" FontWeight="SemiBold" Margin="0,0,0,6"/>
             <CheckBox x:Name="TaskbarSearchBox" Content="Enable Pathweft taskbar search" Click="TaskbarSearch_Click"/>
             <CheckBox x:Name="TaskbarEmbedBox" Content="Show the search box when the taskbar has room" Margin="22,0,0,0" Click="TaskbarSearch_Click"/>
             <TextBlock x:Name="TaskbarSearchStatus" Style="{StaticResource Hint}" TextWrapping="Wrap"/>
             <Button Content="Open search" Style="{StaticResource Tab}" HorizontalAlignment="Left" Click="OpenTaskbarSearch_Click"/>
             <TextBlock Style="{StaticResource Hint}" Text="Ctrl+Alt+Space opens search while Pathweft is running. If the box cannot attach safely, the mode above reports why. No Windows Search, default file manager or sign-in setting is changed."/>
-            <CheckBox x:Name="DefaultBox" Content="Use Pathweft as the default file manager" Click="Default_Click"/>
+            <TextBlock Text="Folders" FontWeight="SemiBold" Margin="0,8,0,6"/>
+            <CheckBox x:Name="DefaultBox" Content="Open filesystem folders and drives in Pathweft" Click="Default_Click"/>
             <TextBlock Style="{StaticResource Hint}">
-              Opening a folder or drive (desktop, Start, other apps) and Win+E open Pathweft instead of File Explorer.
-              Only your user account is changed, and switching this off removes everything it added.
-              If you move Pathweft.exe, switch it off and on again.
+              Off until enabled. Folder requests through Windows use Pathweft directly, without hiding or closing Explorer windows.
+              Switching off restores the prior handlers where Pathweft still owns them.
+              Explicit File Explorer launches, virtual folders and Open/Save dialogs remain in Windows.
             </TextBlock>
-            <CheckBox x:Name="WinEBox" Content="Win+E opens Pathweft" Click="WinE_Click" Margin="22,0,0,0"/>
-            <TextBlock Style="{StaticResource Hint}" Margin="22,2,0,10" Text="Off: Win+E keeps opening File Explorer while folders still open in Pathweft."/>
+            <TextBlock x:Name="FolderIntegrationStatus" Style="{StaticResource Hint}"/>
+            <TextBlock Style="{StaticResource Hint}" Text="Some applications use a separate Windows selection API for Show in folder. That API is unsupported: it can open the folder without selecting the file and report an error to the calling application. Pathweft's own Reveal and /select command preserve selection."/>
+            <Button x:Name="RestoreFolderHandlers" Content="Restore previous folder handlers" Style="{StaticResource Tab}" HorizontalAlignment="Left" Click="RestoreFolderHandlers_Click"/>
+            <TextBlock Text="Keyboard" FontWeight="SemiBold" Margin="0,12,0,6"/>
+            <CheckBox x:Name="WinEBox" Content="Win+E opens Pathweft" Click="WinE_Click"/>
+            <TextBlock Style="{StaticResource Hint}" Text="Off until enabled, independently of folder integration. Uses a windowless keyboard helper at sign-in. Switching off stops it and removes its sign-in entry."/>
+            <TextBlock x:Name="WinEStatus" Style="{StaticResource Hint}"/>
+            <TextBlock Text="Startup and window behavior" FontWeight="SemiBold" Margin="0,8,0,6"/>
             <CheckBox x:Name="TrayBox" Content="Close to the notification area" Click="Tray_Click"/>
             <TextBlock Style="{StaticResource Hint}" Text="Closing the window hides Pathweft next to the clock instead of quitting, so it opens again at once. Click its icon to bring it back; right-click the icon → Quit to really close."/>
             <CheckBox x:Name="StartupBox" Content="Start with Windows, hidden next to the clock" Click="Startup_Click" Margin="22,0,0,0"/>
@@ -259,16 +284,16 @@
         <Border Style="{StaticResource Card}">
           <StackPanel>
             <TextBlock Text="About" Style="{StaticResource H}"/>
-            <TextBlock x:Name="AboutText" Foreground="#8A97AA" TextWrapping="Wrap"/>
-            <TextBlock x:Name="StartupText" Foreground="#8A97AA" TextWrapping="Wrap" Margin="0,6,0,0"
+            <TextBlock x:Name="AboutText" Foreground="{DynamicResource Palette.8A97AA}" TextWrapping="Wrap"/>
+            <TextBlock x:Name="StartupText" Foreground="{DynamicResource Palette.8A97AA}" TextWrapping="Wrap" Margin="0,6,0,0"
                        ToolTip="From launching Pathweft to its window, and to the files in its panes. The last starts are in startup.log in the settings folder."/>
             <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
               <Button x:Name="UpdateCheck" Content="Check for updates" Style="{StaticResource Tab}" Padding="12,6" Click="Update_Click"/>
               <Button Content="What&#x2019;s new" Style="{StaticResource Tab}" Padding="12,6" Margin="6,0,0,0" Click="WhatsNew_Click"/>
-              <TextBlock x:Name="UpdateStatus" Foreground="#8A97AA" VerticalAlignment="Center" Margin="10,0,0,0" TextWrapping="Wrap"/>
+              <TextBlock x:Name="UpdateStatus" Foreground="{DynamicResource Palette.8A97AA}" VerticalAlignment="Center" Margin="10,0,0,0" TextWrapping="Wrap"/>
             </StackPanel>
-            <TextBlock Foreground="#8A97AA" TextWrapping="Wrap" Margin="0,10,0,0">
-              <TextBlock.Resources><Style TargetType="Hyperlink"><Setter Property="Foreground" Value="#E8EEF6"/></Style></TextBlock.Resources>
+            <TextBlock Foreground="{DynamicResource Palette.8A97AA}" TextWrapping="Wrap" Margin="0,10,0,0">
+              <TextBlock.Resources><Style TargetType="Hyperlink"><Setter Property="Foreground" Value="{DynamicResource Palette.E8EEF6}"/></Style></TextBlock.Resources>
               Feedback: <Hyperlink NavigateUri="mailto:feedback@protagonistlabs.app?subject=File%20Labs%20feedback" RequestNavigate="Link_Navigate">feedback@protagonistlabs.app</Hyperlink>
               · <Hyperlink NavigateUri="https://github.com/Darkaxt/Pathweft?utm_source=pathweft&amp;utm_medium=app&amp;utm_campaign=about" RequestNavigate="Link_Navigate">Website</Hyperlink>
               · <Hyperlink NavigateUri="https://protagonistlabs.app/?utm_source=pathweft&amp;utm_medium=app&amp;utm_campaign=more-apps" RequestNavigate="Link_Navigate">More apps from Protagonist Labs</Hyperlink>
@@ -278,7 +303,7 @@
             <TextBlock x:Name="WorksWith" Style="{StaticResource Hint}" LineHeight="18" Margin="0">
               <TextBlock.Resources>
                 <Style TargetType="Hyperlink">
-                  <Setter Property="Foreground" Value="#B4BFCE"/>
+                  <Setter Property="Foreground" Value="{DynamicResource Palette.B4BFCE}"/>
                   <Setter Property="TextDecorations" Value="{x:Null}"/>
                   <Style.Triggers><Trigger Property="IsMouseOver" Value="True"><Setter Property="TextDecorations" Value="Underline"/></Trigger></Style.Triggers>
                 </Style>
