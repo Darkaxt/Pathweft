@@ -30,6 +30,22 @@ sealed class PackageProbe
             if(!target.StartsWith(@"D:\Temp\pathweft-s8-delivery\verification-",StringComparison.OrdinalIgnoreCase))throw new ArgumentException("Owned metadata output required.");
             WriteNativeInfo(target);return;
         }
+        if(args.Length==2&&args[0]=="--engine-state")
+        {
+            string target=Path.GetFullPath(args[1]);
+            if(!target.StartsWith(@"D:\Temp\pathweft-s8-delivery\verification-",StringComparison.OrdinalIgnoreCase))throw new ArgumentException("Owned diagnostics output required.");
+            var window=FindWindowW("EVERYTHING_TASKBAR_NOTIFICATION",null);
+            bool before=window!=IntPtr.Zero&&IsHungAppWindow(window);
+            var library=NativeLibrary.Load(Path.Combine(AppContext.BaseDirectory,"Everything64.dll"));
+            try
+            {
+                bool loaded=Marshal.GetDelegateForFunctionPointer<NativeBool>(NativeLibrary.GetExport(library,"Everything_IsDBLoaded"))();
+                var state=new{window=window.ToInt64(),hungBefore=before,databaseLoaded=loaded,hungAfter=window!=IntPtr.Zero&&IsHungAppWindow(window)};
+                File.WriteAllText(Path.Combine(target,"engine-state.json"),JsonSerializer.Serialize(state));Console.WriteLine(JsonSerializer.Serialize(state));
+            }
+            finally{NativeLibrary.Free(library);}
+            return;
+        }
         if(args.Length==3&&args[0]=="--wait-owner")
         {
             if(!args.Skip(1).All(name=>name.StartsWith("Local\\Pathweft-S8-Wait-",StringComparison.Ordinal)))throw new ArgumentException("Unexpected test signals.");
@@ -39,16 +55,29 @@ sealed class PackageProbe
         if(args.Length!=2)throw new ArgumentException("An owned fixture root and known indexed file are required.");
         root=Path.GetFullPath(args[0]);known=Path.GetFullPath(args[1]);
         if(!root.StartsWith(@"D:\Temp\pathweft-s8-delivery\verification-",StringComparison.OrdinalIgnoreCase)||!File.Exists(known))throw new ArgumentException("Unexpected verification scope.");
-        var app=new App{ShutdownMode=ShutdownMode.OnExplicitShutdown};
+        var dispatcher=Dispatcher.CurrentDispatcher;
+        var posted=new List<DispatcherOperation>();
+        void Posted(object sender,DispatcherHookEventArgs e){if(e.Operation.Priority==DispatcherPriority.Send)posted.Add(e.Operation);}
+        dispatcher.Hooks.OperationPosted+=Posted;
+        App app;
+        try{app=new App{ShutdownMode=ShutdownMode.OnExplicitShutdown};}
+        finally{dispatcher.Hooks.OperationPosted-=Posted;}
+        // WPF Application's constructor posts its startup as the first Send
+        // operation. Retain and cancel that exact pending bootstrap before
+        // pumping the dispatcher. Any unexpected startup shape fails closed.
+        // Keep the real App type: generated BAML requires its component and
+        // resource to belong to the same assembly, so a derived test App is invalid.
+        if(posted.Count!=1||!posted[0].Abort())throw new InvalidOperationException("The owned WPF startup operation could not be isolated before dispatch.");
         app.InitializeComponent();
-        // Load the delivered App's exact BAML root, then own a dispatcher loop
-        // without invoking its normal window-showing OnStartup implementation.
         app.Exit+=(_,_)=>app.Dispatcher.BeginInvokeShutdown(DispatcherPriority.Background);
         var probe=new PackageProbe();
         app.Dispatcher.BeginInvoke(()=>_ = probe.RunAsync(app));
         Dispatcher.Run();
     }
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]delegate IntPtr NativeText();
+    [UnmanagedFunctionPointer(CallingConvention.StdCall)][return:MarshalAs(UnmanagedType.Bool)]delegate bool NativeBool();
+    [DllImport("user32.dll",CharSet=CharSet.Unicode)]static extern IntPtr FindWindowW(string name,string title);
+    [DllImport("user32.dll")]static extern bool IsHungAppWindow(IntPtr window);
     static string NativeTextValue(string library,string export)
     {
         var handle=NativeLibrary.Load(Path.Combine(AppContext.BaseDirectory,"F3D/bin",library),Product,DllImportSearchPath.UseDllDirectoryForDependencies|DllImportSearchPath.System32);
@@ -81,6 +110,7 @@ sealed class PackageProbe
         int result=1;
         try
         {
+            Check(app.Windows.Count==0,"The owned WPF startup operation was cancelled before dispatch and creates no application window");
             Settings.Load();
             Check(Path.GetFullPath(Settings.Dir).StartsWith(root+"\\",StringComparison.OrdinalIgnoreCase),"The delivered assembly uses only the explicit verification profile");
             Call(Type("Appearance"),null,"Initialize");
@@ -147,7 +177,7 @@ sealed class PackageProbe
             WriteNativeInfo(root);
             ((IDisposable)session).Dispose();session=null;await (Task)Call(previewType,null,"DrainAsync");
             Check(!(bool)Get(viewer,"WorkerAlive"),"The delivered F3D render worker exits after preview cleanup");
-            Check(!owner.IsVisible,"Package verification never displays its WPF host");
+            Check(app.Windows.Cast<Window>().All(window=>!window.IsVisible),"Package verification never displays any WPF window");
             result=searchPassed?0:1;
         }
         catch(Exception error){checks.Add(new{failure=error.ToString()});Console.Error.WriteLine(error);}
@@ -156,7 +186,7 @@ sealed class PackageProbe
             if(session is IDisposable live)live.Dispose();
             await (Task)Call(Type("Preview.PreviewSession"),null,"DrainAsync");
             owner?.Quit();
-            File.WriteAllText(Path.Combine(root,"results.json"),JsonSerializer.Serialize(new{result,runtime=Environment.Version.ToString(),product=Product.Location,checks},new JsonSerializerOptions{WriteIndented=true}));
+            File.WriteAllText(Path.Combine(root,"results.json"),JsonSerializer.Serialize(new{result,pid=Environment.ProcessId,fixture=root,runtime=Environment.Version.ToString(),product=Product.Location,checks},new JsonSerializerOptions{WriteIndented=true}));
             Environment.ExitCode=result;app.Shutdown(result);
         }
     }
