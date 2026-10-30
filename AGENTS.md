@@ -13,8 +13,8 @@ do not change its requirements or the user's standing instructions.
   findings inventory and affected acceptance are now verified COMPLETE.
   see `docs/verification/2026-10-29-s5.md` for the direct-write contract,
   measured performance limits and actual caller/preservation/recovery evidence.
-  S6 is BLOCKED awaiting the user-controlled Sandbox-enablement reboot and
-  isolated runtime contract probes; S7-S8 remain NOT STARTED.
+  S6 is ACTIVE after the user's reboot, verifying the isolated runtime and native
+  contracts before implementation; S7-S8 remain NOT STARTED.
   Identify TeraCopy and derive adoption from REA
   evidence before transfer implementation.
 - Keep one ACTIVE stage during authorized implementation. Reconcile complete
@@ -48,3 +48,8 @@ do not change its requirements or the user's standing instructions.
 - Use Huashu design as a reference for new interfaces, aligned with the File Labs
   theme already in Pathweft. Run test windows hidden where possible; keep native
   physical focus/hotkey/shell claims separate from hidden rendered/action checks.
+- S6 UI diagnostics may use the pinned project-local `winapp-sandbox` and
+  `winapp-ui-automation` skills under `.agents/skills/`. Read their provenance and
+  project routing in `.agents/skills/WINAPP-SOURCE.md` before use. WinApp is a
+  development tool, not a product dependency or substitute for REA/native
+  acceptance. Preserve explicit guest targeting and existing execution gates.
