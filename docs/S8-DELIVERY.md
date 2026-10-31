@@ -1,7 +1,9 @@
 # S8 core delivery contract
 
-Current status: ACTIVE for the1.1.6 Explorer routing correction, detailed below.
-Source and hidden native/app qualification pass; final delivery remains required.
+Current status: BLOCKED only on the normal application exit required for the
+installed 1.1.6 verification. Source, published release and independently retrieved
+native/app qualification pass. The current running host copy remains 1.1.5.
+Exact scratch cleanup passes; no user window was closed or controlled.
 
 Authority: specification v0.22 and the user's explicit S8-first/delivery instructions.
 Historical S8 closure through1.1.5 includes CORE-11 and PREVIEW-08..11. The normal
@@ -380,7 +382,7 @@ Retained private receipts include publication metadata, independent retrieval,
 final native integration, actual installation/self-test and cleanup manifests.
 Requested local release assets remain in `dist/1.1.0-c20f9d7f`. S6 is BLOCKED and
 S7 is NOT STARTED; this release does not claim their search or StartAllBack behavior.
-# 1.1.6 routing correction — ACTIVE
+# 1.1.6 routing correction — installed verification BLOCKED
 
 The reported Explorer regression reopens SHELL-01. Keeping the canonical `open`
 name did not give a direct executable command the calling browser context. The
@@ -394,8 +396,19 @@ activation into real ExplorerBrowser navigation, 32/64-bit callers, Unicode/spac
 folders, external drive roots, exact receiver exit and COM object release.
 Private registry qualification verifies disabled integration, both old opt-in
 formats, original owner/value-kind restoration and later-owner preservation.
-Integrated app/current Settings/restart/self-test checks pass. Final package,
-publication/retrieval, installed correction and cleanup remain required.
+Integrated app/current Settings/restart/self-test checks pass. Normal 1.1.6 is
+published at a7648b9d51c63d5aadac9e96b48ecbd8a428581c with all six assets.
+Independent retrieval verifies every asset digest/size and the same source;
+downloaded DLL native checks and delivered app consumer PID 41776 pass.
+Installed correction remains required after the current user app exits normally.
+There is no permission or technical publication blocker and no need to restart
+Explorer, Windows or Sandbox. The prepared per-user installer workflow preserves
+profile/startup state and verifies the user's confirmed folder opt-in.
+Cleanup add460bb2ea452db26d38495899cdf8e applied 20,072 exact members /
+3,677,774,353 helper bytes, including three reviewed self-test junction leaves.
+The test-created read-only flag on its exact 13-byte cue fixture was undone before
+resuming the same ticket; no ACL or unrelated file was changed. Both task roots
+are absent. Earlier spent-output cleanup applied 201 members / 12,417,335 bytes.
 
 File Labs upstream was refreshed during this correction and remains9bfbbce;
 the previously reviewed selective adoption remains applicable. No dependency

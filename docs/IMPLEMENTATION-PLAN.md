@@ -3,7 +3,22 @@
 Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.22, 2026-10-31,
 including the user-authorized continued comparison requirement TRANSFER-07.
 
-S8 is ACTIVE again for the user's Explorer-navigation regression under SHELL-01.
+S8 is BLOCKED on the final installed verification of the SHELL-01 correction.
+Normal 1.1.6/source a7648b9d51c63d5aadac9e96b48ecbd8a428581c is published with
+all six required assets and independently retrieved/verified. Downloaded native
+handlers pass actual 32/64-bit COM/context-menu/browser and external launch checks;
+the independently delivered app consumer PID 41776 and app-host checks pass.
+The existing 1.1.5 main process still prevents host installation. This is an
+external user-controlled exit requirement: finish transfers/editors and exit
+normally, then run the prepared installed update and its exact registration,
+program identity, profile/startup preservation and native-byte checks. No forced
+close, desktop control, new publication approval or additional product release
+is needed. Task scratch is cleaned through the reviewed helper: transaction
+add460bb2ea452db26d38495899cdf8e applied 20,072 members / 3,677,774,353 helper bytes
+with no residual; earlier spent diagnostics cleanup applied 201 members.
+There is no ACTIVE stage or tracked deferral. S9 is NOT STARTED.
+
+Investigation and implementation evidence:
 The old UI label is cached at window construction; passive CLR inspection confirmed
 that cached enabled text and the normal live profile, while fresh registry reads
 show no owned values. Do not infer current registration from that label. Existing
@@ -13,9 +28,9 @@ refreshes Settings ownership on activation. Real hidden Shell IContextMenu calls
 and actual ExplorerBrowser navigation pass for 32/64-bit handlers; external
 receiver launch/path and original-process exit plus DLL unload pass. Private
 registry checks pass for both legacy opt-ins, disabled integration and owner
-restoration. Remaining: full app/current-source qualification, actual COM registry
-activation, final package/publication/retrieval, installed correction and cleanup.
-These are current advancement blockers; no tracked deferrals. S9 is NOT STARTED.
+restoration. Full current-source qualification, actual COM registry activation,
+package/publication/retrieval and cleanup now pass. Installed verification remains
+the external blocker above, with a prepared controller retained privately.
 Prior S8 is COMPLETE for CORE-11 / PREVIEW-08..11: free percentages, consistent capacity
 warnings, provider-based cloud labels, icon preview actions, themed animation
 selection, seamless model composition, executable metadata, shared native/virtual
@@ -59,7 +74,7 @@ and requested Pathweft folder routing with Directory Opus as the Explorer
 replacement reference. Compact results must not depend on WSearch filesystem
 indexing. Programs/Settings independence remains to be qualified, not assumed.
 S1-S5, S4R and S4U are COMPLETE; S6 is BLOCKED by the user's reprioritization;
-S7 is NOT STARTED; S8 is ACTIVE after the delivered v1.1.4 correction.
+S7 is NOT STARTED; S8 became ACTIVE after the delivered v1.1.4 correction.
 The user authorized trying rars on 2026-10-29 and delegated its integration
 choice. The user approved read-only icon cues and Ctrl+H/dot-name visibility;
 Historical S6 investigation following the user's reboot: the guest Windows kernel/build and
@@ -541,7 +556,7 @@ tracked deferral assigned to the current S8 correction.
 | S5 | TRANSFER-01..07 and affected caller/CORE/LIFE criteria; final native/Release/FAT32 evidence and finite findings reconciliation | None within S5 | COMPLETE; no blocker | None |
 | S6 | Matching isolated Windows/Shell modules; current StartAllBack 3.9.28; native query/view trace and Programs/Settings groups with WSearch stopped; program launch and See more results URI dispatch observed on 3.9.28; earlier program/Settings launches on 3.9.25; no complete SAB criterion yet | SAB-01..06, including file-provider/cancellation ownership, remaining provider conditions, compact Everything groups/full-results handoff and direct folder routing | BLOCKED by the user's explicit S8-first priority. Investigation is retained; Sandbox was shut down. Native ABI/ownership and remaining service/indexing comparisons are unresolved when this stage resumes. Host configuration is unchanged. | None |
 | S7 | None | EVERYWHERE-01..05 | S6 prerequisite not complete. File-surface, indexing-scope and Outlook compatibility inventory remains unresolved; no live scope changes during S6. | None |
-| S8 | Prior1.1.5 delivery is verified. Current browser-aware routing passes real hidden 32/64-bit Shell invocation/COM activation, external Unicode/root launches, legacy opt-in upgrades and previous-owner recovery; integrated app/Settings/self-test pass. | Final1.1.6 package, publication/retrieval, installed routing correction and cleanup. | ACTIVE; these delivery criteria block completion. S6/S7 remain outside this release. | None |
+| S8 | Prior1.1.5 delivery verified. Browser-aware routing, legacy/native registration migration, prior-owner recovery, actual32/64-bit COM/context-menu/browser checks, integrated app/Settings/self-test, normal1.1.6 publication and independent native/app retrieval pass. Exact scratch cleanup passes. | Host installation and installed routing/identity/profile verification after normal app exit. | BLOCKED by the running user application; prepared update resumes when it exits. S6/S7 remain outside this release. | None |
 
 S1 and S2 are COMPLETE. The user confirmed normal unlock; real physical drag and
 clipboard checks subsequently passed. A separate STA process read the Windows

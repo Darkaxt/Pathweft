@@ -19,8 +19,11 @@ do not change its requirements or the user's standing instructions.
   are verified. Prior S8 work is COMPLETE through v1.1.3,
   including the compact Ctrl+Alt+Space popup and clipped Settings action fix.
   The prior frame/search/editor/icon/sidebar work shipped in v1.1.1.
-  S8 is ACTIVE again for the reported Explorer-navigation routing regression
-  under SHELL-01. S9 is not started. The 1.1.5 drive and preview refinements are
+  S8 is BLOCKED only on the user-controlled app exit required for the final
+  installed 1.1.6 verification. The SHELL-01 correction is normally published at
+  a7648b9 and independently retrieved/qualified; the running host copy remains
+  1.1.5. Scratch cleanup passes. Resume the prepared installation when the user
+  exits normally; do not force-close their work. S9 is not started. The prior drive and preview refinements are
   delivered and verified. No S6/S7 implementation is authorized.
   S6 is BLOCKED by this user-directed execution boundary,
   with investigation retained and no working patch; S7 remains NOT STARTED.

@@ -8,11 +8,15 @@ user direction recorded here; ordinary implementation choices need no new gate.
 
 ## 1. Intent and current scope
 
-Current reconciliation: S8 is ACTIVE again for the reported Explorer folder-navigation
-regression in1.1.5 under SHELL-01. Establish the actual live registration/context,
-preserve Explorer-owned navigation while retaining opt-in external routing,
-qualify hidden real Shell boundaries and release/verify the correction. Registry
-or caption guesses alone cannot satisfy this criterion. S9 remains NOT STARTED.
+Current reconciliation: S8 is BLOCKED on installed verification of the SHELL-01
+Explorer-navigation correction. Normal 1.1.6 is published at source
+a7648b9d51c63d5aadac9e96b48ecbd8a428581c. Independently retrieved hashes, real
+32/64-bit native Shell/COM/browser workflows and packaged app checks pass.
+Scratch cleanup is verified. The existing 1.1.5 main application is still running;
+the installer requires its normal user-controlled exit. Installation and its
+actual installed routing/identity/profile-preservation checks remain required.
+Resume them after that exit; do not force-close user work. Overall S8 is not
+complete. S9 remains NOT STARTED.
 The correction uses a native DelegateExecute handler: a Shell browser site routes
 through that browser's BrowseObject, while an external filesystem request launches
 Pathweft. Keep 32/64-bit COM registration reversible, migrate only wholly owned
