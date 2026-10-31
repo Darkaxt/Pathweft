@@ -136,7 +136,11 @@
           <TextBlock Text="{Binding DriveLocation}" Foreground="{DynamicResource Palette.8A97AA}" TextTrimming="CharacterEllipsis">
             <TextBlock.Style><Style TargetType="TextBlock"><Style.Triggers><DataTrigger Binding="{Binding DriveLocation}" Value=""><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers></Style></TextBlock.Style>
           </TextBlock>
-          <ProgressBar Minimum="0" Maximum="100" Value="{Binding DriveUsedPercent, Mode=OneWay}" Height="5" Margin="0,4,0,3" Foreground="{DynamicResource Accent}">
+          <ProgressBar Minimum="0" Maximum="100" Value="{Binding DriveUsedPercent, Mode=OneWay}" Height="5" Margin="0,4,0,3">
+            <ProgressBar.Style><Style TargetType="ProgressBar" BasedOn="{StaticResource {x:Type ProgressBar}}">
+              <Setter Property="Foreground" Value="{DynamicResource Accent}"/>
+              <Style.Triggers><DataTrigger Binding="{Binding DriveWarning}" Value="1"><Setter Property="Foreground" Value="#D99024"/></DataTrigger><DataTrigger Binding="{Binding DriveWarning}" Value="2"><Setter Property="Foreground" Value="#E5484D"/></DataTrigger></Style.Triggers>
+            </Style></ProgressBar.Style>
             <ProgressBar.Visibility><Binding Path="HasDriveCapacity"><Binding.Converter><BooleanToVisibilityConverter/></Binding.Converter></Binding></ProgressBar.Visibility>
           </ProgressBar>
           <TextBlock Text="{Binding CapacityText}" Foreground="{DynamicResource Palette.8A97AA}" FontSize="11"/>

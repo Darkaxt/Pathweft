@@ -1,4 +1,4 @@
-# Pathweft 1.1.4
+# Pathweft 1.1.5
 
 Windows 11 x64 is the qualified host. The .NET 10 desktop runtime and native
 archive/preview libraries are included. WebView2 Evergreen is required for the
@@ -45,6 +45,16 @@ results, Ctrl+Enter sends the query to a pane, and Space previews a selection.
 Clicking outside dismisses the popup and its preview; moving focus into its
 preview keeps the interaction open. Downloads in Favorites follows the actual
 Windows known-folder location, including redirection to another drive.
+
+This PC's Free space values include the percentage available. Usage bars in the
+drive list and sidebar use your accent below80% used, amber at80% and red at90%.
+Unavailable drives and empty card-reader slots stay hidden until media is ready.
+Cloud mounts identified through provider registration show Cloud and their
+provider; their raw reported filesystem is available in the tooltip.
+PDF and 3D previews use icon actions with tooltips. The animation selector
+follows the theme, and models composite directly onto the preview surface.
+The Executable details module reads available version resources, architecture,
+size and dates without running the selected application.
 
 Dragging archive entries between Pathweft panes submits their identities directly
 to the shared transfer queue. It does not unpack the selection before starting

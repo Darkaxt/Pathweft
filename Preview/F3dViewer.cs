@@ -33,7 +33,6 @@ internal sealed class F3dViewer(MainWindow owner) : IViewer
     double animationTime;
     readonly System.Diagnostics.Stopwatch animationClock = new();
     double playbackStart;
-    double[] background;
     internal Task RenderCompletion { get; private set; } = Task.CompletedTask;
     internal Frame LastFrame { get; private set; }
     internal bool WorkerAlive => worker?.IsAlive == true;
@@ -75,8 +74,7 @@ internal sealed class F3dViewer(MainWindow owner) : IViewer
     public void Prepare(string input, ContextObject value) { path = input; context = value; context.Title = Path.GetFileName(input) + " · 3D preview (F3D)"; }
     public async Task View(string input, ContextObject value)
     {
-        var color=(owner.Root.Background as SolidColorBrush)?.Color??Color.FromRgb(22,27,36);
-        background=new[]{color.R/255.0,color.G/255.0,color.B/255.0};
+        // Native alpha frames composite onto the preview's own themed surface.
         var image = new Image { Stretch = Stretch.Uniform };
         var notice = BuiltinViewer.Message("Loading model…"); notice.Margin = new(10, 3, 10, 5);
         notice.SetResourceReference(TextBlock.ForegroundProperty, "Palette.8A97AA");
@@ -84,8 +82,9 @@ internal sealed class F3dViewer(MainWindow owner) : IViewer
         AutomationProperties.SetName(viewport, "3D model. Drag to orbit, right or middle drag to pan, wheel to zoom. Arrows rotate, plus/minus zoom, Home resets, F fits.");
         var root = new DockPanel(); var controls = new WrapPanel { Margin = new(6) };
         var animationControls = new DockPanel { Margin = new(8, 2, 8, 6), Visibility = Visibility.Collapsed };
-        var play = new Button { Content = "Play", Style = (Style)owner.FindResource("Ghost"), Padding = new(8, 4, 8, 4) };
-        var clips = new ComboBox { MinWidth = 85, Margin = new(4, 0, 8, 0) };
+        var play = PreviewControls.Icon(owner, "Play", "\uE768");
+        var clips = new ComboBox { MinWidth = 110, MinHeight = 32, MaxWidth = 200, Margin = new(4, 0, 8, 0),
+            VerticalAlignment = VerticalAlignment.Center, Style = (Style)owner.FindResource("PreviewClipCombo") };
         var timeline = new Slider { MinWidth = 80, VerticalAlignment = VerticalAlignment.Center };
         AutomationProperties.SetName(timeline, "Animation time"); AutomationProperties.SetName(clips, "Animation clip");
         DockPanel.SetDock(play, Dock.Left); DockPanel.SetDock(clips, Dock.Left);
@@ -113,12 +112,12 @@ internal sealed class F3dViewer(MainWindow owner) : IViewer
             catch (Exception ex) { if (failLoad) throw; if (context.IsCurrent) notice.Text = "3D preview unavailable: " + ex.Message; }
         }
         queue = (operation, x, y) => { if (stopped || !context.IsCurrent) return; RenderCompletion = Update(operation, x, y); context.Track(RenderCompletion); };
-        void StopPlayback(){playing=false;animationClock.Stop();play.Content="Play";if(animationTick!=null)CompositionTarget.Rendering-=animationTick;}
+        void StopPlayback(){playing=false;animationClock.Stop();PreviewControls.SetIcon(play,"Play","\uE768");if(animationTick!=null)CompositionTarget.Rendering-=animationTick;}
         play.Click+=(_,_)=>
         {
             if(playing){StopPlayback();return;}
             if(LastFrame is not {End:var end,Start:var start}||end<=start)return;
-            playing=true;playbackStart=animationTime;animationClock.Restart();play.Content="Pause";
+            playing=true;playbackStart=animationTime;animationClock.Restart();PreviewControls.SetIcon(play,"Pause","\uE769");
             CompositionTarget.Rendering+=animationTick;
         };
         animationTick=(_,_)=>
@@ -147,9 +146,10 @@ internal sealed class F3dViewer(MainWindow owner) : IViewer
         viewport.LostMouseCapture += (_, _) => dragging = null;
         viewport.MouseWheel += (_, e) => { if (LastFrame != null) { queue("zoom", Math.Pow(1.15, e.Delta / 120.0), 0); e.Handled = true; } };
         viewport.PreviewKeyDown += (_, e) => { if (HandleKey(e.Key)) e.Handled = true; };
-        foreach (var (label, operation) in new[] { ("Orbit left", "left"), ("Orbit right", "right"), ("Zoom in", "in"), ("Zoom out", "out"), ("Fit", "fit"), ("Reset view", "reset") })
+        foreach (var (label, operation, glyph) in new[] { ("Orbit left", "left", "\uE7AD"), ("Orbit right", "right", "\uE7AD"), ("Zoom in", "in", "\uE8A3"), ("Zoom out", "out", "\uE71F"), ("Fit model", "fit", "\uE9A6"), ("Reset view", "reset", "\uE777") })
         {
-            var button = new Button { Content = label, Style = (Style)owner.FindResource("Ghost"), Margin = new(2), Padding = new(8, 5, 8, 5) };
+            var button = PreviewControls.Icon(owner,label,glyph);
+            if(operation=="right")((TextBlock)button.Content).LayoutTransform=new ScaleTransform(-1,1);
             button.Click += (_, _) => queue(operation, 0, 0);
             controls.Children.Add(button);
         }
@@ -204,7 +204,6 @@ internal sealed class F3dViewer(MainWindow owner) : IViewer
                         F3dNative.f3d_window_set_size(window, 960, 720); F3dNative.f3d_window_set_use_hdri_cache(window, 0);
                         var options = F3dNative.f3d_engine_get_options(engine);
                         foreach (string name in new[] { "ui.axis", "ui.fps", "ui.filename", "ui.metadata", "ui.console", "ui.cheatsheet", "render.grid.enable" }) F3dNative.f3d_options_set_as_bool(options, name, 0);
-                        F3dNative.f3d_options_set_as_double_vector(options, "render.background.color", background, 3);
                         F3dNative.f3d_options_set_as_double(options, "render.light.intensity", 1.2);
                         if (F3dNative.f3d_scene_add(F3dNative.f3d_engine_get_scene(engine), path) == 0) throw new InvalidDataException("F3D could not read this model. Check its format and referenced resources.");
                         F3dNative.f3d_camera_reset_to_bounds(camera, 0.9);
@@ -233,7 +232,7 @@ internal sealed class F3dViewer(MainWindow owner) : IViewer
                         case "reset": F3dNative.f3d_camera_reset_to_default(camera); break;
                     }
                     context.Token.ThrowIfCancellationRequested();
-                    IntPtr image = F3dNative.f3d_window_render_to_image(window, 0);
+                    IntPtr image = F3dNative.f3d_window_render_to_image(window, 1);
                     if (image == IntPtr.Zero) throw new InvalidOperationException("F3D returned no rendered model image.");
                     byte[] bytes;
                     try

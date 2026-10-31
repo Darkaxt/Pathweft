@@ -1,6 +1,6 @@
 # Pathweft specification
 
-Version 0.19 - 2026-10-31. Owner: Darkaxt.
+Version 0.20 - 2026-10-31. Owner: Darkaxt.
 
 This is the authoritative specification. The derived plan must preserve every
 requirement and acceptance criterion. Material scope changes require explicit
@@ -8,11 +8,40 @@ user direction recorded here; ordinary implementation choices need no new gate.
 
 ## 1. Intent and current scope
 
-Current reconciliation: the authorized S8 scope through CORE-09/10 and
+Current reconciliation: S8 is ACTIVE for the user-requested 1.1.5 refinements
+below. The earlier authorized S8 scope through CORE-09/10 and
 PREVIEW-06/07 is COMPLETE in normally published and independently retrieved/
 installed1.1.4 (source8552fbdc4a0c38acf7cbb76d98d1ef3d227b6063), with exact
-scratch cleanup verified. No S8 blocker or required deferral remains. This does
+scratch cleanup verified. This does
 not complete the separately postponed S6/S7 or unstarted S9/S11 requirements.
+
+Additional user-directed S8 refinements (2026-10-31), CORE-11 and PREVIEW-08:
+show rounded free-space percentages beside the measured free-space number in
+This PC, computed from each volume's real available/total values. Share usage
+warning colors between This PC and sidebar: theme accent below 80% used,
+amber from 80% and red from 90%. These are explicit Pathweft thresholds, not a
+claim that Explorer implements an amber tier. The user's subsequent clarification
+requires unavailable/no-media drives hidden in This PC as in the sidebar;
+refresh must restore them when media is available. This supersedes CORE-09's
+earlier placeholder-row presentation, without hiding ready cloud/network volumes.
+Identify supported virtual cloud volumes using Windows mount/provider metadata,
+never drive letters or account names; show cloud/provider identity instead of
+misleading physical FAT32/exFAT labels, retaining raw format in tooltips.
+Replace F3D and PDF preview text actions with conventional icon buttons and
+tooltips/accessibility names. Theme the animation selector, including its popup,
+focus and selection states. Composite model rendering into the preview pane so
+there is no contrasting black rectangular cutoff. Keep camera, animation and
+PDF navigation behavior. Verify real cloud mounts, warning boundaries and actual
+large-model/animated/PDF controls in hidden dark/light layouts at 100/150% text
+scale; then deliver one normal 1.1.5 release, independently retrieve and verify
+its package, and install with existing settings/routing preserved.
+PREVIEW-09, added by the user's executable-properties screenshots: show a themed,
+selectable details view for .exe metadata including available description/company,
+file/product versions, copyright, original filename, language, architecture,
+file size, dates and location. Read resources/PE headers only; never execute the
+selected application. Missing version fields stay omitted, malformed headers
+must not crash the preview. Verify actual signed/unsigned and no-version files,
+source preservation, selection changes and module disable behavior.
 
 Additional S8 user requirement (2026-10-31), CORE-09: This PC must show drive
 capacity/free space and usage bars using the same measured volume data as the
@@ -217,6 +246,7 @@ criteria apply within the implementing stage and again at the packaged boundary.
 | CORE-08 | Replace the sidebar's hard top/bottom scrolling cutoffs with a soft opacity fade over the final18 logical pixels of the content viewport, only on edges with content beyond them. Fade the viewport content, keeping the scrollbar, app title and footer controls sharp and interactive. Respect resize, scroll, section/extent and 100%/150% text-scale changes; show no fade when all content fits or in Windows high contrast. Use transparency over the existing background rather than a hardcoded color. Inspect actual top/middle/bottom WPF renders and verify scrollbar/input ownership without host desktop input. |
 | CORE-09 | S8 This PC drive capacity/free/usage and network details plus truthful external connection speeds, as specified in current scope. Verify actual inventory, live refresh/navigation, unknown media/speed, native USB evidence and dark/light responsive layout. |
 | CORE-10 | S8 dynamic detail columns described in current scope; verify data-driven visibility, asynchronous metadata/results, width/sort preservation and contextual navigation. |
+| CORE-11 | S8 measured free-space percentages, shared capacity warning colors and provider-based cloud drive identity, as specified in current scope. Verify actual mounts and unavailable capacity. |
 
 On 2026-10-31, the user also requested EverythingToolbar's four inline search
 toggles: Match case, Match whole word, Match path and Regex. They belong at the
@@ -304,6 +334,8 @@ changing Outlook indexing or modifying the existing engine configuration.
 | PREVIEW-05 | User-authorized S3 prototype addition (2026-10-29): add an opt-in F3D-backed GLB preview module and verify the user-specified Castlevania GLB inside Pathweft. Inspect/adapt F3D source and its supported library API. Keep module settings and resource lifetime under the internal preview host; verify a real model render, camera controls, disable/close cleanup and unchanged original asset. The private asset path/hash belongs in ignored trial input, not public source. This adds a bounded 3D prototype, not arbitrary 3D format parity or editing. |
 | PREVIEW-06 | S8 archive preview tree described in current scope; verify the reported real ZIP and nested/empty/implicit folder fixtures, theme/layout, keyboard expansion, metadata-only browsing and lifecycle. |
 | PREVIEW-07 | S8 full embedded F3D viewer described in current scope, superseding PREVIEW-05's prototype restrictions; verify actual bundled-reader formats and large-model interaction/rendering, opt-in and resource release across preview surfaces. |
+| PREVIEW-08 | S8 themed icon actions in PDF/F3D, animation selector and transparent model composition; preserve interaction and lifecycle, with dark/light responsive evidence. |
+| PREVIEW-09 | S8 executable details preview described in current scope; verify actual resource metadata, source preservation, no execution, missing resources and module settings. |
 
 Compiled-in modules with on-demand initialization are sufficient. Assembly
 unloading, a dynamic plugin marketplace and a general extension framework are not

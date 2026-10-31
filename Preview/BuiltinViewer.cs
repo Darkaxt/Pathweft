@@ -45,6 +45,7 @@ internal sealed class BuiltinViewer(PreviewModule module, MainWindow owner, Entr
             case "markdown": content = MarkdownContent.Render(await ReadText(path, 1024 * 1024, context.Token)); break;
             case "image": content = await Image(path, context.Token); break;
             case "pdf": await Pdf(path, context); return;
+            case "executable": content = ExecutableDetails.View(await Task.Run(()=>ExecutableDetails.Read(path,context.Token),context.Token)); break;
             case "archive":
                 if (entry.IsDir && PaneView.ArchiveOf(entry.Path) is { } location)
                 {
@@ -156,8 +157,8 @@ internal sealed class BuiltinViewer(PreviewModule module, MainWindow owner, Entr
         var root = new DockPanel();
         var controls = new WrapPanel { Margin = new(8) };
         var label = Message("Loading PDF…"); label.Margin = new(10, 5, 10, 5);
-        var previous = Button("Previous page");
-        var next = Button("Next page");
+        var previous = PreviewControls.Icon(owner,"Previous page","\uE76B");
+        var next = PreviewControls.Icon(owner,"Next page","\uE76C");
         controls.Children.Add(previous); controls.Children.Add(label); controls.Children.Add(next);
         DockPanel.SetDock(controls, Dock.Bottom); root.Children.Add(controls);
         var pageImage = new Image { Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly, Margin = new(12) };

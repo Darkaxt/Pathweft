@@ -20,6 +20,13 @@ public partial class MainWindow
         SetSinglePane(true);SetActive(Left);
         await S1Verification.Navigate(Left,PaneView.ThisPC);await Left.driveListingWork;await Settle();
         RefreshDrives();await driveRefreshWork;await Settle();
+        check(DrivePresentation.FreeText(1000,152)=="152 bytes (15%)"&&DrivePresentation.FreeText(0,0)=="","Free space shows rounded free/total percentage without inventing unavailable capacity");
+        check(new[]{201L,200L,101L,100L,0L}.Select(f=>DrivePresentation.Warning(1000,f)).SequenceEqual(new[]{0,1,1,2,2}),"Capacity warning boundaries are consistent: accent below 80%, amber from 80%, red from 90% used");
+        check(CloudVolumes.ReadGoogleRoots(new byte[]{10,4,18,2,88,58}).SetEquals(new[]{"X:\\"})&&CloudVolumes.ReadGoogleRoots(new byte[]{10,255}).Count==0,"Provider mount metadata follows registered roots rather than fixed letters and rejects truncated records");
+        var registeredCloud=CloudVolumes.GoogleRoots();
+        foreach(var cloud in Left.Items.Where(e=>registeredCloud.Contains(e.Path)))
+            check(cloud.DriveFormat=="Cloud"&&cloud.DriveConnection=="Google Drive"&&cloud.DriveRawFormat.Length>0&&cloud.Tip.Contains("Reported filesystem:"),"Real cloud mount displays provider identity and retains raw filesystem detail: "+cloud.Path);
+        check(registeredCloud.Count>0,"Real provider mount registration is present for cloud qualification");
         check(Left.Items.Any(e=>e.IsDrive&&e.HasDriveCapacity),"This PC obtains actual drive capacity/free values");
         foreach(var drive in shownDrives)
         {
@@ -54,7 +61,9 @@ public partial class MainWindow
         check(free.SequenceEqual(free.OrderDescending()),"Drive free-space sorting uses numeric bytes");
         var snapshot=shownDrives.First(d=>!d.Network);
         Left.RefreshThisPC(new[]{snapshot with{Free=snapshot.Free-1},new DriveRow("Z:\\","Empty reader","",0,0,false,"",DriveType.Removable)});await Settle();
-        check(Left.Items.Count()==2&&Left.Items.Single(e=>e.Path==snapshot.Name).DriveFree==snapshot.Free-1&&Left.Items.Single(e=>e.Path=="Z:\\").CapacityText=="No media or unavailable","Drive refresh updates free space, preserves unavailable-media rows and removes disconnected entries");
+        check(Left.Items.Count()==1&&Left.Items.Single().DriveFree==snapshot.Free-1,"Drive refresh updates free space and hides unavailable media and disconnected entries");
+        Left.RefreshThisPC(new[]{snapshot,new DriveRow("Z:\\","Inserted card","exFAT",1024,512,false,"",DriveType.Removable)});await Settle();
+        check(Left.Items.Any(e=>e.Path=="Z:\\"&&e.HasDriveCapacity),"An empty-reader slot returns to This PC once its refreshed media is available");
         await Show(new List<Entry>{new(){Name="Z: Empty reader",Path="Z:\\",IsDir=true,IsDrive=true,Size=-2}});
         check(Columns().SequenceEqual(new[]{"Name"}),"Unavailable media does not invent capacity or show empty metadata columns");
 

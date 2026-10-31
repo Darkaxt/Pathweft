@@ -1,7 +1,19 @@
 # S8 core delivery contract
 
-Authority: specification v0.19 and the user's explicit S8-first/delivery instructions.
-S8 is COMPLETE through1.1.4. Release1.1.4 is normally
+Authority: specification v0.20 and the user's explicit S8-first/delivery instructions.
+S8 is ACTIVE for the 1.1.5 CORE-11 / PREVIEW-08/09 refinements. Source capacity/
+provider/unavailable-media and preview behavior plus dark/light100%/150% checks
+pass in the retained hidden fixtures appearance-64aef27457394964bed64902323ba98a
+and appearance-82e3cb4496a44f1cb8d0ef50d9bfcde2. Actual selected-file screenshots
+were inspected; animation foreground and model alpha are verified. Signed/system,
+unsigned/current and missing-resource executable cases, PDF page actions and
+native camera/playback/lifecycle pass. The popup template was inspected without
+opening a desktop popup. Final package, normal release, independent retrieval,
+installed verification and cleanup remain advancement blockers. No required
+deferrals. The stage-closure review found no need for broader refactoring:
+the small shared icon and usage helpers serve the current paired surfaces;
+cloud metadata reading preserves unknown provider formats. Previous S8 is COMPLETE
+through1.1.4. Release1.1.4 is normally
 published at source8552fbdc4a0c38acf7cbb76d98d1ef3d227b6063; all six required
 assets match independent retrieval. Remote annotated tag readback resolves to
 that source. Actual Release consumer PID45236 and downloaded consumer PID4672

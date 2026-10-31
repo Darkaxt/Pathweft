@@ -23,6 +23,7 @@ internal static class PreviewModules
         new("image", "Images", "WIC images, decoded to fit the preview without retaining the source file.", 90,
             new[] { ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".ico", ".tif", ".tiff", ".heic" }),
         new("pdf", "PDF", "Windows PDF rendering with page navigation; no document scripts.", 90, new[] { ".pdf" }),
+        new("executable", "Executable details", "Version resources, architecture and file details without running the application.", 90, new[] { ".exe" }),
         new("archive", "Archive and folder listing", "Lists supported native archives and folders without extracting or running entries.", 90, Array.Empty<string>()),
         new("media", "Video and audio", "Built-in playback using installed Windows codecs.", 90,
             new[] { ".mp4", ".m4v", ".mov", ".wmv", ".avi", ".mkv", ".webm", ".mpg", ".mpeg", ".3gp", ".ts", ".mp3", ".wav", ".wma", ".m4a", ".aac", ".flac", ".ogg", ".opus" }),

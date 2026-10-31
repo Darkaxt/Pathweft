@@ -628,26 +628,24 @@ public partial class MainWindow : Window
 
     // Drive rows are rebuilt from figures read off the UI thread: asking a network drive for its size
     // blocks for the best part of a second, and the numbers have to keep up with copies and deletes.
-    internal record DriveRow(string Name, string Label, string Format, long Total, long Free, bool Network, string VolumeLabel, DriveType Type, string Connection="", string RemotePath="");
+    internal record DriveRow(string Name, string Label, string Format, long Total, long Free, bool Network, string VolumeLabel, DriveType Type, string Connection="", string RemotePath="", string RawFormat="");
 
-    internal static List<DriveRow> ReadDrives(bool includeUnavailable=false)
+    internal static List<DriveRow> ReadDrives()
     {
         var rows = new List<DriveRow>();
         foreach (var d in DriveInfo.GetDrives())
             try
             {
-                if (!d.IsReady)
-                {
-                    if(includeUnavailable)rows.Add(new(d.Name,d.DriveType==DriveType.CDRom?"DVD drive":"Removable disk","",0,0,false,"",d.DriveType));
-                    continue;
-                }
+                if (!d.IsReady)continue;
                 bool net = d.DriveType == DriveType.Network;
                 var remote=net?GetNetworkPath(d.Name)??"":"";
                 var label=d.VolumeLabel.Length>0?d.VolumeLabel:net?"Network drive":"Local Disk";
                 rows.Add(new(d.Name,label,d.DriveFormat,d.TotalSize,d.AvailableFreeSpace,net,d.VolumeLabel,d.DriveType,net?"Network":"",remote));
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { } // drive went away mid-read
-        var links=DriveConnections.Read(rows.Where(d=>!d.Network&&d.Total>0).Select(d=>d.Name));
+        var googleRoots=CloudVolumes.GoogleRoots();
+        rows=rows.Select(row=>CloudVolumes.Provider(row.Name,row.RemotePath,googleRoots) is {Length:>0} provider?row with{RawFormat=row.Format,Format="Cloud",Connection=provider}:row).ToList();
+        var links=DriveConnections.Read(rows.Where(d=>!d.Network&&d.Total>0&&d.Format!="Cloud").Select(d=>d.Name));
         return rows.Select(row=>links.TryGetValue(row.Name,out var link)?row with{Connection=link.Text}:row).ToList();
     }
 
@@ -657,7 +655,7 @@ public partial class MainWindow : Window
     void RefreshDrives()
     {
         if(!driveRefreshWork.IsCompleted||closingPreviews)return;
-        driveRefreshWork=Task.Run(()=>ReadDrives(includeUnavailable:true)).ContinueWith(t =>
+        driveRefreshWork=Task.Run(()=>ReadDrives()).ContinueWith(t =>
     {
         if(closingPreviews)return;
         var rows = t.Result.Where(d=>d.Total>0).ToList();
@@ -675,7 +673,7 @@ public partial class MainWindow : Window
     // OneCommander-style drive row: "C:  Label        used / total GB" with a usage bar under it.
     Button DriveButton(DriveRow d)
     {
-        double used = d.Total - d.Free, frac = used / d.Total;
+        double used = d.Total - d.Free, frac = DrivePresentation.UsedPercent(d.Total,d.Free)/100;
         var label = d.RemotePath.Length>0?d.Label+" ("+d.RemotePath+")":d.Label;
         var g = new Grid();
         g.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
@@ -693,11 +691,8 @@ public partial class MainWindow : Window
         var bar = new Grid { Height = 2, Margin = new(0, 4, 0, 1) };
         bar.Children.Add(new Border { Background = Hex("#1AFFFFFF") });
         var fill = new Border { Background = (Brush)FindResource("Accent"), HorizontalAlignment = HorizontalAlignment.Left };
-        if (frac > 0.9) // almost full: a bright red that glows a little, so it reads as a warning at a glance
-        {
-            fill.Background = Hex("#FF3347");
-            fill.Effect = new System.Windows.Media.Effects.DropShadowEffect { Color = Color.FromRgb(0xFF, 0x33, 0x47), BlurRadius = 7, ShadowDepth = 0, Opacity = 0.75 };
-        }
+        int warning=DrivePresentation.Warning(d.Total,d.Free);
+        if(warning>0)fill.Background=Hex(warning==2?"#E5484D":"#D99024");
         bar.SizeChanged += (_, e) => fill.Width = e.NewSize.Width * frac;
         bar.Children.Add(fill);
         Grid.SetColumn(name, 1); Grid.SetColumn(size, 2);

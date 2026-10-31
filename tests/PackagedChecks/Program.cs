@@ -218,6 +218,10 @@ sealed class PackageProbe
             var columnKeys=(IDictionary)typeof(PaneView).GetField("colKey",Flags).GetValue(left);
             string[] CurrentColumns()=>((GridView)((ListView)left.FindName("List")).View).Columns.Select(c=>(string)columnKeys[c]).ToArray();
             Check(CurrentColumns().Contains("Capacity")&&!CurrentColumns().Contains("Version"),"Delivered drive view contains populated drive columns without empty file columns");
+            Check(driveRows.Where(e=>e.HasDriveCapacity).All(e=>e.FreeText.Contains('%')),"Delivered drive free-space values include measured percentages");
+            Check(driveRows.All(e=>e.HasDriveCapacity),"Delivered This PC omits unavailable reader slots");
+            foreach(var cloud in driveRows.Where(e=>e.DriveFormat=="Cloud"))
+                Check(cloud.DriveConnection is "Google Drive" or "Tresorit"&&cloud.DriveRawFormat.Length>0,"Delivered provider registration identifies the actual cloud mount: "+cloud.Path);
             foreach(var entry in driveRows.Where(e=>e.Path is "E:\\" or "G:\\"))
                 Check(entry.DriveConnection=="USB · 10 Gbps","Delivered native USB query reports the actual external link: "+entry.Path);
             var folderArrived=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -256,6 +260,9 @@ sealed class PackageProbe
             var markdown=Path.Combine(root,"preview.md");File.WriteAllText(markdown,"# Packaged Markdown\n\nReadable **content**.");
             Call(previewType,session,"Show",new Entry{Name="preview.md",Path=markdown});await (Task)Get(session,"Completion");
             Check((string)Get(session,"State")=="ready"&&(string)Get(session,"ModuleId")=="markdown"&&target.Content!=null,"Delivered internal Markdown module renders through the actual preview session");
+            var appHost=Path.Combine(AppContext.BaseDirectory,"Pathweft.exe");
+            Call(previewType,session,"Show",new Entry{Name="Pathweft.exe",Path=appHost});await (Task)Get(session,"Completion");
+            Check((string)Get(session,"State")=="ready"&&(string)Get(session,"ModuleId")=="executable"&&target.Content is ScrollViewer,"Delivered executable preview renders metadata through its actual module");
             Call(previewType,session,"Show",new Entry{Name="native.zip",Path=Path.Combine(root,"native.zip")});await (Task)Get(session,"Completion");
             var archiveTree=target.Content as TreeView;
             Check((string)Get(session,"State")=="ready"&&archiveTree!=null&&archiveTree.Items.OfType<TreeViewItem>().Any(),"Delivered archive preview is a native themed tree rather than the old flat text dump");
@@ -267,6 +274,9 @@ sealed class PackageProbe
             var viewer=previewType.GetField("viewer",Flags).GetValue(session);
             var frame=Get(viewer,"LastFrame");var png=(byte[])Get(frame,"Png");
             Check((bool)Get(frame,"Offscreen")&&png.Length>1000,"Delivered native preview produces a real offscreen image");
+            var bitmap=(System.Windows.Media.Imaging.BitmapSource)Get(frame,"Bitmap");
+            var bgra=new System.Windows.Media.Imaging.FormatConvertedBitmap(bitmap,System.Windows.Media.PixelFormats.Bgra32,null,0);var alpha=new byte[4];bgra.CopyPixels(new Int32Rect(0,0,1,1),alpha,4,0);
+            Check(alpha[3]==0,"Delivered model renderer composites transparently into the themed preview");
             File.WriteAllBytes(Path.Combine(root,"packaged-f3d.png"),png);
             Check(((string[])Type("Preview.F3dViewer").GetProperty("SupportedExtensions",Flags).GetValue(null)).Contains(".obj"),"Delivered F3D selection discovers its actual bundled model readers");
             Call(viewer.GetType(),viewer,"HandleKey",System.Windows.Input.Key.Right);await (Task)Get(viewer,"RenderCompletion");

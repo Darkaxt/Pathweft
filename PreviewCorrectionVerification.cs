@@ -9,6 +9,7 @@ using System.Windows.Automation.Provider;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Automation;
 
 namespace FileExplorer;
 
@@ -22,11 +23,51 @@ public partial class MainWindow
         using var session = new PreviewSession(this, body, _ => { });
         async Task Show(string path, bool directory = false)
         {
+            PreviewBody.Content=body;
             session.Show(new Entry { Path = path, Name = Path.GetFileName(path), IsDir = directory });
             await session.Completion;
+            body.Measure(new Size(380,640));body.Arrange(new Rect(0,0,380,640));body.UpdateLayout();
             check(session.State == "ready", "Preview loads through the actual session: " + Path.GetExtension(path));
         }
         async Task Settle() => await Dispatcher.InvokeAsync(UpdateLayout, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+        string executable=Path.Combine(AppContext.BaseDirectory,"Pathweft.exe");
+        string executableHash=HashFile(executable);await Show(executable);
+        check(session.ModuleId=="executable"&&ExecutableDetails.Read(executable,default).Any(p=>p.Name=="Product version"&&p.Value.StartsWith(typeof(MainWindow).Assembly.GetName().Version.ToString(3))),"Executable selection renders actual version resources without launching the file");
+        check(HashFile(executable)==executableHash,"Executable metadata preview preserves its source");
+        var signed=ExecutableDetails.Read(Path.Combine(Environment.SystemDirectory,"notepad.exe"),default);
+        check(signed.Any(p=>p.Name=="Company")&&signed.Any(p=>p.Name=="File version"),"System executable exposes actual company/version metadata without being loaded or executed");
+        string noVersion=Path.Combine(root,"no-version.exe");File.WriteAllText(noVersion,"no PE version resource");await Show(noVersion);
+        check(ExecutableDetails.Read(noVersion,default).Any(p=>p.Name=="Executable header"),"Missing resources and malformed executable headers remain a readable details view");
+        Settings.DisabledPreviewModules.Add("executable");session.Refresh();await session.Completion;
+        check(session.ModuleId!="executable","Executable-details module respects its actual Settings disable state");
+        Settings.DisabledPreviewModules.Remove("executable");
+        async Task LayoutPreview(string file,string name)
+        {
+            SetSinglePane(true);SetActive(Left);
+            await S1Verification.Navigate(Left,Path.GetDirectoryName(file));
+            Left.List.SelectedItem=Left.Items.Single(e=>e.Path==file);PreviewFollow();await sidePreview.Completion;
+            foreach(string mode in new[]{"dark","light"})foreach(double scale in new[]{1.0,1.5})
+            {
+                Settings.NativeMode=mode;Settings.TextScale=scale;ApplyAppearance();await sidePreview.Completion;await Settle();
+                Width=1200;Height=820;await Settle();
+                check(sidePreview.Entry.Path==file&&PreviewBody.Content is not TextBox&&PreviewBody.ActualWidth>150&&PreviewBody.ActualHeight>200,"Actual selected-file preview remains current with a usable themed viewport: "+name+mode+scale);
+                if(name=="animation")
+                {var current=PreviewChildren<ComboBox>(PreviewBody).Single();current.ApplyTemplate();var face=PreviewChildren<System.Windows.Controls.Primitives.ToggleButton>(current).First();check(((SolidColorBrush)face.Foreground).Color==((SolidColorBrush)FindResource("Palette.E8EEF6")).Color&&current.ActualHeight>=32&&current.SelectedIndex==0,"Animation selector has a readable selected clip and the actual "+mode+" theme foreground");}
+                await S1Verification.Snapshot(this,root,$"preview-{name}-{mode}-{scale*100:0}");
+            }
+            Settings.NativeMode="dark";Settings.TextScale=1;ApplyAppearance();await sidePreview.Completion;await Settle();await Show(file);
+        }
+        await LayoutPreview(executable,"executable");
+        string pdf=Path.Combine(root,"pages.pdf");WritePdf(pdf);await Show(pdf);await Settle();
+        var pdfButtons=S3VerificationButtons(body).ToArray();
+        var nextPage=pdfButtons.Single(b=>AutomationProperties.GetName(b)=="Next page");
+        var previousPage=pdfButtons.Single(b=>AutomationProperties.GetName(b)=="Previous page");
+        check(nextPage.Content is TextBlock&&nextPage.IsEnabled&&!previousPage.IsEnabled,"PDF navigation uses named icons with correct first-page state");
+        nextPage.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await PreviewSession.DrainAsync();
+        check(!nextPage.IsEnabled&&previousPage.IsEnabled,"PDF next-page icon renders the actual second page");
+        previousPage.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await PreviewSession.DrainAsync();
+        check(nextPage.IsEnabled&&!previousPage.IsEnabled,"PDF previous-page icon returns to the first page");
+        await LayoutPreview(pdf,"pdf");
         TreeViewItem[] Rows(ItemsControl tree) => tree.Items.OfType<TreeViewItem>().ToArray();
         var zip = Path.Combine(root,"tree.zip");
         using (var archive = ZipFile.Open(zip, ZipArchiveMode.Create))
@@ -115,9 +156,15 @@ public partial class MainWindow
         check(animatedRenderer.LastFrame.Animations==1&&animatedRenderer.LastFrame.End>0,"Native scene reports an animation clip and exposes its time range");
         var animationFrame=animatedRenderer.LastFrame;animatedRenderer.Seek(.5);await animatedRenderer.RenderCompletion;
         check(!animationFrame.Png.SequenceEqual(animatedRenderer.LastFrame.Png),"Animation timeline evaluates and renders the actual animated scene");
-        var playButton=S3VerificationButtons(body).Single(b=>b.Content?.ToString()=="Play");
-        playButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));check(playButton.Content.ToString()=="Pause","Actual animation control starts frame-driven playback");
-        playButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));check(playButton.Content.ToString()=="Play","Actual animation control pauses and releases its frame subscription");
+        var playButton=S3VerificationButtons(body).Single(b=>AutomationProperties.GetName(b)=="Play");
+        check(S3VerificationButtons(body).All(b=>b.Content is TextBlock&&AutomationProperties.GetName(b).Length>0&&b.ToolTip!=null),"Model actions use icons with tooltips and accessible names");
+        playButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));check(AutomationProperties.GetName(playButton)=="Pause","Actual animation control starts frame-driven playback");
+        playButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));check(AutomationProperties.GetName(playButton)=="Play","Actual animation control pauses and releases its frame subscription");
+        await LayoutPreview(animated,"animation");
+        var clip=PreviewChildren<ComboBox>(body).Single();clip.ApplyTemplate();
+        check(clip.Style==FindResource("PreviewClipCombo")&&clip.SelectedIndex==0,"Animation selector uses the actual themed template and selected clip");
+        var popup=(System.Windows.Controls.Primitives.Popup)clip.Template.FindName("PART_Popup",clip);
+        check(((SolidColorBrush)((Border)popup.Child).Background).Color==((SolidColorBrush)FindResource("Palette.20242A")).Color,"Animation popup uses the current themed surface without opening a desktop popup");
         var previous=(F3dViewer)session.ViewerForVerification;
         if(!string.IsNullOrEmpty(model))
         {
@@ -126,6 +173,8 @@ public partial class MainWindow
             check(!previous.WorkerAlive,"Selection change destroys the old native engine and joins its thread");
             var renderer=(F3dViewer)session.ViewerForVerification;
             var first=renderer.LastFrame;File.WriteAllBytes(Path.Combine(root,"large-model.png"),first.Png);
+            var bgra=new System.Windows.Media.Imaging.FormatConvertedBitmap(first.Bitmap,PixelFormats.Bgra32,null,0);var corner=new byte[4];bgra.CopyPixels(new Int32Rect(0,0,1,1),corner,4,0);
+            check(corner[3]==0,"Native model background is transparent, eliminating the opaque rectangular cutoff");
             check(first is { Offscreen:true, Bitmap.PixelWidth:960 },"Large user model renders through the actual internal offscreen engine");
             // Use the same application-owned drag handler as WPF pointer movement;
             // no physical mouse or desktop focus is synthesized.
@@ -163,6 +212,17 @@ public partial class MainWindow
         }
         finally{widget.Shutdown();}
         check(HiddenTrialPresentation.ForegroundViolations==0,"Preview correction checks never activate a desktop window");
+    }
+    static string HashFile(string path){using var stream=File.OpenRead(path);return Convert.ToHexString(SHA256.HashData(stream));}
+    static IEnumerable<T> PreviewChildren<T>(DependencyObject root) where T:DependencyObject
+    {for(int i=0;i<VisualTreeHelper.GetChildrenCount(root);i++){var child=VisualTreeHelper.GetChild(root,i);if(child is T match)yield return match;foreach(var next in PreviewChildren<T>(child))yield return next;}}
+    static void WritePdf(string path)
+    {
+        var text=new System.Text.StringBuilder("%PDF-1.4\n");var offsets=new List<int>{0};
+        foreach(string value in new[]{"<< /Type /Catalog /Pages 2 0 R >>","<< /Type /Pages /Kids [3 0 R 4 0 R] /Count 2 >>","<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] >>","<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] >>"})
+        {offsets.Add(text.Length);text.Append($"{offsets.Count-1} 0 obj\n{value}\nendobj\n");}
+        int xref=text.Length;text.Append("xref\n0 5\n0000000000 65535 f \n");foreach(int offset in offsets.Skip(1))text.Append($"{offset:0000000000} 00000 n \n");
+        text.Append($"trailer\n<< /Size 5 /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n");File.WriteAllText(path,text.ToString(),System.Text.Encoding.ASCII);
     }
     static IEnumerable<Button> S3VerificationButtons(DependencyObject root)
     {

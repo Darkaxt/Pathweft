@@ -97,13 +97,15 @@ public class Entry : INotifyPropertyChanged
     public long DriveTotal {get;init;}
     public long DriveFree {get;init;}
     public string DriveFormat {get;init;}="";
+    public string DriveRawFormat {get;init;}="";
     public string DriveConnection {get;init;}="";
     public string DriveLocation {get;init;}="";
     public bool HasDriveCapacity=>IsDrive&&DriveTotal>0;
-    public double DriveUsedPercent=>DriveTotal>0?Math.Clamp(100.0*(DriveTotal-DriveFree)/DriveTotal,0,100):0;
+    public double DriveUsedPercent=>DrivePresentation.UsedPercent(DriveTotal,DriveFree);
+    public int DriveWarning=>DrivePresentation.Warning(DriveTotal,DriveFree);
     public string CapacityText=>HasDriveCapacity?$"{MainWindow.Fmt(DriveFree)} free of {MainWindow.Fmt(DriveTotal)}":"No media or unavailable";
     public string TotalText=>HasDriveCapacity?MainWindow.Fmt(DriveTotal):"";
-    public string FreeText=>HasDriveCapacity?MainWindow.Fmt(DriveFree):"";
+    public string FreeText=>DrivePresentation.FreeText(DriveTotal,DriveFree);
     bool NoDate => IsUp || Modified == default; // network shares have no date
 
     public event PropertyChangedEventHandler PropertyChanged;
@@ -181,7 +183,7 @@ public class Entry : INotifyPropertyChanged
     public string Tip => IsUp ? null : string.Join("\n", new[]
     {
         Name, IsReadOnly ? ReadOnlyReason : null, Location != "" ? "In: " + Location : null, "Type: " + Thumbnails.TypeName(Name, IsDir),
-        IsDrive?CapacityText:null,DriveConnection.Length>0?DriveConnection:null,DriveLocation.Length>0?DriveLocation:null,
+        IsDrive?CapacityText:null,DriveConnection.Length>0?DriveConnection:null,DriveRawFormat.Length>0?"Reported filesystem: "+DriveRawFormat:null,DriveLocation.Length>0?DriveLocation:null,
         size >= 0 ? "Size: " + MainWindow.Fmt(size) : null, NoDate ? null : "Date modified: " + Modified.ToString("yyyy-MM-dd HH:mm:ss"),
     }.Where(line => line != null));
 }
@@ -986,7 +988,7 @@ public partial class PaneView : UserControl
         int v = GoTo(ThisPC, record);
         watcher?.Dispose(); watcher = null;
         sizing?.Cancel();
-        driveListingWork=Task.Run(() => MainWindow.ReadDrives(includeUnavailable:true)).ContinueWith(t => Dispatcher.InvokeAsync(() =>
+        driveListingWork=Task.Run(() => MainWindow.ReadDrives()).ContinueWith(t => Dispatcher.InvokeAsync(() =>
         {
             if (v != navVersion) return;
             var drives = DriveEntries(t.Result);
@@ -998,7 +1000,7 @@ public partial class PaneView : UserControl
         }).Task).Unwrap();
     }
     internal Task driveListingWork=Task.CompletedTask;
-    static List<Entry> DriveEntries(IEnumerable<MainWindow.DriveRow> rows)=>rows.Select(d=>new Entry{Name=$"{d.Name.TrimEnd('\\')}  {d.Label}",Path=d.Name,IsDir=true,Size=-2,IsDrive=true,DriveTotal=d.Total,DriveFree=d.Free,DriveFormat=d.Format,DriveConnection=d.Connection,DriveLocation=d.RemotePath}).ToList();
+    static List<Entry> DriveEntries(IEnumerable<MainWindow.DriveRow> rows)=>rows.Where(d=>d.Total>0).Select(d=>new Entry{Name=$"{d.Name.TrimEnd('\\')}  {d.Label}",Path=d.Name,IsDir=true,Size=-2,IsDrive=true,DriveTotal=d.Total,DriveFree=d.Free,DriveFormat=d.Format,DriveRawFormat=d.RawFormat,DriveConnection=d.Connection,DriveLocation=d.RemotePath}).ToList();
     internal void RefreshThisPC(IEnumerable<MainWindow.DriveRow> rows)
     {
         if(Dir!=ThisPC||InSearch||!Listed)return;
