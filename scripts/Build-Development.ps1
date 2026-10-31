@@ -52,6 +52,8 @@ try {
     }
     Push-Location $projectRoot
     try {
+        $shellOutput=Join-Path $scratch 'shell-router'
+        & (Join-Path $PSScriptRoot 'Build-ShellRouter.ps1') -OutputRoot $shellOutput
         & dotnet --version
         if ($LASTEXITCODE -ne 0) { throw 'The SDK selected by global.json is unavailable.' }
         $buildArguments = @(
@@ -65,6 +67,7 @@ try {
             ('-p:SharpSevenZipRuntimeRoot=' + (Join-Path $cache 'sharpsevenzip/2.0.130-pathweft.1'))
             ('-p:RarsRuntimeRoot=' + (Join-Path $cache 'rars/0.12.3-pathweft.1'))
             ('-p:EverythingRuntimeRoot=' + (Join-Path $cache 'everything/1.4.1.1032'))
+            ('-p:ShellRouterRoot=' + $shellOutput)
         )
         if($Operation -eq 'Publish'){
             if(!$PublishDirectory -or ![IO.Path]::GetFullPath($PublishDirectory).StartsWith($scratch+'\',[StringComparison]::OrdinalIgnoreCase)){throw 'Publish output must remain inside this exact task scratch.'}

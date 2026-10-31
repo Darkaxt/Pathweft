@@ -19,6 +19,7 @@ public partial class SettingsWindow : Window
         ApplyTextSize();
         BuildPreviewModuleControls();
         ShowValues();
+        Activated += (_, _) => RefreshFolderIntegration();
         // A double-click on a slider's handle puts it back to its default (Settings.cs), as in Frostpane: one
         // setting can be tried out and undone without a reset of them all.
         foreach (var (slider, value) in new (System.Windows.Controls.Slider, double)[]
@@ -55,12 +56,8 @@ public partial class SettingsWindow : Window
         VerifyBox.IsChecked = Settings.Verify;
         ParallelBox.IsChecked = Settings.ParallelCopy;
         EditorBox.IsChecked = Settings.InternalEditor;
-        DefaultBox.IsChecked = Settings.IsDefaultFileManager;
         DefaultBox.IsEnabled = WinEBox.IsEnabled = Settings.Profile == null;
-        RestoreFolderHandlers.Visibility = System.IO.File.Exists(WindowsIntegration.RecoveryPath) ? Visibility.Visible : Visibility.Collapsed;
-        FolderIntegrationStatus.Text = Settings.IsDefaultFileManager ? "Folder integration is enabled for this copy of Pathweft."
-            : System.IO.File.Exists(WindowsIntegration.RecoveryPath) ? "Folder handlers changed outside Pathweft. Restore the prior handlers or enable integration again."
-            : "Your current folder handlers are unchanged.";
+        RefreshFolderIntegration();
         WinEBox.IsChecked = Settings.TakeWinE;
         try{WinEStatus.Text=Agent.IsReady?"Win+E is enabled.":Settings.TakeWinE?"Win+E is unavailable. Switch it off and on to start it.":"Win+E integration is off.";}
         catch(Exception ex)when(ex is System.IO.IOException or InvalidOperationException or System.ComponentModel.Win32Exception){WinEStatus.Text=ex.Message;}
@@ -86,6 +83,17 @@ public partial class SettingsWindow : Window
         AutoscrollUpDownBox.IsEnabled = Settings.Autoscroll;
         TipDelaySlider.Value = Settings.TipDelay;
         TipDelayText.Text = $"{Settings.TipDelay / 1000.0:0.0} s";
+    }
+
+    internal void RefreshFolderIntegration()
+    {
+        bool enabled=Settings.IsDefaultFileManager;
+        bool recovery=System.IO.File.Exists(WindowsIntegration.RecoveryPath);
+        DefaultBox.IsChecked=enabled;
+        RestoreFolderHandlers.Visibility=recovery?Visibility.Visible:Visibility.Collapsed;
+        FolderIntegrationStatus.Text=enabled?"Folder integration is enabled for this copy of Pathweft."
+            :recovery?"Folder handlers changed outside Pathweft. Restore the prior handlers or enable integration again."
+            :"Your current folder handlers are unchanged.";
     }
 
     // ---- Reset to defaults: a card's settings, or all three cards, as Pathweft comes (Settings.Reset) ----

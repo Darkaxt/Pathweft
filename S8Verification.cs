@@ -131,7 +131,11 @@ public partial class MainWindow
                     using(var old=isolated.CreateSubKey(@"Software\Classes\Directory\shell\open\command"))old.SetValue("","%SystemRoot%\\explorer.exe",RegistryValueKind.ExpandString);
                     WindowsIntegration.SetEnabled(true);
                     Check(WindowsIntegration.Enabled&&File.Exists(WindowsIntegration.RecoveryPath),"Production Shell registration writes its recovery record and selected verbs to a real isolated registry subtree");
+                    settings.RefreshFolderIntegration();
+                    Check(((CheckBox)settings.FindName("DefaultBox")).IsChecked==true&&((TextBlock)settings.FindName("FolderIntegrationStatus")).Text.Contains("is enabled"),"Existing Settings window refreshes from the actual enabled registration");
                     WindowsIntegration.SetEnabled(false);
+                    settings.RefreshFolderIntegration();
+                    Check(((CheckBox)settings.FindName("DefaultBox")).IsChecked==false&&!((TextBlock)settings.FindName("FolderIntegrationStatus")).Text.Contains("is enabled"),"Settings never retain the old enabled label after handlers change");
                     using(var restored=isolated.OpenSubKey(@"Software\Classes\Directory\shell"))Check((string)restored.GetValue("")=="previous-manager","Disable restores the exact previous default manager");
                     using(var restored=isolated.OpenSubKey(@"Software\Classes\Directory\shell\open\command"))Check(restored.GetValueKind("")==RegistryValueKind.ExpandString&&(string)restored.GetValue("",null,RegistryValueOptions.DoNotExpandEnvironmentNames)=="%SystemRoot%\\explorer.exe","Disable preserves expandable-string kind and unexpanded contents");
                     Check(isolated.OpenSubKey(@"Software\Classes\Drive")==null&&!File.Exists(WindowsIntegration.RecoveryPath),"Disable removes only newly created empty keys and closes its recovery record");

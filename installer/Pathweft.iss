@@ -46,7 +46,10 @@ Name: "defaultfm"; Description: "Open filesystem folders and drives in Pathweft"
 Name: "desktopicon"; Description: "Create a desktop shortcut"; GroupDescription: "Shortcuts:"; Flags: unchecked
 
 [Files]
-Source: "{#PublishRoot}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#PublishRoot}\*"; DestDir: "{app}"; Excludes: "PathweftShell-*.dll"; Flags: ignoreversion recursesubdirs createallsubdirs
+; Versioned native handlers can coexist with a prior version still loaded in a
+; Shell caller. Uninstall never force-closes that caller to remove its DLL.
+Source: "{#PublishRoot}\PathweftShell-*.dll"; DestDir: "{app}"; Flags: ignoreversion uninsrestartdelete
 
 [Icons]
 Name: "{group}\Pathweft"; Filename: "{app}\{#AppExe}"

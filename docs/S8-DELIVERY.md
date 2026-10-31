@@ -1,7 +1,10 @@
 # S8 core delivery contract
 
-Authority: specification v0.21 and the user's explicit S8-first/delivery instructions.
-S8 is COMPLETE through1.1.5, including CORE-11 and PREVIEW-08..11. The normal
+Current status: ACTIVE for the1.1.6 Explorer routing correction, detailed below.
+Source and hidden native/app qualification pass; final delivery remains required.
+
+Authority: specification v0.22 and the user's explicit S8-first/delivery instructions.
+Historical S8 closure through1.1.5 includes CORE-11 and PREVIEW-08..11. The normal
 six-asset release is https://github.com/Darkaxt/Pathweft/releases/tag/v1.1.5,
 source3fa4b465775ce411a89ba2628b1907420facac50. Annotated tag readback resolves
 to that source; all published asset sizes/digests match independent retrieval.
@@ -377,3 +380,23 @@ Retained private receipts include publication metadata, independent retrieval,
 final native integration, actual installation/self-test and cleanup manifests.
 Requested local release assets remain in `dist/1.1.0-c20f9d7f`. S6 is BLOCKED and
 S7 is NOT STARTED; this release does not claim their search or StartAllBack behavior.
+# 1.1.6 routing correction — ACTIVE
+
+The reported Explorer regression reopens SHELL-01. Keeping the canonical `open`
+name did not give a direct executable command the calling browser context. The
+replacement is a small native DelegateExecute handler. A Shell browser site
+navigates through BrowseObject; external filesystem requests launch Pathweft.
+Managed UI is never loaded in Shell callers. The old Settings label was a
+constructor-time snapshot; it now refreshes ownership on activation.
+
+Fresh hidden checks pass for real IContextMenu invocation and actual COM registry
+activation into real ExplorerBrowser navigation, 32/64-bit callers, Unicode/spaced
+folders, external drive roots, exact receiver exit and COM object release.
+Private registry qualification verifies disabled integration, both old opt-in
+formats, original owner/value-kind restoration and later-owner preservation.
+Integrated app/current Settings/restart/self-test checks pass. Final package,
+publication/retrieval, installed correction and cleanup remain required.
+
+File Labs upstream was refreshed during this correction and remains9bfbbce;
+the previously reviewed selective adoption remains applicable. No dependency
+upgrade or unrelated upstream behavior is introduced in this regression patch.

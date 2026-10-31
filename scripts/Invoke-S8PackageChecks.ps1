@@ -27,6 +27,7 @@ function Verify-Members([string]$directory){
     }
 }
 Verify-Members $product
+& (Join-Path $PSScriptRoot 'Build-ShellRouter.ps1') -OutputRoot (Join-Path $run 'native-shell') -Verify -ProductDirectory $product
 $env:PATHWEFT_PROFILE=Join-Path $run 'profile'
 [void][IO.Directory]::CreateDirectory($env:PATHWEFT_PROFILE)
 [IO.File]::WriteAllLines((Join-Path $env:PATHWEFT_PROFILE 'settings.txt'),@('wine=0','tray=0','taskbarsearch=0','theme.native=1','theme.mode=light',"lastseen=$($manifest.version)","tabs.Left=$run","tabs.Right=$run"))

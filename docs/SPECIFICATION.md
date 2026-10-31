@@ -1,6 +1,6 @@
 # Pathweft specification
 
-Version 0.21 - 2026-10-31. Owner: Darkaxt.
+Version 0.22 - 2026-10-31. Owner: Darkaxt.
 
 This is the authoritative specification. The derived plan must preserve every
 requirement and acceptance criterion. Material scope changes require explicit
@@ -8,11 +8,23 @@ user direction recorded here; ordinary implementation choices need no new gate.
 
 ## 1. Intent and current scope
 
-Current reconciliation: S8 is COMPLETE through the user-requested1.1.5 refinements
+Current reconciliation: S8 is ACTIVE again for the reported Explorer folder-navigation
+regression in1.1.5 under SHELL-01. Establish the actual live registration/context,
+preserve Explorer-owned navigation while retaining opt-in external routing,
+qualify hidden real Shell boundaries and release/verify the correction. Registry
+or caption guesses alone cannot satisfy this criterion. S9 remains NOT STARTED.
+The correction uses a native DelegateExecute handler: a Shell browser site routes
+through that browser's BrowseObject, while an external filesystem request launches
+Pathweft. Keep 32/64-bit COM registration reversible, migrate only wholly owned
+old opt-ins, and retain disabled/third-party owners. Version native handler files
+so an update never needs to terminate an Explorer caller holding the previous DLL.
+Refresh folder integration's Settings state when its window activates; its old
+constructor-time label is not evidence of current handler ownership.
+Earlier S8 is COMPLETE through the user-requested1.1.5 refinements
 below, normally published at source3fa4b465775ce411a89ba2628b1907420facac50.
 Independent retrieval, actual packaged workflows, installed hashes/app-host
 self-test, preserved settings/routing and exact scratch cleanup pass. There is
-no S8 blocker or required deferral. The earlier authorized S8 scope through CORE-09/10 and
+no blocker or required deferral in that prior closure. The earlier authorized S8 scope through CORE-09/10 and
 PREVIEW-06/07 is COMPLETE in normally published and independently retrieved/
 installed1.1.4 (source8552fbdc4a0c38acf7cbb76d98d1ef3d227b6063), with exact
 scratch cleanup verified. This does

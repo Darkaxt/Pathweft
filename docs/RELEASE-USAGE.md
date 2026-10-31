@@ -1,4 +1,4 @@
-# Pathweft 1.1.5
+# Pathweft 1.1.6
 
 Windows 11 x64 is the qualified host. The .NET 10 desktop runtime and native
 archive/preview libraries are included. WebView2 Evergreen is required for the
@@ -8,6 +8,9 @@ The installer runs for the current user without administrator privileges.
 Folder routing is unchecked during installation. Settings > Windows integration
 owns folder routing, its restoration action, independent Win+E, and taskbar
 search. Navigation within an existing Explorer window stays in Explorer.
+The native 32/64-bit folder handler preserves a calling Shell browser's site;
+external filesystem requests launch Pathweft. Settings refreshes the current
+handler ownership when activated. An update migrates only an intact old opt-in.
 Explicit Explorer launches, virtual Shell locations and Open/Save
 dialogs remain in Windows. StartAllBack's Shell/known-folder/library links are
 not covered by this release's filesystem registration; their native integration
@@ -94,3 +97,7 @@ packaged file. The normal release contains matching application/dependency
 source archives and original notices. Pathweft's combined derived application
 is GPL-3.0-or-later; dependencies retain their individual terms. You may replace
 compatible shared libraries; no signature restriction prevents relinking.
+
+Source builds also require Visual Studio C++ x86/x64 tools and Windows SDK
+10.0.26100.0 for the small native Shell handler. The installed runtime does not
+require Visual Studio or a separate Visual C++ redistributable.

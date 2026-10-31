@@ -1,15 +1,28 @@
 # Implementation and reconciliation
 
-Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.21, 2026-10-31,
+Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.22, 2026-10-31,
 including the user-authorized continued comparison requirement TRANSFER-07.
 
-S8 is COMPLETE for CORE-11 / PREVIEW-08..11: free percentages, consistent capacity
+S8 is ACTIVE again for the user's Explorer-navigation regression under SHELL-01.
+The old UI label is cached at window construction; passive CLR inspection confirmed
+that cached enabled text and the normal live profile, while fresh registry reads
+show no owned values. Do not infer current registration from that label. Existing
+code replaced the canonical open command with a context-free executable launch.
+The correction preserves the native browser site through DelegateExecute and
+refreshes Settings ownership on activation. Real hidden Shell IContextMenu calls
+and actual ExplorerBrowser navigation pass for 32/64-bit handlers; external
+receiver launch/path and original-process exit plus DLL unload pass. Private
+registry checks pass for both legacy opt-ins, disabled integration and owner
+restoration. Remaining: full app/current-source qualification, actual COM registry
+activation, final package/publication/retrieval, installed correction and cleanup.
+These are current advancement blockers; no tracked deferrals. S9 is NOT STARTED.
+Prior S8 is COMPLETE for CORE-11 / PREVIEW-08..11: free percentages, consistent capacity
 warnings, provider-based cloud labels, icon preview actions, themed animation
 selection, seamless model composition, executable metadata, shared native/virtual
 folder trees and selection-driven preview collapse. Source qualification,
 normal1.1.5 publication at3fa4b465775ce411a89ba2628b1907420facac50,
 independent downloaded consumer PID15184, installation and exact cleanup pass.
-No remaining S8 acceptance, blocker or tracked deferral; no stage is ACTIVE.
+That prior closure had no remaining acceptance, blocker or tracked deferral.
 S6/S7 remain postponed. The immutable release tag remains at its verified source.
 S8 was COMPLETE through1.1.4: CORE-09/10, PREVIEW-06/07 and About are verified in
 source and the final Release package, normal publication, independent retrieval,
@@ -528,7 +541,7 @@ tracked deferral assigned to the current S8 correction.
 | S5 | TRANSFER-01..07 and affected caller/CORE/LIFE criteria; final native/Release/FAT32 evidence and finite findings reconciliation | None within S5 | COMPLETE; no blocker | None |
 | S6 | Matching isolated Windows/Shell modules; current StartAllBack 3.9.28; native query/view trace and Programs/Settings groups with WSearch stopped; program launch and See more results URI dispatch observed on 3.9.28; earlier program/Settings launches on 3.9.25; no complete SAB criterion yet | SAB-01..06, including file-provider/cancellation ownership, remaining provider conditions, compact Everything groups/full-results handoff and direct folder routing | BLOCKED by the user's explicit S8-first priority. Investigation is retained; Sandbox was shut down. Native ABI/ownership and remaining service/indexing comparisons are unresolved when this stage resumes. Host configuration is unchanged. | None |
 | S7 | None | EVERYWHERE-01..05 | S6 prerequisite not complete. File-surface, indexing-scope and Outlook compatibility inventory remains unresolved; no live scope changes during S6. | None |
-| S8 | Current source drive/provider PID46676 and previews/tree/collapse PID41808 pass; actual final Release PID9704 and independently downloaded PID15184 pass. Normal1.1.5/source3fa4b46, installed manifest/app-host/identity, unchanged settings/routing, and cleanup8b428ad132516e0ea2a728181d2ea675 pass. | None in current S8 scope | COMPLETE; no blocker. S6/S7 remain outside this release. | None |
+| S8 | Prior1.1.5 delivery is verified. Current browser-aware routing passes real hidden 32/64-bit Shell invocation/COM activation, external Unicode/root launches, legacy opt-in upgrades and previous-owner recovery; integrated app/Settings/self-test pass. | Final1.1.6 package, publication/retrieval, installed routing correction and cleanup. | ACTIVE; these delivery criteria block completion. S6/S7 remain outside this release. | None |
 
 S1 and S2 are COMPLETE. The user confirmed normal unlock; real physical drag and
 clipboard checks subsequently passed. A separate STA process read the Windows

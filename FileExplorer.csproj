@@ -9,7 +9,7 @@
     <AssemblyName>Pathweft</AssemblyName>
     <Product>Pathweft</Product>
     <Company>Darkaxt</Company>
-    <Version>1.1.5</Version>
+    <Version>1.1.6</Version>
     <!-- WPF windows without their own Icon use this one, so every window gets it -->
     <ApplicationIcon>app.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
@@ -26,6 +26,8 @@
     <ExcludeSevenZipAssemblies>true</ExcludeSevenZipAssemblies>
   </PropertyGroup>
   <ItemGroup>
+    <None Include="$(ShellRouterRoot)\x64\PathweftShell.dll" Link="PathweftShell-$(Version)-x64.dll" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="$(ShellRouterRoot)\x86\PathweftShell.dll" Link="PathweftShell-$(Version)-x86.dll" CopyToOutputDirectory="PreserveNewest" />
     <None Include="$(EverythingRuntimeRoot)\Everything.exe" Link="Everything\Everything.exe" CopyToOutputDirectory="PreserveNewest" />
     <None Include="$(EverythingRuntimeRoot)\Everything.lng" Link="Everything\Everything.lng" CopyToOutputDirectory="PreserveNewest" />
     <None Include="$(EverythingRuntimeRoot)\License.txt" Link="Everything\License.txt" CopyToOutputDirectory="PreserveNewest" />
