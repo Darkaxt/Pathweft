@@ -61,7 +61,7 @@ public partial class MainWindow
                 var presentationSettings = new SettingsWindow(this);
                 presentationSettings.Show();
                 var presentationWidget = new SearchWidgetWindow(this);
-                presentationWidget.ShowSearch(scope);
+                presentationWidget.ShowSearch();
                 await Dispatcher.InvokeAsync(UpdateLayout, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
                 foreach (Window owned in Application.Current.Windows)
                     Check(HiddenTrialPresentation.IsOutsideDisplays(owned), "Hidden presentation keeps " + owned.Title + " outside every display");
@@ -76,7 +76,7 @@ public partial class MainWindow
             if (Environment.GetEnvironmentVariable("PATHWEFT_S2_DPI_ONLY") == "1")
             {
                 var dpiWidget = new SearchWidgetWindow(this);
-                dpiWidget.ShowSearch(scope);
+                dpiWidget.ShowSearch();
                 await VerifyWidgetMonitorTransitions(dpiWidget, Check, observations);
                 dpiWidget.Shutdown();
                 Check(HiddenTrialPresentation.ForegroundViolations == 0, "Hidden monitor verification did not activate its process");
@@ -139,7 +139,7 @@ public partial class MainWindow
             Check(widget.Pane.Items.First().Size == 220, "WIDGET-01 widget sorts the real indexed set");
             var request = widget.Pane.SearchRequest;
             int tabs = Left.OpenTabs.Count;
-            Click(widget.HandoffButton);
+            widget.Handoff();
             await Left.SearchCompletion;
             Check(Left.OpenTabs.Count == tabs + 1 && Left.SearchRequest == request && Left.IndexedTotal == 220, "WIDGET-01 query, explicit scope and sort copied into a full pane tab");
             Check(Right.SearchRequest == rightState, "WIDGET-02 handoff preserves other pane state");
@@ -152,22 +152,14 @@ public partial class MainWindow
             var revealed = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
             void Listed() { if (new[] { Left, Right }.Any(p => !p.InSearch && p.Selected.Any(e => e.Path == selected))) revealed.TrySetResult(); }
             Left.StatsChanged += Listed; Right.StatsChanged += Listed;
-            try { Click(widget.RevealButton); await revealed.Task; }
+            try { ShowFile(selected);widget.Dismiss();await revealed.Task; }
             finally { Left.StatsChanged -= Listed; Right.StatsChanged -= Listed; }
             Check(new[] { Left, Right }.Any(p => p.Dir == Path.GetDirectoryName(selected) && p.Selected.Any(e => e.Path == selected)), "WIDGET-01 actual Reveal opens parent and selects the result");
             taskbarSearch.ShowSearch();
             await widget.Pane.SearchCompletion;
-            widget.Destination.Text = Directory.CreateDirectory(Path.Combine(destination, "widget-copy")).FullName;
-            widget.Pane.ListForVerification.SelectedItem = widget.Pane.Items.First();
-            var copied = widget.Pane.Selected.Single();
-            await Transfer(widget.CopyButton, () => widget.LastTransfer);
-            Check(File.ReadAllBytes(copied.Path).SequenceEqual(File.ReadAllBytes(Path.Combine(widget.Destination.Text, copied.Name))), "WIDGET-02 widget copy delivers matching file contents");
-            widget.Pane.ListForVerification.SelectedItem = widget.Pane.Items.Skip(1).First();
-            var moved = widget.Pane.Selected.Single();
-            var movedBytes = File.ReadAllBytes(moved.Path);
-            widget.Destination.Text = Directory.CreateDirectory(Path.Combine(destination, "widget-move")).FullName;
-            await Transfer(widget.MoveButton, () => widget.LastTransfer);
-            Check(!File.Exists(moved.Path) && movedBytes.SequenceEqual(File.ReadAllBytes(Path.Combine(widget.Destination.Text, moved.Name))), "WIDGET-02 widget move delivers contents and removes source on success");
+            // Dedicated widget transfer controls were explicitly removed in1.1.2.
+            // Main-pane transfer qualification follows; compact-widget acceptance
+            // belongs to S8's current design/interaction verification.
             await S1Verification.Navigate(Left, scope);
             await S1Verification.Navigate(Right, Directory.CreateDirectory(Path.Combine(destination, "pane-copy")).FullName);
             SetActive(Left);
@@ -190,11 +182,11 @@ public partial class MainWindow
             await Query(widget.Pane, "folder: pwfts2_folder", 0);
             widget.Pane.ListForVerification.SelectedItem = widget.Pane.Items.Single(e => e.IsDir);
             var opened = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-            void FolderListed() { if (!widget.Pane.InSearch && widget.Pane.Dir == Path.Combine(scope, "pwfts2_folder") && widget.Pane.Items.Any(e => e.Name == "pwfts2_inside.txt")) opened.TrySetResult(); }
-            widget.Pane.StatsChanged += FolderListed;
-            try { Click(widget.OpenButton); await opened.Task; }
-            finally { widget.Pane.StatsChanged -= FolderListed; }
-            Check(widget.Pane.Items.Any(e => e.Name == "pwfts2_inside.txt"), "WIDGET-02 actual widget Open button navigates the real folder");
+            void FolderListed() { if (new[]{Left,Right}.Any(p=>!p.InSearch&&p.Dir==Path.Combine(scope,"pwfts2_folder")&&p.Items.Any(e=>e.Name=="pwfts2_inside.txt")))opened.TrySetResult(); }
+            Left.StatsChanged+=FolderListed;Right.StatsChanged+=FolderListed;
+            try { widget.Pane.OpenSelected(); await opened.Task; }
+            finally { Left.StatsChanged-=FolderListed;Right.StatsChanged-=FolderListed; }
+            Check(new[]{Left,Right}.Any(p=>p.Dir==Path.Combine(scope,"pwfts2_folder")),"Widget folder results open in the main manager");
             var escape = new KeyEventArgs(Keyboard.PrimaryDevice, PresentationSource.FromVisual(widget), Environment.TickCount, Key.Escape) { RoutedEvent = Keyboard.PreviewKeyDownEvent };
             widget.RaiseEvent(escape);
             Check(!widget.IsVisible, "WIDGET-03 Escape dismisses the actual widget");

@@ -1,4 +1,4 @@
-# Pathweft 1.1.1
+# Pathweft 1.1.2
 
 Windows 11 x64 is the qualified host. The .NET 10 desktop runtime and native
 archive/preview libraries are included. WebView2 Evergreen is required for the
@@ -31,6 +31,10 @@ The single address/search field resolves existing paths first on Enter, then
 searches Everything in the current folder. Search from This PC for all indexed
 files. Four inline switches control case, whole words, path matching and Regex.
 There is no separate filesystem-scan mode or second search row.
+The optional Ctrl+Alt+Space popup searches all indexed files while typing. It
+contains only the query, four match switches and results. Enter opens a result;
+folders and archives open in the main manager. Escape dismisses, Down focuses
+results, Ctrl+Enter sends the query to a pane, and Space previews a selection.
 
 Internal preview modules are selected in Settings > Files. The F3D GLB prototype
 is opt-in; no standalone QuickLook/F3D application is needed. Archive edit

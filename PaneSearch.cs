@@ -29,19 +29,52 @@ public partial class PaneView
     internal string SearchNotice => searchNotice;
     internal string SearchInstance = ""; // default existing instance; diagnostics can exercise an unavailable selection
     internal bool IsWidget { get; set; }
+    internal event Action<string> WidgetLocationOpened;
+    bool widgetColumnsConfigured,indexedCanLoadMore;
     internal void ConfigureWidgetColumns()
     {
         if (details is not GridView grid) return;
-        foreach (var column in grid.Columns.Where(c => colKey.GetValueOrDefault(c) == "Version").ToArray())
-            grid.Columns.Remove(column);
+        if(!widgetColumnsConfigured)
+        {
+            foreach (var column in grid.Columns.Where(c => colKey.GetValueOrDefault(c) is "Version" or "Type").ToArray())grid.Columns.Remove(column);
+            NameColumn.CellTemplate=(DataTemplate)FindResource("WidgetNameCell");
+            var location=new GridViewColumn{Header="Location",Width=220,CellTemplate=(DataTemplate)FindResource("WidgetLocationCell")};
+            grid.Columns.Insert(1,location);colKey[location]="Location";
+            foreach(var column in grid.Columns.Where(c=>colKey.GetValueOrDefault(c) is "Size" or "Modified"))column.CellTemplate=(DataTemplate)FindResource(colKey[column]=="Size"?"WidgetSizeCell":"WidgetDateCell");
+            var header=new Style(typeof(GridViewColumnHeader));header.Setters.Add(new Setter(HeightProperty,0d));header.Setters.Add(new Setter(FocusableProperty,false));
+            grid.ColumnHeaderContainerStyle=header;
+            List.ItemContainerStyle=(Style)FindResource("WidgetResultRow");List.AllowDrop=false;
+            ((FrameworkElement)TabBand.Parent).Visibility=Visibility.Collapsed;
+            FolderStrip.Visibility=Visibility.Collapsed;((FrameworkElement)Footer.Parent).Visibility=Visibility.Collapsed;
+            foreach(var button in PathBar.Children.OfType<Button>())button.Visibility=Visibility.Collapsed;
+            PathBar.Margin=new(0,0,0,10);AddressField.CornerRadius=new(18);AddressField.Padding=new(12,3,8,3);AddressField.MinHeight=38;
+            AddressField.ToolTip="Search files and folders with Everything";
+            var field=(DockPanel)AddressField.Child;
+            var icon=new TextBlock{Text="\uE721",FontFamily=new("Segoe Fluent Icons"),VerticalAlignment=VerticalAlignment.Center,Margin=new(0,0,8,0),IsHitTestVisible=false};
+            DockPanel.SetDock(icon,Dock.Left);field.Children.Insert(0,icon);
+            Card.BorderThickness=new(0);Card.Background=System.Windows.Media.Brushes.Transparent;Glow.Visibility=Visibility.Collapsed;
+            FilterBox.Visibility=Visibility.Visible;Crumbs.Visibility=Visibility.Collapsed;
+            FilterBox.FontSize=14;FilterHint.Text="Search files and folders";
+            System.Windows.Automation.AutomationProperties.SetName(FilterBox,"Search all files and folders");
+            tabs[tab]=ThisPC;
+            widgetColumnsConfigured=true;
+            Search("");
+        }
         FitName();
+    }
+    internal void FocusWidgetResults(){if(List.SelectedIndex<0&&List.Items.Count>0)List.SelectedIndex=0;FocusList();}
+    internal void OpenFirstWidgetResult(){if(List.SelectedIndex<0&&List.Items.Count>0)List.SelectedIndex=0;OpenSelected();}
+    void WidgetScrolled(ScrollChangedEventArgs change)
+    {
+        if(IsWidget&&indexedCanLoadMore&&!searching&&(change.VerticalChange>0||change.ExtentHeightChange>0)&&change.VerticalOffset+change.ViewportHeight>=change.ExtentHeight-change.ViewportHeight/2)
+            SearchCompletion=LoadIndexedPage(indexedCancellation.Token,navVersion);
     }
 
     int SearchScopeIndex =>
 #if DEBUG
         VerificationSearchScope ??
 #endif
-        (Dir==ThisPC ? 1 : 0);
+        (IsWidget||Dir==ThisPC ? 1 : 0);
 #if DEBUG
     // Historical engine regression scenarios can still qualify the retired
     // filesystem backend; release UI has only location-derived Everything scope.
@@ -57,6 +90,7 @@ public partial class PaneView
     {
         if(MatchWord==null||MatchRegex==null||updatingSearchOptions)return;
         MatchWord.IsEnabled=MatchRegex.IsChecked!=true;
+        if(IsWidget&&!string.IsNullOrWhiteSpace(FilterBox.Text)){Search(FilterBox.Text);return;}
         if(indexedSearch&&searchQuery!=null)Search(searchQuery);
     }
     void RestoreMatchOptions(SearchMatchOptions options)
@@ -87,6 +121,7 @@ public partial class PaneView
 
     internal void StopWidgetWork()
     {
+        indexedCanLoadMore=false;
         ++navVersion;
         indexedCancellation?.Cancel();
         sizing?.Cancel(); icons?.Cancel(); thumbs?.Cancel(); prefetching?.Cancel();
@@ -131,12 +166,24 @@ public partial class PaneView
 #if DEBUG
         VerificationQueryEvents?.Add("SEARCH " + query + "\n" + Environment.StackTrace);
 #endif
-        if (string.IsNullOrWhiteSpace(query)) return;
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            if(IsWidget)
+            {
+                StopWidgetWork();LeaveSearch();searchQuery="";
+                indexedResults=new();indexedTotal=indexedOffset=0;
+                ShowItems(indexedResults,null,animate:false);
+                FilterBox.Visibility=Visibility.Visible;Crumbs.Visibility=Visibility.Collapsed;FilterHint.Visibility=Visibility.Visible;
+                SearchCompletion=Task.CompletedTask;
+            }
+            return;
+        }
         ++navVersion;
         searching = false;
         indexedCancellation?.Cancel();
         indexedCancellation?.Dispose();
         indexedCancellation = new();
+        indexedCanLoadMore=false;
         if (SearchScopeIndex == 2)
         {
             indexedSearch = false;
@@ -153,7 +200,7 @@ public partial class PaneView
                 throw new ArgumentException("Everything cannot search inside this virtual location. Search from its containing folder or This PC.");
             indexedExpression = IndexedQuery.Compose(query, SearchScopeIndex == 0 ? Dir : null,MatchOptions);
         }
-        catch (ArgumentException ex) { SearchCoverage.Text = ex.Message; SearchCoverage.Visibility = Visibility.Visible; return; }
+        catch (ArgumentException ex) { if(IsWidget){indexedSearch=false;searchQuery=query;ShowItems(new List<Entry>(),null,animate:false);} SearchCoverage.Text = ex.Message; SearchCoverage.Visibility = Visibility.Visible; return; }
         indexedSearch = true;
         ArchiveRoot = null; // indexed hits are real paths, even when the origin tab is inside a ZIP
         searchQuery = query;
@@ -166,7 +213,7 @@ public partial class PaneView
         indexedResults = new(); indexedTotal = indexedOffset = 0;
         indexedShowHidden = ShowHidden; visibilityParents = new(StringComparer.OrdinalIgnoreCase);
         searchNotice = "Querying the selected Everything index…";
-        SearchCoverage.Visibility = Visibility.Visible;
+        SearchCoverage.Visibility = IsWidget?Visibility.Collapsed:Visibility.Visible;
         ShowItems(indexedResults, null, animate: false);
         SearchCompletion = LoadIndexedPage(indexedCancellation.Token, navVersion);
     }
@@ -210,7 +257,8 @@ public partial class PaneView
             searchNotice = "Everything index · Unindexed locations may be absent.";
             if (changed) searchNotice += " Index changed during paging; refresh to restart.";
             // A duplicate page must not repeatedly request the same offset.
-            MoreResults.Visibility = !changed && page.Hits.Count > 0 && indexedOffset < indexedTotal ? Visibility.Visible : Visibility.Collapsed;
+            indexedCanLoadMore=!changed&&page.Hits.Count>0&&indexedOffset<indexedTotal;
+            MoreResults.Visibility = !IsWidget&&indexedCanLoadMore ? Visibility.Visible : Visibility.Collapsed;
             QueueVisibleSearchAssets();
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested) { }
@@ -218,6 +266,7 @@ public partial class PaneView
         {
             if (generation != navVersion || token.IsCancellationRequested) return;
             searchNotice = ex.Message;
+            indexedCanLoadMore=false;SearchCoverage.Visibility=Visibility.Visible;
             MoreResults.Visibility = Visibility.Collapsed;
         }
         finally
@@ -231,6 +280,7 @@ public partial class PaneView
                 SearchCoverage.Text = searchNotice;
                 MoreResults.IsEnabled = true;
                 UpdateFooter(); StatsChanged?.Invoke();
+                if(IsWidget&&indexedCanLoadMore&&indexedResults.Count==0)await LoadIndexedPage(token,generation);
             }
         }
     }

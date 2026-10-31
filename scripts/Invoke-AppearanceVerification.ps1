@@ -1,5 +1,5 @@
 [CmdletBinding()]
-param([string]$Executable='D:\Temp\pathweft-s8-delivery\artifacts\bin\FileExplorer\debug\Pathweft.exe',[switch]$CloseOnly,[switch]$SidebarOnly)
+param([string]$Executable='D:\Temp\pathweft-s8-delivery\artifacts\bin\FileExplorer\debug\Pathweft.exe',[switch]$CloseOnly,[switch]$SidebarOnly,[switch]$SettingsActionOnly,[switch]$WidgetOnly)
 $ErrorActionPreference='Stop'
 $run=Join-Path 'D:\Temp\pathweft-s8-delivery' ('appearance-'+[guid]::NewGuid().ToString('N'))
 $profile=Join-Path $run 'profile'
@@ -12,6 +12,8 @@ $start.Environment['PATHWEFT_PROFILE']=$profile
 $start.Environment['PATHWEFT_TEST_HIDDEN']='1'
 if($CloseOnly){$start.Environment['PATHWEFT_VERIFY_CLOSE_ONLY']='1'}
 if($SidebarOnly){$start.Environment['PATHWEFT_VERIFY_SIDEBAR_ONLY']='1'}
+if($SettingsActionOnly){$start.Environment['PATHWEFT_VERIFY_SETTINGS_ACTION_ONLY']='1'}
+if($WidgetOnly){$start.Environment['PATHWEFT_VERIFY_WIDGET_ONLY']='1'}
 $start.Environment['TEMP']=$temp;$start.Environment['TMP']=$temp
 $version=([xml](Get-Content -LiteralPath (Join-Path (Split-Path $PSScriptRoot -Parent) 'FileExplorer.csproj'))).Project.PropertyGroup.Version | Where-Object {$_}
 [IO.File]::WriteAllLines((Join-Path $profile 'settings.txt'),@('theme.native=1','theme.mode=dark','theme.windowsaccent=1','animations=0','tray=0','wine=0','taskbarsearch=0',"lastseen=$version","tabs.Left=$run","tabs.Right=$run"))

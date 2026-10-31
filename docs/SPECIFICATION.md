@@ -1,6 +1,6 @@
 # Pathweft specification
 
-Version 0.13 - 2026-10-31. Owner: Darkaxt.
+Version 0.15 - 2026-10-31. Owner: Darkaxt.
 
 This is the authoritative specification. The derived plan must preserve every
 requirement and acceptance criterion. Material scope changes require explicit
@@ -165,6 +165,14 @@ disabled while Regex is enabled, matching the pinned donor. Options stay local
 to each pane/search session and cross widget-to-pane handoff with its query;
 they must not leak across the shared native client or bypass folder scope.
 
+After verified v1.1.1 installation, the user reported the Settings action
+"Restore previous folder handlers" clipped by the shared tab style's width cap.
+CORE-03 requires its complete action label to fit or wrap at the minimum440-DIP
+Settings width and at 100%/150% text scales. Preserve the width cap for actual
+tabs and the existing restore action; do not invoke live recovery during visual
+verification. This bounded correction remains S8 and receives a normal v1.1.2
+patch through the existing release/install channel; v1.1.1 stays immutable.
+
 On 2026-10-31, after v1.1.0 delivery, the user reported the Original theme's
 active header/glow, excessive Settings prose, and the Native window's missing
 green outer activation border. This reopens S8 for the bounded CORE-03/04
@@ -220,8 +228,8 @@ changing Outlook indexing or modifying the existing engine configuration.
 
 | ID | Requirement and acceptance |
 | --- | --- |
-| WIDGET-01 | Integrate selected EverythingToolbar controls/taskbar code with the product's settings/update owner. Hand query, scope and sort into a full pane; reveal opens the real parent and selects the correct item. Verify widget -> real query -> result -> pane/reveal. |
-| WIDGET-02 | Share open/reveal/copy/move behavior and one transfer queue across panes/widget. No duplicate jobs or standalone utility dispatch. Keep independent query, focus and selection state per surface. Verify actual file actions/transfers from both entry points. |
+| WIDGET-01 | Integrate selected EverythingToolbar controls/taskbar code with the product's settings/update owner. The user's post-v1.1.1 design correction requires a compact global search field with the four existing match toggles and a clean name/location/size/date results list in Pathweft's theme. Search as text changes, cancel superseded work, preserve paging and hidden-file rules, and show no drive listing for an empty query. Remove the duplicate title/settings row, browser navigation, destination field, view/sort footer and action bars. Enter/double-click opens results; folder/archive results open in the main manager. Escape/deactivation dismisses, Down focuses results, and Ctrl+Enter hands the query/options into a main pane. Verify actual query/result/open/handoff, errors/cancellation/paging and current rendered minimum/normal layouts at100%/150%. |
+| WIDGET-02 | Keep query, focus and selection independent per surface and reuse the existing Everything/result-open/preview owners. The user's compact-widget correction removes widget-specific copy/move/destination controls and their dedicated transfer workflow; transfers remain in the main manager and its existing shared queue. No standalone utility dispatch or second indexing/transfer owner. Preserve ordinary result opening and optional Space preview without adding visible feature bars. Original S2 transfer-widget evidence is historical, not acceptance of the new compact UI. |
 | WIDGET-03 | Make taskbar integration explicit and optional. Verify the selected search-box mode on the supported Windows build across Explorer restart, focus, keyboard and monitor/DPI changes. Where the box cannot be hosted, provide an explicitly reported supported pinned-icon/hotkey mode. Do not replace the desktop shell. |
 
 ### Internal preview modules

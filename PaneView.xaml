@@ -78,6 +78,38 @@
         </Grid>
       </DockPanel>
     </DataTemplate>
+    <DataTemplate x:Key="WidgetNameCell">
+      <DockPanel>
+        <Grid DockPanel.Dock="Left" Width="16" Height="16" Margin="0,0,8,0" VerticalAlignment="Center" Style="{StaticResource CutDim}">
+          <TextBlock Text="{Binding Icon}" FontFamily="Segoe Fluent Icons" Foreground="{Binding IconBrush}"/>
+          <Image Source="{Binding DisplaySmallIcon}" RenderOptions.BitmapScalingMode="HighQuality"/>
+          <Image Source="{Binding Overlay}"/>
+          <ContentControl Content="{Binding}" Style="{StaticResource ReadOnlyLockStyle}" Width="8" Height="8"/>
+        </Grid>
+        <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+      </DockPanel>
+    </DataTemplate>
+    <DataTemplate x:Key="WidgetLocationCell"><TextBlock Text="{Binding Location}" TextTrimming="CharacterEllipsis" Opacity="0.65" VerticalAlignment="Center" Margin="8,0"/></DataTemplate>
+    <DataTemplate x:Key="WidgetDateCell"><TextBlock Text="{Binding DateText}" TextTrimming="CharacterEllipsis" Opacity="0.65" VerticalAlignment="Center" TextAlignment="Right"/></DataTemplate>
+    <DataTemplate x:Key="WidgetSizeCell">
+      <TextBlock Text="{Binding SizeText}" TextTrimming="CharacterEllipsis" Opacity="0.65" VerticalAlignment="Center" TextAlignment="Right" Margin="0,0,8,0">
+        <TextBlock.Style><Style TargetType="TextBlock"><Style.Triggers><DataTrigger Binding="{Binding IsDir}" Value="True"><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers></Style></TextBlock.Style>
+      </TextBlock>
+    </DataTemplate>
+    <Style x:Key="WidgetResultRow" TargetType="ListViewItem" BasedOn="{StaticResource ItemTip}">
+      <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+      <Setter Property="Foreground" Value="{DynamicResource Palette.E8EEF6}"/>
+      <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="ListViewItem">
+        <Border x:Name="Row" Background="Transparent" BorderBrush="Transparent" BorderThickness="1" CornerRadius="4" Padding="4,5">
+          <GridViewRowPresenter Content="{TemplateBinding Content}" Columns="{Binding View.Columns, RelativeSource={RelativeSource AncestorType=ListView}}"/>
+        </Border>
+        <ControlTemplate.Triggers>
+          <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Row" Property="Background" Value="{DynamicResource Palette.10FFFFFF}"/></Trigger>
+          <Trigger Property="IsSelected" Value="True"><Setter TargetName="Row" Property="Background" Value="{DynamicResource AccentSelect}"/><Setter Property="Foreground" Value="{DynamicResource AccentSelectText}"/></Trigger>
+          <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Row" Property="BorderBrush" Value="{DynamicResource AccentEdge}"/></Trigger>
+        </ControlTemplate.Triggers>
+      </ControlTemplate></Setter.Value></Setter>
+    </Style>
     <DataTemplate x:Key="SizeCell">
       <TextBlock Text="{Binding SizeText}" Opacity="0.7" Typography.NumeralAlignment="Tabular" TextAlignment="Right" Margin="0,0,6,0"/>
     </DataTemplate>

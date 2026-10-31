@@ -8,7 +8,7 @@ one shared transfer queue. It supports single and split folder views.
 
 ## Current state
 
-Version 1.1.1 combines core search, the taskbar widget, internal previews, archive
+Version 1.1.2 combines core search, the taskbar widget, internal previews, archive
 editing and transfers with optional native folder routing and an alternate
 Native appearance. Installer and portable packages include matching source,
 dependency notices and checksums through [Pathweft releases](https://github.com/Darkaxt/Pathweft/releases).
@@ -20,10 +20,11 @@ the Windows Search service or indexing configuration.
 
 ## Core workflows
 
-- Pane search and the taskbar widget share the existing default Everything
-  instance, folder/all-index scopes, file actions and the transfer queue. A
-  separate live filesystem mode searches the current folder. No second indexer
-  starts automatically. Ctrl+Alt+Space opens the widget when enabled.
+- Pane search and the compact taskbar popup share the existing default Everything
+  instance. The pane's single address/search field tries paths first, then searches
+  within the folder; This PC searches the full index. Ctrl+Alt+Space opens the
+  optional global live-search popup with four matching switches and a plain results
+  list. No second indexer starts automatically. Transfers stay in the main manager.
 - Eight internal preview modules serve the side pane, Space preview and widget.
   Standalone QuickLook is unnecessary. The native F3D GLB prototype is opt-in.
 - Native ZIP/7z/TAR browsing and editing share rename/copy/cut/paste actions.

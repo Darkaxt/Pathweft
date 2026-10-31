@@ -189,7 +189,24 @@ sealed class PackageProbe
             Check(left.FindName("AddressField") is FrameworkElement&&left.FindName("SearchScope")==null&&left.FindName("SearchBar")==null&&left.FindName("SearchSubmit")==null&&new[]{"MatchCase","MatchWord","MatchPath","MatchRegex"}.All(name=>left.FindName(name)!=null),"Delivered controls contain the unified field and four match switches, without the retired search row");
             var settings=new SettingsWindow(owner);
             Check(settings.FindName("AppearanceCard") is FrameworkElement,"Delivered Settings starts with Appearance and keeps documentation in Help");
+            var restore=(Button)settings.FindName("RestoreFolderHandlers");
+            Check(restore.Content is TextBlock label&&label.Text=="Restore previous folder handlers"&&label.TextWrapping==TextWrapping.Wrap&&double.IsPositiveInfinity(restore.MaxWidth),"Delivered restore action has a wrapping label and no tab-width cap");
             settings.Close();
+            var widgetType=Type("SearchWidgetWindow");
+            var widget=(Window)Activator.CreateInstance(widgetType,Flags,null,new object[]{owner},null);
+            try
+            {
+                var widgetPane=(PaneView)Get(widget,"Pane");
+                var widgetList=(ListView)widgetPane.FindName("List");
+                Check(widget.WindowStyle==WindowStyle.None&&widget.ShowInTaskbar==false&&widgetPane.Dir==PaneView.ThisPC&&!widgetPane.Items.Any()&&((GridView)widgetList.View).Columns.Count==4&&widgetType.GetField("Destination",Flags)==null,"Delivered popup has only its global query and four-column result view, without the former title/destination/actions");
+                var input=(TextBox)widgetPane.FindName("FilterBox");
+                input.Text="path:\""+Path.GetDirectoryName(known)+"\" \""+Path.GetFileName(known)+"\"";
+                await (Task)Get(widgetPane,"SearchCompletion");
+                Check(widgetPane.Items.Any(entry=>entry.Path.Equals(known,StringComparison.OrdinalIgnoreCase))&&ReferenceEquals(widgetList.ItemContainerStyle,widgetPane.FindResource("WidgetResultRow")),"Delivered compact popup queries the actual index as text changes and retains its plain result style");
+                input.Text="";await (Task)Get(widgetPane,"SearchCompletion");
+                Check(!widgetPane.Items.Any(),"Clearing the delivered popup empties results instead of listing drives");
+            }
+            finally{Call(widgetType,widget,"Shutdown");}
             var target=new ContentControl();
             var previewType=Type("Preview.PreviewSession");
             session=Activator.CreateInstance(previewType,Flags,null,new object[]{owner,target,(Action<string>)(_=>{}),false},null);

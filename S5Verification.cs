@@ -88,11 +88,8 @@ public partial class MainWindow
             await S1Verification.Snapshot(transfersWindow,evidence,"storage-policy-card");
             await S1Verification.Navigate(Left,source);
 
-            Write(source,"widget.txt","widget data");widget=new SearchWidgetWindow(this);widget.ShowSearch(source);await S1Verification.Navigate(widget.Pane,source);await Select(widget.Pane,"widget.txt");widget.Destination.Text=target;
-            var widgetCopy=await Action(()=>Click(widget.CopyButton));
-            Check(ReferenceEquals(widget.LastTransfer,widgetCopy)&&widgetCopy.Successful&&widgetCopy.VerifiedFiles==1,"Actual widget Copy button shares the tracked Ferry queue and verification");
-            widget.Destination.Text=moveTarget;var widgetMove=await Action(()=>Click(widget.MoveButton));
-            Check(ReferenceEquals(widget.LastTransfer,widgetMove)&&widgetMove.Successful&&!File.Exists(Path.Combine(source,"widget.txt")),"Actual widget Move button shares the tracked identity move");widget.Shutdown();widget=null;
+            // The compact1.1.2 widget has no dedicated transfer/destination UI.
+            // Pane/archive/drop-bin callers remain qualified in this workflow.
 
             string archive=Path.Combine(root,"fixture.zip");using(var zip=ZipFile.Open(archive,ZipArchiveMode.Create)){using var writer=new StreamWriter(zip.CreateEntry("entry.txt").Open());writer.Write("archive payload");}
             await S1Verification.Navigate(Left,archive);await S1Verification.Navigate(Right,target);await Select(Left,"entry.txt");var extracted=await Action(()=>Click(CopyButton));

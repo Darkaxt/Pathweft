@@ -1,6 +1,6 @@
 # Implementation and reconciliation
 
-Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.11, 2026-10-31,
+Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.15, 2026-10-31,
 including the user-authorized continued comparison requirement TRANSFER-07.
 
 Current authorization: S8 core file-explorer integration and delivery, explicitly
@@ -10,10 +10,12 @@ upstream changes before compilation; add an alternate Native theme/accent contro
 under Appearance using Huashu and the supplied Explorer screenshot as references.
 S6 is parked by this user-directed execution boundary, not technically complete;
 S7 stays unstarted. Their requirements remain later program work, outside this
-core release. S8 is ACTIVE again for the reported Native frame/close and Settings
-corrections plus the user's unified address/Everything field, four match controls
-and black outer-background changes after v1.1.0. Their focused real hidden
-workflow passes; final v1.1.1 packaging/delivery remains. Historical authorization follows.
+core release. S8 is ACTIVE for the compact global search popup and clipped
+Settings restore action under WIDGET-01/02 and CORE-03. Version 1.1.1 was normally
+published, independently retrieved and installed with unchanged settings/routing;
+its frame/editor/icon/sidebar corrections are verified. Current v1.1.2 source
+workflows pass; final packaging/publication/retrieval/installation remain.
+Historical authorization follows.
 S6 native StartAllBack search was authorized after S5 closure.
 Earlier S5 REA-driven transfer implementation was requested after
 S4U closure. Earlier S3 work was requested on
@@ -28,7 +30,7 @@ and requested Pathweft folder routing with Directory Opus as the Explorer
 replacement reference. Compact results must not depend on WSearch filesystem
 indexing. Programs/Settings independence remains to be qualified, not assumed.
 S1-S5, S4R and S4U are COMPLETE; S6 is BLOCKED by the user's reprioritization;
-S7 is NOT STARTED; S8 is ACTIVE for the bounded v1.1.1 correction.
+S7 is NOT STARTED; S8 is ACTIVE for the bounded v1.1.2 correction.
 The user authorized trying rars on 2026-10-29 and delegated its integration
 choice. The user approved read-only icon cues and Ctrl+H/dot-name visibility;
 Historical S6 investigation following the user's reboot: the guest Windows kernel/build and
@@ -63,6 +65,30 @@ ENV-01..04 belong to the current setup deliverable, not an artificial product
 implementation stage. See [setup evidence](verification/2026-10-28-setup.md).
 
 ## Complete requirement ownership
+
+### Current S8 compact-popup design and verification contract
+
+The user's reference supersedes the historical S2 destination/action-bar design.
+Use the main window's theme background, existing palette/accent and Segoe UI;
+no independent toolbar theme. Default 720x520 DIP, minimum 520x320, with 16-DIP
+outer inset and a 38-DIP rounded query bar. Keep four accessible match switches;
+hide the native caption and all file-browser/action/footer rows. Plain result
+rows show icon/name, muted parent location, size and modified date, with theme
+selection/focus states. Columns fit the viewport; long values ellipsize and retain
+the existing full-path tooltip. Text scaling grows the popup, monitor work-area
+constraints and DPI handling remain owned by the existing window.
+
+The complete source workflow is recorded privately in the original-process
+`ui112-compact-widget-verification.txt` receipt and rendered snapshots: actual
+global index queries and cancellation, option semantics, missing-index error,
+scroll-driven paging, file-open boundary without launching another user app,
+folder/ZIP opening in the main manager, Ctrl+Enter command, Escape, 100%/150%
+minimum/normal sizes and Native/Original theme review. Existing native hotkey
+registration is unchanged; these hidden actions do not claim a fresh physical
+hotkey/Explorer-restart test. Restore-action red/green receipts measure the actual
+final character within the actual button at 440/660 DIP and both text scales.
+WIDGET-01/02 and CORE-03 acceptance require these workflows and final 1.1.2
+delivery verification; no required deferrals or new infrastructure are added.
 
 Post-release stage addition authorized 2026-10-31:
 
@@ -468,8 +494,8 @@ This sequence belongs only to S5, after S4U; it does not authorize later stages.
 
 ## Current reconciliation ledger
 
-Current post-v1.1.0 correction: S8 ACTIVE; CORE-03/04/06/07/08 and SEARCH-01/04 cover
-the requested UI, editor fallback and icon corrections plus v1.1.1 delivery. Historical S8 closure row below
+Current post-v1.1.1 correction: S8 ACTIVE; WIDGET-01/02 and CORE-03 cover the
+compact search popup and full restore-action label plus v1.1.2 delivery. Historical S8 closure row below
 describes v1.1.0 only. S9 NOT STARTED; MENU-01..02 remain unimplemented, with no
 tracked deferral assigned to the current S8 correction.
 
@@ -482,7 +508,7 @@ tracked deferral assigned to the current S8 correction.
 | S5 | TRANSFER-01..07 and affected caller/CORE/LIFE criteria; final native/Release/FAT32 evidence and finite findings reconciliation | None within S5 | COMPLETE; no blocker | None |
 | S6 | Matching isolated Windows/Shell modules; current StartAllBack 3.9.28; native query/view trace and Programs/Settings groups with WSearch stopped; program launch and See more results URI dispatch observed on 3.9.28; earlier program/Settings launches on 3.9.25; no complete SAB criterion yet | SAB-01..06, including file-provider/cancellation ownership, remaining provider conditions, compact Everything groups/full-results handoff and direct folder routing | BLOCKED by the user's explicit S8-first priority. Investigation is retained; Sandbox was shut down. Native ABI/ownership and remaining service/indexing comparisons are unresolved when this stage resumes. Host configuration is unchanged. | None |
 | S7 | None | EVERYWHERE-01..05 | S6 prerequisite not complete. File-surface, indexing-scope and Outlook compatibility inventory remains unresolved; no live scope changes during S6. | None |
-| S8 | Hidden native frame/Settings, unified path-first address/Everything search, four match toggles and handoff, near-black outer background, Native close and actual editor double-click/archived-copy fallback are verified with zero foreground events. Transparent yellow-folder icon generated at native sizes; small-size rendering inspected. Actual closed-event pane cleanup and sidebar top/middle/bottom fade pixels/renders at 100%/150%, resizing and opacity contracts pass. | Final packaged icon/editor/UI checks, normal v1.1.1 publication, independent retrieval and installed verification | ACTIVE; delivery advancement blockers. StartAllBack stays S6/SAB-06; no Sandbox. | None |
+| S8 | v1.1.1 published/retrieved/installed with all manifest members verified and settings/registrations preserved. v1.1.2 hidden real-index popup workflow passes live query/cancellation, match controls, missing-index error, scrolling pagination, file-open boundary, main folder/archive navigation, handoff, Escape and 100%/150% minimum/normal renders. Plain rows persist through real queries. Restore label fits at 440/660 DIP and both text scales without invoking recovery. Zero foreground activation. | Final v1.1.2 package checks, normal publication, independent retrieval and installed verification | ACTIVE; delivery advancement blockers. StartAllBack stays S6/SAB-06; no Sandbox. | None |
 
 S1 and S2 are COMPLETE. The user confirmed normal unlock; real physical drag and
 clipboard checks subsequently passed. A separate STA process read the Windows

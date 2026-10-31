@@ -23,6 +23,113 @@ public partial class MainWindow
         async Task Settled()=>await Dispatcher.InvokeAsync(UpdateLayout,System.Windows.Threading.DispatcherPriority.ApplicationIdle);
         try
         {
+            if(Environment.GetEnvironmentVariable("PATHWEFT_VERIFY_WIDGET_ONLY")=="1")
+            {
+                widget=new SearchWidgetWindow(this);widget.ShowSearch();await Settled();
+                var input=(TextBox)widget.Pane.FindName("FilterBox");
+                var list=widget.Pane.ListForVerification;
+                string known=@"D:\Projects\Pathweft\README.md";
+                bool Known()=>widget.Pane.Items.Any(e=>e.Path.Equals(known,StringComparison.OrdinalIgnoreCase));
+                async Task Query(string text){input.Text=text;await widget.Pane.SearchCompletion;await Settled();}
+                async Task Flip(string name)
+                {
+                    var toggle=(System.Windows.Controls.Primitives.ToggleButton)widget.Pane.FindName(name);
+                    ((IToggleProvider)new ToggleButtonAutomationPeer(toggle).GetPattern(PatternInterface.Toggle)).Toggle();
+                    await widget.Pane.SearchCompletion;await Settled();
+                }
+                Check(widget.WindowStyle==WindowStyle.None&&widget.Pane.Dir==PaneView.ThisPC&&!widget.Pane.Items.Any(),"The compact widget opens to an empty global query without a caption/header or drive listing");
+                Check(((DockPanel)widget.Content).Children.Count==2&&widget.Notice.Visibility==Visibility.Collapsed&&((DockPanel)widget.Pane.FindName("PathBar")).Children.OfType<Button>().All(b=>!b.IsVisible)&&!((FrameworkElement)((TextBlock)widget.Pane.FindName("Footer")).Parent).IsVisible,"Only search/match controls and results are visible; navigation, destination and action/view/sort bars are absent");
+                Check(((GridView)list.View).Columns.Select(c=>c.Header is Panel header?header.Children.OfType<TextBlock>().Last().Text:c.Header.ToString()).SequenceEqual(new[]{"Name","Location","Size","Modified"}),"The real result view has the four restrained reference columns");
+                input.Text="no_such_widget_result";input.Text="path:\"D:\\Projects\\Pathweft\" \"README.md\"";
+                await widget.Pane.SearchCompletion;await Settled();
+                Check(Known()&&widget.Pane.SearchRequest.Scope==1&&widget.Pane.SearchRequest.Query==input.Text,"Actual text changes query the global Everything index and a superseded query cannot overwrite newer results");
+                Check(ReferenceEquals(list.ItemContainerStyle,widget.Pane.FindResource("WidgetResultRow")),"Live query results retain their plain popup row template without file-pane stripes or age bars");
+                widget.Pane.SearchInstance="Pathweft-missing-widget-verification-instance";
+                await Query("README");
+                Check(!widget.Pane.Items.Any()&&((FrameworkElement)widget.Pane.FindName("SearchCoverage")).IsVisible&&!string.IsNullOrWhiteSpace(widget.Pane.SearchNotice),"An unavailable index shows a concise error and clears stale results");
+                widget.Pane.SearchInstance="";
+                await Query(@"D:\Projects\Pathweft");
+                Check(widget.Pane.Dir==PaneView.ThisPC,"Typing an existing path stays a global search rather than navigating a mini file browser");
+                await Query("path:\"D:\\Projects\\Pathweft\" readme.md");Check(Known(),"Default widget matching is case insensitive");
+                await Flip("MatchCase");Check(!Known(),"The compact Match case control changes actual indexed results");await Flip("MatchCase");
+                await Query(@"^D:\\Projects\\Pathweft\\README\.md$");await Flip("MatchPath");await Flip("MatchRegex");await Flip("MatchCase");
+                Check(Known()&&!((Control)widget.Pane.FindName("MatchWord")).IsEnabled,"Regex, path and case controls retain their actual Everything semantics in the compact input");
+                var options=widget.Pane.MatchOptions;widget.Handoff();await Left.SearchCompletion;await Settled();
+                Check(!widget.IsVisible&&Left.MatchOptions==options&&Left.Items.Any(e=>e.Path.Equals(known,StringComparison.OrdinalIgnoreCase)),"The Ctrl+Enter handoff command preserves the real query/options and dismisses the popup");
+                widget.ShowSearch();await widget.Pane.SearchCompletion;
+                await Flip("MatchRegex");await Flip("MatchPath");await Flip("MatchCase");
+                await Query("path:\"C:\\Windows\\System32\" ext:dll");
+                int pageCount=widget.Pane.Items.Count();Check(pageCount>0&&widget.Pane.IndexedTotal>pageCount,"The live global query has more real results than one index page");
+                list.ScrollIntoView(widget.Pane.Items.Last());await Settled();await widget.Pane.SearchCompletion;await Settled();
+                Check(widget.Pane.Items.Count()>pageCount&&!((Control)widget.Pane.FindName("MoreResults")).IsVisible,"Scrolling the actual results loads the next page without a paging action bar");
+                foreach(double scale in new[]{1.0,1.5})foreach(double width in new[]{520d,720d})
+                {
+                    Settings.TextScale=scale;widget.ApplyTextScale();widget.Width=width*scale;widget.Height=520*scale;await Settled();
+                    Check(((GridView)list.View).Columns.Sum(c=>c.Width)<=list.ActualWidth&&input.ActualWidth>160,"Query and result columns fit the compact width "+width+" at text scale "+scale);
+                    await S1Verification.Snapshot(widget,root,$"compact-widget-{scale*100:0}-{width:0}");
+                }
+                Settings.TextScale=1;widget.ApplyTextScale();
+                widget.Width=720;widget.Height=520;
+                foreach(string theme in new[]{"light","original"})
+                {
+                    Settings.NativeTheme=theme!="original";Settings.NativeMode=theme=="original"?"dark":theme;ApplyAppearance();await Settled();
+                    Check(ReferenceEquals(widget.Background,Root.Background),"The compact popup follows the main "+theme+" theme background");
+                    await S1Verification.Snapshot(widget,root,"compact-widget-theme-"+theme);
+                }
+                Settings.NativeTheme=true;Settings.NativeMode="dark";ApplyAppearance();await Settled();
+                await Query("path:\"D:\\Projects\\Pathweft\" \"README.md\"");
+                list.SelectedItem=widget.Pane.Items.First(e=>e.Path.Equals(known,StringComparison.OrdinalIgnoreCase));
+                var opened=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+                widget.Pane.ExternalOpenForVerification=start=>{Check(start.FileName==known&&start.UseShellExecute,"Enter reaches the existing Windows file-open boundary for the selected result");opened.TrySetResult();};
+                bool editor=Settings.InternalEditor;Settings.InternalEditor=false;
+                try{input.RaiseEvent(new System.Windows.Input.KeyEventArgs(System.Windows.Input.Keyboard.PrimaryDevice,PresentationSource.FromVisual(widget),Environment.TickCount,System.Windows.Input.Key.Enter){RoutedEvent=System.Windows.Input.Keyboard.PreviewKeyDownEvent});await opened.Task;}
+                finally{Settings.InternalEditor=editor;widget.Pane.ExternalOpenForVerification=null;}
+                await Query("");Check(!widget.Pane.Items.Any()&&input.Visibility==Visibility.Visible&&((FrameworkElement)widget.Pane.FindName("Crumbs")).Visibility!=Visibility.Visible,"Clearing the input empties results without showing drives or breadcrumbs");
+                await Query("path:\"D:\\Projects\\Pathweft\" folder: docs");
+                string docs=@"D:\Projects\Pathweft\docs";list.SelectedItem=widget.Pane.Items.First(e=>e.Path.Equals(docs,StringComparison.OrdinalIgnoreCase));
+                var navigated=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+                void FolderLocated(){if(new[]{Left,Right}.Any(p=>p.Dir==docs&&p.Listed&&!p.InSearch))navigated.TrySetResult();}
+                Left.StatsChanged+=FolderLocated;Right.StatsChanged+=FolderLocated;
+                try{widget.Pane.OpenSelected();FolderLocated();await navigated.Task;}finally{Left.StatsChanged-=FolderLocated;Right.StatsChanged-=FolderLocated;}
+                Check(!widget.IsVisible&&widget.Pane.Dir==PaneView.ThisPC,"Folder results open in the main manager and dismiss the global search popup");
+                string archive=@"D:\Projects\Pathweft\dist\1.1.1\Pathweft-1.1.1-source.zip";
+                widget.ShowSearch("path:\"D:\\Projects\\Pathweft\\dist\\1.1.1\" \"Pathweft-1.1.1-source.zip\"");await widget.Pane.SearchCompletion;
+                list.SelectedItem=widget.Pane.Items.Single(e=>e.Path.Equals(archive,StringComparison.OrdinalIgnoreCase));
+                var archiveOpened=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+                void ArchiveLocated(){if(new[]{Left,Right}.Any(p=>p.ArchiveRoot?.Archive==archive&&p.Listed&&p.Items.Any()))archiveOpened.TrySetResult();}
+                Left.StatsChanged+=ArchiveLocated;Right.StatsChanged+=ArchiveLocated;
+                try{widget.Pane.OpenSelected();ArchiveLocated();await archiveOpened.Task;}finally{Left.StatsChanged-=ArchiveLocated;Right.StatsChanged-=ArchiveLocated;}
+                Check(!widget.IsVisible&&widget.Pane.Dir==PaneView.ThisPC,"An indexed ZIP result opens its real contents in the main manager without turning the popup into a file browser");
+                widget.ShowSearch("README.md");await widget.Pane.SearchCompletion;
+                widget.RaiseEvent(new System.Windows.Input.KeyEventArgs(System.Windows.Input.Keyboard.PrimaryDevice,PresentationSource.FromVisual(widget),Environment.TickCount,System.Windows.Input.Key.Escape){RoutedEvent=System.Windows.Input.Keyboard.PreviewKeyDownEvent});
+                Check(!widget.IsVisible&&HiddenTrialPresentation.ForegroundViolations==0,"Escape dismisses the popup and the complete hidden workflow causes zero foreground activation");
+                result=0;return;
+            }
+            if(Environment.GetEnvironmentVariable("PATHWEFT_VERIFY_SETTINGS_ACTION_ONLY")=="1")
+            {
+                settings=new SettingsWindow(this);settings.Show();await Settled();
+                var action=(Button)settings.FindName("RestoreFolderHandlers");
+                action.Visibility=Visibility.Visible; // real action/style; never invoke registry recovery
+                IEnumerable<DependencyObject> Children(DependencyObject parent)
+                {
+                    for(int i=0;i<VisualTreeHelper.GetChildrenCount(parent);i++)
+                    {var child=VisualTreeHelper.GetChild(parent,i);yield return child;foreach(var descendant in Children(child))yield return descendant;}
+                }
+                foreach(double scale in new[]{1.0,1.5})foreach(double width in new[]{440d,660d})
+                {
+                    Settings.TextScale=scale;settings.Width=width;settings.Height=640;
+                    settings.GetType().GetMethod("ApplyTextSize",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic).Invoke(settings,null);
+                    await Settled();action.BringIntoView();await Settled();
+                    var text=Children(action).OfType<TextBlock>().Single(t=>t.Text=="Restore previous folder handlers");
+                    var last=text.ContentEnd.GetCharacterRect(System.Windows.Documents.LogicalDirection.Backward);
+                    var end=text.TranslatePoint(new Point(last.Right,last.Bottom),action);
+                    checks.Add(new{scale,width,actionWidth=action.ActualWidth,textWidth=text.ActualWidth,textHeight=text.ActualHeight,last=last.ToString(),end});
+                    await S1Verification.Snapshot(settings,root,$"restore-action-{scale*100:0}-{width:0}");
+                    Check(!last.IsEmpty&&end.X<=action.ActualWidth+0.5&&end.Y<=action.ActualHeight+0.5,"The full restore-handler action label fits at width "+width+" and text scale "+scale);
+                }
+                Check(HiddenTrialPresentation.ForegroundViolations==0,"Restore-action layout checks caused zero foreground activation and never invoked recovery");
+                result=0;return;
+            }
             if(Environment.GetEnvironmentVariable("PATHWEFT_VERIFY_SIDEBAR_ONLY")=="1")
             {
                 Check(SidebarEdgeMask(200,false,false,false)==null&&SidebarEdgeMask(200,true,true,true)==null,"Unclipped content and high-contrast mode retain fully opaque content");
@@ -143,11 +250,11 @@ public partial class MainWindow
             Check(Left.InSearch&&Left.SearchRequest.Scope==1&&Left.Items.Any(e=>e.Path.Equals(@"D:\Projects\Pathweft\README.md",StringComparison.OrdinalIgnoreCase)),"Searching from This PC queries the real global Everything index");
             Check(Left.FindName("SearchBar")==null&&Left.FindName("SearchScope")==null&&Left.FindName("SearchOptions")==null&&Left.FindName("SearchSubmit")==null,"The second row, mode selector, funnel and search icon are absent");
             widget=new SearchWidgetWindow(this);
-            widget.ShowSearch(PaneView.ThisPC,@"^D:\\Projects\\Pathweft\\README\.md$");
+            widget.ShowSearch(@"^D:\\Projects\\Pathweft\\README\.md$");
             await Toggle(widget.Pane,"MatchCase");await Toggle(widget.Pane,"MatchPath");await Toggle(widget.Pane,"MatchRegex");
             Check(HasReadme(widget.Pane),"Taskbar widget searches with its independent inline match options");
             var match=widget.Pane.MatchOptions;
-            ((IInvokeProvider)new ButtonAutomationPeer(widget.HandoffButton).GetPattern(PatternInterface.Invoke)).Invoke();await Settled();await Left.SearchCompletion;
+            widget.Handoff();await Settled();await Left.SearchCompletion;
             Check(Left.MatchOptions==match&&HasReadme(Left)&&Left.SearchRequest.Scope==1,"Actual widget-to-pane handoff preserves query, global location and all match options");
             widget.Shutdown();widget=null;
             Check(((SolidColorBrush)Root.Background).Color==Color.FromRgb(20,20,20)&&SidebarPanel.Background==Brushes.Transparent,"Native dark outer background exactly matches the sidebar while panes retain gray surfaces");

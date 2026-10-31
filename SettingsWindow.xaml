@@ -250,7 +250,10 @@
             </TextBlock>
             <TextBlock x:Name="FolderIntegrationStatus" Style="{StaticResource Hint}"/>
             <TextBlock Style="{StaticResource Hint}" Text="Virtual folders and Open/Save dialogs remain in Explorer. Some apps' Show in folder requests cannot preserve file selection."/>
-            <Button x:Name="RestoreFolderHandlers" Content="Restore previous folder handlers" Style="{StaticResource Tab}" HorizontalAlignment="Left" Click="RestoreFolderHandlers_Click"/>
+            <Button x:Name="RestoreFolderHandlers" Style="{StaticResource Ghost}" FontSize="11" Padding="9,3" HorizontalAlignment="Left"
+                    AutomationProperties.Name="Restore previous folder handlers" Click="RestoreFolderHandlers_Click">
+              <TextBlock Text="Restore previous folder handlers" TextWrapping="Wrap"/>
+            </Button>
             <TextBlock Text="Keyboard" FontWeight="SemiBold" Margin="0,12,0,6"/>
             <CheckBox x:Name="WinEBox" Content="Win+E opens Pathweft" Click="WinE_Click"/>
             <TextBlock Style="{StaticResource Hint}" Text="Works independently of folder integration. Turning it off returns Win+E to Explorer."/>

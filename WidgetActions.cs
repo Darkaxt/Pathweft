@@ -6,14 +6,17 @@ namespace FileExplorer;
 public partial class MainWindow
 {
     internal TaskbarSearchHost taskbarSearch;
-    internal string WidgetFolder => active?.Dir is { Length: > 0 } path ? path : Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-    internal string WidgetDefaultDestination => Other.Dir;
     internal void ApplyTaskbarSearch() => taskbarSearch?.ApplySettings();
-    internal void OpenWidgetSettings() { Show(); OpenSettings(); }
-    internal void OpenWidgetArchive(PaneView pane, Entry entry) => OpenFromArchive(pane, entry);
-    internal void SubmitWidgetDrop(PaneView pane, List<string> paths, string destination, bool move)
+    internal void OpenWidgetLocation(string path)
     {
-        Submit(paths, destination, move);
+        Show();
+        if(WindowState==System.Windows.WindowState.Minimized)WindowState=System.Windows.WindowState.Normal;
+        if(Archive.IsArchiveName(path)&&File.Exists(path)){active.NewTab();active.Navigate(path);}
+        else OpenPath(active,path);
+#if DEBUG
+        if(!HiddenTrialPresentation.Enabled)
+#endif
+        {Activate();active.FocusList();}
     }
     internal void AcceptWidgetSearch(PaneSearchRequest request)
     {

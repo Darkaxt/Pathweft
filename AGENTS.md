@@ -14,9 +14,9 @@ do not change its requirements or the user's standing instructions.
   see `docs/verification/2026-10-29-s5.md` for the direct-write contract,
   measured performance limits and actual caller/preservation/recovery evidence.
   The user explicitly reprioritized S8 core delivery ahead of Windows search work.
-  S8 is ACTIVE again for the user's 2026-10-31 Native frame/Settings, unified
-  address/Everything search, editor fallback and app-icon corrections to the
-  published v1.1.0. No S6/S7 implementation is authorized.
+  S8 is ACTIVE for the user's compact Ctrl+Alt+Space popup and clipped Settings
+  action corrections in v1.1.2. The prior frame/search/editor/icon/sidebar work
+  is published and installed as v1.1.1. No S6/S7 implementation is authorized.
   S6 is BLOCKED by this user-directed execution boundary,
   with investigation retained and no working patch; S7 remains NOT STARTED.
   S9 context-menu reorganization is planned, NOT STARTED (MENU-01..02).

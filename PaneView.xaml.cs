@@ -413,10 +413,11 @@ public partial class PaneView : UserControl
         }
         // The line where Name ends follows its width, the sideways scroll and the list's height.
         ((System.ComponentModel.INotifyPropertyChanged)NameColumn).PropertyChanged += (_, e) => { if (e.PropertyName == "ActualWidth") PlaceNameEdge(); };
-        List.AddHandler(ScrollViewer.ScrollChangedEvent, new ScrollChangedEventHandler((_, _) =>
+        List.AddHandler(ScrollViewer.ScrollChangedEvent, new ScrollChangedEventHandler((_, change) =>
         {
             PlaceNameEdge();
             QueueVisibleSearchAssets();
+            WidgetScrolled(change);
             if (Marqueeing) MarqueeMove(Mouse.GetPosition(List)); // a wheel or the edge moved the rows under a rectangle
         }));
         MarqueeLayer.SizeChanged += (_, _) => PlaceNameEdge();
@@ -1860,6 +1861,8 @@ public partial class PaneView : UserControl
         }
         // a Stash or Backup Labs backup opens in its app when that is installed (1.0.40), otherwise as before;
         // read off the UI thread, the file may be on a share that is asleep
+        if(IsWidget&&(e.FolderTarget!=null||Archive.IsArchiveName(e.Path)))
+        {WidgetLocationOpened?.Invoke(e.FolderTarget??e.Path);return;}
         var backup = !e.IsUp && !e.IsDir && Backups.Named(e.Path) ? await Task.Run(() => MainWindow.BackupStart(e.Path)) : null;
         if (e.IsUp) Up();
         else if (ArchiveRoot != null) { if (e.IsDir) Navigate(e.Path); else OpenArchived?.Invoke(e); }
@@ -1903,6 +1906,7 @@ public partial class PaneView : UserControl
     TextBox PathBox=>FilterBox;
     void EndEditPath()
     {
+        if(IsWidget){Suggest.IsOpen=false;FilterBox.Visibility=Visibility.Visible;Crumbs.Visibility=Visibility.Collapsed;FilterHint.Visibility=FilterBox.Text.Length==0?Visibility.Visible:Visibility.Collapsed;return;}
         Suggest.IsOpen=false;FilterHint.Visibility=Visibility.Collapsed;
         PathBox.Visibility=InSearch?Visibility.Visible:Visibility.Collapsed;
         Crumbs.Visibility=InSearch?Visibility.Hidden:Visibility.Visible;
@@ -1930,6 +1934,15 @@ public partial class PaneView : UserControl
     // Preview, not KeyDown: the text box itself handles Up/Down (caret) before KeyDown would see them.
     async void PathBox_PreviewKeyDown(object s, KeyEventArgs e)
     {
+        if(IsWidget)
+        {
+            if(e.Key is Key.Enter or Key.Down)
+            {
+                e.Handled=true;var query=FilterBox.Text;await SearchCompletion;
+                if(IsVisible&&FilterBox.Text==query){if(e.Key==Key.Enter)OpenFirstWidgetResult();else FocusWidgetResults();}
+            }
+            return;
+        }
         bool open = Suggest.IsOpen && SuggestList.Items.Count > 0;
         switch (e.Key)
         {
@@ -2000,6 +2013,7 @@ public partial class PaneView : UserControl
 
     public void FocusFilter()
     {
+        if(IsWidget){FilterBox.Focus();FilterBox.SelectAll();return;}
         FilterBox.Visibility=Visibility.Visible;Crumbs.Visibility=Visibility.Hidden;
         FilterBox.Text=searchQuery??"";FilterHint.Text=Dir==ThisPC?"Enter a path or search all files":"Enter a path or search this folder";
         FilterHint.Visibility=FilterBox.Text.Length==0?Visibility.Visible:Visibility.Collapsed;
@@ -2016,6 +2030,7 @@ public partial class PaneView : UserControl
     void Filter_Changed(object s, TextChangedEventArgs e)
     {
         FilterHint.Visibility = FilterBox.Visibility==Visibility.Visible&&FilterBox.Text.Length==0 ? Visibility.Visible : Visibility.Collapsed;
+        if(IsWidget){Search(FilterBox.Text);return;}
         PathBox_Changed(s,e);
     }
     void ApplyFilter()
@@ -2136,6 +2151,16 @@ public partial class PaneView : UserControl
 
     void FitName()
     {
+        if(IsWidget)
+        {
+            if(List.View is GridView widgetGrid)
+            {
+                double width=Math.Max(380,List.ActualWidth-42);
+                foreach(var column in widgetGrid.Columns)
+                    column.Width=width*(colKey.GetValueOrDefault(column) switch{"Name"=>0.34,"Location"=>0.36,"Size"=>0.10,_=>0.20});
+            }
+            return;
+        }
         // gutter: a strip of empty space kept right of the last column, to click on (see RowAt)
         if (!IsWidget && Settings.ColumnWidths.ContainsKey("Name")) return; // dragged by the user: theirs, not the pane's
         const double scrollbar = 14, padding = 14;
@@ -2158,7 +2183,7 @@ public partial class PaneView : UserControl
     /// selection rectangle instead of picking up the file (Drag_Down), and the line shows where that begins.
     void PlaceNameEdge()
     {
-        bool show = Mode == ViewMode.Details;
+        bool show = Mode == ViewMode.Details&&!IsWidget;
         NameEdge.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
         if (!show) return;
         // the same boundary Drag_Down tests, mapped through the list's text-size scale like the marquee
@@ -2168,11 +2193,12 @@ public partial class PaneView : UserControl
 
     public void SetView(ViewMode mode)
     {
+        if(IsWidget)mode=ViewMode.Details;
         Mode = mode;
         PlaceNameEdge();
         var m = Modes.First(x => x.mode == mode);
         ViewIcon.Text = m.glyph; ViewName.Text = m.name;
-        Settings.Views[Name] = mode;
+        if(!IsWidget)Settings.Views[Name] = mode;
         var sel = List.SelectedItem;
         // Template, item style and panel are three separate changes, and the list would rebuild its
         // containers after each one. Detached from its items it rebuilds once, when they come back.
@@ -2184,7 +2210,8 @@ public partial class PaneView : UserControl
             List.View = details;
             List.ClearValue(ItemsControl.ItemTemplateProperty);
             List.ClearValue(ItemsControl.ItemsPanelProperty);
-            List.ClearValue(ItemsControl.ItemContainerStyleProperty);
+            if(IsWidget)List.ItemContainerStyle=(Style)FindResource("WidgetResultRow");
+            else List.ClearValue(ItemsControl.ItemContainerStyleProperty);
             ScrollViewer.SetHorizontalScrollBarVisibility(List, ScrollBarVisibility.Auto); // columns wider than the pane scroll sideways
             Dispatcher.BeginInvoke(HideScrollCorner, DispatcherPriority.Loaded); // once the Details template is in
         }

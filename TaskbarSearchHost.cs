@@ -62,7 +62,7 @@ internal sealed class TaskbarSearchHost : IDisposable
     {
         if (!Settings.TaskbarSearch || disposed) return;
         Widget ??= new SearchWidgetWindow(main);
-        Widget.ShowSearch(main.WidgetFolder, query);
+        Widget.ShowSearch(query);
         SearchShown?.Invoke();
     }
 

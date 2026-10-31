@@ -124,7 +124,7 @@ public partial class MainWindow
                 await S1Verification.Snapshot(quick, evidence, "space-f3d-prototype");
                 Key(quick, System.Windows.Input.Key.Escape); await sidePreview.Completion;
                 var widget3d = await WidgetResult("pwfts3_f3d.glb");
-                Click(widget3d.PreviewButton); await quickPreview.Completion; Ready(quickPreview, "f3d");
+                widget3d.Preview(); await quickPreview.Completion; Ready(quickPreview, "f3d");
                 var widgetRenderer = (F3dViewer)quickPreview.ViewerForVerification;
                 await S1Verification.Snapshot(quick, evidence, "widget-f3d-prototype");
                 moduleSettings = new SettingsWindow(this); moduleSettings.Show();
@@ -243,7 +243,7 @@ public partial class MainWindow
             await Select("pwfts3_sample.md");
             var mainSelection = Left.Selected.Single().Path;
             var widget = await WidgetResult("pwfts3_sample.md");
-            Click(widget.PreviewButton); await quickPreview.Completion; Ready(quickPreview, "markdown");
+            widget.Preview(); await quickPreview.Completion; Ready(quickPreview, "markdown");
             Check(Left.Selected.Single().Path == mainSelection && quickSource == widget.Pane, "PREVIEW-04 widget search-result preview keeps main and widget selection independent");
             await S1Verification.Snapshot(quick, evidence, "widget-markdown-preview");
             Settings.TextScale = 1.5; ApplyAppearance();

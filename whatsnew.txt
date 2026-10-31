@@ -1,6 +1,11 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.2 | 2026-10-31 | Compact search popup
+- Ctrl+Alt+Space opens a clean search field and results list in Pathweft's theme. Results update while typing and load more while scrolling.
+- The extra title, navigation, destination, transfer and view/sort bars are removed. Enter opens a result; folders and archives open in the main manager. Escape dismisses, Down selects results, Ctrl+Enter opens the query in a pane, and Space previews.
+- The Restore previous folder handlers action now displays its complete label.
+
 ## 1.1.1 | 2026-10-31 | Native frame and clearer settings
 - A transparent yellow-folder app icon replaces the pink tile, with contrasting two-pane list marks and native Windows sizes.
 - Sidebar content fades softly at clipped scrolling edges, while its title, footer buttons and scrollbar stay sharp.

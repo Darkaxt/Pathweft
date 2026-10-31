@@ -5,6 +5,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Data;
 using FileExplorer.Search;
 
 namespace FileExplorer;
@@ -13,14 +14,7 @@ internal sealed class SearchWidgetWindow : Window
 {
     readonly MainWindow main;
     internal PaneView Pane { get; } = new() { Name = "Widget", IsWidget = true };
-    internal TextBox Destination { get; } = new() { MinWidth = 130, Margin = new(4), Background = MainWindow.Hex("#252830"), Foreground = MainWindow.Hex("#E8EEF6"), Padding = new(5), ToolTip = "Copy or move selected results into this real folder" };
-    internal TextBlock Notice { get; } = new() { TextWrapping = TextWrapping.Wrap, Margin = new(8, 4, 8, 4) };
-    internal Button HandoffButton { get; }
-    internal Button RevealButton { get; }
-    internal Button CopyButton { get; }
-    internal Button MoveButton { get; }
-    internal Button OpenButton { get; }
-    internal Button PreviewButton { get; }
+    internal TextBlock Notice { get; } = new() { TextWrapping = TextWrapping.Wrap, Margin = new(0, 4, 0, 0), Visibility=Visibility.Collapsed };
     readonly TextBox query;
     readonly DockPanel root;
     double appliedTextScale = 1;
@@ -35,46 +29,22 @@ internal sealed class SearchWidgetWindow : Window
         HiddenTrialPresentation.Prepare(this);
 #endif
         Title = "Pathweft Search";
-        Width = 680; Height = 520; MinWidth = 560; MinHeight = 380;
+        Width = 720; Height = 520; MinWidth = 520; MinHeight = 320;
+        WindowStyle=WindowStyle.None;ResizeMode=ResizeMode.CanResize;
         WindowStartupLocation = WindowStartupLocation.Manual;
-        Background = MainWindow.Hex("#161B24"); Foreground = MainWindow.Hex("#E8EEF6");
+        SetBinding(BackgroundProperty,new Binding("Background"){Source=owner.FindName("Root")});
+        Foreground = MainWindow.Hex("#E8EEF6");
         FontFamily = owner.FontFamily; FontSize = owner.FontSize;
         ShowInTaskbar = false;
-        root = new DockPanel { Margin = new(6) };
-        var title = new DockPanel { Margin = new(8, 4, 8, 6) };
-        var settings = Button("Settings", () => main.OpenWidgetSettings());
-        DockPanel.SetDock(settings, Dock.Right); title.Children.Add(settings);
-        title.Children.Add(new TextBlock { Text = "Pathweft Search", FontSize = 16, FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center });
-        DockPanel.SetDock(title, Dock.Top); root.Children.Add(title);
-        var actions = new WrapPanel { Margin = new(4) };
-        HandoffButton = Button("Open search in pane", () => { main.AcceptWidgetSearch(Pane.SearchRequest); Dismiss(); });
-        HandoffButton.FontWeight = FontWeights.SemiBold;
-        HandoffButton.SetResourceReference(ForegroundProperty, "Accent");
-        RevealButton = Button("Reveal", Reveal);
-        OpenButton = Button("Open", () => Pane.OpenSelected());
-        PreviewButton = Button("Preview", () => main.ToggleQuickView(Pane, this));
-        CopyButton = Button("Copy to folder", () => Transfer(false));
-        MoveButton = Button("Move to folder", () => Transfer(true));
-        foreach (var action in new[] { HandoffButton, RevealButton, PreviewButton, OpenButton, CopyButton, MoveButton }) actions.Children.Add(action);
-        DockPanel.SetDock(actions, Dock.Bottom); root.Children.Add(actions);
+        root = new DockPanel { Margin = new(16) };
         DockPanel.SetDock(Notice, Dock.Bottom); root.Children.Add(Notice);
-        var destination = new DockPanel();
-        destination.Children.Add(new TextBlock { Text = "Destination", VerticalAlignment = VerticalAlignment.Center, Margin = new(8, 0, 3, 0) });
-        destination.Children.Add(Destination);
-        System.Windows.Automation.AutomationProperties.SetName(Destination, "Transfer destination folder");
-        DockPanel.SetDock(destination, Dock.Bottom); root.Children.Add(destination);
         root.Children.Add(Pane); Content = root;
         query = (TextBox)Pane.FindName("FilterBox");
-        // This surface has one search session; browser tabs remain in the main window.
-        var tabBand = (FrameworkElement)Pane.FindName("TabBand");
-        ((FrameworkElement)tabBand.Parent).Visibility = Visibility.Collapsed;
-        ((FrameworkElement)Pane.FindName("FolderStrip")).Visibility = Visibility.Collapsed;
         Pane.ConfigureWidgetColumns();
         Pane.Loaded += (_, _) => Pane.ConfigureWidgetColumns();
-        Pane.Error += message => Notice.Text = message;
-        Pane.OpenArchived += entry => main.OpenWidgetArchive(Pane, entry);
-        Pane.FilesDropped += (sources, destinationFolder, move) => main.SubmitWidgetDrop(Pane, sources, destinationFolder, move);
-        Pane.StatsChanged += UpdateActions;
+        Pane.Error += message => {Notice.Text=message;Notice.Visibility=Visibility.Visible;};
+        Pane.WidgetLocationOpened+=path=>{main.OpenWidgetLocation(path);Dismiss();};
+        query.TextChanged+=(_,_)=>Notice.Visibility=Visibility.Collapsed;
         PreviewKeyDown += OnWidgetKeyDown;
         Deactivated += (_, _) => { if (!IsKeyboardFocusWithin && !IsOwnedWindowActive()) Dismiss(); };
         Closing += (_, e) => { if (!closing) { e.Cancel = true; Dismiss(); } };
@@ -88,33 +58,18 @@ internal sealed class SearchWidgetWindow : Window
             if (dpiLayout?.Status != System.Windows.Threading.DispatcherOperationStatus.Pending)
                 dpiLayout = Dispatcher.InvokeAsync(() => ConstrainToWorkArea(), System.Windows.Threading.DispatcherPriority.ApplicationIdle);
         };
-        UpdateActions();
     }
 
-    Button Button(string label, Action action)
-    {
-        var button = new Button { Content = label, Margin = new(2), Padding = new(8, 5, 8, 5), Style = (Style)main.FindResource("Ghost") };
-        System.Windows.Automation.AutomationProperties.SetName(button, label);
-        button.Click += (_, _) => action();
-        return button;
-    }
-
-    internal void ShowSearch(string folder, string initialQuery = null)
+    internal void ShowSearch(string initialQuery = null)
     {
         ApplyTextScale();
-        if (Pane.Dir == "")
-        {
-            Pane.Navigate(PaneView.ThisPC);
-        }
-        if (initialQuery != null) query.Text = initialQuery;
-        if (Destination.Text == "") Destination.Text = main.WidgetDefaultDestination;
+        if(initialQuery!=null&&initialQuery!=query.Text)query.Text=initialQuery;
+        else Pane.Search(query.Text);
         Show(); ConstrainToWorkArea(anchorAtCursor: true);
 #if DEBUG
         if (!HiddenTrialPresentation.SuppressFocus(this))
 #endif
         { Activate(); Pane.FocusFilter(); }
-        if (initialQuery != null || Pane.SearchRequest.Query.Length > 0) Pane.Search(query.Text);
-        UpdateActions();
     }
 
     internal void ApplyTextScale()
@@ -123,7 +78,7 @@ internal sealed class SearchWidgetWindow : Window
         if (scale != appliedTextScale)
         {
             double width = Width * scale / appliedTextScale, height = Height * scale / appliedTextScale;
-            MinWidth = 560 * scale; MinHeight = 380 * scale;
+            MinWidth = 520 * scale; MinHeight = 320 * scale;
             Width = width; Height = height;
             appliedTextScale = scale;
         }
@@ -147,28 +102,19 @@ internal sealed class SearchWidgetWindow : Window
     bool IsOwnedWindowActive() => OwnedWindows.Cast<Window>().Any(w => w.IsActive);
     internal void Dismiss() { main.CloseWidgetPreview(Pane); if (IsVisible) Hide(); Pane.StopWidgetWork(); }
     internal void Shutdown() { main.CloseWidgetPreview(Pane); closing = true; Close(); }
-    void Reveal() { if (Pane.Selected.FirstOrDefault() is { } entry) { main.Show(); main.ShowFile(entry.Path); Dismiss(); } }
-    internal Job LastTransfer { get; private set; }
-    void Transfer(bool move)
-    {
-        if (!Directory.Exists(Destination.Text)) { Notice.Text = "Choose an existing destination folder."; return; }
-        LastTransfer = main.Submit(Pane.Selected.Select(e => e.Path).ToList(), Destination.Text, move);
-        Notice.Text = LastTransfer == null ? "Select a result first." : "Submitted to Pathweft’s transfer queue. View progress in Transfers.";
-    }
-    void UpdateActions()
-    {
-        bool selected = Pane.Selected.Count > 0;
-        RevealButton.IsEnabled = PreviewButton.IsEnabled = CopyButton.IsEnabled = MoveButton.IsEnabled = selected;
-        HandoffButton.IsEnabled = !string.IsNullOrWhiteSpace(query.Text);
-    }
-    void OnWidgetKeyDown(object sender, KeyEventArgs e)
+    internal void Handoff(){if(!string.IsNullOrWhiteSpace(Pane.SearchRequest.Query)){main.AcceptWidgetSearch(Pane.SearchRequest);Dismiss();}}
+    internal void Preview()=>main.ToggleQuickView(Pane,this);
+    async void OnWidgetKeyDown(object sender, KeyEventArgs e)
     {
         if (main.HandleHiddenShortcut(e.Key, e.KeyboardDevice.Modifiers, e.IsRepeat, e.OriginalSource)) { e.Handled = true; return; }
         if (e.Key == Key.Escape) { Keyboard.ClearFocus(); Dismiss(); e.Handled = true; }
-        else if (e.OriginalSource is ComboBoxItem or ComboBox) return;
-        else if (query.IsKeyboardFocusWithin && e.Key == Key.Enter) return; // unified address field resolves paths first
-        else if (query.IsKeyboardFocusWithin && e.Key == Key.Down) { Pane.FocusList(); e.Handled = true; }
-        else if (e.Key == Key.Space && e.OriginalSource is not TextBox) { main.ToggleQuickView(Pane, this); e.Handled = true; }
+        else if (e.OriginalSource is ComboBoxItem or ComboBox or System.Windows.Controls.Primitives.ButtonBase) return;
+        else if (e.Key==Key.Enter&&e.KeyboardDevice.Modifiers==ModifierKeys.Control){Handoff();e.Handled=true;}
+        else if (query.IsKeyboardFocusWithin && e.Key == Key.Enter) return; // Pane's query handler opens a result, never resolves an address
+        else if (query.IsKeyboardFocusWithin && e.Key == Key.Down)
+        {e.Handled=true;var text=query.Text;await Pane.SearchCompletion;if(IsVisible&&query.Text==text)Pane.FocusWidgetResults();}
+        else if(e.KeyboardDevice.Modifiers==ModifierKeys.Control&&e.Key is Key.F or Key.L){Pane.FocusFilter();e.Handled=true;}
+        else if (e.Key == Key.Space && e.OriginalSource is not TextBox) { Preview(); e.Handled = true; }
         else if (Pane.IsKeyboardFocusWithin && e.OriginalSource is not TextBox && e.Key == Key.Enter) { Pane.OpenSelected(); e.Handled = true; }
     }
 }
