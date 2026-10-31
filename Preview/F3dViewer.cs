@@ -15,7 +15,7 @@ namespace FileExplorer.Preview;
 internal sealed class F3dViewer(MainWindow owner) : IViewer
 {
     sealed record Request(string Operation, double X, double Y, TaskCompletionSource<Frame> Result);
-    internal sealed record Frame(BitmapSource Bitmap,byte[] Pixels,double[] Camera,bool Offscreen,uint Animations,double Start,double End,long Sequence,double RenderMilliseconds,double TransferMilliseconds,double[] Up,double[] Focal)
+    internal sealed record Frame(BitmapSource Bitmap,byte[] Pixels,double[] Camera,bool Offscreen,uint Animations,double Start,double End,long Sequence,double RenderMilliseconds,double TransferMilliseconds,double[] Up,double[] Focal,double InputMilliseconds,int InputSamples,int InputRenderCalls)
     {
         // Export only on explicit diagnostic/screenshot demand, never per gesture.
         internal byte[] Png {get{var encoder=new PngBitmapEncoder();encoder.Frames.Add(BitmapFrame.Create(Bitmap));using var stream=new MemoryStream();encoder.Save(stream);return stream.ToArray();}}
@@ -47,6 +47,7 @@ internal sealed class F3dViewer(MainWindow owner) : IViewer
     internal event Action<Frame> FramePresented;
 #if DEBUG
     internal Action<Frame> BeforeFrameCompletionForVerification;
+    internal volatile bool NativeInputForVerification;
 #endif
 
     internal static bool Supports(string input) => extensions.Value.Contains(Path.GetExtension(input));
@@ -215,7 +216,8 @@ internal sealed class F3dViewer(MainWindow owner) : IViewer
     void RenderLoop()
     {
         IntPtr engine = IntPtr.Zero, window = IntPtr.Zero, camera = IntPtr.Zero, animation = IntPtr.Zero,interactor=IntPtr.Zero;
-        bool pointerDown=false;
+        bool pointerDown=false,pointerPan=false;int pointerX=0,pointerY=0;
+        F3dOrbit orbit=null;
         bool cameraMoved=false;double defaultAspect=4.0/3;
         try
         {
@@ -249,30 +251,51 @@ internal sealed class F3dViewer(MainWindow owner) : IViewer
                         F3dNative.f3d_options_set_as_double(options,"render.grid.reflection",0.2);
                         F3dNative.f3d_options_set_as_double(options, "render.light.intensity", 1.2);
                         if (F3dNative.f3d_scene_add(F3dNative.f3d_engine_get_scene(engine), path) == 0) throw new InvalidDataException("F3D could not read this model. Check its format and referenced resources.");
+                        var modelUp=new double[3];F3dNative.f3d_camera_get_view_up(camera,modelUp);orbit=new(modelUp);
                         F3dNative.f3d_camera_azimuth(camera,20);F3dNative.f3d_camera_elevation(camera,15);
                         F3dNative.f3d_camera_reset_to_bounds(camera, 0.9);
                         F3dNative.f3d_camera_set_current_as_default(camera);
                         animation = F3dNative.f3d_scene_get_animation(F3dNative.f3d_engine_get_scene(engine));
                     }
+                    var inputClock=System.Diagnostics.Stopwatch.StartNew();int inputSamples=0,inputRenderCalls=0;
                     foreach (var request in batch) switch (request.Operation)
                     {
                         case "time": F3dNative.f3d_animation_load_time(animation, request.X); break;
                         case "clip": F3dNative.f3d_options_set_as_string(F3dNative.f3d_engine_get_options(engine), "scene.animation.indices", ((int)request.X).ToString(System.Globalization.CultureInfo.InvariantCulture)); F3dNative.f3d_animation_load_time(animation, 0); break;
-                        // Forward the complete captured gesture to F3D's own
-                        // default fixed-up/pole-aware controller. Its C API takes
-                        // top-left pixel positions and handles Y conversion.
                         case "orbit-start":case "pan-start":
+                            pointerX=(int)(request.X*F3dNative.f3d_window_get_width(window));
+                            pointerY=F3dNative.f3d_window_get_height(window)-1-(int)(request.Y*F3dNative.f3d_window_get_height(window));
+                            pointerPan=request.Operation=="pan-start";
+#if DEBUG
+                            if(NativeInputForVerification){
                             if(pointerDown)F3dNative.f3d_interactor_trigger_mouse_button(interactor,1,0);
                             F3dNative.f3d_interactor_trigger_mouse_position(interactor,request.X*F3dNative.f3d_window_get_width(window),request.Y*F3dNative.f3d_window_get_height(window));
                             // triggerMousePosition resets VTK's modifier bits;
                             // set Shift after positioning and before the press.
                             F3dNative.f3d_interactor_trigger_mod_update(interactor,request.Operation=="pan-start"?2:0);
-                            F3dNative.f3d_interactor_trigger_mouse_button(interactor,0,0);pointerDown=true;break;
+                            F3dNative.f3d_interactor_trigger_mouse_button(interactor,0,0);}
+#endif
+                            pointerDown=true;break;
                         case "pointer-move":
-                            if(pointerDown){cameraMoved=true;F3dNative.f3d_interactor_trigger_mouse_position(interactor,request.X*F3dNative.f3d_window_get_width(window),request.Y*F3dNative.f3d_window_get_height(window));}break;
+                            if(pointerDown)
+                            {
+                                cameraMoved=true;inputSamples++;
+                                int width=F3dNative.f3d_window_get_width(window),height=F3dNative.f3d_window_get_height(window);
+                                int x=(int)(request.X*width),y=height-1-(int)(request.Y*height);
+#if DEBUG
+                                if(NativeInputForVerification){inputRenderCalls++;F3dNative.f3d_interactor_trigger_mouse_position(interactor,request.X*width,request.Y*height);}
+                                else
+#endif
+                                orbit.Apply(camera,x-pointerX,y-pointerY,width,height,pointerPan);
+                                pointerX=x;pointerY=y;
+                            }break;
                         case "pointer-end":
+#if DEBUG
+                            if(NativeInputForVerification){
                             if(pointerDown)F3dNative.f3d_interactor_trigger_mouse_button(interactor,1,0);
-                            pointerDown=false;F3dNative.f3d_interactor_trigger_mod_update(interactor,0);break;
+                            F3dNative.f3d_interactor_trigger_mod_update(interactor,0);}
+#endif
+                            pointerDown=false;break;
                         case "resize":
                             double oldAspect=(double)F3dNative.f3d_window_get_width(window)/Math.Max(1,F3dNative.f3d_window_get_height(window));
                             double newAspect=request.X/request.Y;
@@ -295,6 +318,7 @@ internal sealed class F3dViewer(MainWindow owner) : IViewer
                             F3dNative.f3d_camera_dolly(camera,Math.Min(1,aspect)/Math.Min(1,defaultAspect));break;
                     }
                     context.Token.ThrowIfCancellationRequested();
+                    double inputMs=inputClock.Elapsed.TotalMilliseconds;
                     var clock=System.Diagnostics.Stopwatch.StartNew();
                     IntPtr image = F3dNative.f3d_window_render_to_image(window, 1);
                     double renderMs=clock.Elapsed.TotalMilliseconds;clock.Restart();
@@ -315,7 +339,7 @@ internal sealed class F3dViewer(MainWindow owner) : IViewer
                     uint count=F3dNative.f3d_animation_count(animation);
                     double start=0,end=0;if(count>0)F3dNative.f3d_animation_get_time_range(animation,out start,out end);
                     var up=new double[3];var target=new double[3];F3dNative.f3d_camera_get_view_up(camera,up);F3dNative.f3d_camera_get_focal_point(camera,target);
-                    var frame = new Frame(bitmap,pixels,position,true,count,start,end,++renderedSequence,renderMs,clock.Elapsed.TotalMilliseconds,up,target);
+                    var frame = new Frame(bitmap,pixels,position,true,count,start,end,++renderedSequence,renderMs,clock.Elapsed.TotalMilliseconds,up,target,inputMs,inputSamples,inputRenderCalls);
 #if DEBUG
                     BeforeFrameCompletionForVerification?.Invoke(frame);
 #endif

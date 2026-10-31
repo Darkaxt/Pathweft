@@ -9,6 +9,9 @@ namespace FileExplorer.Preview;
 internal static class F3dNative
 {
     const string Library = "pathweft-f3d-c-api";
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct CameraState
+    {internal double X,Y,Z,FX,FY,FZ,UX,UY,UZ,Angle;}
     static F3dNative()
     {
         NativeLibrary.SetDllImportResolver(typeof(F3dNative).Assembly, (name, assembly, _) =>
@@ -59,6 +62,8 @@ internal static class F3dNative
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern void f3d_camera_pan(IntPtr camera, double right, double up, double forward);
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern void f3d_camera_get_focal_point(IntPtr camera, [Out] double[] point);
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern void f3d_camera_get_view_up(IntPtr camera, [Out] double[] up);
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern void f3d_camera_get_state(IntPtr camera,out CameraState state);
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern void f3d_camera_set_state(IntPtr camera,ref CameraState state);
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern double f3d_camera_get_view_angle(IntPtr camera);
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern void f3d_camera_dolly(IntPtr camera, double factor);
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern void f3d_camera_get_position(IntPtr camera, [Out] double[] position);

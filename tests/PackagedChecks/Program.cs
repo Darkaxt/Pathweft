@@ -313,18 +313,21 @@ sealed class PackageProbe
             Call(viewer.GetType(),viewer,"HandleKey",System.Windows.Input.Key.Home);await (Task)Get(viewer,"RenderCompletion");
             var initialCamera=(double[])Get(Get(viewer,"LastFrame"),"Camera");
             Call(viewer.GetType(),viewer,"BeginDrag",new Point(.72*nativeViewport.ActualWidth,.5*nativeViewport.ActualHeight),false);
-            bool upright=true;
+            bool upright=true,circleMoved=false;int inputDraws=0;
             for(int i=1;i<=20;i++)
             {
                 double angle=2*Math.PI*i/20;
                 Call(viewer.GetType(),viewer,"MoveDrag",new Point((.5+.22*Math.Cos(angle))*nativeViewport.ActualWidth,(.5+.22*Math.Sin(angle))*nativeViewport.ActualHeight));await (Task)Get(viewer,"RenderCompletion");
                 upright&=((double[])Get(Get(viewer,"LastFrame"),"Up"))[1]>0;
+                circleMoved|=!initialCamera.SequenceEqual((double[])Get(Get(viewer,"LastFrame"),"Camera"));
+                inputDraws+=(int)Get(Get(viewer,"LastFrame"),"InputRenderCalls");
             }
             Call(viewer.GetType(),viewer,"EndDrag");await (Task)Get(viewer,"RenderCompletion");
             var circle=Get(viewer,"LastFrame");var circleCamera=(double[])Get(circle,"Camera");var circleFocal=(double[])Get(circle,"Focal");
             double orbitError=Math.Sqrt(initialCamera.Zip(circleCamera).Sum(p=>Math.Pow(p.First-p.Second,2)));
             double cameraDistance=Math.Sqrt(circleCamera.Zip(circleFocal).Sum(p=>Math.Pow(p.First-p.Second,2)));
-            Check(upright&&orbitError/cameraDistance<.02,"Delivered native circular mouse gesture stays upright and returns to its starting orientation");
+            Check(circleMoved&&upright&&orbitError/cameraDistance<.02,"Delivered circular mouse gesture moves, stays upright and returns to its starting orientation");
+            Check(inputDraws==0,"Delivered camera input performs no implicit per-event renders before capture");
             WriteNativeInfo(root);
             ((IDisposable)session).Dispose();session=null;await (Task)Call(previewType,null,"DrainAsync");
             Check(!(bool)Get(viewer,"WorkerAlive"),"The delivered F3D render worker exits after preview cleanup");

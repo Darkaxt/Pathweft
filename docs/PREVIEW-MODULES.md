@@ -38,11 +38,12 @@ memory; the native renderer never creates a visible preview window. Presentation
 uses raw lower-left RGBA converted to top-left BGRA, without PNG encoding or
 decoding during input. Completed monotonically ordered frames remain eligible
 while newer gestures are pending; content-generation cancellation still excludes
-old selections. Complete mouse gestures are forwarded to the pinned F3D interactor, preserving
-its default fixed model-up axis and elevation limits instead of camera-local
-trackball roll. Right/middle/Shift-left pan mapping is retained. Position events
-precede the press-time modifier update because the native position API clears
-VTK's modifier bits. Native gesture state remains owned by the render worker.
+old selections. Ordered mouse samples use selected pinned F3D default-controller
+math, preserving the fixed model-up axis, temporary-up behavior and pole limits.
+Camera updates omit the native interactor's immediate per-event Render calls;
+the render worker performs the batch's explicit frame capture afterward. The
+original controller remains a Debug-only verification oracle, including its
+position-before-modifier event ordering. Right/middle/Shift-left pan is retained.
 Native frame dimensions follow actual viewport layout/DPI and
 camera framing adjusts for portrait aspect ratios. Explicit diagnostic PNG
 exports are generated only on demand. The cache

@@ -8,6 +8,11 @@ Full source terms: LICENSE.md.txt and THIRD_PARTY_LICENSES.md.txt.
 The selected C API headers and offscreen-thumbnail example are retained under
 reference/ as original text, with hashes in source-manifest.json. Their API and
 rendering sequence are adapted in Preview/F3dNative.cs and Preview/F3dViewer.cs.
+The fixed-up Rotate math and temporary-up/pole behavior from
+library/src/vtkF3DInteractorStyle.cxx at the same pinned source are adapted in
+Preview/F3dOrbit.cs, omitting its immediate per-input Render call. Original file
+SHA256:160763B64FA97C027B77C2007809E920C3034205F45DA6F3970C0DDB1004EBBA.
+Complete original source is retained in the corresponding dependency archive.
 The C API library is called directly; no F3D executable or shell extension runs.
 Only the bundled native GLB reader is selected. The preview uses an owned render
 thread and offscreen context, presents frames in WPF, and exposes camera actions.

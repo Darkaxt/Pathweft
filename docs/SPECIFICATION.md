@@ -1,6 +1,6 @@
 # Pathweft specification
 
-Version 0.25 - 2026-10-31. Owner: Darkaxt.
+Version 0.26 - 2026-11-01. Owner: Darkaxt.
 
 This is the authoritative specification. The derived plan must preserve every
 requirement and acceptance criterion. Material scope changes require explicit
@@ -8,7 +8,24 @@ user direction recorded here; ordinary implementation choices need no new gate.
 
 ## 1. Intent and current scope
 
-Current correction: S8 ACTIVE for PREVIEW-13, authorized by the user's circular
+Current correction: S8 ACTIVE for PREVIEW-13/14. The installed1.1.9 orbit behavior
+passes scripted correctness but regresses real rendering performance. PREVIEW-14
+requires processing every ordered camera sample without drawing for each sample,
+retaining one explicit frame capture per render batch and completed-frame
+presentation. Port the selected pinned F3D controller math if its input API
+couples camera updates to immediate rendering; this implementation choice
+preserves the user's native orbit behavior rather than requiring that API.
+Compare camera state with the pinned native controller for circular/reverse/pole
+and pan paths; measure whole batch input work, capture and transfer for realistic
+bursts on the real model. Require zero implicit input renders and no sample/path
+loss, quality reduction, arbitrary timer, throttle or input-delay workaround.
+For native numeric comparison, position/focal and ordinary up components use
+1e-7 absolute tolerance. At the native1e-10-degree pole clamp only, up components
+allow1e-4 (<.006 degrees): the projected basis is ill-conditioned there, while
+position/focal stay strict. Pole limits/upright behavior remain separately tested.
+Deliver and independently verify one final1.1.10 release and installed update.
+
+PREVIEW-13 was authorized by the user's circular
 mouse-gesture regression report. Use the pinned F3D default input controller's
 fixed model-up orbit/pole behavior instead of camera-local trackball math.
 Circular drags must expose sides/underside without accumulating unwanted roll.
@@ -17,8 +34,9 @@ frame presentation, DPI/resize, animation and native worker/cancellation ownersh
 Verify an ordered circular/reverse circular gesture, vertical pole limits,
 camera-up/focal/distance, pan/zoom/reset, actual large-model previews and teardown
 through hidden app actions; compare with pinned native controller source/API.
-Deliver one normal1.1.9 release, independently retrieve/test it and verify the
-user-controlled installed updater boundary. No unrelated S9/S11/S6/S7 work.
+The1.1.9 normal release, independent retrieval and installed updater hashes/main/
+helper readiness pass, but the subsequent performance regression prevents S8
+closure. No unrelated S9/S11/S6/S7 work.
 
 Historical extension: S8 is COMPLETE through1.1.8 for the previous refinement round.
 PREVIEW-12: correct continuous mouse rotation/frame presentation, remove PNG

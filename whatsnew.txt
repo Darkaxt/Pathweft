@@ -1,6 +1,11 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.10 | 2026-11-01 | Responsive 3D interaction
+Camera movement now applies every mouse sample without redrawing the model for
+each one. The F3D fixed-up orbit and pole behavior are preserved, while each
+render batch produces only its explicit captured frame.
+
 ## 1.1.9 | 2026-11-01 | Native 3D mouse orbit
 3D mouse gestures now use F3D's native default controller, keeping the model
 upright during circular drags and preventing flips at the poles. Pan, zoom,
