@@ -14,8 +14,8 @@ do not change its requirements or the user's standing instructions.
   see `docs/verification/2026-10-29-s5.md` for the direct-write contract,
   measured performance limits and actual caller/preservation/recovery evidence.
   The user explicitly reprioritized S8 core delivery ahead of Windows search work.
-  S8 is ACTIVE for the post-v1.1.2 click-outside dismissal correction under
-  WIDGET-01/02 and v1.1.3 delivery. Prior S8 work is COMPLETE through v1.1.2,
+  S8 is ACTIVE for PREVIEW-06/07 and the About settings-folder action, followed
+  by final delivery. Prior S8 work is COMPLETE through v1.1.3,
   including the compact Ctrl+Alt+Space popup and clipped Settings action fix.
   The prior frame/search/editor/icon/sidebar work shipped in v1.1.1.
   No other stage is ACTIVE. No S6/S7 implementation is authorized.
@@ -48,8 +48,9 @@ do not change its requirements or the user's standing instructions.
   packages. Review useful upstream
   changes before compiling. Implement optional Native appearance/accent settings
   under Appearance and opt-in shell routing under Windows integration.
-- Prefer source/native SDK integration inside Pathweft. The F3D GLB prototype
-  belongs to S3; native 7-Zip-backed browsing and rename/copy/cut/paste belong to S4.
+- Prefer source/native SDK integration inside Pathweft. S8 promotes the S3 F3D
+  prototype to the interactive viewer and archive tree under PREVIEW-06/07;
+  native 7-Zip-backed browsing and rename/copy/cut/paste belong to S4.
 - S6 targets Everything results inside the existing StartAllBack menu, allowing a
   version-bound native hook after REA evidence. Keep native category dividers with
   reduced Everything-backed subsets; See more results opens the full integrated

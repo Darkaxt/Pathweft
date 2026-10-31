@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.ComTypes;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -109,6 +110,21 @@ sealed class PackageProbe
         catch(TargetInvocationException error){System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(error.InnerException).Throw();throw;}
     }
     static object Get(object target,string name)=>target.GetType().GetProperty(name,Flags).GetValue(target);
+    // Force the receiving WPF object through the native data contract, rather
+    // than letting it reuse the source's managed IDataObject directly.
+    sealed class NativeDataConsumer(System.Runtime.InteropServices.ComTypes.IDataObject source):System.Runtime.InteropServices.ComTypes.IDataObject
+    {
+        internal int Reads;
+        public void GetData(ref FORMATETC format,out STGMEDIUM medium){Reads++;source.GetData(ref format,out medium);}
+        public void GetDataHere(ref FORMATETC format,ref STGMEDIUM medium)=>source.GetDataHere(ref format,ref medium);
+        public int QueryGetData(ref FORMATETC format)=>source.QueryGetData(ref format);
+        public int GetCanonicalFormatEtc(ref FORMATETC format,out FORMATETC result)=>source.GetCanonicalFormatEtc(ref format,out result);
+        public void SetData(ref FORMATETC format,ref STGMEDIUM medium,bool release)=>source.SetData(ref format,ref medium,release);
+        public IEnumFORMATETC EnumFormatEtc(DATADIR direction)=>source.EnumFormatEtc(direction);
+        public int DAdvise(ref FORMATETC format,ADVF flags,IAdviseSink sink,out int connection)=>source.DAdvise(ref format,flags,sink,out connection);
+        public void DUnadvise(int connection)=>source.DUnadvise(connection);
+        public int EnumDAdvise(out IEnumSTATDATA values)=>source.EnumDAdvise(out values);
+    }
     void Check(bool success,string criterion)
     {
         checks.Add(new{criterion,passed=success});Console.WriteLine(criterion+": "+success);
@@ -178,7 +194,10 @@ sealed class PackageProbe
             var lazyDrag=Activator.CreateInstance(dragType,Flags,null,new object[]{archivePaths,(Func<string[]>)(()=>{exports++;return new[]{payload};})},null);
             var drag=new DataObject(lazyDrag);
             Check(((string[])Call(dragType,null,"Files",drag)).SequenceEqual(archivePaths)&&exports==0,"Delivered archive drag identities are available without materializing export files");
-            Check(((string[])drag.GetData(DataFormats.FileDrop)).SequenceEqual(new[]{payload})&&((string[])drag.GetData(DataFormats.FileDrop)).SequenceEqual(new[]{payload})&&exports==1,"Delivered Windows file-drop export stays compatible and materializes once on demand");
+            var bridge=new NativeDataConsumer((System.Runtime.InteropServices.ComTypes.IDataObject)drag);
+            var received=new DataObject(bridge);
+            Check(((string[])Call(dragType,null,"Files",received)).SequenceEqual(archivePaths)&&exports==0&&bridge.Reads>0,"Native OLE round-trip preserves internal archive identities without requesting export");
+            Check(((string[])received.GetData(DataFormats.FileDrop)).SequenceEqual(new[]{payload})&&((string[])received.GetData(DataFormats.FileDrop)).SequenceEqual(new[]{payload})&&exports==1,"Delivered Windows file-drop export stays compatible across native OLE and materializes once on demand");
             new System.Windows.Interop.WindowInteropHelper(owner).EnsureHandle(); // an owned, never-shown HWND is required by WPF's Owner contract
             using(var icon=Application.GetResourceStream(new Uri("/Pathweft;component/app.ico",UriKind.Relative)).Stream)
                 VerifyIcon(System.Windows.Media.Imaging.BitmapDecoder.Create(icon,System.Windows.Media.Imaging.BitmapCreateOptions.PreservePixelFormat,System.Windows.Media.Imaging.BitmapCacheOption.OnLoad).Frames[0],"Delivered WPF app icon has a transparent background, yellow folder and contrasting brown marks");

@@ -1,15 +1,30 @@
 # S8 core delivery contract
 
-Authority: specification v0.16 and the user's explicit S8-first/delivery instructions.
-S8 is ACTIVE for the v1.1.3 dismissal, archive-drag, redirected Downloads and
-Explorer-navigation corrections. Prior delivery is COMPLETE through v1.1.2. S6 remains BLOCKED by the
+Authority: specification v0.17 and the user's explicit S8-first/delivery instructions.
+S8 is ACTIVE for PREVIEW-06/07 and the About settings-folder action. Prior
+delivery is COMPLETE through v1.1.3. S6 remains BLOCKED by the
 user's priority boundary; S7, S9 and S11 remain NOT STARTED.
 
-## Current v1.1.3 correction
+## Current preview correction
 
-WIDGET-01/02, ARCHIVE-04, CORE-03 and SHELL-01 source acceptance passes. No later
-stage is active. Final current-version packaging, normal publication/retrieval,
-installed verification and exact scratch cleanup remain advancement blockers.
+The archive tree, interactive unrestricted F3D reader integration and concise
+About action are required but not yet implemented/verified. These internal
+acceptance blockers keep S8 ACTIVE; final release/retrieval/install follows
+integrated acceptance. No tracked deferrals or later-stage implementation.
+
+## Delivered v1.1.3 correction
+
+WIDGET-01/02, ARCHIVE-04, CORE-03 and SHELL-01 acceptance passes. Normal release
+v1.1.3 source is 9ed2de04e9977ebf43fbea7efc71366bbeac5b2f; all six assets match
+independent retrieval. Installed D:\Tools\Pathweft members, actual app-host
+self-test, shortcut/uninstall identity and unchanged user settings/routing pass.
+Native COM custom-metadata and CF_HDROP round trips also pass in the independently
+retrieved package (PID2244); the permanent consumer test adds no application bits.
+The exact user large-archive physical drag was not replayed. Binaries remain
+unsigned. Cleanup fc824d66009ab06d5e6f4d3b05ac15cd is APPLIED for all19,168
+candidate members (3,356,707,541 helper file bytes); followup
+47f4a2ddfa72ad15e50eb9efcafcca69 removes the two task-created empty roots.
+Requested dist releases, installed application and required evidence are retained.
 
 The dismissal regression reproduces the old retained keyboard-focus guard and
 passes with the real Deactivated callback, settled activation, owned preview,

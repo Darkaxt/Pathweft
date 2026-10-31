@@ -1,12 +1,30 @@
 # Pathweft specification
 
-Version 0.16 - 2026-10-31. Owner: Darkaxt.
+Version 0.17 - 2026-10-31. Owner: Darkaxt.
 
 This is the authoritative specification. The derived plan must preserve every
 requirement and acceptance criterion. Material scope changes require explicit
 user direction recorded here; ordinary implementation choices need no new gate.
 
 ## 1. Intent and current scope
+
+Post-v1.1.3 user additions (2026-10-31), owned by S8: replace the About
+Diagnostics expander/telemetry with an Open settings folder button (CORE-03).
+PREVIEW-06 replaces flat archive text with an expandable, themed folder/file tree
+matching the sidebar Folders selector, concise names, keyboard expansion,
+scrolling and sizes; enumerate metadata without extracting entries, preserve
+empty/implicit directories, and release obsolete preview work.
+PREVIEW-07 promotes the F3D module beyond the GLB prototype: remove its file-size
+and embedded-resource restrictions, select the formats supported by the bundled
+readers, and provide mouse orbit, pan, wheel zoom, fit/reset and keyboard access.
+Keep module opt-in, native rendering inside Pathweft, asynchronous rendering and
+actual worker teardown. Verify a real user model above 64 MiB, camera/frame
+changes, supported external-resource models, disabled/malformed cases and
+unchanged source assets. Engine reader/rendering limitations remain explicit;
+3D editing and formats unavailable in the bundled engine are not promised.
+Complete integrated hidden/rendered checks, normal final release, independent
+package retrieval and installation verification. No Sandbox or desktop takeover.
+The preceding v1.1.3 correction below is delivered and verified.
 
 Post-v1.1.2 correction: clicking outside the search popup must dismiss it even
 if WPF still reports keyboard focus in the query field during deactivation.
@@ -255,6 +273,8 @@ changing Outlook indexing or modifying the existing engine configuration.
 | PREVIEW-03 | Persist per-module enable/disable settings. Disabled modules are not selected or initialized; disabling the current module releases its preview resources. Resolve overlaps by deterministic priority or explicit preference. Show an eligible alternative or honest unsupported/disabled state. Verify toggles, active-disable and restart persistence. |
 | PREVIEW-04 | Space, side-pane and widget previews share selection/lifecycle rules. Rapid navigation cannot show obsolete content. Close/change releases documents, playback and native resources. Previewing must not execute a selected executable or run document macros/scripts. Verify representative formats, malformed/large/unsupported inputs and file release by rename/delete after closing. |
 | PREVIEW-05 | User-authorized S3 prototype addition (2026-10-29): add an opt-in F3D-backed GLB preview module and verify the user-specified Castlevania GLB inside Pathweft. Inspect/adapt F3D source and its supported library API. Keep module settings and resource lifetime under the internal preview host; verify a real model render, camera controls, disable/close cleanup and unchanged original asset. The private asset path/hash belongs in ignored trial input, not public source. This adds a bounded 3D prototype, not arbitrary 3D format parity or editing. |
+| PREVIEW-06 | S8 archive preview tree described in current scope; verify the reported real ZIP and nested/empty/implicit folder fixtures, theme/layout, keyboard expansion, metadata-only browsing and lifecycle. |
+| PREVIEW-07 | S8 full embedded F3D viewer described in current scope, superseding PREVIEW-05's prototype restrictions; verify actual bundled-reader formats and large-model interaction/rendering, opt-in and resource release across preview surfaces. |
 
 Compiled-in modules with on-demand initialization are sufficient. Assembly
 unloading, a dynamic plugin marketplace and a general extension framework are not
