@@ -10,6 +10,18 @@ public partial class SettingsWindow : Window
     {
         InitializeComponent();
         Owner = main = owner;
+        Width=Math.Min(SystemParameters.WorkArea.Width,740*Math.Max(1,Settings.TextScale));
+        MinWidth=Math.Min(Width,620*Math.Max(1,Settings.TextScale));
+        Height=Math.Min(SystemParameters.WorkArea.Height,640*Math.Max(1,Settings.TextScale));
+        foreach(var (title,card) in new[]{("Appearance",AppearanceCard),("Files",FilesCard),("Transfers",TransfersCard),("Windows integration",IntegrationCard),("Defaults",DefaultsCard),("About",AboutCard)})
+            SettingsCategories.Items.Add(new System.Windows.Controls.ListBoxItem{Content=title,Tag=card});
+        SettingsCategories.SelectionChanged+=(_,_)=>
+        {
+            var selected=(SettingsCategories.SelectedItem as System.Windows.Controls.ListBoxItem)?.Tag;
+            foreach(System.Windows.UIElement card in SettingsCards.Children)card.Visibility=ReferenceEquals(card,selected)?Visibility.Visible:Visibility.Collapsed;
+            CategoryScroll.ScrollToTop();
+        };
+        SettingsCategories.SelectedIndex=0;
 #if DEBUG
         HiddenTrialPresentation.Prepare(this);
 #endif

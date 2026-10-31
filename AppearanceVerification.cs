@@ -23,6 +23,8 @@ public partial class MainWindow
         async Task Settled()=>await Dispatcher.InvokeAsync(UpdateLayout,System.Windows.Threading.DispatcherPriority.ApplicationIdle);
         try
         {
+            if(Environment.GetEnvironmentVariable("PATHWEFT_VERIFY_ROUND118")=="1")
+            {await VerifyRound118(root,Check);result=0;return;}
             if(Environment.GetEnvironmentVariable("PATHWEFT_VERIFY_CLOUD_ONLY")=="1")
             {await VerifyCloudQuota(root,Check);result=0;return;}
             if(Environment.GetEnvironmentVariable("PATHWEFT_VERIFY_STATS_ONLY")=="1")
@@ -214,7 +216,7 @@ public partial class MainWindow
             Check(automaticEditor!=null,"Automatic opening can decline an editor-incompatible file before creating an editor or showing an error");
             Check(Settings.NativeTheme&&Settings.WindowsAccent,"Real startup loads Native and Windows accent from the isolated persisted profile");
             settings=new SettingsWindow(this);settings.Show();await Settled();settings.UpdateLayout();
-            var body=(ScrollViewer)settings.FindName("Body");
+            var body=(ScrollViewer)settings.FindName("CategoryScroll");
             var first=(Border)((StackPanel)body.Content).Children[0];
             Check(first.Name=="AppearanceCard","Settings starts with actionable Appearance controls instead of the search qualification report");
             var hwnd=new WindowInteropHelper(this).Handle;
@@ -311,6 +313,7 @@ public partial class MainWindow
             }
             var help=(Button)settings.FindName("SearchHelp");
             Check(help!=null,"Settings provides a deliberate Help entry for search documentation");
+            ((ListBox)settings.FindName("SettingsCategories")).SelectedIndex=5;await Settled();
             ((IInvokeProvider)new ButtonAutomationPeer(help).GetPattern(PatternInterface.Invoke)).Invoke();await Settled();
             Check(Application.Current.Windows.OfType<HelpWindow>().Any(),"The Settings Help action opens the actual searchable Help window");
             bool closed=false,canceled=false;

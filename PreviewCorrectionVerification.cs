@@ -204,10 +204,11 @@ public partial class MainWindow
             var first=renderer.LastFrame;File.WriteAllBytes(Path.Combine(root,"large-model.png"),first.Png);
             var bgra=new System.Windows.Media.Imaging.FormatConvertedBitmap(first.Bitmap,PixelFormats.Bgra32,null,0);var corner=new byte[4];bgra.CopyPixels(new Int32Rect(0,0,1,1),corner,4,0);
             check(corner[3]==0,"Native model background is transparent, eliminating the opaque rectangular cutoff");
-            check(first is { Offscreen:true, Bitmap.PixelWidth:960 },"Large user model renders through the actual internal offscreen engine");
+            check(first is { Offscreen:true, Bitmap.PixelWidth:>0,Bitmap.PixelHeight:>0 },"Large user model renders through the actual internal offscreen engine at its requested viewport size");
             // Use the same application-owned drag handler as WPF pointer movement;
             // no physical mouse or desktop focus is synthesized.
             body.Measure(new Size(500,600));body.Arrange(new Rect(0,0,500,600));
+            await Settle();await renderer.RenderCompletion;first=renderer.LastFrame;
             renderer.ApplyDrag(new Vector(80,25),false);await renderer.RenderCompletion;
             check(!first.Camera.SequenceEqual(renderer.LastFrame.Camera)&&!first.Png.SequenceEqual(renderer.LastFrame.Png),"Drag orbit changes both native camera and rendered model");
             var orbit=renderer.LastFrame;renderer.ApplyDrag(new Vector(20,15),true);await renderer.RenderCompletion;

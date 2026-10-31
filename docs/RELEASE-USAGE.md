@@ -1,4 +1,4 @@
-# Pathweft 1.1.7
+# Pathweft 1.1.8
 
 Windows 11 x64 is the qualified host. The .NET 10 desktop runtime and native
 archive/preview libraries are included. WebView2 Evergreen is required for the
@@ -22,7 +22,11 @@ Folder-plus-selection requests sent to Pathweft's /select command are supported.
 StartAllBack's grouped Everything results and the wider Windows Search migration
 are later unfinished integrations; this release does not change Windows Search.
 
-Settings > Appearance selects Original or Native. Native follows Windows
+Settings > Appearance selects Original or Native.
+Settings categories are selected from the left column; only that category is
+shown and long categories scroll independently. Help's category navigation marks
+the section currently being read in bold as you scroll or filter the guide.
+Native follows Windows
 light/dark and accent preferences, or a selected light/dark/custom accent.
 Ctrl+P switches one/two panes. Ctrl+H toggles Windows-hidden and dot-name files.
 This PC shows drive capacities, free space, usage bars, filesystems and mapped

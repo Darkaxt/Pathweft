@@ -241,6 +241,19 @@ sealed class PackageProbe
             Check(owner.FindName("SidebarScroll") is ScrollViewer&&sidebarMask.MappingMode==System.Windows.Media.BrushMappingMode.Absolute&&sidebarMask.EndPoint.Y==200&&sidebarMask.GradientStops[0].Color.A==0&&sidebarMask.GradientStops[^1].Color.A==0&&Call(typeof(MainWindow),null,"SidebarEdgeMask",200d,true,true,true)==null,"Delivered sidebar owns a viewport-coordinate fade and preserves high-contrast opacity");
             Check(left.FindName("AddressField") is FrameworkElement&&left.FindName("SearchScope")==null&&left.FindName("SearchBar")==null&&left.FindName("SearchSubmit")==null&&new[]{"MatchCase","MatchWord","MatchPath","MatchRegex"}.All(name=>left.FindName(name)!=null),"Delivered controls contain the unified field and four match switches, without the retired search row");
             var settings=new SettingsWindow(owner);
+            var categories=(ListBox)settings.FindName("SettingsCategories");
+            var cards=(StackPanel)settings.FindName("SettingsCards");
+            Check(categories.Items.Count==6&&settings.Width>=740,"Delivered Settings uses six vertical categories with the preserved content width");
+            foreach(ListBoxItem item in categories.Items)
+            {
+                categories.SelectedItem=item;
+                Check(cards.Children.OfType<Border>().Count(c=>c.Visibility==Visibility.Visible)==1&&((Border)item.Tag).Visibility==Visibility.Visible,"Delivered Settings category selects its existing controls: "+item.Content);
+            }
+            var guide=new HelpWindow(owner);
+            Check(((StackPanel)guide.FindName("Topics")).Children.OfType<Button>().Any(),"Delivered Help retains its searchable category navigation");
+            Call(typeof(HelpWindow),guide,"HighlightReadingSection");
+            Check(((StackPanel)guide.FindName("Topics")).Children.OfType<Button>().Count(b=>b.FontWeight==FontWeights.Bold)==1,"Delivered Help identifies one current reading section");
+            guide.Close();
             Check(settings.FindName("OpenSettingsFolder") is Button&&settings.FindName("ProfileText")==null,"Delivered About contains the settings-folder action without the old Diagnostics expander");
             Check(settings.FindName("AppearanceCard") is FrameworkElement,"Delivered Settings starts with Appearance and keeps documentation in Help");
             var restore=(Button)settings.FindName("RestoreFolderHandlers");
@@ -284,6 +297,7 @@ sealed class PackageProbe
             Check((string)Get(session,"State")=="ready"&&(string)Get(session,"ModuleId")=="f3d","Delivered F3D DLL and native dependencies render an embedded GLB through the actual module");
             var viewer=previewType.GetField("viewer",Flags).GetValue(session);
             var frame=Get(viewer,"LastFrame");var png=(byte[])Get(frame,"Png");
+            Check(((byte[])Get(frame,"Pixels")).Length>0&&(long)Get(frame,"Sequence")>0&&(double)Get(frame,"TransferMilliseconds")>=0,"Delivered F3D presents native raw pixel frames without PNG in the interaction path");
             Check((bool)Get(frame,"Offscreen")&&png.Length>1000,"Delivered native preview produces a real offscreen image");
             var bitmap=(System.Windows.Media.Imaging.BitmapSource)Get(frame,"Bitmap");
             var bgra=new System.Windows.Media.Imaging.FormatConvertedBitmap(bitmap,System.Windows.Media.PixelFormats.Bgra32,null,0);var alpha=new byte[4];bgra.CopyPixels(new Int32Rect(0,0,1,1),alpha,4,0);

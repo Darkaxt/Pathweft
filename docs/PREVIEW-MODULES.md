@@ -14,7 +14,7 @@ and taskbar Preview/Space share the same selection and lifecycle implementation.
 | Archive and folder listing | Native archive formats listed in [ARCHIVES.md](ARCHIVES.md); expandable folder/file tree with icons, concise names and sizes for containers/virtual directories; existing Stash/Backup Labs explicit actions | All archive metadata, WPF rows created on expansion with virtualization; filesystem folder text remains limited to 1,000 names; no archive extraction or execution | Selected QuickLook selection/lifecycle; File Labs sidebar tree presentation; S4 native archive integration |
 | Video and audio | .mp4, .m4v, .mov, .wmv, .avi, .mkv, .webm, .mpg, .mpeg, .3gp, .ts; .mp3, .wav, .wma, .m4a, .aac, .flac, .ogg, .opus | Installed Windows codecs via WPF MediaElement. Space playback, side-pane pause until Play; Enter toggles and Left/Right seek in the Space window; position refresh is display-only. No codec downloads or external player dispatch | File Labs playback and optional Reel metadata, owned per selected module instance |
 | Fonts | .ttf, .otf specimen at several sizes; no installation | 16 MiB; WPF font rendering; scrollable sample | Selected QuickLook font selection/lifecycle; File Labs native specimen |
-| 3D models (F3D), disabled by default | Actual bundled-reader inventory, including GLB/glTF, OBJ, STL, PLY, FBX, STEP and USD; native materials and relative resources; mouse orbit/pan/wheel zoom, Fit/Reset, keyboard camera controls; animation clip/playback/timeline when present | No Pathweft model-size or JSON-chunk cap; native libf3d 4.0.0 C API, offscreen 960×720 frames; engine/reader format limits and available machine memory apply; no editing | F3D's native library API and offscreen example adapted to the internal viewer contract |
+| 3D models (F3D), disabled by default | Actual bundled-reader inventory, including GLB/glTF, OBJ, STL, PLY, FBX, STEP and USD; native materials/resources; orbit/pan/zoom, Fit/Reset and keyboard controls; animation clips/playback/timeline; FXAA, ambient lighting/occlusion, tone mapping and reflective grid | Native libf3d4.0.0 offscreen RGBA frames sized to viewport/DPI, copied directly to WPF BGRA; no model-size/JSON cap, no editing; engine/reader/machine limits apply | F3D native C API and pinned source, integrated under the internal viewer contract |
 
 Higher numerical priority wins; equal priorities use ordinal module ID. Markdown
 has priority 100, other typed viewers 90, F3D 80 and text -5. Existing image/archive
@@ -34,7 +34,13 @@ settling delay or timer decides load/cleanup completion.
 F3D owns a dedicated STA render thread and request queue for OpenGL affinity.
 Disable, selection change and close finish pending requests, destroy the native
 engine on that thread and observe its actual exit. Frames cross into WPF in
-memory; the native renderer never creates a visible preview window. Its cache
+memory; the native renderer never creates a visible preview window. Presentation
+uses raw lower-left RGBA converted to top-left BGRA, without PNG encoding or
+decoding during input. Completed monotonically ordered frames remain eligible
+while newer gestures are pending; content-generation cancellation still excludes
+old selections. Native frame dimensions follow actual viewport layout/DPI and
+camera framing adjusts for portrait aspect ratios. Explicit diagnostic PNG
+exports are generated only on demand. The cache
 uses the application profile. No F3D executable, shell extension or registry
 integration is used. Animation evaluates on the same native thread; playback
 follows WPF frame events with one pending render, and releases that subscription

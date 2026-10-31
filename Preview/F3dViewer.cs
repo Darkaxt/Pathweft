@@ -15,7 +15,11 @@ namespace FileExplorer.Preview;
 internal sealed class F3dViewer(MainWindow owner) : IViewer
 {
     sealed record Request(string Operation, double X, double Y, TaskCompletionSource<Frame> Result);
-    internal sealed record Frame(BitmapImage Bitmap, byte[] Png, double[] Camera, bool Offscreen, uint Animations, double Start, double End);
+    internal sealed record Frame(BitmapSource Bitmap,byte[] Pixels,double[] Camera,bool Offscreen,uint Animations,double Start,double End,long Sequence,double RenderMilliseconds,double TransferMilliseconds)
+    {
+        // Export only on explicit diagnostic/screenshot demand, never per gesture.
+        internal byte[] Png {get{var encoder=new PngBitmapEncoder();encoder.Frames.Add(BitmapFrame.Create(Bitmap));using var stream=new MemoryStream();encoder.Save(stream);return stream.ToArray();}}
+    }
     static readonly object pluginLock = new();
     static readonly Lazy<HashSet<string>> extensions = new(LoadReaders);
     BlockingCollection<Request> requests;
@@ -23,12 +27,15 @@ internal sealed class F3dViewer(MainWindow owner) : IViewer
     ContextObject context;
     string path;
     volatile bool stopped;
-    int revision;
+    long renderedSequence,presentedSequence;
+    int renderWidth=960,renderHeight=720;
+    readonly bool light=Appearance.Native&&Appearance.Light;
     Border viewport;
     Point lastPointer;
     MouseButton? dragging;
     Action<string, double, double> queue;
     EventHandler animationTick;
+    EventHandler resizeHandler;
     bool playing;
     double animationTime;
     readonly System.Diagnostics.Stopwatch animationClock = new();
@@ -36,6 +43,11 @@ internal sealed class F3dViewer(MainWindow owner) : IViewer
     internal Task RenderCompletion { get; private set; } = Task.CompletedTask;
     internal Frame LastFrame { get; private set; }
     internal bool WorkerAlive => worker?.IsAlive == true;
+    internal long PresentedFrames {get;private set;}
+    internal event Action<Frame> FramePresented;
+#if DEBUG
+    internal Action<Frame> BeforeFrameCompletionForVerification;
+#endif
 
     internal static bool Supports(string input) => extensions.Value.Contains(Path.GetExtension(input));
     internal static string[] SupportedExtensions => extensions.Value.Order().ToArray();
@@ -86,6 +98,7 @@ internal sealed class F3dViewer(MainWindow owner) : IViewer
         var clips = new ComboBox { MinWidth = 110, MinHeight = 32, MaxWidth = 200, Margin = new(4, 0, 8, 0),
             VerticalAlignment = VerticalAlignment.Center, Style = (Style)owner.FindResource("PreviewClipCombo") };
         var timeline = new Slider { MinWidth = 80, VerticalAlignment = VerticalAlignment.Center };
+        bool populatingClips=false;
         AutomationProperties.SetName(timeline, "Animation time"); AutomationProperties.SetName(clips, "Animation clip");
         DockPanel.SetDock(play, Dock.Left); DockPanel.SetDock(clips, Dock.Left);
         animationControls.Children.Add(play); animationControls.Children.Add(clips); animationControls.Children.Add(timeline);
@@ -94,17 +107,25 @@ internal sealed class F3dViewer(MainWindow owner) : IViewer
         root.Children.Add(controls); root.Children.Add(notice); root.Children.Add(viewport);
         async Task Update(string operation, double x = 0, double y = 0, bool failLoad = false)
         {
-            int current = ++revision;
             try
             {
                 var frame = await Submit(operation, x, y);
-                if (current != revision || !context.IsCurrent) return;
+                // Input revisions are not content generations: a completed frame
+                // remains useful while a newer gesture is rendering. Reject only
+                // an old viewer generation or an out-of-order/duplicate frame.
+                if (!context.IsCurrent||frame.Sequence<=presentedSequence) return;
+                presentedSequence=frame.Sequence;PresentedFrames++;
                 LastFrame = frame; image.Source = frame.Bitmap; notice.Text = "Drag to rotate · Right-drag to pan · Wheel to zoom";
+                FramePresented?.Invoke(frame);
                 if(frame.Animations>0)
                 {
                     animationControls.Visibility=Visibility.Visible;
                     if(clips.Items.Count!=frame.Animations)
-                    {for(int i=0;i<frame.Animations;i++)clips.Items.Add("Animation "+(i+1));clips.SelectedIndex=0;}
+                    {
+                        populatingClips=true;
+                        try{clips.Items.Clear();for(int i=0;i<frame.Animations;i++)clips.Items.Add("Animation "+(i+1));clips.SelectedIndex=0;}
+                        finally{populatingClips=false;}
+                    }
                     timeline.Minimum=frame.Start;timeline.Maximum=Math.Max(frame.Start,frame.End);
                 }
             }
@@ -129,7 +150,7 @@ internal sealed class F3dViewer(MainWindow owner) : IViewer
             timeline.SetCurrentValue(Slider.ValueProperty,animationTime);queue("time",animationTime,0);
         };
         timeline.ValueChanged+=(_,e)=>{if(!playing&&LastFrame!=null){animationTime=e.NewValue;queue("time",animationTime,0);}};
-        clips.SelectionChanged+=(_,_)=>{if(clips.SelectedIndex>=0&&LastFrame!=null){StopPlayback();animationTime=0;queue("clip",clips.SelectedIndex,0);}};
+        clips.SelectionChanged+=(_,_)=>{if(!populatingClips&&clips.SelectedIndex>=0&&LastFrame!=null){StopPlayback();animationTime=0;queue("clip",clips.SelectedIndex,0);}};
         viewport.MouseDown += (_, e) =>
         {
             if (LastFrame == null || e.ChangedButton is not (MouseButton.Left or MouseButton.Right or MouseButton.Middle)) return;
@@ -154,6 +175,15 @@ internal sealed class F3dViewer(MainWindow owner) : IViewer
             controls.Children.Add(button);
         }
         context.ViewerContent = root;
+        void Resize()
+        {
+            if(stopped||!context.IsCurrent||viewport.ActualWidth<=0||viewport.ActualHeight<=0)return;
+            var dpi=VisualTreeHelper.GetDpi(viewport);
+            int width=Math.Max(1,(int)Math.Ceiling(viewport.ActualWidth*dpi.DpiScaleX)),height=Math.Max(1,(int)Math.Ceiling(viewport.ActualHeight*dpi.DpiScaleY));
+            if(width==renderWidth&&height==renderHeight)return;
+            renderWidth=width;renderHeight=height;queue("resize",width,height);
+        }
+        resizeHandler=(_,_)=>Resize();viewport.LayoutUpdated+=resizeHandler;
         RenderCompletion = Update("load", failLoad: true);
         await RenderCompletion;
     }
@@ -179,6 +209,7 @@ internal sealed class F3dViewer(MainWindow owner) : IViewer
     void RenderLoop()
     {
         IntPtr engine = IntPtr.Zero, window = IntPtr.Zero, camera = IntPtr.Zero, animation = IntPtr.Zero;
+        bool cameraMoved=false;double defaultAspect=4.0/3;
         try
         {
             foreach (var first in requests.GetConsumingEnumerable())
@@ -203,9 +234,14 @@ internal sealed class F3dViewer(MainWindow owner) : IViewer
                         if (F3dNative.f3d_window_is_offscreen(window) == 0) throw new InvalidOperationException("The F3D renderer is not offscreen.");
                         F3dNative.f3d_window_set_size(window, 960, 720); F3dNative.f3d_window_set_use_hdri_cache(window, 0);
                         var options = F3dNative.f3d_engine_get_options(engine);
-                        foreach (string name in new[] { "ui.axis", "ui.fps", "ui.filename", "ui.metadata", "ui.console", "ui.cheatsheet", "render.grid.enable" }) F3dNative.f3d_options_set_as_bool(options, name, 0);
+                        foreach (string name in new[] { "ui.axis", "ui.fps", "ui.filename", "ui.metadata", "ui.console", "ui.cheatsheet" }) F3dNative.f3d_options_set_as_bool(options, name, 0);
+                        F3dNative.f3d_options_set_as_string(options,"render.effect.antialiasing.mode","fxaa");
+                        foreach(string name in new[]{"render.effect.ambient_occlusion","render.effect.tone_mapping","render.grid.enable","render.hdri.ambient"})F3dNative.f3d_options_set_as_bool(options,name,1);
+                        F3dNative.f3d_options_set_as_double_vector(options,"render.grid.color",light?new[]{0.4,0.4,0.4}:new[]{0.12,0.12,0.12},3);
+                        F3dNative.f3d_options_set_as_double(options,"render.grid.reflection",0.2);
                         F3dNative.f3d_options_set_as_double(options, "render.light.intensity", 1.2);
                         if (F3dNative.f3d_scene_add(F3dNative.f3d_engine_get_scene(engine), path) == 0) throw new InvalidDataException("F3D could not read this model. Check its format and referenced resources.");
+                        F3dNative.f3d_camera_azimuth(camera,20);F3dNative.f3d_camera_elevation(camera,15);
                         F3dNative.f3d_camera_reset_to_bounds(camera, 0.9);
                         F3dNative.f3d_camera_set_current_as_default(camera);
                         animation = F3dNative.f3d_scene_get_animation(F3dNative.f3d_engine_get_scene(engine));
@@ -214,44 +250,61 @@ internal sealed class F3dViewer(MainWindow owner) : IViewer
                     {
                         case "time": F3dNative.f3d_animation_load_time(animation, request.X); break;
                         case "clip": F3dNative.f3d_options_set_as_string(F3dNative.f3d_engine_get_options(engine), "scene.animation.indices", ((int)request.X).ToString(System.Globalization.CultureInfo.InvariantCulture)); F3dNative.f3d_animation_load_time(animation, 0); break;
-                        case "orbit": F3dNative.f3d_camera_azimuth(camera, -request.X * 180); F3dNative.f3d_camera_elevation(camera, request.Y * 180); break;
+                        // F3D/VTK trackball factor: 20 * MotionFactor(10), with
+                        // WPF's downward Y converted to the native upward axis.
+                        case "orbit": cameraMoved=true;F3dNative.f3d_camera_azimuth(camera, -request.X * 200); F3dNative.f3d_camera_elevation(camera, request.Y * 200); break;
+                        case "resize":
+                            double oldAspect=(double)F3dNative.f3d_window_get_width(window)/Math.Max(1,F3dNative.f3d_window_get_height(window));
+                            double newAspect=request.X/request.Y;
+                            F3dNative.f3d_window_set_size(window,(int)request.X,(int)request.Y);
+                            if(!cameraMoved)
+                            {F3dNative.f3d_camera_reset_to_bounds(camera,0.9);F3dNative.f3d_camera_set_current_as_default(camera);defaultAspect=newAspect;}
+                            else F3dNative.f3d_camera_dolly(camera,Math.Min(1,newAspect)/Math.Min(1,oldAspect));
+                            break;
                         case "pan":
+                            cameraMoved=true;
                             var pos = new double[3]; var focal = new double[3];
                             F3dNative.f3d_camera_get_position(camera, pos); F3dNative.f3d_camera_get_focal_point(camera, focal);
                             double distance = Math.Sqrt(pos.Zip(focal).Sum(p => Math.Pow(p.First - p.Second, 2)));
                             double span = 2 * distance * Math.Tan(F3dNative.f3d_camera_get_view_angle(camera) * Math.PI / 360);
-                            F3dNative.f3d_camera_pan(camera, -request.X * span * 4 / 3, request.Y * span, 0); break;
-                        case "zoom": F3dNative.f3d_camera_dolly(camera, request.X); break;
-                        case "up": F3dNative.f3d_camera_elevation(camera, 20); break;
-                        case "down": F3dNative.f3d_camera_elevation(camera, -20); break;
-                        case "fit": F3dNative.f3d_camera_reset_to_bounds(camera, 0.9); break;
-                        case "left": F3dNative.f3d_camera_azimuth(camera, -20); break;
-                        case "right": F3dNative.f3d_camera_azimuth(camera, 20); break;
-                        case "in": F3dNative.f3d_camera_dolly(camera, 1.2); break;
-                        case "out": F3dNative.f3d_camera_dolly(camera, 1 / 1.2); break;
-                        case "reset": F3dNative.f3d_camera_reset_to_default(camera); break;
+                            F3dNative.f3d_camera_pan(camera, -request.X * span * F3dNative.f3d_window_get_width(window) / Math.Max(1,F3dNative.f3d_window_get_height(window)), request.Y * span, 0); break;
+                        case "zoom": cameraMoved=true;F3dNative.f3d_camera_dolly(camera, request.X); break;
+                        case "up": cameraMoved=true;F3dNative.f3d_camera_elevation(camera, 20); break;
+                        case "down": cameraMoved=true;F3dNative.f3d_camera_elevation(camera, -20); break;
+                        case "fit": cameraMoved=true;F3dNative.f3d_camera_reset_to_bounds(camera, 0.9); break;
+                        case "left": cameraMoved=true;F3dNative.f3d_camera_azimuth(camera, -20); break;
+                        case "right": cameraMoved=true;F3dNative.f3d_camera_azimuth(camera, 20); break;
+                        case "in": cameraMoved=true;F3dNative.f3d_camera_dolly(camera, 1.2); break;
+                        case "out": cameraMoved=true;F3dNative.f3d_camera_dolly(camera, 1 / 1.2); break;
+                        case "reset":
+                            F3dNative.f3d_camera_reset_to_default(camera);
+                            double aspect=(double)F3dNative.f3d_window_get_width(window)/Math.Max(1,F3dNative.f3d_window_get_height(window));
+                            F3dNative.f3d_camera_dolly(camera,Math.Min(1,aspect)/Math.Min(1,defaultAspect));break;
                     }
                     context.Token.ThrowIfCancellationRequested();
+                    var clock=System.Diagnostics.Stopwatch.StartNew();
                     IntPtr image = F3dNative.f3d_window_render_to_image(window, 1);
+                    double renderMs=clock.Elapsed.TotalMilliseconds;clock.Restart();
                     if (image == IntPtr.Zero) throw new InvalidOperationException("F3D returned no rendered model image.");
-                    byte[] bytes;
+                    byte[] pixels;BitmapSource bitmap;
                     try
                     {
-                        IntPtr buffer = F3dNative.f3d_image_save_buffer(image, 0, out uint size);
-                        if (buffer == IntPtr.Zero) throw new InvalidDataException("F3D could not encode its frame.");
-                        try
-                        {
-                            bytes = new byte[checked((int)size)]; Marshal.Copy(buffer, bytes, 0, bytes.Length);
-                        }
-                        finally { F3dNative.f3d_image_destroy_buffer(buffer); }
+                        int width=checked((int)F3dNative.f3d_image_get_width(image)),height=checked((int)F3dNative.f3d_image_get_height(image));
+                        if(width<=0||height<=0||F3dNative.f3d_image_get_channel_count(image)!=4||F3dNative.f3d_image_get_channel_type(image)!=0)throw new InvalidDataException("F3D did not return an RGBA byte frame.");
+                        var content=F3dNative.f3d_image_get_content(image);
+                        if(content==IntPtr.Zero)throw new InvalidDataException("F3D returned no pixel content.");
+                        var rgba=new byte[checked(width*height*4)];Marshal.Copy(content,rgba,0,rgba.Length);
+                        pixels=TopDownBgra(rgba,width,height);
+                        bitmap=BitmapSource.Create(width,height,96,96,PixelFormats.Bgra32,null,pixels,width*4);bitmap.Freeze();
                     }
                     finally { F3dNative.f3d_image_destroy(image); }
-                    using var stream = new MemoryStream(bytes);
-                    var bitmap = new BitmapImage(); bitmap.BeginInit(); bitmap.CacheOption = BitmapCacheOption.OnLoad; bitmap.StreamSource = stream; bitmap.EndInit(); bitmap.Freeze();
                     var position = new double[3]; F3dNative.f3d_camera_get_position(camera, position);
                     uint count=F3dNative.f3d_animation_count(animation);
                     double start=0,end=0;if(count>0)F3dNative.f3d_animation_get_time_range(animation,out start,out end);
-                    var frame = new Frame(bitmap, bytes, position, true, count, start, end);
+                    var frame = new Frame(bitmap,pixels,position,true,count,start,end,++renderedSequence,renderMs,clock.Elapsed.TotalMilliseconds);
+#if DEBUG
+                    BeforeFrameCompletionForVerification?.Invoke(frame);
+#endif
                     foreach (var r in batch) r.Result.TrySetResult(frame);
                 }
                 catch (Exception ex) { foreach (var r in batch) r.Result.TrySetException(ex); }
@@ -262,11 +315,24 @@ internal sealed class F3dViewer(MainWindow owner) : IViewer
     public void Cleanup()
     {
         if (stopped) return;
-        stopped = true; ++revision;
+        stopped = true;
         playing=false;animationClock.Stop();if(animationTick!=null)CompositionTarget.Rendering-=animationTick;
+        if(viewport!=null&&resizeHandler!=null)viewport.LayoutUpdated-=resizeHandler;
         if (viewport?.IsMouseCaptured == true) viewport.ReleaseMouseCapture();
         requests?.CompleteAdding();
         if (worker != null) context?.Track(Task.Run(() => { worker.Join(); requests.Dispose(); }));
         LastFrame = null;
+    }
+    internal static byte[] TopDownBgra(byte[] rgba,int width,int height)
+    {
+        // libf3d exports lower-left RGBA; WPF expects top-left BGRA.
+        int stride=checked(width*4);var pixels=new byte[checked(stride*height)];
+        if(rgba.Length!=pixels.Length)throw new ArgumentException("Unexpected RGBA dimensions.");
+        for(int y=0;y<height;y++)for(int x=0;x<stride;x+=4)
+        {
+            int source=(height-y-1)*stride+x,target=y*stride+x;
+            pixels[target]=rgba[source+2];pixels[target+1]=rgba[source+1];pixels[target+2]=rgba[source];pixels[target+3]=rgba[source+3];
+        }
+        return pixels;
     }
 }

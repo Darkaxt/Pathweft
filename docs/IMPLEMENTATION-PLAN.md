@@ -1,9 +1,27 @@
 # Implementation and reconciliation
 
-Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.23, 2026-10-31,
+Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.24, 2026-10-31,
 including the user-authorized continued comparison requirement TRANSFER-07.
 
-S8 is COMPLETE through1.1.7. CORE-12/13, integrated source and actual packaged
+S8 is ACTIVE for PREVIEW-12 (continuous native 3D interaction/quality), CORE-14
+(vertical Settings categories) and CORE-15 (Help reading-position highlight),
+plus bounded JUMP-03 research/planning for S11. Implement and verify each complete
+user-facing workflow, then reconcile/package/publish/independently retrieve one
+normal release and verify the user's installed update. Source/API/render pipeline
+and existing Settings/Help control owners are reused. The unimplemented current
+delivery criteria block closure; no external impediment or tracked deferral. S11
+implementation and S6/S7/S9 remain unstarted/postponed.
+
+Current source acceptance passes: complete Settings/Help/continuous-render
+workflow PID10212; broader preview regression PID61704. Screenshots were visually
+reviewed and source inputs preserved. The independent packaged consumer compiles
+against the new assembly. JUMP-03's documented native destination plan is complete,
+without claiming S11 runtime implementation. The scoped closure assessment found
+no required consolidation. See [current evidence](verification/2026-10-31-render118.md).
+S8 remains ACTIVE for final1.1.8 package, normal release, independent retrieval
+and user-controlled installed update verification; no intermediate release.
+
+Prior S8 is COMPLETE through1.1.7. CORE-12/13, integrated source and actual packaged
 workflows, normal publication, independent retrieval, the actual user-updater
 installation and exact cleanup pass; see the current verification document.
 Published source: eeb5d40a0b7ef2a3799445ad352ec21a5bad2c3b. The installed
@@ -141,7 +159,7 @@ plan neither authorizes itself nor adds approval checkpoints.
 | S5 - REA-driven transfer improvements | COMPLETE | TRANSFER-01..07, archive/caller and WIDGET-02 revalidation, affected CORE-02/03, LIFE-01/DELIVERY-03 | Initial S5 criteria passed at e478986; user extended comparison/implementation | Finite findings inventory resolved; source/target handle reuse, copy-time hashing, metadata/EOF reductions, storage decisions, matched profiles, actual callers, adverse/preservation/cleanup and Release checks pass; see [evidence](verification/2026-10-29-s5.md) |
 | S6 - Native StartAllBack search | BLOCKED | SAB-01..06, affected SEARCH/CORE/LIFE/DELIVERY criteria | Parked by explicit user-directed S8-first execution; resume only after reprioritization is lifted | Investigation only; no working patch or complete SAB criterion. All native groups/handoff/provider/lifecycle/routing criteria remain open. |
 | S7 - Everything filesystem search and Outlook indexing scope | NOT STARTED | EVERYWHERE-01..05, affected SEARCH/CORE/LIFE/SHELL criteria | S6 COMPLETE; finite consumer/semantics/scope inventory before migration | Native Everything file results with selected filesystem roots excluded from Windows indexing; WSearch/Outlook retained, explicit Windows-managed exceptions, local/mail/reboot/recovery verification |
-| S8 - Core integration and delivery | COMPLETE | SHELL-01, CORE-03..13, PREVIEW-06..11, affected SEARCH/WIDGET/ARCHIVE, DELIVERY-01..03 | CORE-12/13 source, final1.1.7 publication/retrieval, native/app verification, actual user-updater installation and cleanup pass | No remaining S8 acceptance, blocker or tracked deferral. S6/S7 remain parked; S9/S11 unstarted. |
+| S8 - Core integration and delivery | ACTIVE | SHELL-01, CORE-03..15, PREVIEW-06..12, JUMP-03 research, affected SEARCH/WIDGET/ARCHIVE, DELIVERY-01..03 | Verified through1.1.7; new round explicitly authorized | Complete smooth 3D/quality, vertical Settings, Help reading highlight and bounded S11 research; verify integrated behavior and one final normal release/update. No tracked deferral. |
 
 ENV-01..04 belong to the current setup deliverable, not an artificial product
 implementation stage. See [setup evidence](verification/2026-10-28-setup.md).

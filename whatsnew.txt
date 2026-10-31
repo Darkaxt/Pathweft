@@ -1,6 +1,11 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.8 | 2026-10-31 | Smoother 3D and clearer settings
+- 3D previews keep updating during mouse drags and transfer raw native pixels without PNG encoding. Rendering follows the preview’s size and DPI, with anti-aliasing, ambient lighting, shadows and a reflective grid.
+- Settings uses vertical category tabs, preserving the existing content width and controls.
+- Help automatically marks the section you’re reading in bold, including scrolling and filtered results.
+
 ## 1.1.7 | 2026-10-31 | Cloud capacity and useful statistics
 - Google Drive streaming mounts show their actual account storage quota instead of the cache volume’s capacity. This PC, the sidebar, folder headers and capacity cards use the cloud figures; binary units are labelled GiB/TiB.
 - If Google’s cached quota cannot be read, the drive stays accessible with an unavailable-quota message. Mount-reported cache-constrained space remains separately labelled in tooltips.

@@ -9,6 +9,7 @@ namespace FileExplorer;
 // kept here and nowhere else, so a new shortcut in MainWindow.OnPreviewKeyDown or a new feature needs a line here too.
 public partial class HelpWindow : Window
 {
+    readonly List<(TextBlock Heading,Button Topic)> sectionTopics=new();
     static readonly (string Section, (string Key, string What)[] Rows)[] Help =
     {
         ("The window", new[]
@@ -170,6 +171,10 @@ public partial class HelpWindow : Window
     {
         InitializeComponent();
         Owner = owner;
+        double scale=Math.Max(1,Settings.TextScale);
+        Root.LayoutTransform=scale>1?new ScaleTransform(scale,scale):null;
+        Width=Math.Min(SystemParameters.WorkArea.Width,900*scale);MinWidth=Math.Min(Width,560*scale);
+        Height=Math.Min(SystemParameters.WorkArea.Height,740*scale);
 #if DEBUG
         HiddenTrialPresentation.Prepare(this);
 #endif
@@ -179,6 +184,8 @@ public partial class HelpWindow : Window
         // Laying out every topic took 150-250 ms before the first frame; the window comes up empty and they follow on
         // the next one, while it fades in (Motion).
         ContentRendered += (_, _) => { Body.Visibility = Visibility.Visible; Find.Focus(); };
+        Scroller.ScrollChanged+=(_,_)=>HighlightReadingSection();
+        Sections.SizeChanged+=(_,_)=>HighlightReadingSection();
         Show("");
     }
 
@@ -192,6 +199,7 @@ public partial class HelpWindow : Window
     {
         Sections.Children.Clear();
         Topics.Children.Clear();
+        sectionTopics.Clear();
         foreach (var (section, rows) in Help)
         {
             var hits = rows.Where(r => query == "" || r.Key.Contains(query, StringComparison.OrdinalIgnoreCase)
@@ -203,6 +211,7 @@ public partial class HelpWindow : Window
             var topic = new Button { Content = $"{section}", Style = (Style)FindResource("Side"), Margin = new(0, 1, 0, 1), HorizontalContentAlignment = HorizontalAlignment.Left };
             topic.Click += (_, _) => Scroller.ScrollToVerticalOffset(Scroller.VerticalOffset + heading.TranslatePoint(new Point(0, 0), Scroller).Y);
             Topics.Children.Add(topic);
+            sectionTopics.Add((heading,topic));
             foreach (var (key, what) in hits)
             {
                 var row = new Grid { Margin = new(0, 3, 0, 3) };
@@ -210,6 +219,7 @@ public partial class HelpWindow : Window
                 row.ColumnDefinitions.Add(new ColumnDefinition());
                 var k = new TextBlock { Text = key, FontFamily = new FontFamily("Cascadia Mono, Consolas"), FontSize = 11.5, Foreground = (Brush)FindResource("Accent"), TextWrapping = TextWrapping.Wrap, Margin = new(0, 0, 12, 0) };
                 var w = new TextBlock { Text = what, TextWrapping = TextWrapping.Wrap, Foreground = MainWindow.Hex("#C9D3E0") };
+                w.SetResourceReference(TextBlock.ForegroundProperty,"Palette.B4BFCE");
                 Grid.SetColumn(w, 1);
                 row.Children.Add(k); row.Children.Add(w);
                 Sections.Children.Add(row);
@@ -218,5 +228,18 @@ public partial class HelpWindow : Window
         if (Sections.Children.Count == 0)
             Sections.Children.Add(new TextBlock { Text = "Nothing matches.", Foreground = MainWindow.Hex("#8A97AA") });
         Scroller.ScrollToTop();
+        Sections.Dispatcher.InvokeAsync(HighlightReadingSection,System.Windows.Threading.DispatcherPriority.Loaded);
+    }
+    void HighlightReadingSection()
+    {
+        if(sectionTopics.Count==0)return;
+        // The last heading at/above the reading edge owns the current section;
+        // near the end, select the final section even when it cannot scroll to top.
+        var current=sectionTopics[0].Topic;
+        foreach(var (heading,topic) in sectionTopics)
+            if(heading.TranslatePoint(new Point(),Scroller).Y<=2)current=topic;
+        if(Scroller.ScrollableHeight>0&&Scroller.VerticalOffset>=Scroller.ScrollableHeight-1)current=sectionTopics[^1].Topic;
+        foreach(var (_,topic) in sectionTopics)
+        {topic.FontWeight=ReferenceEquals(topic,current)?FontWeights.Bold:FontWeights.Normal;System.Windows.Automation.AutomationProperties.SetItemStatus(topic,ReferenceEquals(topic,current)?"Current section":"");}
     }
 }

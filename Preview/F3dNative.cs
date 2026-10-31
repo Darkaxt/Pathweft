@@ -41,6 +41,8 @@ internal static class F3dNative
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern void f3d_options_set_as_double_vector(IntPtr options, [MarshalAs(UnmanagedType.LPUTF8Str)] string name, double[] values, nuint count);
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern int f3d_scene_add(IntPtr scene, [MarshalAs(UnmanagedType.LPUTF8Str)] string path);
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern void f3d_window_set_size(IntPtr window, int width, int height);
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern int f3d_window_get_width(IntPtr window);
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern int f3d_window_get_height(IntPtr window);
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern int f3d_window_is_offscreen(IntPtr window);
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern void f3d_window_set_use_hdri_cache(IntPtr window, int enabled);
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern IntPtr f3d_window_get_camera(IntPtr window);
@@ -58,4 +60,9 @@ internal static class F3dNative
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern IntPtr f3d_image_save_buffer(IntPtr image, int format, out uint size);
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern void f3d_image_destroy_buffer(IntPtr buffer);
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern void f3d_image_destroy(IntPtr image);
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern uint f3d_image_get_width(IntPtr image);
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern uint f3d_image_get_height(IntPtr image);
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern uint f3d_image_get_channel_count(IntPtr image);
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern int f3d_image_get_channel_type(IntPtr image);
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern IntPtr f3d_image_get_content(IntPtr image);
 }

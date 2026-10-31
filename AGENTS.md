@@ -4,6 +4,10 @@ Read `docs/SPECIFICATION.md` first. It is authoritative; the plan and this file
 do not change its requirements or the user's standing instructions.
 
 - S1-S4 are COMPLETE;
+  Current S8 extension is ACTIVE under specification0.24: PREVIEW-12 smooth
+  native 3D/quality, CORE-14 vertical Settings, CORE-15 Help section tracking and
+  JUMP-03 bounded S11 research. Deliver together; no S11 implementation or
+  S6/S7/S9 work. Prior1.1.7 closure remains historical below.
   S4R is COMPLETE, authorized by the user's 2026-10-29 request to try bitplane/rars
   with the integration choice delegated. A plan does not
   authorize itself or intermediate product releases. S4U is now COMPLETE, authorized

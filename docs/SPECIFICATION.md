@@ -1,12 +1,38 @@
 # Pathweft specification
 
-Version 0.23 - 2026-10-31. Owner: Darkaxt.
+Version 0.24 - 2026-10-31. Owner: Darkaxt.
 
 This is the authoritative specification. The derived plan must preserve every
 requirement and acceptance criterion. Material scope changes require explicit
 user direction recorded here; ordinary implementation choices need no new gate.
 
 ## 1. Intent and current scope
+
+Current extension: S8 is ACTIVE for the user's authorized next refinement round.
+PREVIEW-12: correct continuous mouse rotation/frame presentation, remove PNG
+encode/decode from interactive rendering, size native frames for the viewport
+and DPI, preserve camera/animation/cancellation/resource ownership, and provide
+F3D-quality anti-aliasing/lighting/grid presentation consistent with the theme.
+Inspect the pinned native API/source; verify sustained mouse gestures produce
+intermediate presented frames (not only a final jump), camera motion and native
+pixel orientation/alpha, actual large/animated models, resize/DPI and teardown.
+Measure relevant render/presentation stages; do not invent a frame-rate guarantee.
+CORE-14: replace the Settings paper roll with themed vertical category tabs on
+the left, widening the default window to preserve the existing content area.
+Display only the selected category; retain every setting, handler/reset/persistence
+and keyboard/accessibility behavior. Verify navigation/settings and unclipped
+dark/light100/150% layouts, including scrolling within a tall category.
+CORE-15: Help's left category becomes bold automatically for the section being
+read, including scrolling, category clicks, search filtering and resize. Use
+actual layout/scroll events; no polling or feedback loops that move the reader.
+JUMP-03: investigate the native pinned/recent folder expansion shown in the
+user's StartAllBack screenshot and its taskbar Jump List equivalent. Document
+how Pathweft can expose real folder destinations, pin/recent/removal/privacy,
+application identity and cold/warm launch under S11/JUMP-01..02. This request
+authorizes bounded investigation and a concrete implementation plan, not a
+StartAllBack patch, desktop takeover or premature S11 implementation. Deliver
+PREVIEW-12/CORE-14/15 together in one verified normal release, retaining current
+opt-ins/user settings and the installed updater workflow. No S6/S7/S9 work.
 
 Current reconciliation: S8 is COMPLETE through 1.1.7. CORE-12/13 source,
 hidden real-account/navigation/layout acceptance, final package, normal six-asset
