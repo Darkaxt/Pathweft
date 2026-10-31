@@ -19,13 +19,14 @@ do not change its requirements or the user's standing instructions.
   are verified. Prior S8 work is COMPLETE through v1.1.3,
   including the compact Ctrl+Alt+Space popup and clipped Settings action fix.
   The prior frame/search/editor/icon/sidebar work shipped in v1.1.1.
-  S8 is BLOCKED only on installed1.1.7 verification after the user's normal
-  updater/reopen. CORE-12/13 source, final package, normal six-asset publication,
-  independent native/app retrieval and exact cleanup pass at eeb5d40/tagv1.1.7.
-  No ACTIVE stage or tracked deferral. Do not resume S9/S6/S7 automatically.
+  S8 is COMPLETE through1.1.7. CORE-12/13 source, final package, normal six-asset
+  publication, independent native/app retrieval, actual user-updater installation
+  and exact cleanup pass at eeb5d40/tagv1.1.7. All792 installed members match;
+  reopened mainPID12928/helperPID40692 and helper ownership/ready state pass.
+  No S8 blocker, ACTIVE stage or tracked deferral. Do not resume S9/S6/S7 automatically.
   The user installed1.1.6 with
   the updater and confirms Explorer navigation / Win+E. Preserve their running
-  app; installed1.1.6 identity/hashes and agent readiness are verified. Keep the
+  app; installed1.1.6 and1.1.7 identity/hashes and agent readiness are verified. Keep the
   current external-tool registry-view discrepancy explicit; do not rewrite live
   registrations from that diagnostic view. The prepared read-only installed
   verifier is in .local/evidence/2026-10-31-cloud117/Verify-Installed.ps1.

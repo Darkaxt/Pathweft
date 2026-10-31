@@ -1,6 +1,6 @@
 # S8 core delivery contract
 
-Current status: BLOCKED only on the user's normal installed update to1.1.7.
+Current status: COMPLETE through the user's actual installed1.1.7 update.
 CORE-12/13 cloud-quota/statistics changes are normally published at
 https://github.com/Darkaxt/Pathweft/releases/tag/v1.1.7, source
 eeb5d40a0b7ef2a3799445ad352ec21a5bad2c3b. Six asset sizes/digests and immutable
@@ -8,8 +8,10 @@ source/tag match independent retrieval. Actual packaged consumer PID54992 and
 downloaded consumer PID45068 pass, including real cloud quota and statistics
 behavior, native32/64-bit Shell routing and existing search/archive/preview paths.
 Exact scratch cleanup passes. The user's1.1.6 updater result/installed hashes and
-Explorer/Win+E confirmation are recorded. It stays running until their normal
-update; installed1.1.7 verification remains. No desktop control or forced close.
+Explorer/Win+E confirmation are recorded. The user's1.1.7 updater/reopen now passes
+all792 installed manifest hashes and current mainPID12928/helperPID40692 identity,
+helper owner/start matching and ready event. Recovery remains version2. No S8
+blocker or tracked deferral remains. No desktop control or forced close.
 
 Authority: specification v0.23 and the user's explicit S8-first/delivery instructions.
 Historical S8 closure through1.1.5 includes CORE-11 and PREVIEW-08..11. The normal
