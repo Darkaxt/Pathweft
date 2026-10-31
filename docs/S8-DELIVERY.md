@@ -10,6 +10,10 @@ saved width, disabled preference and actual F3D worker exit pass. Package and
 delivery verification remains required. The earlier unpublished bb946b7 package
 and exact build root were removed through reviewed cleanup af058ff0cd35fbd1c94bfc6148dba1db
 (2,895 members / 1,701,014,309 helper file bytes, no exclusions/errors).
+The next unpublished package at5bb5723 caught a missing embedded1.1.5 What's new
+entry in the app-host gate. That entry is corrected, and the current source
+self-test passes. No application UI behavior changed after its current acceptance
+checks; final packaging and delivered verification still must pass.
 Source capacity/
 provider/unavailable-media and preview behavior plus dark/light100%/150% checks
 pass in the retained hidden fixtures appearance-64aef27457394964bed64902323ba98a

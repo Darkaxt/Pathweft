@@ -1,6 +1,13 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.5 | 2026-10-31 | Clearer drives and native previews
+- Free-space values include percentages. Drive bars share accent/amber/red usage warnings, cloud mounts show their provider, and empty reader slots stay hidden.
+- Model and PDF preview actions use icons with tooltips. Animation selection follows the theme, and models blend into the preview background.
+- Executable previews show file and version details without running the application.
+- Native folders and virtual archive folders share an expandable tree. Native branches load when expanded, and Ctrl+H also updates preview visibility.
+- Clearing selection collapses the preview pane without disabling it; the next selection restores its saved width.
+
 ## 1.1.4 | 2026-10-31 | Archive trees and interactive 3D
 - This PC shows capacity/free/usage bars, network targets and negotiated USB connection speeds. Empty file columns hide and return when metadata arrives, preserving their widths.
 - Archive previews show expandable folders, file icons and sizes instead of a flat list of repeated paths.
