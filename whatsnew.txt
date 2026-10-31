@@ -2,6 +2,7 @@
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
 ## 1.1.4 | 2026-10-31 | Archive trees and interactive 3D
+- This PC shows capacity/free/usage bars, network targets and negotiated USB connection speeds. Empty file columns hide and return when metadata arrives, preserving their widths.
 - Archive previews show expandable folders, file icons and sizes instead of a flat list of repeated paths.
 - The opt-in F3D viewer supports the bundled model formats without the former 64-MiB/embedded-only restrictions. Drag to rotate, right-drag to pan, wheel to zoom, and fit or reset the camera. Animated scenes expose clip, playback and timeline controls.
 - About has an Open settings folder button instead of the Diagnostics expander and startup text.

@@ -206,7 +206,7 @@ public partial class PaneView
         searchQuery = query;
         FilterBox.Text = query;
         FilterBox.Visibility=Visibility.Visible;Crumbs.Visibility=Visibility.Hidden;FilterHint.Visibility=Visibility.Collapsed;
-        if (sortKey == "Version") ShowSort("Name", false);
+        if (sortKey is not ("Name" or "Size" or "Type" or "Modified")) ShowSort("Name", false);
         ++navVersion;
         sizing?.Cancel(); icons?.Cancel(); thumbs?.Cancel();
         StopFolderWatch();

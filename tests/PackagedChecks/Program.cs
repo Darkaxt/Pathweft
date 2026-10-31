@@ -212,10 +212,25 @@ sealed class PackageProbe
             string rejectedHtml=Path.Combine(root,"rejected.html");File.WriteAllBytes(rejectedHtml,new byte[]{0,1,2,3});
             Check(!(bool)Call(Type("EditorWindow"),null,"TryOpen",rejectedHtml)&&!(bool)Type("EditorWindow").GetProperty("HasOpenWindow",Flags).GetValue(null),"Delivered editor declines binary HTML without creating a window");
             var left=(PaneView)owner.FindName("Left");
+            left.Navigate(PaneView.ThisPC);await (Task)typeof(PaneView).GetField("driveListingWork",Flags).GetValue(left);
+            var driveRows=left.Items.Where(e=>e.IsDrive).ToArray();
+            Check(driveRows.Any(e=>e.HasDriveCapacity)&&driveRows.Where(e=>e.HasDriveCapacity).All(e=>e.DriveFree>=0&&e.DriveFree<=e.DriveTotal),"Delivered This PC reads real drive capacities and free-space values");
+            var columnKeys=(IDictionary)typeof(PaneView).GetField("colKey",Flags).GetValue(left);
+            string[] CurrentColumns()=>((GridView)((ListView)left.FindName("List")).View).Columns.Select(c=>(string)columnKeys[c]).ToArray();
+            Check(CurrentColumns().Contains("Capacity")&&!CurrentColumns().Contains("Version"),"Delivered drive view contains populated drive columns without empty file columns");
+            foreach(var entry in driveRows.Where(e=>e.Path is "E:\\" or "G:\\"))
+                Check(entry.DriveConnection=="USB · 10 Gbps","Delivered native USB query reports the actual external link: "+entry.Path);
+            var folderArrived=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            void FolderArrived(){if(left.Dir==root&&left.Listed&&left.Items.Any(e=>!e.IsDrive))folderArrived.TrySetResult();}
+            left.StatsChanged+=FolderArrived;
+            try{left.Navigate(root);FolderArrived();await folderArrived.Task;}finally{left.StatsChanged-=FolderArrived;}
+            await app.Dispatcher.InvokeAsync(()=>{},DispatcherPriority.ApplicationIdle);
+            Check(!CurrentColumns().Contains("Capacity")&&!CurrentColumns().Contains("Version")&&CurrentColumns().Contains("Size"),"Delivered folder navigation restores only populated file columns");
             var sidebarMask=(System.Windows.Media.LinearGradientBrush)Call(typeof(MainWindow),null,"SidebarEdgeMask",200d,true,true,false);
             Check(owner.FindName("SidebarScroll") is ScrollViewer&&sidebarMask.MappingMode==System.Windows.Media.BrushMappingMode.Absolute&&sidebarMask.EndPoint.Y==200&&sidebarMask.GradientStops[0].Color.A==0&&sidebarMask.GradientStops[^1].Color.A==0&&Call(typeof(MainWindow),null,"SidebarEdgeMask",200d,true,true,true)==null,"Delivered sidebar owns a viewport-coordinate fade and preserves high-contrast opacity");
             Check(left.FindName("AddressField") is FrameworkElement&&left.FindName("SearchScope")==null&&left.FindName("SearchBar")==null&&left.FindName("SearchSubmit")==null&&new[]{"MatchCase","MatchWord","MatchPath","MatchRegex"}.All(name=>left.FindName(name)!=null),"Delivered controls contain the unified field and four match switches, without the retired search row");
             var settings=new SettingsWindow(owner);
+            Check(settings.FindName("OpenSettingsFolder") is Button&&settings.FindName("ProfileText")==null,"Delivered About contains the settings-folder action without the old Diagnostics expander");
             Check(settings.FindName("AppearanceCard") is FrameworkElement,"Delivered Settings starts with Appearance and keeps documentation in Help");
             var restore=(Button)settings.FindName("RestoreFolderHandlers");
             Check(restore.Content is TextBlock label&&label.Text=="Restore previous folder handlers"&&label.TextWrapping==TextWrapping.Wrap&&double.IsPositiveInfinity(restore.MaxWidth),"Delivered restore action has a wrapping label and no tab-width cap");

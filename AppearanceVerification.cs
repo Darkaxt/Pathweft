@@ -23,6 +23,8 @@ public partial class MainWindow
         async Task Settled()=>await Dispatcher.InvokeAsync(UpdateLayout,System.Windows.Threading.DispatcherPriority.ApplicationIdle);
         try
         {
+            if(Environment.GetEnvironmentVariable("PATHWEFT_VERIFY_DRIVES_ONLY")=="1")
+            {await VerifyDriveViews(root,Check);result=0;return;}
             if(Environment.GetEnvironmentVariable("PATHWEFT_VERIFY_PREVIEW_ONLY")=="1")
             {await VerifyPreviewCorrection(root,Check);result=0;return;}
             if(Environment.GetEnvironmentVariable("PATHWEFT_VERIFY_ARCHIVE_DRAG_ONLY")=="1")

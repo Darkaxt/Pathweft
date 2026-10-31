@@ -14,7 +14,8 @@ do not change its requirements or the user's standing instructions.
   see `docs/verification/2026-10-29-s5.md` for the direct-write contract,
   measured performance limits and actual caller/preservation/recovery evidence.
   The user explicitly reprioritized S8 core delivery ahead of Windows search work.
-  S8 is ACTIVE for PREVIEW-06/07 and the About settings-folder action, followed
+  S8 is ACTIVE for CORE-09/10 drive details/dynamic columns and final delivery;
+  PREVIEW-06/07 and the About settings-folder action have passed source checks,
   by final delivery. Prior S8 work is COMPLETE through v1.1.3,
   including the compact Ctrl+Alt+Space popup and clipped Settings action fix.
   The prior frame/search/editor/icon/sidebar work shipped in v1.1.1.

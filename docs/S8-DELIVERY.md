@@ -1,7 +1,27 @@
 # S8 core delivery contract
 
-Authority: specification v0.17 and the user's explicit S8-first/delivery instructions.
-S8 is ACTIVE for PREVIEW-06/07 and the About settings-folder action. Prior
+Authority: specification v0.19 and the user's explicit S8-first/delivery instructions.
+S8 is ACTIVE for CORE-09/10 drive details and dynamic columns before publication. PREVIEW-06/07
+and About pass source and actual package checks (PID55808); no1.1.4 tag/release
+has been published. CORE-09/10 source acceptance now passes PID36576: actual
+capacity/free/sidebar parity, mapped UNC targets, USB disk-to-hub topology and
+10-Gbps Rx/Tx for both E:/G:, dark/light at100%/150%, numeric drive sorting,
+unavailable media, empty/mixed folders, real asynchronous executable version,
+streaming membership/metadata/width preservation and actual Everything results.
+The initial drive-render failure was RangeBase's default two-way binding to a
+read-only calculated percentage; an explicit OneWay binding fixes the cause.
+The real search transition exposed a drive-only sort rejected by Everything;
+file search now resets an inapplicable drive sort to Name. No retries/timeouts
+or benchmarks were added. Renders are inspected and foreground events stay zero.
+Current-source final package/release/retrieval/install/cleanup remain blockers. Prior
+Latest affected verification PID28560 additionally proves refresh reconciliation
+for changed free space, unavailable media and removed entries. All current source
+acceptance is satisfied; no consolidation/framework or required deferral remains.
+Superseded unpublished package cleanup e666452ba81fb4aef6f3142deaef3f02 is
+APPLIED (2,681,669,756 helper file bytes); its one protected selftest junction was
+removed first as an exact leaf by cbb0883ea65c18b4e3a1c1e59419fcfe. The target
+was not traversed. Earlier spent Debug output was also cleaned by
+b7f95ea6dde356969a08f0e9b39db1c2 (303,430,266 helper file bytes).
 delivery is COMPLETE through v1.1.3. S6 remains BLOCKED by the
 user's priority boundary; S7, S9 and S11 remain NOT STARTED.
 

@@ -628,28 +628,40 @@ public partial class MainWindow : Window
 
     // Drive rows are rebuilt from figures read off the UI thread: asking a network drive for its size
     // blocks for the best part of a second, and the numbers have to keep up with copies and deletes.
-    record DriveRow(string Name, string Label, string Format, long Total, long Free, bool Network, string VolumeLabel, DriveType Type);
+    internal record DriveRow(string Name, string Label, string Format, long Total, long Free, bool Network, string VolumeLabel, DriveType Type, string Connection="", string RemotePath="");
 
-    static List<DriveRow> ReadDrives()
+    internal static List<DriveRow> ReadDrives(bool includeUnavailable=false)
     {
         var rows = new List<DriveRow>();
         foreach (var d in DriveInfo.GetDrives())
             try
             {
-                if (!d.IsReady) continue;
+                if (!d.IsReady)
+                {
+                    if(includeUnavailable)rows.Add(new(d.Name,d.DriveType==DriveType.CDRom?"DVD drive":"Removable disk","",0,0,false,"",d.DriveType));
+                    continue;
+                }
                 bool net = d.DriveType == DriveType.Network;
-                var label = net && GetNetworkPath(d.Name) is { } unc ? $"({unc})" : d.VolumeLabel;
-                rows.Add(new DriveRow(d.Name, label, d.DriveFormat, d.TotalSize, d.AvailableFreeSpace, net, d.VolumeLabel, d.DriveType));
+                var remote=net?GetNetworkPath(d.Name)??"":"";
+                var label=d.VolumeLabel.Length>0?d.VolumeLabel:net?"Network drive":"Local Disk";
+                rows.Add(new(d.Name,label,d.DriveFormat,d.TotalSize,d.AvailableFreeSpace,net,d.VolumeLabel,d.DriveType,net?"Network":"",remote));
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { } // drive went away mid-read
-        return rows;
+        var links=DriveConnections.Read(rows.Where(d=>!d.Network&&d.Total>0).Select(d=>d.Name));
+        return rows.Select(row=>links.TryGetValue(row.Name,out var link)?row with{Connection=link.Text}:row).ToList();
     }
 
     List<DriveRow> shownDrives = new();
+    Task driveRefreshWork=Task.CompletedTask;
 
-    void RefreshDrives() => Task.Run(ReadDrives).ContinueWith(t =>
+    void RefreshDrives()
     {
-        var rows = t.Result;
+        if(!driveRefreshWork.IsCompleted||closingPreviews)return;
+        driveRefreshWork=Task.Run(()=>ReadDrives(includeUnavailable:true)).ContinueWith(t =>
+    {
+        if(closingPreviews)return;
+        var rows = t.Result.Where(d=>d.Total>0).ToList();
+        Left.RefreshThisPC(t.Result);Right.RefreshThisPC(t.Result);
         if (rows.SequenceEqual(shownDrives)) return; // nothing moved: leave the buttons alone
         bool plugged = !rows.Select(d => (d.Name, d.VolumeLabel)).SequenceEqual(shownDrives.Select(d => (d.Name, d.VolumeLabel)));
         shownDrives = rows;
@@ -658,12 +670,13 @@ public partial class MainWindow : Window
         if (plugged) ShowDriveNodes(); // only when drives came or went: rebuilding closes opened branches
         UpdateStats();
     }, TaskScheduler.FromCurrentSynchronizationContext());
+    }
 
     // OneCommander-style drive row: "C:  Label        used / total GB" with a usage bar under it.
     Button DriveButton(DriveRow d)
     {
         double used = d.Total - d.Free, frac = used / d.Total;
-        var label = d.Label;
+        var label = d.RemotePath.Length>0?d.Label+" ("+d.RemotePath+")":d.Label;
         var g = new Grid();
         g.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         g.ColumnDefinitions.Add(new ColumnDefinition());
@@ -690,7 +703,7 @@ public partial class MainWindow : Window
         Grid.SetColumn(name, 1); Grid.SetColumn(size, 2);
         Grid.SetRow(bar, 1); Grid.SetColumn(bar, 1); Grid.SetColumnSpan(bar, 2);
         g.Children.Add(icon); g.Children.Add(name); g.Children.Add(size); g.Children.Add(bar);
-        var b = new Button { Content = g, Style = (Style)FindResource("Side"), HorizontalContentAlignment = HorizontalAlignment.Stretch, Margin = new(0, 1, 0, 1), ToolTip = $"{d.Name}  {d.Format}  ·  {Fmt(d.Free)} free" };
+        var b = new Button { Content = g, Style = (Style)FindResource("Side"), HorizontalContentAlignment = HorizontalAlignment.Stretch, Margin = new(0, 1, 0, 1), ToolTip = $"{d.Name}  {d.Format}  ·  {Fmt(d.Free)} free"+(d.Connection.Length>0?" · "+d.Connection:"") };
         b.Click += (_, _) => { active.Navigate(d.Name); active.FocusList(); };
         b.PreviewMouseDown += (_, e) => { if (e.ChangedButton == MouseButton.Middle) { active.OpenInBackgroundTab(d.Name); e.Handled = true; } };
         // Windows' own menu for the drive (Properties, Eject, Format, BitLocker…), hosted as the folders' Windows menu is

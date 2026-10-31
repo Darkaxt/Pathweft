@@ -1,12 +1,32 @@
 # Pathweft specification
 
-Version 0.17 - 2026-10-31. Owner: Darkaxt.
+Version 0.19 - 2026-10-31. Owner: Darkaxt.
 
 This is the authoritative specification. The derived plan must preserve every
 requirement and acceptance criterion. Material scope changes require explicit
 user direction recorded here; ordinary implementation choices need no new gate.
 
 ## 1. Intent and current scope
+
+Additional S8 user requirement (2026-10-31), CORE-09: This PC must show drive
+capacity/free space and usage bars using the same measured volume data as the
+sidebar, with useful network share/provider details and capacity bars when
+available. Show external-drive connection speed from Windows' actual USB link
+information, including the reported E:/G: 10-Gbps expectation; distinguish the
+negotiated connection from device capability and measured transfer throughput.
+Unknown/unavailable media or unsupported speed reporting must remain honest.
+Read device/volume information asynchronously without administrator prompts,
+write benchmarks, USB resets or desktop takeover. Verify real local/external/
+network drives, navigation/refresh, missing-media states and themed layout.
+Integrate this before the pending final release; earlier unpublished packages
+are superseded qualification output, not separate deliveries.
+CORE-10 adds dynamic detail columns: retain Name; omit columns with no meaningful
+data in the current folder/search/drive view, restore them when asynchronous
+metadata or incoming results supply values, and preserve widths/applicable sort/
+navigation. A drive-only sort resets to Name when entering file search.
+Use drive-specific capacity/free/filesystem/connection columns in This PC and
+normal file metadata elsewhere. Verify empty/mixed folders, async version/size,
+search streaming, drive-to-folder transitions and resize without empty columns.
 
 Post-v1.1.3 user additions (2026-10-31), owned by S8: replace the About
 Diagnostics expander/telemetry with an Open settings folder button (CORE-03).
@@ -189,6 +209,8 @@ criteria apply within the implementing stage and again at the packaged boundary.
 | CORE-06 | Automatic file opening (double-click/Enter) with the internal editor enabled must use the Windows association when the editor cannot read the file, without an editor error or empty window. Check actual readability before creating the editor, reuse decoded content once accepted, and preserve an already-open document's unsaved content. Apply the same decision to archive working copies while preserving their ownership. Disabling the editor uses Windows associations; explicit F4/Edit continues to request editing. Verify unsupported extensions and rejected HTML content/size through the actual double-click route, supported text/HTML, disabled-editor behavior, archive routing and absence of host focus. |
 | CORE-07 | Replace the app-wide pink tile/dark-folder icon with a transparent Windows-yellow/gold folder, retaining the two-pane list motif with three left lines, two right lines and the central divider. Use contrasting brown marks, remove the bottom-right line, and fill the icon canvas enough to match Explorer's apparent folder size (about 92% width). Include native Windows icon sizes from 16 through 256 pixels. Apply through the shared WPF resource, executable/window/tray/shortcut identity and installer/uninstaller; verify alpha/color, small-size legibility and final packaged resources. |
 | CORE-08 | Replace the sidebar's hard top/bottom scrolling cutoffs with a soft opacity fade over the final18 logical pixels of the content viewport, only on edges with content beyond them. Fade the viewport content, keeping the scrollbar, app title and footer controls sharp and interactive. Respect resize, scroll, section/extent and 100%/150% text-scale changes; show no fade when all content fits or in Windows high contrast. Use transparency over the existing background rather than a hardcoded color. Inspect actual top/middle/bottom WPF renders and verify scrollbar/input ownership without host desktop input. |
+| CORE-09 | S8 This PC drive capacity/free/usage and network details plus truthful external connection speeds, as specified in current scope. Verify actual inventory, live refresh/navigation, unknown media/speed, native USB evidence and dark/light responsive layout. |
+| CORE-10 | S8 dynamic detail columns described in current scope; verify data-driven visibility, asynchronous metadata/results, width/sort preservation and contextual navigation. |
 
 On 2026-10-31, the user also requested EverythingToolbar's four inline search
 toggles: Match case, Match whole word, Match path and Regex. They belong at the

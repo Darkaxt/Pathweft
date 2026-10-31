@@ -31,6 +31,8 @@ public partial class MainWindow
             if (change.Cancel) { closingPreviews = false; return; } // normal notification-area hide
             change.Cancel = true;
             await PreviewSession.DrainAsync();
+            await driveRefreshWork;
+            await Task.WhenAll(Left.driveListingWork,Right.driveListingWork);
             await Task.WhenAll(jobs.Where(job => job.ArchiveOperation).Select(job => job.Completion));
             previewCloseAccepted = true;
             _ = Dispatcher.BeginInvoke(Close);

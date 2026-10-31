@@ -122,6 +122,27 @@
         <TextBlock Text="{Binding DateText}" Opacity="0.6" Typography.NumeralAlignment="Tabular"/>
       </StackPanel>
     </DataTemplate>
+    <DataTemplate x:Key="DriveNameCell">
+      <DockPanel Margin="2,6,12,6">
+        <Grid DockPanel.Dock="Left" Width="32" Height="32" Margin="0,0,10,0" VerticalAlignment="Center">
+          <TextBlock Text="{Binding Icon}" FontFamily="Segoe Fluent Icons" Foreground="{Binding IconBrush}">
+            <TextBlock.Visibility><Binding Path="NoSmallIcon"><Binding.Converter><BooleanToVisibilityConverter/></Binding.Converter></Binding></TextBlock.Visibility>
+          </TextBlock>
+          <Image Source="{Binding DisplaySmallIcon}" RenderOptions.BitmapScalingMode="HighQuality"/>
+          <Image Source="{Binding Overlay}"/>
+        </Grid>
+        <StackPanel>
+          <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis"/>
+          <TextBlock Text="{Binding DriveLocation}" Foreground="{DynamicResource Palette.8A97AA}" TextTrimming="CharacterEllipsis">
+            <TextBlock.Style><Style TargetType="TextBlock"><Style.Triggers><DataTrigger Binding="{Binding DriveLocation}" Value=""><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers></Style></TextBlock.Style>
+          </TextBlock>
+          <ProgressBar Minimum="0" Maximum="100" Value="{Binding DriveUsedPercent, Mode=OneWay}" Height="5" Margin="0,4,0,3" Foreground="{DynamicResource Accent}">
+            <ProgressBar.Visibility><Binding Path="HasDriveCapacity"><Binding.Converter><BooleanToVisibilityConverter/></Binding.Converter></Binding></ProgressBar.Visibility>
+          </ProgressBar>
+          <TextBlock Text="{Binding CapacityText}" Foreground="{DynamicResource Palette.8A97AA}" FontSize="11"/>
+        </StackPanel>
+      </DockPanel>
+    </DataTemplate>
     <DataTemplate x:Key="TileCell">
       <StackPanel>
         <Grid Width="{Binding Tag, RelativeSource={RelativeSource AncestorType=ListView}}"

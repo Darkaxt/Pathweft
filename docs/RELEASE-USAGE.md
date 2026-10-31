@@ -22,6 +22,12 @@ are later unfinished integrations; this release does not change Windows Search.
 Settings > Appearance selects Original or Native. Native follows Windows
 light/dark and accent preferences, or a selected light/dark/custom accent.
 Ctrl+P switches one/two panes. Ctrl+H toggles Windows-hidden and dot-name files.
+This PC shows drive capacities, free space, usage bars, filesystems and mapped
+network targets. External USB connection rates come from the actual Windows
+hub/lane query, not a write benchmark or a device model's maximum. Unknown rates
+remain unavailable; older Windows stacks can expose only a speed category.
+Detail columns without data are hidden and restored as asynchronous metadata
+or results arrive, retaining widths. This PC uses populated drive columns.
 
 Search shares the existing default Everything instance; Pathweft does not start
 a second index, change its service or alter its settings. The unchanged pinned

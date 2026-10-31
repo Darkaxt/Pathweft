@@ -93,6 +93,17 @@ public class Entry : INotifyPropertyChanged
     public string Version { get => version; set { version = value; Changed(nameof(Version)); } }
     public string Ext => IsDir ? "" : System.IO.Path.GetExtension(Name).TrimStart('.').ToLowerInvariant();
     public string SizeText => IsUp || size == -2 ? "" : size < 0 ? "…" : MainWindow.Fmt(size);
+    public bool IsDrive {get;init;}
+    public long DriveTotal {get;init;}
+    public long DriveFree {get;init;}
+    public string DriveFormat {get;init;}="";
+    public string DriveConnection {get;init;}="";
+    public string DriveLocation {get;init;}="";
+    public bool HasDriveCapacity=>IsDrive&&DriveTotal>0;
+    public double DriveUsedPercent=>DriveTotal>0?Math.Clamp(100.0*(DriveTotal-DriveFree)/DriveTotal,0,100):0;
+    public string CapacityText=>HasDriveCapacity?$"{MainWindow.Fmt(DriveFree)} free of {MainWindow.Fmt(DriveTotal)}":"No media or unavailable";
+    public string TotalText=>HasDriveCapacity?MainWindow.Fmt(DriveTotal):"";
+    public string FreeText=>HasDriveCapacity?MainWindow.Fmt(DriveFree):"";
     bool NoDate => IsUp || Modified == default; // network shares have no date
 
     public event PropertyChangedEventHandler PropertyChanged;
@@ -170,6 +181,7 @@ public class Entry : INotifyPropertyChanged
     public string Tip => IsUp ? null : string.Join("\n", new[]
     {
         Name, IsReadOnly ? ReadOnlyReason : null, Location != "" ? "In: " + Location : null, "Type: " + Thumbnails.TypeName(Name, IsDir),
+        IsDrive?CapacityText:null,DriveConnection.Length>0?DriveConnection:null,DriveLocation.Length>0?DriveLocation:null,
         size >= 0 ? "Size: " + MainWindow.Fmt(size) : null, NoDate ? null : "Date modified: " + Modified.ToString("yyyy-MM-dd HH:mm:ss"),
     }.Where(line => line != null));
 }
@@ -199,6 +211,11 @@ class EntrySort(string key, bool desc) : IComparer
         int r = key switch
         {
             "Size" => x.Size.CompareTo(y.Size),
+            "Capacity"=>x.DriveTotal.CompareTo(y.DriveTotal),
+            "Free space"=>x.DriveFree.CompareTo(y.DriveFree),
+            "Filesystem"=>ExplorerOrder.Instance.Compare(x.DriveFormat,y.DriveFormat),
+            "Connection"=>ExplorerOrder.Instance.Compare(x.DriveConnection,y.DriveConnection),
+            "Location"=>ExplorerOrder.Instance.Compare(x.DriveLocation,y.DriveLocation),
             "Type" => ExplorerOrder.Instance.Compare(x.Ext, y.Ext) is var t && t != 0 ? t : ExplorerOrder.Instance.Compare(x.Name, y.Name),
             "Modified" => x.Modified.CompareTo(y.Modified),
             "Version" => ExplorerOrder.Instance.Compare(x.Version, y.Version) is var v && v != 0 ? v : ExplorerOrder.Instance.Compare(x.Name, y.Name),
@@ -412,6 +429,7 @@ public partial class PaneView : UserControl
                 widthProp.AddValueChanged(c, (_, _) => { if (!IsWidget) Settings.ColumnWidths[colKey[c]] = c.Width; if (!ResizingColumn) FitName(); });
         }
         // The line where Name ends follows its width, the sideways scroll and the list's height.
+        InitializeColumns();
         ((System.ComponentModel.INotifyPropertyChanged)NameColumn).PropertyChanged += (_, e) => { if (e.PropertyName == "ActualWidth") PlaceNameEdge(); };
         List.AddHandler(ScrollViewer.ScrollChangedEvent, new ScrollChangedEventHandler((_, change) =>
         {
@@ -717,6 +735,7 @@ public partial class PaneView : UserControl
         int firstSelected = keep && view != null && List.SelectedItems.Count > 0 ? List.SelectedItems.Cast<object>().Min(view.IndexOf) : -1;
         var left = items;
         items = list;
+        TrackColumns();
         view = new ListCollectionView((IList)items) { CustomSort = indexedSearch ? null : new EntrySort(sortKey, sortDesc) };
         ApplyGrouping();
         ApplyFilter();
@@ -967,23 +986,24 @@ public partial class PaneView : UserControl
         int v = GoTo(ThisPC, record);
         watcher?.Dispose(); watcher = null;
         sizing?.Cancel();
-        Task.Run(() => DriveInfo.GetDrives().Select(d =>
-        {
-            // a drive that isn't ready (an empty card reader) is listed without asking it more
-            string label = "";
-            try { if (d.IsReady) label = d.VolumeLabel; } catch (IOException) { } catch (UnauthorizedAccessException) { }
-            if (label == "") label = d.DriveType switch { DriveType.Network => "Network drive", DriveType.Removable => "Removable disk", DriveType.CDRom => "DVD drive", _ => "Local Disk" };
-            return new Entry { Name = $"{d.Name.TrimEnd('\\')}  {label}", Path = d.Name, IsDir = true, Size = -2 }; // as in Drives: by letter
-        }).ToList()).ContinueWith(t => Dispatcher.BeginInvoke(() =>
+        driveListingWork=Task.Run(() => MainWindow.ReadDrives(includeUnavailable:true)).ContinueWith(t => Dispatcher.InvokeAsync(() =>
         {
             if (v != navVersion) return;
-            var drives = t.Result;
+            var drives = DriveEntries(t.Result);
             ShowItems(drives, drives.FirstOrDefault(e => e.Path.Equals(from, StringComparison.OrdinalIgnoreCase))?.Name);
             DriveInfoText.Text = "";
             UsedBar.Width = 0;
             StartIcons();
             Listed = true; StatsChanged?.Invoke();
-        }));
+        }).Task).Unwrap();
+    }
+    internal Task driveListingWork=Task.CompletedTask;
+    static List<Entry> DriveEntries(IEnumerable<MainWindow.DriveRow> rows)=>rows.Select(d=>new Entry{Name=$"{d.Name.TrimEnd('\\')}  {d.Label}",Path=d.Name,IsDir=true,Size=-2,IsDrive=true,DriveTotal=d.Total,DriveFree=d.Free,DriveFormat=d.Format,DriveConnection=d.Connection,DriveLocation=d.RemotePath}).ToList();
+    internal void RefreshThisPC(IEnumerable<MainWindow.DriveRow> rows)
+    {
+        if(Dir!=ThisPC||InSearch||!Listed)return;
+        var updated=DriveEntries(rows).OrderBy(e=>e.Path,ExplorerOrder.Instance).ToList();
+        ShowItems(updated,List.SelectedItem is Entry selected?selected.Name:null,animate:false,keep:true);StartIcons();
     }
 
     [System.Runtime.InteropServices.DllImport("netapi32.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
@@ -1287,6 +1307,7 @@ public partial class PaneView : UserControl
         ++navVersion;++suggestVersion;
         StopFolderWatch();
         indexedSearch=false;
+        StopColumns();
         indexedCancellation?.Cancel();sizing?.Cancel();prefetching?.Cancel();icons?.Cancel();thumbs?.Cancel();
         renameTimer.Stop();zoomTimer?.Stop();overlayTimer?.Stop();
     }
@@ -2163,8 +2184,9 @@ public partial class PaneView : UserControl
         if (!IsWidget && Settings.ColumnWidths.ContainsKey("Name")) return; // dragged by the user: theirs, not the pane's
         const double scrollbar = 14, padding = 14;
         double gutter = IsWidget ? 16 : 110;
-        var others = ((GridView)List.View).Columns.Where(c => c != NameColumn).Sum(c => double.IsNaN(c.Width) ? c.ActualWidth : c.Width);
-        NameColumn.Width = Math.Max(120, List.ActualWidth - others - scrollbar - padding - gutter);
+        if(List.View is not GridView current)return;
+        var others = current.Columns.Where(c => c != NameColumn).Sum(c => double.IsNaN(c.Width) ? c.ActualWidth : c.Width);
+        NameColumn.Width = Math.Max(Dir==ThisPC?260:120, List.ActualWidth - others - scrollbar - padding - gutter);
     }
 
     // ---- View modes (FilePilot-style): Details, List, and M/L/XL icons with shell thumbnails ----
