@@ -3,13 +3,14 @@
 Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.21, 2026-10-31,
 including the user-authorized continued comparison requirement TRANSFER-07.
 
-S8 is ACTIVE for CORE-11 / PREVIEW-08..11: free percentages, consistent capacity
+S8 is COMPLETE for CORE-11 / PREVIEW-08..11: free percentages, consistent capacity
 warnings, provider-based cloud labels, icon preview actions, themed animation
 selection, seamless model composition, executable metadata, shared native/virtual
-folder trees and selection-driven preview collapse. Acceptance remaining: integrated
-hidden source verification, normal 1.1.5 publication/retrieval/installation and
-cleanup. These are internal advancement blockers being implemented, with no
-tracked deferrals. S6/S7 remain postponed; no other stage receives implementation.
+folder trees and selection-driven preview collapse. Source qualification,
+normal1.1.5 publication at3fa4b465775ce411a89ba2628b1907420facac50,
+independent downloaded consumer PID15184, installation and exact cleanup pass.
+No remaining S8 acceptance, blocker or tracked deferral; no stage is ACTIVE.
+S6/S7 remain postponed. The immutable release tag remains at its verified source.
 S8 was COMPLETE through1.1.4: CORE-09/10, PREVIEW-06/07 and About are verified in
 source and the final Release package, normal publication, independent retrieval,
 installation and exact cleanup. The prior release source is
@@ -29,7 +30,7 @@ independently retrieved and installed with all member hashes and preserved user
 settings/routing. Native OLE custom-format/CF_HDROP consumer checks also pass.
 The user verified Explorer subfolder navigation stays in Explorer. Exact old
 large-archive physical dragging was not replayed. Prior task scratch is cleaned.
-No required blocker remained for that prior release; current refinements remain ACTIVE.
+No required blocker or tracked deferral remains in the current S8 scope.
 Historical authorization follows.
 S6 native StartAllBack search was authorized after S5 closure.
 Earlier S5 REA-driven transfer implementation was requested after
@@ -74,7 +75,7 @@ plan neither authorizes itself nor adds approval checkpoints.
 | S5 - REA-driven transfer improvements | COMPLETE | TRANSFER-01..07, archive/caller and WIDGET-02 revalidation, affected CORE-02/03, LIFE-01/DELIVERY-03 | Initial S5 criteria passed at e478986; user extended comparison/implementation | Finite findings inventory resolved; source/target handle reuse, copy-time hashing, metadata/EOF reductions, storage decisions, matched profiles, actual callers, adverse/preservation/cleanup and Release checks pass; see [evidence](verification/2026-10-29-s5.md) |
 | S6 - Native StartAllBack search | BLOCKED | SAB-01..06, affected SEARCH/CORE/LIFE/DELIVERY criteria | Parked by explicit user-directed S8-first execution; resume only after reprioritization is lifted | Investigation only; no working patch or complete SAB criterion. All native groups/handoff/provider/lifecycle/routing criteria remain open. |
 | S7 - Everything filesystem search and Outlook indexing scope | NOT STARTED | EVERYWHERE-01..05, affected SEARCH/CORE/LIFE/SHELL criteria | S6 COMPLETE; finite consumer/semantics/scope inventory before migration | Native Everything file results with selected filesystem roots excluded from Windows indexing; WSearch/Outlook retained, explicit Windows-managed exceptions, local/mail/reboot/recovery verification |
-| S8 - Core integration and delivery | ACTIVE | SHELL-01, CORE-03..11, PREVIEW-06..11, affected SEARCH/WIDGET/ARCHIVE, DELIVERY-01..03 | Delivered S8 through1.1.4 and current user additions | CORE-11/PREVIEW-08..11 integrated source checks and final1.1.5 delivery/cleanup required. S6/S7 remain parked. |
+| S8 - Core integration and delivery | COMPLETE | SHELL-01, CORE-03..11, PREVIEW-06..11, affected SEARCH/WIDGET/ARCHIVE, DELIVERY-01..03 | Delivered S8 through1.1.4 and current user additions | Integrated source checks, final1.1.5 six-asset release, independent retrieval, installed verification/settings preservation and exact cleanup pass. S6/S7 remain parked. |
 
 ENV-01..04 belong to the current setup deliverable, not an artificial product
 implementation stage. See [setup evidence](verification/2026-10-28-setup.md).
@@ -527,7 +528,7 @@ tracked deferral assigned to the current S8 correction.
 | S5 | TRANSFER-01..07 and affected caller/CORE/LIFE criteria; final native/Release/FAT32 evidence and finite findings reconciliation | None within S5 | COMPLETE; no blocker | None |
 | S6 | Matching isolated Windows/Shell modules; current StartAllBack 3.9.28; native query/view trace and Programs/Settings groups with WSearch stopped; program launch and See more results URI dispatch observed on 3.9.28; earlier program/Settings launches on 3.9.25; no complete SAB criterion yet | SAB-01..06, including file-provider/cancellation ownership, remaining provider conditions, compact Everything groups/full-results handoff and direct folder routing | BLOCKED by the user's explicit S8-first priority. Investigation is retained; Sandbox was shut down. Native ABI/ownership and remaining service/indexing comparisons are unresolved when this stage resumes. Host configuration is unchanged. | None |
 | S7 | None | EVERYWHERE-01..05 | S6 prerequisite not complete. File-surface, indexing-scope and Outlook compatibility inventory remains unresolved; no live scope changes during S6. | None |
-| S8 | Prior1.1.4 fully delivered; current drive/provider source PID62840 and preview behavior PID62308 pass. | Complete themed preview qualification, packaged checks and normal1.1.5 publication/retrieval/install/cleanup | ACTIVE; remaining acceptance is internal work, not a parked stage. S6/S7 remain outside this release. | None |
+| S8 | Current source drive/provider PID46676 and previews/tree/collapse PID41808 pass; actual final Release PID9704 and independently downloaded PID15184 pass. Normal1.1.5/source3fa4b46, installed manifest/app-host/identity, unchanged settings/routing, and cleanup8b428ad132516e0ea2a728181d2ea675 pass. | None in current S8 scope | COMPLETE; no blocker. S6/S7 remain outside this release. | None |
 
 S1 and S2 are COMPLETE. The user confirmed normal unlock; real physical drag and
 clipboard checks subsequently passed. A separate STA process read the Windows

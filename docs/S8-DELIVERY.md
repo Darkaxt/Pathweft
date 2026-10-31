@@ -1,39 +1,40 @@
 # S8 core delivery contract
 
 Authority: specification v0.21 and the user's explicit S8-first/delivery instructions.
-S8 is ACTIVE for the 1.1.5 CORE-11 / PREVIEW-08..11 refinements. Native/virtual
-folder tree parity and empty-selection collapse were added before publication;
-final integrated source checks pass in appearance-4aff38ff8fb843db907a78e0439e2c68
-and appearance-b10fa99a40dc401bb8690690b248ae22. Actual tree expansion, empty/
-hidden-folder states, live Ctrl+H, single/split selection collapse/restoration,
-saved width, disabled preference and actual F3D worker exit pass. Package and
-delivery verification remains required. The earlier unpublished bb946b7 package
-and exact build root were removed through reviewed cleanup af058ff0cd35fbd1c94bfc6148dba1db
-(2,895 members / 1,701,014,309 helper file bytes, no exclusions/errors).
-The next unpublished package at5bb5723 caught a missing embedded1.1.5 What's new
-entry in the app-host gate. That entry is corrected, and the current source
-self-test passes. No application UI behavior changed after its current acceptance
-checks; final packaging and delivered verification still must pass.
-The independent Release consumer now passes PID14416 against the actual portable
-application: real-index, native archives/OLE/transfers, updated drive/provider/
-USB values, native/virtual trees, empty-selection collapse, executable details,
-F3D alpha/camera/worker exit and hidden-window lifecycle. Its test-only access to
-the generated internal List field was corrected to use FindName, as an external
-consumer must. The final package is regenerated to include that verified consumer
-source; product behavior is unchanged by this harness correction.
-Source capacity/
-provider/unavailable-media and preview behavior plus dark/light100%/150% checks
-pass in the retained hidden fixtures appearance-64aef27457394964bed64902323ba98a
-and appearance-82e3cb4496a44f1cb8d0ef50d9bfcde2. Actual selected-file screenshots
-were inspected; animation foreground and model alpha are verified. Signed/system,
-unsigned/current and missing-resource executable cases, PDF page actions and
-native camera/playback/lifecycle pass. The popup template was inspected without
-opening a desktop popup. Final package, normal release, independent retrieval,
-installed verification and cleanup remain advancement blockers. No required
-deferrals. The stage-closure review found no need for broader refactoring:
-the small shared icon and usage helpers serve the current paired surfaces;
-cloud metadata reading preserves unknown provider formats. Previous S8 is COMPLETE
-through1.1.4. Release1.1.4 is normally
+S8 is COMPLETE through1.1.5, including CORE-11 and PREVIEW-08..11. The normal
+six-asset release is https://github.com/Darkaxt/Pathweft/releases/tag/v1.1.5,
+source3fa4b465775ce411a89ba2628b1907420facac50. Annotated tag readback resolves
+to that source; all published asset sizes/digests match independent retrieval.
+Actual Release consumer PID9704 and downloaded consumer PID15184 verify the
+real index, native archives/OLE/transfers, drive/provider/USB values, native and
+virtual trees, preview collapse, executable details and F3D alpha/camera/cleanup.
+The embedded release history and actual portable/installed app-host self-tests pass.
+
+Source drive/provider PID46676 and preview/tree/collapse PID41808 pass, including
+actual hidden dark/light100%/150% layouts, live Ctrl+H, lazy nested expansion,
+single/split empty-selection collapse, saved width, disabled preference and native
+worker exit. Actual selected-file screenshots were inspected. The themed popup
+template was inspected without opening a desktop popup. No host input or Sandbox
+was used. The current small helpers serve the paired surfaces; no broader
+refactoring or new infrastructure is required for acceptance.
+
+The independently downloaded installer updated D:\Tools\Pathweft to
+1.1.5+3fa4b465775ce411a89ba2628b1907420facac50. Every installed member, shortcut,
+uninstall identity and app-host self-test passes. User settings and folder/startup
+registrations are unchanged; Win+E remains off. The current-user installer ran
+without administrator privileges. Application and installer remain unsigned.
+
+Retained private receipts/renders/workflow sources are in
+`.local/evidence/2026-10-31-ui115`. Final cleanup8b428ad132516e0ea2a728181d2ea675
+inspected/deleted29,531 exact members (5,048,262,520 helper file bytes), including
+six verified self-test junction leaves, with no exclusions/errors. Both task roots
+D:\Temp\pathweft-s8-delivery and E:\Temp\pathweft-115 are absent. Requested dist
+assets, installed application, persistent dependencies and user files are retained.
+Earlier superseded unpublished packages were separately reviewed/removed before
+regeneration; their diagnosis remains in the private audit. No required S8 blocker,
+tracked deferral or acceptance criterion remains. S6/S7 stay postponed.
+
+Prior S8 delivery through1.1.4 follows. Release1.1.4 is normally
 published at source8552fbdc4a0c38acf7cbb76d98d1ef3d227b6063; all six required
 assets match independent retrieval. Remote annotated tag readback resolves to
 that source. Actual Release consumer PID45236 and downloaded consumer PID4672
