@@ -3,13 +3,12 @@
 Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.24, 2026-10-31,
 including the user-authorized continued comparison requirement TRANSFER-07.
 
-S8 is ACTIVE for PREVIEW-12 (continuous native 3D interaction/quality), CORE-14
+S8 is COMPLETE through1.1.8 for PREVIEW-12 (continuous native 3D interaction/quality), CORE-14
 (vertical Settings categories) and CORE-15 (Help reading-position highlight),
-plus bounded JUMP-03 research/planning for S11. Implement and verify each complete
-user-facing workflow, then reconcile/package/publish/independently retrieve one
-normal release and verify the user's installed update. Source/API/render pipeline
-and existing Settings/Help control owners are reused. The unimplemented current
-delivery criteria block closure; no external impediment or tracked deferral. S11
+plus bounded JUMP-03 research/planning for S11. Complete user-facing workflows,
+normal publication, independent retrieval and installed updater verification
+pass. Source/API/render pipeline and existing Settings/Help control owners are
+reused. No remaining S8 criterion, blocker or tracked deferral. S11
 implementation and S6/S7/S9 remain unstarted/postponed.
 
 Current source acceptance passes: complete Settings/Help/continuous-render
@@ -18,8 +17,13 @@ reviewed and source inputs preserved. The independent packaged consumer compiles
 against the new assembly. JUMP-03's documented native destination plan is complete,
 without claiming S11 runtime implementation. The scoped closure assessment found
 no required consolidation. See [current evidence](verification/2026-10-31-render118.md).
-S8 remains ACTIVE for final1.1.8 package, normal release, independent retrieval
-and user-controlled installed update verification; no intermediate release.
+Normal1.1.8/tagv1.1.8 source64118e9 is published with six verified assets.
+Local packaged consumer PID61916 and independently retrieved consumer PID16188
+pass, including actual32/64-bit Shell/COM and hidden app workflows. All792
+installed files match; reopened mainPID4748/helperPID37904 and helper identity/
+readiness pass after the user's updater. Final exact cleanup applies7692 members
+after spent-output checkpoints; both scratch roots are absent and the older
+partial ticket is closed. No ACTIVE stage or required consolidation remains.
 
 Prior S8 is COMPLETE through1.1.7. CORE-12/13, integrated source and actual packaged
 workflows, normal publication, independent retrieval, the actual user-updater
@@ -159,7 +163,7 @@ plan neither authorizes itself nor adds approval checkpoints.
 | S5 - REA-driven transfer improvements | COMPLETE | TRANSFER-01..07, archive/caller and WIDGET-02 revalidation, affected CORE-02/03, LIFE-01/DELIVERY-03 | Initial S5 criteria passed at e478986; user extended comparison/implementation | Finite findings inventory resolved; source/target handle reuse, copy-time hashing, metadata/EOF reductions, storage decisions, matched profiles, actual callers, adverse/preservation/cleanup and Release checks pass; see [evidence](verification/2026-10-29-s5.md) |
 | S6 - Native StartAllBack search | BLOCKED | SAB-01..06, affected SEARCH/CORE/LIFE/DELIVERY criteria | Parked by explicit user-directed S8-first execution; resume only after reprioritization is lifted | Investigation only; no working patch or complete SAB criterion. All native groups/handoff/provider/lifecycle/routing criteria remain open. |
 | S7 - Everything filesystem search and Outlook indexing scope | NOT STARTED | EVERYWHERE-01..05, affected SEARCH/CORE/LIFE/SHELL criteria | S6 COMPLETE; finite consumer/semantics/scope inventory before migration | Native Everything file results with selected filesystem roots excluded from Windows indexing; WSearch/Outlook retained, explicit Windows-managed exceptions, local/mail/reboot/recovery verification |
-| S8 - Core integration and delivery | ACTIVE | SHELL-01, CORE-03..15, PREVIEW-06..12, JUMP-03 research, affected SEARCH/WIDGET/ARCHIVE, DELIVERY-01..03 | Verified through1.1.7; new round explicitly authorized | Complete smooth 3D/quality, vertical Settings, Help reading highlight and bounded S11 research; verify integrated behavior and one final normal release/update. No tracked deferral. |
+| S8 - Core integration and delivery | COMPLETE | SHELL-01, CORE-03..15, PREVIEW-06..12, JUMP-03 research, affected SEARCH/WIDGET/ARCHIVE, DELIVERY-01..03 | Verified through1.1.8 | Continuous 3D/raw frames/quality, Settings categories and Help reading highlight pass; S11 research documented; normal release, independent retrieval, installed updater verification and exact cleanup pass. No blocker or tracked deferral. |
 
 ENV-01..04 belong to the current setup deliverable, not an artificial product
 implementation stage. See [setup evidence](verification/2026-10-28-setup.md).
@@ -613,7 +617,7 @@ tracked deferral assigned to the current S8 correction.
 | S5 | TRANSFER-01..07 and affected caller/CORE/LIFE criteria; final native/Release/FAT32 evidence and finite findings reconciliation | None within S5 | COMPLETE; no blocker | None |
 | S6 | Matching isolated Windows/Shell modules; current StartAllBack 3.9.28; native query/view trace and Programs/Settings groups with WSearch stopped; program launch and See more results URI dispatch observed on 3.9.28; earlier program/Settings launches on 3.9.25; no complete SAB criterion yet | SAB-01..06, including file-provider/cancellation ownership, remaining provider conditions, compact Everything groups/full-results handoff and direct folder routing | BLOCKED by the user's explicit S8-first priority. Investigation is retained; Sandbox was shut down. Native ABI/ownership and remaining service/indexing comparisons are unresolved when this stage resumes. Host configuration is unchanged. | None |
 | S7 | None | EVERYWHERE-01..05 | S6 prerequisite not complete. File-surface, indexing-scope and Outlook compatibility inventory remains unresolved; no live scope changes during S6. | None |
-| S8 | CORE-12/13 real two-account quota and all capacity surfaces, statistics collapse/preferences/layout; actual packaged native/app workflows, normal1.1.7 publication, independent retrieval, actual installed hashes/main/helper ownership/readiness and cleanup pass. Prior user Explorer/Win+E confirmation retained. | None within S8 | COMPLETE; no blocker. S6/S7 remain outside this release. | None |
+| S8 | CORE-12..15, PREVIEW-12 and JUMP-03 research verified; actual native/app workflows, normal1.1.8 publication, independent retrieval,792 installed hashes/main/helper readiness and exact cleanup pass. Prior Explorer/Win+E confirmation retained. | None within S8 | COMPLETE; no blocker. S6/S7/S9/S11 runtime implementation remains outside this release. | None |
 
 S1 and S2 are COMPLETE. The user confirmed normal unlock; real physical drag and
 clipboard checks subsequently passed. A separate STA process read the Windows

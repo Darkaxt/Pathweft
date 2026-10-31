@@ -8,7 +8,7 @@ user direction recorded here; ordinary implementation choices need no new gate.
 
 ## 1. Intent and current scope
 
-Current extension: S8 is ACTIVE for the user's authorized next refinement round.
+Current extension: S8 is COMPLETE through1.1.8 for the authorized refinement round.
 PREVIEW-12: correct continuous mouse rotation/frame presentation, remove PNG
 encode/decode from interactive rendering, size native frames for the viewport
 and DPI, preserve camera/animation/cancellation/resource ownership, and provide
@@ -34,7 +34,15 @@ StartAllBack patch, desktop takeover or premature S11 implementation. Deliver
 PREVIEW-12/CORE-14/15 together in one verified normal release, retaining current
 opt-ins/user settings and the installed updater workflow. No S6/S7/S9 work.
 
-Current reconciliation: S8 is COMPLETE through 1.1.7. CORE-12/13 source,
+Current1.1.8 reconciliation: PREVIEW-12, CORE-14/15 and JUMP-03 research pass.
+Normal release/tagv1.1.8 source64118e927b71d528fdc6626ae3315e4faeafcd12
+has six verified assets. Actual local and independently retrieved native/app
+checks pass, as do792 installed hashes and reopened main/helper readiness after
+the user's updater. Exact task scratch cleanup passes. No ACTIVE stage or S8
+blocker/tracked deferral remains. S11 runtime implementation remains NOT STARTED;
+S6/S7 are postponed and S9 is NOT STARTED. See the1.1.8 verification record.
+
+Historical1.1.7 reconciliation: CORE-12/13 source,
 hidden real-account/navigation/layout acceptance, final package, normal six-asset
 publication, independent retrieved native/app verification and the user's actual
 installed update pass. Release source is
