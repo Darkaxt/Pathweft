@@ -14,6 +14,13 @@ The next unpublished package at5bb5723 caught a missing embedded1.1.5 What's new
 entry in the app-host gate. That entry is corrected, and the current source
 self-test passes. No application UI behavior changed after its current acceptance
 checks; final packaging and delivered verification still must pass.
+The independent Release consumer now passes PID14416 against the actual portable
+application: real-index, native archives/OLE/transfers, updated drive/provider/
+USB values, native/virtual trees, empty-selection collapse, executable details,
+F3D alpha/camera/worker exit and hidden-window lifecycle. Its test-only access to
+the generated internal List field was corrected to use FindName, as an external
+consumer must. The final package is regenerated to include that verified consumer
+source; product behavior is unchanged by this harness correction.
 Source capacity/
 provider/unavailable-media and preview behavior plus dark/light100%/150% checks
 pass in the retained hidden fixtures appearance-64aef27457394964bed64902323ba98a

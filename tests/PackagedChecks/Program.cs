@@ -259,7 +259,7 @@ sealed class PackageProbe
             session=Activator.CreateInstance(previewType,Flags,null,new object[]{owner,target,(Action<string>)(_=>{}),false},null);
             Call(previewType,session,"Show",new Entry{Name="folder",Path=root,IsDir=true});await (Task)Get(session,"Completion");
             Check((string)Get(session,"State")=="ready"&&target.Content is TreeView,"Delivered native folder preview uses the shared file tree");
-            Settings.Preview=true;Call(typeof(MainWindow),owner,"ApplyPreview");left.List.UnselectAll();Call(typeof(MainWindow),owner,"PreviewFollow");
+            Settings.Preview=true;Call(typeof(MainWindow),owner,"ApplyPreview");((ListView)left.FindName("List")).UnselectAll();Call(typeof(MainWindow),owner,"PreviewFollow");
             Check(((FrameworkElement)owner.FindName("PreviewPane")).Visibility==Visibility.Collapsed&&((ColumnDefinition)owner.FindName("PreviewColumn")).Width.Value==0&&Settings.Preview,"Delivered empty-selection preview releases its complete column without disabling the preference");
             var markdown=Path.Combine(root,"preview.md");File.WriteAllText(markdown,"# Packaged Markdown\n\nReadable **content**.");
             Call(previewType,session,"Show",new Entry{Name="preview.md",Path=markdown});await (Task)Get(session,"Completion");
