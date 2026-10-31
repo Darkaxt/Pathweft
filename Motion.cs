@@ -96,7 +96,10 @@ static class Motion
     static void FadeOut(object s, CancelEventArgs e)
     {
         var w = (Window)s;
-        if (leaving.Remove(w) || e.Cancel || !On || Root(w) is not { } root) return; // a second Close is the real one
+        // Native windows already have a compositor-owned closing transition.
+        // Fading only WPF's client first exposes the extended DWM glass surface
+        // as an empty colorized rectangle while the native window stays alive.
+        if (leaving.Remove(w) || e.Cancel || !On || Appearance.Native || Root(w) is not { } root) return;
         e.Cancel = true;
         leaving.Add(w);
         bool? result = w.DialogResult; // cancelling the close forgets it

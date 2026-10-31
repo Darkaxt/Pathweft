@@ -30,15 +30,7 @@
     <!-- shown once the empty window is on screen (SettingsWindow.xaml.cs) -->
     <ScrollViewer x:Name="Body" VerticalScrollBarVisibility="Auto" Padding="18,16" Visibility="Collapsed">
       <StackPanel>
-        <Border Style="{StaticResource Card}">
-          <StackPanel>
-            <TextBlock Text="Indexed search" Style="{StaticResource H}"/>
-            <TextBlock Style="{StaticResource Hint}" Text="Both panes use the existing default Everything instance and its index. Pathweft never starts another indexer or changes its exclusions. Everything 1.4.1 or later is required; the validated engine is 1.4.1.1032."/>
-            <TextBlock Style="{StaticResource Hint}" Text="Choose Everything · Folder or Everything · All beside a pane's query. Enter searches; typing alone filters the listing. Native Everything syntax, wildcards and regex: are supported. Results load 200 at a time, sorted by the index."/>
-            <TextBlock Style="{StaticResource Hint}" Margin="0" Text="An index can omit excluded, offline, network or non-NTFS locations. Choose Filesystem · Folder to search a live subtree explicitly. Inaccessible entries and links are excluded and the search stops at 10,000 matches; it does not claim complete coverage."/>
-          </StackPanel>
-        </Border>
-        <Border Style="{StaticResource Card}">
+        <Border x:Name="AppearanceCard" Style="{StaticResource Card}">
           <StackPanel>
             <DockPanel>
               <Button x:Name="ResetAppearance" DockPanel.Dock="Right" Content="Reset" Style="{StaticResource Tab}" VerticalAlignment="Top" Click="ResetSection_Click"
@@ -51,14 +43,14 @@
               <Button x:Name="ThemeNative" Content="Native" Style="{StaticResource Tab}" Click="Theme_Click" AutomationProperties.Name="Native Windows theme"/>
             </StackPanel>
             <StackPanel x:Name="NativeOptions" Margin="0,4,0,10">
-              <TextBlock Style="{StaticResource Hint}" Text="Neutral Windows surfaces without the pane glow or background effects. File colors and read-only indicators stay recognizable."/>
+              <TextBlock Style="{StaticResource Hint}" Text="Neutral surfaces that follow Windows appearance."/>
               <StackPanel Orientation="Horizontal">
                 <Button x:Name="ThemeSystem" Content="Use Windows mode" Style="{StaticResource Tab}" Click="NativeMode_Click"/>
                 <Button x:Name="ThemeLight" Content="Light" Style="{StaticResource Tab}" Click="NativeMode_Click"/>
                 <Button x:Name="ThemeDark" Content="Dark" Style="{StaticResource Tab}" Click="NativeMode_Click"/>
               </StackPanel>
               <CheckBox x:Name="WindowsAccentBox" Content="Use Windows accent color" Margin="0,8,0,0" Click="WindowsAccent_Click"/>
-              <TextBlock Style="{StaticResource Hint}" Text="Follows the Windows accent, using a readable tone. Choosing a color below switches to a custom accent. Windows high contrast takes precedence."/>
+              <TextBlock Style="{StaticResource Hint}" Text="Choose a color below to use a custom accent."/>
             </StackPanel>
             <StackPanel x:Name="GlassOptions">
             <TextBlock Style="{StaticResource Hint}" Margin="0,-4,0,10" Text="Double-click a slider's handle to put it back to its default."/>
@@ -236,9 +228,9 @@
               <TextBlock Text="Transfers" Style="{StaticResource H}"/>
             </DockPanel>
             <CheckBox x:Name="VerifyBox" Content="Verify copies after transfer" Click="Verify_Click"/>
-            <TextBlock Style="{StaticResource Hint}" Text="Checks copied data and alternate streams with xxHash3. Moves always verify copied data before removing the source. Cancelling removes the current incomplete copy. Same-volume renames preserve file identity without a byte-copy check."/>
+            <TextBlock Style="{StaticResource Hint}" Text="Checks the copied data. Moves always verify before removing the source."/>
             <CheckBox x:Name="ParallelBox" Content="Copy small files several at once" Margin="0,10,0,0" Click="Parallel_Click"/>
-            <TextBlock Style="{StaticResource Hint}" Text="Files under 16 MB go four at a time when both drives are SSDs or network shares, where a small file is mostly waiting. To or from a spinning disk they still go one by one, and big files always do."/>
+            <TextBlock Style="{StaticResource Hint}" Text="Improves small-file transfers on SSDs and network drives."/>
           </StackPanel>
         </Border>
 
@@ -250,20 +242,18 @@
             <CheckBox x:Name="TaskbarEmbedBox" Content="Show the search box when the taskbar has room" Margin="22,0,0,0" Click="TaskbarSearch_Click"/>
             <TextBlock x:Name="TaskbarSearchStatus" Style="{StaticResource Hint}" TextWrapping="Wrap"/>
             <Button Content="Open search" Style="{StaticResource Tab}" HorizontalAlignment="Left" Click="OpenTaskbarSearch_Click"/>
-            <TextBlock Style="{StaticResource Hint}" Text="Ctrl+Alt+Space opens search while Pathweft is running. If the box cannot attach safely, the mode above reports why. No Windows Search, default file manager or sign-in setting is changed."/>
+            <TextBlock Style="{StaticResource Hint}" Text="Ctrl+Alt+Space opens search while Pathweft is running."/>
             <TextBlock Text="Folders" FontWeight="SemiBold" Margin="0,8,0,6"/>
             <CheckBox x:Name="DefaultBox" Content="Open filesystem folders and drives in Pathweft" Click="Default_Click"/>
             <TextBlock Style="{StaticResource Hint}">
-              Off until enabled. Folder requests through Windows use Pathweft directly, without hiding or closing Explorer windows.
-              Switching off restores the prior handlers where Pathweft still owns them.
-              Explicit File Explorer launches, virtual folders and Open/Save dialogs remain in Windows.
+              Opens supported folder links in Pathweft. Switching off restores your previous folder handler.
             </TextBlock>
             <TextBlock x:Name="FolderIntegrationStatus" Style="{StaticResource Hint}"/>
-            <TextBlock Style="{StaticResource Hint}" Text="Some applications use a separate Windows selection API for Show in folder. That API is unsupported: it can open the folder without selecting the file and report an error to the calling application. Pathweft's own Reveal and /select command preserve selection."/>
+            <TextBlock Style="{StaticResource Hint}" Text="Virtual folders and Open/Save dialogs remain in Explorer. Some apps' Show in folder requests cannot preserve file selection."/>
             <Button x:Name="RestoreFolderHandlers" Content="Restore previous folder handlers" Style="{StaticResource Tab}" HorizontalAlignment="Left" Click="RestoreFolderHandlers_Click"/>
             <TextBlock Text="Keyboard" FontWeight="SemiBold" Margin="0,12,0,6"/>
             <CheckBox x:Name="WinEBox" Content="Win+E opens Pathweft" Click="WinE_Click"/>
-            <TextBlock Style="{StaticResource Hint}" Text="Off until enabled, independently of folder integration. Uses a windowless keyboard helper at sign-in. Switching off stops it and removes its sign-in entry."/>
+            <TextBlock Style="{StaticResource Hint}" Text="Works independently of folder integration. Turning it off returns Win+E to Explorer."/>
             <TextBlock x:Name="WinEStatus" Style="{StaticResource Hint}"/>
             <TextBlock Text="Startup and window behavior" FontWeight="SemiBold" Margin="0,8,0,6"/>
             <CheckBox x:Name="TrayBox" Content="Close to the notification area" Click="Tray_Click"/>
@@ -285,8 +275,13 @@
           <StackPanel>
             <TextBlock Text="About" Style="{StaticResource H}"/>
             <TextBlock x:Name="AboutText" Foreground="{DynamicResource Palette.8A97AA}" TextWrapping="Wrap"/>
-            <TextBlock x:Name="StartupText" Foreground="{DynamicResource Palette.8A97AA}" TextWrapping="Wrap" Margin="0,6,0,0"
-                       ToolTip="From launching Pathweft to its window, and to the files in its panes. The last starts are in startup.log in the settings folder."/>
+            <Button x:Name="SearchHelp" Content="Help and search guide" Style="{StaticResource Tab}" HorizontalAlignment="Left" Margin="0,8,0,0" Click="Help_Click"/>
+            <Expander Header="Diagnostics" Margin="0,8,0,0">
+              <StackPanel>
+                <TextBlock x:Name="ProfileText" Style="{StaticResource Hint}"/>
+                <TextBlock x:Name="StartupText" Style="{StaticResource Hint}"/>
+              </StackPanel>
+            </Expander>
             <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
               <Button x:Name="UpdateCheck" Content="Check for updates" Style="{StaticResource Tab}" Padding="12,6" Click="Update_Click"/>
               <Button Content="What&#x2019;s new" Style="{StaticResource Tab}" Padding="12,6" Margin="6,0,0,0" Click="WhatsNew_Click"/>

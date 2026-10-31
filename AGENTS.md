@@ -14,9 +14,12 @@ do not change its requirements or the user's standing instructions.
   see `docs/verification/2026-10-29-s5.md` for the direct-write contract,
   measured performance limits and actual caller/preservation/recovery evidence.
   The user explicitly reprioritized S8 core delivery ahead of Windows search work.
-  S8 is COMPLETE: v1.1.0 is published, independently retrieved and installed.
+  S8 is ACTIVE again for the user's 2026-10-31 Native frame and Settings-copy
+  corrections to the published v1.1.0. No S6/S7 implementation is authorized.
   S6 is BLOCKED by this user-directed execution boundary,
   with investigation retained and no working patch; S7 remains NOT STARTED.
+  S9 context-menu reorganization is planned, NOT STARTED (MENU-01..02).
+  S11 native pinned/recent folder Jump Lists is planned, NOT STARTED (JUMP-01..02).
   Identify TeraCopy and derive adoption from REA
   evidence before transfer implementation.
 - Keep one ACTIVE stage during authorized implementation. Reconcile complete

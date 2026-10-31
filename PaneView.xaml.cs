@@ -699,6 +699,7 @@ public partial class PaneView : UserControl
         else if (!path.Equals(filteredFolder, StringComparison.OrdinalIgnoreCase)) FilterBox.Text = "";
         filteredFolder = path;
         BuildCrumbs();
+        EndEditPath();
         BuildTabs();
         return ++navVersion;
     }
@@ -1165,53 +1166,6 @@ public partial class PaneView : UserControl
         UpdateFooter();
         StartSizing(); StartVersions(); StartIcons(); StartThumbs();
         StatsChanged?.Invoke();
-    }
-
-    // ---- the search options button: each choice writes its term into the filter box, replacing one of the same kind ----
-    void SearchOptions_Click(object s, RoutedEventArgs e)
-    {
-        var menu = new ContextMenu { PlacementTarget = SearchOptions, Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom };
-        MenuItem Choice(string header, string kind, string term)
-        {
-            var mi = new MenuItem { Header = header, IsChecked = term != null && FilterBox.Text.Contains(term, StringComparison.OrdinalIgnoreCase) };
-            mi.Click += (_, _) => SetTerm(kind, term);
-            return mi;
-        }
-        var size = new MenuItem { Header = "Size" };
-        foreach (var (h, t) in new[] { ("Any size", null), ("Under 1 MB", "size:<1MB"), ("1 MB to 100 MB", "size:1MB-100MB"), ("Over 100 MB", "size:>100MB"), ("Over 1 GB", "size:>1GB") })
-            size.Items.Add(Choice(h, "size", t));
-        var date = new MenuItem { Header = "Modified" };
-        foreach (var (h, t) in new[] { ("Any time", null), ("Today", "within:today"), ("In the last 7 days", "within:7d"), ("In the last 30 days", "within:30d"), ("In the last year", "within:1y") })
-            date.Items.Add(Choice(h, "within", t));
-        menu.Items.Add(size);
-        menu.Items.Add(date);
-        menu.Items.Add(new Separator());
-        var re = new MenuItem { Header = "Name matches a regular expression…" };
-        re.Click += (_, _) => { if (Ask("Regular expression", "The name matches (case doesn't matter)", "re:") is { } v) SetTerm("re", $"re:\"{v}\""); };
-        var content = new MenuItem { Header = "Contains text…", ToolTip = "Looks inside files up to 64 MB when you press Enter (files only in the cloud are skipped)" };
-        content.Click += (_, _) => { if (Ask("Contains text", "Text inside the file", "content:") is { } v) SetTerm("content", $"content:\"{v}\""); };
-        menu.Items.Add(re);
-        menu.Items.Add(content);
-        menu.Items.Add(new Separator());
-        var go = new MenuItem { Header = "Search every subfolder", InputGestureText = "Enter", IsEnabled = FilterBox.Text.Trim() != "" };
-        go.Click += (_, _) => { Search(FilterBox.Text.Trim()); FocusList(); };
-        menu.Items.Add(go);
-        menu.IsOpen = true;
-
-        string Ask(string title, string label, string kind)
-        {
-            var current = System.Text.RegularExpressions.Regex.Match(FilterBox.Text, @"(?<!\S)" + kind + @"(""[^""]*""|\S+)", System.Text.RegularExpressions.RegexOptions.IgnoreCase).Groups[1].Value.Trim('"');
-            return PromptDialog.Ask(Window.GetWindow(this), title, label, current, "Use") is { Length: > 0 } v ? v.Replace("\"", "") : null;
-        }
-    }
-
-    /// Puts `term` in the filter box in place of any term of the same kind (null just removes it).
-    void SetTerm(string kind, string term)
-    {
-        var rest = System.Text.RegularExpressions.Regex.Replace(FilterBox.Text, @"(?<!\S)" + kind + @":(""[^""]*""|\S+)", "", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-        FilterBox.Text = System.Text.RegularExpressions.Regex.Replace((rest + " " + term).Trim(), @"\s{2,}", " ");
-        FilterBox.Focus();
-        FilterBox.CaretIndex = FilterBox.Text.Length;
     }
 
     /// Esc in the filter box: out of search results, or just clear the filter.
@@ -1921,12 +1875,19 @@ public partial class PaneView : UserControl
 
     public void EditPath()
     {
-        PathBox.Text = Dir;
+        PathBox.Text = Dir==ThisPC ? "This PC" : Dir;
         PathBox.Visibility = Visibility.Visible;
         Crumbs.Visibility = Visibility.Hidden;
+        FilterHint.Visibility=Visibility.Collapsed;
         PathBox.Focus(); PathBox.SelectAll();
     }
-    void EndEditPath() { Suggest.IsOpen = false; PathBox.Visibility = Visibility.Collapsed; Crumbs.Visibility = Visibility.Visible; }
+    TextBox PathBox=>FilterBox;
+    void EndEditPath()
+    {
+        Suggest.IsOpen=false;FilterHint.Visibility=Visibility.Collapsed;
+        PathBox.Visibility=InSearch?Visibility.Visible:Visibility.Collapsed;
+        Crumbs.Visibility=InSearch?Visibility.Hidden:Visibility.Visible;
+    }
     void Crumbs_Click(object s, MouseButtonEventArgs e) { if (e.OriginalSource is Border) EditPath(); }
     // middle-click on the empty part of the path: the folder above, in a new tab (a segment opens itself)
     void Crumbs_MiddleClick(object s, MouseButtonEventArgs e)
@@ -1942,14 +1903,13 @@ public partial class PaneView : UserControl
         static Transform Scale(double s) => s == 1 ? null : new ScaleTransform(s, s);
         TabsArea.LayoutTransform = Scale(Settings.TabsScale);
         PathBar.LayoutTransform = Scale(Settings.PathScale);
-        SearchBar.LayoutTransform = Scale(Settings.PathScale);
         List.LayoutTransform = Scale(Settings.ListScale);
         PlaceNameEdge();
     }
     string TypedPath => Environment.ExpandEnvironmentVariables(PathBox.Text.Trim().Trim('"'));
 
     // Preview, not KeyDown: the text box itself handles Up/Down (caret) before KeyDown would see them.
-    void PathBox_PreviewKeyDown(object s, KeyEventArgs e)
+    async void PathBox_PreviewKeyDown(object s, KeyEventArgs e)
     {
         bool open = Suggest.IsOpen && SuggestList.Items.Count > 0;
         switch (e.Key)
@@ -1959,9 +1919,12 @@ public partial class PaneView : UserControl
             case Key.Tab when open: Complete((string)(SuggestList.SelectedItem ?? SuggestList.Items[0])); break;
             case Key.Enter:
                 var target = open && SuggestList.SelectedItem is string pick ? pick : TypedPath;
-                EndEditPath(); Navigate(target); List.Focus(); break;
+                e.Handled=true;
+                if(open&&SuggestList.SelectedItem is string){EndEditPath();Navigate(target);FocusList();}
+                else await SubmitAddressAsync();
+                return;
             case Key.Escape when open: Suggest.IsOpen = false; break;
-            case Key.Escape: EndEditPath(); List.Focus(); break;
+            case Key.Escape: ClearFilter();EndEditPath(); List.Focus(); break;
             default: return;
         }
         e.Handled = true;
@@ -2016,7 +1979,13 @@ public partial class PaneView : UserControl
         e.Handled = true;
     }
 
-    public void FocusFilter() { FilterBox.Focus(); FilterBox.SelectAll(); }
+    public void FocusFilter()
+    {
+        FilterBox.Visibility=Visibility.Visible;Crumbs.Visibility=Visibility.Hidden;
+        FilterBox.Text=searchQuery??"";FilterHint.Text=Dir==ThisPC?"Enter a path or search all files":"Enter a path or search this folder";
+        FilterHint.Visibility=FilterBox.Text.Length==0?Visibility.Visible:Visibility.Collapsed;
+        FilterBox.Focus();FilterBox.SelectAll();
+    }
     // On the selected row once it is drawn, not on the list: a file handed in from outside (Open path in Everything,
     // Open-Shell) was selected while the keyboard stayed on the list, so the arrows started elsewhere (Rico, 1.0.53).
     // A folder read from the cache is shown before this runs, and a fresh read that changes nothing only patches it.
@@ -2027,16 +1996,13 @@ public partial class PaneView : UserControl
     }
     void Filter_Changed(object s, TextChangedEventArgs e)
     {
-        FilterHint.Visibility = FilterBox.Text == "" ? Visibility.Visible : Visibility.Collapsed;
-        FilterClear.Visibility = FilterBox.Text == "" ? Visibility.Collapsed : Visibility.Visible;
-        ApplyFilter();
-        if (view != null) UpdateFooter();
+        FilterHint.Visibility = FilterBox.Visibility==Visibility.Visible&&FilterBox.Text.Length==0 ? Visibility.Visible : Visibility.Collapsed;
+        PathBox_Changed(s,e);
     }
-    void FilterClear_Click(object s, RoutedEventArgs e) { ClearFilter(); FilterBox.Focus(); }
     void ApplyFilter()
     {
         if (view == null) return;
-        var q = searchQuery != null ? "" : FilterBox.Text; // search results are already the matches
+        var q = ""; // One address/search field: typing is a draft; Enter submits to Everything.
         // the same words and terms as the search, but contents only on Enter: the filter runs at every keystroke
         var find = SearchQuery.Parse(q, DateTime.Now);
         view.Filter = q.Trim() == "" || find.Error != null ? null : o => o is Entry { IsUp: true }

@@ -58,9 +58,9 @@ public partial class MainWindow
             taskbarSearch.ShowSearch();
             var widget = taskbarSearch.Widget;
             await S1Verification.Navigate(widget.Pane, Path.Combine(root, "files"));
-            ((ComboBox)widget.Pane.FindName("SearchScope")).SelectedIndex = 0;
+            widget.Pane.VerificationSearchScope=0;
             ((TextBox)widget.Pane.FindName("FilterBox")).Text = name;
-            Click((Button)widget.Pane.FindName("SearchSubmit")); await widget.Pane.SearchCompletion;
+            widget.Pane.Search(name); await widget.Pane.SearchCompletion;
             widget.Pane.ListForVerification.SelectedItem = widget.Pane.Items.Single(e => e.Name == name);
             return widget;
         }

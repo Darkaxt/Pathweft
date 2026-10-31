@@ -198,7 +198,7 @@ public partial class App : Application
         Settings.Load(); // before any window: the panes read column widths while being built
         Appearance.Initialize();
 #if DEBUG
-        if (e.Args.Any(a => a.StartsWith("--verify-s4=") || a.StartsWith("--verify-fileui=") || a.StartsWith("--verify-s5=") || a.StartsWith("--verify-s8=")) && Environment.GetEnvironmentVariable("PATHWEFT_TEST_HIDDEN") == "1" && !HiddenTrialPresentation.Enabled)
+        if (e.Args.Any(a => a.StartsWith("--verify-s4=") || a.StartsWith("--verify-fileui=") || a.StartsWith("--verify-s5=") || a.StartsWith("--verify-s8=") || a.StartsWith("--verify-s8-appearance=")) && Environment.GetEnvironmentVariable("PATHWEFT_TEST_HIDDEN") == "1" && !HiddenTrialPresentation.Enabled)
         { Shutdown(2); return; } // fail before constructing a window when a hidden trial profile is unrecognized
 #endif
         UseTipDelay();
@@ -216,6 +216,8 @@ public partial class App : Application
         if (e.Args.FirstOrDefault(a => a.StartsWith("--verify-s5=")) is { } transferVerification)
             window.ContentRendered += async (_, _) => await window.VerifyS5(transferVerification["--verify-s5=".Length..]);
         HiddenTrialPresentation.Prepare(window);
+        if(e.Args.FirstOrDefault(a=>a.StartsWith("--verify-s8-appearance=")) is { } appearanceCorrection)
+            window.ContentRendered+=async(_,_)=>await window.VerifyAppearanceCorrection(appearanceCorrection["--verify-s8-appearance=".Length..]);
         if(S8ShellTrial.Enabled)
             window.ContentRendered+=(_,_)=>window.CaptureShellRequest(Program.PathArg(e.Args));
         if (e.Args.FirstOrDefault(a => a.StartsWith("--verify-s8=")) is { } coreVerification)

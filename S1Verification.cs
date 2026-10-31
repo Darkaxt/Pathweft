@@ -195,7 +195,7 @@ internal static class S1Verification
             window.ApplyAppearance();
             window.Width = 1440; window.Height = 960;
             await Snapshot(window, output, "two-panes-1440x960-scale125");
-            Check(Control(left, "FilterBox").ActualWidth >= 50 && Control(left, "SearchScope").ActualWidth >= 140, "CORE-03 search controls fit at representative scales");
+            Check(Control(left, "AddressField").ActualWidth >= 140, "CORE-03 one address/search field fits at representative scales");
             var settings = new SettingsWindow(window);
             settings.Show();
             await Snapshot(settings, output, "settings");
@@ -244,39 +244,16 @@ internal static class S1Verification
         await Navigate(pane, archive);
         Check(pane.ArchiveRoot != null && !pane.InSearch && pane.Items.Any(e => e.Name == "inside.txt"), "CORE-02 Esc restores archive browsing after indexed search");
     }
-    static async Task VerifyScopeSelector(PaneView pane, string output)
+    static Task VerifyScopeSelector(PaneView pane, string output)
     {
-        var combo = (ComboBox)pane.FindName("SearchScope");
-        pane.ListForVerification.SelectedItem = null;
-        combo.Focus();
-        var enterKey = new KeyEventArgs(Keyboard.PrimaryDevice, PresentationSource.FromVisual(combo), Environment.TickCount, Key.Enter) { RoutedEvent = Keyboard.PreviewKeyDownEvent };
-        combo.RaiseEvent(enterKey);
-        Check(!enterKey.Handled, "CORE-03 scope keyboard does not invoke the window's file-open command");
-        var peer = System.Windows.Automation.Peers.UIElementAutomationPeer.CreatePeerForElement(combo);
-        var expand = (System.Windows.Automation.Provider.IExpandCollapseProvider)peer.GetPattern(System.Windows.Automation.Peers.PatternInterface.ExpandCollapse);
-        expand.Expand();
-        await combo.Dispatcher.InvokeAsync(() => { combo.UpdateLayout(); }, DispatcherPriority.ApplicationIdle);
-        var popup = (System.Windows.Controls.Primitives.Popup)combo.Template.FindName("PART_Popup", combo);
-        var child = (FrameworkElement)popup.Child;
-        Check(popup.IsOpen && child.IsVisible && child.ActualWidth >= combo.ActualWidth, "CORE-03 scoped search dropdown opens through UI Automation");
-        var dpi = VisualTreeHelper.GetDpi(child);
-        var image = new RenderTargetBitmap((int)Math.Ceiling(child.ActualWidth * dpi.DpiScaleX), (int)Math.Ceiling(child.ActualHeight * dpi.DpiScaleY), dpi.PixelsPerInchX, dpi.PixelsPerInchY, PixelFormats.Pbgra32);
-        image.Render(child);
-        var encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(image));
-        using (var stream = File.Create(Path.Combine(output, "scope-options.png"))) encoder.Save(stream);
-        // SelectionItem belongs to the selector's data-item peer, rather than
-        // the presentation container's element peer.
-        var itemPeer = peer.GetChildren().Single(item => item.GetName() == "Filesystem · Folder");
-        ((System.Windows.Automation.Provider.ISelectionItemProvider)itemPeer.GetPattern(System.Windows.Automation.Peers.PatternInterface.SelectionItem)).Select();
-        expand.Collapse();
-        await pane.SearchCompletion;
-        Check(combo.SelectedIndex == 2 && pane.Items.Count() == 620, "CORE-03 scope choice dispatches the actual filesystem search");
+        Check(pane.FindName("SearchScope")==null&&pane.FindName("AddressField") is Border,"CORE-03 retired scope selector is replaced by one address/search field");
+        return Task.CompletedTask;
     }
     static void StartQuery(PaneView pane, string text, int scope)
     {
-        ((ComboBox)pane.FindName("SearchScope")).SelectedIndex = scope;
+        pane.VerificationSearchScope=scope;
         ((TextBox)pane.FindName("FilterBox")).Text = text;
-        ((Button)pane.FindName("SearchSubmit")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        pane.Search(text); // backend contracts; the retired scope-selector UI is no longer used
     }
     static async Task Query(PaneView pane, string text, int scope) { StartQuery(pane, text, scope); await pane.SearchCompletion; }
     internal static async Task Navigate(PaneView pane, string path)

@@ -47,7 +47,7 @@ public partial class HelpWindow : Window
             ("Alt+Left / Alt+Right", "Back / Forward (also the mouse side buttons)"),
             ("Ctrl+L", "Type a path; matching folders are suggested, Tab completes, Down picks one. %USERPROFILE% and other variables work"),
             ("Chevron after a path segment", "The folders inside it, to jump sideways"),
-            ("Ctrl+F", "Filter this folder as you type; Enter searches every subfolder, * and ? work"),
+            ("Ctrl+F / Ctrl+L", "Use the address/search field. Enter resolves an existing path first; otherwise it searches Everything in this folder. Search from This PC for all indexed files."),
             ("Esc", "Leave search results"),
             ("Ctrl+D", "Pin the folder (or the selected folders) to Quick access; drag a pinned folder to reorder, right-click it to move or remove it"),
             ("Quick access lists", "Several lists with names you choose: the ··· on Quick access' header, or a right-click on the header, switches between them and adds, renames, reorders or deletes them. Ctrl+D pins to the list shown"),
@@ -97,8 +97,10 @@ public partial class HelpWindow : Window
         }),
         ("Search and preview", new[]
         {
-            ("Filter box", "At the right of the path: typing filters this folder; Enter searches every subfolder and shows where each result was found. Esc leaves the results"),
-            ("Search terms", "In the filter box, beside the words of the name: size:>10MB, size:<1KB, size:10MB-1GB · within:today, within:7d (d, w, m, y) · after:2026-10-01, before:2026-01-01 · re:\"^IMG_\\d+\" for a regular expression · content:\"some text\" to look inside files (on Enter, up to 64 MB). The funnel button beside the box writes them for you"),
+            ("Address or search", "One field in the path row. Enter tries a quoted, relative or environment-variable path first; folders open and files are revealed. If the path does not exist, the text is sent to Everything. Esc returns to browsing."),
+            ("Everything search", "Searches this folder and its descendants. Search from This PC for the full index. Uses your existing Everything 1.4.1 or later instance; no second indexer is started. Native Everything syntax and wildcards work; results load 200 at a time."),
+            ("Aa / Ab / ..\\ / .*", "Match case, match whole word, match path and regular expression. These switches affect this pane's search and follow a taskbar search when opened in a pane. Whole-word matching is unavailable while Regex is on."),
+            ("Search coverage", "Only files known to Everything can appear. Excluded, offline, network or non-NTFS locations may be absent. Pathweft reports engine availability and never silently falls back to a filesystem scan."),
             ("Space", "Built-in preview: pictures, video/audio (Enter pauses, ←/→ seek), PDF pages, text/code, Markdown, ZIP contents, fonts and folders. Up/Down move through the list; Space or Esc closes. The taskbar widget uses the same modules"),
             ("Alt+P", "Preview pane: the selected file beside the panes, following the active pane; drag its edge to size it"),
             ("Settings → Files → Preview modules", "Enable or disable each built-in viewer. Changes affect open previews immediately. Markdown takes priority over text; disabled/unsupported files show an honest state or a readable alternative"),
@@ -137,9 +139,9 @@ public partial class HelpWindow : Window
         }),
         ("Windows integration", new[]
         {
-            ("Settings → Use Pathweft as the default file manager", "Folders and drives you open anywhere in Windows open in Pathweft; switching it off gives them back to what had them before"),
-            ("Win+E", "Opens Pathweft, or brings it forward, while it is the default file manager. Settings can leave Win+E to File Explorer"),
-            ("Show in folder", "When another app asks Explorer to show a file (Open path in Everything, Show in folder in a browser), Pathweft opens its folder with the file selected"),
+            ("Default folder application", "Settings → Windows integration enables supported filesystem-folder and drive open/explore links. Switching off restores previous handlers still owned by Pathweft. Explicit Explorer launches, virtual Shell locations and Open/Save dialogs remain Windows surfaces; StartAllBack links are not yet supported."),
+            ("Win+E", "Enabled separately under Windows integration. A windowless helper opens Pathweft at sign-in and stops when the option is disabled; this leaves the default-folder option unchanged."),
+            ("Show in folder", "Pathweft Reveal and its /select command select the requested file. The separate Windows SHOpenFolderAndSelectItems API is unsupported: callers can receive E_ABORT and an opened folder without the requested selection. Keep folder integration off if these callers are essential."),
             ("Right-click a drive or a folder in the sidebar", "Windows' own menu for it: Properties, Eject, Format, BitLocker and what other apps add"),
             ("Ctrl+G in an Open or Save dialog", "Takes the dialog to the folder Pathweft is showing (while Pathweft is the default file manager)"),
             ("Settings → Close to the notification area", "Closing hides Pathweft next to the clock instead of quitting, so it opens again at once. Click the icon to bring it back; right-click it → Quit to really close"),
@@ -168,6 +170,9 @@ public partial class HelpWindow : Window
     {
         InitializeComponent();
         Owner = owner;
+#if DEBUG
+        HiddenTrialPresentation.Prepare(this);
+#endif
         SourceInitialized += (_, _) => MainWindow.ApplyAcrylic(this);
         Root.Background = MainWindow.Tint();
         PreviewKeyDown += (_, e) => { if (e.Key == Key.Escape) Close(); };

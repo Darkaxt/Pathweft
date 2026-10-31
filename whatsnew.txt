@@ -1,6 +1,14 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.1 | 2026-10-31 | Native frame and clearer settings
+- One address/search field replaces the separate search row: Enter tries the path first, then searches Everything in this folder. Search from This PC for all indexed files. Inline switches provide Match case, Match whole word, Match path and Regex.
+- Native dark outer surfaces match the sidebar's near-black background; file panes keep their neutral gray surface.
+- Native windows close through Windows directly, avoiding the empty brown surface exposed by the old client-only fade.
+- Native windows use the Windows accent for their active outer border when colored window borders are enabled. Inactive windows return to the normal frame; caption surfaces remain neutral.
+- Settings starts with Appearance. Search instructions and compatibility details live in Help, and startup/profile details are tucked under Diagnostics.
+- The context-menu reorganization is planned as S9 and is not part of this update.
+
 ## 1.1.0 | 2026-10-31 | Pathweft core integration
 Pathweft brings the file browser, indexed search, internal previews, native archives and shared transfer queue into one application.
 **Appearance and navigation**

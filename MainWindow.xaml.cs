@@ -187,6 +187,9 @@ public partial class MainWindow : Window
         int dark = Appearance.Light ? 0 : 1, backdrop = Appearance.Native ? 1 : Settings.Backdrop;
         DwmSetWindowAttribute(hwnd, 20, ref dark, sizeof(int));     // dark title bar
         DwmSetWindowAttribute(hwnd, 38, ref backdrop, sizeof(int)); // DWMWA_SYSTEMBACKDROP_TYPE: 1 none, 2 mica, 3 acrylic
+        w.Activated+=Appearance.FrameActivityChanged;
+        w.Deactivated+=Appearance.FrameActivityChanged;
+        Appearance.ApplyFrame(w,w.IsActive);
     }
 
     // Sync apps announce status changes through SHChangeNotify ("this item's icon changed"), which is
@@ -261,12 +264,14 @@ public partial class MainWindow : Window
         DwmSetWindowAttribute(h, 38, ref b, sizeof(int));
         int dark = Appearance.Light ? 0 : 1;
         DwmSetWindowAttribute(h, 20, ref dark, sizeof(int));
+        Appearance.ApplyFrame(w,w.IsActive);
     }
 
     public void ApplyAppearance()
     {
         Appearance.Apply();
         Root.Background = Tint();
+        SidebarPanel.Background=Appearance.Native?Brushes.Transparent:Hex("#40000000");
         SetBackdrop(this);
         Application.Current.Resources["ItemTips"] = Settings.ItemTips; // the rows' tooltips (App.xaml)
         if (quick != null) SetBackdrop(quick);
@@ -442,7 +447,7 @@ public partial class MainWindow : Window
     void Settings_Click(object s, RoutedEventArgs e) => OpenSettings();
 
     HelpWindow helpWindow;
-    void OpenHelp()
+    internal void OpenHelp()
     {
         if (helpWindow != null) { Bring(helpWindow); return; }
         helpWindow = new HelpWindow(this);
@@ -1557,6 +1562,8 @@ public partial class MainWindow : Window
         var alt = Keyboard.Modifiers.HasFlag(ModifierKeys.Alt);
         var key = e.Key == Key.System ? e.SystemKey : e.Key;
 
+        if(ctrl&&key is Key.L or Key.F){if(key==Key.L)active.EditPath();else active.FocusFilter();e.Handled=true;return;}
+
         if (e.OriginalSource is TextBox)
         {
             // tab shortcuts work from the filter/path box too
@@ -1564,9 +1571,7 @@ public partial class MainWindow : Window
             // Filter box only: arrows/Enter/Esc hand control back to the list. The path and rename
             // boxes handle their own Enter/Esc.
             if (e.OriginalSource is not TextBox { Name: "FilterBox" } filter) return;
-            if (key == Key.Enter && filter.Text.Trim() is { Length: > 0 } query) { active.Search(query); active.FocusList(); e.Handled = true; }
-            else if (key is Key.Down or Key.Enter) { active.FocusList(); e.Handled = true; }
-            else if (key == Key.Escape) { active.ClearFilter(); active.FocusList(); e.Handled = true; }
+            // The unified address field owns Enter, path suggestions and Escape.
             return;
         }
 

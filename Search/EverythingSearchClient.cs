@@ -103,8 +103,8 @@ internal sealed class EverythingSearchClient
             {
                 string cls = "EVERYTHING_TASKBAR_NOTIFICATION" + (request.Instance.Length == 0 ? "" : "_(" + request.Instance + ")");
                 var engine = Native.FindWindowW(cls, null);
-                if (engine == IntPtr.Zero) throw new InvalidOperationException("Everything is unavailable. Start the selected instance, then search again, or choose Filesystem · Folder.");
-                if (Native.IsHungAppWindow(engine)) throw new InvalidOperationException("Everything is not responding. Its index is unchanged; search again when it responds, or choose Filesystem · Folder.");
+                if (engine == IntPtr.Zero) throw new InvalidOperationException("Everything is unavailable. Start Everything, then search again.");
+                if (Native.IsHungAppWindow(engine)) throw new InvalidOperationException("Everything is not responding. Search again when it is ready.");
                 Native.GetWindowThreadProcessId(engine, out uint pid);
                 var process = request.Process = Process.GetProcessById((int)pid);
                 string version = FileVersionInfo.GetVersionInfo(process.MainModule.FileName).FileVersion;

@@ -1,6 +1,6 @@
 # Pathweft specification
 
-Version 0.10 - 2026-10-31. Owner: Darkaxt.
+Version 0.11 - 2026-10-31. Owner: Darkaxt.
 
 This is the authoritative specification. The derived plan must preserve every
 requirement and acceptance criterion. Material scope changes require explicit
@@ -150,9 +150,33 @@ criteria apply within the implementing stage and again at the packaged boundary.
 | --- | --- |
 | CORE-01 | Give Pathweft independent executable/product, settings, IPC/single-instance, agent/startup, shell, installer and updater identities. Verify side-by-side isolation from File Labs: no forwarding into, migrating, overwriting or uninstalling it. Establish isolation before ordinary-user-state runtime trials. |
 | CORE-02 | Preserve usable folder navigation, tabs, one/two panes, selection, keyboard actions, clipboard and drag/drop. Verify representative real folders and cross-pane operations, including a large listing. Inherited source is not proof of runtime correctness. |
-| CORE-03 | One settings interface owns integrations and module controls; normal views remain uncluttered. Before accepting UI changes, establish concrete layout/display-scale expectations and inspect current rendered screenshots at representative sizes. |
+| CORE-03 | One settings interface owns integrations and module controls; normal views remain uncluttered. Settings starts with actionable preferences, not a search implementation/qualification report. Keep search instructions, version/paging/coverage details and verification terminology in Help or developer documentation; preserve concise actionable availability/unsupported-operation messages. Before accepting UI changes, establish concrete layout/display-scale expectations and inspect current rendered screenshots at representative sizes. |
 | CORE-04 | S8 provides an alternate Native appearance with neutral surfaces, restrained selection/focus and Windows accent support. Appearance settings select the existing or Native theme and system/custom accent; persist the choice and apply it consistently to panes, settings, taskbar search and product dialogs. Follow Windows light/dark and high-contrast preferences where supported; retain readable text and keyboard focus. Inspect actual rendered single/split layouts and settings at 100%/150% scale and representative window widths, including live theme/accent changes and restart persistence. Keep the existing theme available. |
 | CORE-05 | Before S8 compilation, review upstream source/dependency drift against the imported revisions, record concrete adoption/non-adoption decisions and integrate applicable fixes. Preserve fork identity, implemented Everything/native archive/preview/transfer behavior, source provenance and notices. Adopted behavior receives focused regression checks and the final integrated release verification; do not blindly replace fork implementations or upgrade dependencies without a relevant benefit. |
+
+On 2026-10-31, the user also requested EverythingToolbar's four inline search
+toggles: Match case, Match whole word, Match path and Regex. They belong at the
+right end of the single address/search field, with accessible names, tooltips,
+visible selected states and actual Everything behavior. Match whole word is
+disabled while Regex is enabled, matching the pinned donor. Options stay local
+to each pane/search session and cross widget-to-pane handoff with its query;
+they must not leak across the shared native client or bypass folder scope.
+
+On 2026-10-31, after v1.1.0 delivery, the user reported the Original theme's
+active header/glow, excessive Settings prose, and the Native window's missing
+green outer activation border. This reopens S8 for the bounded CORE-03/04
+correction. Native window frames must use the actual Windows accent for the
+active outer border when Windows enables colored title bars/borders, revert on
+deactivation, refresh on system changes, and retain neutral caption surfaces.
+Keep the existing Original theme selectable. Verify native DWM call results and frames
+without taking host focus and inspect Settings at 100%/150%; no Sandbox/S6 work.
+The user's later color clarification uses the sidebar's near-black background
+for the Native dark outer window area behind the panes and summary cards; retain
+the gray file-pane surfaces, Light mode and Windows high-contrast behavior.
+The user subsequently reported a brown intermediate square on close and requested
+black or immediate disappearance. After the header correction, qualify the
+closing path and remove any Native client-only fade that exposes a colored DWM
+surface. Preserve ordinary Windows closing behavior, settings and active work.
 
 ### File visibility and read-only cues (S4U)
 
@@ -181,10 +205,10 @@ made from them. Dot names remain detectable even on an unavailable indexed path.
 
 | ID | Requirement and acceptance |
 | --- | --- |
-| SEARCH-01 | Use the actual Everything index inside panes, reusing selected EverythingToolbar client source. Offer full indexed scope and explicit current-subtree scope, distinct from ordinary list filtering. Compare real engine results for Unicode, spaces, wildcards, regex and scope boundaries. |
+| SEARCH-01 | Use the actual Everything index inside panes, reusing selected EverythingToolbar client source. The user's 2026-10-31 clarification replaces the mode picker and separate search row with one browser-style address/search field in the existing path row. On Enter, first resolve the text as an existing path (including quoted, environment-variable and relative paths); navigate to a folder or reveal a file. If it does not resolve, search Everything within the current folder. This PC supplies global scope. Remove the second row, scope selector, funnel and search icons. Ctrl+L and Ctrl+F focus this same field. Preserve navigation/history, archive browsing, Unicode/spaces, wildcards/regex, paging and cancellation; compare against the real index. |
 | SEARCH-02 | Page/lazily retrieve results and indexed metadata/sorts; do not eagerly decode every icon or enumerate all hits. Superseded queries cannot replace newer results. Verify rapid query changes, paging/sorting, empty results and changing/deleted paths. |
 | SEARCH-03 | Share one deliberately selected engine instance/index between panes and widget, reusing an existing compatible instance where appropriate. Pin the binary/API version and own readiness/reconnect/instance lifecycle explicitly; never silently create a duplicate index. Keep the GUI unprivileged and necessary service privileges at the indexing boundary. |
-| SEARCH-04 | Display true coverage and engine availability. Offer an explicit filesystem-search mode for unindexed locations with visible scope/progress. Do not silently fall back to a full-drive crawl or label partial results complete. Verify missing engine and unindexed/offline/network/non-NTFS cases. |
+| SEARCH-04 | Display concise true coverage and actionable engine availability. Under the user's 2026-10-31 Everything-only clarification, remove the filesystem-scan mode from the product UI; a failed path lookup falls back to Everything, never to a filesystem crawl. Unindexed/offline/network/non-NTFS coverage depends on the actual existing Everything index and must not be presented as complete. Path resolution must remain responsive and a superseded resolution/query cannot navigate or replace newer state. |
 
 Integrating Everything does not itself authorize disabling Windows Search,
 changing Outlook indexing or modifying the existing engine configuration.
@@ -342,6 +366,33 @@ separate questions. The plan cannot turn either into completed integration.
 Primary sources: [Windows indexing scope](https://support.microsoft.com/en-us/windows/experience/performance-optimization/search-indexing-in-windows),
 [Outlook indexing/service checks](https://support.microsoft.com/en-gb/outlook/troubleshooting-outlook-search-issues?nochrome=true),
 [local versus service search](https://support.microsoft.com/en-us/support/known-issues/outlook-search-might-not-display-recent-emails-on-windows-11).
+
+### Context menu reorganization (S9)
+
+The user's 2026-10-31 request adds S9 to the plan, without starting it during the
+S8 appearance correction. It covers the Pathweft context menu; it does not
+authorize redesigning Windows' native third-party menu or starting S6/S7.
+
+| ID | Requirement and acceptance |
+| --- | --- |
+| MENU-01 | Inventory current commands and their eligibility for files, folders, mixed/multiple selections, empty space and archive entries. Reorganize related commands into clear groups/submenus, prioritize common file operations and remove duplicate presentation while preserving supported actions, keyboard access and existing shortcuts. Define the final grouping when S9 becomes ACTIVE using the existing Native/Original design contract. |
+| MENU-02 | Preserve the selectable native Windows context-menu path, Shell extension behavior and capability-aware unsupported/read-only states. Verify real open/copy/cut/paste/rename/delete and archive operations through the reorganized menu, keyboard navigation, narrow/small-display placement and both themes at 100%/150%. Publish and verify the completed S9 change through the existing release channel. |
+
+### Native Jump Lists (S11)
+
+The user's 2026-10-31 screenshots add S11 as planned work: Pathweft's expandable
+application entry should expose native pinned and recent/frequent folder
+destinations, comparable to Explorer, plus useful tasks as demonstrated by
+Directory Opus. This is native Shell Jump List integration, separate from S6's
+StartAllBack search-provider work; no host Start menu interaction is authorized
+as part of recording this plan.
+
+| ID | Requirement and acceptance |
+| --- | --- |
+| JUMP-01 | Qualify supported native Shell/WPF Jump List APIs and stable Pathweft application identity. Show pinned destinations and recent/frequent folder destinations in the expandable app entry and taskbar Jump List. Preserve Windows-controlled pin/unpin/removal and recent-items privacy preferences; do not overwrite Explorer/Opus lists. Respect removed/rejected items and retain pinned state across updates. A Tasks-only menu does not satisfy folder-destination acceptance. |
+| JUMP-02 | Folder destinations launch Pathweft directly with the correct Unicode/quoted path in cold and running-instance states, independently of the optional default-folder setting. Qualify virtual/offline destinations explicitly and preserve existing open/reveal semantics. Add applicable tasks through existing application actions, not a second manager. Verify actual native Jump List contents and user pin/unpin/open/remove behavior, restart/update/uninstall ownership and final release delivery. StartAllBack is a caller-compatibility check for this native feature, not permission to resume S6 or restart Sandbox. |
+
+Native reference: [Microsoft WPF JumpList](https://learn.microsoft.com/en-us/dotnet/api/system.windows.shell.jumplist).
 
 ### Lifecycle, shell integration and final delivery
 

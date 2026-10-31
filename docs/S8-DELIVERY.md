@@ -1,7 +1,25 @@
 # S8 core delivery contract
 
-Authority: specification v0.10 and the user's explicit S8-first/delivery instructions.
-S8 is COMPLETE as of 2026-10-31; S6 is BLOCKED by that instruction and S7 is NOT STARTED.
+Authority: specification v0.11 and the user's explicit S8-first/delivery instructions.
+S8 is ACTIVE for the user's post-v1.1.0 Native frame and Settings-copy corrections;
+S6 is BLOCKED by that instruction and S7 is NOT STARTED.
+Current remaining acceptance: final v1.1.1 release and delivery verification.
+The real Native close reproduction failed before the correction; it now closes
+without cancelling the native close to animate an empty client. The real hidden address-path
+resolution, folder/This-PC Everything search, four match switches, widget-to-pane
+handoff, near-black outer background and concise Settings/Help checks pass.
+Native border/caption calls return S_OK for active/inactive inputs and the actual
+HWND retains a two-pixel DWM outer frame. Color attribute getters return
+E_INVALIDARG and offscreen PrintWindow supplies no composed pixels; these are
+native API/geometry checks, not a foreground desktop-pixel claim. Current settings
+renders at 100%/150% are inspected. S9 and S11 are NOT STARTED; neither gates this
+patch. Prior v1.1.0 delivery evidence below remains historical.
+Final focused UI run passed original PID and result binding, including a
+superseded asynchronous path resolution, real query modifier effects, actual
+widget handoff and zero foreground events. Private receipts identify the
+exact fixture/runtime. Frame color evidence remains limited as described above.
+The changes reuse the pane/query owner, native frame lifecycle and existing
+Help/Settings; no new service/provider, consolidation stage or required deferral.
 This release covers the file explorer. StartAllBack and broader Windows Search
 replacement remain unfinished later work and will be identified as such.
 

@@ -19,6 +19,12 @@ No donor updater, setup assistant, separate tray product, forced foreground hook
 timer-driven attach retries, settling deadline or animation polling is imported.
 Pathweft's existing PaneView, settings owner, SDK dispatcher and Ferry queue are reused.
 
+S8 four inline search toggles reference Controls/SearchBox.xaml at the same pin:
+Match case, Match whole word, Match path and Regex; whole-word is disabled while
+Regex is active. Adapted into PaneView's existing unified address/search field.
+Native Everything query modifiers are applied to the user expression so these
+options cannot turn the separately composed folder boundary into a regex.
+
 MIT License
 Copyright (c) 2023 Stephan Rumswinkel
 

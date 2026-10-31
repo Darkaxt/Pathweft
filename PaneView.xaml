@@ -3,31 +3,23 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:FileExplorer">
   <UserControl.Resources>
-    <Style x:Key="SearchScopeStyle" TargetType="ComboBox">
-      <Setter Property="Foreground" Value="{DynamicResource Palette.E8EEF6}"/>
-      <Setter Property="Background" Value="{DynamicResource Palette.252830}"/>
+    <Style x:Key="SearchMatchToggle" TargetType="ToggleButton">
+      <Setter Property="Width" Value="27"/>
+      <Setter Property="Height" Value="26"/>
+      <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
+      <Setter Property="FontSize" Value="12"/>
       <Setter Property="Template">
-        <Setter.Value>
-          <ControlTemplate TargetType="ComboBox">
-            <Grid>
-              <ToggleButton Focusable="False" IsChecked="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}">
-                <ToggleButton.Template>
-                  <ControlTemplate TargetType="ToggleButton">
-                    <Border Background="{DynamicResource Palette.252830}" BorderBrush="{DynamicResource Palette.36FFFFFF}" BorderThickness="1" CornerRadius="5">
-                      <TextBlock Text="⌄" Foreground="{DynamicResource Palette.B3FFFFFF}" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                    </Border>
-                  </ControlTemplate>
-                </ToggleButton.Template>
-              </ToggleButton>
-              <ContentPresenter Content="{TemplateBinding SelectionBoxItem}" IsHitTestVisible="False" Margin="7,3,20,3" VerticalAlignment="Center"/>
-              <Popup x:Name="PART_Popup" IsOpen="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}" StaysOpen="False" Placement="Bottom" AllowsTransparency="True" Focusable="False">
-                <Border Background="{DynamicResource Palette.252830}" BorderBrush="{DynamicResource Palette.50FFFFFF}" BorderThickness="1" CornerRadius="5" MinWidth="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}" Padding="3">
-                  <StackPanel IsItemsHost="True"/>
-                </Border>
-              </Popup>
-            </Grid>
-          </ControlTemplate>
-        </Setter.Value>
+        <Setter.Value><ControlTemplate TargetType="ToggleButton">
+          <Border x:Name="MatchBorder" Background="Transparent" BorderBrush="Transparent" BorderThickness="1" CornerRadius="4">
+            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+          </Border>
+          <ControlTemplate.Triggers>
+            <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="MatchBorder" Property="Background" Value="{DynamicResource Palette.14FFFFFF}"/></Trigger>
+            <Trigger Property="IsChecked" Value="True"><Setter TargetName="MatchBorder" Property="Background" Value="{DynamicResource AccentSoft}"/><Setter Property="Foreground" Value="{DynamicResource Accent}"/></Trigger>
+            <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="MatchBorder" Property="BorderBrush" Value="{DynamicResource Accent}"/></Trigger>
+            <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.4"/></Trigger>
+          </ControlTemplate.Triggers>
+        </ControlTemplate></Setter.Value>
       </Setter>
     </Style>
     <!-- the chevrons between path segments: a Ghost button with less room around the glyph -->
@@ -192,17 +184,27 @@
         <Button DockPanel.Dock="Left" Style="{StaticResource Ghost}" Content="&#xE72B;" FontFamily="Segoe Fluent Icons" FontSize="10" ToolTip="Back (Alt+Left) · middle-click: in a new tab" Click="Back_Click" Tag="back" PreviewMouseDown="Nav_MiddleClick"/>
         <Button DockPanel.Dock="Left" Style="{StaticResource Ghost}" Content="&#xE72A;" FontFamily="Segoe Fluent Icons" FontSize="10" ToolTip="Forward (Alt+Right) · middle-click: in a new tab" Click="Fwd_Click" Tag="fwd" PreviewMouseDown="Nav_MiddleClick"/>
         <Button DockPanel.Dock="Left" Style="{StaticResource Ghost}" Content="&#xE74A;" FontFamily="Segoe Fluent Icons" FontSize="10" ToolTip="Up (Backspace) · middle-click: in a new tab" Click="Up_Click" Tag="up" PreviewMouseDown="Nav_MiddleClick"/>
+        <Border x:Name="AddressField" Background="{DynamicResource Palette.12FFFFFF}" CornerRadius="5" Padding="6,2" MinHeight="30"
+                ToolTip="Enter a path or search with Everything. This PC searches all indexed files." MouseLeftButtonDown="Crumbs_Click">
+        <DockPanel>
+          <StackPanel x:Name="MatchToggles" DockPanel.Dock="Right" Orientation="Horizontal" Margin="5,0,0,0">
+            <ToggleButton x:Name="MatchCase" Content="Aa" Style="{StaticResource SearchMatchToggle}" ToolTip="Match case" AutomationProperties.Name="Match case" Checked="MatchOptions_Changed" Unchecked="MatchOptions_Changed"/>
+            <ToggleButton x:Name="MatchWord" Style="{StaticResource SearchMatchToggle}" ToolTip="Match whole word" AutomationProperties.Name="Match whole word" Checked="MatchOptions_Changed" Unchecked="MatchOptions_Changed"><TextBlock Text="Ab" TextDecorations="Underline"/></ToggleButton>
+            <ToggleButton x:Name="MatchPath" Content="..\" Style="{StaticResource SearchMatchToggle}" ToolTip="Match path" AutomationProperties.Name="Match path" Checked="MatchOptions_Changed" Unchecked="MatchOptions_Changed"/>
+            <ToggleButton x:Name="MatchRegex" Content=".*" FontWeight="Bold" Style="{StaticResource SearchMatchToggle}" ToolTip="Regular expression" AutomationProperties.Name="Regular expression" Checked="MatchOptions_Changed" Unchecked="MatchOptions_Changed"/>
+          </StackPanel>
         <Grid>
-          <Border Background="Transparent" MouseLeftButtonDown="Crumbs_Click" PreviewMouseDown="Crumbs_MiddleClick">
+          <Border Background="Transparent" ClipToBounds="True" PreviewMouseDown="Crumbs_MiddleClick">
             <StackPanel x:Name="Crumbs" Orientation="Horizontal" VerticalAlignment="Center"/>
           </Border>
-          <TextBox x:Name="PathBox" Style="{StaticResource Bare}" Visibility="Collapsed" Margin="4,3"
-                   PreviewKeyDown="PathBox_PreviewKeyDown" TextChanged="PathBox_Changed" LostKeyboardFocus="PathBox_Lost"/>
+          <TextBlock x:Name="FilterHint" Text="Enter a path or search this folder" Foreground="{DynamicResource Palette.99FFFFFF}" Margin="4,0" VerticalAlignment="Center" IsHitTestVisible="False" Visibility="Collapsed"/>
+          <TextBox x:Name="FilterBox" Style="{StaticResource Bare}" Visibility="Collapsed" Margin="4,3"
+                   AutomationProperties.Name="Address or Everything search" PreviewKeyDown="PathBox_PreviewKeyDown" TextChanged="Filter_Changed" LostKeyboardFocus="PathBox_Lost"/>
           <!-- folder suggestions while typing a path; it opens the way Windows opens menus (fade, slide or none) -->
-          <Popup x:Name="Suggest" PlacementTarget="{Binding ElementName=PathBox}" Placement="Bottom" AllowsTransparency="True" StaysOpen="True"
+          <Popup x:Name="Suggest" PlacementTarget="{Binding ElementName=FilterBox}" Placement="Bottom" AllowsTransparency="True" StaysOpen="True"
                  PopupAnimation="{DynamicResource {x:Static SystemParameters.MenuPopupAnimationKey}}">
             <Border Background="{DynamicResource Palette.F2161B24}" BorderBrush="{DynamicResource Palette.2EFFFFFF}" BorderThickness="1" CornerRadius="6" Padding="3"
-                    MinWidth="{Binding ActualWidth, ElementName=PathBox}">
+                    MinWidth="{Binding ActualWidth, ElementName=FilterBox}">
               <ListBox x:Name="SuggestList" Focusable="False" Background="Transparent" BorderThickness="0" Foreground="{DynamicResource Palette.E8EEF6}"
                        MaxHeight="320" PreviewMouseLeftButtonDown="Suggest_MouseDown">
                 <ListBox.ItemContainerStyle>
@@ -225,29 +227,10 @@
             </Border>
           </Popup>
         </Grid>
-      </DockPanel>
-
-      <DockPanel x:Name="SearchBar" DockPanel.Dock="Top" Margin="10,6,10,4" LastChildFill="True">
-        <ComboBox x:Name="SearchScope" Style="{StaticResource SearchScopeStyle}" DockPanel.Dock="Left" Width="158" Margin="0,0,6,0" SelectedIndex="0"
-                  SelectionChanged="Scope_Changed" AutomationProperties.Name="Search scope" ToolTip="Choose indexed search or an explicit live filesystem search">
-          <ComboBoxItem Content="Everything · Folder"/>
-          <ComboBoxItem Content="Everything · All"/>
-          <ComboBoxItem Content="Filesystem · Folder"/>
-        </ComboBox>
-        <Button x:Name="SearchSubmit" DockPanel.Dock="Right" Style="{StaticResource Ghost}" Content="&#xE721;" FontFamily="Segoe Fluent Icons"
-                Click="Search_Click" ToolTip="Search (Enter)" AutomationProperties.Name="Search"/>
-        <Button x:Name="SearchOptions" DockPanel.Dock="Right" Style="{StaticResource Ghost}" Content="&#xE71C;" FontFamily="Segoe Fluent Icons" IsEnabled="False"
-                ToolTip="Filesystem search options (size, date, regex or contents)" Click="SearchOptions_Click" AutomationProperties.Name="Filesystem search options"/>
-        <Button x:Name="FilterClear" DockPanel.Dock="Right" Style="{StaticResource Ghost}" Content="&#xE711;" FontFamily="Segoe Fluent Icons" FontSize="10" Visibility="Collapsed"
-                ToolTip="Clear (Esc)" AutomationProperties.Name="Clear the filter or search" Click="FilterClear_Click"/>
-        <Border Background="{DynamicResource Palette.12FFFFFF}" CornerRadius="5" MinWidth="50" ToolTip="Typing filters the current listing. Enter runs the selected search. Indexed search accepts native Everything syntax including wildcards and regex:.">
-          <Grid>
-            <TextBlock x:Name="FilterHint" Text="Filter · Enter searches" Foreground="{DynamicResource Palette.99FFFFFF}" Margin="8,0" VerticalAlignment="Center" IsHitTestVisible="False"/>
-            <TextBox x:Name="FilterBox" Style="{StaticResource Bare}" Margin="6,3" TextChanged="Filter_Changed" AutomationProperties.Name="Filter or search query"/>
-          </Grid>
+        </DockPanel>
         </Border>
       </DockPanel>
-      <TextBlock x:Name="SearchCoverage" DockPanel.Dock="Top" Visibility="Collapsed" Margin="14,0,14,5" Foreground="{DynamicResource Palette.B3FFFFFF}" FontSize="11" TextWrapping="Wrap"/>
+      <TextBlock x:Name="SearchCoverage" DockPanel.Dock="Bottom" Visibility="Collapsed" Margin="14,0,14,5" Foreground="{DynamicResource Palette.B3FFFFFF}" FontSize="11" TextWrapping="Wrap"/>
       <Button x:Name="MoreResults" DockPanel.Dock="Bottom" Visibility="Collapsed" Margin="10,3" Content="Load next 200 results" Style="{StaticResource Ghost}" Click="MoreResults_Click"/>
 
       <!-- Drive usage. Also a place for the current folder itself, between the address bar and the files:

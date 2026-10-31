@@ -134,7 +134,7 @@ public partial class MainWindow
             bool before = Settings.ShowHidden;
             Check(HandleHiddenShortcut(Key.H, ModifierKeys.Control, true, filter) && Settings.ShowHidden == before, "Held Ctrl+H does not toggle repeatedly");
             Check(!HandleHiddenShortcut(Key.H, ModifierKeys.Control | ModifierKeys.Shift, false, filter) && !HandleHiddenShortcut(Key.H, ModifierKeys.Control, false, new TextBox()), "Additional modifiers and inline text editing are preserved");
-            await Hidden((TextBox)Left.FindName("PathBox"));
+            await Hidden((TextBox)Left.FindName("FilterBox"));
             await S1Verification.Navigate(Left, other);
             Check(!Left.Items.Any(e => e.Name.StartsWith('.')), "Cached revisit cannot restore hidden dot entries");
             await S1Verification.Navigate(Left, folder); filter.Text = "";
@@ -157,7 +157,7 @@ public partial class MainWindow
             Settings.TaskbarSearch = true; taskbarSearch.ShowSearch(); Settings.TaskbarSearch = false;
             var widget = taskbarSearch.Widget;
             await S1Verification.Navigate(widget.Pane, folder);
-            ((ComboBox)widget.Pane.FindName("SearchScope")).SelectedIndex = 0;
+            widget.Pane.VerificationSearchScope=0;
             widget.Pane.Search("pwfui_hit_"); await widget.Pane.SearchCompletion;
             Check(!widget.Pane.Items.Any(), "Search widget shares hidden filtering before toggle");
             await Hidden(filter);
@@ -171,7 +171,7 @@ public partial class MainWindow
             Check(Left.Items.Count() == 2 && Left.Items.All(e => e.Name.StartsWith("ordinary.")), "Superseded real indexed query cannot replace the latest visibility result");
             await S1Verification.Navigate(Left, folder);
             await Hidden(Left.ListForVerification);
-            ((ComboBox)Left.FindName("SearchScope")).SelectedIndex = 2;
+            Left.VerificationSearchScope=2;
             Left.Search("pwfui_hit_"); await Left.SearchCompletion;
             Check(Left.Items.Count() == 5, "Recursive filesystem search prunes dot and Windows-hidden directory descendants");
             string duplicates = Path.Combine(root, "duplicate-fixture");

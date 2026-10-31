@@ -114,7 +114,8 @@ sealed class PackageProbe
             Settings.Load();
             Check(Path.GetFullPath(Settings.Dir).StartsWith(root+"\\",StringComparison.OrdinalIgnoreCase),"The delivered assembly uses only the explicit verification profile");
             Call(Type("Appearance"),null,"Initialize");
-            Check(Product.GetName().Version.ToString(3)=="1.1.0"&&Product.GetType("FileExplorer.S8ShellTrial")==null&&Product.GetType("FileExplorer.HiddenTrialPresentation")==null,"Delivered version and absence of Debug trial hooks");
+            using var deliveredManifest=JsonDocument.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory,"release-manifest.json")));
+            Check(Product.GetName().Version.ToString(3)==deliveredManifest.RootElement.GetProperty("version").GetString()&&Product.GetType("FileExplorer.S8ShellTrial")==null&&Product.GetType("FileExplorer.HiddenTrialPresentation")==null&&Product.GetType("FileExplorer.MainWindow").GetMethod("VerifyAppearanceCorrection",Flags)==null,"Delivered version and absence of Debug trial hooks");
 
             bool searchPassed=false;
             try
@@ -159,6 +160,11 @@ sealed class PackageProbe
             }
 
             owner=new MainWindow(); // construct real controls/resources, never show
+            var left=(PaneView)owner.FindName("Left");
+            Check(left.FindName("AddressField") is FrameworkElement&&left.FindName("SearchScope")==null&&left.FindName("SearchBar")==null&&left.FindName("SearchSubmit")==null&&new[]{"MatchCase","MatchWord","MatchPath","MatchRegex"}.All(name=>left.FindName(name)!=null),"Delivered controls contain the unified field and four match switches, without the retired search row");
+            var settings=new SettingsWindow(owner);
+            Check(settings.FindName("AppearanceCard") is FrameworkElement,"Delivered Settings starts with Appearance and keeps documentation in Help");
+            settings.Close();
             var target=new ContentControl();
             var previewType=Type("Preview.PreviewSession");
             session=Activator.CreateInstance(previewType,Flags,null,new object[]{owner,target,(Action<string>)(_=>{}),false},null);

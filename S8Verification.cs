@@ -53,15 +53,14 @@ public partial class MainWindow
             await Left.IconsCompletionForVerification;
             var filter=(TextBox)Left.FindName("FilterBox");
             filter.Text="notes";await Settled();
-            Check(((TextBlock)Left.FindName("Footer")).Text.Contains("match"),"Upstream filter footer describes matching entries");
+            Check(!Left.InSearch,"The unified address field keeps typing as a draft until Enter");
             await S1Verification.Navigate(Left,folder);
             Check(filter.Text=="notes","Refreshing the same folder preserves its filter");
             await S1Verification.Navigate(Left,other);
             Check(filter.Text=="","Changing folders clears the old filter");
             filter.Text="other";
-            var clear=(Button)Left.FindName("FilterClear");
-            ((IInvokeProvider)new ButtonAutomationPeer(clear).GetPattern(PatternInterface.Invoke)).Invoke();await Settled();
-            Check(filter.Text==""&&clear.Visibility==Visibility.Collapsed,"Clear action uses the real button path");
+            Left.ClearFilter();await Settled();
+            Check(filter.Text==""&&Left.FindName("SearchBar")==null,"Clearing the address keeps the second search row removed");
             await S1Verification.Navigate(Left,folder);
             Check(PaneView.SearchQuery.Parse("size:>=1KB size:<=2KB",DateTime.Now).MatchesMeta("sample.bin",false,1000,DateTime.Now),"Inclusive filesystem size comparisons accept the boundary");
             Check(!PaneView.SearchQuery.Parse("size:>=1KB",DateTime.Now).MatchesMeta("sample.bin",false,999,DateTime.Now),"Inclusive lower size bound rejects a smaller file");
@@ -78,7 +77,7 @@ public partial class MainWindow
             var rendered=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
             settings.ContentRendered+=(_,_)=>rendered.TrySetResult();settings.Show();await rendered.Task;
             Invoke("ThemeNative");await Settled();Invoke("ThemeDark");await Settled();
-            Check(Settings.NativeTheme&&!Appearance.Light&&((SolidColorBrush)Root.Background).Color==Color.FromRgb(28,28,28),"Native Dark is selected through settings and uses an opaque neutral background");
+            Check(Settings.NativeTheme&&!Appearance.Light&&((SolidColorBrush)Root.Background).Color==Color.FromRgb(20,20,20),"Native Dark is selected through settings and uses an opaque neutral background");
             Check(((Border)Left.FindName("Glow")).Opacity==0,"Native theme removes the active-pane glow");
             Check(MainWindow.Contrast(AccentColor,Appearance.Background)>=4.5,"Native accent remains readable against the window background");
             Check(Left.Items.Single(e=>e.Name=="locked.txt").IsReadOnly,"Native theme retains actual read-only file state");

@@ -34,8 +34,8 @@ public partial class SettingsWindow : Window
             };
         BuildSwatches();
         BuildWheel();
-        AboutText.Text = $"Pathweft {typeof(App).Assembly.GetName().Version?.ToString(3)} · Darkaxt · based on File Labs\n" +
-                         "Transfers run on the Ferry engine. Settings live in " + Settings.Dir;
+        AboutText.Text = $"Pathweft {typeof(App).Assembly.GetName().Version?.ToString(3)} · Darkaxt · based on File Labs";
+        ProfileText.Text="Settings folder: "+Settings.Dir;
         BuildWorksWith();
         Refresh();
         if (main.taskbarSearch != null) main.taskbarSearch.StatusChanged += UpdateTaskbarStatus;
@@ -62,7 +62,7 @@ public partial class SettingsWindow : Window
             : System.IO.File.Exists(WindowsIntegration.RecoveryPath) ? "Folder handlers changed outside Pathweft. Restore the prior handlers or enable integration again."
             : "Your current folder handlers are unchanged.";
         WinEBox.IsChecked = Settings.TakeWinE;
-        try{WinEStatus.Text=Agent.IsReady?"Win+E helper is running and its keyboard hook is ready.":Settings.TakeWinE?"Win+E is selected, but its helper is not running. Switch it off and on to start it.":"Win+E integration is off.";}
+        try{WinEStatus.Text=Agent.IsReady?"Win+E is enabled.":Settings.TakeWinE?"Win+E is unavailable. Switch it off and on to start it.":"Win+E integration is off.";}
         catch(Exception ex)when(ex is System.IO.IOException or InvalidOperationException or System.ComponentModel.Win32Exception){WinEStatus.Text=ex.Message;}
         TrayBox.IsChecked = Settings.CloseToTray;
         StartupBox.IsChecked = Settings.StartWithWindows; // off unless the user turns it on: nothing else writes it
@@ -451,6 +451,7 @@ public partial class SettingsWindow : Window
     void Theme_Click(object s, RoutedEventArgs e) { Settings.NativeTheme = s == ThemeNative; Changed(); }
     void NativeMode_Click(object s, RoutedEventArgs e) { Settings.NativeMode = s == ThemeLight ? "light" : s == ThemeDark ? "dark" : "system"; Changed(); }
     void WindowsAccent_Click(object s, RoutedEventArgs e) { Settings.WindowsAccent = WindowsAccentBox.IsChecked == true; Changed(); }
+    void Help_Click(object s,RoutedEventArgs e)=>main.OpenHelp();
 
     void BgChoose_Click(object s, RoutedEventArgs e)
     {

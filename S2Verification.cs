@@ -26,10 +26,10 @@ public partial class MainWindow
         void Click(Button button) => button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         async Task Query(PaneView pane, string text, int scope)
         {
-            ((ComboBox)pane.FindName("SearchScope")).SelectedIndex = scope;
+            pane.VerificationSearchScope=scope;
             var query = (TextBox)pane.FindName("FilterBox");
             query.Text = text;
-            ((Button)pane.FindName("SearchSubmit")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            pane.Search(text); // backend regression; the current omnibox UI is qualified separately
             await pane.SearchCompletion;
         }
         async Task<Job> Transfer(Button button, Func<Job> selectedJob)

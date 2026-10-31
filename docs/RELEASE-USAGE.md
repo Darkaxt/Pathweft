@@ -1,4 +1,4 @@
-# Pathweft 1.1.0
+# Pathweft 1.1.1
 
 Windows 11 x64 is the qualified host. The .NET 10 desktop runtime and native
 archive/preview libraries are included. WebView2 Evergreen is required for the
@@ -27,7 +27,10 @@ a second index, change its service or alter its settings. The unchanged pinned
 Everything 1.4.1.1032 portable engine is included in Everything/. If there is no
 existing instance, configure/start that engine explicitly using its own UI and
 license; indexing privileges and indexed folders remain an explicit choice.
-The filesystem search mode is separate and scoped to the selected folder.
+The single address/search field resolves existing paths first on Enter, then
+searches Everything in the current folder. Search from This PC for all indexed
+files. Four inline switches control case, whole words, path matching and Regex.
+There is no separate filesystem-scan mode or second search row.
 
 Internal preview modules are selected in Settings > Files. The F3D GLB prototype
 is opt-in; no standalone QuickLook/F3D application is needed. Archive edit

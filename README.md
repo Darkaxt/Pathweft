@@ -8,7 +8,7 @@ one shared transfer queue. It supports single and split folder views.
 
 ## Current state
 
-Version 1.1.0 combines core search, the taskbar widget, internal previews, archive
+Version 1.1.1 combines core search, the taskbar widget, internal previews, archive
 editing and transfers with optional native folder routing and an alternate
 Native appearance. Installer and portable packages include matching source,
 dependency notices and checksums through [Pathweft releases](https://github.com/Darkaxt/Pathweft/releases).

@@ -104,8 +104,7 @@ internal sealed class SearchWidgetWindow : Window
         ApplyTextScale();
         if (Pane.Dir == "")
         {
-            Pane.Navigate(folder);
-            ((ComboBox)Pane.FindName("SearchScope")).SelectedIndex = 1;
+            Pane.Navigate(PaneView.ThisPC);
         }
         if (initialQuery != null) query.Text = initialQuery;
         if (Destination.Text == "") Destination.Text = main.WidgetDefaultDestination;
@@ -113,7 +112,7 @@ internal sealed class SearchWidgetWindow : Window
 #if DEBUG
         if (!HiddenTrialPresentation.SuppressFocus(this))
 #endif
-        { Activate(); query.Focus(); query.SelectAll(); }
+        { Activate(); Pane.FocusFilter(); }
         if (initialQuery != null || Pane.SearchRequest.Query.Length > 0) Pane.Search(query.Text);
         UpdateActions();
     }
@@ -167,7 +166,7 @@ internal sealed class SearchWidgetWindow : Window
         if (main.HandleHiddenShortcut(e.Key, e.KeyboardDevice.Modifiers, e.IsRepeat, e.OriginalSource)) { e.Handled = true; return; }
         if (e.Key == Key.Escape) { Keyboard.ClearFocus(); Dismiss(); e.Handled = true; }
         else if (e.OriginalSource is ComboBoxItem or ComboBox) return;
-        else if (query.IsKeyboardFocusWithin && e.Key == Key.Enter) { Pane.Search(query.Text); e.Handled = true; }
+        else if (query.IsKeyboardFocusWithin && e.Key == Key.Enter) return; // unified address field resolves paths first
         else if (query.IsKeyboardFocusWithin && e.Key == Key.Down) { Pane.FocusList(); e.Handled = true; }
         else if (e.Key == Key.Space && e.OriginalSource is not TextBox) { main.ToggleQuickView(Pane, this); e.Handled = true; }
         else if (Pane.IsKeyboardFocusWithin && e.OriginalSource is not TextBox && e.Key == Key.Enter) { Pane.OpenSelected(); e.Handled = true; }

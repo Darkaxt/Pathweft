@@ -24,6 +24,7 @@ public partial class PaneView
     string indexedExpression;
     ObservableCollection<Entry> indexedResults;
     internal Task SearchCompletion { get; private set; } = Task.CompletedTask;
+    internal Task AddressCompletion { get; private set; } = Task.CompletedTask;
     internal uint IndexedTotal => indexedTotal;
     internal string SearchNotice => searchNotice;
     internal string SearchInstance = ""; // default existing instance; diagnostics can exercise an unavailable selection
@@ -36,14 +37,49 @@ public partial class PaneView
         FitName();
     }
 
-    internal PaneSearchRequest SearchRequest => new(Dir, FilterBox.Text, SearchScope.SelectedIndex, sortKey, sortDesc);
+    int SearchScopeIndex =>
+#if DEBUG
+        VerificationSearchScope ??
+#endif
+        (Dir==ThisPC ? 1 : 0);
+#if DEBUG
+    // Historical engine regression scenarios can still qualify the retired
+    // filesystem backend; release UI has only location-derived Everything scope.
+    internal int? VerificationSearchScope;
+#endif
+    bool updatingSearchOptions;
+    internal SearchMatchOptions MatchOptions => (MatchCase.IsChecked==true?SearchMatchOptions.Case:0)
+        |(MatchWord.IsChecked==true?SearchMatchOptions.WholeWord:0)
+        |(MatchPath.IsChecked==true?SearchMatchOptions.Path:0)
+        |(MatchRegex.IsChecked==true?SearchMatchOptions.Regex:0);
+    internal PaneSearchRequest SearchRequest => new(Dir, searchQuery??"", SearchScopeIndex, sortKey, sortDesc,MatchOptions);
+    void MatchOptions_Changed(object sender,RoutedEventArgs args)
+    {
+        if(MatchWord==null||MatchRegex==null||updatingSearchOptions)return;
+        MatchWord.IsEnabled=MatchRegex.IsChecked!=true;
+        if(indexedSearch&&searchQuery!=null)Search(searchQuery);
+    }
+    void RestoreMatchOptions(SearchMatchOptions options)
+    {
+        updatingSearchOptions=true;
+        try
+        {
+            MatchCase.IsChecked=options.HasFlag(SearchMatchOptions.Case);
+            MatchWord.IsChecked=options.HasFlag(SearchMatchOptions.WholeWord);
+            MatchPath.IsChecked=options.HasFlag(SearchMatchOptions.Path);
+            MatchRegex.IsChecked=options.HasFlag(SearchMatchOptions.Regex);
+            MatchWord.IsEnabled=MatchRegex.IsChecked!=true;
+        }
+        finally{updatingSearchOptions=false;}
+    }
 
     internal void ApplySearchRequest(PaneSearchRequest request)
     {
         LeaveSearch();
         searchQuery = null;
-        if (Dir != request.Folder) Navigate(request.Folder);
-        SearchScope.SelectedIndex = request.Scope;
+        RestoreMatchOptions(request.Match);
+        var folder=request.Scope==1?ThisPC:request.Folder;
+        if (Dir != folder) Navigate(folder);
         ShowSort(request.Sort, request.Descending);
         FilterBox.Text = request.Query;
         Search(request.Query);
@@ -57,6 +93,39 @@ public partial class PaneView
         StopFolderWatch();
     }
 
+    internal Task SubmitAddressAsync()=>AddressCompletion=ResolveAddressAsync(FilterBox.Text);
+    async Task ResolveAddressAsync(string text)
+    {
+        text=text.Trim();
+        if(text.Length==0){ClearFilter();return;}
+        int generation=navVersion,revision=suggestVersion;
+        string origin=Dir;
+        Suggest.IsOpen=false;
+        var resolved=await Task.Run(()=>
+        {
+            string raw=Environment.ExpandEnvironmentVariables(text.Trim('"'));
+            if(raw.Equals("This PC",StringComparison.OrdinalIgnoreCase)||raw.Equals("My PC",StringComparison.OrdinalIgnoreCase))return(Path:ThisPC,Folder:true);
+            if(raw=="~"||raw.StartsWith("~\\")||raw.StartsWith("~/"))raw=Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)+raw[1..];
+            try
+            {
+                var basis=IsVirtual(origin)||IsServer(origin)?Environment.GetFolderPath(Environment.SpecialFolder.UserProfile):origin;
+                string path=Path.GetFullPath(raw,basis);
+                var attributes=File.GetAttributes(path);
+                return(Path:path,Folder:(attributes&FileAttributes.Directory)!=0);
+            }
+            catch(Exception error)when(error is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException or System.Security.SecurityException){return(Path:(string)null,Folder:false);}
+        });
+        if(generation!=navVersion||revision!=suggestVersion||text!=FilterBox.Text.Trim())return;
+        if(resolved.Path!=null)
+        {
+            if(resolved.Folder)Navigate(resolved.Path);
+            else Navigate(Path.GetDirectoryName(resolved.Path),Path.GetFileName(resolved.Path));
+            EndEditPath();
+        }
+        else{Search(text);await SearchCompletion;}
+        if(IsKeyboardFocusWithin)FocusList();
+    }
+
     public void Search(string query)
     {
 #if DEBUG
@@ -68,7 +137,7 @@ public partial class PaneView
         indexedCancellation?.Cancel();
         indexedCancellation?.Dispose();
         indexedCancellation = new();
-        if (SearchScope.SelectedIndex == 2)
+        if (SearchScopeIndex == 2)
         {
             indexedSearch = false;
             MoreResults.Visibility = Visibility.Collapsed;
@@ -80,15 +149,16 @@ public partial class PaneView
         }
         try
         {
-            if (SearchScope.SelectedIndex == 0 && (IsVirtual(Dir) || IsServer(Dir)))
-                throw new ArgumentException("Choose a real folder for subtree search, or choose Everything · All.");
-            indexedExpression = IndexedQuery.Compose(query, SearchScope.SelectedIndex == 0 ? Dir : null);
+            if (SearchScopeIndex == 0 && IsVirtual(Dir))
+                throw new ArgumentException("Everything cannot search inside this virtual location. Search from its containing folder or This PC.");
+            indexedExpression = IndexedQuery.Compose(query, SearchScopeIndex == 0 ? Dir : null,MatchOptions);
         }
         catch (ArgumentException ex) { SearchCoverage.Text = ex.Message; SearchCoverage.Visibility = Visibility.Visible; return; }
         indexedSearch = true;
         ArchiveRoot = null; // indexed hits are real paths, even when the origin tab is inside a ZIP
         searchQuery = query;
         FilterBox.Text = query;
+        FilterBox.Visibility=Visibility.Visible;Crumbs.Visibility=Visibility.Hidden;FilterHint.Visibility=Visibility.Collapsed;
         if (sortKey == "Version") ShowSort("Name", false);
         ++navVersion;
         sizing?.Cancel(); icons?.Cancel(); thumbs?.Cancel();
@@ -114,7 +184,7 @@ public partial class PaneView
             if (token.IsCancellationRequested || generation != navVersion) return;
             // Inspect only the requested page. A separate raw cursor ensures a
             // fully hidden page cannot repeat or make paging stop prematurely.
-            string visibilityRoot = SearchScope.SelectedIndex == 0 ? Dir : null;
+            string visibilityRoot = SearchScopeIndex == 0 ? Dir : null;
             var parents = visibilityParents;
             var visibility = indexedShowHidden ? null : await Task.Run(() => page.Hits.Select(hit =>
                 FileVisibility.PathVisible(hit.Path, visibilityRoot, parents, token)).ToArray(), token);
@@ -137,8 +207,7 @@ public partial class PaneView
                     Location = System.IO.Path.GetDirectoryName(hit.Path) ?? "", IsCut = CutPaths.Contains(hit.Path),
                 });
             }
-            searchNotice = page.Engine + " · Index coverage only; excluded, unindexed or offline items may be absent. Filesystem · Folder searches the live subtree.";
-            if (!indexedShowHidden) searchNotice += " Hidden/dot paths are filtered per page; inaccessible attributes are unknown. Indexed match count includes filtered paths.";
+            searchNotice = "Everything index · Unindexed locations may be absent.";
             if (changed) searchNotice += " Index changed during paging; refresh to restart.";
             // A duplicate page must not repeatedly request the same offset.
             MoreResults.Visibility = !changed && page.Hits.Count > 0 && indexedOffset < indexedTotal ? Visibility.Visible : Visibility.Collapsed;
@@ -166,17 +235,10 @@ public partial class PaneView
         }
     }
 
-    void Search_Click(object sender, RoutedEventArgs e) { Search(FilterBox.Text.Trim()); FocusList(); }
     void MoreResults_Click(object sender, RoutedEventArgs e)
     {
         if (indexedSearch && !searching && indexedOffset < indexedTotal)
             SearchCompletion = LoadIndexedPage(indexedCancellation.Token, navVersion);
-    }
-    void Scope_Changed(object sender, SelectionChangedEventArgs e)
-    {
-        if (SearchOptions == null) return;
-        SearchOptions.IsEnabled = SearchScope.SelectedIndex == 2;
-        if (searchQuery != null) Search(FilterBox.Text.Trim());
     }
 
     void LeaveSearch()

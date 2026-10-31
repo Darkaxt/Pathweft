@@ -1,6 +1,8 @@
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Media;
+using System.Windows.Interop;
+using System.Runtime.InteropServices;
 using Microsoft.Win32;
 using Windows.UI.ViewManagement;
 
@@ -43,7 +45,7 @@ internal static class Appearance
     }
     internal static bool Native => Settings.NativeTheme || SystemParameters.HighContrast;
     internal static bool Light => Native && nativeLight;
-    internal static Color Background => SystemParameters.HighContrast ? SystemColors.WindowColor : Native ? Light ? Color.FromRgb(243,243,243) : Color.FromRgb(28,28,28) : Color.FromRgb(10,13,19);
+    internal static Color Background => SystemParameters.HighContrast ? SystemColors.WindowColor : Native ? Light ? Color.FromRgb(243,243,243) : Color.FromRgb(20,20,20) : Color.FromRgb(10,13,19);
 
     static bool ReadLightPreference()
     {
@@ -127,6 +129,37 @@ internal static class Appearance
             }
             return color;
         }
+    }
+
+    // The native frame belongs to Windows, independently of the application's
+    // custom selection color. DWM requires activation changes to be supplied
+    // when an explicit border color is used.
+    [DllImport("dwmapi.dll")] static extern int DwmSetWindowAttribute(IntPtr window,int attribute,ref uint value,int size);
+    internal static (uint Border,uint Caption,int BorderResult,int CaptionResult) ApplyFrame(Window window,bool active)
+    {
+        var handle=new WindowInteropHelper(window).Handle;
+        if(handle==IntPtr.Zero)return(0xFFFFFFFF,0xFFFFFFFF,unchecked((int)0x80070006),unchecked((int)0x80070006));
+        const uint automatic=0xFFFFFFFF;
+        uint border=automatic,caption=automatic;
+        if(Native&&!SystemParameters.HighContrast)
+        {
+            var background=Background;
+            caption=(uint)(background.R|background.G<<8|background.B<<16);
+            using var key=Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\DWM");
+            if(active&&key?.GetValue("ColorPrevalence") is int enabled&&enabled!=0)
+            {
+                var accent=system.GetColorValue(UIColorType.Accent);
+                border=(uint)(accent.R|accent.G<<8|accent.B<<16);
+            }
+        }
+        int borderResult=DwmSetWindowAttribute(handle,34,ref border,sizeof(uint)); // DWMWA_BORDER_COLOR
+        int captionResult=DwmSetWindowAttribute(handle,35,ref caption,sizeof(uint)); // DWMWA_CAPTION_COLOR
+        return(border,caption,borderResult,captionResult);
+    }
+    internal static void FrameActivityChanged(object sender,EventArgs args)
+    {
+        var window=(Window)sender;
+        ApplyFrame(window,window.IsActive);
     }
 
     internal static (Color Fill,Color Text) Selection(Color accent)
