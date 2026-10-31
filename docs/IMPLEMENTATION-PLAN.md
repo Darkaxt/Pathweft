@@ -468,8 +468,8 @@ This sequence belongs only to S5, after S4U; it does not authorize later stages.
 
 ## Current reconciliation ledger
 
-Current post-v1.1.0 correction: S8 ACTIVE; remaining CORE-03/04 Native frame and
-Settings-copy acceptance plus v1.1.1 delivery. Historical S8 closure row below
+Current post-v1.1.0 correction: S8 ACTIVE; CORE-03/04/06/07 and SEARCH-01/04 cover
+the requested UI, editor fallback and icon corrections plus v1.1.1 delivery. Historical S8 closure row below
 describes v1.1.0 only. S9 NOT STARTED; MENU-01..02 remain unimplemented, with no
 tracked deferral assigned to the current S8 correction.
 
@@ -482,7 +482,7 @@ tracked deferral assigned to the current S8 correction.
 | S5 | TRANSFER-01..07 and affected caller/CORE/LIFE criteria; final native/Release/FAT32 evidence and finite findings reconciliation | None within S5 | COMPLETE; no blocker | None |
 | S6 | Matching isolated Windows/Shell modules; current StartAllBack 3.9.28; native query/view trace and Programs/Settings groups with WSearch stopped; program launch and See more results URI dispatch observed on 3.9.28; earlier program/Settings launches on 3.9.25; no complete SAB criterion yet | SAB-01..06, including file-provider/cancellation ownership, remaining provider conditions, compact Everything groups/full-results handoff and direct folder routing | BLOCKED by the user's explicit S8-first priority. Investigation is retained; Sandbox was shut down. Native ABI/ownership and remaining service/indexing comparisons are unresolved when this stage resumes. Host configuration is unchanged. | None |
 | S7 | None | EVERYWHERE-01..05 | S6 prerequisite not complete. File-surface, indexing-scope and Outlook compatibility inventory remains unresolved; no live scope changes during S6. | None |
-| S8 | v1.1.0 delivery verified as recorded below; the existing Native controls track Windows accent, but the custom outer frame lacks activation updates and Settings contains excessive implementation prose. | Native DWM frame activation/system preference handling; concise Settings and Help; affected real hidden rendering/native readback and v1.1.1 delivery | ACTIVE; internal CORE-03/04 and delivery advancement blockers. StartAllBack stays S6/SAB-06; no Sandbox. | None |
+| S8 | Hidden native frame/Settings, unified path-first address/Everything search, four match toggles and handoff, near-black outer background, Native close and actual editor double-click/archived-copy fallback are verified with zero foreground events. Transparent yellow-folder icon generated at native sizes; small-size rendering inspected. | Final packaged icon/editor/UI checks, normal v1.1.1 publication, independent retrieval and installed verification | ACTIVE; delivery advancement blockers. StartAllBack stays S6/SAB-06; no Sandbox. | None |
 
 S1 and S2 are COMPLETE. The user confirmed normal unlock; real physical drag and
 clipboard checks subsequently passed. A separate STA process read the Windows

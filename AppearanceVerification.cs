@@ -22,6 +22,8 @@ public partial class MainWindow
         async Task Settled()=>await Dispatcher.InvokeAsync(UpdateLayout,System.Windows.Threading.DispatcherPriority.ApplicationIdle);
         try
         {
+            var automaticEditor=typeof(EditorWindow).GetMethod("TryOpen",System.Reflection.BindingFlags.Public|System.Reflection.BindingFlags.Static);
+            Check(automaticEditor!=null,"Automatic opening can decline an editor-incompatible file before creating an editor or showing an error");
             Check(Settings.NativeTheme&&Settings.WindowsAccent,"Real startup loads Native and Windows accent from the isolated persisted profile");
             settings=new SettingsWindow(this);settings.Show();await Settled();settings.UpdateLayout();
             var body=(ScrollViewer)settings.FindName("Body");
@@ -135,6 +137,50 @@ public partial class MainWindow
                 settings=null;
             }
             finally{Settings.Animations=animations;}
+            bool internalEditor=Settings.InternalEditor;
+            try
+            {
+                Settings.InternalEditor=true;
+                string editorFolder=Directory.CreateDirectory(Path.Combine(root,"editor-routing")).FullName;
+                string binaryHtml=Path.Combine(editorFolder,"binary.html"),largeHtml=Path.Combine(editorFolder,"large.html"),plainHtml=Path.Combine(editorFolder,"plain.html"),unsupported=Path.Combine(editorFolder,"unsupported.bin");
+                File.WriteAllBytes(binaryHtml,new byte[]{0,1,2,3});File.WriteAllBytes(unsupported,new byte[]{0,1,2,3});
+                using(var large=File.Create(largeHtml))large.SetLength(20L*1024*1024+1);
+                File.WriteAllText(plainHtml,"<!doctype html><html><body>Editor routing fixture</body></html>");
+                foreach(var path in new[]{binaryHtml,largeHtml,unsupported})
+                    Check(!EditorWindow.TryOpen(path)&&!EditorWindow.HasOpenWindow,"Automatic editor declines "+Path.GetFileName(path)+" without an error dialog or empty editor");
+                var external=new List<System.Diagnostics.ProcessStartInfo>();Left.ExternalOpenForVerification=external.Add;
+                await S1Verification.Navigate(Left,editorFolder);
+                async Task DoubleClick(string name)
+                {
+                    var list=(ListView)Left.FindName("List");
+                    list.SelectedItem=Left.Items.Single(e=>e.Name==name);await Settled();
+                    list.ScrollIntoView(Left.Selected.Single());await Settled();
+                    var row=(ListViewItem)list.ItemContainerGenerator.ContainerFromItem(Left.Selected.Single());
+                    Check(row!=null,"Real file row generated for double-click: "+name);
+                    list.RaiseEvent(new System.Windows.Input.MouseButtonEventArgs(System.Windows.Input.Mouse.PrimaryDevice,Environment.TickCount,System.Windows.Input.MouseButton.Left){RoutedEvent=Control.MouseDoubleClickEvent,Source=row});
+                    await Settled();
+                }
+                foreach(var path in new[]{binaryHtml,largeHtml,unsupported})await DoubleClick(Path.GetFileName(path));
+                Check(external.Count==3&&external.All(p=>p.UseShellExecute&&p.WorkingDirectory==editorFolder)&&!EditorWindow.HasOpenWindow,"Actual file-row double-clicks reach the existing Windows-association launch boundary for rejected files; test captures dispatch without launching user apps");
+                await DoubleClick("plain.html");
+                Check(external.Count==3&&EditorWindow.OwnsArchiveCopy(plainHtml),"Supported HTML still opens internally when automatic editing is enabled");
+                await EditorWindow.CaptureForVerification(Path.Combine(root,"editor-supported-html"),light:false);
+                await EditorWindow.CloseForVerification();
+                Settings.InternalEditor=false;await DoubleClick("plain.html");
+                Check(external.Count==4&&external[^1].FileName==plainHtml&&!EditorWindow.HasOpenWindow,"Disabling the internal editor sends ordinary HTML double-clicks to the Windows association");
+                Settings.InternalEditor=true;
+                string archive=Path.Combine(root,"editor-routing.zip");
+                using(var zip=System.IO.Compression.ZipFile.Open(archive,System.IO.Compression.ZipArchiveMode.Create))System.IO.Compression.ZipFileExtensions.CreateEntryFromFile(zip,binaryHtml,"binary.html");
+                await S1Verification.Navigate(Left,archive);
+                string archivedDispatch=null;ArchiveConsumerForVerification=path=>{archivedDispatch=path;return null;};
+                await OpenArchiveEntry(Left,Left.Items.Single(e=>e.Name=="binary.html"));
+                Check(archivedDispatch!=null&&File.ReadAllBytes(archivedDispatch).SequenceEqual(File.ReadAllBytes(binaryHtml))&&!EditorWindow.HasOpenWindow,"Archive automatic open hands a rejected HTML extracted copy to the external consumer with its bytes preserved");
+                // Explicit editing still accepts HTML; it does not inherit the automatic fallback decision.
+                EditorWindow.Open(plainHtml);Check(EditorWindow.OwnsArchiveCopy(plainHtml),"Explicit editor opening remains available for HTML");
+                await EditorWindow.CaptureForVerification(Path.Combine(root,"editor-explicit-html"),light:false);
+                await EditorWindow.CloseForVerification();
+            }
+            finally{Settings.InternalEditor=internalEditor;Left.ExternalOpenForVerification=null;ArchiveConsumerForVerification=null;}
             Check(HiddenTrialPresentation.ForegroundViolations==0,"Focused appearance checks caused zero foreground activation");
             result=0;
         }

@@ -30,12 +30,16 @@ public partial class MainWindow
         try
         {
             copy = await Task.Run(() => ArchiveContent.Extract(at.Archive, new[] { entry.Name }, at.Inner, "opened file"));
-#if DEBUG
-            if (ArchiveConsumerForVerification != null) { ArchiveConsumerForVerification(copy.File); }
+            if (editor) EditorWindow.Open(copy.File);
+            else if (Settings.InternalEditor && !Runnable.Contains(Path.GetExtension(copy.File)) && EditorWindow.TryOpen(copy.File)) { }
             else
+            {
+#if DEBUG
+                if (ArchiveConsumerForVerification != null) ArchiveConsumerForVerification(copy.File);
+                else
 #endif
-            if (editor || Settings.InternalEditor && EditorWindow.IsText(copy.File) && !Runnable.Contains(Path.GetExtension(copy.File))) EditorWindow.Open(copy.File);
-            else Process.Start(new ProcessStartInfo(copy.File) { UseShellExecute = true, WorkingDirectory = Path.GetDirectoryName(copy.File) });
+                Process.Start(new ProcessStartInfo(copy.File) { UseShellExecute = true, WorkingDirectory = Path.GetDirectoryName(copy.File) });
+            }
             Status.Text = "Opened an extracted copy. Changes are not written into the archive. Release it after closing its app in Settings → Archive working copies.";
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.ComponentModel.Win32Exception)

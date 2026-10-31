@@ -1,9 +1,27 @@
 # S8 core delivery contract
 
-Authority: specification v0.11 and the user's explicit S8-first/delivery instructions.
+Authority: specification v0.12 and the user's explicit S8-first/delivery instructions.
 S8 is ACTIVE for the user's post-v1.1.0 Native frame and Settings-copy corrections;
 S6 is BLOCKED by that instruction and S7 is NOT STARTED.
 Current remaining acceptance: final v1.1.1 release and delivery verification.
+The user's editor report is double-clicking HTML; its original file was deleted,
+and the reported error concerned decoding/opening. The automatic route previously
+used only the extension, created the editor, then showed read rejection. It now
+checks the existing decoder/size limit quietly before creating a window and uses
+the caller's existing Windows-association route on rejection. Supported HTML
+still edits; F4 remains explicit. Hidden original PID16284 verifies actual
+file-row double-clicks for binary/oversized HTML and unsupported extensions,
+disabled-editor HTML, supported HTML/explicit editor rendering and archive-copy
+fallback. External dispatch is captured at the real launch boundary to avoid
+launching user applications. No exact reproduction of the deleted file is claimed.
+Zero foreground events were observed. CORE-06 source acceptance passes.
+CORE-07 uses one transparent yellow-folder icon for WPF, executable, tray,
+shortcuts and installer. Native sizes16..256 and 32px readability/alpha are
+inspected; the 32px visible bounds are29x25 with no background tile. Packaged
+WPF/native resource checks and delivery remain advancement blockers.
+The first final-package probe exposed a test-only WPF Owner precondition:
+creating Settings with a never-shown owner requires EnsureHandle first. This
+correction creates a hidden HWND, not a visible test window.
 The real Native close reproduction failed before the correction; it now closes
 without cancelling the native close to animate an empty client. The real hidden address-path
 resolution, folder/This-PC Everything search, four match switches, widget-to-pane

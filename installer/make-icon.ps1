@@ -1,7 +1,9 @@
-<#
-    app.ico since 24.10.2026 is the studio's new File Labs icon (variant "c1": a dark folder with two panes of
-    list lines on a pink → orange tile, full bleed so it reads at 24 px in a 4K taskbar). It is drawn from SVG in
-    G:\Claude Projects\Marketing\icons\filelabs-new\v8 (c1-margin40.svg for 40 px and up, c1-small.svg for 16–32 px)
-    and assembled there as filelabs.ico. This script copies that file in; the build picks up app.ico.
-#>
-Copy-Item 'G:\Claude Projects\Marketing\icons\filelabs-new\v8\filelabs.ico' (Join-Path $PSScriptRoot '..\app.ico') -Force
+[CmdletBinding()]
+param()
+$ErrorActionPreference='Stop'
+$root=Split-Path -Parent $PSScriptRoot
+$source=Join-Path $root 'assets/pathweft-icon.png'
+$target=Join-Path $root 'app.ico'
+# Real alpha background; the visible folder fills 92% of a square canvas.
+& magick $source -trim +repage -resize 236x236 -gravity center -background none -extent 256x256 -define icon:auto-resize=256,128,96,64,48,40,32,24,20,16 $target
+if($LASTEXITCODE -ne 0){throw 'Windows icon generation failed.'}

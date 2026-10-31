@@ -78,6 +78,16 @@ sealed class PackageProbe
     [UnmanagedFunctionPointer(CallingConvention.StdCall)][return:MarshalAs(UnmanagedType.Bool)]delegate bool NativeBool();
     [DllImport("user32.dll",CharSet=CharSet.Unicode)]static extern IntPtr FindWindowW(string name,string title);
     [DllImport("user32.dll")]static extern bool IsHungAppWindow(IntPtr window);
+    [DllImport("shell32.dll",CharSet=CharSet.Unicode)]static extern uint ExtractIconExW(string file,int index,out IntPtr large,out IntPtr small,uint count);
+    [DllImport("user32.dll")]static extern bool DestroyIcon(IntPtr icon);
+    void VerifyIcon(System.Windows.Media.Imaging.BitmapSource source,string criterion)
+    {
+        var bitmap=new System.Windows.Media.Imaging.FormatConvertedBitmap(source,System.Windows.Media.PixelFormats.Bgra32,null,0);
+        var pixels=new byte[bitmap.PixelWidth*bitmap.PixelHeight*4];bitmap.CopyPixels(pixels,bitmap.PixelWidth*4,0);
+        int yellow=0,brown=0;
+        for(int i=0;i<pixels.Length;i+=4){int b=pixels[i],g=pixels[i+1],r=pixels[i+2],a=pixels[i+3];if(a>200&&r>180&&g>110&&b<130)yellow++;if(a>200&&r>40&&r<170&&g<110&&b<65)brown++;}
+        Check(pixels[3]==0&&pixels[^1]==0&&yellow>bitmap.PixelWidth*bitmap.PixelHeight/4&&brown>bitmap.PixelWidth*bitmap.PixelHeight/30,criterion);
+    }
     static string NativeTextValue(string library,string export)
     {
         var handle=NativeLibrary.Load(Path.Combine(AppContext.BaseDirectory,"F3D/bin",library),Product,DllImportSearchPath.UseDllDirectoryForDependencies|DllImportSearchPath.System32);
@@ -160,6 +170,18 @@ sealed class PackageProbe
             }
 
             owner=new MainWindow(); // construct real controls/resources, never show
+            new System.Windows.Interop.WindowInteropHelper(owner).EnsureHandle(); // an owned, never-shown HWND is required by WPF's Owner contract
+            using(var icon=Application.GetResourceStream(new Uri("/Pathweft;component/app.ico",UriKind.Relative)).Stream)
+                VerifyIcon(System.Windows.Media.Imaging.BitmapDecoder.Create(icon,System.Windows.Media.Imaging.BitmapCreateOptions.PreservePixelFormat,System.Windows.Media.Imaging.BitmapCacheOption.OnLoad).Frames[0],"Delivered WPF app icon has a transparent background, yellow folder and contrasting brown marks");
+            IntPtr largeIcon=IntPtr.Zero,smallIcon=IntPtr.Zero;
+            try
+            {
+                Check(ExtractIconExW(Path.Combine(AppContext.BaseDirectory,"Pathweft.exe"),0,out largeIcon,out smallIcon,1)==1,"The delivered executable exposes its native Windows icon");
+                VerifyIcon(System.Windows.Interop.Imaging.CreateBitmapSourceFromHIcon(largeIcon,Int32Rect.Empty,System.Windows.Media.Imaging.BitmapSizeOptions.FromEmptyOptions()),"The native executable/shortcut icon uses the same transparent yellow-folder identity");
+            }
+            finally{if(largeIcon!=IntPtr.Zero)DestroyIcon(largeIcon);if(smallIcon!=IntPtr.Zero)DestroyIcon(smallIcon);}
+            string rejectedHtml=Path.Combine(root,"rejected.html");File.WriteAllBytes(rejectedHtml,new byte[]{0,1,2,3});
+            Check(!(bool)Call(Type("EditorWindow"),null,"TryOpen",rejectedHtml)&&!(bool)Type("EditorWindow").GetProperty("HasOpenWindow",Flags).GetValue(null),"Delivered editor declines binary HTML without creating a window");
             var left=(PaneView)owner.FindName("Left");
             Check(left.FindName("AddressField") is FrameworkElement&&left.FindName("SearchScope")==null&&left.FindName("SearchBar")==null&&left.FindName("SearchSubmit")==null&&new[]{"MatchCase","MatchWord","MatchPath","MatchRegex"}.All(name=>left.FindName(name)!=null),"Delivered controls contain the unified field and four match switches, without the retired search row");
             var settings=new SettingsWindow(owner);

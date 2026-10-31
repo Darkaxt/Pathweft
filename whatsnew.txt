@@ -2,6 +2,8 @@
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
 ## 1.1.1 | 2026-10-31 | Native frame and clearer settings
+- A transparent yellow-folder app icon replaces the pink tile, with contrasting two-pane list marks and native Windows sizes.
+- When automatic editing cannot read a file, double-click opens its normal Windows application without an editor error. F4/Edit remains an explicit edit command.
 - One address/search field replaces the separate search row: Enter tries the path first, then searches Everything in this folder. Search from This PC for all indexed files. Inline switches provide Match case, Match whole word, Match path and Regex.
 - Native dark outer surfaces match the sidebar's near-black background; file panes keep their neutral gray surface.
 - Native windows close through Windows directly, avoiding the empty brown surface exposed by the old client-only fade.

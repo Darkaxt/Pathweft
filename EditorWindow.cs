@@ -87,6 +87,21 @@ public sealed class EditorWindow : Window
 
     /// <summary>Opens a file in the editor window, as a new tab or by switching to its tab.</summary>
     public static void Open(string path)
+        => OpenPrepared(path);
+
+    /// <summary>Automatic open: let the Windows association handle files this editor cannot read.</summary>
+    public static bool TryOpen(string path)
+    {
+        if (!IsText(path)) return false;
+        path = Path.GetFullPath(path);
+        // Keep an existing document, including unsaved edits, rather than re-reading it.
+        if (OwnsArchiveCopy(path)) { Open(path); return true; }
+        if (Read(path, quiet: true) is not { } read) return false;
+        OpenPrepared(path, read);
+        return true;
+    }
+
+    static void OpenPrepared(string path, (string Text, string Encoding)? prepared = null)
     {
         var fresh = instance == null;
         if (fresh)
@@ -94,7 +109,7 @@ public sealed class EditorWindow : Window
             instance = new EditorWindow();
             instance.RestoreSession(except: path);
         }
-        instance.AddFile(path, activate: true, line: 1, column: 1, quiet: false);
+        instance.AddFile(path, activate: true, line: 1, column: 1, quiet: false, prepared);
         Show(fresh);
     }
 
@@ -103,7 +118,7 @@ public sealed class EditorWindow : Window
     {
         var fresh = instance == null;
         instance ??= new EditorWindow();
-        if (instance.Read(left, quiet: false) is not { } l || instance.Read(right, quiet: false) is not { } r)
+        if (Read(left, quiet: false) is not { } l || Read(right, quiet: false) is not { } r)
         {
             if (fresh) instance = null;
             return;
@@ -188,12 +203,12 @@ public sealed class EditorWindow : Window
     }
 #endif
 
-    void AddFile(string path, bool activate, int line, int column, bool quiet)
+    void AddFile(string path, bool activate, int line, int column, bool quiet, (string Text, string Encoding)? prepared = null)
     {
         path = Path.GetFullPath(path);
         var open = docs.FirstOrDefault(d => string.Equals(d.Value.Path, path, StringComparison.OrdinalIgnoreCase));
         if (open.Value != null) { if (activate) Post(new JsonObject { ["type"] = "focus", ["id"] = open.Key }); return; }
-        if (Read(path, quiet) is not { } read) return;
+        if ((prepared ?? Read(path, quiet)) is not { } read) return;
         var (text, encoding) = read;
         var id = nextId++;
         var doc = new Doc { Path = path, Encoding = encoding, KnownWrite = Stamp(path) };
@@ -206,7 +221,7 @@ public sealed class EditorWindow : Window
         });
     }
 
-    (string Text, string Encoding)? Read(string path, bool quiet)
+    static (string Text, string Encoding)? Read(string path, bool quiet)
     {
         try
         {
@@ -220,7 +235,7 @@ public sealed class EditorWindow : Window
 
         (string, string)? Refuse(string message)
         {
-            if (!quiet) PromptDialog.Choose(IsVisible ? this : Application.Current.MainWindow, "The editor can't open this file", message, "OK");
+            if (!quiet) PromptDialog.Choose(instance is { IsVisible: true } ? instance : Application.Current.MainWindow, "The editor can't open this file", message, "OK");
             return null;
         }
     }

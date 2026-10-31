@@ -1828,6 +1828,9 @@ public partial class PaneView : UserControl
         if (commit && name != "" && name != entry.Name) RenameCommitted?.Invoke(entry, name);
     }
 
+#if DEBUG
+    internal Action<System.Diagnostics.ProcessStartInfo> ExternalOpenForVerification;
+#endif
     public async void OpenSelected()
     {
         if (List.SelectedItem is not Entry e) return;
@@ -1852,7 +1855,7 @@ public partial class PaneView : UserControl
         else if (!e.IsDir && Archive.IsArchiveName(e.Path)) Navigate(e.Path); // a ZIP or TAR opens like a folder
         else if (e.FolderTarget is { } folder) Navigate(folder); // a shortcut to a folder opens here, as in Explorer
         // a script is run, like Explorer does; editing it is F4 / Edit in the menu
-        else if (backup == null && Settings.InternalEditor && EditorWindow.IsText(e.Path) && !MainWindow.Runnable.Contains(Path.GetExtension(e.Path))) EditorWindow.Open(e.Path);
+        else if (backup == null && Settings.InternalEditor && !MainWindow.Runnable.Contains(Path.GetExtension(e.Path)) && EditorWindow.TryOpen(e.Path)) { }
         else
         {
             // A shortcut whose target is gone gets Windows' own answer, as from Explorer: it looks for the target, then
@@ -1862,11 +1865,16 @@ public partial class PaneView : UserControl
             // started in its own folder, as from Explorer: scripts rely on relative paths
             try
             {
-                System.Diagnostics.Process.Start(backup ?? new System.Diagnostics.ProcessStartInfo(e.Path)
+                var start = backup ?? new System.Diagnostics.ProcessStartInfo(e.Path)
                 {
                     UseShellExecute = true, WorkingDirectory = Path.GetDirectoryName(e.Path),
                     ErrorDialog = link, ErrorDialogParentHandle = link ? new System.Windows.Interop.WindowInteropHelper(Window.GetWindow(this)).Handle : IntPtr.Zero,
-                });
+                };
+#if DEBUG
+                if (ExternalOpenForVerification != null) ExternalOpenForVerification(start);
+                else
+#endif
+                System.Diagnostics.Process.Start(start);
             }
             catch (System.ComponentModel.Win32Exception ex) when (ex.NativeErrorCode == 1223) { } // ERROR_CANCELLED: answered in Windows' dialog
             catch (System.ComponentModel.Win32Exception ex) { Error?.Invoke(ex.Message); } // e.g. no app associated
