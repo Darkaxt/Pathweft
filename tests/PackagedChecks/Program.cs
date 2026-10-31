@@ -176,7 +176,8 @@ sealed class PackageProbe
             IntPtr largeIcon=IntPtr.Zero,smallIcon=IntPtr.Zero;
             try
             {
-                Check(ExtractIconExW(Path.Combine(AppContext.BaseDirectory,"Pathweft.exe"),0,out largeIcon,out smallIcon,1)==1,"The delivered executable exposes its native Windows icon");
+                uint extracted=ExtractIconExW(Path.Combine(AppContext.BaseDirectory,"Pathweft.exe"),0,out largeIcon,out smallIcon,1);
+                Check(extracted==2&&largeIcon!=IntPtr.Zero&&smallIcon!=IntPtr.Zero,"The delivered executable exposes both native Windows icon sizes");
                 VerifyIcon(System.Windows.Interop.Imaging.CreateBitmapSourceFromHIcon(largeIcon,Int32Rect.Empty,System.Windows.Media.Imaging.BitmapSizeOptions.FromEmptyOptions()),"The native executable/shortcut icon uses the same transparent yellow-folder identity");
             }
             finally{if(largeIcon!=IntPtr.Zero)DestroyIcon(largeIcon);if(smallIcon!=IntPtr.Zero)DestroyIcon(smallIcon);}
@@ -213,7 +214,14 @@ sealed class PackageProbe
         {
             if(session is IDisposable live)live.Dispose();
             await (Task)Call(Type("Preview.PreviewSession"),null,"DrainAsync");
-            owner?.Quit();
+            if(owner!=null)
+            {
+                var closed=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+                owner.Closed+=(_,_)=>closed.TrySetResult();owner.Quit();
+                await closed.Task; // the first Close waits for owned preview/archive work
+            }
+            if(owner!=null)
+                Check(new[]{"Left","Right"}.All(name=>typeof(PaneView).GetField("watcher",Flags).GetValue(owner.FindName(name))==null&&!((DispatcherTimer)typeof(PaneView).GetField("debounce",Flags).GetValue(owner.FindName(name))).IsEnabled),"Closing the actual window releases both folder watchers and pending refresh timers before resource teardown");
             File.WriteAllText(Path.Combine(root,"results.json"),JsonSerializer.Serialize(new{result,pid=Environment.ProcessId,fixture=root,runtime=Environment.Version.ToString(),product=Product.Location,checks},new JsonSerializerOptions{WriteIndented=true}));
             Environment.ExitCode=result;app.Shutdown(result);
         }

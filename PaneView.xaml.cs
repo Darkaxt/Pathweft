@@ -1281,6 +1281,17 @@ public partial class PaneView : UserControl
         }, token);
     }
 
+    internal void CloseView()
+    {
+        // Closing is the end of this view's ownership, including reads already
+        // queued on the dispatcher. A hidden/tray window has not closed.
+        ++navVersion;++suggestVersion;
+        StopFolderWatch();
+        indexedSearch=false;
+        indexedCancellation?.Cancel();sizing?.Cancel();prefetching?.Cancel();icons?.Cancel();thumbs?.Cancel();
+        renameTimer.Stop();zoomTimer?.Stop();overlayTimer?.Stop();
+    }
+
     void StopFolderWatch()
     {
         debounce.Stop();

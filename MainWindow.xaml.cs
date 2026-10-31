@@ -54,7 +54,11 @@ public partial class MainWindow : Window
             // with the notification-area icon on, closing only hides: the next open is instant
             if (tray != null && !quitting) { e.Cancel = true; Hide(); }
         };
-        Closed += (_, _) => { taskbarSearch?.Dispose(); tray?.Dispose(); }; // or the icon lingers until the pointer passes over it
+        Closed += (_, _) =>
+        {
+            foreach(var pane in new[]{Left,Right})pane.CloseView();
+            taskbarSearch?.Dispose();tray?.Dispose();
+        };
         SourceInitialized += (_, _) => { ApplyAcrylic(this); WatchShellChanges(); taskbarSearch = new(this); taskbarSearch.ApplySettings(); };
         InitializePreviews();
         if (Settings.Profile == null) StartUpdateChecks();

@@ -38,6 +38,17 @@ widget handoff and zero foreground events. Private receipts identify the
 exact fixture/runtime. Frame color evidence remains limited as described above.
 The changes reuse the pane/query owner, native frame lifecycle and existing
 Help/Settings; no new service/provider, consolidation stage or required deferral.
+Final qualification exposed a lifecycle error in the independent probe: it
+requested Quit then shut down the application before the asynchronous preview
+drain completed the actual Closed event, allowing a queued folder refresh to
+lose its resources. The probe now awaits actual Closed. The production Closed
+lifecycle also releases its pane watcher/timer owners and invalidates pending
+navigation before resource teardown; queued watcher callbacks already verify
+watcher identity. A focused close-only reproduction verifies actual closure,
+rather than treating the first deliberately cancelled Close as completion.
+Original PID42768 exits0 after actual closure with both watcher fields null and
+both refresh timers stopped. Prior UI/editor evidence applies to unchanged
+behavior; final packaged verification will also await and assert this boundary.
 This release covers the file explorer. StartAllBack and broader Windows Search
 replacement remain unfinished later work and will be identified as such.
 

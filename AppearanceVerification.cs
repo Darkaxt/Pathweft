@@ -17,11 +17,14 @@ public partial class MainWindow
     internal async Task VerifyAppearanceCorrection(string root)
     {
         if(!HiddenTrialPresentation.Enabled||!Path.GetFullPath(root).StartsWith(@"D:\Temp\pathweft-s8-delivery\",StringComparison.OrdinalIgnoreCase))throw new ArgumentException("Owned hidden fixture required.");
+        Application.Current.ShutdownMode=ShutdownMode.OnExplicitShutdown;
         var checks=new List<object>(); int result=1; SettingsWindow settings=null;SearchWidgetWindow widget=null;
         void Check(bool passed,string criterion){checks.Add(new{criterion,passed});if(!passed)throw new InvalidOperationException(criterion);}
         async Task Settled()=>await Dispatcher.InvokeAsync(UpdateLayout,System.Windows.Threading.DispatcherPriority.ApplicationIdle);
         try
         {
+            if(Environment.GetEnvironmentVariable("PATHWEFT_VERIFY_CLOSE_ONLY")=="1")
+            {await S1Verification.Navigate(Left,root);result=0;return;}
             var automaticEditor=typeof(EditorWindow).GetMethod("TryOpen",System.Reflection.BindingFlags.Public|System.Reflection.BindingFlags.Static);
             Check(automaticEditor!=null,"Automatic opening can decline an editor-incompatible file before creating an editor or showing an error");
             Check(Settings.NativeTheme&&Settings.WindowsAccent,"Real startup loads Native and Windows accent from the isolated persisted profile");
@@ -190,8 +193,22 @@ public partial class MainWindow
             widget?.Shutdown();
             foreach(var help in Application.Current.Windows.OfType<HelpWindow>().ToArray())help.Close();
             settings?.Close();
+            var closed=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            bool didClose=false,closeCancelled=false;
+            Closed+=(_,_)=>{didClose=true;closed.TrySetResult();};Closing+=(_,args)=>closeCancelled=args.Cancel;
+            Quit();
+            await closed.Task; // preview work owns the first cancelled Close; wait for the actual Closed event
+            foreach(var pane in new[]{Left,Right})
+            {
+                var flags=System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic;
+                var watch=(FileSystemWatcher)typeof(PaneView).GetField("watcher",flags).GetValue(pane);
+                var pending=((System.Windows.Threading.DispatcherTimer)typeof(PaneView).GetField("debounce",flags).GetValue(pane)).IsEnabled;
+                checks.Add(new{close=didClose,cancelled=closeCancelled,pane=pane.Name,watch=watch?.Path,pending});
+                if(watch!=null||pending)
+                {result=1;checks.Add(new{failure="Closing left a folder watcher/refresh timer alive after view resource teardown."});}
+            }
             File.WriteAllText(Path.Combine(root,"results.json"),JsonSerializer.Serialize(new{result,pid=Environment.ProcessId,checks},new JsonSerializerOptions{WriteIndented=true}));
-            Close();Application.Current.Shutdown(result);
+            Application.Current.Shutdown(result);
         }
     }
 }
