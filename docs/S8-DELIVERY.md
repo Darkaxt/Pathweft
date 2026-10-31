@@ -1,9 +1,72 @@
 # S8 core delivery contract
 
-Authority: specification v0.13 and the user's explicit S8-first/delivery instructions.
-S8 is ACTIVE for the user's post-v1.1.0 Native frame and Settings-copy corrections;
-S6 is BLOCKED by that instruction and S7 is NOT STARTED.
-Current remaining acceptance: final v1.1.1 release and delivery verification.
+Authority: specification v0.15 and the user's explicit S8-first/delivery instructions.
+S8 is COMPLETE through v1.1.2; no stage is ACTIVE. S6 remains BLOCKED by the
+user's priority boundary; S7, S9 and S11 remain NOT STARTED.
+
+## Current v1.1.2 delivery and reconciliation
+
+[v1.1.2](https://github.com/Darkaxt/Pathweft/releases/tag/v1.1.2) is normally
+published with all six installer/portable/source/manifest/checksum assets. The
+immutable release source is `f5aaab0f117f132fd040f1cc9fbd73ba1afd2f73`.
+GitHub asset sizes/digests match local deliverables and independently downloaded
+copies. Documentation closure does not move the release tag.
+
+The Ctrl+Alt+Space popup now contains only its rounded global live-query field,
+four matching switches and plain name/location/size/date results. It uses the
+main theme and shared query/open/preview owners. The title/settings, browser,
+destination and action/view/sort rows are removed. Folder/ZIP results open in the
+main manager. Empty input stays empty; Enter opens, Down selects, Escape dismisses,
+and Ctrl+Enter hands off the query/options. The common pane's SetView previously
+restored its striped template during queries; widget results now retain their
+plain row template. The Settings restore action previously inherited Tab's
+140-DIP cap; it now uses the action style and a wrapping full label.
+
+Source receipt PID59328 verifies actual global-index queries, superseded work,
+matching, unavailable-index errors, scrolling pages, file-open boundary, main
+folder/ZIP navigation and dismissal, with zero foreground activation. Current
+minimum/normal renders at 100%/150% and Native dark/light/Original are inspected.
+Restore-action red/green receipts measure the final text character inside the
+real button at 440/660 DIP and both text scales. Physical hotkey registration
+and Explorer restart are unchanged historical native evidence, not newly claimed
+hidden-input tests.
+
+The independently retrieved Release consumer PID55784 passes the real-index
+popup workflow, native ZIP/7z/RAR edits, transfer content verification, app/native
+icons, editor refusal, Markdown/F3D render and actual worker/window cleanup. No
+WPF verification window is displayed. Existing Everything briefly reported busy
+during bulk extraction; the same original extracted fixtures passed after its
+actual ready state returned, without restart/configuration changes or new retries
+in the application. This is ready-index integration evidence, not an engine
+cold-start claim.
+
+The downloaded installer successfully updated `D:\Tools\Pathweft` to v1.1.2.
+Every installed manifest member and actual app-host self-test passes; shortcut,
+uninstall identity, persistent user data and folder/startup registrations are
+verified. The first attempt rolled back because an existing unregistered helper
+held clrjit.dll. Its exact PID44276/start-time/executable ownership was verified
+and it exited0 through its normal shutdown event. Saved Win+E was already off;
+no option or startup entry was enabled. Runtime PID/log records are lifecycle
+state, separately distinguished from preserved user settings. Binaries remain
+unsigned as disclosed.
+
+Final reconciliation: WIDGET-01/02 and CORE-03 corrections and all S8 delivery
+criteria pass. No required S8 blocker, deferral, consolidation or new framework
+remains. The changes reuse existing owners and templates. S6/S7 and the planned
+S9/S11 features are outside this explicitly authorized core correction.
+
+Required private render/workflow receipts are hash-retained. Final cleanup
+transaction `11126ee53ceb4818e52f52bb8833af28` inspected all19,192 exact members
+with zero exclusions and is APPLIED: 3,356,257,606 helper-reported file bytes,
+not a measured physical-free-space claim. Requested dist/1.1.2 and older releases,
+the installed application and active dependency/tool caches are preserved.
+
+## Historical v1.1.1 source qualification
+
+The following source-qualification notes preceded its successful normal release,
+independent retrieval and installed verification. Their pending-delivery wording
+is historical; v1.1.1 is delivered and the current status is recorded above.
+
 CORE-08 source acceptance passes in the actual hidden sidebar at 100%/150%:
 top/middle/bottom fades, no fade after resizing to fit, unchanged scrollbar/footer
 and hit testing, and the pure high-contrast opacity contract. Current renders are
