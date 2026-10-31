@@ -1,7 +1,22 @@
 # Implementation and reconciliation
 
-Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.24, 2026-10-31,
+Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.25, 2026-10-31,
 including the user-authorized continued comparison requirement TRANSFER-07.
+
+S8 ACTIVE for PREVIEW-13: correct circular mouse gestures by using F3D's native
+default input controller. Source confirms camera-local azimuth/elevation differs
+from native fixed-up orbit/pole limits. Verify complete circular/reverse/pole and
+pan/zoom/reset/DPI/lifecycle behavior, then package/publish/retrieve/install1.1.9.
+The unsatisfied gesture contract and final delivery block closure; both are
+internally actionable. No external blocker or tracked deferral. S9/S11 remain
+NOT STARTED, S6/S7 postponed. Previous1.1.8 acceptance remains historical below.
+
+Source gesture acceptance now passes (PID46772); preview regression PID55864
+and completed-frame pressure/lifecycle PID18152 also pass. The old circular-roll
+failure is reproduced before the change (PID46944). Native source/API inspection
+and complete model image were reviewed; package consumer compiles with an added
+delivered native-circle check. Only final1.1.9 package/publication/retrieval and
+installed updater verification remain. See [evidence](verification/2026-11-01-orbit119.md).
 
 S8 is COMPLETE through1.1.8 for PREVIEW-12 (continuous native 3D interaction/quality), CORE-14
 (vertical Settings categories) and CORE-15 (Help reading-position highlight),
@@ -163,7 +178,7 @@ plan neither authorizes itself nor adds approval checkpoints.
 | S5 - REA-driven transfer improvements | COMPLETE | TRANSFER-01..07, archive/caller and WIDGET-02 revalidation, affected CORE-02/03, LIFE-01/DELIVERY-03 | Initial S5 criteria passed at e478986; user extended comparison/implementation | Finite findings inventory resolved; source/target handle reuse, copy-time hashing, metadata/EOF reductions, storage decisions, matched profiles, actual callers, adverse/preservation/cleanup and Release checks pass; see [evidence](verification/2026-10-29-s5.md) |
 | S6 - Native StartAllBack search | BLOCKED | SAB-01..06, affected SEARCH/CORE/LIFE/DELIVERY criteria | Parked by explicit user-directed S8-first execution; resume only after reprioritization is lifted | Investigation only; no working patch or complete SAB criterion. All native groups/handoff/provider/lifecycle/routing criteria remain open. |
 | S7 - Everything filesystem search and Outlook indexing scope | NOT STARTED | EVERYWHERE-01..05, affected SEARCH/CORE/LIFE/SHELL criteria | S6 COMPLETE; finite consumer/semantics/scope inventory before migration | Native Everything file results with selected filesystem roots excluded from Windows indexing; WSearch/Outlook retained, explicit Windows-managed exceptions, local/mail/reboot/recovery verification |
-| S8 - Core integration and delivery | COMPLETE | SHELL-01, CORE-03..15, PREVIEW-06..12, JUMP-03 research, affected SEARCH/WIDGET/ARCHIVE, DELIVERY-01..03 | Verified through1.1.8 | Continuous 3D/raw frames/quality, Settings categories and Help reading highlight pass; S11 research documented; normal release, independent retrieval, installed updater verification and exact cleanup pass. No blocker or tracked deferral. |
+| S8 - Core integration and delivery | ACTIVE | SHELL-01, CORE-03..15, PREVIEW-06..13, JUMP-03 research, affected SEARCH/WIDGET/ARCHIVE, DELIVERY-01..03 | Verified through1.1.8; PREVIEW-13 correction authorized | Native default mouse orbit/pole behavior and final1.1.9 delivery remain acceptance blockers. No external impediment or tracked deferral. |
 
 ENV-01..04 belong to the current setup deliverable, not an artificial product
 implementation stage. See [setup evidence](verification/2026-10-28-setup.md).
@@ -617,7 +632,7 @@ tracked deferral assigned to the current S8 correction.
 | S5 | TRANSFER-01..07 and affected caller/CORE/LIFE criteria; final native/Release/FAT32 evidence and finite findings reconciliation | None within S5 | COMPLETE; no blocker | None |
 | S6 | Matching isolated Windows/Shell modules; current StartAllBack 3.9.28; native query/view trace and Programs/Settings groups with WSearch stopped; program launch and See more results URI dispatch observed on 3.9.28; earlier program/Settings launches on 3.9.25; no complete SAB criterion yet | SAB-01..06, including file-provider/cancellation ownership, remaining provider conditions, compact Everything groups/full-results handoff and direct folder routing | BLOCKED by the user's explicit S8-first priority. Investigation is retained; Sandbox was shut down. Native ABI/ownership and remaining service/indexing comparisons are unresolved when this stage resumes. Host configuration is unchanged. | None |
 | S7 | None | EVERYWHERE-01..05 | S6 prerequisite not complete. File-surface, indexing-scope and Outlook compatibility inventory remains unresolved; no live scope changes during S6. | None |
-| S8 | CORE-12..15, PREVIEW-12 and JUMP-03 research verified; actual native/app workflows, normal1.1.8 publication, independent retrieval,792 installed hashes/main/helper readiness and exact cleanup pass. Prior Explorer/Win+E confirmation retained. | None within S8 | COMPLETE; no blocker. S6/S7/S9/S11 runtime implementation remains outside this release. | None |
+| S8 | Prior1.1.8 acceptance remains verified. Native source identifies the circular gesture's camera-local axis mismatch. | PREVIEW-13 native circular/pole/pan/zoom/resize/lifecycle acceptance and final1.1.9 release/retrieval/installation. | ACTIVE; internal acceptance gaps being resolved. S6/S7/S9/S11 runtime implementation remains outside this release. | None |
 
 S1 and S2 are COMPLETE. The user confirmed normal unlock; real physical drag and
 clipboard checks subsequently passed. A separate STA process read the Windows

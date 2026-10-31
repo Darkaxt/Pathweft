@@ -1,6 +1,6 @@
 # Pathweft specification
 
-Version 0.24 - 2026-10-31. Owner: Darkaxt.
+Version 0.25 - 2026-10-31. Owner: Darkaxt.
 
 This is the authoritative specification. The derived plan must preserve every
 requirement and acceptance criterion. Material scope changes require explicit
@@ -8,7 +8,19 @@ user direction recorded here; ordinary implementation choices need no new gate.
 
 ## 1. Intent and current scope
 
-Current extension: S8 is COMPLETE through1.1.8 for the authorized refinement round.
+Current correction: S8 ACTIVE for PREVIEW-13, authorized by the user's circular
+mouse-gesture regression report. Use the pinned F3D default input controller's
+fixed model-up orbit/pole behavior instead of camera-local trackball math.
+Circular drags must expose sides/underside without accumulating unwanted roll.
+Preserve current right/middle/Shift pan mapping, wheel zoom, camera buttons,
+frame presentation, DPI/resize, animation and native worker/cancellation ownership.
+Verify an ordered circular/reverse circular gesture, vertical pole limits,
+camera-up/focal/distance, pan/zoom/reset, actual large-model previews and teardown
+through hidden app actions; compare with pinned native controller source/API.
+Deliver one normal1.1.9 release, independently retrieve/test it and verify the
+user-controlled installed updater boundary. No unrelated S9/S11/S6/S7 work.
+
+Historical extension: S8 is COMPLETE through1.1.8 for the previous refinement round.
 PREVIEW-12: correct continuous mouse rotation/frame presentation, remove PNG
 encode/decode from interactive rendering, size native frames for the viewport
 and DPI, preserve camera/animation/cancellation/resource ownership, and provide

@@ -34,6 +34,10 @@ internal static class F3dNative
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern void f3d_animation_get_time_range(IntPtr animation, out double minimum, out double maximum);
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern void f3d_animation_load_time(IntPtr animation, double time);
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern IntPtr f3d_engine_get_window(IntPtr engine);
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern IntPtr f3d_engine_get_interactor(IntPtr engine);
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern void f3d_interactor_trigger_mod_update(IntPtr interactor,int modifier);
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern void f3d_interactor_trigger_mouse_button(IntPtr interactor,int action,int button);
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern void f3d_interactor_trigger_mouse_position(IntPtr interactor,double x,double y);
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern IntPtr f3d_engine_get_options(IntPtr engine);
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern void f3d_options_set_as_bool(IntPtr options, [MarshalAs(UnmanagedType.LPUTF8Str)] string name, int value);
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern void f3d_options_set_as_double(IntPtr options, [MarshalAs(UnmanagedType.LPUTF8Str)] string name, double value);
@@ -54,6 +58,7 @@ internal static class F3dNative
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern void f3d_camera_elevation(IntPtr camera, double angle);
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern void f3d_camera_pan(IntPtr camera, double right, double up, double forward);
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern void f3d_camera_get_focal_point(IntPtr camera, [Out] double[] point);
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern void f3d_camera_get_view_up(IntPtr camera, [Out] double[] up);
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern double f3d_camera_get_view_angle(IntPtr camera);
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern void f3d_camera_dolly(IntPtr camera, double factor);
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern void f3d_camera_get_position(IntPtr camera, [Out] double[] position);

@@ -25,6 +25,8 @@ public partial class MainWindow
         {
             if(Environment.GetEnvironmentVariable("PATHWEFT_VERIFY_ROUND118")=="1")
             {await VerifyRound118(root,Check);result=0;return;}
+            if(Environment.GetEnvironmentVariable("PATHWEFT_VERIFY_ORBIT")=="1")
+            {await VerifyOrbit119(root,Check);result=0;return;}
             if(Environment.GetEnvironmentVariable("PATHWEFT_VERIFY_CLOUD_ONLY")=="1")
             {await VerifyCloudQuota(root,Check);result=0;return;}
             if(Environment.GetEnvironmentVariable("PATHWEFT_VERIFY_STATS_ONLY")=="1")

@@ -4,6 +4,9 @@ Read `docs/SPECIFICATION.md` first. It is authoritative; the plan and this file
 do not change its requirements or the user's standing instructions.
 
 - S1-S4 are COMPLETE;
+  Current S8 correction is ACTIVE under specification0.25/PREVIEW-13 for native
+  circular mouse orbit parity and verified final1.1.9 delivery. Preserve pan/
+  zoom, frame/DPI/animation/native lifecycle; no S9/S11/S6/S7 implementation.
   Current S8 extension is COMPLETE under specification0.24: PREVIEW-12 smooth
   native 3D/quality, CORE-14 vertical Settings, CORE-15 Help section tracking and
   JUMP-03 bounded S11 research. Delivered together as normal1.1.8 at64118e9;

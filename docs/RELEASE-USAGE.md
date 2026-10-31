@@ -1,4 +1,4 @@
-# Pathweft 1.1.8
+# Pathweft 1.1.9
 
 Windows 11 x64 is the qualified host. The .NET 10 desktop runtime and native
 archive/preview libraries are included. WebView2 Evergreen is required for the
@@ -71,6 +71,9 @@ Empty statistics cards and their layout space collapse automatically, preserving
 the Full/Compact/Off preference. This PC counts locations without fake file totals.
 PDF and 3D previews use icon actions with tooltips. The animation selector
 follows the theme, and models composite directly onto the preview surface.
+Mouse orbit uses F3D's native default controller: the model stays upright while
+you inspect its sides and underside. Right/middle drag or Shift-left drag pans;
+the wheel zooms. Native pole limits prevent accidental camera flips.
 The Executable details module reads available version resources, architecture,
 size and dates without running the selected application.
 Folders and virtual archive folders share an expandable tree; native branches

@@ -1,6 +1,11 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.9 | 2026-11-01 | Native 3D mouse orbit
+3D mouse gestures now use F3D's native default controller, keeping the model
+upright during circular drags and preventing flips at the poles. Pan, zoom,
+reset, animation, viewport sizing and hidden native cleanup are preserved.
+
 ## 1.1.8 | 2026-10-31 | Smoother 3D and clearer settings
 - 3D previews keep updating during mouse drags and transfer raw native pixels without PNG encoding. Rendering follows the preview’s size and DPI, with anti-aliasing, ambient lighting, shadows and a reflective grid.
 - Settings uses vertical category tabs, preserving the existing content width and controls.
