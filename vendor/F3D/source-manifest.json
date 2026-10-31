@@ -33,5 +33,10 @@
     "file": "examples/libf3d/cpp/offscreen-thumbnail/main.cxx",
     "sha256": "3A89C235EF2BFB74CDD8CB6D4F4C34105D4B7E01EC3D79F8C99552265D7A9977",
     "sourceCommit": "b72c7b5c9244e4a0c12975ce6546645c1a8b2680"
+  },
+  {
+    "file": "c/animation_c_api.h",
+    "sha256": "0E4F621B90510F5C16D48622BF2DA096445FC43B3BFB45FAA52C48B74099A784",
+    "sourceCommit": "b72c7b5c9244e4a0c12975ce6546645c1a8b2680"
   }
 ]

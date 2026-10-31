@@ -48,12 +48,13 @@ internal sealed class BuiltinViewer(PreviewModule module, MainWindow owner, Entr
             case "archive":
                 if (entry.IsDir && PaneView.ArchiveOf(entry.Path) is { } location)
                 {
-                    content = Text(string.Join("\n", await Task.Run(() => Archive.List(location.Archive, location.Inner).Select(i => i.Name + (i.IsDir ? "/" : "")).ToArray(), context.Token)));
+                    content = ArchiveTree.View(await Task.Run(() => ArchiveTree.Read(location.Archive, location.Inner, context.Token), context.Token), context);
                     break;
                 }
                 if (!entry.IsDir && Backups.Named(path) && await Task.Run(() => Backups.Inspect(path, details: true, () => context.Token.IsCancellationRequested), context.Token) is { } backup)
                     content = owner.BackupView(entry, backup);
-                else content = Text(await Task.Run(() => Listing(path, entry.IsDir, context.Token), context.Token));
+                else if (!entry.IsDir) content = ArchiveTree.View(await Task.Run(() => ArchiveTree.Read(path, "", context.Token), context.Token), context);
+                else content = Text(await Task.Run(() => FolderListing(path, context.Token), context.Token));
                 break;
             case "font": content = Font(path); break;
             case "media": await Media(path, context); return;
@@ -126,26 +127,17 @@ internal sealed class BuiltinViewer(PreviewModule module, MainWindow owner, Entr
         }, token);
         return new Image { Source = bitmap, Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly, Margin = new(16) };
     }
-    static string Listing(string path, bool directory, CancellationToken token)
+    static string FolderListing(string path, CancellationToken token)
     {
         var text = new StringBuilder();
-        if (directory)
+        int count = 0;
+        foreach (var item in new DirectoryInfo(path).EnumerateFileSystemInfos())
         {
-            int count = 0;
-            foreach (var item in new DirectoryInfo(path).EnumerateFileSystemInfos())
-            {
-                token.ThrowIfCancellationRequested();
-                if (++count > 1000) { text.AppendLine("… First 1,000 items only."); break; }
-                text.AppendLine(item.Name + (item is DirectoryInfo ? "\\" : ""));
-            }
-            return text.Length == 0 ? "(empty folder)" : text.ToString();
+            token.ThrowIfCancellationRequested();
+            if (++count > 1000) { text.AppendLine("… First 1,000 items only."); break; }
+            text.AppendLine(item.Name + (item is DirectoryInfo ? "\\" : ""));
         }
-        var entries = Archive.Read(path);
-        text.AppendLine($"{entries.Count} entries\n");
-        foreach (var item in entries.Take(5000))
-        { token.ThrowIfCancellationRequested(); text.AppendLine($"{MainWindow.Fmt(item.Size),10}  {item.Path}" + (item.IsDir ? "/" : "")); }
-        if (entries.Count > 5000) text.AppendLine("… First 5,000 entries only; nothing extracted.");
-        return text.ToString();
+        return text.Length == 0 ? "(empty folder)" : text.ToString();
     }
     static UIElement Font(string path)
     {

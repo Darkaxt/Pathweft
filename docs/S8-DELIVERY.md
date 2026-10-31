@@ -7,10 +7,22 @@ user's priority boundary; S7, S9 and S11 remain NOT STARTED.
 
 ## Current preview correction
 
-The archive tree, interactive unrestricted F3D reader integration and concise
-About action are required but not yet implemented/verified. These internal
-acceptance blockers keep S8 ACTIVE; final release/retrieval/install follows
-integrated acceptance. No tracked deferrals or later-stage implementation.
+PREVIEW-06/07 and the About action pass integrated source checks (PID33736).
+The actual moved VLC ZIP expands in the side pane; nested/empty/implicit folders,
+accessible expansion, 1,200-file branches, metadata-only reads and current theme
+foreground pass. Dark/light renders are inspected. Native readers include model
+formats beyond GLB, while existing image viewers retain priority. The real
+161-MB user GLB renders; orbit/pan change camera and pixels, zoom/reset restores
+the camera and source hashes match. External-buffer glTF and animated glTF
+timeline evaluation pass; actual Play/Pause controls change playback state.
+Space/widget dispatch, malformed refusal, disable/switch/close native teardown
+and zero foreground events pass. These are app-owned events/handlers, not physical
+desktop mouse-input claims. Final normal release/retrieval/installation and exact
+scratch cleanup remain advancement blockers. No deferrals or new abstractions
+beyond the required metadata tree/reader interop; old flat archive code is removed.
+File Labs HEAD remains the previously reviewed9bfbbce; no additional upstream
+patch applies. Pinned native dependencies and their restored full source hashes
+remain unchanged; the selected animation C API reference is added.
 
 ## Delivered v1.1.3 correction
 

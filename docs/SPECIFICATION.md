@@ -16,7 +16,8 @@ scrolling and sizes; enumerate metadata without extracting entries, preserve
 empty/implicit directories, and release obsolete preview work.
 PREVIEW-07 promotes the F3D module beyond the GLB prototype: remove its file-size
 and embedded-resource restrictions, select the formats supported by the bundled
-readers, and provide mouse orbit, pan, wheel zoom, fit/reset and keyboard access.
+readers, and provide mouse orbit, pan, wheel zoom, fit/reset and keyboard access,
+plus native animation clip selection, playback and timeline when present.
 Keep module opt-in, native rendering inside Pathweft, asynchronous rendering and
 actual worker teardown. Verify a real user model above 64 MiB, camera/frame
 changes, supported external-resource models, disabled/malformed cases and

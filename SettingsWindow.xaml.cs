@@ -35,7 +35,7 @@ public partial class SettingsWindow : Window
         BuildSwatches();
         BuildWheel();
         AboutText.Text = $"Pathweft {typeof(App).Assembly.GetName().Version?.ToString(3)} · Darkaxt · based on File Labs";
-        ProfileText.Text="Settings folder: "+Settings.Dir;
+        OpenSettingsFolder.ToolTip = Settings.Dir;
         BuildWorksWith();
         Refresh();
         if (main.taskbarSearch != null) main.taskbarSearch.StatusChanged += UpdateTaskbarStatus;
@@ -66,7 +66,6 @@ public partial class SettingsWindow : Window
         catch(Exception ex)when(ex is System.IO.IOException or InvalidOperationException or System.ComponentModel.Win32Exception){WinEStatus.Text=ex.Message;}
         TrayBox.IsChecked = Settings.CloseToTray;
         StartupBox.IsChecked = Settings.StartWithWindows; // off unless the user turns it on: nothing else writes it
-        StartupText.Text = StartupClock.Last;
         AnimationsBox.IsChecked = Settings.Animations;
         SmoothScrollBox.IsChecked = Settings.SmoothScroll;
         SinglePaneBox.IsChecked = Settings.SinglePane;
@@ -452,6 +451,7 @@ public partial class SettingsWindow : Window
     void NativeMode_Click(object s, RoutedEventArgs e) { Settings.NativeMode = s == ThemeLight ? "light" : s == ThemeDark ? "dark" : "system"; Changed(); }
     void WindowsAccent_Click(object s, RoutedEventArgs e) { Settings.WindowsAccent = WindowsAccentBox.IsChecked == true; Changed(); }
     void Help_Click(object s,RoutedEventArgs e)=>main.OpenHelp();
+    void OpenSettingsFolder_Click(object s,RoutedEventArgs e) {main.OpenSettingsFolder();Close();}
 
     void BgChoose_Click(object s, RoutedEventArgs e)
     {

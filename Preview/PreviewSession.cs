@@ -123,7 +123,7 @@ internal sealed class PreviewSession : IDisposable
         }
         finally { extracted.Dispose(); }
     }
-    internal bool HandleKey(System.Windows.Input.Key key) => viewer is BuiltinViewer builtin && builtin.HandleKey(key);
+    internal bool HandleKey(System.Windows.Input.Key key) => viewer is F3dViewer model ? model.HandleKey(key) : viewer is BuiltinViewer builtin && builtin.HandleKey(key);
     internal static void RefreshAll() { foreach (var session in sessions.ToArray()) session.Refresh(); }
     internal static void ClearAll() { foreach (var session in sessions.ToArray()) session.Clear(); }
     internal static async Task DrainAsync()

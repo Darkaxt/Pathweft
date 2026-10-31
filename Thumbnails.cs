@@ -166,6 +166,19 @@ public static class Thumbnails
     // What Explorer calls a type ("Text Document", "File folder"), asked of the shell once per extension:
     // with USEFILEATTRIBUTES it only reads the registry, cheap enough for the UI thread.
     static readonly System.Collections.Concurrent.ConcurrentDictionary<string, string> typeNames = new(StringComparer.OrdinalIgnoreCase);
+    static readonly System.Collections.Concurrent.ConcurrentDictionary<string, BitmapSource> typeIcons = new(StringComparer.OrdinalIgnoreCase);
+    internal static BitmapSource TypeIcon(string name, bool directory) => typeIcons.GetOrAdd(directory ? "\\" : System.IO.Path.GetExtension(name), ext =>
+    {
+        var info = new SHFILEINFO();
+        SHGetFileInfo(directory ? "folder" : "x" + ext, directory ? 0x10u : 0x80u, ref info, (uint)Marshal.SizeOf<SHFILEINFO>(), SHGFI_ICON | SHGFI_SMALLICON | 0x10);
+        if (info.hIcon == IntPtr.Zero) return null;
+        try
+        {
+            var bitmap = System.Windows.Interop.Imaging.CreateBitmapSourceFromHIcon(info.hIcon, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
+            bitmap.Freeze(); return bitmap;
+        }
+        finally { DestroyIcon(info.hIcon); }
+    });
     public static string TypeName(string name, bool dir) => typeNames.GetOrAdd(dir ? "\\" : System.IO.Path.GetExtension(name), ext =>
     {
         var fi = new SHFILEINFO();

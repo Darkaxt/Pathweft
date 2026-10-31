@@ -1,4 +1,4 @@
-# Pathweft 1.1.3
+# Pathweft 1.1.4
 
 Windows 11 x64 is the qualified host. The .NET 10 desktop runtime and native
 archive/preview libraries are included. WebView2 Evergreen is required for the
@@ -45,8 +45,14 @@ to the shared transfer queue. It does not unpack the selection before starting
 the drag. External Windows consumers can request extracted CF_HDROP content on
 demand through the synchronous OLE data interface.
 
-Internal preview modules are selected in Settings > Files. The F3D GLB prototype
-is opt-in; no standalone QuickLook/F3D application is needed. Archive edit
+Internal preview modules are selected in Settings > Files. The interactive F3D
+viewer is opt-in; no standalone QuickLook/F3D application is needed. Drag rotates,
+right/middle-drag pans and the wheel zooms. Arrows rotate, +/- zoom, Home resets,
+and F fits the model. Animated scenes expose clip/playback/timeline controls.
+The bundled readers select model formats; there is no application model-size
+cap, and relative external resources stay beside their model. Reader-specific
+limits still apply. Archive previews use an expandable metadata-only file tree.
+About > Open settings folder opens the profile in Pathweft. Archive edit
 capabilities depend on the actual container/variant. Unsupported/read-only
 entries keep their filename readable and show a gray icon with a lock and reason.
 See the source's docs/ARCHIVES.md and docs/PREVIEW-MODULES.md for exact limits.

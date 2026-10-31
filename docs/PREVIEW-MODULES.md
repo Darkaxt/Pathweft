@@ -11,13 +11,14 @@ and taskbar Preview/Space share the same selection and lifecycle implementation.
 | Markdown | .md, .markdown, .mdx, .mmd, .mkd, .mdwn, .mdown, .mdc, .qmd, .rmd, .rmarkdown, .apib, .mdtxt, .mdtext; CommonMark headings, paragraphs, lists, emphasis, code, quotes and rules | First 1 MiB, visible truncation; Markdig 1.5.0 and native WPF FlowDocument; embedded HTML is inert, links are labels, images show alt labels; no remote resource loading or embedded script/diagram execution | QuickLook MarkdownViewer extension/selection/lifecycle adapted; its browser/template pipeline replaced by native WPF |
 | Images | .jpg, .jpeg, .png, .gif, .bmp, .webp, .ico, .tif, .tiff, .heic through available WIC decoders; first frame | 64 MiB / 200 megapixels; decoded longest dimension at most 2,000 pixels; optional HEIC/WebP availability depends on installed codecs | Selected QuickLook image lifecycle/format contract; existing File Labs WPF BitmapImage path, now backed by a closed source read |
 | PDF | .pdf with Previous/Next page controls and a truthful page indicator; document scripts do not run | 64 MiB; Windows.Data.Pdf with in-memory source, one page render requested at 1,400 DIP per request (physical pixels depend on Windows rendering scale); password/encryption/renderer failures report unavailable | Existing File Labs Windows PDF renderer adapted to module ownership and bounded page navigation |
-| Archive and folder listing | Native archive formats listed in [ARCHIVES.md](ARCHIVES.md); physical and virtual directories; existing Stash/Backup Labs metadata and explicit Open action where recognized | First 5,000 archive names / 1,000 filesystem folder names with visible limits; shared native metadata backend; no extraction, execution or implicit external utility for container listing | Selected QuickLook selection/lifecycle; File Labs presentation and backup actions; S4 native archive integration |
+| Archive and folder listing | Native archive formats listed in [ARCHIVES.md](ARCHIVES.md); expandable folder/file tree with icons, concise names and sizes for containers/virtual directories; existing Stash/Backup Labs explicit actions | All archive metadata, WPF rows created on expansion with virtualization; filesystem folder text remains limited to 1,000 names; no archive extraction or execution | Selected QuickLook selection/lifecycle; File Labs sidebar tree presentation; S4 native archive integration |
 | Video and audio | .mp4, .m4v, .mov, .wmv, .avi, .mkv, .webm, .mpg, .mpeg, .3gp, .ts; .mp3, .wav, .wma, .m4a, .aac, .flac, .ogg, .opus | Installed Windows codecs via WPF MediaElement. Space playback, side-pane pause until Play; Enter toggles and Left/Right seek in the Space window; position refresh is display-only. No codec downloads or external player dispatch | File Labs playback and optional Reel metadata, owned per selected module instance |
 | Fonts | .ttf, .otf specimen at several sizes; no installation | 16 MiB; WPF font rendering; scrollable sample | Selected QuickLook font selection/lifecycle; File Labs native specimen |
-| 3D prototype (F3D), disabled by default | Version-2 .glb with embedded resources; textured initial-pose rendering; Orbit left/right, Zoom in/out and Reset view | 64 MiB model / 4 MiB JSON chunk; external resource references rejected; native libf3d 4.0.0 C API, offscreen 960×720 render; no animation playback or editing | F3D's native library API and offscreen example adapted to the internal viewer contract |
+| 3D models (F3D), disabled by default | Actual bundled-reader inventory, including GLB/glTF, OBJ, STL, PLY, FBX, STEP and USD; native materials and relative resources; mouse orbit/pan/wheel zoom, Fit/Reset, keyboard camera controls; animation clip/playback/timeline when present | No Pathweft model-size or JSON-chunk cap; native libf3d 4.0.0 C API, offscreen 960×720 frames; engine/reader format limits and available machine memory apply; no editing | F3D's native library API and offscreen example adapted to the internal viewer contract |
 
 Higher numerical priority wins; equal priorities use ordinal module ID. Markdown
-and F3D have priority 100, other typed viewers 90 and text -5. Disabled modules are excluded
+has priority 100, other typed viewers 90, F3D 80 and text -5. Existing image/archive
+viewers retain priority over overlapping F3D readers. Disabled modules are excluded
 before construction/Init. A readable text alternative can handle a disabled
 specialized format; otherwise the preview explicitly says no enabled module can
 display it. Decoder/load failures report an error rather than launching another
@@ -35,8 +36,10 @@ Disable, selection change and close finish pending requests, destroy the native
 engine on that thread and observe its actual exit. Frames cross into WPF in
 memory; the native renderer never creates a visible preview window. Its cache
 uses the application profile. No F3D executable, shell extension or registry
-integration is used. The prototype renders the model's initial pose; the presence
-of animation clips in a GLB does not imply animation playback support.
+integration is used. Animation evaluates on the same native thread; playback
+follows WPF frame events with one pending render, and releases that subscription
+on pause, selection change, disable and close. Gesture requests arriving during
+a render are applied together before the next frame. No delay controls completion.
 
 Standalone QuickLook named-pipe dispatch and Windows shell preview handlers are
 absent from this governed path. The retained PreviewHandler.cs source is not

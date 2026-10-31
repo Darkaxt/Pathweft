@@ -279,12 +279,7 @@
             <TextBlock Text="About" Style="{StaticResource H}"/>
             <TextBlock x:Name="AboutText" Foreground="{DynamicResource Palette.8A97AA}" TextWrapping="Wrap"/>
             <Button x:Name="SearchHelp" Content="Help and search guide" Style="{StaticResource Tab}" HorizontalAlignment="Left" Margin="0,8,0,0" Click="Help_Click"/>
-            <Expander Header="Diagnostics" Margin="0,8,0,0">
-              <StackPanel>
-                <TextBlock x:Name="ProfileText" Style="{StaticResource Hint}"/>
-                <TextBlock x:Name="StartupText" Style="{StaticResource Hint}"/>
-              </StackPanel>
-            </Expander>
+            <Button x:Name="OpenSettingsFolder" Content="Open settings folder" Style="{StaticResource Ghost}" HorizontalAlignment="Left" Padding="12,6" Margin="0,8,0,0" Click="OpenSettingsFolder_Click"/>
             <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
               <Button x:Name="UpdateCheck" Content="Check for updates" Style="{StaticResource Tab}" Padding="12,6" Click="Update_Click"/>
               <Button Content="What&#x2019;s new" Style="{StaticResource Tab}" Padding="12,6" Margin="6,0,0,0" Click="WhatsNew_Click"/>

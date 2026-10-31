@@ -8,7 +8,7 @@ internal sealed record PreviewModule(string Id, string Name, string Description,
 {
     internal bool Enabled => !Settings.DisabledPreviewModules.Contains(Id);
     internal bool Matches(Entry entry) => Id == "archive" && (entry.IsDir || Archive.IsArchiveName(entry.Path)) ||
-        !entry.IsDir && (Id == "text" || Extensions.Contains(Path.GetExtension(entry.Path), StringComparer.OrdinalIgnoreCase));
+        !entry.IsDir && (Id == "text" || (Id == "f3d" ? F3dViewer.Supports(entry.Path) : Extensions.Contains(Path.GetExtension(entry.Path), StringComparer.OrdinalIgnoreCase)));
 }
 
 internal static class PreviewModules
@@ -17,7 +17,7 @@ internal static class PreviewModules
     // Fixed inventory: no reflection, downloaded plugins or donor product services.
     internal static readonly PreviewModule[] All =
     {
-        new("f3d", "3D models (F3D prototype)", "Opt-in GLB preview with orbit, zoom and reset; embedded model resources only.", 100, new[] { ".glb" }),
+        new("f3d", "3D models (F3D)", "Interactive model preview: drag to rotate, right-drag to pan, wheel to zoom. Uses the bundled F3D readers.", 80, Array.Empty<string>()),
         new("markdown", "Markdown", "Read-only formatted Markdown; scripts and remote resources stay inactive.", 100,
             new[] { ".md", ".markdown", ".mdx", ".mmd", ".mkd", ".mdwn", ".mdown", ".mdc", ".qmd", ".rmd", ".rmarkdown", ".apib", ".mdtxt", ".mdtext" }),
         new("image", "Images", "WIC images, decoded to fit the preview without retaining the source file.", 90,

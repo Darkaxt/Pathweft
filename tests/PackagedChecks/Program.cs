@@ -241,6 +241,9 @@ sealed class PackageProbe
             var markdown=Path.Combine(root,"preview.md");File.WriteAllText(markdown,"# Packaged Markdown\n\nReadable **content**.");
             Call(previewType,session,"Show",new Entry{Name="preview.md",Path=markdown});await (Task)Get(session,"Completion");
             Check((string)Get(session,"State")=="ready"&&(string)Get(session,"ModuleId")=="markdown"&&target.Content!=null,"Delivered internal Markdown module renders through the actual preview session");
+            Call(previewType,session,"Show",new Entry{Name="native.zip",Path=Path.Combine(root,"native.zip")});await (Task)Get(session,"Completion");
+            var archiveTree=target.Content as TreeView;
+            Check((string)Get(session,"State")=="ready"&&archiveTree!=null&&archiveTree.Items.OfType<TreeViewItem>().Any(),"Delivered archive preview is a native themed tree rather than the old flat text dump");
 
             string model=Path.Combine(root,"triangle.glb");WriteTriangle(model);
             Settings.DisabledPreviewModules.Remove("f3d");
@@ -250,6 +253,10 @@ sealed class PackageProbe
             var frame=Get(viewer,"LastFrame");var png=(byte[])Get(frame,"Png");
             Check((bool)Get(frame,"Offscreen")&&png.Length>1000,"Delivered native preview produces a real offscreen image");
             File.WriteAllBytes(Path.Combine(root,"packaged-f3d.png"),png);
+            Check(((string[])Type("Preview.F3dViewer").GetProperty("SupportedExtensions",Flags).GetValue(null)).Contains(".obj"),"Delivered F3D selection discovers its actual bundled model readers");
+            Call(viewer.GetType(),viewer,"HandleKey",System.Windows.Input.Key.Right);await (Task)Get(viewer,"RenderCompletion");
+            var moved=(byte[])Get(Get(viewer,"LastFrame"),"Png");
+            Check(!png.SequenceEqual(moved),"Delivered native keyboard camera interaction changes the rendered model");
             WriteNativeInfo(root);
             ((IDisposable)session).Dispose();session=null;await (Task)Call(previewType,null,"DrainAsync");
             Check(!(bool)Get(viewer,"WorkerAlive"),"The delivered F3D render worker exits after preview cleanup");

@@ -19,7 +19,20 @@ internal static class F3dNative
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern void f3d_engine_destroy(IntPtr engine);
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern int f3d_engine_set_cache_path(IntPtr engine, [MarshalAs(UnmanagedType.LPUTF8Str)] string path);
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern int f3d_engine_load_plugin([MarshalAs(UnmanagedType.LPUTF8Str)] string name);
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern void f3d_engine_autoload_plugins();
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct ReaderInfo
+    {
+        internal IntPtr Name, Description, Extensions, MimeTypes, Plugin;
+        internal int SceneReader, GeometryReader;
+    }
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern IntPtr f3d_engine_get_readers_info(out int count);
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern void f3d_engine_destroy_readers_info(IntPtr readers);
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern IntPtr f3d_engine_get_scene(IntPtr engine);
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern IntPtr f3d_scene_get_animation(IntPtr scene);
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern uint f3d_animation_count(IntPtr animation);
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern void f3d_animation_get_time_range(IntPtr animation, out double minimum, out double maximum);
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern void f3d_animation_load_time(IntPtr animation, double time);
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern IntPtr f3d_engine_get_window(IntPtr engine);
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern IntPtr f3d_engine_get_options(IntPtr engine);
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern void f3d_options_set_as_bool(IntPtr options, [MarshalAs(UnmanagedType.LPUTF8Str)] string name, int value);
@@ -36,6 +49,10 @@ internal static class F3dNative
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern void f3d_camera_set_current_as_default(IntPtr camera);
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern void f3d_camera_reset_to_default(IntPtr camera);
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern void f3d_camera_azimuth(IntPtr camera, double angle);
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern void f3d_camera_elevation(IntPtr camera, double angle);
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern void f3d_camera_pan(IntPtr camera, double right, double up, double forward);
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern void f3d_camera_get_focal_point(IntPtr camera, [Out] double[] point);
+    [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern double f3d_camera_get_view_angle(IntPtr camera);
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern void f3d_camera_dolly(IntPtr camera, double factor);
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern void f3d_camera_get_position(IntPtr camera, [Out] double[] position);
     [DllImport(Library, CallingConvention = CallingConvention.Cdecl)] internal static extern IntPtr f3d_image_save_buffer(IntPtr image, int format, out uint size);

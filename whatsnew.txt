@@ -1,6 +1,11 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.4 | 2026-10-31 | Archive trees and interactive 3D
+- Archive previews show expandable folders, file icons and sizes instead of a flat list of repeated paths.
+- The opt-in F3D viewer supports the bundled model formats without the former 64-MiB/embedded-only restrictions. Drag to rotate, right-drag to pan, wheel to zoom, and fit or reset the camera. Animated scenes expose clip, playback and timeline controls.
+- About has an Open settings folder button instead of the Diagnostics expander and startup text.
+
 ## 1.1.3 | 2026-10-31 | Dismissal and archive drag fixes
 - Clicking outside search dismisses it even when its query field retains keyboard focus. Moving into its preview keeps it open; leaving the preview dismisses both.
 - ZIP/7z drags between panes go straight to the transfer queue without unpacking on the UI thread before the drag starts. External Windows drops still receive extracted files on demand.

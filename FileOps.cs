@@ -12,6 +12,7 @@ namespace FileExplorer;
 // Commands beyond copy/move/delete: undo, zip, compare, rename many, checksum, shortcuts, run as admin.
 public partial class MainWindow
 {
+    internal void OpenSettingsFolder() => active.Navigate(Settings.Dir);
     internal static string DownloadsFolder()
     {
         var id=new Guid("374DE290-123F-4565-9164-39C4925E467B");

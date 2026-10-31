@@ -105,6 +105,7 @@ public partial class MainWindow
         quick.PreviewKeyDown += (_, key) =>
         {
             if (key.Key is Key.Space or Key.Escape) { quick.Close(); key.Handled = true; }
+            else if (quickPreview.HandleKey(key.Key)) key.Handled = true;
             else if (key.Key is Key.Up or Key.Down)
             {
                 var list = source.List;
@@ -115,7 +116,6 @@ public partial class MainWindow
                 }
                 key.Handled = true;
             }
-            else if (quickPreview.HandleKey(key.Key)) key.Handled = true;
         };
         ApplyPreviewAppearance(); quick.Show(); PreviewFollow();
     }
