@@ -41,13 +41,20 @@ public partial class MainWindow
     }
     void ApplyPreview()
     {
-        var on = Settings.Preview ? Visibility.Visible : Visibility.Collapsed;
+        previewShown = null;
+        if(Settings.Preview)PreviewFollow();
+        else{SetPreviewVisible(false);sidePreview?.Clear();}
+    }
+    void SetPreviewVisible(bool visible)
+    {
+        var on = visible ? Visibility.Visible : Visibility.Collapsed;
+        if(PreviewPane.Visibility==on)return;
         PreviewPane.Visibility = PreviewSplitter.Visibility = on;
-        PreviewGap.Width = new GridLength(Settings.Preview ? 10 : 0);
-        PreviewColumn.Width = new GridLength(Settings.Preview ? Settings.PreviewWidth : 0);
-        PreviewColumn.MinWidth = Settings.Preview ? 200 : 0;
-        FitPreview(); PlaceCaption(); previewShown = null;
-        if (Settings.Preview) PreviewFollow(); else sidePreview?.Clear();
+        PreviewColumn.MinWidth = visible ? 200 : 0;
+        PreviewColumn.MaxWidth=double.PositiveInfinity;
+        PreviewGap.Width = new GridLength(visible ? 10 : 0);
+        PreviewColumn.Width = new GridLength(visible ? Settings.PreviewWidth : 0);
+        FitPreview(); PlaceCaption();
     }
     void TogglePreview() { Settings.Preview = !Settings.Preview; Settings.Save(); ApplyPreview(); }
     void Preview_Click(object sender, RoutedEventArgs e) { TogglePreview(); active.FocusList(); }
@@ -64,12 +71,15 @@ public partial class MainWindow
         if (closingPreviews) return;
         if (quick != null)
         {
+            SetPreviewVisible(false);
             var selected = quickSource?.List.SelectedItem as Entry;
             if (selected?.Path != quickShown) { quickShown = selected?.Path; quickPreview.Show(selected); }
             return;
         }
         if (!Settings.Preview || sidePreview == null) return;
         var entry = active?.List.SelectedItem as Entry;
+        if(entry?.IsUp==true)entry=null;
+        SetPreviewVisible(entry!=null);
         if (entry?.Path == previewShown) return;
         previewShown = entry?.Path; sidePreview.Show(entry);
     }

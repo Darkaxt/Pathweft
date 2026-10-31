@@ -54,9 +54,10 @@ public partial class MainWindow
     void PlaceCaption()
     {
         var rightmost = Settings.SinglePane ? Left : Right;
-        Left.ReserveCaption(!Settings.Preview && rightmost == Left ? CaptionWidth : 0);
-        Right.ReserveCaption(!Settings.Preview && rightmost == Right ? CaptionWidth : 0);
-        PreviewHeader.Margin = new Thickness(12, Settings.Preview ? 40 : 6, 6, 4);
+        bool preview=PreviewPane.Visibility==Visibility.Visible;
+        Left.ReserveCaption(!preview && rightmost == Left ? CaptionWidth : 0);
+        Right.ReserveCaption(!preview && rightmost == Right ? CaptionWidth : 0);
+        PreviewHeader.Margin = new Thickness(12, preview ? 40 : 6, 6, 4);
     }
 
     struct ThemeOptions { public uint Flags, Mask; }

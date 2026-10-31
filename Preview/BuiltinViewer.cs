@@ -55,7 +55,7 @@ internal sealed class BuiltinViewer(PreviewModule module, MainWindow owner, Entr
                 if (!entry.IsDir && Backups.Named(path) && await Task.Run(() => Backups.Inspect(path, details: true, () => context.Token.IsCancellationRequested), context.Token) is { } backup)
                     content = owner.BackupView(entry, backup);
                 else if (!entry.IsDir) content = ArchiveTree.View(await Task.Run(() => ArchiveTree.Read(path, "", context.Token), context.Token), context);
-                else content = Text(await Task.Run(() => FolderListing(path, context.Token), context.Token));
+                else content = ArchiveTree.View(await Task.Run(() => ArchiveTree.ReadDirectory(path, context.Token, PaneView.ShowHidden), context.Token), context);
                 break;
             case "font": content = Font(path); break;
             case "media": await Media(path, context); return;
@@ -127,18 +127,6 @@ internal sealed class BuiltinViewer(PreviewModule module, MainWindow owner, Entr
             return image;
         }, token);
         return new Image { Source = bitmap, Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly, Margin = new(16) };
-    }
-    static string FolderListing(string path, CancellationToken token)
-    {
-        var text = new StringBuilder();
-        int count = 0;
-        foreach (var item in new DirectoryInfo(path).EnumerateFileSystemInfos())
-        {
-            token.ThrowIfCancellationRequested();
-            if (++count > 1000) { text.AppendLine("… First 1,000 items only."); break; }
-            text.AppendLine(item.Name + (item is DirectoryInfo ? "\\" : ""));
-        }
-        return text.Length == 0 ? "(empty folder)" : text.ToString();
     }
     static UIElement Font(string path)
     {

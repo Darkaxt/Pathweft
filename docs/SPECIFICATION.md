@@ -1,6 +1,6 @@
 # Pathweft specification
 
-Version 0.20 - 2026-10-31. Owner: Darkaxt.
+Version 0.21 - 2026-10-31. Owner: Darkaxt.
 
 This is the authoritative specification. The derived plan must preserve every
 requirement and acceptance criterion. Material scope changes require explicit
@@ -42,6 +42,20 @@ file size, dates and location. Read resources/PE headers only; never execute the
 selected application. Missing version fields stay omitted, malformed headers
 must not crash the preview. Verify actual signed/unsigned and no-version files,
 source preservation, selection changes and module disable behavior.
+PREVIEW-10, subsequent user clarification: extend the themed expandable folder/
+file tree to every ordinary native folder and virtual folder inside supported
+compressed containers. Read native branches asynchronously only when expanded;
+preserve names, type icons, file sizes, natural folder-first sorting and hidden
+visibility. Show clear empty/inaccessible-folder states, without extracting or
+executing files. Cancel obsolete branch loads on selection change/closure.
+PREVIEW-11: when the active pane has no selected item (including the parent row),
+collapse the side preview and its splitter/column completely. Restore the saved
+preview width on a new selection when preview remains enabled; do not change the
+user's enabled preference. Caption buttons must remain correctly reserved in
+single/split layouts. Verify actual selection clearing/restoration, disabled
+preview, pending folder/model cleanup and themed rendering without desktop input.
+These additions supersede the still-unpublished initial1.1.5 package atbb946b7;
+no intermediate release is authorized.
 
 Additional S8 user requirement (2026-10-31), CORE-09: This PC must show drive
 capacity/free space and usage bars using the same measured volume data as the
@@ -336,6 +350,8 @@ changing Outlook indexing or modifying the existing engine configuration.
 | PREVIEW-07 | S8 full embedded F3D viewer described in current scope, superseding PREVIEW-05's prototype restrictions; verify actual bundled-reader formats and large-model interaction/rendering, opt-in and resource release across preview surfaces. |
 | PREVIEW-08 | S8 themed icon actions in PDF/F3D, animation selector and transparent model composition; preserve interaction and lifecycle, with dark/light responsive evidence. |
 | PREVIEW-09 | S8 executable details preview described in current scope; verify actual resource metadata, source preservation, no execution, missing resources and module settings. |
+| PREVIEW-10 | S8 common tree presentation for native and virtual compressed folders, lazy asynchronous native branch reads, hidden visibility and resource lifecycle, as specified above. |
+| PREVIEW-11 | S8 selection-driven preview collapse/restoration without altering the enabled preference, with correct saved width/caption layout and resource cleanup. |
 
 Compiled-in modules with on-demand initialization are sufficient. Assembly
 unloading, a dynamic plugin marketplace and a general extension framework are not

@@ -19,7 +19,7 @@ do not change its requirements or the user's standing instructions.
   are verified. Prior S8 work is COMPLETE through v1.1.3,
   including the compact Ctrl+Alt+Space popup and clipped Settings action fix.
   The prior frame/search/editor/icon/sidebar work shipped in v1.1.1.
-  S8 is ACTIVE again for CORE-11/PREVIEW-08, the user-directed 1.1.5 drive and
+  S8 is ACTIVE again for CORE-11/PREVIEW-08..11, the user-directed 1.1.5 drive and
   preview refinements. No S6/S7 implementation is authorized.
   S6 is BLOCKED by this user-directed execution boundary,
   with investigation retained and no working patch; S7 remains NOT STARTED.

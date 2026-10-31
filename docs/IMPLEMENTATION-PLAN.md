@@ -1,11 +1,12 @@
 # Implementation and reconciliation
 
-Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.20, 2026-10-31,
+Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.21, 2026-10-31,
 including the user-authorized continued comparison requirement TRANSFER-07.
 
-S8 is ACTIVE for CORE-11 / PREVIEW-08/09: free percentages, consistent capacity
+S8 is ACTIVE for CORE-11 / PREVIEW-08..11: free percentages, consistent capacity
 warnings, provider-based cloud labels, icon preview actions, themed animation
-selection, seamless model composition and executable metadata. Acceptance remaining: integrated
+selection, seamless model composition, executable metadata, shared native/virtual
+folder trees and selection-driven preview collapse. Acceptance remaining: integrated
 hidden source verification, normal 1.1.5 publication/retrieval/installation and
 cleanup. These are internal advancement blockers being implemented, with no
 tracked deferrals. S6/S7 remain postponed; no other stage receives implementation.
@@ -73,7 +74,7 @@ plan neither authorizes itself nor adds approval checkpoints.
 | S5 - REA-driven transfer improvements | COMPLETE | TRANSFER-01..07, archive/caller and WIDGET-02 revalidation, affected CORE-02/03, LIFE-01/DELIVERY-03 | Initial S5 criteria passed at e478986; user extended comparison/implementation | Finite findings inventory resolved; source/target handle reuse, copy-time hashing, metadata/EOF reductions, storage decisions, matched profiles, actual callers, adverse/preservation/cleanup and Release checks pass; see [evidence](verification/2026-10-29-s5.md) |
 | S6 - Native StartAllBack search | BLOCKED | SAB-01..06, affected SEARCH/CORE/LIFE/DELIVERY criteria | Parked by explicit user-directed S8-first execution; resume only after reprioritization is lifted | Investigation only; no working patch or complete SAB criterion. All native groups/handoff/provider/lifecycle/routing criteria remain open. |
 | S7 - Everything filesystem search and Outlook indexing scope | NOT STARTED | EVERYWHERE-01..05, affected SEARCH/CORE/LIFE/SHELL criteria | S6 COMPLETE; finite consumer/semantics/scope inventory before migration | Native Everything file results with selected filesystem roots excluded from Windows indexing; WSearch/Outlook retained, explicit Windows-managed exceptions, local/mail/reboot/recovery verification |
-| S8 - Core integration and delivery | ACTIVE | SHELL-01, CORE-03..11, PREVIEW-06..09, affected SEARCH/WIDGET/ARCHIVE, DELIVERY-01..03 | Delivered S8 through1.1.4 and current user additions | CORE-11/PREVIEW-08/09 integrated source checks and final1.1.5 delivery/cleanup required. S6/S7 remain parked. |
+| S8 - Core integration and delivery | ACTIVE | SHELL-01, CORE-03..11, PREVIEW-06..11, affected SEARCH/WIDGET/ARCHIVE, DELIVERY-01..03 | Delivered S8 through1.1.4 and current user additions | CORE-11/PREVIEW-08..11 integrated source checks and final1.1.5 delivery/cleanup required. S6/S7 remain parked. |
 
 ENV-01..04 belong to the current setup deliverable, not an artificial product
 implementation stage. See [setup evidence](verification/2026-10-28-setup.md).
@@ -124,7 +125,7 @@ Post-release stage addition authorized 2026-10-31:
 | PREVIEW-06/07 | S8 | Archive tree, full embedded F3D interaction/reader support and final delivery |
 | CORE-09 | S8 | This PC capacity/network/connection details and final delivery |
 | CORE-10 | S8 | Dynamic populated detail columns and final delivery |
-| CORE-11, PREVIEW-08/09 | S8 | Capacity/provider refinements, icon/themed previews, executable details and final1.1.5 delivery |
+| CORE-11, PREVIEW-08..11 | S8 | Capacity/provider refinements, icon/themed previews, executable details, shared folder trees, empty-selection collapse and final1.1.5 delivery |
 | ARCHIVE-01..05 | S4 | Transfer revalidation S5; final package S8 |
 | RAR-01..05 | S4R | Transfer revalidation S5; final package/source/license/install S8 |
 | FILEUI-01..03 | S4U | Delivered icon/visibility/settings package revalidation S8 |

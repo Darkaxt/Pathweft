@@ -360,6 +360,8 @@ public partial class MainWindow : Window
         Left.RefreshVisibility(); Right.RefreshVisibility();
         taskbarSearch?.Widget?.Pane.RefreshVisibility();
         RefreshFolderTreeVisibility();
+        if(sidePreview?.ModuleId=="archive")sidePreview.Refresh();
+        if(quickPreview?.ModuleId=="archive")quickPreview.Refresh();
     }
 
     public void ResortPanes() { foreach (var p in new[] { Left, Right }) p.SetSort(p.SortKey, p.SortDescending); }

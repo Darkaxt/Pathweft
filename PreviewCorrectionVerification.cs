@@ -30,6 +30,34 @@ public partial class MainWindow
             check(session.State == "ready", "Preview loads through the actual session: " + Path.GetExtension(path));
         }
         async Task Settle() => await Dispatcher.InvokeAsync(UpdateLayout, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+        string folder=Path.Combine(root,"folder-tree");Directory.CreateDirectory(Path.Combine(folder,"Nested","Deep"));Directory.CreateDirectory(Path.Combine(folder,"Empty"));
+        File.WriteAllText(Path.Combine(folder,"Nested","Deep","leaf.txt"),"leaf");File.WriteAllText(Path.Combine(folder,".hidden"),"hidden");
+        await Show(folder,true);var folderTree=(TreeView)body.Content;
+        check(folderTree.Items.OfType<TreeViewItem>().Count()==2,"Native folder preview uses concise folder-first tree rows and hides dotfiles");
+        var branch=folderTree.Items.OfType<TreeViewItem>().Single(r=>((ArchiveTree.Node)r.Tag).Name=="Nested");
+        check(branch.Items[0] is string,"Native tree does not enumerate grandchildren before expansion");
+        ((IExpandCollapseProvider)new TreeViewItemAutomationPeer(branch).GetPattern(PatternInterface.ExpandCollapse)).Expand();await ((ArchiveTree.Node)branch.Tag).Expansion;
+        var deep=branch.Items.OfType<TreeViewItem>().Single();deep.IsExpanded=true;await ((ArchiveTree.Node)deep.Tag).Expansion;
+        check(deep.Items.OfType<TreeViewItem>().Single().ToolTip.ToString()==Path.Combine(folder,"Nested","Deep","leaf.txt"),"Accessible native branch expansion asynchronously resolves real nested files");
+        var emptyBranch=folderTree.Items.OfType<TreeViewItem>().Single(r=>((ArchiveTree.Node)r.Tag).Name=="Empty");emptyBranch.IsExpanded=true;await ((ArchiveTree.Node)emptyBranch.Tag).Expansion;
+        check(emptyBranch.Items.OfType<TextBlock>().Single().Text=="Empty folder","Empty native folders have an explicit empty state");
+        PaneView.ShowHidden=true;await Show(folder,true);check(((TreeView)body.Content).Items.OfType<TreeViewItem>().Count()==3,"Native folder tree honors enabled hidden-file visibility");PaneView.ShowHidden=false;
+        Settings.Preview=true;await S1Verification.Navigate(Left,root);SetActive(Left);
+        Left.List.SelectedItem=Left.Items.Single(e=>e.Path==folder);PreviewFollow();await sidePreview.Completion;await Settle();
+        double previewWidth=Settings.PreviewWidth;
+        foreach(bool single in new[]{true,false})
+        {
+            SetSinglePane(single);Left.List.UnselectAll();PreviewFollow();await PreviewSession.DrainAsync();await Settle();
+            check(Settings.Preview&&PreviewPane.Visibility==Visibility.Collapsed&&PreviewSplitter.Visibility==Visibility.Collapsed&&PreviewColumn.Width.Value==0&&PreviewGap.Width.Value==0,"Empty selection collapses the complete preview without changing its enabled preference: "+single);
+            Left.List.SelectedItem=Left.Items.Single(e=>e.Path==folder);PreviewFollow();await sidePreview.Completion;await Settle();
+            check(PreviewPane.Visibility==Visibility.Visible&&PreviewColumn.Width.Value==previewWidth&&PreviewBody.Content is TreeView,"New selection restores the saved preview width and native folder tree: "+single);
+        }
+        Settings.Preview=false;ApplyPreview();Left.List.UnselectAll();Left.List.SelectedItem=Left.Items.Single(e=>e.Path==folder);PreviewFollow();
+        check(PreviewPane.Visibility==Visibility.Collapsed,"Selection does not re-enable a deliberately disabled preview");
+        Settings.Preview=true;ApplyPreview();await sidePreview.Completion;
+        ToggleHidden();await sidePreview.Completion;await Settle();
+        check(((TreeView)PreviewBody.Content).Items.OfType<TreeViewItem>().Any(r=>((ArchiveTree.Node)r.Tag).Name==".hidden"),"Actual Ctrl+H visibility action refreshes the selected native folder preview");
+        ToggleHidden();await sidePreview.Completion;
         string executable=Path.Combine(AppContext.BaseDirectory,"Pathweft.exe");
         string executableHash=HashFile(executable);await Show(executable);
         check(session.ModuleId=="executable"&&ExecutableDetails.Read(executable,default).Any(p=>p.Name=="Product version"&&p.Value.StartsWith(typeof(MainWindow).Assembly.GetName().Version.ToString(3))),"Executable selection renders actual version resources without launching the file");
@@ -41,7 +69,7 @@ public partial class MainWindow
         Settings.DisabledPreviewModules.Add("executable");session.Refresh();await session.Completion;
         check(session.ModuleId!="executable","Executable-details module respects its actual Settings disable state");
         Settings.DisabledPreviewModules.Remove("executable");
-        async Task LayoutPreview(string file,string name)
+        async Task LayoutPreview(string file,string name,bool directory=false)
         {
             SetSinglePane(true);SetActive(Left);
             await S1Verification.Navigate(Left,Path.GetDirectoryName(file));
@@ -55,8 +83,9 @@ public partial class MainWindow
                 {var current=PreviewChildren<ComboBox>(PreviewBody).Single();current.ApplyTemplate();var face=PreviewChildren<System.Windows.Controls.Primitives.ToggleButton>(current).First();check(((SolidColorBrush)face.Foreground).Color==((SolidColorBrush)FindResource("Palette.E8EEF6")).Color&&current.ActualHeight>=32&&current.SelectedIndex==0,"Animation selector has a readable selected clip and the actual "+mode+" theme foreground");}
                 await S1Verification.Snapshot(this,root,$"preview-{name}-{mode}-{scale*100:0}");
             }
-            Settings.NativeMode="dark";Settings.TextScale=1;ApplyAppearance();await sidePreview.Completion;await Settle();await Show(file);
+            Settings.NativeMode="dark";Settings.TextScale=1;ApplyAppearance();await sidePreview.Completion;await Settle();await Show(file,directory);
         }
+        await LayoutPreview(folder,"folder",true);
         await LayoutPreview(executable,"executable");
         string pdf=Path.Combine(root,"pages.pdf");WritePdf(pdf);await Show(pdf);await Settle();
         var pdfButtons=S3VerificationButtons(body).ToArray();
@@ -197,6 +226,11 @@ public partial class MainWindow
         session.Clear();await PreviewSession.DrainAsync();
         await S1Verification.Navigate(Left,root);SetActive(Left);
         Left.List.SelectedItem=Left.Items.Single(e=>e.Path==obj);
+        Settings.Preview=true;ApplyPreview();await sidePreview.Completion;
+        var collapseRenderer=(F3dViewer)sidePreview.ViewerForVerification;
+        Left.List.UnselectAll();PreviewFollow();await PreviewSession.DrainAsync();
+        check(PreviewPane.Visibility==Visibility.Collapsed&&!collapseRenderer.WorkerAlive,"Clearing model selection collapses the side pane and joins its native render worker");
+        Left.List.SelectedItem=Left.Items.Single(e=>e.Path==obj);PreviewFollow();await sidePreview.Completion;
         ToggleQuickView(Left,this);await quickPreview.Completion;
         var spaceRenderer=(F3dViewer)quickPreview.ViewerForVerification;
         check(quickPreview.State=="ready"&&quickPreview.ModuleId=="f3d","Space preview uses the same expanded embedded model reader");

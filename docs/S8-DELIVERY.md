@@ -1,7 +1,16 @@
 # S8 core delivery contract
 
-Authority: specification v0.20 and the user's explicit S8-first/delivery instructions.
-S8 is ACTIVE for the 1.1.5 CORE-11 / PREVIEW-08/09 refinements. Source capacity/
+Authority: specification v0.21 and the user's explicit S8-first/delivery instructions.
+S8 is ACTIVE for the 1.1.5 CORE-11 / PREVIEW-08..11 refinements. Native/virtual
+folder tree parity and empty-selection collapse were added before publication;
+final integrated source checks pass in appearance-4aff38ff8fb843db907a78e0439e2c68
+and appearance-b10fa99a40dc401bb8690690b248ae22. Actual tree expansion, empty/
+hidden-folder states, live Ctrl+H, single/split selection collapse/restoration,
+saved width, disabled preference and actual F3D worker exit pass. Package and
+delivery verification remains required. The earlier unpublished bb946b7 package
+and exact build root were removed through reviewed cleanup af058ff0cd35fbd1c94bfc6148dba1db
+(2,895 members / 1,701,014,309 helper file bytes, no exclusions/errors).
+Source capacity/
 provider/unavailable-media and preview behavior plus dark/light100%/150% checks
 pass in the retained hidden fixtures appearance-64aef27457394964bed64902323ba98a
 and appearance-82e3cb4496a44f1cb8d0ef50d9bfcde2. Actual selected-file screenshots

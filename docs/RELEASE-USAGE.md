@@ -55,6 +55,9 @@ PDF and 3D previews use icon actions with tooltips. The animation selector
 follows the theme, and models composite directly onto the preview surface.
 The Executable details module reads available version resources, architecture,
 size and dates without running the selected application.
+Folders and virtual archive folders share an expandable tree; native branches
+load on expansion. Clearing selection collapses the preview and splitter without
+disabling preview. Selecting another item restores its saved width.
 
 Dragging archive entries between Pathweft panes submits their identities directly
 to the shared transfer queue. It does not unpack the selection before starting
