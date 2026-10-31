@@ -46,7 +46,7 @@ internal sealed class SearchWidgetWindow : Window
         Pane.WidgetLocationOpened+=path=>{main.OpenWidgetLocation(path);Dismiss();};
         query.TextChanged+=(_,_)=>Notice.Visibility=Visibility.Collapsed;
         PreviewKeyDown += OnWidgetKeyDown;
-        Deactivated += (_, _) => { if (!IsKeyboardFocusWithin && !IsOwnedWindowActive()) Dismiss(); };
+        Deactivated += (_, _) => DismissAfterDeactivation();
         Closing += (_, e) => { if (!closing) { e.Cancel = true; Dismiss(); } };
         Closed += (_, _) => Pane.StopWidgetWork();
         SourceInitialized += (_, _) => MainWindow.ApplyAcrylic(this);
@@ -100,7 +100,14 @@ internal sealed class SearchWidgetWindow : Window
     }
 
     bool IsOwnedWindowActive() => OwnedWindows.Cast<Window>().Any(w => w.IsActive);
-    internal void Dismiss() { main.CloseWidgetPreview(Pane); if (IsVisible) Hide(); Pane.StopWidgetWork(); }
+    internal void DismissAfterDeactivation() => Dispatcher.BeginInvoke(() =>
+    {
+        // Keyboard focus can remain cached in the query when native activation
+        // leaves. Read window activation after this transition, including an
+        // owned preview gaining activation, rather than testing that cache.
+        if(IsVisible&&!IsActive&&!IsOwnedWindowActive())Dismiss();
+    },System.Windows.Threading.DispatcherPriority.Input);
+    internal void Dismiss() { if (IsVisible) Hide(); main.CloseWidgetPreview(Pane); Pane.StopWidgetWork(); }
     internal void Shutdown() { main.CloseWidgetPreview(Pane); closing = true; Close(); }
     internal void Handoff(){if(!string.IsNullOrWhiteSpace(Pane.SearchRequest.Query)){main.AcceptWidgetSearch(Pane.SearchRequest);Dismiss();}}
     internal void Preview()=>main.ToggleQuickView(Pane,this);

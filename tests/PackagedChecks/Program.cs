@@ -170,6 +170,15 @@ sealed class PackageProbe
             }
 
             owner=new MainWindow(); // construct real controls/resources, never show
+            string downloads=(string)Call(typeof(MainWindow),null,"DownloadsFolder");
+            Check(((Panel)owner.FindName("Favorites")).Children.OfType<Button>().Any(button=>button.ToolTip as string==downloads),"Delivered Favorites contains the actual Windows Downloads location");
+            int exports=0;
+            string[] archivePaths={Path.Combine(root,"native.zip","renamed.txt")};
+            var dragType=Type("ArchiveDragData");
+            var lazyDrag=Activator.CreateInstance(dragType,Flags,null,new object[]{archivePaths,(Func<string[]>)(()=>{exports++;return new[]{payload};})},null);
+            var drag=new DataObject(lazyDrag);
+            Check(((string[])Call(dragType,null,"Files",drag)).SequenceEqual(archivePaths)&&exports==0,"Delivered archive drag identities are available without materializing export files");
+            Check(((string[])drag.GetData(DataFormats.FileDrop)).SequenceEqual(new[]{payload})&&((string[])drag.GetData(DataFormats.FileDrop)).SequenceEqual(new[]{payload})&&exports==1,"Delivered Windows file-drop export stays compatible and materializes once on demand");
             new System.Windows.Interop.WindowInteropHelper(owner).EnsureHandle(); // an owned, never-shown HWND is required by WPF's Owner contract
             using(var icon=Application.GetResourceStream(new Uri("/Pathweft;component/app.ico",UriKind.Relative)).Stream)
                 VerifyIcon(System.Windows.Media.Imaging.BitmapDecoder.Create(icon,System.Windows.Media.Imaging.BitmapCreateOptions.PreservePixelFormat,System.Windows.Media.Imaging.BitmapCacheOption.OnLoad).Frames[0],"Delivered WPF app icon has a transparent background, yellow folder and contrasting brown marks");

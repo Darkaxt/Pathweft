@@ -14,10 +14,11 @@ do not change its requirements or the user's standing instructions.
   see `docs/verification/2026-10-29-s5.md` for the direct-write contract,
   measured performance limits and actual caller/preservation/recovery evidence.
   The user explicitly reprioritized S8 core delivery ahead of Windows search work.
-  S8 is COMPLETE through the verified published/retrieved/installed v1.1.2,
+  S8 is ACTIVE for the post-v1.1.2 click-outside dismissal correction under
+  WIDGET-01/02 and v1.1.3 delivery. Prior S8 work is COMPLETE through v1.1.2,
   including the compact Ctrl+Alt+Space popup and clipped Settings action fix.
   The prior frame/search/editor/icon/sidebar work shipped in v1.1.1.
-  No stage is ACTIVE. No S6/S7 implementation is authorized.
+  No other stage is ACTIVE. No S6/S7 implementation is authorized.
   S6 is BLOCKED by this user-directed execution boundary,
   with investigation retained and no working patch; S7 remains NOT STARTED.
   S9 context-menu reorganization is planned, NOT STARTED (MENU-01..02).

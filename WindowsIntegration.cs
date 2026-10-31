@@ -41,7 +41,9 @@ internal static class WindowsIntegration
         foreach(var type in Types)
         {
             var shell=Classes+type+@"\shell";
-            yield return(shell,"",Verb);
+            // Explorer recognizes canonical Open as inline navigation. A custom
+            // default verb makes its own subfolder double-click launch us.
+            yield return(shell,"","open");
             yield return(shell+@"\pathweft","","Open in Pathweft");
             yield return(shell+@"\pathweft","Icon",Environment.ProcessPath);
             yield return(shell+@"\pathweft\command","",Command);
@@ -101,6 +103,31 @@ internal static class WindowsIntegration
         {
             Restore();throw;
         }
+    }
+
+    internal static void UpgradeOwnedRegistration()
+    {
+        // A previous opt-in registration remains opt-in after updating. Never
+        // enable routing from a missing record or take over another manager.
+        if(Settings.Profile!=null
+#if DEBUG
+           && VerificationRoot==null
+#endif
+          )return;
+        if(!File.Exists(RecoveryPath)||Enabled)return;
+        Registration prior;
+        try{prior=JsonSerializer.Deserialize<Registration>(File.ReadAllText(RecoveryPath));}
+        catch(JsonException){return;} // normal recovery UI retains the invalid record
+        var current=Values().ToArray();
+        if(prior?.Version!=1||prior.Values==null||prior.Values.Count!=current.Length||
+           !current.All(item=>prior.Values.Any(v=>v.Key==item.Key&&v.Name==item.Name&&v.Written==
+               (item.Name==""&&Types.Any(type=>item.Key==Classes+type+@"\shell")?Verb:item.Value))))return;
+        foreach(var value in prior.Values)
+        {
+            using var key=CurrentUser.OpenSubKey(value.Key);
+            if(key?.GetValue(value.Name,null,RegistryValueOptions.DoNotExpandEnvironmentNames) as string!=value.Written)return;
+        }
+        SetEnabled(true); // validated restore, then recapture the same original owner
     }
 
     static void Restore()

@@ -1,12 +1,26 @@
 # Pathweft specification
 
-Version 0.15 - 2026-10-31. Owner: Darkaxt.
+Version 0.16 - 2026-10-31. Owner: Darkaxt.
 
 This is the authoritative specification. The derived plan must preserve every
 requirement and acceptance criterion. Material scope changes require explicit
 user direction recorded here; ordinary implementation choices need no new gate.
 
 ## 1. Intent and current scope
+
+Post-v1.1.2 correction: clicking outside the search popup must dismiss it even
+if WPF still reports keyboard focus in the query field during deactivation.
+Moving focus into its owned preview keeps that interaction open; moving outside
+the popup/preview dismisses both. Escape remains available, and reopening must
+not be closed by a previous deactivation callback. S8 owns this WIDGET-01/02
+correction, focused hidden regression checks and final v1.1.3 delivery.
+The same correction includes the reported archive-to-folder drag freeze and
+delayed drop: internal archive drags must start without extracting on the UI
+thread, submit the existing archive transfer queue on drop, preserve source
+contents and interoperation, and never drop into a later pointer location after
+preparation. Restore the redirected Windows Downloads known folder in Favorites.
+Existing Explorer windows must retain their own subfolder navigation while
+opt-in external folder launches route to Pathweft; SHELL-01 owns this boundary.
 
 Create a responsive Windows folder browser with connected Everything search,
 taskbar search, internal previews and improved transfers in one maintained

@@ -139,6 +139,7 @@ public partial class App : Application
             {
                 if(e.Args.Contains("--resume-agent"))
                 {
+                    WindowsIntegration.UpgradeOwnedRegistration();
                     if(Settings.TakeWinE&&Agent.OwnsStartup)Agent.EnableAsync(Environment.ProcessPath).GetAwaiter().GetResult();
                 }
                 else
@@ -196,6 +197,10 @@ public partial class App : Application
             listening = Listen();
         }
         Settings.Load(); // before any window: the panes read column widths while being built
+        string folderUpgradeIssue=null;
+        try{WindowsIntegration.UpgradeOwnedRegistration();}
+        catch(Exception error)when(error is IOException or UnauthorizedAccessException or InvalidOperationException or System.Security.SecurityException)
+        {folderUpgradeIssue="Folder integration could not be updated. Review Settings > Windows integration.";}
         Appearance.Initialize();
 #if DEBUG
         if (e.Args.Any(a => a.StartsWith("--verify-s4=") || a.StartsWith("--verify-fileui=") || a.StartsWith("--verify-s5=") || a.StartsWith("--verify-s8=") || a.StartsWith("--verify-s8-appearance=")) && Environment.GetEnvironmentVariable("PATHWEFT_TEST_HIDDEN") == "1" && !HiddenTrialPresentation.Enabled)
@@ -210,6 +215,7 @@ public partial class App : Application
         sizeSaver.Start();
         base.OnStartup(e);
         var window = new MainWindow(); // opened here, not via StartupUri, so --agent etc. never build it
+        if(folderUpgradeIssue!=null&&window.FindName("Status") is System.Windows.Controls.TextBlock status)status.Text=folderUpgradeIssue;
 #if DEBUG
         if (e.Args.FirstOrDefault(a => a.StartsWith("--verify-fileui=")) is { } fileUiVerification)
             window.ContentRendered += async (_, _) => await window.VerifyFileUi(fileUiVerification["--verify-fileui=".Length..]);

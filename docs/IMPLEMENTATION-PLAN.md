@@ -1,6 +1,6 @@
 # Implementation and reconciliation
 
-Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.15, 2026-10-31,
+Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.16, 2026-10-31,
 including the user-authorized continued comparison requirement TRANSFER-07.
 
 Current authorization: S8 core file-explorer integration and delivery, explicitly
@@ -10,12 +10,17 @@ upstream changes before compilation; add an alternate Native theme/accent contro
 under Appearance using Huashu and the supplied Explorer screenshot as references.
 S6 is parked by this user-directed execution boundary, not technically complete;
 S7 stays unstarted. Their requirements remain later program work, outside this
-core release. S8 is COMPLETE for the compact global search popup and clipped
+core release. S8 is ACTIVE for the post-v1.1.2 focus-loss dismissal correction
+and v1.1.3 delivery under WIDGET-01/02. Reproduce the stale keyboard-focus guard;
+verify outside/owned-preview/reactivation/Escape and cancelled search lifecycle
+without desktop activation, then package/publish/retrieve/install and clean.
+No other stage is active. Prior S8 is COMPLETE for the compact global search popup and clipped
 Settings restore action under WIDGET-01/02 and CORE-03. Version 1.1.1 was normally
 published, independently retrieved and installed with unchanged settings/routing;
 its frame/editor/icon/sidebar corrections are verified. Version 1.1.2 source,
 final packaging, normal publication, independent retrieval and installation all
-pass. Exact task scratch is cleaned; no stage is ACTIVE.
+pass. Prior task scratch is cleaned. The current dismissal regression and final
+v1.1.3 delivery remain advancement blockers; no tracked deferrals are assigned.
 Historical authorization follows.
 S6 native StartAllBack search was authorized after S5 closure.
 Earlier S5 REA-driven transfer implementation was requested after
@@ -60,7 +65,7 @@ plan neither authorizes itself nor adds approval checkpoints.
 | S5 - REA-driven transfer improvements | COMPLETE | TRANSFER-01..07, archive/caller and WIDGET-02 revalidation, affected CORE-02/03, LIFE-01/DELIVERY-03 | Initial S5 criteria passed at e478986; user extended comparison/implementation | Finite findings inventory resolved; source/target handle reuse, copy-time hashing, metadata/EOF reductions, storage decisions, matched profiles, actual callers, adverse/preservation/cleanup and Release checks pass; see [evidence](verification/2026-10-29-s5.md) |
 | S6 - Native StartAllBack search | BLOCKED | SAB-01..06, affected SEARCH/CORE/LIFE/DELIVERY criteria | Parked by explicit user-directed S8-first execution; resume only after reprioritization is lifted | Investigation only; no working patch or complete SAB criterion. All native groups/handoff/provider/lifecycle/routing criteria remain open. |
 | S7 - Everything filesystem search and Outlook indexing scope | NOT STARTED | EVERYWHERE-01..05, affected SEARCH/CORE/LIFE/SHELL criteria | S6 COMPLETE; finite consumer/semantics/scope inventory before migration | Native Everything file results with selected filesystem roots excluded from Windows indexing; WSearch/Outlook retained, explicit Windows-managed exceptions, local/mail/reboot/recovery verification |
-| S8 - Core integration and delivery | COMPLETE | SHELL-01, CORE-03..08, affected SEARCH-01/04 and WIDGET-01/02, DELIVERY-01..03; reconcile core release scope | S1-S5/S4R/S4U COMPLETE; explicit user core-first delivery instruction supersedes S6/S7 prerequisites | v1.1.0/v1.1.1 delivery and current v1.1.2 compact-popup/restore-action correction pass source, real-index, rendered, packaged, published/retrieved and installed checks. Exact scratch cleanup passes. See [delivery ledger](S8-DELIVERY.md). S6/S7 explicitly undelivered. |
+| S8 - Core integration and delivery | ACTIVE | SHELL-01, CORE-03..08, affected SEARCH/WIDGET/ARCHIVE, DELIVERY-01..03 | Prior S8 through v1.1.2 is COMPLETE; user-reported regressions reopen S8 | Current v1.1.3 requires dismissal/preview, archive drag/queue, redirected Downloads and Explorer-native navigation verification, final normal release/retrieval/install and cleanup. S6/S7 remain parked. |
 
 ENV-01..04 belong to the current setup deliverable, not an artificial product
 implementation stage. See [setup evidence](verification/2026-10-28-setup.md).
@@ -495,7 +500,7 @@ This sequence belongs only to S5, after S4U; it does not authorize later stages.
 
 ## Current reconciliation ledger
 
-Current post-v1.1.1 correction: S8 COMPLETE; WIDGET-01/02 and CORE-03 cover the
+Prior post-v1.1.1 correction: S8 COMPLETE; WIDGET-01/02 and CORE-03 cover the
 compact search popup and full restore-action label plus v1.1.2 delivery. Historical S8 closure row below
 describes v1.1.0 only. S9 NOT STARTED; MENU-01..02 remain unimplemented, with no
 tracked deferral assigned to the current S8 correction.
@@ -509,7 +514,7 @@ tracked deferral assigned to the current S8 correction.
 | S5 | TRANSFER-01..07 and affected caller/CORE/LIFE criteria; final native/Release/FAT32 evidence and finite findings reconciliation | None within S5 | COMPLETE; no blocker | None |
 | S6 | Matching isolated Windows/Shell modules; current StartAllBack 3.9.28; native query/view trace and Programs/Settings groups with WSearch stopped; program launch and See more results URI dispatch observed on 3.9.28; earlier program/Settings launches on 3.9.25; no complete SAB criterion yet | SAB-01..06, including file-provider/cancellation ownership, remaining provider conditions, compact Everything groups/full-results handoff and direct folder routing | BLOCKED by the user's explicit S8-first priority. Investigation is retained; Sandbox was shut down. Native ABI/ownership and remaining service/indexing comparisons are unresolved when this stage resumes. Host configuration is unchanged. | None |
 | S7 | None | EVERYWHERE-01..05 | S6 prerequisite not complete. File-surface, indexing-scope and Outlook compatibility inventory remains unresolved; no live scope changes during S6. | None |
-| S8 | v1.1.1 and v1.1.2 published/retrieved/installed; actual manifest members, settings and registrations verified. Current hidden real-index popup passes live query/cancellation, matching, missing-index error, scroll pagination, file-open boundary, main folder/ZIP navigation, handoff, Escape, 100%/150% minimum/normal layouts and Native/Original themes. Plain rows persist through real queries. Restore label fits at 440/660 DIP and both text scales. Zero foreground activation. Downloaded Release consumer PID55784 verifies the compact popup and existing transfer/archive/editor/preview/native-library lifecycle. Installed self-test passes; exact scratch cleanup is APPLIED. | None in authorized S8 core scope | None. StartAllBack remains separately parked S6/SAB-06; no Sandbox. | None |
+| S8 | Prior v1.1.1/v1.1.2 publication/retrieval/installation and cleanup pass. Current dismissal regression reproduces stale keyboard focus and passes deactivation/owned-preview/reactivation/Escape without foreground activity. Real ZIP/7z drop-to-queue and CF_HDROP export, content/source preservation and redirected Downloads wiring pass hidden checks. | Explorer-native navigation boundary; final current-source package, publication/retrieval/installation and cleanup | ACTIVE; current acceptance/delivery blockers. No Sandbox or S6/S7 work. | None |
 
 S1 and S2 are COMPLETE. The user confirmed normal unlock; real physical drag and
 clipboard checks subsequently passed. A separate STA process read the Windows

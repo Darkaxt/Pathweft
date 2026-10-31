@@ -1,4 +1,4 @@
-# Pathweft 1.1.2
+# Pathweft 1.1.3
 
 Windows 11 x64 is the qualified host. The .NET 10 desktop runtime and native
 archive/preview libraries are included. WebView2 Evergreen is required for the
@@ -7,7 +7,8 @@ optional F4 editor; the application reports when that runtime is unavailable.
 The installer runs for the current user without administrator privileges.
 Folder routing is unchecked during installation. Settings > Windows integration
 owns folder routing, its restoration action, independent Win+E, and taskbar
-search. Explicit Explorer launches, virtual Shell locations and Open/Save
+search. Navigation within an existing Explorer window stays in Explorer.
+Explicit Explorer launches, virtual Shell locations and Open/Save
 dialogs remain in Windows. StartAllBack's Shell/known-folder/library links are
 not covered by this release's filesystem registration; their native integration
 belongs to the postponed StartAllBack stage. Direct SHOpenFolderAndSelectItems is unsupported:
@@ -35,6 +36,14 @@ The optional Ctrl+Alt+Space popup searches all indexed files while typing. It
 contains only the query, four match switches and results. Enter opens a result;
 folders and archives open in the main manager. Escape dismisses, Down focuses
 results, Ctrl+Enter sends the query to a pane, and Space previews a selection.
+Clicking outside dismisses the popup and its preview; moving focus into its
+preview keeps the interaction open. Downloads in Favorites follows the actual
+Windows known-folder location, including redirection to another drive.
+
+Dragging archive entries between Pathweft panes submits their identities directly
+to the shared transfer queue. It does not unpack the selection before starting
+the drag. External Windows consumers can request extracted CF_HDROP content on
+demand through the synchronous OLE data interface.
 
 Internal preview modules are selected in Settings > Files. The F3D GLB prototype
 is opt-in; no standalone QuickLook/F3D application is needed. Archive edit

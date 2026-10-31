@@ -78,7 +78,7 @@ public partial class MainWindow : Window
             ("", "Home", user),
             ("", "Desktop", Environment.GetFolderPath(Environment.SpecialFolder.Desktop)),
             ("", "Documents", Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)),
-            ("", "Downloads", Path.Combine(user, "Downloads")),
+            ("", "Downloads", DownloadsFolder()),
             ("", "Pictures", Environment.GetFolderPath(Environment.SpecialFolder.MyPictures)),
             ("", "Music", Environment.GetFolderPath(Environment.SpecialFolder.MyMusic)),
             ("", "Videos", Environment.GetFolderPath(Environment.SpecialFolder.MyVideos)) })

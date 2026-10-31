@@ -1,10 +1,39 @@
 # S8 core delivery contract
 
-Authority: specification v0.15 and the user's explicit S8-first/delivery instructions.
-S8 is COMPLETE through v1.1.2; no stage is ACTIVE. S6 remains BLOCKED by the
+Authority: specification v0.16 and the user's explicit S8-first/delivery instructions.
+S8 is ACTIVE for the v1.1.3 dismissal, archive-drag, redirected Downloads and
+Explorer-navigation corrections. Prior delivery is COMPLETE through v1.1.2. S6 remains BLOCKED by the
 user's priority boundary; S7, S9 and S11 remain NOT STARTED.
 
-## Current v1.1.2 delivery and reconciliation
+## Current v1.1.3 correction
+
+WIDGET-01/02, ARCHIVE-04, CORE-03 and SHELL-01 source acceptance passes. No later
+stage is active. Final current-version packaging, normal publication/retrieval,
+installed verification and exact scratch cleanup remain advancement blockers.
+
+The dismissal regression reproduces the old retained keyboard-focus guard and
+passes with the real Deactivated callback, settled activation, owned preview,
+reactivation and Escape (PID55380). This is hidden event/state verification,
+not a claim of desktop mouse input. ZIP/7z source receipt PID42744 routes actual
+Drop events into Ferry while an owned destination lane is held; the dispatcher
+continues before extraction, then exact nested contents transfer successfully.
+The real native CF_HDROP adapter still materializes once on external demand.
+No clipboard or desktop input is used and foreground-event counts stay zero.
+This fixes the reported in-app drag's synchronous pre-drag extraction and late
+native-drag start; synchronous external OLE data requests retain their protocol
+boundary. No user archive or destination was written by these tests.
+
+Downloads resolves through SHGetKnownFolderPath and is present in the actual
+Favorites panel at the machine's redirected D:\Downloads location. Keeping the
+canonical default Open verb was checked by the user in an existing Explorer
+window: double-clicking the child stayed in Explorer. The exact previous off
+configuration was restored afterward. Private-registry checks cover canonical
+registration, disabled-state preservation, owned legacy upgrade, original-owner
+restoration and protection of another manager. No hook/COM server or extra queue
+was introduced. Final verification reuses unchanged v1.1.2 visual/native-hotkey
+evidence; affected routing/drag/dismissal paths receive current checks.
+
+## Prior v1.1.2 delivery and reconciliation
 
 [v1.1.2](https://github.com/Darkaxt/Pathweft/releases/tag/v1.1.2) is normally
 published with all six installer/portable/source/manifest/checksum assets. The

@@ -246,7 +246,7 @@
             <TextBlock Text="Folders" FontWeight="SemiBold" Margin="0,8,0,6"/>
             <CheckBox x:Name="DefaultBox" Content="Open filesystem folders and drives in Pathweft" Click="Default_Click"/>
             <TextBlock Style="{StaticResource Hint}">
-              Opens supported folder links in Pathweft. Switching off restores your previous folder handler.
+              Opens supported folder links in Pathweft. Navigation inside Explorer stays there. Switching off restores your previous handler.
             </TextBlock>
             <TextBlock x:Name="FolderIntegrationStatus" Style="{StaticResource Hint}"/>
             <TextBlock Style="{StaticResource Hint}" Text="Virtual folders and Open/Save dialogs remain in Explorer. Some apps' Show in folder requests cannot preserve file selection."/>

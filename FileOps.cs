@@ -12,6 +12,15 @@ namespace FileExplorer;
 // Commands beyond copy/move/delete: undo, zip, compare, rename many, checksum, shortcuts, run as admin.
 public partial class MainWindow
 {
+    internal static string DownloadsFolder()
+    {
+        var id=new Guid("374DE290-123F-4565-9164-39C4925E467B");
+        int result=SHGetKnownFolderPath(ref id,0,IntPtr.Zero,out var path);
+        if(result<0)return "";
+        try{return Marshal.PtrToStringUni(path)??"";}
+        finally{Marshal.FreeCoTaskMem(path);}
+    }
+    [DllImport("shell32.dll",CharSet=CharSet.Unicode)]static extern int SHGetKnownFolderPath(ref Guid folder,uint flags,IntPtr token,out IntPtr path);
     // ---- Undo (Ctrl+Z) ----
     // Renames, new folders/files, zips, shortcuts, and copies/moves that met no conflicts. A job that
     // had conflicts, or poured a folder into one of the same name, is not undoable: its targets are not

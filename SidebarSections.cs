@@ -337,7 +337,7 @@ public partial class MainWindow
     {
         var found = new List<string>();
         if (e.Data.GetData("PathweftFolder") is string tab && !PaneView.IsVirtual(tab)) found.Add(tab);
-        if (e.Data.GetData(DataFormats.FileDrop) is string[] files)
+        if (ArchiveDragData.Files(e.Data) is string[] files)
             foreach (var f in files.Take(50))
                 if (Directory.Exists(f)) found.Add(f);
                 else if (f.EndsWith(".lnk", StringComparison.OrdinalIgnoreCase) && ShortcutTarget(f) is { } t && t != f && Directory.Exists(t)) found.Add(t);

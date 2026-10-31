@@ -23,6 +23,41 @@ public partial class MainWindow
         async Task Settled()=>await Dispatcher.InvokeAsync(UpdateLayout,System.Windows.Threading.DispatcherPriority.ApplicationIdle);
         try
         {
+            if(Environment.GetEnvironmentVariable("PATHWEFT_VERIFY_ARCHIVE_DRAG_ONLY")=="1")
+            {await VerifyArchiveDragRegression(root,Check);result=0;return;}
+            if(Environment.GetEnvironmentVariable("PATHWEFT_VERIFY_WIDGET_DISMISS_ONLY")=="1")
+            {
+                widget=new SearchWidgetWindow(this);widget.ShowSearch("");await Settled();
+                var flags=System.Reflection.BindingFlags.Static|System.Reflection.BindingFlags.NonPublic;
+                var writeFlag=typeof(UIElement).GetMethod("WriteFlag",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic);
+                var focusFlag=Enum.Parse(writeFlag.GetParameters()[0].ParameterType,"IsKeyboardFocusWithinCache");
+                void FocusFlag(bool value)=>writeFlag.Invoke(widget,new object[]{focusFlag,value});
+                var activeKey=(DependencyPropertyKey)typeof(Window).GetField("IsActivePropertyKey",flags).GetValue(null);
+                var deactivate=typeof(Window).GetMethod("OnDeactivated",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic);
+                // Arrange the reported WPF focus state without moving native
+                // focus or synthesizing desktop input. Invoke the real event.
+                FocusFlag(true);
+                Check(widget.IsKeyboardFocusWithin,"The regression arranges retained WPF keyboard focus during deactivation");
+                deactivate.Invoke(widget,new object[]{EventArgs.Empty});await Settled();
+                Check(!widget.IsVisible,"Deactivation dismisses even while the query still reports keyboard focus");
+                FocusFlag(false);widget.ShowSearch("");await Settled();
+                widget.Preview();await Settled();
+                var preview=quick;preview.Owner=widget;preview.SetValue(activeKey,true);
+                deactivate.Invoke(widget,new object[]{EventArgs.Empty});await Settled();
+                Check(widget.IsVisible&&preview.IsVisible,"Focus moving into the owned preview keeps the popup and preview open");
+                preview.SetValue(activeKey,false);deactivate.Invoke(preview,new object[]{EventArgs.Empty});await Settled();
+                Check(!widget.IsVisible&&quick==null,"Leaving the owned preview dismisses the complete popup interaction");
+                widget.ShowSearch("");await Settled();
+                deactivate.Invoke(widget,new object[]{EventArgs.Empty});
+                widget.SetValue(activeKey,true);await Settled();
+                Check(widget.IsVisible,"A reactivated popup survives a queued prior deactivation check");
+                widget.SetValue(activeKey,false);deactivate.Invoke(widget,new object[]{EventArgs.Empty});await Settled();
+                Check(!widget.IsVisible,"The popup can dismiss normally again after reactivation");
+                widget.ShowSearch("");await Settled();
+                widget.RaiseEvent(new System.Windows.Input.KeyEventArgs(System.Windows.Input.Keyboard.PrimaryDevice,PresentationSource.FromVisual(widget),Environment.TickCount,System.Windows.Input.Key.Escape){RoutedEvent=System.Windows.Input.Keyboard.PreviewKeyDownEvent});
+                Check(!widget.IsVisible&&HiddenTrialPresentation.ForegroundViolations==0,"Escape remains available and the event regression never activates a desktop window");
+                result=0;return;
+            }
             if(Environment.GetEnvironmentVariable("PATHWEFT_VERIFY_WIDGET_ONLY")=="1")
             {
                 widget=new SearchWidgetWindow(this);widget.ShowSearch();await Settled();

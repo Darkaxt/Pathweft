@@ -54,13 +54,13 @@ public partial class MainWindow
     // could delete what it sent.
     void Bin_DragOver(object s, DragEventArgs e)
     {
-        e.Effects = e.Data.GetDataPresent(DataFormats.FileDrop) ? DragDropEffects.Copy : DragDropEffects.None;
+        e.Effects = ArchiveDragData.HasFiles(e.Data) ? DragDropEffects.Copy : DragDropEffects.None;
         e.Handled = true;
     }
 
     void Bin_Drop(object s, DragEventArgs e)
     {
-        if (e.Data.GetData(DataFormats.FileDrop) is string[] { Length: > 0 } files) AddToBin(files);
+        if (ArchiveDragData.Files(e.Data) is { Length: > 0 } files) AddToBin(files);
         e.Effects = DragDropEffects.Copy;
         e.Handled = true;
     }

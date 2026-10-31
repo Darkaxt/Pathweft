@@ -87,6 +87,7 @@ public partial class MainWindow
         HiddenTrialPresentation.Prepare(quick);
 #endif
         quick.SourceInitialized += (_, _) => ApplyAcrylic(quick);
+        if(owner is SearchWidgetWindow widget)quick.Deactivated+=(_,_)=>widget.DismissAfterDeactivation();
         quickPreview = new(this, quickBody, text => { if (quick != null) quick.Title = text; }, autoplay: true);
         void Follow() => PreviewFollow();
         source.StatsChanged += Follow;
@@ -98,7 +99,7 @@ public partial class MainWindow
 #if DEBUG
             if (!HiddenTrialPresentation.Enabled)
 #endif
-                source.FocusList();
+                if(source.IsVisible)source.FocusList();
             PreviewFollow();
         };
         quick.PreviewKeyDown += (_, key) =>

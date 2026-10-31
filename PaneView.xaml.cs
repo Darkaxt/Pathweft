@@ -747,24 +747,22 @@ public partial class PaneView : UserControl
         StatsChanged?.Invoke();
     }
 
-    /// Dragging out of an archive (the user, 1.0.61: three files from a ZIP to the other pane did nothing): what is
-    /// selected is extracted to a temp folder first and those copies are dragged, to the other pane or any app, as Explorer
-    /// does with a ZIP. ponytail: extracted before the drag starts, so a big selection waits a moment with the wait cursor;
-    /// delayed rendering (the data written only on drop) would remove that wait.
-    internal string[] ExtractForDrag()
+    // Start the drag immediately with an immutable selection. Internal drops
+    // submit virtual paths to Ferry; external OLE consumers request export data.
+    internal DataObject CreateDragData()
     {
-        if (ArchiveRoot is not { } at) return Array.Empty<string>();
-        var names = Selected.Select(e => e.Name).ToArray();
-        if (names.Length == 0) return Array.Empty<string>();
-        try
+        if(ArchiveRoot is not { } at)return new DataObject(DataFormats.FileDrop,Selected.Select(e=>e.Path).ToArray());
+        var selected=Selected.Select(e=>(e.Path,e.Name)).ToArray();
+        return new DataObject(new ArchiveDragData(selected.Select(e=>e.Path).ToArray(),()=>
         {
-            Mouse.OverrideCursor = Cursors.Wait;
-            var copy = ArchiveContent.Extract(at.Archive, names, at.Inner, "drag export");
-            return names.Select(n => System.IO.Path.Combine(copy.Directory, "data", n)).ToArray();
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        { Error?.Invoke("Cannot prepare archive drag: " + ex.Message); return Array.Empty<string>(); }
-        finally { Mouse.OverrideCursor = null; }
+            try
+            {
+                var copy=ArchiveContent.Extract(at.Archive,selected.Select(e=>e.Name).ToArray(),at.Inner,"drag export");
+                return selected.Select(e=>System.IO.Path.Combine(copy.Directory,"data",e.Name)).ToArray();
+            }
+            catch(Exception error)when(error is IOException or UnauthorizedAccessException)
+            {Error?.Invoke("Cannot prepare archive drag: "+error.Message);return Array.Empty<string>();}
+        }));
     }
 
     // ---- after a paste or drop: the new arrivals selected once the folder has been read again ----
@@ -2742,9 +2740,8 @@ public partial class PaneView : UserControl
         var d = e.GetPosition(List) - dragStart;
         if (Math.Abs(d.X) < SystemParameters.MinimumHorizontalDragDistance && Math.Abs(d.Y) < SystemParameters.MinimumVerticalDragDistance) return;
         dragArmed = false; keepSelection = null; deselectOnUp = null; renameCandidate = null;
-        var paths = ArchiveRoot != null ? ExtractForDrag() : Selected.Select(x => x.Path).ToArray();
-        if (paths.Length == 0) return;
-        var data = new DataObject(DataFormats.FileDrop, paths);
+        if(Selected.Count==0)return;
+        var data=CreateDragData();
         // Windows can refuse to start a drag ("a drag operation is already in progress"): 1.0.36 died of it
         // once in testing. Then there is simply no drag, as if the mouse hadn't moved far enough.
         // out of an archive it is a copy, whatever the drive: the card says Copied, and the ZIP keeps its files
@@ -2773,7 +2770,7 @@ public partial class PaneView : UserControl
         // DragOver only: Drop_Drop runs this too, after it has ended both
         if (s == List && e.RoutedEvent == DragOverEvent) { WheelWhileDragging(this); ScrollAtEdge(e); }
         // onto a drive's row it goes into the drive; onto This PC itself, nowhere
-        e.Effects = DropTarget(e) is var into && into != ThisPC ? ArchiveOf(into) is { } a ? (Archive.CanChange(a.Archive) && e.Data.GetDataPresent(DataFormats.FileDrop) ? DragDropEffects.Copy : DragDropEffects.None)
+        e.Effects = DropTarget(e) is var into && into != ThisPC ? ArchiveOf(into) is { } a ? (Archive.CanChange(a.Archive) && ArchiveDragData.HasFiles(e.Data) ? DragDropEffects.Copy : DragDropEffects.None)
                     : DropEffects(e, into) : DragDropEffects.None;
         // the folder it would go into lights up, in a colour apart from the selection's
         var row = FindRow(e.OriginalSource as DependencyObject);
@@ -2787,7 +2784,7 @@ public partial class PaneView : UserControl
         var effects = DragDropEffects.None;
         // As in Explorer: Ctrl copies, Shift moves, and without either a drop on the same drive moves and
         // on another drive copies — only as far as the source allows (some offer Copy alone).
-        if (e.Data.GetData(DataFormats.FileDrop) is string[] { Length: > 0 } files)
+        if (ArchiveDragData.Files(e.Data) is { Length: > 0 } files)
         {
             bool sameDrive = string.Equals(System.IO.Path.GetPathRoot(files[0]), System.IO.Path.GetPathRoot(target), StringComparison.OrdinalIgnoreCase);
             var want = e.KeyStates.HasFlag(DragDropKeyStates.ControlKey) ? DragDropEffects.Copy
@@ -2817,7 +2814,7 @@ public partial class PaneView : UserControl
     {
         WheelWhileDragging(null);
         ScrollAtEdge(null);
-        if (e.Data.GetData(DataFormats.FileDrop) is not string[] files || files.Length == 0) return;
+        if (ArchiveDragData.Files(e.Data) is not { Length: > 0 } files) return;
         Drop_Over(s, e);
         ShowDropRow(null);
         if (e.Effects == DragDropEffects.None) return;
