@@ -1,9 +1,17 @@
 # S8 core delivery contract
 
-Authority: specification v0.12 and the user's explicit S8-first/delivery instructions.
+Authority: specification v0.13 and the user's explicit S8-first/delivery instructions.
 S8 is ACTIVE for the user's post-v1.1.0 Native frame and Settings-copy corrections;
 S6 is BLOCKED by that instruction and S7 is NOT STARTED.
 Current remaining acceptance: final v1.1.1 release and delivery verification.
+CORE-08 source acceptance passes in the actual hidden sidebar at 100%/150%:
+top/middle/bottom fades, no fade after resizing to fit, unchanged scrollbar/footer
+and hit testing, and the pure high-contrast opacity contract. Current renders are
+inspected; Native clipped-edge pixels equal the actual20/20/20 background.
+The gradient uses absolute viewport coordinates with clipping: a relative mask
+used the taller/scrolled descendant bounds and did not visibly fade the viewport.
+The final accepted fixture is appearance-5c52a42b019a45ff8f17a6f8389e5380,
+with zero foreground events and actual Closed-event watcher/timer cleanup.
 The user's editor report is double-clicking HTML; its original file was deleted,
 and the reported error concerned decoding/opening. The automatic route previously
 used only the extension, created the editor, then showed read rejection. It now

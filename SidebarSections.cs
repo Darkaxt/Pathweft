@@ -10,6 +10,34 @@ namespace FileExplorer;
 // header to reorder. Order and collapsed state are remembered.
 public partial class MainWindow
 {
+    static Brush SidebarEdgeMask(double height,bool above,bool below,bool highContrast)
+    {
+        if(highContrast||height<=0||!above&&!below)return null;
+        double edge=Math.Min(18/height,0.5);
+        var mask=new LinearGradientBrush
+        {
+            MappingMode=BrushMappingMode.Absolute,StartPoint=new(0,0),EndPoint=new(0,height),
+            GradientStops=new()
+            {
+                new(above?Colors.Transparent:Colors.Black,0),new(Colors.Black,edge),
+                new(Colors.Black,1-edge),new(below?Colors.Transparent:Colors.Black,1)
+            }
+        };
+        mask.Freeze();return mask;
+    }
+    void UpdateSidebarFade()
+    {
+        if(SidebarScroll.Template?.FindName("PART_ScrollContentPresenter",SidebarScroll) is ScrollContentPresenter viewport)
+        {
+            viewport.ClipToBounds=true;
+            viewport.OpacityMask=SidebarEdgeMask(viewport.ActualHeight,SidebarScroll.VerticalOffset>0,SidebarScroll.VerticalOffset<SidebarScroll.ScrollableHeight,SystemParameters.HighContrast);
+        }
+    }
+    void SidebarScroll_Loaded(object sender,RoutedEventArgs args)=>UpdateSidebarFade();
+    void SidebarScroll_SizeChanged(object sender,SizeChangedEventArgs args)=>UpdateSidebarFade();
+    void SidebarScroll_Changed(object sender,ScrollChangedEventArgs args)
+    {if(ReferenceEquals(sender,args.OriginalSource))UpdateSidebarFade();}
+
     // The content panels live in MainWindow.xaml; a section is just a header wrapped around one.
     (string Key, string Title, string Glyph, Panel Content)[] Sections => new[]
     {

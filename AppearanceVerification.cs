@@ -23,6 +23,41 @@ public partial class MainWindow
         async Task Settled()=>await Dispatcher.InvokeAsync(UpdateLayout,System.Windows.Threading.DispatcherPriority.ApplicationIdle);
         try
         {
+            if(Environment.GetEnvironmentVariable("PATHWEFT_VERIFY_SIDEBAR_ONLY")=="1")
+            {
+                Check(SidebarEdgeMask(200,false,false,false)==null&&SidebarEdgeMask(200,true,true,true)==null,"Unclipped content and high-contrast mode retain fully opaque content");
+                foreach(double scale in new[]{1.0,1.5})
+                {
+                    Settings.TextScale=scale;Height=680;Width=1200;ApplyAppearance();await Settled();
+                    var viewport=(ScrollContentPresenter)SidebarScroll.Template.FindName("PART_ScrollContentPresenter",SidebarScroll);
+                    Check(viewport!=null&&SidebarScroll.ScrollableHeight>0,"Actual sidebar content overflows its viewport at "+scale+" text scale");
+                    foreach(string position in new[]{"top","middle","bottom"})
+                    {
+                        SidebarScroll.ScrollToVerticalOffset(position=="top"?0:position=="bottom"?SidebarScroll.ScrollableHeight:SidebarScroll.ScrollableHeight/2);
+                        await Settled();UpdateSidebarFade();
+                        var mask=(LinearGradientBrush)viewport.OpacityMask;
+                        Check(mask!=null&&mask.GradientStops[0].Color.A==(position=="top"?255:0)&&mask.GradientStops[^1].Color.A==(position=="bottom"?255:0),"Only clipped "+position+" viewport edges fade at "+scale+" text scale");
+                        Check(SidebarScroll.OpacityMask==null&&SidebarPanel.OpacityMask==null&&viewport.IsHitTestVisible,"Scrollbar, title/footer and sidebar input remain outside the content-only fade");
+                        await S1Verification.Snapshot(this,root,$"sidebar-fade-{scale*100:0}-{position}");
+                        if(position=="middle")
+                        {
+                            using var file=File.OpenRead(Path.Combine(root,$"sidebar-fade-{scale*100:0}-{position}.png"));
+                            var image=System.Windows.Media.Imaging.BitmapDecoder.Create(file,System.Windows.Media.Imaging.BitmapCreateOptions.PreservePixelFormat,System.Windows.Media.Imaging.BitmapCacheOption.OnLoad).Frames[0];
+                            var bitmap=new System.Windows.Media.Imaging.FormatConvertedBitmap(image,PixelFormats.Bgra32,null,0);
+                            var pixels=new byte[bitmap.PixelWidth*bitmap.PixelHeight*4];bitmap.CopyPixels(pixels,bitmap.PixelWidth*4,0);
+                            var point=viewport.TranslatePoint(new Point(viewport.ActualWidth/2,0),this);
+                            int x=(int)Math.Round(point.X*bitmap.PixelWidth/ActualWidth),y=(int)Math.Ceiling(point.Y*bitmap.PixelHeight/ActualHeight);
+                            int at=(y*bitmap.PixelWidth+x)*4;
+                            checks.Add(new{edgePixel=new[]{pixels[at],pixels[at+1],pixels[at+2]},point,viewport.ActualHeight,descendantBounds=VisualTreeHelper.GetDescendantBounds(viewport).ToString()});
+                            Check(Math.Abs(pixels[at]-20)<=3&&Math.Abs(pixels[at+1]-20)<=3&&Math.Abs(pixels[at+2]-20)<=3,"The actual clipped edge fades into the Native background pixels at "+scale+" text scale");
+                        }
+                    }
+                    Height=(SidebarScroll.ExtentHeight+160)*scale;await Settled();UpdateSidebarFade();
+                    Check(SidebarScroll.ScrollableHeight==0&&viewport.OpacityMask==null,"Resizing to fit the actual content removes the fade at "+scale+" text scale");
+                }
+                Check(HiddenTrialPresentation.ForegroundViolations==0,"Sidebar fade verification caused zero foreground activation");
+                result=0;return;
+            }
             if(Environment.GetEnvironmentVariable("PATHWEFT_VERIFY_CLOSE_ONLY")=="1")
             {await S1Verification.Navigate(Left,root);result=0;return;}
             var automaticEditor=typeof(EditorWindow).GetMethod("TryOpen",System.Reflection.BindingFlags.Public|System.Reflection.BindingFlags.Static);

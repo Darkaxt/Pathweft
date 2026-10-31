@@ -276,6 +276,7 @@ public partial class MainWindow : Window
         Appearance.Apply();
         Root.Background = Tint();
         SidebarPanel.Background=Appearance.Native?Brushes.Transparent:Hex("#40000000");
+        UpdateSidebarFade();
         SetBackdrop(this);
         Application.Current.Resources["ItemTips"] = Settings.ItemTips; // the rows' tooltips (App.xaml)
         if (quick != null) SetBackdrop(quick);

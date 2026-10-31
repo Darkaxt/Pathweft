@@ -231,7 +231,8 @@
           </ScrollViewer>
         </DockPanel>
       </Border>
-      <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="8,12">
+      <ScrollViewer x:Name="SidebarScroll" VerticalScrollBarVisibility="Auto" Padding="8,12"
+                    Loaded="SidebarScroll_Loaded" ScrollChanged="SidebarScroll_Changed" SizeChanged="SidebarScroll_SizeChanged">
         <!-- Sections (Quick access / Favorites / Drives) are added by SidebarSections.cs, in the
              order the user dragged them into; each one collapses and both are remembered. -->
         <Grid>
