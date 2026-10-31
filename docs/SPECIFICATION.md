@@ -8,8 +8,8 @@ user direction recorded here; ordinary implementation choices need no new gate.
 
 ## 1. Intent and current scope
 
-Current correction: S8 ACTIVE for PREVIEW-13/14. The installed1.1.9 orbit behavior
-passes scripted correctness but regresses real rendering performance. PREVIEW-14
+Current correction: S8 COMPLETE through1.1.10 for PREVIEW-13/14. The installed1.1.9
+orbit behavior passed scripted correctness but regressed rendering performance. PREVIEW-14
 requires processing every ordered camera sample without drawing for each sample,
 retaining one explicit frame capture per render batch and completed-frame
 presentation. Port the selected pinned F3D controller math if its input API
@@ -25,6 +25,15 @@ allow1e-4 (<.006 degrees): the projected basis is ill-conditioned there, while
 position/focal stay strict. Pole limits/upright behavior remain separately tested.
 Deliver and independently verify one final1.1.10 release and installed update.
 
+Reconciliation: camera/native parity, ordered burst/zero implicit draws, full
+gesture/preview/frame-pressure acceptance pass. Normalv1.1.10 sourceaf82ca29eb46261ea62e2cf193f664333923d844
+and all six assets match; local/retrieved real native/app workflows pass. All792
+installed files and reopened mainPID52824 match; the user reports performance
+fixed. Current external view has no helper owner/startup/stored wine opt-in, so
+no fresh Win+E readiness is claimed and no setting is changed. Exact task cleanup
+passes. No ACTIVE stage or S8 blocker/deferral. S9/S11 remain NOT STARTED and
+S6/S7 postponed. See the1.1.10 verification record.
+
 PREVIEW-13 was authorized by the user's circular
 mouse-gesture regression report. Use the pinned F3D default input controller's
 fixed model-up orbit/pole behavior instead of camera-local trackball math.
@@ -35,8 +44,8 @@ Verify an ordered circular/reverse circular gesture, vertical pole limits,
 camera-up/focal/distance, pan/zoom/reset, actual large-model previews and teardown
 through hidden app actions; compare with pinned native controller source/API.
 The1.1.9 normal release, independent retrieval and installed updater hashes/main/
-helper readiness pass, but the subsequent performance regression prevents S8
-closure. No unrelated S9/S11/S6/S7 work.
+helper readiness passed; the subsequent performance regression reopened S8 and
+is resolved in1.1.10. No unrelated S9/S11/S6/S7 work.
 
 Historical extension: S8 is COMPLETE through1.1.8 for the previous refinement round.
 PREVIEW-12: correct continuous mouse rotation/frame presentation, remove PNG

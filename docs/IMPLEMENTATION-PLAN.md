@@ -3,19 +3,23 @@
 Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.26, 2026-11-01,
 including the user-authorized continued comparison requirement TRANSFER-07.
 
-S8 ACTIVE for PREVIEW-13/14:1.1.9 is published/retrieved and the user's installed
+S8 COMPLETE through1.1.10 for PREVIEW-13/14. Historical1.1.9 was published/retrieved and the installed
 792 hashes/new mainPID58436/helperPID24392 readiness pass, but rendering has
-regressed. Native Rotate calls Render for every input sample, defeating batched
-capture. Separate selected native-equivalent camera math from draws, prove camera
-parity and ordered burst/whole-batch performance, then deliver verified1.1.10.
-This is the only ACTIVE stage; no external impediment or tracked deferral.
+regressed. Native Rotate renders each input sample, defeating batching. The
+selected native-equivalent math is now separate from draws, with camera/burst
+parity and verified1.1.10 delivery. No ACTIVE stage, S8 blocker or tracked deferral.
 
 Current source acceptance passes: native camera parity and ordered burst work
 PID28160, complete mouse/resize/teardown PID62544, preview integration PID64724,
 and pending-frame/layout lifecycle PID29524. The24-sample input path drops from
 24 implicit draws/689.9ms to0 draws/2.77ms while retaining the same endpoint.
-Only final1.1.10 package, publication, independent retrieval and installed update
-remain. See [current evidence](verification/2026-11-01-render1110.md).
+Normalv1.1.10 ataf82ca2 and six assets pass. Packaged consumer PID36932 and
+independently retrieved consumer PID54992 pass real32/64-bit native/app workflows.
+All792 installed files and reopened mainPID52824 match; user reports fixed.
+No current helper-owner/startup/stored wine opt-in is visible, so no fresh Win+E
+readiness claim or live setting rewrite. Exact cleanup applies7696 final members
+after spent-output checkpoints; both scratch roots are absent. See
+[current evidence](verification/2026-11-01-render1110.md).
 
 Prior PREVIEW-13 correction used F3D's native
 default input controller. Source confirms camera-local azimuth/elevation differs
@@ -192,7 +196,7 @@ plan neither authorizes itself nor adds approval checkpoints.
 | S5 - REA-driven transfer improvements | COMPLETE | TRANSFER-01..07, archive/caller and WIDGET-02 revalidation, affected CORE-02/03, LIFE-01/DELIVERY-03 | Initial S5 criteria passed at e478986; user extended comparison/implementation | Finite findings inventory resolved; source/target handle reuse, copy-time hashing, metadata/EOF reductions, storage decisions, matched profiles, actual callers, adverse/preservation/cleanup and Release checks pass; see [evidence](verification/2026-10-29-s5.md) |
 | S6 - Native StartAllBack search | BLOCKED | SAB-01..06, affected SEARCH/CORE/LIFE/DELIVERY criteria | Parked by explicit user-directed S8-first execution; resume only after reprioritization is lifted | Investigation only; no working patch or complete SAB criterion. All native groups/handoff/provider/lifecycle/routing criteria remain open. |
 | S7 - Everything filesystem search and Outlook indexing scope | NOT STARTED | EVERYWHERE-01..05, affected SEARCH/CORE/LIFE/SHELL criteria | S6 COMPLETE; finite consumer/semantics/scope inventory before migration | Native Everything file results with selected filesystem roots excluded from Windows indexing; WSearch/Outlook retained, explicit Windows-managed exceptions, local/mail/reboot/recovery verification |
-| S8 - Core integration and delivery | ACTIVE | SHELL-01, CORE-03..15, PREVIEW-06..14, JUMP-03 research, affected SEARCH/WIDGET/ARCHIVE, DELIVERY-01..03 | Installed1.1.9 correctness verified; rendering regression corrected at source | Native-equivalent camera/burst/preview/pressure acceptance pass. Final1.1.10 package/publication/retrieval/installation remain. No external impediment or tracked deferral. |
+| S8 - Core integration and delivery | COMPLETE | SHELL-01, CORE-03..15, PREVIEW-06..14, JUMP-03 research, affected SEARCH/WIDGET/ARCHIVE, DELIVERY-01..03 | Verified through1.1.10; user confirms performance fixed | Camera/burst/preview/pressure, real package/retrieved workflows, normal publication,792 installed hashes/main identity and exact cleanup pass. No blocker or tracked deferral. |
 
 ENV-01..04 belong to the current setup deliverable, not an artificial product
 implementation stage. See [setup evidence](verification/2026-10-28-setup.md).
@@ -647,7 +651,7 @@ tracked deferral assigned to the current S8 correction.
 | S5 | TRANSFER-01..07 and affected caller/CORE/LIFE criteria; final native/Release/FAT32 evidence and finite findings reconciliation | None within S5 | COMPLETE; no blocker | None |
 | S6 | Matching isolated Windows/Shell modules; current StartAllBack 3.9.28; native query/view trace and Programs/Settings groups with WSearch stopped; program launch and See more results URI dispatch observed on 3.9.28; earlier program/Settings launches on 3.9.25; no complete SAB criterion yet | SAB-01..06, including file-provider/cancellation ownership, remaining provider conditions, compact Everything groups/full-results handoff and direct folder routing | BLOCKED by the user's explicit S8-first priority. Investigation is retained; Sandbox was shut down. Native ABI/ownership and remaining service/indexing comparisons are unresolved when this stage resumes. Host configuration is unchanged. | None |
 | S7 | None | EVERYWHERE-01..05 | S6 prerequisite not complete. File-surface, indexing-scope and Outlook compatibility inventory remains unresolved; no live scope changes during S6. | None |
-| S8 | PREVIEW-13/14 native-equivalent camera states, ordered burst/zero implicit draws, complete gestures, preview and pending-frame ownership pass at source. | Final1.1.10 package/publication/retrieval/installation. | ACTIVE; internal delivery work remains. S6/S7/S9/S11 runtime implementation remains outside this release. | None |
+| S8 | PREVIEW-13/14 camera/burst/zero implicit draws, gestures, previews, frame ownership, actual package/retrieved workflows, normal1.1.10 release, installed hashes/main identity, user confirmation and exact cleanup pass. | None within S8 | COMPLETE; no blocker. Current external Win+E view preserved without fresh readiness claim. S6/S7/S9/S11 runtime work remains outside this release. | None |
 
 S1 and S2 are COMPLETE. The user confirmed normal unlock; real physical drag and
 clipboard checks subsequently passed. A separate STA process read the Windows

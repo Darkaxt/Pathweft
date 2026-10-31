@@ -4,11 +4,13 @@ Read `docs/SPECIFICATION.md` first. It is authoritative; the plan and this file
 do not change its requirements or the user's standing instructions.
 
 - S1-S4 are COMPLETE;
-  Current S8 correction is ACTIVE under specification0.26/PREVIEW-13/14: installed
-  1.1.9 gesture correctness/delivery pass but real input/render performance
-  regresses because native events render immediately. Separate native-equivalent
-  camera math from draws, verify burst performance and final1.1.10. Preserve pan/
-  zoom, frame/DPI/animation/native lifecycle; no S9/S11/S6/S7 implementation.
+  Current S8 correction is COMPLETE under specification0.26/PREVIEW-13/14.
+  Normal1.1.10 ataf82ca2 separates native-equivalent camera math from per-input
+  draws. Camera/burst/preview/pressure and actual package/retrieved workflows pass;
+  all792 installed hashes and reopened mainPID52824 pass; user reports fixed.
+  Scratch cleanup passes. No current helper-owner/startup/stored wine opt-in is
+  visible: preserve that state; do not claim fresh Win+E readiness or rewrite it.
+  No ACTIVE stage or S8 blocker/deferral; no S9/S11/S6/S7 implementation.
   Current S8 extension is COMPLETE under specification0.24: PREVIEW-12 smooth
   native 3D/quality, CORE-14 vertical Settings, CORE-15 Help section tracking and
   JUMP-03 bounded S11 research. Delivered together as normal1.1.8 at64118e9;
