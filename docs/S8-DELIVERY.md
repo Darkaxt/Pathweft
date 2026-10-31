@@ -1,11 +1,17 @@
 # S8 core delivery contract
 
-Current status: BLOCKED only on the normal application exit required for the
-installed 1.1.6 verification. Source, published release and independently retrieved
-native/app qualification pass. The current running host copy remains 1.1.5.
-Exact scratch cleanup passes; no user window was closed or controlled.
+Current status: BLOCKED only on the user's normal installed update to1.1.7.
+CORE-12/13 cloud-quota/statistics changes are normally published at
+https://github.com/Darkaxt/Pathweft/releases/tag/v1.1.7, source
+eeb5d40a0b7ef2a3799445ad352ec21a5bad2c3b. Six asset sizes/digests and immutable
+source/tag match independent retrieval. Actual packaged consumer PID54992 and
+downloaded consumer PID45068 pass, including real cloud quota and statistics
+behavior, native32/64-bit Shell routing and existing search/archive/preview paths.
+Exact scratch cleanup passes. The user's1.1.6 updater result/installed hashes and
+Explorer/Win+E confirmation are recorded. It stays running until their normal
+update; installed1.1.7 verification remains. No desktop control or forced close.
 
-Authority: specification v0.22 and the user's explicit S8-first/delivery instructions.
+Authority: specification v0.23 and the user's explicit S8-first/delivery instructions.
 Historical S8 closure through1.1.5 includes CORE-11 and PREVIEW-08..11. The normal
 six-asset release is https://github.com/Darkaxt/Pathweft/releases/tag/v1.1.5,
 source3fa4b465775ce411a89ba2628b1907420facac50. Annotated tag readback resolves

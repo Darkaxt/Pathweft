@@ -3,7 +3,16 @@
 Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.23, 2026-10-31,
 including the user-authorized continued comparison requirement TRANSFER-07.
 
-S8 is ACTIVE for CORE-12: make bottom statistics reflect useful data, collapse
+S8 is BLOCKED only on the user's normal installed update to1.1.7. CORE-12/13,
+integrated source and actual packaged workflows, normal publication, independent
+retrieval and exact cleanup pass; see the current verification document. The
+published source is eeb5d40a0b7ef2a3799445ad352ec21a5bad2c3b. The user keeps1.1.6
+running; no forced close or reinstall is authorized by this checkpoint. Resume
+the prepared read-only installed verifier after their updater reopens1.1.7.
+Installed acceptance is the only external advancement blocker; no tracked
+deferral or ACTIVE stage. S6/S7 remain postponed; S9/S11 are NOT STARTED.
+
+Current refinement contract: make bottom statistics reflect useful data, collapse
 unavailable cards/columns and the entire empty strip, reclaim layout space and
 restore applicable information without changing the stored full/compact/off
 preference. This PC counts locations, not zero-byte folders. Verify the complete
@@ -12,8 +21,8 @@ then commit/publish/retrieve the integrated update. In the same S8 reconciliatio
 verify the user's1.1.6 updater result without reinstalling over their live app.
 The user confirms Explorer navigation and Win+E are correct; physical external
 folder-link testing is explicitly left until a real use case. Its existing hidden
-native proof remains distinct. Missing CORE-12 implementation/acceptance and
-installed reconciliation are current advancement blockers; no tracked deferral.
+native proof remains distinct. The source/package requirements below are now
+satisfied; only the installed1.1.7 update/verification boundary remains open.
 CORE-12 passes current integrated hidden navigation/selection/archive/search,
 full/compact/off and dark/light100/150% layout acceptance (PID22756); CORE-13
 passes the real two-account quota, all capacity surfaces, account/mount binding,
@@ -21,10 +30,13 @@ unknown/quota-unavailable handling and local/network preservation checks
 (PID50104). Targeted dark/light screenshots were visually reviewed. The source
 reads only the DriveFS account quota properties through Windows' read-only
 SQLite interface, without auth access or cache/client setting changes. See
-[current evidence](verification/2026-10-31-cloud117.md). S8 remains ACTIVE for
-final packaging, delivered-consumer checks, normal1.1.7 release/retrieval and
-the actual installed update boundary. No implementation gap or tracked deferral
-remains in CORE-12/13.
+[current evidence](verification/2026-10-31-cloud117.md). Final packaged consumer
+PID54992 and independently downloaded consumer PID45068 pass, including actual
+32/64-bit Shell/COM/browser and external-launch verification, real quota values,
+statistics collapse, index/archives/transfers/previews. Six published asset
+sizes/digests and immutable tag/source match. Final cleanup applied9706 members
+without residuals after two spent-output checkpoints. Only the actual installed
+update boundary remains; no implementation gap or tracked deferral in CORE-12/13.
 
 Previous checkpoint: S8 was BLOCKED on installed verification of SHELL-01.
 Normal 1.1.6/source a7648b9d51c63d5aadac9e96b48ecbd8a428581c is published with
@@ -126,7 +138,7 @@ plan neither authorizes itself nor adds approval checkpoints.
 | S5 - REA-driven transfer improvements | COMPLETE | TRANSFER-01..07, archive/caller and WIDGET-02 revalidation, affected CORE-02/03, LIFE-01/DELIVERY-03 | Initial S5 criteria passed at e478986; user extended comparison/implementation | Finite findings inventory resolved; source/target handle reuse, copy-time hashing, metadata/EOF reductions, storage decisions, matched profiles, actual callers, adverse/preservation/cleanup and Release checks pass; see [evidence](verification/2026-10-29-s5.md) |
 | S6 - Native StartAllBack search | BLOCKED | SAB-01..06, affected SEARCH/CORE/LIFE/DELIVERY criteria | Parked by explicit user-directed S8-first execution; resume only after reprioritization is lifted | Investigation only; no working patch or complete SAB criterion. All native groups/handoff/provider/lifecycle/routing criteria remain open. |
 | S7 - Everything filesystem search and Outlook indexing scope | NOT STARTED | EVERYWHERE-01..05, affected SEARCH/CORE/LIFE/SHELL criteria | S6 COMPLETE; finite consumer/semantics/scope inventory before migration | Native Everything file results with selected filesystem roots excluded from Windows indexing; WSearch/Outlook retained, explicit Windows-managed exceptions, local/mail/reboot/recovery verification |
-| S8 - Core integration and delivery | ACTIVE | SHELL-01, CORE-03..13, PREVIEW-06..11, affected SEARCH/WIDGET/ARCHIVE, DELIVERY-01..03 | Existing releases through1.1.6; current CORE-12/13 integrated source acceptance passes | Finish actual1.1.7 package qualification, normal release, independent retrieval, installed update boundary and exact cleanup. S6/S7 remain parked. |
+| S8 - Core integration and delivery | BLOCKED | SHELL-01, CORE-03..13, PREVIEW-06..11, affected SEARCH/WIDGET/ARCHIVE, DELIVERY-01..03 | CORE-12/13 source, final1.1.7 publication/retrieval, native/app verification and cleanup pass | Only installed1.1.7 verification remains after the user's normal updater/reopen; existing1.1.6 stays running. No tracked deferral. S6/S7 remain parked. |
 
 ENV-01..04 belong to the current setup deliverable, not an artificial product
 implementation stage. See [setup evidence](verification/2026-10-28-setup.md).
@@ -178,6 +190,7 @@ Post-release stage addition authorized 2026-10-31:
 | CORE-09 | S8 | This PC capacity/network/connection details and final delivery |
 | CORE-10 | S8 | Dynamic populated detail columns and final delivery |
 | CORE-11, PREVIEW-08..11 | S8 | Capacity/provider refinements, icon/themed previews, executable details, shared folder trees, empty-selection collapse and final1.1.5 delivery |
+| CORE-12/13 | S8 | Automatic useful statistics and mapped Google cloud-account quota; source/package/publication/retrieval verified in1.1.7, installed verification pending the user's update |
 | ARCHIVE-01..05 | S4 | Transfer revalidation S5; final package S8 |
 | RAR-01..05 | S4R | Transfer revalidation S5; final package/source/license/install S8 |
 | FILEUI-01..03 | S4U | Delivered icon/visibility/settings package revalidation S8 |
@@ -579,7 +592,7 @@ tracked deferral assigned to the current S8 correction.
 | S5 | TRANSFER-01..07 and affected caller/CORE/LIFE criteria; final native/Release/FAT32 evidence and finite findings reconciliation | None within S5 | COMPLETE; no blocker | None |
 | S6 | Matching isolated Windows/Shell modules; current StartAllBack 3.9.28; native query/view trace and Programs/Settings groups with WSearch stopped; program launch and See more results URI dispatch observed on 3.9.28; earlier program/Settings launches on 3.9.25; no complete SAB criterion yet | SAB-01..06, including file-provider/cancellation ownership, remaining provider conditions, compact Everything groups/full-results handoff and direct folder routing | BLOCKED by the user's explicit S8-first priority. Investigation is retained; Sandbox was shut down. Native ABI/ownership and remaining service/indexing comparisons are unresolved when this stage resumes. Host configuration is unchanged. | None |
 | S7 | None | EVERYWHERE-01..05 | S6 prerequisite not complete. File-surface, indexing-scope and Outlook compatibility inventory remains unresolved; no live scope changes during S6. | None |
-| S8 | Prior1.1.5 delivery verified. Browser-aware routing, legacy/native registration migration, prior-owner recovery, actual32/64-bit COM/context-menu/browser checks, integrated app/Settings/self-test, normal1.1.6 publication and independent native/app retrieval pass. Exact scratch cleanup passes. | Host installation and installed routing/identity/profile verification after normal app exit. | BLOCKED by the running user application; prepared update resumes when it exits. S6/S7 remain outside this release. | None |
+| S8 | CORE-12/13 real two-account quota and all capacity surfaces, statistics collapse/preferences/layout; actual packaged native/app workflows, normal1.1.7 publication, independent retrieval and cleanup pass. Existing1.1.6 installed hashes/agent and user Explorer/Win+E confirmation retained. | Installed1.1.7 identity/files/runtime after normal updater/reopen. | BLOCKED by user-controlled installed update while1.1.6 stays running; read-only verifier prepared, no forced close/reinstall. S6/S7 remain outside this release. | None |
 
 S1 and S2 are COMPLETE. The user confirmed normal unlock; real physical drag and
 clipboard checks subsequently passed. A separate STA process read the Windows

@@ -19,13 +19,16 @@ do not change its requirements or the user's standing instructions.
   are verified. Prior S8 work is COMPLETE through v1.1.3,
   including the compact Ctrl+Alt+Space popup and clipped Settings action fix.
   The prior frame/search/editor/icon/sidebar work shipped in v1.1.1.
-  S8 is ACTIVE for CORE-12/13 statistics auto-collapse and Google cloud quota.
-  Integrated source/hidden visual acceptance passes; complete final1.1.7 delivery.
+  S8 is BLOCKED only on installed1.1.7 verification after the user's normal
+  updater/reopen. CORE-12/13 source, final package, normal six-asset publication,
+  independent native/app retrieval and exact cleanup pass at eeb5d40/tagv1.1.7.
+  No ACTIVE stage or tracked deferral. Do not resume S9/S6/S7 automatically.
   The user installed1.1.6 with
   the updater and confirms Explorer navigation / Win+E. Preserve their running
   app; installed1.1.6 identity/hashes and agent readiness are verified. Keep the
   current external-tool registry-view discrepancy explicit; do not rewrite live
-  registrations from that diagnostic view. Deliver CORE-12/13 through the updater.
+  registrations from that diagnostic view. The prepared read-only installed
+  verifier is in .local/evidence/2026-10-31-cloud117/Verify-Installed.ps1.
   User external-folder-link testing waits for a real use case; keep prior hidden
   native evidence separate. S9 remains NOT STARTED.
   Previous checkpoint: S8 was BLOCKED on the user-controlled app exit required for the final

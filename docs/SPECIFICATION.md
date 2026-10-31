@@ -8,9 +8,16 @@ user direction recorded here; ordinary implementation choices need no new gate.
 
 ## 1. Intent and current scope
 
-Current reconciliation: S8 is ACTIVE for the user's statistics auto-collapse
-and Google Drive cloud-quota refinements (CORE-12/13). Source acceptance and
-targeted hidden visual review pass; final1.1.7 package/release/delivery remain.
+Current reconciliation: S8 is BLOCKED only on the user-controlled installed
+update from1.1.6 to1.1.7. CORE-12/13 source, hidden real-account/navigation/layout
+acceptance, final package, normal six-asset publication and independent retrieved
+native/app verification pass. Release source is
+eeb5d40a0b7ef2a3799445ad352ec21a5bad2c3b, tagv1.1.7. Exact scratch cleanup passes.
+The published product is verified; the requested installed outcome is incomplete
+until the user updates normally and the installed identity/files/runtime check
+passes. This external normal-update boundary is not a missing publication
+approval. Resume the retained read-only installed verifier after the updater
+reopens1.1.7; do not close or reinstall over the running user application.
 The user updated to1.1.6 through the built-in updater;
 the new main application and Win+E helper are running. The user confirms Explorer
 navigation stays in Explorer and Win+E works. User testing of external folder
