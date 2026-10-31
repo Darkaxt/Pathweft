@@ -1,33 +1,49 @@
 # S8 core delivery contract
 
 Authority: specification v0.19 and the user's explicit S8-first/delivery instructions.
-S8 is ACTIVE for CORE-09/10 drive details and dynamic columns before publication. PREVIEW-06/07
-and About pass source and actual package checks (PID55808); no1.1.4 tag/release
-has been published. CORE-09/10 source acceptance now passes PID36576: actual
-capacity/free/sidebar parity, mapped UNC targets, USB disk-to-hub topology and
-10-Gbps Rx/Tx for both E:/G:, dark/light at100%/150%, numeric drive sorting,
-unavailable media, empty/mixed folders, real asynchronous executable version,
-streaming membership/metadata/width preservation and actual Everything results.
-The initial drive-render failure was RangeBase's default two-way binding to a
-read-only calculated percentage; an explicit OneWay binding fixes the cause.
-The real search transition exposed a drive-only sort rejected by Everything;
-file search now resets an inapplicable drive sort to Name. No retries/timeouts
-or benchmarks were added. Renders are inspected and foreground events stay zero.
-Current-source final package/release/retrieval/install/cleanup remain blockers. Prior
-Latest affected verification PID28560 additionally proves refresh reconciliation
-for changed free space, unavailable media and removed entries. All current source
-acceptance is satisfied; no consolidation/framework or required deferral remains.
+S8 is COMPLETE through1.1.4. Release1.1.4 is normally
+published at source8552fbdc4a0c38acf7cbb76d98d1ef3d227b6063; all six required
+assets match independent retrieval. Remote annotated tag readback resolves to
+that source. Actual Release consumer PID45236 and downloaded consumer PID4672
+verify the new drive/dynamic-column/archive-tree/3D behavior alongside real-index
+search and the existing native archive/transfer/icon/editor/sidebar workflows.
+Downloaded-package verification briefly encountered the existing index's busy
+state after bulk extraction. Its original extracted fixture passed after actual
+readiness was observed, without restart, index/configuration changes or new
+application retries.
+
+The independently retrieved installer updated D:\Tools\Pathweft to1.1.4;
+every installed member, actual app-host self-test, shortcut and uninstall identity
+passes. Normal user data and folder/startup registrations are unchanged; saved
+Win+E remains off. The installer ran without administrator privileges and its
+own temporary directory stayed under the task root. Binaries remain unsigned.
+No Sandbox or physical desktop-input automation was used.
+
+Current source acceptance passes PID28560 for capacity/sidebar parity, mapped
+UNC targets, exact native E:/G:10-Gbps Rx/Tx, dark/light100%/150%, numeric sorting,
+refresh/removal/unavailable media, empty/mixed folders, real asynchronous versions,
+streaming columns and widths, and the real Everything transition. Preview/About
+acceptance passes latest PID28232. All required functionality and delivery are
+verified; no consolidation/framework or tracked deferral remains.
 Superseded unpublished package cleanup e666452ba81fb4aef6f3142deaef3f02 is
 APPLIED (2,681,669,756 helper file bytes); its one protected selftest junction was
 removed first as an exact leaf by cbb0883ea65c18b4e3a1c1e59419fcfe. The target
 was not traversed. Earlier spent Debug output was also cleaned by
 b7f95ea6dde356969a08f0e9b39db1c2 (303,430,266 helper file bytes).
-delivery is COMPLETE through v1.1.3. S6 remains BLOCKED by the
+Final cleanup caec23233407869470384fecd6beeaf7 is APPLIED after inspecting all
+19,101 members with zero exclusions, including three exact selftest leaf
+junctions. All19,101 candidates were removed (3,356,666,556 helper file bytes),
+without errors. D:\Temp\pathweft-s8-delivery and E:\Temp\pathweft-114 are absent.
+Canonical dist releases, the installed application, required evidence and active
+dependency caches are retained. No required S8 blocker or deferral remains.
+Documentation closure does not change the immutable application release tag.
+
+Prior delivery is COMPLETE through v1.1.3. S6 remains BLOCKED by the
 user's priority boundary; S7, S9 and S11 remain NOT STARTED.
 
-## Current preview correction
+## Delivered v1.1.4 previews
 
-PREVIEW-06/07 and the About action pass integrated source checks (PID33736).
+PREVIEW-06/07 and About pass integrated checks (PID33736, latest rerun PID28232).
 The actual moved VLC ZIP expands in the side pane; nested/empty/implicit folders,
 accessible expansion, 1,200-file branches, metadata-only reads and current theme
 foreground pass. Dark/light renders are inspected. Native readers include model
@@ -37,8 +53,8 @@ the camera and source hashes match. External-buffer glTF and animated glTF
 timeline evaluation pass; actual Play/Pause controls change playback state.
 Space/widget dispatch, malformed refusal, disable/switch/close native teardown
 and zero foreground events pass. These are app-owned events/handlers, not physical
-desktop mouse-input claims. Final normal release/retrieval/installation and exact
-scratch cleanup remain advancement blockers. No deferrals or new abstractions
+desktop mouse-input claims. Normal release/retrieval/installation and exact
+scratch cleanup pass. No deferrals or new abstractions
 beyond the required metadata tree/reader interop; old flat archive code is removed.
 File Labs HEAD remains the previously reviewed9bfbbce; no additional upstream
 patch applies. Pinned native dependencies and their restored full source hashes

@@ -8,7 +8,7 @@ one shared transfer queue. It supports single and split folder views.
 
 ## Current state
 
-Version 1.1.3 combines core search, the taskbar widget, internal previews, archive
+Version 1.1.4 combines core search, the taskbar widget, internal previews, archive
 editing and transfers with optional native folder routing and an alternate
 Native appearance. Installer and portable packages include matching source,
 dependency notices and checksums through [Pathweft releases](https://github.com/Darkaxt/Pathweft/releases).
@@ -26,7 +26,10 @@ the Windows Search service or indexing configuration.
   optional global live-search popup with four matching switches and a plain results
   list. No second indexer starts automatically. Transfers stay in the main manager.
 - Eight internal preview modules serve the side pane, Space preview and widget.
-  Standalone QuickLook is unnecessary. The native F3D GLB prototype is opt-in.
+  Standalone QuickLook is unnecessary. The opt-in native F3D viewer supports its
+  bundled model readers, external resources, mouse/keyboard camera interaction
+  and animation controls without the former model-size limit. Archives preview
+  as expandable folder/file trees without extraction.
 - Native ZIP/7z/TAR browsing and editing share rename/copy/cut/paste actions.
   Eligible RAR variants support reading and preservation-checked editing through
   the embedded Rust library. Unsupported variants remain explicitly read-only
@@ -40,6 +43,10 @@ the Windows Search service or indexing configuration.
 - Settings > Appearance offers Original or Native, with Windows light/dark and
   accent preferences or explicit choices. Settings > Windows integration owns
   independent, reversible opt-in folder routing and Win+E.
+- This PC shows capacity/free/usage, filesystem and mapped network targets.
+  External USB speeds come from the negotiated Windows hub/lane information.
+  Detail columns hide when empty and return with incoming metadata, retaining
+  their widths. About opens the settings folder with a single action.
 
 Folder routing covers qualified normal Shell verbs and shortcuts. Explicit
 Explorer launches, virtual Shell locations and common Open/Save dialogs remain

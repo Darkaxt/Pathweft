@@ -8,6 +8,12 @@ user direction recorded here; ordinary implementation choices need no new gate.
 
 ## 1. Intent and current scope
 
+Current reconciliation: the authorized S8 scope through CORE-09/10 and
+PREVIEW-06/07 is COMPLETE in normally published and independently retrieved/
+installed1.1.4 (source8552fbdc4a0c38acf7cbb76d98d1ef3d227b6063), with exact
+scratch cleanup verified. No S8 blocker or required deferral remains. This does
+not complete the separately postponed S6/S7 or unstarted S9/S11 requirements.
+
 Additional S8 user requirement (2026-10-31), CORE-09: This PC must show drive
 capacity/free space and usage bars using the same measured volume data as the
 sidebar, with useful network share/provider details and capacity bars when
