@@ -1,4 +1,4 @@
-# Pathweft 1.1.6
+# Pathweft 1.1.7
 
 Windows 11 x64 is the qualified host. The .NET 10 desktop runtime and native
 archive/preview libraries are included. WebView2 Evergreen is required for the
@@ -54,6 +54,17 @@ drive list and sidebar use your accent below80% used, amber at80% and red at90%.
 Unavailable drives and empty card-reader slots stay hidden until media is ready.
 Cloud mounts identified through provider registration show Cloud and their
 provider; their raw reported filesystem is available in the tooltip.
+Google Drive account quotas come from the desktop client's read-only local
+metadata, bound through its account-to-mount registration. They use GiB/TiB to
+match the client's binary byte counts without labelling them as decimal GB/TB.
+This PC, sidebar, folder header and capacity card use those cloud figures.
+Mount-reported capacity can be cache constrained and appears separately in the
+tooltip. Missing/unknown/unlimited quota records show an unavailable message;
+the ready cloud drive remains accessible. Figures refresh when Google updates
+its cached account metadata; this does not make a separate authenticated request.
+No credentials are read and Google Drive's cache/streaming settings are unchanged.
+Empty statistics cards and their layout space collapse automatically, preserving
+the Full/Compact/Off preference. This PC counts locations without fake file totals.
 PDF and 3D previews use icon actions with tooltips. The animation selector
 follows the theme, and models composite directly onto the preview surface.
 The Executable details module reads available version resources, architecture,

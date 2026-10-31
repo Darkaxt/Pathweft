@@ -1,6 +1,11 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.7 | 2026-10-31 | Cloud capacity and useful statistics
+- Google Drive streaming mounts show their actual account storage quota instead of the cache volume’s capacity. This PC, the sidebar, folder headers and capacity cards use the cloud figures; binary units are labelled GiB/TiB.
+- If Google’s cached quota cannot be read, the drive stays accessible with an unavailable-quota message. Mount-reported cache-constrained space remains separately labelled in tooltips.
+- Empty statistics cards collapse automatically. This PC gains the space back, while useful folder, selection and capacity cards return when applicable.
+
 ## 1.1.6 | 2026-10-31 | Preserve Explorer navigation
 - Opt-in folder integration distinguishes in-place folder browsing from external launches. Explorer and file dialogs retain their own navigation while external folder links open Pathweft.
 - Existing owned folder registrations upgrade without enabling disabled integration or replacing another manager. Turning integration off restores the original handlers.

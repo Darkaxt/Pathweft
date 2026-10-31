@@ -573,13 +573,13 @@ public partial class MainWindow : Window
     /// <summary>The cards below the panes: full, compact (the figure and its label, nothing else), or hidden.</summary>
     public void ApplyStats()
     {
-        StatsRow.Visibility = Settings.Stats == 0 ? Visibility.Collapsed : Visibility.Visible;
         bool full = Settings.Stats == 2;
         foreach (var e in new FrameworkElement[] { DriveIcon, FolderIcon, SelIcon, DriveBar, KindBar, StatFolderSub, SelSub })
             e.Visibility = full ? Visibility.Visible : Visibility.Collapsed;
         foreach (var card in StatsRow.Children.OfType<Border>())
             card.Padding = full ? new Thickness(12, 9, 14, 9) : new Thickness(10, 3, 12, 3);
         StatsRow.Margin = new Thickness(0, full ? 10 : 8, 0, 0);
+        UpdateStats();
     }
 
     /// Settings → "Close the second pane with its last tab": closing that tab hides the pane, as Ctrl+P does.
@@ -630,7 +630,13 @@ public partial class MainWindow : Window
 
     // Drive rows are rebuilt from figures read off the UI thread: asking a network drive for its size
     // blocks for the best part of a second, and the numbers have to keep up with copies and deletes.
-    internal record DriveRow(string Name, string Label, string Format, long Total, long Free, bool Network, string VolumeLabel, DriveType Type, string Connection="", string RemotePath="", string RawFormat="");
+    internal record DriveRow(string Name, string Label, string Format, long Total, long Free, bool Network, string VolumeLabel, DriveType Type, string Connection="", string RemotePath="", string RawFormat="",bool CloudQuota=false,bool CloudReady=false,long MountTotal=0,long MountFree=0,long CloudUsed=-1)
+    {
+        internal bool Available=>Total>0||CloudReady;
+        internal long Used=>CloudUsed>=0?CloudUsed:Total-Free;
+    }
+    internal static DriveRow WithGoogleQuota(DriveRow row,CloudVolumes.Quota quota)=>row with
+    {RawFormat=row.Format,Format="Cloud",Connection="Google Drive",CloudReady=true,CloudQuota=true,MountTotal=row.Total,MountFree=row.Free,Total=quota?.Total??0,Free=quota?.Free??0,CloudUsed=quota?.Used??-1};
 
     internal static List<DriveRow> ReadDrives()
     {
@@ -645,8 +651,10 @@ public partial class MainWindow : Window
                 rows.Add(new(d.Name,label,d.DriveFormat,d.TotalSize,d.AvailableFreeSpace,net,d.VolumeLabel,d.DriveType,net?"Network":"",remote));
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { } // drive went away mid-read
-        var googleRoots=CloudVolumes.GoogleRoots();
-        rows=rows.Select(row=>CloudVolumes.Provider(row.Name,row.RemotePath,googleRoots) is {Length:>0} provider?row with{RawFormat=row.Format,Format="Cloud",Connection=provider}:row).ToList();
+        var mounts=CloudVolumes.GoogleMounts();
+        var quotas=mounts.Values.Distinct().ToDictionary(id=>id,CloudVolumes.GoogleQuota);
+        var googleRoots=new HashSet<string>(mounts.Keys,StringComparer.OrdinalIgnoreCase);
+        rows=rows.Select(row=>mounts.TryGetValue(row.Name,out var id)?WithGoogleQuota(row,quotas[id]):CloudVolumes.Provider(row.Name,row.RemotePath,googleRoots) is {Length:>0} provider?row with{RawFormat=row.Format,Format="Cloud",Connection=provider}:row).ToList();
         var links=DriveConnections.Read(rows.Where(d=>!d.Network&&d.Total>0&&d.Format!="Cloud").Select(d=>d.Name));
         return rows.Select(row=>links.TryGetValue(row.Name,out var link)?row with{Connection=link.Text}:row).ToList();
     }
@@ -660,8 +668,9 @@ public partial class MainWindow : Window
         driveRefreshWork=Task.Run(()=>ReadDrives()).ContinueWith(t =>
     {
         if(closingPreviews)return;
-        var rows = t.Result.Where(d=>d.Total>0).ToList();
+        var rows = t.Result.Where(d=>d.Available).ToList();
         Left.RefreshThisPC(t.Result);Right.RefreshThisPC(t.Result);
+        Left.RefreshDriveUsage(t.Result);Right.RefreshDriveUsage(t.Result);
         if (rows.SequenceEqual(shownDrives)) return; // nothing moved: leave the buttons alone
         bool plugged = !rows.Select(d => (d.Name, d.VolumeLabel)).SequenceEqual(shownDrives.Select(d => (d.Name, d.VolumeLabel)));
         shownDrives = rows;
@@ -675,7 +684,7 @@ public partial class MainWindow : Window
     // OneCommander-style drive row: "C:  Label        used / total GB" with a usage bar under it.
     Button DriveButton(DriveRow d)
     {
-        double used = d.Total - d.Free, frac = DrivePresentation.UsedPercent(d.Total,d.Free)/100;
+        double used = d.Used, frac = DrivePresentation.UsedPercent(d.Total,d.Free)/100;
         var label = d.RemotePath.Length>0?d.Label+" ("+d.RemotePath+")":d.Label;
         var g = new Grid();
         g.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
@@ -688,9 +697,8 @@ public partial class MainWindow : Window
         name.Inlines.Add(new System.Windows.Documents.Run(d.Name.TrimEnd((char)92) + "  ") { FontWeight = FontWeights.SemiBold });
         name.Inlines.Add(new System.Windows.Documents.Run(label) { Foreground = (Brush)FindResource("Muted") });
         var size = new TextBlock { Margin = new(6, 0, 0, 0), Typography = { NumeralAlignment = FontNumeralAlignment.Tabular } };
-        size.Inlines.Add(new System.Windows.Documents.Run($"{used / 1e9:N0}"));
-        size.Inlines.Add(new System.Windows.Documents.Run($" / {d.Total / 1e9:N0} GB") { Foreground = (Brush)FindResource("Muted") });
-        var bar = new Grid { Height = 2, Margin = new(0, 4, 0, 1) };
+        size.Text=d.Total<=0?"Quota unavailable":d.CloudQuota?$"{used/1073741824:N0} / {d.Total/1073741824.0:N0} GiB":$"{used/1e9:N0} / {d.Total/1e9:N0} GB";
+        var bar = new Grid { Height = 2, Margin = new(0, 4, 0, 1),Visibility=d.Total>0?Visibility.Visible:Visibility.Collapsed };
         bar.Children.Add(new Border { Background = Hex("#1AFFFFFF") });
         var fill = new Border { Background = (Brush)FindResource("Accent"), HorizontalAlignment = HorizontalAlignment.Left };
         int warning=DrivePresentation.Warning(d.Total,d.Free);
@@ -700,7 +708,7 @@ public partial class MainWindow : Window
         Grid.SetColumn(name, 1); Grid.SetColumn(size, 2);
         Grid.SetRow(bar, 1); Grid.SetColumn(bar, 1); Grid.SetColumnSpan(bar, 2);
         g.Children.Add(icon); g.Children.Add(name); g.Children.Add(size); g.Children.Add(bar);
-        var b = new Button { Content = g, Style = (Style)FindResource("Side"), HorizontalContentAlignment = HorizontalAlignment.Stretch, Margin = new(0, 1, 0, 1), ToolTip = $"{d.Name}  {d.Format}  ·  {Fmt(d.Free)} free"+(d.Connection.Length>0?" · "+d.Connection:"") };
+        var b = new Button { Content = g, Style = (Style)FindResource("Side"), HorizontalContentAlignment = HorizontalAlignment.Stretch, Margin = new(0, 1, 0, 1), ToolTip = $"{d.Name}  {d.Format}  ·  {DrivePresentation.Capacity(d.Total,d.Free,d.CloudQuota)}"+(d.Connection.Length>0?" · "+d.Connection:"")+(d.CloudQuota?"\n"+DrivePresentation.CloudSource+"\nMount-reported space (cache constrained): "+DrivePresentation.Capacity(d.MountTotal,d.MountFree):"") };
         b.Click += (_, _) => { active.Navigate(d.Name); active.FocusList(); };
         b.PreviewMouseDown += (_, e) => { if (e.ChangedButton == MouseButton.Middle) { active.OpenInBackgroundTab(d.Name); e.Handled = true; } };
         // Windows' own menu for the drive (Properties, Eject, Format, BitLocker…), hosted as the folders' Windows menu is
@@ -952,7 +960,11 @@ public partial class MainWindow : Window
 
     void UpdateStats()
     {
-        if (active?.Dir is not { Length: > 0 } dir) return;
+        if (active?.Dir is not { Length: > 0 } dir)
+        {
+            DriveCard.Visibility=FolderCard.Visibility=SelectionCard.Visibility=Visibility.Collapsed;
+            ArrangeStats();return;
+        }
         // Only when the folder actually changed: the 10 s refresh would otherwise wipe whatever message
         // the status bar is showing ("Path copied", "Pinned …").
         if (dir != shownDir) { shownDir = dir; Status.Text = dir == PaneView.ThisPC ? "This PC" : dir; }
@@ -964,24 +976,26 @@ public partial class MainWindow : Window
             using var key = Microsoft.Win32.Registry.CurrentUser.CreateSubKey(Agent.StateKey);
             key.SetValue("CurrentFolder", dir);
         }
-        ShowFolderStats();
-        ShowSelectionStats();
+        bool content=active.InSearch||dir!=PaneView.ThisPC&&!(dir.StartsWith(@"\\")&&!dir.Trim('\\').Contains('\\'));
+        ShowFolderStats(content);
+        ShowSelectionStats(content);
         if (bin.Count > 0) ShowBinTarget();
 
         // The figures come from the drive rows, read off the UI thread every 10 s and after every copy or
         // delete: asking a network drive here cost up to 177 ms, once per folder whose size came in.
         var root = dir.StartsWith(@"\\") ? null : Path.GetPathRoot(dir);
-        if (shownDrives.FirstOrDefault(r => r.Name.Equals(root, StringComparison.OrdinalIgnoreCase)) is not { } d)
+        if (shownDrives.FirstOrDefault(r => r.Name.Equals(root, StringComparison.OrdinalIgnoreCase)) is not {Total:>0} d)
         {
-            DriveCard.Visibility = Visibility.Hidden; // a share has no drive figures
-            return;
+            DriveCard.Visibility = Visibility.Collapsed;
+            ArrangeStats();return;
         }
         DriveCard.Visibility = Visibility.Visible;
         double used = d.Total > 0 ? (double)(d.Total - d.Free) / d.Total : 0;
         StatDrive.Text = d.Name.TrimEnd('\\') + (d.VolumeLabel != "" ? "  " + d.VolumeLabel : "");
         StatFs.Text = $"  ·  {d.Format}{(d.Network ? " · network" : "")}";
-        StatFree.Text = Fmt(d.Free);
-        StatUsed.Text = $"   ·   {Fmt(d.Total - d.Free)} of {Fmt(d.Total)} used";
+        StatFree.Text = DrivePresentation.Size(d.Free,d.CloudQuota);
+        StatUsed.Text = $"   ·   {DrivePresentation.Size(d.Used,d.CloudQuota)} of {DrivePresentation.Size(d.Total,d.CloudQuota)} used";
+        DriveCard.ToolTip=d.CloudQuota?DrivePresentation.CloudSource:null;
         DrivePct.Text = $"{used * 100:0}% full";
         DriveBar.ColumnDefinitions[0].Width = new GridLength(used, GridUnitType.Star);
         DriveBar.ColumnDefinitions[1].Width = new GridLength(1 - used, GridUnitType.Star);
@@ -990,6 +1004,18 @@ public partial class MainWindow : Window
         DriveFill.Background = DriveIcon.Foreground = colour;
         DrivePct.Foreground = full ? colour : (Brush)FindResource("Muted");
         DriveFill.Effect = full ? FullGlow : null;
+        ArrangeStats();
+    }
+
+    void ArrangeStats()
+    {
+        bool drive=DriveCard.Visibility==Visibility.Visible,folder=FolderCard.Visibility==Visibility.Visible,selection=SelectionCard.Visibility==Visibility.Visible;
+        StatsRow.ColumnDefinitions[0].Width=drive?new GridLength(1.25,GridUnitType.Star):new GridLength(0);
+        StatsRow.ColumnDefinitions[1].Width=new GridLength(drive&&(folder||selection)?10:0);
+        StatsRow.ColumnDefinitions[2].Width=folder?new GridLength(1,GridUnitType.Star):new GridLength(0);
+        StatsRow.ColumnDefinitions[3].Width=new GridLength(folder&&selection?10:0);
+        StatsRow.ColumnDefinitions[4].Width=selection?new GridLength(1,GridUnitType.Star):new GridLength(0);
+        StatsRow.Visibility=Settings.Stats!=0&&(drive||folder||selection)?Visibility.Visible:Visibility.Collapsed;
     }
 
     readonly System.Windows.Media.Effects.DropShadowEffect FullGlow = new() { Color = Color.FromRgb(0xFF, 0x33, 0x47), BlurRadius = 7, ShadowDepth = 0, Opacity = 0.75 };
@@ -1003,9 +1029,11 @@ public partial class MainWindow : Window
     };
     string kindsShown;
 
-    void ShowFolderStats()
+    void ShowFolderStats(bool applicable)
     {
+        if(!applicable){FolderCard.Visibility=Visibility.Collapsed;return;}
         var all = active.Items.ToList();
+        FolderCard.Visibility=all.Count>0?Visibility.Visible:Visibility.Collapsed;
         int folders = all.Count(e => e.IsDir);
         StatFolder.Text = Fmt(active.FolderTotal);
         StatFolderSub.Text = $"{folders} folder{(folders == 1 ? "" : "s")} · {all.Count - folders} file{(all.Count - folders == 1 ? "" : "s")}"
@@ -1031,11 +1059,13 @@ public partial class MainWindow : Window
 
     // The selection when there is one; otherwise the most recent change in the folder — what you are
     // usually looking for in Downloads or a project folder.
-    void ShowSelectionStats()
+    void ShowSelectionStats(bool applicable)
     {
+        if(!applicable){SelectionCard.Visibility=Visibility.Collapsed;return;}
         var sel = active.Selected;
         if (sel.Count > 0)
         {
+            SelectionCard.Visibility=Visibility.Visible;
             long bytes = sel.Sum(e => Math.Max(0, e.Size)), folder = active.FolderTotal;
             SelIcon.Text = "\uE8B3";
             SelTitle.Text = sel.Count == 1 ? "Selected" : $"{sel.Count} selected";
@@ -1044,6 +1074,7 @@ public partial class MainWindow : Window
             return;
         }
         var newest = active.Items.Where(e => e.Modified != default).MaxBy(e => e.Modified);
+        SelectionCard.Visibility=newest!=null?Visibility.Visible:Visibility.Collapsed;
         SelIcon.Text = "\uE823"; // clock
         SelTitle.Text = "Latest change";
         SelValue.Text = newest == null ? "—" : Ago(newest.Modified);

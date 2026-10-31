@@ -100,12 +100,15 @@ public class Entry : INotifyPropertyChanged
     public string DriveRawFormat {get;init;}="";
     public string DriveConnection {get;init;}="";
     public string DriveLocation {get;init;}="";
+    public bool DriveCloudQuota {get;init;}
+    public long DriveMountTotal {get;init;}
+    public long DriveMountFree {get;init;}
     public bool HasDriveCapacity=>IsDrive&&DriveTotal>0;
     public double DriveUsedPercent=>DrivePresentation.UsedPercent(DriveTotal,DriveFree);
     public int DriveWarning=>DrivePresentation.Warning(DriveTotal,DriveFree);
-    public string CapacityText=>HasDriveCapacity?$"{MainWindow.Fmt(DriveFree)} free of {MainWindow.Fmt(DriveTotal)}":"No media or unavailable";
-    public string TotalText=>HasDriveCapacity?MainWindow.Fmt(DriveTotal):"";
-    public string FreeText=>DrivePresentation.FreeText(DriveTotal,DriveFree);
+    public string CapacityText=>DrivePresentation.Capacity(DriveTotal,DriveFree,DriveCloudQuota);
+    public string TotalText=>HasDriveCapacity?DrivePresentation.Size(DriveTotal,DriveCloudQuota):DriveCloudQuota?"Unavailable":"";
+    public string FreeText=>DrivePresentation.FreeText(DriveTotal,DriveFree,DriveCloudQuota);
     bool NoDate => IsUp || Modified == default; // network shares have no date
 
     public event PropertyChangedEventHandler PropertyChanged;
@@ -184,6 +187,7 @@ public class Entry : INotifyPropertyChanged
     {
         Name, IsReadOnly ? ReadOnlyReason : null, Location != "" ? "In: " + Location : null, "Type: " + Thumbnails.TypeName(Name, IsDir),
         IsDrive?CapacityText:null,DriveConnection.Length>0?DriveConnection:null,DriveRawFormat.Length>0?"Reported filesystem: "+DriveRawFormat:null,DriveLocation.Length>0?DriveLocation:null,
+        DriveCloudQuota?DrivePresentation.CloudSource+"\nMount-reported space (cache constrained): "+DrivePresentation.Capacity(DriveMountTotal,DriveMountFree):null,
         size >= 0 ? "Size: " + MainWindow.Fmt(size) : null, NoDate ? null : "Date modified: " + Modified.ToString("yyyy-MM-dd HH:mm:ss"),
     }.Where(line => line != null));
 }
@@ -536,7 +540,7 @@ public partial class PaneView : UserControl
         // when it's ready. The window never freezes on a folder change.
         Task.Run(() =>
         {
-            var (used, driveText) = DriveUsage(di.FullName);
+            var (used, driveText,driveTip) = DriveUsage(di.FullName);
 
             // Always read: a folder's timestamp moves when a child is added, removed or renamed, but not
             // when a file inside is rewritten — a growing download or log kept its old size forever.
@@ -578,6 +582,7 @@ public partial class PaneView : UserControl
                 {
                     UsedBar.SetBinding(WidthProperty, new Binding("ActualWidth") { Source = UsedBar.Parent, Converter = new Scale(used) });
                     DriveInfoText.Text = driveText;
+                    DriveInfoText.ToolTip=driveTip;
                 }
                 Listed = true;
                 UpdateFooter();
@@ -588,17 +593,34 @@ public partial class PaneView : UserControl
         });
     }
 
-    static (double Used, string Text) DriveUsage(string path)
+    internal static (double Used, string Text,string Tip) DriveUsage(string path)
     {
         try
         {
-            var drive = new DriveInfo(System.IO.Path.GetPathRoot(path));
+            string root=System.IO.Path.GetPathRoot(path);
+            var mounts=CloudVolumes.GoogleMounts();
+            if(mounts.TryGetValue(root,out var account))
+            {
+                var quota=CloudVolumes.GoogleQuota(account);
+                return (quota==null?0:DrivePresentation.UsedPercent(quota.Total,quota.Free)/100,DrivePresentation.Capacity(quota?.Total??0,quota?.Free??0,true),DrivePresentation.CloudSource);
+            }
+            var drive = new DriveInfo(root);
             if (drive.IsReady)
                 return (1 - (double)drive.AvailableFreeSpace / drive.TotalSize,
-                        $"{MainWindow.Fmt(drive.AvailableFreeSpace)} free of {MainWindow.Fmt(drive.TotalSize)}");
+                        $"{MainWindow.Fmt(drive.AvailableFreeSpace)} free of {MainWindow.Fmt(drive.TotalSize)}",null);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException) { }
-        return (-1, null);
+        return (-1, null,null);
+    }
+    internal void RefreshDriveUsage(IEnumerable<MainWindow.DriveRow> rows)
+    {
+        if(Dir==null||IsVirtual(Dir)||InSearch||Dir==ThisPC)return;
+        string root=System.IO.Path.GetPathRoot(Dir);
+        var drive=rows.FirstOrDefault(d=>d.Name.Equals(root,StringComparison.OrdinalIgnoreCase));
+        if(drive==null)return;
+        UsedBar.SetBinding(WidthProperty,new Binding("ActualWidth"){Source=UsedBar.Parent,Converter=new Scale(DrivePresentation.UsedPercent(drive.Total,drive.Free)/100)});
+        DriveInfoText.Text=DrivePresentation.Capacity(drive.Total,drive.Free,drive.CloudQuota);
+        DriveInfoText.ToolTip=drive.CloudQuota?DrivePresentation.CloudSource:null;
     }
 
     void StartPasses()
@@ -1000,7 +1022,7 @@ public partial class PaneView : UserControl
         }).Task).Unwrap();
     }
     internal Task driveListingWork=Task.CompletedTask;
-    static List<Entry> DriveEntries(IEnumerable<MainWindow.DriveRow> rows)=>rows.Where(d=>d.Total>0).Select(d=>new Entry{Name=$"{d.Name.TrimEnd('\\')}  {d.Label}",Path=d.Name,IsDir=true,Size=-2,IsDrive=true,DriveTotal=d.Total,DriveFree=d.Free,DriveFormat=d.Format,DriveRawFormat=d.RawFormat,DriveConnection=d.Connection,DriveLocation=d.RemotePath}).ToList();
+    internal static List<Entry> DriveEntries(IEnumerable<MainWindow.DriveRow> rows)=>rows.Where(d=>d.Available).Select(d=>new Entry{Name=$"{d.Name.TrimEnd('\\')}  {d.Label}",Path=d.Name,IsDir=true,Size=-2,IsDrive=true,DriveTotal=d.Total,DriveFree=d.Free,DriveFormat=d.Format,DriveRawFormat=d.RawFormat,DriveConnection=d.Connection,DriveLocation=d.RemotePath,DriveCloudQuota=d.CloudQuota,DriveMountTotal=d.MountTotal,DriveMountFree=d.MountFree}).ToList();
     internal void RefreshThisPC(IEnumerable<MainWindow.DriveRow> rows)
     {
         if(Dir!=ThisPC||InSearch||!Listed)return;
@@ -1344,6 +1366,10 @@ public partial class PaneView : UserControl
 
     void UpdateFooter()
     {
+        if(Dir==ThisPC&&!InSearch)
+        {
+            int count=Items.Count();Footer.Text=$"{count:N0} location{(count==1?"":"s")}";return;
+        }
         if (indexedSearch)
         {
             Footer.Text = $"{items.Count:N0} visible · {indexedOffset:N0} / {indexedTotal:N0} indexed matches checked{(searching ? " · searching…" : "")} · Esc returns";

@@ -295,7 +295,7 @@
           </DockPanel>
         </Border>
 
-        <Border Grid.Column="2" Style="{StaticResource StatCard}">
+        <Border x:Name="FolderCard" Grid.Column="2" Style="{StaticResource StatCard}">
           <DockPanel>
             <TextBlock x:Name="FolderIcon" Text="&#xE8B7;" Style="{StaticResource StatIcon}" Foreground="{DynamicResource Palette.60A5FA}" VerticalAlignment="Center" Margin="0,0,12,0"/>
             <StackPanel VerticalAlignment="Center">
@@ -308,7 +308,7 @@
           </DockPanel>
         </Border>
 
-        <Border Grid.Column="4" Style="{StaticResource StatCard}">
+        <Border x:Name="SelectionCard" Grid.Column="4" Style="{StaticResource StatCard}">
           <DockPanel>
             <TextBlock x:Name="SelIcon" Text="&#xE8B3;" Style="{StaticResource StatIcon}" VerticalAlignment="Center" Margin="0,0,12,0"/>
             <StackPanel VerticalAlignment="Center">

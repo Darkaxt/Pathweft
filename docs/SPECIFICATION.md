@@ -1,6 +1,6 @@
 # Pathweft specification
 
-Version 0.22 - 2026-10-31. Owner: Darkaxt.
+Version 0.23 - 2026-10-31. Owner: Darkaxt.
 
 This is the authoritative specification. The derived plan must preserve every
 requirement and acceptance criterion. Material scope changes require explicit
@@ -8,7 +8,45 @@ user direction recorded here; ordinary implementation choices need no new gate.
 
 ## 1. Intent and current scope
 
-Current reconciliation: S8 is BLOCKED on installed verification of the SHELL-01
+Current reconciliation: S8 is ACTIVE for the user's statistics auto-collapse
+and Google Drive cloud-quota refinements (CORE-12/13). Source acceptance and
+targeted hidden visual review pass; final1.1.7 package/release/delivery remain.
+The user updated to1.1.6 through the built-in updater;
+the new main application and Win+E helper are running. The user confirms Explorer
+navigation stays in Explorer and Win+E works. User testing of external folder
+links is expressly left until a real use case; retain the hidden native evidence
+and distinguish that from a physical user check. Finish installed identity/routing
+reconciliation alongside the current refinement; do not reinstall over the live
+application or replace the user's registry from an inconsistent diagnostic view.
+
+CORE-12 (2026-10-31): automatically collapse the bottom statistics strip whenever
+it contains no meaningful figures, particularly This PC's fake folder total and
+empty latest-change card. Collapse each unavailable card and its columns/gaps,
+and reclaim the whole strip's height/margin when none remain. Preserve full,
+compact and disabled preferences; navigating to useful folder/archive/search
+content or changing active panes restores applicable cards automatically. A real
+empty folder's available drive-capacity card can remain, while empty placeholder
+folder/latest-change cards stay hidden. This PC's footer should count locations
+without inventing folder/file/byte totals. Use the existing Native/Original design,
+without new controls or animation. Verify actual hidden single/split navigation,
+selection, empty content, global search, native/virtual archive data and settings
+changes, plus dark/light100/150% layout bounds and reclaimed height. Deliver one
+normal verified update after integrated acceptance; preserve live user work.
+
+CORE-13 (2026-10-31): for Google Drive's streaming mounts, show the actual
+per-account cloud capacity, used/free space and percentage consistently in This
+PC, the sidebar and applicable capacity cards. The filesystem's cache-volume
+capacity is not the account's cloud quota. Associate accounts through provider
+mount metadata, never fixed drive letters or screenshot numbers. Prefer a
+read-only provider-exposed local source; do not copy the desktop client's auth
+tokens or change its streaming/cache settings. Keep local-cache figures distinctly
+labelled where relevant. An unavailable quota must be explicit, and must not hide
+an otherwise ready cloud mount or present local disk figures as cloud capacity.
+Verify both real mounted accounts, numeric interpretation, mount changes and
+unknown/unlimited/unavailable states, plus existing local/network drive behavior.
+Finish this authorized refinement in the same active S8 integration/delivery.
+
+Previous reconciliation: S8 was BLOCKED on installed verification of the SHELL-01
 Explorer-navigation correction. Normal 1.1.6 is published at source
 a7648b9d51c63d5aadac9e96b48ecbd8a428581c. Independently retrieved hashes, real
 32/64-bit native Shell/COM/browser workflows and packaged app checks pass.

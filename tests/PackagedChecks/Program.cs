@@ -219,7 +219,14 @@ sealed class PackageProbe
             string[] CurrentColumns()=>((GridView)((ListView)left.FindName("List")).View).Columns.Select(c=>(string)columnKeys[c]).ToArray();
             Check(CurrentColumns().Contains("Capacity")&&!CurrentColumns().Contains("Version"),"Delivered drive view contains populated drive columns without empty file columns");
             Check(driveRows.Where(e=>e.HasDriveCapacity).All(e=>e.FreeText.Contains('%')),"Delivered drive free-space values include measured percentages");
-            Check(driveRows.All(e=>e.HasDriveCapacity),"Delivered This PC omits unavailable reader slots");
+            Check(driveRows.All(e=>e.HasDriveCapacity||e.DriveCloudQuota),"Delivered This PC omits unavailable readers while retaining ready accounts with unknown quota");
+            Check(((Grid)owner.FindName("StatsRow")).Visibility==Visibility.Collapsed,"Delivered This PC collapses the useless statistics strip");
+            var mounts=(IDictionary)Call(Type("CloudVolumes"),null,"GoogleMounts");
+            foreach(var cloud in driveRows.Where(e=>e.DriveConnection=="Google Drive"))
+            {
+                var quota=Call(Type("CloudVolumes"),null,"GoogleQuota",mounts[cloud.Path]);
+                Check(quota!=null&&cloud.DriveCloudQuota&&cloud.DriveTotal==(long)Get(quota,"Total")&&cloud.DriveFree==(long)Get(quota,"Free")&&cloud.TotalText.EndsWith("iB")&&cloud.Tip.Contains("Mount-reported space (cache constrained)"),"Delivered cloud quota comes from the mapped account and distinguishes mount space: "+cloud.Path);
+            }
             foreach(var cloud in driveRows.Where(e=>e.DriveFormat=="Cloud"))
                 Check(cloud.DriveConnection is "Google Drive" or "Tresorit"&&cloud.DriveRawFormat.Length>0,"Delivered provider registration identifies the actual cloud mount: "+cloud.Path);
             foreach(var entry in driveRows.Where(e=>e.Path is "E:\\" or "G:\\"))
