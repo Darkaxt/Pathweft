@@ -3,18 +3,20 @@
 Read `docs/SPECIFICATION.md` first. It is authoritative; the plan and this file
 do not change its requirements or the user's standing instructions.
 
-Current S8 ACTIVE for UPDATE-01/PREVIEW-16/spec0.34. Installed1.1.13 is verified:
-871 member hashes, reopened main/helper readiness and22 desktop route values.
-The user's themed updater popup and video/3D timeline fixes are integrated;
-fresh source/native light/dark100/150 checks, real seek/clock/download/hash/cancel,
-installer callbacks/error phases and hidden rendering pass. Finish current1.1.14
-final package after the complete candidate passed delivered native32/64/app/
-media checks. Scope assessment found no required consolidation. Finish verified commit, normal final
-release/retrieval and installed check. Retain installer ownership across exit;
-no updater service, arbitrary delays, forced close, Sandbox or desktop input.
-No other ACTIVE stage or deferral. Current native/build scratch
-is D:/Temp/pathweft-s8-delivery for small-file/native I/O, transaction
-3c1f187466b43f8bb132e78beaa50935. Clean spent output through the installed helper.
+Current S8 BLOCKED only on installed1.1.14 updater-result verification for
+UPDATE-01/PREVIEW-16/spec0.34. Normal1.1.14 is published at
+1d20122f52768c2760dd1f552d37e19f07ca67b0. Source/native light/dark100/150 UI,
+real media/model seeks/clock, download/hash/cancel and installer progress/error
+checks pass. Six release asset digests, main/branch/tag readback, independent
+retrieval and downloaded native32/64/app/media checks pass. Scope assessment has
+no required consolidation. Installed copy still1.1.13 (main125152/helper137620);
+the user has been asked to update/reopen. Next: private
+.local/evidence/2026-11-01-update114/Invoke-InstalledDesktop114.ps1, which verifies
+all installed members, main/helper readiness and22 actual desktop route values.
+No desktop input, forced exit, handler rewrite, Sandbox or another release.
+No ACTIVE stage or tracked deferral. All task scratch D:/Temp/pathweft-s8-delivery
+is removed; final cleanup transaction3c1f187466b43f8bb132e78beaa50935 is applied
+with zero residuals. Preserve dist/1.1.14 and required private audit evidence.
 Earlier1.1.13 checkpoint follows as history.
 
 Previous S8 BLOCKED only on the installed1.1.13 updater readback for
