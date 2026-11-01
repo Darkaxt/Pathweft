@@ -3,7 +3,7 @@
 Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.28, 2026-11-01,
 including the user-authorized continued comparison requirement TRANSFER-07.
 
-Current S8 status: ACTIVE, CORE-16 general file opening and CORE-17 storage. Already authorized by
+Current S8 status: COMPLETE, CORE-16 general file opening and CORE-17 storage. Already authorized by
 the reported silent Open regression and direction to verify all file types.
 Root cause: Inno6.7.4 lowest-privilege installer passes enforcing RedirectionGuard
 to launched apps, unlike the desktop. Native junction and association failures
@@ -15,10 +15,17 @@ Storage/drag source acceptance passes, including Change location, verified moves
 failure preservation/cleanup, an actual parent/worker exit handoff and themed
 100/150% Storage layouts (PID66244). The historical abandoned copy is removed;
 cache/editor data are migrated offline with hashes and private permissions retained.
-Remaining internal blockers: verify integrated final package and normal1.1.11
-publication, independent retrieval, installed identity and actual installed
-profile relocation/restart. Final exact scratch cleanup remains required.
-No tracked deferral. Preserve live app and consumers; no Sandbox/desktop control.
+Final normalv1.1.11 at76694a9 is published with all six assets; source/tag and
+GitHub digests match. Local and independently downloaded native/app package
+workflows pass (PID69544/57644). All792 installed members, reopened mainPID63812,
+helperPID69224 ownership/readiness and desktop audit mode pass. The shipping
+worker moved the actual desktop profile with exit0, preserved settings/runtime
+content and left only a76-byte Roaming pointer. External diagnostic and desktop
+Roaming views differed; actual desktop-context acceptance and pointer readback
+resolve that verification issue without production workarounds. Exact abandoned
+output, obsolete migration output and final scratch cleanup pass. Closure
+assessment found no required consolidation. No S8 blocker, tracked deferral or
+ACTIVE stage. Preserve the running app; no Sandbox/desktop takeover.
 
 S8 COMPLETE through1.1.10 for PREVIEW-13/14. Historical1.1.9 was published/retrieved and the installed
 792 hashes/new mainPID58436/helperPID24392 readiness pass, but rendering has
@@ -213,7 +220,7 @@ plan neither authorizes itself nor adds approval checkpoints.
 | S5 - REA-driven transfer improvements | COMPLETE | TRANSFER-01..07, archive/caller and WIDGET-02 revalidation, affected CORE-02/03, LIFE-01/DELIVERY-03 | Initial S5 criteria passed at e478986; user extended comparison/implementation | Finite findings inventory resolved; source/target handle reuse, copy-time hashing, metadata/EOF reductions, storage decisions, matched profiles, actual callers, adverse/preservation/cleanup and Release checks pass; see [evidence](verification/2026-10-29-s5.md) |
 | S6 - Native StartAllBack search | BLOCKED | SAB-01..06, affected SEARCH/CORE/LIFE/DELIVERY criteria | Parked by explicit user-directed S8-first execution; resume only after reprioritization is lifted | Investigation only; no working patch or complete SAB criterion. All native groups/handoff/provider/lifecycle/routing criteria remain open. |
 | S7 - Everything filesystem search and Outlook indexing scope | NOT STARTED | EVERYWHERE-01..05, affected SEARCH/CORE/LIFE/SHELL criteria | S6 COMPLETE; finite consumer/semantics/scope inventory before migration | Native Everything file results with selected filesystem roots excluded from Windows indexing; WSearch/Outlook retained, explicit Windows-managed exceptions, local/mail/reboot/recovery verification |
-| S8 - Core integration and delivery | ACTIVE | CORE-16/17; historical SHELL-01, CORE-03..15, PREVIEW-06..14, JUMP-03 research, affected SEARCH/WIDGET/ARCHIVE, DELIVERY-01..03 | General Open/message, desktop launch and native association root cause verified | Non-system storage and drag disposal, integrated verification, final1.1.11 delivery and installed migration remain. No tracked deferral. |
+| S8 - Core integration and delivery | COMPLETE | CORE-16/17; historical SHELL-01, CORE-03..15, PREVIEW-06..14, JUMP-03 research, affected SEARCH/WIDGET/ARCHIVE, DELIVERY-01..03 | General Open/Message, desktop activation, non-system storage, failed-drag disposal, Change location, normal1.1.11/local/retrieved/installed workflows and exact cleanup verified | No S8 blocker or tracked deferral. Other stages retain their existing boundaries. |
 
 ENV-01..04 belong to the current setup deliverable, not an artificial product
 implementation stage. See [setup evidence](verification/2026-10-28-setup.md).

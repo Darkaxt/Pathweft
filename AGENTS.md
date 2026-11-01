@@ -3,16 +3,18 @@
 Read `docs/SPECIFICATION.md` first. It is authoritative; the plan and this file
 do not change its requirements or the user's standing instructions.
 
-Current S8 ACTIVE: CORE-16/17/spec0.28. Installer-inherited RedirectionGuard
-root cause is proven; all temporary REA sessions are detached/ended. General
-Open/actions/Message/editor/archive source checks pass (PID61648), native32/64
-desktop launch and isolated installer completion pass. Finish non-system bulk
-storage/failed drag disposal, integrated verification and normal1.1.11 delivery.
-Preserve the running app/settings/consumers. No Sandbox or desktop takeover.
-The user confirms the historical VLC drag extraction is abandoned failed output;
-clean that exact lease through transactional-cleanup. Offline cache/editor data
-migration must wait for old writers to exit; preserve content and settings.
-Earlier COMPLETE statements below are historical release checkpoints.
+Current S8 COMPLETE: CORE-16/17/spec0.28, normalv1.1.11 at76694a9.
+General Open/Message/editor/archive, real native32/64 desktop activation,
+non-system storage, cancelled-drag disposal and Change location pass source and
+delivered-package checks. Independent retrieval passes; all792 installed hashes,
+reopened mainPID63812/helperPID69224 ownership/readiness and desktop audit policy
+pass. The shipping worker moved the real profile to D:, preserving settings and
+cache/editor content; only the76-byte Roaming pointer remains. External diagnostic
+and desktop Roaming views differed: final relocation/runtime verification used
+the actual desktop context and their current pointers are reconciled. Preserve
+the active app/profile. Exact abandoned-output and scratch cleanup pass; REA is
+detached/released. No S8 blocker/deferral or ACTIVE stage. No Sandbox/desktop
+takeover or S6/S7/S9/S11 implementation. Earlier checkpoints below are historical.
 
 - S1-S4 are COMPLETE;
   Current S8 correction is COMPLETE under specification0.26/PREVIEW-13/14.

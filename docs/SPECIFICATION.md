@@ -41,7 +41,12 @@ rewrite user associations, or hardcode resolved player executable paths.
 
 ## 1. Intent and current scope
 
-Current correction: S8 ACTIVE for CORE-16 after the user's live reproduction
+Current correction: S8 COMPLETE for CORE-16/17, delivered as normal1.1.11 at
+76694a9. Source, local/retrieved package workflows, actual installed identity,
+desktop-context restart, complete profile relocation and exact cleanup pass.
+No current S8 blocker or tracked deferral. The diagnostic history follows.
+
+The correction began with CORE-16 after the user's live reproduction
 under the prepared, temporary read-only launch trace. MP4 dispatch reaches
 ShellExecuteExW and fails with HRESULT0x800401F5; TS/PDF/XLSX return success,
 with unexpected association-choice dialogs reported for TS/XLSX. The temporary
@@ -57,11 +62,12 @@ working copies. Preserve explicit edit/preview semantics. No MP4-only routing,
 host media playback, desktop takeover or unrelated shell registration changes.
 Use synthetic receivers for actual association-boundary checks. Source acceptance
 and one final normal release/retrieval/installed verification are required;
-previous 1.1.10 evidence below remains historical. S8 is ACTIVE for CORE-16/17.
+previous 1.1.10 evidence below remains historical.
 The live trace proved the inherited mitigation root cause and is detached;
 the desktop launch correction and general action/message checks pass in source.
-Storage correction, integrated verification and final1.1.11 delivery remain
-acceptance blockers within this active stage. No tracked deferral.
+Storage correction, integrated verification and final1.1.11 delivery are verified,
+including the real desktop-profile worker and ready integration helper. The
+installed app retains desktop audit mode; the installer retains its protection.
 
 Current correction: S8 COMPLETE through1.1.10 for PREVIEW-13/14. The installed1.1.9
 orbit behavior passed scripted correctness but regressed rendering performance. PREVIEW-14
