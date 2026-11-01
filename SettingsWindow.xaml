@@ -284,6 +284,18 @@
           </StackPanel>
         </Border>
 
+        <Border x:Name="StorageCard" Style="{StaticResource Card}">
+          <StackPanel>
+            <TextBlock Text="Storage" Style="{StaticResource H}"/>
+            <TextBlock Text="Data location" Margin="0,4,0,6"/>
+            <TextBlock x:Name="DataLocation" TextWrapping="Wrap" TextTrimming="CharacterEllipsis" AutomationProperties.Name="Current data location"/>
+            <TextBlock x:Name="SettingsLocation" Style="{StaticResource Hint}" Margin="0,6,0,10"/>
+            <Button x:Name="ChangeDataLocation" Content="Change location…" Style="{StaticResource Tab}" Padding="12,6" HorizontalAlignment="Left" Click="ChangeDataLocation_Click" AutomationProperties.Name="Change data location"/>
+            <TextBlock Style="{StaticResource Hint}" Margin="0,10,0,0" Text="Moves your settings, cache and working files to an empty folder on a data drive. Pathweft restarts when the move is complete."/>
+            <TextBlock x:Name="StorageStatus" Style="{StaticResource Hint}" Margin="0,10,0,0" AutomationProperties.LiveSetting="Polite"/>
+          </StackPanel>
+        </Border>
+
         <Border x:Name="DefaultsCard" Style="{StaticResource Card}">
           <StackPanel>
             <TextBlock Text="Defaults" Style="{StaticResource H}"/>

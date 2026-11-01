@@ -11,9 +11,13 @@ are proven. Actual existing-desktop launch retains installer protection and
 passes native32/64 checks and isolated installer/helper completion. General
 double-click/context/Enter-F3 dispatch, row Message rendering/retry, real fixture
 associations and editor/archive boundaries pass (PID61648).
-Remaining internal blockers: finish/verify non-system bulk storage and failed
-drag cleanup; verify integrated final package and normal1.1.11 publication,
-independent retrieval, installed updater identity and offline legacy data cleanup.
+Storage/drag source acceptance passes, including Change location, verified moves,
+failure preservation/cleanup, an actual parent/worker exit handoff and themed
+100/150% Storage layouts (PID66244). The historical abandoned copy is removed;
+cache/editor data are migrated offline with hashes and private permissions retained.
+Remaining internal blockers: verify integrated final package and normal1.1.11
+publication, independent retrieval, installed identity and actual installed
+profile relocation/restart. Final exact scratch cleanup remains required.
 No tracked deferral. Preserve live app and consumers; no Sandbox/desktop control.
 
 S8 COMPLETE through1.1.10 for PREVIEW-13/14. Historical1.1.9 was published/retrieved and the installed

@@ -149,6 +149,15 @@ sealed class PackageProbe
             SizeCache.Save();
             string newCache=(string)typeof(SizeCache).GetProperty("FilePath",Flags).GetValue(null);
             Check(newCache.StartsWith(bulk+"\\",StringComparison.OrdinalIgnoreCase)&&File.ReadAllText(newCache).Contains(remembered),"Delivered cache saves preserved records in bulk storage");
+            string moveRoot=Directory.CreateDirectory(Path.Combine(root,"relocation")).FullName;
+            string moveSettings=Directory.CreateDirectory(Path.Combine(moveRoot,"settings")).FullName;
+            string moveBulk=Directory.CreateDirectory(Path.Combine(moveRoot,"bulk")).FullName;
+            string moveTarget=Path.Combine(moveRoot,"chosen"),movePointer=Path.Combine(moveRoot,"location.txt");
+            File.WriteAllText(Path.Combine(moveSettings,"settings.txt"),"theme.native=1\n");File.WriteAllBytes(Path.Combine(moveBulk,"data.bin"),new byte[]{3,7,11});
+            var relocation=Type("StorageLocation");var requestType=relocation.GetNestedType("Request",BindingFlags.NonPublic);
+            var moveRequest=Activator.CreateInstance(requestType,new object[]{moveSettings,moveBulk,moveTarget,0,0L});
+            Call(relocation,null,"Move",moveRequest,movePointer,null);
+            Check(File.ReadAllLines(movePointer).Single()==moveTarget&&File.ReadAllText(Path.Combine(moveTarget,"settings.txt"))=="theme.native=1\n"&&File.ReadAllBytes(Path.Combine(moveTarget,"Runtime","data.bin")).SequenceEqual(new byte[]{3,7,11})&&!Directory.Exists(moveSettings)&&!Directory.Exists(moveBulk),"Delivered relocation preserves settings/runtime bytes, commits its pointer and removes the verified source members");
             Call(Type("Appearance"),null,"Initialize");
             using var deliveredManifest=JsonDocument.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory,"release-manifest.json")));
             Check(Product.GetName().Version.ToString(3)==deliveredManifest.RootElement.GetProperty("version").GetString()&&Product.GetType("FileExplorer.S8ShellTrial")==null&&Product.GetType("FileExplorer.HiddenTrialPresentation")==null&&Product.GetType("FileExplorer.MainWindow").GetMethod("VerifyAppearanceCorrection",Flags)==null,"Delivered version and absence of Debug trial hooks");
@@ -258,7 +267,7 @@ sealed class PackageProbe
             var settings=new SettingsWindow(owner);
             var categories=(ListBox)settings.FindName("SettingsCategories");
             var cards=(StackPanel)settings.FindName("SettingsCards");
-            Check(categories.Items.Count==6&&settings.Width>=740,"Delivered Settings uses six vertical categories with the preserved content width");
+            Check(categories.Items.Count==7&&settings.Width>=740&&settings.FindName("ChangeDataLocation") is Button,"Delivered Settings includes Storage and its Change location action with the preserved content width");
             foreach(ListBoxItem item in categories.Items)
             {
                 categories.SelectedItem=item;

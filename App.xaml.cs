@@ -24,7 +24,11 @@ static class Program
     [STAThread]
     static void Main(string[] args)
     {
+        if(args.FirstOrDefault(a=>a.StartsWith("--relocate-profile=")) is { } relocation)
+        { Environment.ExitCode=StorageLocation.Run(relocation["--relocate-profile=".Length..]);return; }
 #if DEBUG
+        if(args.FirstOrDefault(a=>a.StartsWith("--storage-parent=")) is { } storageParent)
+        {StorageLocation.StartVerificationParent(storageParent["--storage-parent=".Length..],args.Single(a=>a.StartsWith("--storage-parent-pipe="))["--storage-parent-pipe=".Length..]);return;}
         if(args.FirstOrDefault(a=>a.StartsWith("--desktop-test-profile=")) is { } testProfile)
         {
             string profile=Path.GetFullPath(testProfile["--desktop-test-profile=".Length..]);
@@ -227,6 +231,13 @@ public partial class App : Application
             listening = Listen();
         }
         Settings.Load(); // before any window: the panes read column widths while being built
+        if(Settings.Profile==null)
+        {
+            // This app and its children own their runtime scratch on the data drive.
+            // Explicit verification profiles keep their caller's isolated scratch.
+            string runtimeTemp=Directory.CreateDirectory(Path.Combine(DataFolder.Bulk,"Temp")).FullName;
+            Environment.SetEnvironmentVariable("TEMP",runtimeTemp);Environment.SetEnvironmentVariable("TMP",runtimeTemp);
+        }
         string folderUpgradeIssue=null;
         try{WindowsIntegration.UpgradeOwnedRegistration();}
         catch(Exception error)when(error is IOException or UnauthorizedAccessException or InvalidOperationException or System.Security.SecurityException)
@@ -245,6 +256,7 @@ public partial class App : Application
         sizeSaver.Start();
         base.OnStartup(e);
         var window = new MainWindow(); // opened here, not via StartupUri, so --agent etc. never build it
+        if(e.Args.Contains("--storage-result"))window.ContentRendered+=(_,_)=>window.OpenStorageSettings();
         if(folderUpgradeIssue!=null&&window.FindName("Status") is System.Windows.Controls.TextBlock status)status.Text=folderUpgradeIssue;
 #if DEBUG
         if (e.Args.FirstOrDefault(a => a.StartsWith("--verify-fileui=")) is { } fileUiVerification)

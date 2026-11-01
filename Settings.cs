@@ -283,7 +283,8 @@ public static class Settings
 static class DataFolder
 {
     internal static readonly string New = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Pathweft");
-    internal static string Current => New;
+    internal static string LocationFile => Path.Combine(New, "location.txt");
+    internal static string Current => File.Exists(LocationFile) ? Path.GetFullPath(File.ReadAllText(LocationFile).Trim()) : New;
     // Small settings stay in Roaming. Bulk/cache data must never silently spill
     // onto the system volume. Explicit test/portable profiles remain self-contained.
     static readonly Lazy<string> bulk = new(() => ResolveBulk(Settings.Dir, Settings.Profile != null || Settings.Portable != null));

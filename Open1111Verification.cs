@@ -139,6 +139,7 @@ public partial class MainWindow
             SizeCache.Set(cacheFolder.FullName,cacheFolder.LastWriteTimeUtc,12345);SizeCache.Save();
             check(File.ReadLines(SizeCache.FilePath).Any(line=>line.EndsWith("|"+cacheFolder.FullName))&&SizeCache.FilePath.StartsWith(DataFolder.Cache+"\\",StringComparison.OrdinalIgnoreCase),"Folder-size persistence writes actual data under the bulk cache root");
             check(Directory.Exists(DataFolder.WebView2)&&DataFolder.WebView2.StartsWith(DataFolder.Bulk+"\\",StringComparison.OrdinalIgnoreCase),"The actual served editor creates its WebView2 profile under bulk storage");
+            await VerifyStorageLocation1111(root,check);
             check(HiddenTrialPresentation.ForegroundViolations==0,"Opening/error/editor checks did not activate a host test window");
             Environment.SetEnvironmentVariable("PATHWEFT_DESKTOP_TEST_PROFILE",Settings.Profile);
             try{check(DesktopLaunch.FromSetup(true)==0,"Desktop-context resume helper returns its actual completion through the current-user result channel without touching host settings");}

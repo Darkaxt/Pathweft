@@ -117,7 +117,12 @@ Pathweft.exe. Settings live in Data/. Preserve Data/ when replacing the program
 files. Disable folder/Win+E/startup integration before moving or deleting a
 portable copy. A portable copy has its own application instance and profile.
 
-Installed bulk data uses D:\AppData\Pathweft\<user SID>, separate from small
+Settings > Storage > Change location moves settings and runtime data to a chosen
+empty non-system folder after the app exits, verifies it, updates the small
+Roaming startup pointer and reopens Settings to the result. Finish transfers,
+save/close editor tabs and release external archive working copies first.
+
+Initially installed bulk data uses D:\AppData\Pathweft\<user SID>, separate from small
 Roaming settings. Archive working copies, folder-size/preview caches and WebView2
 runtime data belong there. A data-root.txt file in the settings folder can name
 another absolute non-system data directory; unavailable storage is reported

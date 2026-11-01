@@ -8,7 +8,7 @@ user direction recorded here; ordinary implementation choices need no new gate.
 
 CORE-17 (S8, user-authorized storage correction): keep small settings on C:;
 place installed bulk archive working copies, folder-size caches, editor WebView2
-data and preview caches on D: under a per-user Pathweft data directory. A small
+data, child-process runtime scratch and preview caches on D: under a per-user Pathweft data directory. A small
 data-root.txt setting may select another non-system data drive; never silently
 fall back to C:. Preserve isolated test/explicit portable profiles. Preserve
 existing folder-size cache data and legacy working-copy path bindings until
@@ -19,6 +19,15 @@ accepted external handoffs retain their actual consumer lifetime. Verify real
 archive extraction/drag outcomes, cache writes/legacy reads, editor profile paths,
 legacy-copy release and installed storage migration/cleanup. Migration must wait
 for old writers to exit, verify destination content and preserve settings.
+The user extends CORE-17 with Settings > Storage > Change location: select a
+data folder, move existing settings/runtime data after graceful app/helper exit,
+verify copied content before switching the startup pointer, remove only the
+verified old members, and reopen with the same settings/integrations. Only a
+small location pointer remains in Roaming. Display current location and a concise
+success/failure message. Reject nonempty/overlapping/system-drive destinations;
+block while transfers, editor tabs or retained external working copies are in
+use. Preserve source data and the current binding on pre-commit failure. Verify
+the real relocation worker, UI action and themed layouts before final release.
 
 CORE-16 includes the user's requested dynamic Message grid column for file-open
 failures, with full-detail tooltip and clearing on successful retry. Do not bury

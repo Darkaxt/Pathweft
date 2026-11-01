@@ -13,7 +13,7 @@ public partial class SettingsWindow : Window
         Width=Math.Min(SystemParameters.WorkArea.Width,740*Math.Max(1,Settings.TextScale));
         MinWidth=Math.Min(Width,620*Math.Max(1,Settings.TextScale));
         Height=Math.Min(SystemParameters.WorkArea.Height,640*Math.Max(1,Settings.TextScale));
-        foreach(var (title,card) in new[]{("Appearance",AppearanceCard),("Files",FilesCard),("Transfers",TransfersCard),("Windows integration",IntegrationCard),("Defaults",DefaultsCard),("About",AboutCard)})
+        foreach(var (title,card) in new[]{("Appearance",AppearanceCard),("Files",FilesCard),("Transfers",TransfersCard),("Windows integration",IntegrationCard),("Storage",StorageCard),("Defaults",DefaultsCard),("About",AboutCard)})
             SettingsCategories.Items.Add(new System.Windows.Controls.ListBoxItem{Content=title,Tag=card});
         SettingsCategories.SelectionChanged+=(_,_)=>
         {
@@ -31,7 +31,7 @@ public partial class SettingsWindow : Window
         ApplyTextSize();
         BuildPreviewModuleControls();
         ShowValues();
-        Activated += (_, _) => RefreshFolderIntegration();
+        Activated += (_, _) => {RefreshFolderIntegration();RefreshStorage();};
         // A double-click on a slider's handle puts it back to its default (Settings.cs), as in Frostpane: one
         // setting can be tried out and undone without a reset of them all.
         foreach (var (slider, value) in new (System.Windows.Controls.Slider, double)[]
@@ -49,11 +49,56 @@ public partial class SettingsWindow : Window
         BuildWheel();
         AboutText.Text = $"Pathweft {typeof(App).Assembly.GetName().Version?.ToString(3)} · Darkaxt · based on File Labs";
         OpenSettingsFolder.ToolTip = Settings.Dir;
+        RefreshStorage();
         BuildWorksWith();
         Refresh();
         if (main.taskbarSearch != null) main.taskbarSearch.StatusChanged += UpdateTaskbarStatus;
         Closed += (_, _) => { if (main.taskbarSearch != null) main.taskbarSearch.StatusChanged -= UpdateTaskbarStatus; };
         UpdateTaskbarStatus();
+    }
+
+    void RefreshStorage()
+    {
+        DataLocation.Text=DataFolder.Bulk;DataLocation.ToolTip=DataFolder.Bulk;
+        SettingsLocation.Text="Settings: "+Settings.Dir;
+        string blocker=StorageLocation.Blocker(main);
+        ChangeDataLocation.IsEnabled=blocker==null;
+        StorageStatus.Text=blocker??"";
+        if(blocker==null&&System.IO.File.Exists(StorageLocation.ResultPath))
+        {
+            try{StorageStatus.Text=System.Text.Json.JsonSerializer.Deserialize<StorageLocation.Result>(System.IO.File.ReadAllText(StorageLocation.ResultPath))?.Message??"";}
+            catch(Exception error)when(error is System.IO.IOException or System.Text.Json.JsonException){StorageStatus.Text="The last storage move result could not be read.";}
+        }
+    }
+    internal void SelectStorage() => SettingsCategories.SelectedItem=SettingsCategories.Items.Cast<System.Windows.Controls.ListBoxItem>().Single(item=>ReferenceEquals(item.Tag,StorageCard));
+#if DEBUG
+    internal Func<string> ChooseStorageForVerification;
+    internal Action<string> MoveStorageForVerification;
+#endif
+    void ChangeDataLocation_Click(object sender,RoutedEventArgs e)
+    {
+        try
+        {
+            string destination;
+#if DEBUG
+            if(ChooseStorageForVerification!=null)destination=ChooseStorageForVerification();
+            else
+#endif
+            {
+                if(StorageLocation.Blocker(main) is { } blocker){StorageStatus.Text=blocker;return;}
+                var chooser=new Microsoft.Win32.OpenFolderDialog{Title="Choose an empty folder for Pathweft data",Multiselect=false};
+                if(chooser.ShowDialog(this)!=true)return;
+                destination=chooser.FolderName;
+            }
+            if(destination==null)return;
+            StorageLocation.Validate(Settings.Dir,DataFolder.Bulk,destination);
+            StorageStatus.Text="Moving data and restarting…";
+#if DEBUG
+            if(MoveStorageForVerification!=null){MoveStorageForVerification(destination);return;}
+#endif
+            StorageLocation.Start(main,destination);
+        }
+        catch(Exception error)when(error is System.IO.IOException or UnauthorizedAccessException or System.ComponentModel.Win32Exception){StorageStatus.Text=error.Message;}
     }
 
     /// Every control set from what is in use: at opening, and after a reset.

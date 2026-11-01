@@ -452,6 +452,11 @@ public partial class MainWindow : Window
         settingsWindow.Show();
     }
     void Settings_Click(object s, RoutedEventArgs e) => OpenSettings();
+    internal void OpenStorageSettings()
+    {
+        OpenSettings();
+        settingsWindow.SelectStorage();
+    }
 
     HelpWindow helpWindow;
     internal void OpenHelp()

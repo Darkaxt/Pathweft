@@ -24,7 +24,7 @@ public partial class MainWindow
             {
                 var categories=(ListBox)settings.FindName("SettingsCategories");
                 var cards=(StackPanel)settings.FindName("SettingsCards");var scroll=(ScrollViewer)settings.FindName("CategoryScroll");
-                check(categories.Items.Count==6&&settings.Width>=740,"Settings preserves content width and exposes six vertical categories: "+theme+scale);
+                check(categories.Items.Count==7&&settings.Width>=740,"Settings preserves content width and exposes seven vertical categories: "+theme+scale);
                 foreach(ListBoxItem item in categories.Items)
                 {
                     ((ISelectionItemProvider)new ListBoxItemAutomationPeer(item,new ListBoxAutomationPeer(categories)).GetPattern(PatternInterface.SelectionItem)).Select();await Settle();
