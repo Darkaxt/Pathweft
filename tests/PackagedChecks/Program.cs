@@ -339,6 +339,7 @@ sealed class PackageProbe
             Call(previewType,session,"Show",new Entry{Name="native.zip",Path=Path.Combine(root,"native.zip")});await (Task)Get(session,"Completion");
             var archiveTree=target.Content as TreeView;
             Check((string)Get(session,"State")=="ready"&&archiveTree!=null&&archiveTree.Items.OfType<TreeViewItem>().Any(),"Delivered archive preview is a native themed tree rather than the old flat text dump");
+            await VerifyMedia(target,session);
 
             string model=Path.Combine(root,"triangle.glb");WriteTriangle(model);
             Settings.DisabledPreviewModules.Remove("f3d");
@@ -399,6 +400,38 @@ sealed class PackageProbe
             File.WriteAllText(Path.Combine(root,"results.json"),JsonSerializer.Serialize(new{result,pid=Environment.ProcessId,fixture=root,runtime=Environment.Version.ToString(),product=Product.Location,checks},new JsonSerializerOptions{WriteIndented=true}));
             Environment.ExitCode=result;app.Shutdown(result);
         }
+    }
+    async Task VerifyMedia(ContentControl target,object previewSession)
+    {
+        string inventory=Environment.GetEnvironmentVariable("PATHWEFT_MEDIA113_INPUTS");
+        if(string.IsNullOrEmpty(inventory))throw new InvalidOperationException("Source-bound SDR/audio/DV fixture inventory is required for packaged media qualification.");
+        using var inputs=JsonDocument.Parse(File.ReadAllText(inventory));
+        var parameters=new System.Windows.Interop.HwndSourceParameters("Pathweft hidden packaged media")
+        {Width=960,Height=540,PositionX=(int)(SystemParameters.VirtualScreenLeft+SystemParameters.VirtualScreenWidth+8192),PositionY=0,WindowStyle=unchecked((int)0x80000000),ExtendedWindowStyle=0x08000080};
+        using var presentation=new System.Windows.Interop.HwndSource(parameters);
+        presentation.RootVisual=target;target.Width=960;target.Height=540;
+        target.Measure(new Size(960,540));target.Arrange(new Rect(0,0,960,540));target.UpdateLayout();
+        var type=Type("Preview.PreviewSession");
+        try
+        {
+            foreach(var input in inputs.RootElement.EnumerateArray())
+            {
+                string name=input.GetProperty("name").GetString(),path=Path.GetFullPath(input.GetProperty("path").GetString());
+                Call(type,previewSession,"Show",new Entry{Name=Path.GetFileName(path),Path=path});await (Task)Get(previewSession,"Completion");
+                Check((string)Get(previewSession,"State")=="ready"&&(string)Get(previewSession,"ModuleId")=="media","Delivered media module loads the real fixture: "+name);
+                object builtin=type.GetField("viewer",Flags).GetValue(previewSession);
+                var viewer=builtin.GetType().GetField("media",Flags).GetValue(builtin);var player=Get(viewer,"Player");
+                Check((string)Call(player.GetType(),player,"Property","pause")=="yes"&&(string)Call(player.GetType(),player,"Property","current-vo")=="gpu-next","Delivered media uses its bundled paused GPU output: "+name);
+                if(name!="audio")
+                {
+                    await (Task)Call(player.GetType(),player,"CommandAsync",new object[]{new[]{"screenshot-to-file",Path.Combine(root,"packaged-"+name+".png"),"window"}});
+                    Check(new FileInfo(Path.Combine(root,"packaged-"+name+".png")).Length>1000,"Delivered native media output renders a real frame: "+name);
+                }
+                Call(type,previewSession,"Clear");await (Task)Call(type,null,"DrainAsync");
+                Check(((Task)Get(player,"Completion")).IsCompletedSuccessfully,"Delivered media teardown observes its actual native worker exit: "+name);
+            }
+        }
+        finally{Call(type,previewSession,"Clear");await (Task)Call(type,null,"DrainAsync");presentation.RootVisual=null;}
     }
     static void WriteTriangle(string path)
     {

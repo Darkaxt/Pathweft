@@ -8,6 +8,8 @@
 #include <shldisp.h>
 #include <wrl/client.h>
 #include <atomic>
+#include <memory>
+#include "FolderView.h"
 #include <string>
 
 // {CF5ABF8B-73EA-4DF9-A991-C163D76FE2A2}

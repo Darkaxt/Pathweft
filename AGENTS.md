@@ -3,7 +3,36 @@
 Read `docs/SPECIFICATION.md` first. It is authoritative; the plan and this file
 do not change its requirements or the user's standing instructions.
 
-Current S8 BLOCKED: SHELL-02/03/spec0.31. Normal1.1.12 is published at363a266,
+Current S8 ACTIVE: SHELL-02/03, PREVIEW-15/spec0.33 plus sidebar drive-label consistency.
+Current checkpoint: native folder selection and complete libmpv preview pass
+hidden product qualification. The actual Helium process's controlled native
+request returns S_OK and highlights the supplied file; this is a boundary replay,
+not a desktop click. C:/D: display fallbacks pass. SDR/audio playback/seek/EOF,
+Space autoplay, module/selection/shutdown teardown and source-bound DV P5/P8
+GPU-frame comparisons pass. Candidate1.1.13 preparation uses build.ps1 and the
+existing package checks plus delivered libmpv/native folder-selection coverage.
+The full1.1.13 qualification candidate passes delivered native32/64/app/media
+checks and member hashes. Remaining: committed final package, normal publication,
+independent retrieval and installed/updater verification. No new stage or
+deferral. Prior investigation follows.
+
+Restarted HeliumPID109860 now sees both registered COM architectures. Its real
+Show in folder request loads PathweftShell, CoCreateInstance returns S_OK and
+ShellExecute launches Pathweft for Downloads successfully. User confirms working,
+then explicitly requests downloaded-file highlighting too. The native handler
+still passes only the folder; SHOpenFolderAndSelectItems returns E_ABORT. Resolve
+that handoff through native integration, preserving Explorer/virtual/opt-out
+behavior; do not silently mark complete. Folders now uses DriveRow.Label like
+Drives for empty volume-label fallback; verify with the complete integrated fix.
+The user subsequently says go ahead with libmpv: PREVIEW-15 is now authorized.
+Use a pinned bundled native runtime and gpu-next/libplacebo child-window playback,
+existing module toggle and themed controls; preserve actual media lifecycle and
+qualify DV-to-SDR against the fork's real fixtures. No standalone player or Qt/
+Kotlin frontend import. Complete the native selection handoff first, then the
+complete media integration; one final release after all current criteria pass.
+No other ACTIVE stage or tracked deferral. Previous blocked checkpoint follows.
+
+Previous S8 BLOCKED: SHELL-02/03/spec0.31. Normal1.1.12 is published at363a266,
 independently retrieved/qualified and installed through the user's updater.
 All792 installed members, reopened main/helper ownership/readiness and actual
 desktop-context22 registry values pass. SHELL-03's dynamic editor/recovery is

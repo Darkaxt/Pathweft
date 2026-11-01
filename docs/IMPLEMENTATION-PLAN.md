@@ -1,9 +1,49 @@
 # Implementation and reconciliation
 
-Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.31, 2026-11-01,
+Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.33, 2026-11-01,
 including the user-authorized continued comparison requirement TRANSFER-07.
 
-Current S8 status: BLOCKED for SHELL-02; SHELL-03 is verified and delivered.
+Current S8 status: ACTIVE for SHELL-02, PREVIEW-15 and the reported sidebar label mismatch.
+Current reconciliation (1.1.13 candidate): native RegisterPending/Register folder
+views preserve multi-selection and inactive-tab selection; opting out revokes
+them. Actual Helium PID109860's controlled native request returned S_OK and the
+hidden product selected the exact supplied file (PID58968), with no foreground
+takeover. This is an actual caller-process boundary replay, not a browser UI click.
+Folders/Drives C:/D: fallback labels pass. Bundled native media passes real SDR/
+audio playback, seek/EOF, side pause, Space autoplay, module-disable and shutdown
+cleanup. P5/P8.1/P8.4 preserve Dolby Vision metadata through D3D11VA; GPU frames
+pass comparisons with source-bound fork references and the P5 negative control.
+The Nuvio BT.2390 curve with explicit sRGB output and the fork's contrast/peak
+settings is the qualified preset. No PNG roundtrip is used in product playback.
+Closure assessment: one media client/event owner per preview, native-window
+teardown awaits actual renderer exit; no duplicate installed-codec path remains.
+The complete1.1.13 qualification candidate passes delivered native32/64 folder
+selection/browser routing, actual portable app-host self-test and independent
+assembly checks, including real bundled media GPU output and teardown. No visible
+WPF window or live defaults were changed. Packaged member hashes remain intact.
+Required remaining acceptance: committed final package, normal six-asset1.1.13
+release, independent retrieval and installed/updater verification.
+No tracked deferral or second ACTIVE stage. Earlier investigation below is history.
+
+Helium's normal desktop restart resolves class visibility: the real user action
+loads the shipped native handler, CoCreateInstance returns S_OK and ShellExecute
+successfully launches Pathweft for Downloads. The user confirms folder opening.
+File highlighting is explicitly requested and remains unsatisfied: the handler
+passes only the folder and SHOpenFolderAndSelectItems returns E_ABORT afterward.
+Complete native selection handoff and preserve Explorer/virtual/opt-out behavior,
+then verify source, shipping package and real caller before one final release.
+Folders now uses DriveRow.Label, like Drives, instead of raw VolumeLabel; the
+reported C: has an empty label and D: is actually labeled Local Disk. Verify the
+actual sidebar labels with the integrated change; no volume rename is intended.
+The user subsequently authorizes bundled libmpv/DV integration as PREVIEW-15.
+Implement complete native media playback/controls/lifecycle with the pinned
+fork-derived runtime, then real media/color and packaged/installed verification.
+Finish the current native selection contract before opening that implementation
+front; keep one final release for the whole requested extension. No other stage
+is ACTIVE. Prior1.1.12 source/package/installation evidence remains applicable
+to unchanged behavior. The previous BLOCKED checkpoint follows as history.
+
+Previous S8 status: BLOCKED for SHELL-02; SHELL-03 is verified and delivered.
 Normal1.1.12 at363a266 is installed through the user's updater; all792 members,
 reopened main/helper ownership/readiness and actual desktop22 registry values
 pass. The user's real action was Show in folder. The native trace records
@@ -274,7 +314,7 @@ plan neither authorizes itself nor adds approval checkpoints.
 | S5 - REA-driven transfer improvements | COMPLETE | TRANSFER-01..07, archive/caller and WIDGET-02 revalidation, affected CORE-02/03, LIFE-01/DELIVERY-03 | Initial S5 criteria passed at e478986; user extended comparison/implementation | Finite findings inventory resolved; source/target handle reuse, copy-time hashing, metadata/EOF reductions, storage decisions, matched profiles, actual callers, adverse/preservation/cleanup and Release checks pass; see [evidence](verification/2026-10-29-s5.md) |
 | S6 - Native StartAllBack search | BLOCKED | SAB-01..06, affected SEARCH/CORE/LIFE/DELIVERY criteria | Parked by explicit user-directed S8-first execution; resume only after reprioritization is lifted | Investigation only; no working patch or complete SAB criterion. All native groups/handoff/provider/lifecycle/routing criteria remain open. |
 | S7 - Everything filesystem search and Outlook indexing scope | NOT STARTED | EVERYWHERE-01..05, affected SEARCH/CORE/LIFE/SHELL criteria | S6 COMPLETE; finite consumer/semantics/scope inventory before migration | Native Everything file results with selected filesystem roots excluded from Windows indexing; WSearch/Outlook retained, explicit Windows-managed exceptions, local/mail/reboot/recovery verification |
-| S8 - Core integration and delivery | BLOCKED | SHELL-02/03; historical CORE-16/17, SHELL-01, CORE-03..15, PREVIEW-06..14, JUMP-03 research and DELIVERY-01..03 | Normal1.1.12 published/retrieved/installed; SHELL-03 editor/recovery and packaged native/app checks pass; scratch cleaned | SHELL-02 real Show in folder/file-selection and Open downloads folder boundary remain unresolved. Caller cannot see desktop COM registration. Need normal Helium desktop relaunch and bounded visibility readback. No tracked deferral. |
+| S8 - Core integration and delivery | ACTIVE | SHELL-02/03, reported sidebar label correction; historical CORE-16/17, SHELL-01, CORE-03..15, PREVIEW-06..14, JUMP-03 research and DELIVERY-01..03 | Normal1.1.12 published/retrieved/installed; SHELL-03 passes. Restarted real Helium caller opens Pathweft successfully and user confirms. | Explicit file highlighting, integrated label correction, affected verification and final delivery remain. Native selection still returns E_ABORT. No tracked deferral. |
 
 ENV-01..04 belong to the current setup deliverable, not an artificial product
 implementation stage. See [setup evidence](verification/2026-10-28-setup.md).

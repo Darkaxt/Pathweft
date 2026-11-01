@@ -231,13 +231,15 @@ public partial class MainWindow
             foreach (string file in new[] { "pwfts3_sample.wav", "pwfts3_sample.mp4" })
             {
                 await Select(file); Ready(sidePreview, "media");
-                var element = Descendants<MediaElement>(PreviewBody).Single();
-                Check(element.NaturalDuration.HasTimeSpan && (file.EndsWith(".wav") || element.NaturalVideoWidth == 160), "PREVIEW-02 actual Windows media decoder opened the audio/video fixture");
+                var player=((BuiltinViewer)sidePreview.ViewerForVerification).MediaForVerification.Player;
+                Check(double.TryParse(player.Property("duration"),System.Globalization.CultureInfo.InvariantCulture,out var duration)&&duration>0 && (file.EndsWith(".wav") || player.Property("width")=="160"), "PREVIEW-02 the bundled native media decoder opened the audio/video fixture");
                 var ended = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-                RoutedEventHandler Ended = (_, _) => ended.TrySetResult(); element.MediaEnded += Ended;
-                try { Click(Descendants<Button>(PreviewBody).Single(b => b.Content?.ToString() == "Play / pause")); await ended.Task; }
-                finally { element.MediaEnded -= Ended; }
-                Check(element.Position == TimeSpan.Zero, "PREVIEW-04 actual media-end event resets playback without a completion timer");
+                bool eof=false;
+                void Ended(string name,object value){if(name=="eof-reached"&&value is true)eof=true;if(eof&&name=="time-pos"&&value is double seconds&&seconds<=0.01)ended.TrySetResult();}
+                player.Changed+=Ended;
+                try { Click(Descendants<Button>(PreviewBody).Single(b => b.ToolTip?.ToString() == "Play")); await ended.Task; }
+                finally { player.Changed-=Ended; }
+                Check(player.Property("pause")=="yes", "PREVIEW-04 actual media-end event resets and pauses playback without a completion timer");
             }
 
             await Select("pwfts3_sample.md");

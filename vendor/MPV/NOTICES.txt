@@ -1,0 +1,20 @@
+Pathweft's media preview uses selected libmpv client API/native-window integration
+with the runtime built from Darkaxt/vlc tag redesign-v1.1.1, commit
+b84e7326e3d3e554120f3866fbe1c1acfa5ec6cc. The native-window gpu-next approach is
+also used by Darkaxt/NuvioDesktopDV. No Qt/Kotlin player interface is imported.
+
+mpv contributors: GPL-2.0-or-later; the linked FFmpeg build is GPL/version3.
+libplacebo and every linked dependency retain their original terms. Complete
+original selected notices are distributed in MPV/licenses, with their verified
+source archive identities in its manifest. See runtime-manifest.json and the
+donor's MPV-BUILDINFO.json for exact revisions, build recipes and native hashes.
+
+The matching dependency-source release includes full pinned native sources,
+the donor's build recipe, WASAPI session patch, SDK contrib recipes and runtime
+sources. Reproduce/import using scripts/Prepare-MpvDependency.py. Compatible
+replacement shared libraries are permitted; Pathweft does not signature-lock
+the native runtime. Do not omit original notices or corresponding source.
+
+Preview output is GPU-rendered BT.709/sRGB SDR, including Dolby Vision metadata
+mapping. Native Dolby Vision display signaling and full Profile7 FEL are not
+claimed. The F3D runtime has a separate FFmpeg build and its own notices.

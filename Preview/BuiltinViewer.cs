@@ -15,12 +15,10 @@ namespace FileExplorer.Preview;
 
 internal sealed class BuiltinViewer(PreviewModule module, MainWindow owner, Entry entry) : IViewer
 {
-    MediaElement media;
-    DispatcherTimer positionTimer;
+    MpvViewer media;
     byte[] pdfBytes;
     int pageRevision;
     bool cleaned;
-    bool paused;
     internal Task Ready { get; private set; } = Task.CompletedTask;
 
     public bool CanHandle(string path)
@@ -58,7 +56,7 @@ internal sealed class BuiltinViewer(PreviewModule module, MainWindow owner, Entr
                 else content = ArchiveTree.View(await Task.Run(() => ArchiveTree.ReadDirectory(path, context.Token, PaneView.ShowHidden), context.Token), context);
                 break;
             case "font": content = Font(path); break;
-            case "media": await Media(path, context); return;
+            case "media": media=new MpvViewer(owner);Ready=media.View(path,context);await Ready;return;
             default: throw new NotSupportedException("Unknown built-in preview module.");
         }
         context.Token.ThrowIfCancellationRequested();
@@ -68,8 +66,7 @@ internal sealed class BuiltinViewer(PreviewModule module, MainWindow owner, Entr
     {
         if (cleaned) return;
         cleaned = true; ++pageRevision;
-        positionTimer?.Stop(); positionTimer = null;
-        media?.Close(); if (media != null) media.Source = null; media = null;
+        media?.Cleanup();media=null;
         pdfBytes = null;
     }
 
@@ -186,63 +183,8 @@ internal sealed class BuiltinViewer(PreviewModule module, MainWindow owner, Entr
         if (context.IsCurrent && total == 0) throw new InvalidDataException(label.Text);
     }
 
-    Button Button(string label) => new() { Content = label, Style = (Style)owner.FindResource("Ghost"), Margin = new(3), Padding = new(8, 5, 8, 5) };
-    async Task Media(string path, ContextObject context)
-    {
-        var opened = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        var element = media = new MediaElement { LoadedBehavior = MediaState.Manual, UnloadedBehavior = MediaState.Close, Stretch = Stretch.Uniform, ScrubbingEnabled = true };
+    internal bool HandleKey(System.Windows.Input.Key key)=>media?.HandleKey(key)==true;
 #if DEBUG
-        if (HiddenTrialPresentation.Enabled) element.Volume = 0;
+    internal MpvViewer MediaForVerification=>media;
 #endif
-        var play = Button("Play / pause");
-        var position = new Slider { Minimum = 0, MinWidth = 80, Margin = new(8), VerticalAlignment = VerticalAlignment.Center };
-        var time = Message(""); time.Margin = new(8);
-        paused = !context.Autoplay;
-        play.Click += (_, _) => { if (paused) element.Play(); else element.Pause(); paused = !paused; };
-        position.PreviewMouseLeftButtonUp += (_, _) => element.Position = TimeSpan.FromSeconds(position.Value);
-        element.MediaOpened += (_, _) =>
-        {
-            if (!context.IsCurrent) return;
-            if (element.NaturalDuration.HasTimeSpan) position.Maximum = element.NaturalDuration.TimeSpan.TotalSeconds;
-            opened.TrySetResult();
-        };
-        element.MediaFailed += (_, e) =>
-        {
-            opened.TrySetException(e.ErrorException);
-            if (context.IsCurrent) context.ViewerContent = Message("Media unavailable: " + e.ErrorException.Message);
-            positionTimer?.Stop(); element.Close();
-        };
-        element.MediaEnded += (_, _) => { element.Pause(); element.Position = TimeSpan.Zero; paused = true; };
-        var root = new DockPanel(); var controls = new DockPanel { Margin = new(6) };
-        DockPanel.SetDock(play, Dock.Left); DockPanel.SetDock(time, Dock.Right);
-        controls.Children.Add(play); controls.Children.Add(time); controls.Children.Add(position);
-        DockPanel.SetDock(controls, Dock.Bottom); root.Children.Add(controls); root.Children.Add(element);
-        context.ViewerContent = root;
-        using var registration = context.Token.Register(() => opened.TrySetCanceled(context.Token));
-        element.Source = new Uri(path);
-        if (context.Autoplay) element.Play(); else element.Pause();
-        // Display-only position refresh. Loading/cleanup never depends on this timer.
-        positionTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(250) };
-        positionTimer.Tick += (_, _) =>
-        {
-            if (!context.IsCurrent) return;
-            if (!position.IsMouseCaptureWithin) position.Value = element.Position.TotalSeconds;
-            time.Text = $"{element.Position:mm\\:ss} / {TimeSpan.FromSeconds(position.Maximum):mm\\:ss}";
-        };
-        positionTimer.Start();
-        Ready = opened.Task;
-        await Ready;
-        await owner.AddReelPreview(path, root, () => context.IsCurrent);
-    }
-    internal bool HandleKey(System.Windows.Input.Key key)
-    {
-        if (media == null) return false;
-        switch (key)
-        {
-            case System.Windows.Input.Key.Enter: if (paused) media.Play(); else media.Pause(); paused = !paused; return true;
-            case System.Windows.Input.Key.Left: media.Position = media.Position > TimeSpan.FromSeconds(5) ? media.Position - TimeSpan.FromSeconds(5) : TimeSpan.Zero; return true;
-            case System.Windows.Input.Key.Right: media.Position += TimeSpan.FromSeconds(5); return true;
-            default: return false;
-        }
-    }
 }

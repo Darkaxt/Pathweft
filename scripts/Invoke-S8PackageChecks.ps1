@@ -1,5 +1,5 @@
 [CmdletBinding()]
-param([Parameter(Mandatory)][string]$DeliveryRoot,[switch]$InstallTrial)
+param([Parameter(Mandatory)][string]$DeliveryRoot,[switch]$InstallTrial,[string]$MediaInputs=$env:PATHWEFT_MEDIA113_INPUTS)
 $ErrorActionPreference='Stop'
 $project=Split-Path -Parent $PSScriptRoot
 $scratch='D:\Temp\pathweft-s8-delivery'
@@ -27,7 +27,9 @@ function Verify-Members([string]$directory){
     }
 }
 Verify-Members $product
-& (Join-Path $PSScriptRoot 'Build-ShellRouter.ps1') -OutputRoot (Join-Path $run 'native-shell') -Verify -ProductDirectory $product
+if(!$MediaInputs -or !(Test-Path -LiteralPath $MediaInputs)){throw 'Supply the source-bound SDR/audio/DV fixture inventory with -MediaInputs.'}
+$env:PATHWEFT_MEDIA113_INPUTS=[IO.Path]::GetFullPath($MediaInputs)
+& (Join-Path $PSScriptRoot 'Build-ShellRouter.ps1') -OutputRoot (Join-Path $run 'native-shell') -Verify -RevealProbe -ProductDirectory $product
 $env:PATHWEFT_PROFILE=Join-Path $run 'profile'
 [void][IO.Directory]::CreateDirectory($env:PATHWEFT_PROFILE)
 [IO.File]::WriteAllLines((Join-Path $env:PATHWEFT_PROFILE 'settings.txt'),@('wine=0','tray=0','taskbarsearch=0','theme.native=1','theme.mode=light',"lastseen=$($manifest.version)","tabs.Left=$run","tabs.Right=$run"))

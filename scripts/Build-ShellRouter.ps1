@@ -1,5 +1,5 @@
 [CmdletBinding()]
-param([Parameter(Mandatory)][string]$OutputRoot,[switch]$Verify,[string]$ProductDirectory)
+param([Parameter(Mandatory)][string]$OutputRoot,[switch]$Verify,[string]$ProductDirectory,[switch]$RevealProbe)
 $ErrorActionPreference='Stop'
 $root=Split-Path -Parent $PSScriptRoot
 $destination=[IO.Path]::GetFullPath($OutputRoot)
@@ -18,6 +18,11 @@ foreach($arch in @('x64','x86')){
     $link=@('/link',('/LIBPATH:'+(Join-Path $vc "lib/$arch")))
     foreach($kind in @('um','ucrt')){$link+='/LIBPATH:'+(Join-Path $sdk "Lib/$sdkVersion/$kind/$arch")}
     $link+=@('kernel32.lib','ole32.lib','oleaut32.lib','shell32.lib','shlwapi.lib','uuid.lib','advapi32.lib','user32.lib')
+    if($RevealProbe){
+        $test=@((Join-Path $root 'tests/ShellRevealProbe.cpp'),('/Fo'+$output+'\'))+$link+@(('/OUT:'+(Join-Path $output 'ShellRevealProbe.exe')),'/SUBSYSTEM:CONSOLE')
+        & (Join-Path $vc "bin/Hostx64/$arch/cl.exe") @arguments @test
+        if($LASTEXITCODE -ne 0){throw "Native $arch reveal diagnostic compilation failed."}
+    }
     $dll=@('/LD',(Join-Path $root 'native/pathweft-shell/Router.cpp'),('/Fo'+$output+'\'))+$link+@(('/DEF:'+(Join-Path $root 'native/pathweft-shell/Router.def')),('/OUT:'+(Join-Path $output 'PathweftShell.dll')),('/IMPLIB:'+(Join-Path $output 'PathweftShell.lib')))
     if($ProductDirectory){
         $manifest=Get-Content (Join-Path $ProductDirectory 'release-manifest.json') -Raw|ConvertFrom-Json
@@ -43,5 +48,12 @@ foreach($arch in @('x64','x86')){
         if($probe.ExitCode -ne 0){throw "Native $arch browser/launch verification failed: $($probe.ExitCode)"}
         if([IO.File]::ReadAllText((Join-Path $output 'received.txt'),[Text.Encoding]::Unicode) -ne [IO.Path]::GetPathRoot($fixture)){throw 'External drive launch lost its trailing separator.'}
         $probe.Dispose()
+        if($RevealProbe){
+            [IO.File]::WriteAllText((Join-Path $fixture 'selected.txt'),'Native Shell selection fixture.')
+            $reveal=Start-Process -FilePath (Join-Path $output 'ShellRevealProbe.exe') -ArgumentList @(('"'+(Join-Path $output 'PathweftShell.dll')+'"'),('"'+$fixture+'"')) -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $output 'reveal.stdout.txt') -RedirectStandardError (Join-Path $output 'reveal.stderr.txt')
+            $reveal.WaitForExit();$reveal.Refresh();Get-Content (Join-Path $output 'reveal.stdout.txt')
+            if($reveal.ExitCode -ne 0){throw "Delivered $arch native Shell selection failed: $($reveal.ExitCode)"}
+            $reveal.Dispose()
+        }
     }
 }

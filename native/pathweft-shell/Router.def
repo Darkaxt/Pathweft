@@ -3,3 +3,5 @@ EXPORTS
   DllGetClassObject PRIVATE
   DllCanUnloadNow PRIVATE
   PathweftLaunchDesktop PRIVATE
+  PathweftRegisterFolder PRIVATE
+  PathweftRevokeFolder PRIVATE

@@ -1,4 +1,4 @@
-# Pathweft 1.1.12
+# Pathweft 1.1.13
 
 Windows 11 x64 is the qualified host. The .NET 10 desktop runtime and native
 archive/preview libraries are included. WebView2 Evergreen is required for the
@@ -30,10 +30,9 @@ handler ownership when activated. An update migrates only an intact old opt-in.
 Explicit Explorer launches, virtual Shell locations and Open/Save
 dialogs remain in Windows. StartAllBack's Shell/known-folder/library links are
 not covered by this release's filesystem registration; their native integration
-belongs to the postponed StartAllBack stage. Direct SHOpenFolderAndSelectItems is unsupported:
-with folder routing enabled it can open a Pathweft folder, lose the requested
-selection and return E_ABORT to its caller. Some applications' Show in folder
-actions use that API; do not enable folder routing if those actions are essential.
+belongs to the postponed StartAllBack stage. With folder integration enabled,
+SHOpenFolderAndSelectItems uses registered filesystem tabs to preserve the
+supplied file selection, including an inactive tab whose listing loads later.
 Folder-plus-selection requests sent to Pathweft's /select command are supported.
 StartAllBack's grouped Everything results and the wider Windows Search migration
 are later unfinished integrations; this release does not change Windows Search.
@@ -147,6 +146,16 @@ packaged file. The normal release contains matching application/dependency
 source archives and original notices. Pathweft's combined derived application
 is GPL-3.0-or-later; dependencies retain their individual terms. You may replace
 compatible shared libraries; no signature restriction prevents relinking.
+
+Video and audio previews use bundled libmpv, FFmpeg and libplacebo from the
+source-pinned VLC fork. GPU playback uses D3D11 and gpu-next; media plays directly
+in the preview without an installed player or Windows codec dependency. Side
+previews begin paused; Space previews autoplay. Icon controls provide play/pause,
+mute and seeking. Shader caches use the selected runtime data location.
+Dolby Vision Profiles 5 and 8 are qualified for BT.709/sRGB SDR conversion using
+the native metadata and the Nuvio fork's BT.2390 curve. Native Dolby Vision display
+signaling and full Profile 7 FEL are not claimed. The corresponding-source asset
+includes pinned media sources and build recipes; MPV/ contains original notices.
 
 Source builds also require Visual Studio C++ x86/x64 tools and Windows SDK
 10.0.26100.0 for the small native Shell handler. The installed runtime does not

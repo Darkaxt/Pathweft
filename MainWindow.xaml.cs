@@ -56,10 +56,11 @@ public partial class MainWindow : Window
         };
         Closed += (_, _) =>
         {
+            shellFolderViews?.Dispose();
             foreach(var pane in new[]{Left,Right})pane.CloseView();
             taskbarSearch?.Dispose();tray?.Dispose();
         };
-        SourceInitialized += (_, _) => { ApplyAcrylic(this); WatchShellChanges(); taskbarSearch = new(this); taskbarSearch.ApplySettings(); };
+        SourceInitialized += (_, _) => { ApplyAcrylic(this); WatchShellChanges(); taskbarSearch = new(this); taskbarSearch.ApplySettings(); shellFolderViews=new(this); };
         InitializePreviews();
         if (Settings.Profile == null) StartUpdateChecks();
 

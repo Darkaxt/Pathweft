@@ -76,7 +76,7 @@ public partial class MainWindow
     {
         folderTree.Items.Clear();
         foreach (var d in shownDrives)
-            folderTree.Items.Add(TreeNode(d.Name, d.Name.TrimEnd('\\') + (d.VolumeLabel != "" ? "  " + d.VolumeLabel : "")));
+            folderTree.Items.Add(TreeNode(d.Name, d.Name.TrimEnd('\\') + (d.Label != "" ? "  " + d.Label : "")));
     }
 
     TreeViewItem TreeNode(string path, string label)

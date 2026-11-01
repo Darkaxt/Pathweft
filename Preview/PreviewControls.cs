@@ -5,7 +5,7 @@ using System.Windows.Media;
 
 namespace FileExplorer.Preview;
 
-// Shared only by the embedded PDF and model toolbars.
+// Shared by the embedded PDF, model and media toolbars.
 internal static class PreviewControls
 {
     internal static Button Icon(MainWindow owner, string name, string glyph)

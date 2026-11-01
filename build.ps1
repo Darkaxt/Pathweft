@@ -53,6 +53,10 @@ foreach($file in $f3d.files){
     if((Get-FileHash -LiteralPath (Join-Path $publish $relative) -Algorithm SHA256).Hash -ne $file.sha256){throw "F3D dependency changed: $relative"}
 }
 if((Get-FileHash -LiteralPath (Join-Path $publish 'Everything/Everything.exe')).Hash -ne 'F191F756996A14A11E5445FA7103D302EFD510CF2FBF920E6C0C8ED51D512E36'){throw 'Bundled Everything engine changed.'}
+$mpv=Get-Content -LiteralPath (Join-Path $root 'vendor/MPV/runtime-manifest.json') -Raw|ConvertFrom-Json
+foreach($file in $mpv.runtime.PSObject.Properties){
+    if((Get-FileHash -LiteralPath (Join-Path $publish ('MPV/'+$file.Name))).Hash -ne $file.Value){throw "Pinned media library differs: $($file.Name)"}
+}
 Copy-Item -LiteralPath (Join-Path $root 'docs/RELEASE-USAGE.md') -Destination (Join-Path $publish 'README.txt')
 Copy-Item -LiteralPath (Join-Path $root 'docs/THIRD-PARTY-NOTICES.md') -Destination (Join-Path $publish 'THIRD-PARTY-NOTICES.md')
 $runtimeNotices=Join-Path $publish 'licenses/Microsoft'
@@ -84,6 +88,15 @@ if($LASTEXITCODE -ne 0){throw 'Portable archive creation failed.'}
 # offline native Rust dependency sources, not only selected reference snippets.
 $sources=Join-Path $scratch 'corresponding-sources'
 if(!(Test-Path -LiteralPath (Join-Path $sources 'source-manifest.json'))){throw 'Prepare verified corresponding dependency sources first.'}
+$mpvSources=Join-Path $CacheRoot 'mpv/e471496c56-pathweft.1/sources'
+foreach($file in $mpv.sources){
+    if((Get-FileHash -LiteralPath (Join-Path $mpvSources $file.name)).Hash -ne $file.sha256){throw "Media corresponding source differs: $($file.name)"}
+}
+if(!(Test-Path -LiteralPath (Join-Path $sources 'MPV'))){Copy-Item -LiteralPath $mpvSources -Destination (Join-Path $sources 'MPV') -Recurse}
+foreach($file in Get-ChildItem -LiteralPath $mpvSources -File -Recurse){
+    $relative=[IO.Path]::GetRelativePath($mpvSources,$file.FullName)
+    if((Get-FileHash -LiteralPath (Join-Path $sources ('MPV/'+$relative))).Hash -ne (Get-FileHash -LiteralPath $file.FullName).Hash){throw "Packaged media source or build recipe differs: $relative"}
+}
 & "$env:SystemRoot/System32/tar.exe" -a -c -f (Join-Path $delivery "Pathweft-$version-dependency-sources.zip") -C $sources .
 if($LASTEXITCODE -ne 0){throw 'Dependency-source archive creation failed.'}
 if(!$Candidate){

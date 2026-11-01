@@ -9,6 +9,7 @@ namespace FileExplorer;
 // window watcher, process-creation interception or managed code in caller hosts.
 internal static class WindowsIntegration
 {
+    internal static event Action Changed;
     const string Classes=@"Software\Classes\";
     const string Verb="pathweft";
     const string RouterClsid="{CF5ABF8B-73EA-4DF9-A991-C163D76FE2A2}";
@@ -253,6 +254,7 @@ internal static class WindowsIntegration
         if(VerificationRoot!=null)return;
 #endif
         SHChangeNotify(0x08000000,0,IntPtr.Zero,IntPtr.Zero);
+        Changed?.Invoke();
     }
     [DllImport("shell32.dll")]static extern void SHChangeNotify(uint change,uint flags,IntPtr first,IntPtr second);
 }

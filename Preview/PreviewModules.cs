@@ -25,7 +25,7 @@ internal static class PreviewModules
         new("pdf", "PDF", "Windows PDF rendering with page navigation; no document scripts.", 90, new[] { ".pdf" }),
         new("executable", "Executable details", "Version resources, architecture and file details without running the application.", 90, new[] { ".exe" }),
         new("archive", "Folders and archives", "Expandable folder and archive trees without extracting or running entries.", 90, Array.Empty<string>()),
-        new("media", "Video and audio", "Built-in playback using installed Windows codecs.", 90,
+        new("media", "Video and audio", "Bundled MPV playback with hardware acceleration and Dolby Vision to SDR conversion.", 90,
             new[] { ".mp4", ".m4v", ".mov", ".wmv", ".avi", ".mkv", ".webm", ".mpg", ".mpeg", ".3gp", ".ts", ".mp3", ".wav", ".wma", ".m4a", ".aac", ".flac", ".ogg", ".opus" }),
         new("font", "Fonts", "TrueType and OpenType specimens; the font is not installed.", 90, new[] { ".ttf", ".otf" }),
         new("text", "Text and code", "Read-only source text with encoding detection and a visible 256-KiB limit.", -5, Array.Empty<string>())

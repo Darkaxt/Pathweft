@@ -1,10 +1,44 @@
 # Pathweft specification
 
-Version 0.31 - 2026-11-01. Owner: Darkaxt.
+Version 0.33 - 2026-11-01. Owner: Darkaxt.
 
 This is the authoritative specification. The derived plan must preserve every
 requirement and acceptance criterion. Material scope changes require explicit
 user direction recorded here; ordinary implementation choices need no new gate.
+
+Current S8 is ACTIVE again. The user restarted Helium from Start and confirmed
+folder opening works; native tracing verifies class lookup and handler activation
+now succeed. The user explicitly requests preserving file highlighting too.
+Complete that native selection handoff without taking over Explorer navigation,
+preserve opt-out/virtual-folder behavior and verify the real Helium request before
+the final release of this extension. The prior process-context lookup failure is
+resolved in the restarted caller; its lower-level cause is not inferred.
+The user's current sidebar report also requires consistent drive display names:
+Folders uses the same fallback label as Drives for an unlabeled volume. Do not
+rename the actual filesystem volume. Media-engine alternatives from the user's
+VLC/NuvioDesktopDV forks were initially a feasibility review; the user's subsequent
+"go ahead, libmpv" explicitly authorizes PREVIEW-15 in this same S8 extension.
+
+PREVIEW-15 (S8, already authorized): replace Video and audio's WPF/installed-codec
+backend with a bundled, version/source-pinned libmpv runtime using the user's
+VLC/NuvioDesktopDV Dolby Vision work. Keep the existing module enable/disable
+setting, Pathweft theme and preview ownership; no standalone installed player,
+Kotlin/Qt UI import, extra engine chooser or codec downloads. Render into a
+native child window through gpu-next/libplacebo, without PNG/CPU frame roundtrips
+or loss of Dolby Vision metadata. Reuse the proven DV pipeline's exact source,
+runtime identity, relevant configuration, notices and corresponding sources;
+do not assume that merely using libVLC carries the fork's MPV/DV implementation.
+Maintain video/audio play/pause, seek, duration/position, Space-window autoplay,
+side-pane pause until Play, keyboard controls, errors and deterministic teardown
+when changing selection, disabling/closing preview or shutting down. Retain themed
+icon controls and accessible labels. Verify real SDR/audio and representative
+DV Profile5/8 rendering against the available known-good fork fixtures/reference,
+negative color control, actual native playback/events/EOF/teardown and hidden
+pane/popup integration. Qualify the known-good SDR/sRGB conversion; native Dolby
+Vision display signaling and full Profile7 FEL are not claimed. Include native
+runtime/provenance/source in the normal final release and independently verify
+the actual downloaded package and installed integration. No intermediate release
+or unrelated stage is authorized by this extension.
 
 SHELL-02 clarification (user: "I clicked Show in Folder", followed by permission
 to test while away): the actual failing Helium action is Show in folder. Its

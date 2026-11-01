@@ -285,6 +285,8 @@ public partial class PaneView : UserControl
 
     public string Dir => tabs[tab];
     public event Action Activated, StatsChanged;
+    internal event Action NavigationChanged;
+    string itemsFolder;
     public event Action<string> Error;
     public event Action<Entry> OpenArchived; // Enter on a file inside an archive: MainWindow opens it from a temp copy
     public event Action<List<string>, string, bool> FilesDropped; // sources, destination, move
@@ -748,6 +750,7 @@ public partial class PaneView : UserControl
         BuildCrumbs();
         EndEditPath();
         BuildTabs();
+        NavigationChanged?.Invoke();
         return ++navVersion;
     }
 
@@ -763,6 +766,7 @@ public partial class PaneView : UserControl
         int firstSelected = keep && view != null && List.SelectedItems.Count > 0 ? List.SelectedItems.Cast<object>().Min(view.IndexOf) : -1;
         var left = items;
         items = list;
+        itemsFolder=Dir;
         TrackColumns();
         view = new ListCollectionView((IList)items) { CustomSort = indexedSearch ? null : new EntrySort(sortKey, sortDesc) };
         ApplyGrouping();
@@ -833,12 +837,24 @@ public partial class PaneView : UserControl
         pendingFocus = focus;
     }
 
+    internal void SelectFromShell(string name,uint flags)
+    {
+        // SVSI_DESELECTOTHERS is sent on the first item, then SVSI_SELECT for
+        // the remaining items. Preserve that contract even while rows load.
+        var names=(flags&4)!=0?new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            :pendingSelect!=null?new HashSet<string>(pendingSelect,StringComparer.OrdinalIgnoreCase)
+            :Selected.Select(item=>item.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        if(name!=null){if((flags&1)!=0)names.Add(name);else names.Remove(name);}
+        SelectAfterRefresh(names,(flags&0x10)!=0);
+        if(string.Equals(itemsFolder,Dir,StringComparison.OrdinalIgnoreCase)&&!InSearch&&view!=null)ApplyPendingSelect();
+    }
+
     void ApplyPendingSelect()
     {
         var (names, current, offset) = (pendingSelect, pendingCurrent, pendingOffset);
         pendingSelect = null; pendingCurrent = null; pendingOffset = null;
         if (names.Count > 0 && !items.Any(e => names.Contains(e.Name))) return; // not here (yet): the selection stays as it was
-        if (names.Count > 0 || offset != null) SetSelection(e => names.Contains(e.Name)); // a tab left with nothing selected comes back so
+        SetSelection(e => names.Contains(e.Name)); // including an explicit empty Shell selection
         var first = view.Cast<Entry>().FirstOrDefault(e => current != null ? e.Name.Equals(current, StringComparison.OrdinalIgnoreCase) : names.Contains(e.Name))
                     ?? view.Cast<Entry>().FirstOrDefault(e => names.Contains(e.Name));
         if (first == null && offset == null) return;
