@@ -6,7 +6,9 @@ This is the authoritative specification. The derived plan must preserve every
 requirement and acceptance criterion. Material scope changes require explicit
 user direction recorded here; ordinary implementation choices need no new gate.
 
-Current S8 is ACTIVE again. The user restarted Helium from Start and confirmed
+The current S8 extension remains open pending installed1.1.13 verification;
+source and independently retrieved final-release checks pass, as recorded in
+the implementation ledger. The user restarted Helium from Start and confirmed
 folder opening works; native tracing verifies class lookup and handler activation
 now succeed. The user explicitly requests preserving file highlighting too.
 Complete that native selection handoff without taking over Explorer navigation,

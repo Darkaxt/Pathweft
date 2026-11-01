@@ -3,7 +3,23 @@
 Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.33, 2026-11-01,
 including the user-authorized continued comparison requirement TRANSFER-07.
 
-Current S8 status: ACTIVE for SHELL-02, PREVIEW-15 and the reported sidebar label mismatch.
+Current S8 status: BLOCKED only on installed1.1.13 verification.
+Normal1.1.13 is published at26143f4b1dee768e587da6e13704005bbc71fede;
+all six published assets match their source/tag and SHA-256 digests. Independent
+retrieval passes native32/64 browser routing/selection, actual app-host self-test,
+bundled media GPU rendering/teardown and integrated app checks with unchanged
+packaged member hashes. No visible windows or live routing changes were used.
+Source criteria for SHELL-02, PREVIEW-15 and drive-label consistency pass below.
+Remaining criterion: actual installed/updater integration and all installed-member
+hashes, process/helper readiness and desktop routing readback. The existing1.1.12
+main/helper remain active and preserved. This is external/user-controlled update
+readiness; the user has been asked once to update/reopen. Resolution/next action:
+run the prepared read-only installed113 desktop-context verifier after reopen.
+Until then S8 is not COMPLETE. No tracked deferrals or other ACTIVE stage.
+Reviewed task scratch cleanup passes with no residuals; normal deliverables
+remain in dist/1.1.13 and required private verification evidence is retained.
+The earlier ACTIVE checkpoint follows as history.
+
 Current reconciliation (1.1.13 candidate): native RegisterPending/Register folder
 views preserve multi-selection and inactive-tab selection; opting out revokes
 them. Actual Helium PID109860's controlled native request returned S_OK and the

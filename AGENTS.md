@@ -3,7 +3,22 @@
 Read `docs/SPECIFICATION.md` first. It is authoritative; the plan and this file
 do not change its requirements or the user's standing instructions.
 
-Current S8 ACTIVE: SHELL-02/03, PREVIEW-15/spec0.33 plus sidebar drive-label consistency.
+Current S8 BLOCKED only on the installed1.1.13 updater readback for
+SHELL-02/03, PREVIEW-15/spec0.33 and sidebar drive-label consistency.
+Normal1.1.13 is published at26143f4b1dee768e587da6e13704005bbc71fede.
+All six published asset digests/source tag match; the independently retrieved
+package passes native32/64 routing/selection, real app-host and complete app/
+media checks. Source SDR/audio/DV color and real Helium process boundary checks
+pass as recorded below. Existing installed1.1.12 remains running; user-controlled
+Settings > About > Check for updates/reopen is requested once. Do not force-close
+it or replace active files. Exact next action: run the prepared read-only
+.local/evidence/2026-11-01-folder1112/Invoke-InstalledDesktop113.ps1 after reopen;
+check all release members, main/helper readiness and actual desktop route values.
+This is the only remaining acceptance blocker; no tracked deferral/ACTIVE stage.
+Reviewed task scratch cleanup passes with no residuals; preserve dist/1.1.13,
+retained private verification evidence and the active pinned dependency cache.
+Earlier ACTIVE checkpoint follows as history.
+
 Current checkpoint: native folder selection and complete libmpv preview pass
 hidden product qualification. The actual Helium process's controlled native
 request returns S_OK and highlights the supplied file; this is a boundary replay,
