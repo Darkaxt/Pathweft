@@ -1,12 +1,58 @@
 # Pathweft specification
 
-Version 0.26 - 2026-11-01. Owner: Darkaxt.
+Version 0.28 - 2026-11-01. Owner: Darkaxt.
 
 This is the authoritative specification. The derived plan must preserve every
 requirement and acceptance criterion. Material scope changes require explicit
 user direction recorded here; ordinary implementation choices need no new gate.
 
+CORE-17 (S8, user-authorized storage correction): keep small settings on C:;
+place installed bulk archive working copies, folder-size caches, editor WebView2
+data and preview caches on D: under a per-user Pathweft data directory. A small
+data-root.txt setting may select another non-system data drive; never silently
+fall back to C:. Preserve isolated test/explicit portable profiles. Preserve
+existing folder-size cache data and legacy working-copy path bindings until
+their consumers finish. The user identifies the historical VLC extraction as
+abandoned failed-drag output: release that exact copy with reviewed cleanup.
+Known failed/cancelled drags automatically release materialized copies;
+accepted external handoffs retain their actual consumer lifetime. Verify real
+archive extraction/drag outcomes, cache writes/legacy reads, editor profile paths,
+legacy-copy release and installed storage migration/cleanup. Migration must wait
+for old writers to exit, verify destination content and preserve settings.
+
+CORE-16 includes the user's requested dynamic Message grid column for file-open
+failures, with full-detail tooltip and clearing on successful retry. Do not bury
+these errors in the bottom status path. Verify actual row/column rendering.
+Root-cause evidence identifies installer-inherited RedirectionGuard enforcement:
+the running main rejects the registered Scoop player junction with error448;
+Explorer uses audit mode. Inno6.7.4 documents this inheritance for lowest-privilege
+installers. Correct desktop application/helper launch ownership while retaining
+the installer's protection; do not disable Windows or installer mitigations,
+rewrite user associations, or hardcode resolved player executable paths.
+
 ## 1. Intent and current scope
+
+Current correction: S8 ACTIVE for CORE-16 after the user's live reproduction
+under the prepared, temporary read-only launch trace. MP4 dispatch reaches
+ShellExecuteExW and fails with HRESULT0x800401F5; TS/PDF/XLSX return success,
+with unexpected association-choice dialogs reported for TS/XLSX. The temporary
+trace is detached. Synthetic double-click,
+custom context Open and actual Windows association receivers pass without a
+production behavior change; they do not establish the cause of the live failure.
+The user reports ordinary MP4
+double-click and custom context Open doing nothing, while Explorer and native
+Open with work. Trace the shared action to its root before changing behavior.
+Correct and verify the general open contract across ordinary associations,
+double-click/Enter/context Open, editor enabled/disabled, directories and archive
+working copies. Preserve explicit edit/preview semantics. No MP4-only routing,
+host media playback, desktop takeover or unrelated shell registration changes.
+Use synthetic receivers for actual association-boundary checks. Source acceptance
+and one final normal release/retrieval/installed verification are required;
+previous 1.1.10 evidence below remains historical. S8 is ACTIVE for CORE-16/17.
+The live trace proved the inherited mitigation root cause and is detached;
+the desktop launch correction and general action/message checks pass in source.
+Storage correction, integrated verification and final1.1.11 delivery remain
+acceptance blockers within this active stage. No tracked deferral.
 
 Current correction: S8 COMPLETE through1.1.10 for PREVIEW-13/14. The installed1.1.9
 orbit behavior passed scripted correctness but regressed rendering performance. PREVIEW-14

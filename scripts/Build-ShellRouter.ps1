@@ -17,7 +17,7 @@ foreach($arch in @('x64','x86')){
     foreach($kind in @('shared','um','ucrt','winrt')){$arguments+='/I'+(Join-Path $sdk "Include/$sdkVersion/$kind")}
     $link=@('/link',('/LIBPATH:'+(Join-Path $vc "lib/$arch")))
     foreach($kind in @('um','ucrt')){$link+='/LIBPATH:'+(Join-Path $sdk "Lib/$sdkVersion/$kind/$arch")}
-    $link+=@('kernel32.lib','ole32.lib','shell32.lib','shlwapi.lib','uuid.lib','advapi32.lib','user32.lib')
+    $link+=@('kernel32.lib','ole32.lib','oleaut32.lib','shell32.lib','shlwapi.lib','uuid.lib','advapi32.lib','user32.lib')
     $dll=@('/LD',(Join-Path $root 'native/pathweft-shell/Router.cpp'),('/Fo'+$output+'\'))+$link+@(('/DEF:'+(Join-Path $root 'native/pathweft-shell/Router.def')),('/OUT:'+(Join-Path $output 'PathweftShell.dll')),('/IMPLIB:'+(Join-Path $output 'PathweftShell.lib')))
     if($ProductDirectory){
         $manifest=Get-Content (Join-Path $ProductDirectory 'release-manifest.json') -Raw|ConvertFrom-Json

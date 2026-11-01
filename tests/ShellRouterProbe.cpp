@@ -153,7 +153,7 @@ int wmain(int argc,wchar_t** argv){
         }
     }
     withSite->Release();
-    for(int external=0;external<2;++external){
+    for(int external=0;external<3;++external){
     wchar_t volume[32768];if(!GetVolumePathNameW(argv[2],volume,32768))return 18;
     PCWSTR expected=external==0?argv[2]:volume;
     if(external){
@@ -168,7 +168,14 @@ int wmain(int argc,wchar_t** argv){
     std::wstring releaseName=std::wstring(eventName)+L"-release";
     HANDLE release=CreateEventW(nullptr,TRUE,FALSE,releaseName.c_str());
     SetEnvironmentVariableW(L"PATHWEFT_SHELL_PROBE_EVENT",eventName);
-    Check(command->Execute(),"route external folder");
+    if(external==2){
+        auto launch=reinterpret_cast<HRESULT(__stdcall*)(PCWSTR,PCWSTR,PCWSTR,int)>(GetProcAddress(library,"PathweftLaunchDesktop"));
+        if(!launch)return 22;
+        std::wstring directory=argv[1];directory.resize(directory.find_last_of(L"\\/"));
+        const auto executable=directory+L"\\Pathweft.exe";
+        const auto arguments=L"\""+std::wstring(expected)+L"\\\" \""+eventName+L"\"";
+        Check(launch(executable.c_str(),arguments.c_str(),directory.c_str(),SW_HIDE),"activate hidden receiver through existing desktop");
+    }else Check(command->Execute(),"route external folder");
     if(WaitForSingleObject(completed,INFINITE)!=WAIT_OBJECT_0)return 6;
     std::wstring received=argv[1];received.resize(received.find_last_of(L"\\/"));received+=L"\\received.txt";
     HANDLE receipt=CreateFileW(received.c_str(),GENERIC_READ,FILE_SHARE_READ,nullptr,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,nullptr);if(receipt==INVALID_HANDLE_VALUE)return 19;
@@ -179,6 +186,7 @@ int wmain(int argc,wchar_t** argv){
     FILE* stream=nullptr;_wfopen_s(&stream,pidFile.c_str(),L"r");if(!stream)return 8;
     DWORD childId=0;if(fscanf_s(stream,"%lu",&childId)!=1)return 9;fclose(stream);
     HANDLE child=OpenProcess(SYNCHRONIZE|PROCESS_QUERY_LIMITED_INFORMATION,FALSE,childId);if(!child)return 10;
+    if(external==2){PROCESS_MITIGATION_REDIRECTION_TRUST_POLICY policy{};if(!GetProcessMitigationPolicy(child,ProcessRedirectionTrustPolicy,&policy,sizeof(policy))||policy.EnforceRedirectionTrust)return 23;}
     SetEvent(release);if(WaitForSingleObject(child,INFINITE)!=WAIT_OBJECT_0)return 11;
     DWORD exitCode=1;if(!GetExitCodeProcess(child,&exitCode)||exitCode)return 12;
     CloseHandle(child);CloseHandle(release);

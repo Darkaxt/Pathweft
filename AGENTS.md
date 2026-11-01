@@ -3,6 +3,17 @@
 Read `docs/SPECIFICATION.md` first. It is authoritative; the plan and this file
 do not change its requirements or the user's standing instructions.
 
+Current S8 ACTIVE: CORE-16/17/spec0.28. Installer-inherited RedirectionGuard
+root cause is proven; all temporary REA sessions are detached/ended. General
+Open/actions/Message/editor/archive source checks pass (PID61648), native32/64
+desktop launch and isolated installer completion pass. Finish non-system bulk
+storage/failed drag disposal, integrated verification and normal1.1.11 delivery.
+Preserve the running app/settings/consumers. No Sandbox or desktop takeover.
+The user confirms the historical VLC drag extraction is abandoned failed output;
+clean that exact lease through transactional-cleanup. Offline cache/editor data
+migration must wait for old writers to exit; preserve content and settings.
+Earlier COMPLETE statements below are historical release checkpoints.
+
 - S1-S4 are COMPLETE;
   Current S8 correction is COMPLETE under specification0.26/PREVIEW-13/14.
   Normal1.1.10 ataf82ca2 separates native-equivalent camera math from per-input

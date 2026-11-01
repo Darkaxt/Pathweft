@@ -237,7 +237,7 @@ internal sealed class F3dViewer(MainWindow owner) : IViewer
                             engine = F3dNative.f3d_engine_create(1);
                         }
                         if (engine == IntPtr.Zero) throw new InvalidOperationException("F3D could not create an offscreen renderer.");
-                        string cache = Path.Combine(Settings.Dir, "preview-f3d-cache"); Directory.CreateDirectory(cache);
+                        string cache = Path.Combine(DataFolder.Cache, "preview-f3d-cache"); Directory.CreateDirectory(cache);
                         if (F3dNative.f3d_engine_set_cache_path(engine, cache) == 0) throw new IOException("F3D cache could not use the application profile.");
                         window = F3dNative.f3d_engine_get_window(engine); camera = F3dNative.f3d_window_get_camera(window);
                         interactor=F3dNative.f3d_engine_get_interactor(engine);

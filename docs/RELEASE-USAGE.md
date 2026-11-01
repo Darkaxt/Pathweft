@@ -1,10 +1,16 @@
-# Pathweft 1.1.10
+# Pathweft 1.1.11
 
 Windows 11 x64 is the qualified host. The .NET 10 desktop runtime and native
 archive/preview libraries are included. WebView2 Evergreen is required for the
 optional F4 editor; the application reports when that runtime is unavailable.
 
 The installer runs for the current user without administrator privileges.
+After installation/update, application and helper activation use the existing
+desktop's context so they do not inherit Setup's RedirectionGuard restriction.
+Setup retains its protection and user file associations remain unchanged.
+Ordinary file-open failures appear in the affected row's Message column, with
+full details in its tooltip. Successful retry clears the error and hides the
+column when empty. Archive working-copy launch failures follow the same rule.
 Folder routing is unchecked during installation. Settings > Windows integration
 owns folder routing, its restoration action, independent Win+E, and taskbar
 search. Navigation within an existing Explorer window stays in Explorer.
@@ -110,6 +116,15 @@ For portable use, extract Pathweft/ to a writable directory and launch
 Pathweft.exe. Settings live in Data/. Preserve Data/ when replacing the program
 files. Disable folder/Win+E/startup integration before moving or deleting a
 portable copy. A portable copy has its own application instance and profile.
+
+Installed bulk data uses D:\AppData\Pathweft\<user SID>, separate from small
+Roaming settings. Archive working copies, folder-size/preview caches and WebView2
+runtime data belong there. A data-root.txt file in the settings folder can name
+another absolute non-system data directory; unavailable storage is reported
+without a system-drive fallback. Close consumers and verify content before
+migrating existing data. Legacy external working copies retain their original
+paths until released from Archive working copies. Cancelled/failed drag exports
+are discarded automatically; accepted external handoffs retain their lifetime.
 
 Pathweft binaries/installer are unsigned. Verify SHA256SUMS.txt against the
 published assets. release-manifest.json identifies the source commit and each

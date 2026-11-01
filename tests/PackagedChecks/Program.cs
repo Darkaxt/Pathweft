@@ -139,6 +139,16 @@ sealed class PackageProbe
             Check(app.Windows.Count==0,"The owned WPF startup operation was cancelled before dispatch and creates no application window");
             Settings.Load();
             Check(Path.GetFullPath(Settings.Dir).StartsWith(root+"\\",StringComparison.OrdinalIgnoreCase),"The delivered assembly uses only the explicit verification profile");
+            string bulk=(string)Type("DataFolder").GetProperty("Bulk",Flags).GetValue(null);
+            Check(bulk==Path.Combine(Settings.Dir,"Runtime")&&((string)Type("DataFolder").GetProperty("WebView2",Flags).GetValue(null)).StartsWith(bulk+"\\",StringComparison.OrdinalIgnoreCase),"Delivered bulk and editor data use the isolated runtime root, separate from small settings");
+            string remembered=Directory.CreateDirectory(Path.Combine(root,"remembered-size")).FullName;
+            var stamp=Directory.GetLastWriteTimeUtc(remembered);
+            File.WriteAllText(Path.Combine(Settings.Dir,"folder-sizes.txt"),$"23456|{stamp.Ticks}|{DateTime.UtcNow.Ticks}|{remembered}\n");
+            SizeCache.StartLoading();
+            Check(SizeCache.Get(remembered,stamp)==23456,"Delivered cache reads legacy Roaming records without losing remembered sizes");
+            SizeCache.Save();
+            string newCache=(string)typeof(SizeCache).GetProperty("FilePath",Flags).GetValue(null);
+            Check(newCache.StartsWith(bulk+"\\",StringComparison.OrdinalIgnoreCase)&&File.ReadAllText(newCache).Contains(remembered),"Delivered cache saves preserved records in bulk storage");
             Call(Type("Appearance"),null,"Initialize");
             using var deliveredManifest=JsonDocument.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory,"release-manifest.json")));
             Check(Product.GetName().Version.ToString(3)==deliveredManifest.RootElement.GetProperty("version").GetString()&&Product.GetType("FileExplorer.S8ShellTrial")==null&&Product.GetType("FileExplorer.HiddenTrialPresentation")==null&&Product.GetType("FileExplorer.MainWindow").GetMethod("VerifyAppearanceCorrection",Flags)==null,"Delivered version and absence of Debug trial hooks");
@@ -237,6 +247,11 @@ sealed class PackageProbe
             try{left.Navigate(root);FolderArrived();await folderArrived.Task;}finally{left.StatsChanged-=FolderArrived;}
             await app.Dispatcher.InvokeAsync(()=>{},DispatcherPriority.ApplicationIdle);
             Check(!CurrentColumns().Contains("Capacity")&&!CurrentColumns().Contains("Version")&&CurrentColumns().Contains("Size"),"Delivered folder navigation restores only populated file columns");
+            var messageEntry=left.Items.First();messageEntry.Message="Could not open: packaged fixture error";
+            await app.Dispatcher.InvokeAsync(()=>{},DispatcherPriority.ApplicationIdle);
+            Check(CurrentColumns().Contains("Message")&&messageEntry.Tip.Contains(messageEntry.Message),"Delivered row failures expose a dynamic Message column and full tooltip");
+            messageEntry.Message="";await app.Dispatcher.InvokeAsync(()=>{},DispatcherPriority.ApplicationIdle);
+            Check(!CurrentColumns().Contains("Message"),"Delivered retry clearing removes the empty Message column");
             var sidebarMask=(System.Windows.Media.LinearGradientBrush)Call(typeof(MainWindow),null,"SidebarEdgeMask",200d,true,true,false);
             Check(owner.FindName("SidebarScroll") is ScrollViewer&&sidebarMask.MappingMode==System.Windows.Media.BrushMappingMode.Absolute&&sidebarMask.EndPoint.Y==200&&sidebarMask.GradientStops[0].Color.A==0&&sidebarMask.GradientStops[^1].Color.A==0&&Call(typeof(MainWindow),null,"SidebarEdgeMask",200d,true,true,true)==null,"Delivered sidebar owns a viewport-coordinate fade and preserves high-contrast opacity");
             Check(left.FindName("AddressField") is FrameworkElement&&left.FindName("SearchScope")==null&&left.FindName("SearchBar")==null&&left.FindName("SearchSubmit")==null&&new[]{"MatchCase","MatchWord","MatchPath","MatchRegex"}.All(name=>left.FindName(name)!=null),"Delivered controls contain the unified field and four match switches, without the retired search row");

@@ -25,6 +25,36 @@ static class Program
     static void Main(string[] args)
     {
 #if DEBUG
+        if(args.FirstOrDefault(a=>a.StartsWith("--desktop-test-profile=")) is { } testProfile)
+        {
+            string profile=Path.GetFullPath(testProfile["--desktop-test-profile=".Length..]);
+            if(!profile.StartsWith(@"D:\Temp\pathweft-s8-delivery\appearance-",StringComparison.OrdinalIgnoreCase)||!args.Contains("--resume-agent"))throw new ArgumentException("Owned resume fixture required.");
+            Environment.SetEnvironmentVariable("PATHWEFT_PROFILE",profile);
+        }
+#endif
+        if(args.Contains("--desktop-launch"))
+        {
+            try{Environment.ExitCode=DesktopLaunch.FromSetup(args.Contains("--resume-agent"));}
+            catch(Exception error)when(error is System.Runtime.InteropServices.COMException or IOException or UnauthorizedAccessException){Environment.ExitCode=1;}
+            return;
+        }
+        if(args.FirstOrDefault(a=>a.StartsWith("--desktop-result=")) is { } desktopResult)
+        {
+            if(!args.Contains("--resume-agent")){Environment.ExitCode=1;return;}
+            Environment.ExitCode=1;
+            try{var application=new App();application.InitializeComponent();Environment.ExitCode=application.Run();}
+            finally{DesktopLaunch.Report(desktopResult["--desktop-result=".Length..],Environment.ExitCode);}
+            return;
+        }
+#if DEBUG
+        const string openReceiver="--open1111-receiver=";
+        if(args.FirstOrDefault(a=>a.StartsWith(openReceiver)) is { } openRequest)
+        {
+            string target=System.IO.Path.GetFullPath(openRequest[openReceiver.Length..]);
+            if(!target.StartsWith(@"D:\Temp\pathweft-s8-delivery\appearance-",StringComparison.OrdinalIgnoreCase))throw new ArgumentException("Owned open fixture required.");
+            System.IO.File.WriteAllText(target+".receipt.json",System.Text.Json.JsonSerializer.Serialize(new{path=target,directory=Environment.CurrentDirectory,pid=Environment.ProcessId}));
+            return;
+        }
         if(S8ShellTrial.Enabled)
         {
             var scratch=Directory.CreateDirectory(Path.Combine(Program.PortableDir,"temp")).FullName;
@@ -493,7 +523,7 @@ public partial class App : Application
                 sizing.GetAwaiter().GetResult();
             }
             SizeCache.Save();
-            Check(File.ReadLines(Path.Combine(Settings.Dir,"folder-sizes.txt")).All(line=>line.Split('|',4).Length==4),"size cache: concurrent sizing/shutdown save retains valid records");
+            Check(File.ReadLines(SizeCache.FilePath).All(line=>line.Split('|',4).Length==4),"size cache: concurrent sizing/shutdown save retains valid records");
 
             // selected text: white on the default accent at 8:1 or better (1.0.38's 6.97:1 still read as grey), and
             // readable on other accents and strengths

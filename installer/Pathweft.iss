@@ -56,8 +56,8 @@ Name: "{group}\Pathweft"; Filename: "{app}\{#AppExe}"
 Name: "{autodesktop}\Pathweft"; Filename: "{app}\{#AppExe}"; Tasks: desktopicon
 
 [Run]
-Filename: "{app}\{#AppExe}"; Flags: nowait runhidden; Check: RestartRequested
-Filename: "{app}\{#AppExe}"; Description: "Launch Pathweft"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\{#AppExe}"; Parameters: "--desktop-launch"; Flags: nowait runhidden; Check: RestartRequested
+Filename: "{app}\{#AppExe}"; Parameters: "--desktop-launch"; Description: "Launch Pathweft"; Flags: nowait postinstall skipifsilent
 
 ; User settings, tabs, history, caches and recovery records are never swept by
 ; the uninstaller. The executable restores only registrations it still owns.
@@ -143,7 +143,7 @@ begin
       RaiseException('Pathweft was installed, but folder integration was not enabled. Use Settings > Windows integration to inspect or restore it.');
   end;
   if CurStep = ssPostInstall then begin
-    if not Exec(ExpandConstant('{app}\{#AppExe}'), '--resume-agent', '', SW_HIDE, ewWaitUntilTerminated, Code) or (Code <> 0) then
+    if not Exec(ExpandConstant('{app}\{#AppExe}'), '--desktop-launch --resume-agent', '', SW_HIDE, ewWaitUntilTerminated, Code) or (Code <> 0) then
       RaiseException('Pathweft was installed, but its Win+E helper could not restart. Open Settings > Windows integration to inspect its status.');
   end;
 end;

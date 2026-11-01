@@ -284,5 +284,23 @@ static class DataFolder
 {
     internal static readonly string New = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Pathweft");
     internal static string Current => New;
-    internal static string WebView2 => Path.Combine(Settings.Dir, "WebView2");
+    // Small settings stay in Roaming. Bulk/cache data must never silently spill
+    // onto the system volume. Explicit test/portable profiles remain self-contained.
+    static readonly Lazy<string> bulk = new(() => ResolveBulk(Settings.Dir, Settings.Profile != null || Settings.Portable != null));
+    internal static string Bulk => bulk.Value;
+    internal static string ResolveBulk(string settings, bool isolated)
+    {
+        if (isolated) return Path.Combine(settings, "Runtime");
+        string choice = Path.Combine(settings, "data-root.txt");
+        string root = File.Exists(choice) ? File.ReadAllText(choice).Trim() :
+            Path.Combine(@"D:\AppData\Pathweft", System.Security.Principal.WindowsIdentity.GetCurrent().User.Value);
+        if (!Path.IsPathFullyQualified(root)) throw new IOException("Pathweft's data-root.txt must name an absolute folder on a data drive.");
+        root = Path.GetFullPath(root);
+        if (Path.GetPathRoot(root).Equals(Path.GetPathRoot(Environment.SystemDirectory), StringComparison.OrdinalIgnoreCase))
+            throw new IOException("Pathweft bulk storage must use a data drive, not the Windows system drive. Set data-root.txt in the settings folder.");
+        if (!Directory.Exists(Path.GetPathRoot(root))) throw new IOException("Pathweft's data drive is unavailable: " + Path.GetPathRoot(root));
+        return root;
+    }
+    internal static string Cache => Path.Combine(Bulk, "Cache");
+    internal static string WebView2 => Path.Combine(Bulk, "WebView2");
 }

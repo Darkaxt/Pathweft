@@ -15,8 +15,8 @@ public static class SizeCache
     record Entry(long Size, long Stamp, long UsedAt); // Stamp = folder's LastWriteTimeUtc ticks
 
     static readonly ConcurrentDictionary<string, Entry> map = new(StringComparer.OrdinalIgnoreCase);
-    static string FilePath => Path.Combine(Settings.Dir, "folder-sizes.txt");
-    const int MaxEntries = 1_000_000; // ~100 MB on disk at most; the least recently used go first
+    internal static string FilePath => Path.Combine(DataFolder.Cache, "folder-sizes.txt");
+    const int MaxEntries = 1_000_000; // Entry bound; byte size depends on path lengths. Least recently used go first.
 
     // Read in the background after the window's first frame (MainWindow), or as soon as something needs a size.
     // Read at startup, a big cache delayed the first frame: its parse and garbage collections took 0.8 s of the
@@ -68,10 +68,12 @@ public static class SizeCache
 
     public static void Load()
     {
-        if (!File.Exists(FilePath)) return;
+        // Read the old cache once if necessary; all future writes use bulk storage.
+        string source = File.Exists(FilePath) ? FilePath : Path.Combine(Settings.Dir, "folder-sizes.txt");
+        if (!File.Exists(source)) return;
         try
         {
-            foreach (var line in File.ReadLines(FilePath))
+            foreach (var line in File.ReadLines(source))
             {
                 var p = line.Split('|', 4);
                 if (p.Length == 4 && long.TryParse(p[0], out var size) && long.TryParse(p[1], out var stamp) && long.TryParse(p[2], out var used)
@@ -102,7 +104,7 @@ public static class SizeCache
         Ready();                     // still reading: saving now would write half of it
         try
         {
-            Directory.CreateDirectory(Settings.Dir);
+            Directory.CreateDirectory(DataFolder.Cache);
             // ConcurrentDictionary's own snapshot holds its collection locks.
             // LINQ's ICollection fast path reads Count and later calls CopyTo;
             // a sizing worker can add entries between those two operations.

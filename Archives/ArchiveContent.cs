@@ -8,14 +8,18 @@ namespace FileExplorer;
 // remain until the user declares their external consumer finished; launcher exit is insufficient.
 internal static class ArchiveContent
 {
-    internal sealed record Record(string Id, string Source, string Purpose, string[] Files, string[] Directories);
-    internal static string Root => Path.Combine(Settings.Dir, "archive-content");
+    internal sealed record Record(string Id, string Source, string Purpose, string[] Files, string[] Directories)
+    {
+        [System.Text.Json.Serialization.JsonIgnore] public string StorageRoot { get; init; }
+    }
+    internal static string Root => Path.Combine(DataFolder.Bulk, "archive-content");
+    internal static string Location(Record record) => Path.Combine(record.StorageRoot ?? Root, record.Id);
     static readonly ConcurrentDictionary<string, byte> activePreviews = new();
     internal sealed class Lease(Record record) : IDisposable
     {
         int disposed;
         internal Record Record => record;
-        internal string Directory => Path.Combine(Root, record.Id);
+        internal string Directory => Location(record);
         internal string File => Path.Combine(Directory, record.Files.Single());
         public void Dispose()
         {
@@ -49,20 +53,20 @@ internal static class ArchiveContent
     }
     internal static IEnumerable<Record> Retained()
     {
-        if (!Directory.Exists(Root)) yield break;
-        foreach (string directory in Directory.EnumerateDirectories(Root))
+        foreach (string storage in new[] { Root, Path.Combine(Settings.Dir, "archive-content") }.Distinct(StringComparer.OrdinalIgnoreCase))
+        foreach (string directory in Directory.Exists(storage) ? Directory.EnumerateDirectories(storage) : Enumerable.Empty<string>())
         {
             Record record = null;
             try { record = JsonSerializer.Deserialize<Record>(System.IO.File.ReadAllText(Path.Combine(directory, "lease.json"))); }
             catch (Exception ex) when (ex is IOException or JsonException) { }
-            if (record != null && record.Id == Path.GetFileName(directory)) yield return record;
+            if (record != null && record.Id == Path.GetFileName(directory)) yield return record with { StorageRoot = storage };
         }
     }
     internal static void Release(Record record)
     {
         if (record.Id.Length != 32 || !record.Id.All(Uri.IsHexDigit)) throw new IOException("Invalid working-copy identity.");
         if (activePreviews.ContainsKey(record.Id)) throw new IOException("Close the internal preview before releasing this copy.");
-        string directory = Path.Combine(Root, record.Id);
+        string directory = Location(record);
         if (!Directory.Exists(directory)) return;
         // Prove each known file is currently unlocked before deleting any member.
         // For external consumers this supplements the user's explicit closure action.

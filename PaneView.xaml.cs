@@ -17,6 +17,8 @@ public class Entry : INotifyPropertyChanged
     public string Name { get; init; }
     public string Path { get; init; }
     public bool IsDir { get; init; }
+    string message="";
+    public string Message { get=>message; set { message=value??"";Changed(nameof(Message));Changed(nameof(Tip)); } }
     DateTime modified;
     public DateTime Modified
     {
@@ -185,7 +187,7 @@ public class Entry : INotifyPropertyChanged
     // The hover tooltip, as Explorer's: the whole name (a long one is cut off in the row), then type, size, date.
     public string Tip => IsUp ? null : string.Join("\n", new[]
     {
-        Name, IsReadOnly ? ReadOnlyReason : null, Location != "" ? "In: " + Location : null, "Type: " + Thumbnails.TypeName(Name, IsDir),
+        Name, Message.Length>0?Message:null, IsReadOnly ? ReadOnlyReason : null, Location != "" ? "In: " + Location : null, "Type: " + Thumbnails.TypeName(Name, IsDir),
         IsDrive?CapacityText:null,DriveConnection.Length>0?DriveConnection:null,DriveRawFormat.Length>0?"Reported filesystem: "+DriveRawFormat:null,DriveLocation.Length>0?DriveLocation:null,
         DriveCloudQuota?DrivePresentation.CloudSource+"\nMount-reported space (cache constrained): "+DrivePresentation.Capacity(DriveMountTotal,DriveMountFree):null,
         size >= 0 ? "Size: " + MainWindow.Fmt(size) : null, NoDate ? null : "Date modified: " + Modified.ToString("yyyy-MM-dd HH:mm:ss"),
@@ -222,6 +224,7 @@ class EntrySort(string key, bool desc) : IComparer
             "Filesystem"=>ExplorerOrder.Instance.Compare(x.DriveFormat,y.DriveFormat),
             "Connection"=>ExplorerOrder.Instance.Compare(x.DriveConnection,y.DriveConnection),
             "Location"=>ExplorerOrder.Instance.Compare(x.DriveLocation,y.DriveLocation),
+            "Message"=>ExplorerOrder.Instance.Compare(x.Message,y.Message),
             "Type" => ExplorerOrder.Instance.Compare(x.Ext, y.Ext) is var t && t != 0 ? t : ExplorerOrder.Instance.Compare(x.Name, y.Name),
             "Modified" => x.Modified.CompareTo(y.Modified),
             "Version" => ExplorerOrder.Instance.Compare(x.Version, y.Version) is var v && v != 0 ? v : ExplorerOrder.Instance.Compare(x.Name, y.Name),
@@ -262,6 +265,7 @@ public class FileList : ListView
     {
         protected override List<System.Windows.Automation.Peers.AutomationPeer> GetChildrenCore() => null;
         protected override string GetNameCore() => Item is Entry e ? e.AccessibleName : base.GetNameCore();
+        protected override string GetHelpTextCore() => Item is Entry e ? e.Message : base.GetHelpTextCore();
     }
 }
 
@@ -792,6 +796,7 @@ public partial class PaneView : UserControl
 
     // Start the drag immediately with an immutable selection. Internal drops
     // submit virtual paths to Ferry; external OLE consumers request export data.
+    ArchiveContent.Lease dragExport;
     internal DataObject CreateDragData()
     {
         if(ArchiveRoot is not { } at)return new DataObject(DataFormats.FileDrop,Selected.Select(e=>e.Path).ToArray());
@@ -800,12 +805,19 @@ public partial class PaneView : UserControl
         {
             try
             {
-                var copy=ArchiveContent.Extract(at.Archive,selected.Select(e=>e.Name).ToArray(),at.Inner,"drag export");
+                var copy=dragExport=ArchiveContent.Extract(at.Archive,selected.Select(e=>e.Name).ToArray(),at.Inner,"drag export");
                 return selected.Select(e=>System.IO.Path.Combine(copy.Directory,"data",e.Name)).ToArray();
             }
             catch(Exception error)when(error is IOException or UnauthorizedAccessException)
             {Error?.Invoke("Cannot prepare archive drag: "+error.Message);return Array.Empty<string>();}
         }));
+    }
+    internal void CompleteDrag(DragDropEffects outcome)
+    {
+        var copy = dragExport; dragExport = null;
+        // None also covers a refused/failed drag. A completed external handoff
+        // keeps its copy: OLE acceptance is not the external consumer's exit.
+        if (outcome == DragDropEffects.None) copy?.Dispose();
     }
 
     // ---- after a paste or drop: the new arrivals selected once the folder has been read again ----
@@ -1893,6 +1905,7 @@ public partial class PaneView : UserControl
     public async void OpenSelected()
     {
         if (List.SelectedItem is not Entry e) return;
+        e.Message="";
         if (indexedSearch && !e.IsUp)
         {
             int generation = navVersion;
@@ -1938,7 +1951,7 @@ public partial class PaneView : UserControl
                 System.Diagnostics.Process.Start(start);
             }
             catch (System.ComponentModel.Win32Exception ex) when (ex.NativeErrorCode == 1223) { } // ERROR_CANCELLED: answered in Windows' dialog
-            catch (System.ComponentModel.Win32Exception ex) { Error?.Invoke(ex.Message); } // e.g. no app associated
+            catch (System.ComponentModel.Win32Exception ex) { e.Message="Could not open: "+ex.Message; }
         }
     }
 
@@ -2795,7 +2808,8 @@ public partial class PaneView : UserControl
         // Windows can refuse to start a drag ("a drag operation is already in progress"): 1.0.36 died of it
         // once in testing. Then there is simply no drag, as if the mouse hadn't moved far enough.
         // out of an archive it is a copy, whatever the drive: the card says Copied, and the ZIP keeps its files
-        try { DragDrop.DoDragDrop(List, data, ArchiveRoot != null ? DragDropEffects.Copy : DragDropEffects.Copy | DragDropEffects.Move); }
+        var outcome = DragDropEffects.None;
+        try { outcome = DragDrop.DoDragDrop(List, data, ArchiveRoot != null ? DragDropEffects.Copy : DragDropEffects.Copy | DragDropEffects.Move); }
         catch (System.Runtime.InteropServices.COMException ex)
         {
             _ = ex;
@@ -2805,6 +2819,9 @@ public partial class PaneView : UserControl
         }
         finally
         {
+            try { CompleteDrag(outcome); }
+            catch (IOException ex) { Error?.Invoke("Could not release cancelled archive drag: " + ex.Message); }
+            catch (UnauthorizedAccessException ex) { Error?.Invoke("Could not release cancelled archive drag: " + ex.Message); }
             WheelWhileDragging(null); ScrollAtEdge(null); // however the drag ended
 #if DEBUG
             VerificationDragEnded?.Invoke();

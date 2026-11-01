@@ -373,6 +373,11 @@
             </GridViewColumn>
             <GridViewColumn Header="Size" Width="80" CellTemplate="{StaticResource SizeCell}"/>
             <GridViewColumn Header="Modified" Width="170" CellTemplate="{StaticResource DateCell}"/>
+            <GridViewColumn Header="Message" Width="300">
+              <GridViewColumn.CellTemplate>
+                <DataTemplate><TextBlock Text="{Binding Message}" ToolTip="{Binding Message}" TextTrimming="CharacterEllipsis"/></DataTemplate>
+              </GridViewColumn.CellTemplate>
+            </GridViewColumn>
           </GridView>
         </ListView.View>
       </local:FileList>

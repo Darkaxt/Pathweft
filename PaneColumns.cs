@@ -39,7 +39,7 @@ public partial class PaneView
     void ObserveColumnEntry(Entry entry)
     {if(columnEntries.Add(entry))entry.PropertyChanged+=ColumnDataChanged;}
     void ColumnDataChanged(object sender,PropertyChangedEventArgs e)
-    {if(e.PropertyName is nameof(Entry.Size) or nameof(Entry.Version) or nameof(Entry.Modified))QueueColumns();}
+    {if(e.PropertyName is nameof(Entry.Size) or nameof(Entry.Version) or nameof(Entry.Modified) or nameof(Entry.Message))QueueColumns();}
     void ColumnsChanged(object sender,NotifyCollectionChangedEventArgs e)
     {
         if(e.Action==NotifyCollectionChangedAction.Reset)
@@ -65,6 +65,7 @@ public partial class PaneView
         {
             "Name"=>true,"Version"=>data.Any(e=>e.Version.Length>0),"Type"=>data.Any(e=>e.Ext.Length>0),
             "Size"=>data.Any(e=>e.Size>=0),"Modified"=>data.Any(e=>e.Modified!=default),
+            "Message"=>data.Any(e=>e.Message.Length>0),
             "Capacity" or "Free space"=>data.Any(e=>e.HasDriveCapacity),"Filesystem"=>data.Any(e=>e.DriveFormat.Length>0),
             "Connection"=>data.Any(e=>e.DriveConnection.Length>0),"Location"=>data.Any(e=>e.DriveLocation.Length>0),_=>false
         };

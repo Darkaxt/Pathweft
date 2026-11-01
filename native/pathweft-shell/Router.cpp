@@ -4,6 +4,9 @@
 #include <shlobj.h>
 #include <shlwapi.h>
 #include <servprov.h>
+#include <exdisp.h>
+#include <shldisp.h>
+#include <wrl/client.h>
 #include <atomic>
 #include <string>
 
@@ -12,6 +15,39 @@ const CLSID CLSID_PathweftRouter={0xcf5abf8b,0x73ea,0x4df9,{0xa9,0x91,0xc1,0x63,
 const CLSID CLSID_WindowsFolderOpen={0x11dbb47c,0xa525,0x400b,{0x9e,0x80,0xa5,0x46,0x15,0xa0,0x90,0xc0}};
 static HMODULE module;
 static std::atomic<long> objects{0};
+
+// Desktop application activation after Setup. Use the existing desktop's
+// automation object, not a new Shell.Application hosted in Setup's context.
+// Setup retains RedirectionGuard; the installed app gets the user's desktop
+// launch context, exactly like opening its shortcut from Explorer.
+extern "C" HRESULT __stdcall PathweftLaunchDesktop(PCWSTR file,PCWSTR arguments,PCWSTR directory,int show){
+    using Microsoft::WRL::ComPtr;
+    if(!file||!*file)return E_INVALIDARG;
+    const HRESULT initialized=CoInitializeEx(nullptr,COINIT_APARTMENTTHREADED);
+    if(FAILED(initialized))return initialized;
+    struct Apartment {~Apartment(){CoUninitialize();}} apartment;
+    ComPtr<IShellWindows> windows;
+    HRESULT hr=CoCreateInstance(CLSID_ShellWindows,nullptr,CLSCTX_LOCAL_SERVER,IID_PPV_ARGS(&windows));
+    if(FAILED(hr))return hr;
+    VARIANT location{},empty{};location.vt=VT_I4;location.lVal=CSIDL_DESKTOP;
+    long hwnd=0;ComPtr<IDispatch> dispatch;
+    hr=windows->FindWindowSW(&location,&empty,SWC_DESKTOP,&hwnd,SWFO_NEEDDISPATCH,&dispatch);if(hr!=S_OK||!dispatch)return FAILED(hr)?hr:HRESULT_FROM_WIN32(ERROR_NOT_FOUND);
+    ComPtr<IServiceProvider> services;hr=dispatch.As(&services);if(FAILED(hr))return hr;
+    ComPtr<IShellBrowser> browser;hr=services->QueryService(SID_STopLevelBrowser,IID_PPV_ARGS(&browser));if(FAILED(hr))return hr;
+    ComPtr<IShellView> view;hr=browser->QueryActiveShellView(&view);if(FAILED(hr))return hr;
+    ComPtr<IDispatch> background;hr=view->GetItemObject(SVGIO_BACKGROUND,IID_PPV_ARGS(&background));if(FAILED(hr))return hr;
+    ComPtr<IShellFolderViewDual> folder;hr=background.As(&folder);if(FAILED(hr))return hr;
+    ComPtr<IDispatch> application;hr=folder->get_Application(&application);if(FAILED(hr))return hr;
+    ComPtr<IShellDispatch2> shell;hr=application.As(&shell);if(FAILED(hr))return hr;
+    BSTR target=SysAllocString(file);if(!target)return E_OUTOFMEMORY;
+    VARIANT args{},dir{},verb{},visibility{};
+    args.vt=dir.vt=verb.vt=VT_BSTR;visibility.vt=VT_I4;visibility.lVal=show;
+    args.bstrVal=SysAllocString(arguments?arguments:L"");dir.bstrVal=SysAllocString(directory?directory:L"");verb.bstrVal=SysAllocString(L"open");
+    if(!args.bstrVal||!dir.bstrVal||!verb.bstrVal)hr=E_OUTOFMEMORY;
+    else hr=shell->ShellExecute(target,args,dir,verb,visibility);
+    SysFreeString(target);VariantClear(&args);VariantClear(&dir);VariantClear(&verb);
+    return hr;
+}
 static std::wstring Quoted(PCWSTR value){
     std::wstring result=L"\"";size_t slashes=0;
     for(auto p=value;*p;++p){

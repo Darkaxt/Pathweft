@@ -26,6 +26,7 @@ public partial class MainWindow
     async Task OpenArchiveEntry(PaneView pane, Entry entry, bool editor = false)
     {
         if (pane.ArchiveRoot is not { } at) return;
+        entry.Message="";
         ArchiveContent.Lease copy = null;
         try
         {
@@ -43,7 +44,7 @@ public partial class MainWindow
             Status.Text = "Opened an extracted copy. Changes are not written into the archive. Release it after closing its app in Settings → Archive working copies.";
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.ComponentModel.Win32Exception)
-        { copy?.Dispose(); Status.Text = "Archive open failed: " + ex.Message; }
+        { copy?.Dispose(); entry.Message = "Could not open archive entry: " + ex.Message; }
     }
     void DeleteFromArchive(PaneView pane)
     {
@@ -109,7 +110,7 @@ public partial class MainWindow
                 {
                     try
                     {
-                        string directory = Path.Combine(ArchiveContent.Root, record.Id);
+                        string directory = ArchiveContent.Location(record);
                         if (record.Files.Any(f => EditorWindow.OwnsArchiveCopy(Path.Combine(directory, f)))) throw new IOException("Close the editor tab before releasing this copy.");
                         ArchiveContent.Release(record); RefreshCopies();
                     }
