@@ -3,9 +3,9 @@
 Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.34, 2026-11-01,
 including the user-authorized continued comparison requirement TRANSFER-07.
 
-Current S8 status: BLOCKED only on the installed1.1.14 updater-result criterion
-for UPDATE-01/PREVIEW-16. Implementation, normal release and independent delivery
-verification pass; no other stage is ACTIVE.
+Current S8 status: COMPLETE through installed1.1.14 for UPDATE-01/PREVIEW-16.
+Implementation, normal release, independent delivery and installed verification
+pass. No stage is ACTIVE; no remaining S8 blocker or tracked deferral.
 Previous1.1.13 acceptance is COMPLETE:871 installed member hashes, reopened main
 PID125152/helperPID137620 readiness and22 actual desktop route values pass.
 Current scope: installer-owned themed deployment progress that survives parent
@@ -35,13 +35,15 @@ main/branch/tag readback, six asset digests, independent retrieval and the actua
 downloaded package's native/app workflows pass. Its documented unsigned state
 is verified. Source and downloaded updater/timeline checks pass. Reuse the
 unchanged scope-closure assessment above; no required consolidation finding.
-The only remaining acceptance blocker is external: the user's main125152 and
-helper137620 still run1.1.13. The user has been asked to update/reopen through
-Settings > About. Until that happens, do not claim installed parity or S8 COMPLETE.
-Next exact action: private Invoke-InstalledDesktop114.ps1 verifies every installed
-member, actual main/helper ownership/readiness and22 desktop route values from
-the real desktop context, with no desktop input or handler mutation. No tracked
-deferral, Sandbox, forced exit, additional release or new implementation stage.
+The user updated/reopened1.1.14. Fresh2026-11-02 Invoke-InstalledDesktop114.ps1
+verification passes all871 installed member hashes against the independently
+qualified release, main132612/helper130388 ownership and helper readiness,
+plus22 actual desktop route values and configured/applied route equality.
+Folder/open remains disabled; existing opted-in routes retain ownership. No
+desktop input, folder launch or handler mutation was used. Retained private
+installed114-via-updater.json and installed114-desktop.json close the last
+acceptance blocker. The unchanged scope-closure assessment remains applicable;
+no required consolidation, further release or postponed-stage implementation.
 All exact task scratch D:/Temp/pathweft-s8-delivery is removed through reviewed
 transactional-cleanup tickets with zero residuals; final transaction
 3c1f187466b43f8bb132e78beaa50935 is applied. Preserve dist/1.1.14 and required

@@ -9,10 +9,10 @@ user direction recorded here; ordinary implementation choices need no new gate.
 The previous S8 extension is COMPLETE through1.1.13: all871 installed members,
 reopened main/helper readiness and22 desktop route values pass after the user's
 update. The following corrections are published and independently qualified in
-normal1.1.14 at1d20122f52768c2760dd1f552d37e19f07ca67b0. S8 is BLOCKED only
-on the installed updater-result criterion: the user's active copy remains1.1.13.
-After the user updates/reopens, verify installed members, main/helper readiness
-and actual desktop route ownership. No other stage is ACTIVE; no tracked deferral.
+normal1.1.14 at1d20122f52768c2760dd1f552d37e19f07ca67b0. S8 is COMPLETE:
+after the user's update/reopen, fresh2026-11-02 verification passes all871
+installed member hashes, main/helper ownership and readiness, and22 actual
+desktop route values. No remaining S8 blocker, ACTIVE stage or tracked deferral.
 
 UPDATE-01: the user requests a themed popup reporting deployment progress during
 updates. Retain the existing update action and verified per-user installer.

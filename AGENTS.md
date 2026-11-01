@@ -3,18 +3,19 @@
 Read `docs/SPECIFICATION.md` first. It is authoritative; the plan and this file
 do not change its requirements or the user's standing instructions.
 
-Current S8 BLOCKED only on installed1.1.14 updater-result verification for
-UPDATE-01/PREVIEW-16/spec0.34. Normal1.1.14 is published at
+Current S8 COMPLETE through installed1.1.14 for UPDATE-01/PREVIEW-16/spec0.34.
+The user updated/reopened; fresh desktop-context verification on2026-11-02 passes
+all871 installed member hashes, reopened main132612/helper130388 ownership,
+helper readiness and22 actual desktop route values. Normal1.1.14 is published at
 1d20122f52768c2760dd1f552d37e19f07ca67b0. Source/native light/dark100/150 UI,
 real media/model seeks/clock, download/hash/cancel and installer progress/error
 checks pass. Six release asset digests, main/branch/tag readback, independent
 retrieval and downloaded native32/64/app/media checks pass. Scope assessment has
-no required consolidation. Installed copy still1.1.13 (main125152/helper137620);
-the user has been asked to update/reopen. Next: private
-.local/evidence/2026-11-01-update114/Invoke-InstalledDesktop114.ps1, which verifies
-all installed members, main/helper readiness and22 actual desktop route values.
+no required consolidation. Installed parity is verified; private receipts are
+installed114-via-updater.json and installed114-desktop.json in
+.local/evidence/2026-11-01-update114. No remaining S8 blocker or deferral.
 No desktop input, forced exit, handler rewrite, Sandbox or another release.
-No ACTIVE stage or tracked deferral. All task scratch D:/Temp/pathweft-s8-delivery
+No ACTIVE stage; do not start postponed stages automatically. All task scratch D:/Temp/pathweft-s8-delivery
 is removed; final cleanup transaction3c1f187466b43f8bb132e78beaa50935 is applied
 with zero residuals. Preserve dist/1.1.14 and required private audit evidence.
 Earlier1.1.13 checkpoint follows as history.
