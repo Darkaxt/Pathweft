@@ -1,10 +1,26 @@
 # Pathweft specification
 
-Version 0.28 - 2026-11-01. Owner: Darkaxt.
+Version 0.29 - 2026-11-01. Owner: Darkaxt.
 
 This is the authoritative specification. The derived plan must preserve every
 requirement and acceptance criterion. Material scope changes require explicit
 user direction recorded here; ordinary implementation choices need no new gate.
+
+SHELL-02 (S8 ACTIVE, already authorized): cover the explicit Folder-class explore
+request used by Chromium/Helium's Open downloads folder action through the
+existing opt-in native handler. Preserve navigation within Explorer, native
+virtual folders, prior handler values and later third-party changes. Upgrade an
+intact existing opt-in registration without enabling an opted-out installation.
+Verify the exact Folder/explore registration in the shipping assembly,
+registration upgrade/disable restoration and hidden32/64-bit native COM/browser
+navigation. Live ShellExecute caller checks escaped their process-local fixture
+and opened Explorer despite SW_HIDE; the user is closing those popups. Those
+results are failures, not acceptance. Stop that host test and use a user-controlled
+Helium Open downloads folder click for the final actual browser boundary.
+Deliver one normal1.1.12 release, independently retrieve/verify it and verify the
+installed registration. No address-bar change: the user confirmed the apparent
+blank-folder problem was an unsubmitted address. Direct reveal-file API coverage
+and other postponed stages remain outside this correction.
 
 CORE-17 (S8, user-authorized storage correction): initially keep small settings on C:;
 place installed bulk archive working copies, folder-size caches, editor WebView2

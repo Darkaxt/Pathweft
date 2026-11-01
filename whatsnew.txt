@@ -1,6 +1,10 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.12 | 2026-11-01 | Browser folder links
+- Open downloads folder requests that explicitly use Windows' Folder/explore route now use the existing opt-in Pathweft folder integration. Existing Explorer navigation and virtual folders keep their native behavior.
+- Updates extend an intact enabled registration; disabling integration restores the previous Folder/explore command and delegate.
+
 ## 1.1.11 | 2026-11-01 | File opening and data location
 - Windows file associations work from the normal desktop context after installation and updates. File-open errors appear beside their file in the Message column.
 - Settings > Storage includes Change location to move settings and runtime data with verified copying and automatic restart. Bulk data and runtime scratch use a data drive; Roaming keeps only the startup pointer after relocation.

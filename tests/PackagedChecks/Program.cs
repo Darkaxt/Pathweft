@@ -19,6 +19,13 @@ sealed class PackageProbe
 {
     static readonly BindingFlags Flags=BindingFlags.Public|BindingFlags.NonPublic|BindingFlags.Instance|BindingFlags.Static;
     static readonly Assembly Product=typeof(App).Assembly;
+    void CheckExplicitFolderRegistration()
+    {
+        var integration=Product.GetType("FileExplorer.WindowsIntegration",true);
+        var values=(IEnumerable<(string Key,string Name,string Value)>)integration.GetMethod("Values",Flags).Invoke(null,null);
+        var folder=values.Where(v=>v.Key==@"Software\Classes\Folder\shell\explore\command").ToArray();
+        Check(folder.Length==2&&folder.Any(v=>v.Name==""&&v.Value.Contains("%1"))&&folder.Any(v=>v.Name=="DelegateExecute"&&v.Value=="{CF5ABF8B-73EA-4DF9-A991-C163D76FE2A2}"),"Delivered opt-in registration covers the explicit Folder/explore command and native delegate");
+    }
     static string root,known;
     readonly List<object> checks=new();
     MainWindow owner;
@@ -137,6 +144,7 @@ sealed class PackageProbe
         try
         {
             Check(app.Windows.Count==0,"The owned WPF startup operation was cancelled before dispatch and creates no application window");
+            CheckExplicitFolderRegistration();
             Settings.Load();
             Check(Path.GetFullPath(Settings.Dir).StartsWith(root+"\\",StringComparison.OrdinalIgnoreCase),"The delivered assembly uses only the explicit verification profile");
             string bulk=(string)Type("DataFolder").GetProperty("Bulk",Flags).GetValue(null);

@@ -3,7 +3,15 @@
 Read `docs/SPECIFICATION.md` first. It is authoritative; the plan and this file
 do not change its requirements or the user's standing instructions.
 
-Current S8 COMPLETE: CORE-16/17/spec0.28, normalv1.1.11 at76694a9.
+Current S8 ACTIVE: SHELL-02/spec0.29. Add explicit Folder/explore to the existing
+opt-in handler, preserve Explorer/virtual behavior and intact prior opt-in
+migration/restoration. Source registration and hidden native32/64-bit COM/browser
+checks pass. Host ShellExecute fixtures escaped SW_HIDE and were stopped; do not
+run more test-folder launches. Finish shipping-mapping/package checks, one normal
+1.1.12 release/retrieval/installed readback and user-controlled Helium click, then
+cleanup. No address-field
+change, reveal-file hook, Sandbox, desktop takeover or postponed-stage work.
+Historical S8 COMPLETE: CORE-16/17/spec0.28, normalv1.1.11 at76694a9.
 General Open/Message/editor/archive, real native32/64 desktop activation,
 non-system storage, cancelled-drag disposal and Change location pass source and
 delivered-package checks. Independent retrieval passes; all792 installed hashes,

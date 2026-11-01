@@ -23,6 +23,8 @@ public partial class MainWindow
         async Task Settled()=>await Dispatcher.InvokeAsync(UpdateLayout,System.Windows.Threading.DispatcherPriority.ApplicationIdle);
         try
         {
+            if(Environment.GetEnvironmentVariable("PATHWEFT_VERIFY_FOLDER112")=="1")
+            {VerifyFolderRouting112(Check);result=0;return;}
             if(Environment.GetEnvironmentVariable("PATHWEFT_VERIFY_OPEN1111")=="1")
             {await VerifyOpen1111(root,Check);result=0;return;}
             if(Environment.GetEnvironmentVariable("PATHWEFT_VERIFY_ROUND118")=="1")

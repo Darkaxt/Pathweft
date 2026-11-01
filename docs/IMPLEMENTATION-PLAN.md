@@ -1,9 +1,20 @@
 # Implementation and reconciliation
 
-Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.28, 2026-11-01,
+Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.29, 2026-11-01,
 including the user-authorized continued comparison requirement TRANSFER-07.
 
-Current S8 status: COMPLETE, CORE-16 general file opening and CORE-17 storage. Already authorized by
+Current S8 status: ACTIVE for SHELL-02, already authorized by the user's go ahead.
+Implement the missing explicit Folder/explore route using the existing opt-in
+native handler; verify migration/restoration, the exact shipping Folder/explore
+mapping, hidden32/64-bit COM/browser routing and a user-controlled final Helium
+click. Host ShellExecute fixture checks opened unwanted Explorer windows; they
+were stopped and are failed diagnostics, not acceptance. Registration migration/
+restoration and hidden native32/64-bit COM/browser source checks pass. Remaining
+internal blockers: packaged shipping-mapping verification and one final1.1.12 release/retrieval/
+installed readback plus scratch cleanup. No tracked deferral; other stages stay
+unchanged. Historical1.1.11 closure follows.
+
+Previous S8 status: COMPLETE, CORE-16 general file opening and CORE-17 storage. Already authorized by
 the reported silent Open regression and direction to verify all file types.
 Root cause: Inno6.7.4 lowest-privilege installer passes enforcing RedirectionGuard
 to launched apps, unlike the desktop. Native junction and association failures
@@ -220,7 +231,7 @@ plan neither authorizes itself nor adds approval checkpoints.
 | S5 - REA-driven transfer improvements | COMPLETE | TRANSFER-01..07, archive/caller and WIDGET-02 revalidation, affected CORE-02/03, LIFE-01/DELIVERY-03 | Initial S5 criteria passed at e478986; user extended comparison/implementation | Finite findings inventory resolved; source/target handle reuse, copy-time hashing, metadata/EOF reductions, storage decisions, matched profiles, actual callers, adverse/preservation/cleanup and Release checks pass; see [evidence](verification/2026-10-29-s5.md) |
 | S6 - Native StartAllBack search | BLOCKED | SAB-01..06, affected SEARCH/CORE/LIFE/DELIVERY criteria | Parked by explicit user-directed S8-first execution; resume only after reprioritization is lifted | Investigation only; no working patch or complete SAB criterion. All native groups/handoff/provider/lifecycle/routing criteria remain open. |
 | S7 - Everything filesystem search and Outlook indexing scope | NOT STARTED | EVERYWHERE-01..05, affected SEARCH/CORE/LIFE/SHELL criteria | S6 COMPLETE; finite consumer/semantics/scope inventory before migration | Native Everything file results with selected filesystem roots excluded from Windows indexing; WSearch/Outlook retained, explicit Windows-managed exceptions, local/mail/reboot/recovery verification |
-| S8 - Core integration and delivery | COMPLETE | CORE-16/17; historical SHELL-01, CORE-03..15, PREVIEW-06..14, JUMP-03 research, affected SEARCH/WIDGET/ARCHIVE, DELIVERY-01..03 | General Open/Message, desktop activation, non-system storage, failed-drag disposal, Change location, normal1.1.11/local/retrieved/installed workflows and exact cleanup verified | No S8 blocker or tracked deferral. Other stages retain their existing boundaries. |
+| S8 - Core integration and delivery | ACTIVE | SHELL-02; historical CORE-16/17, SHELL-01, CORE-03..15, PREVIEW-06..14, JUMP-03 research and DELIVERY-01..03 | Prior1.1.11 verified; explicit Folder/explore root cause identified | Missing route, migration/restoration and exact native-call verification; final1.1.12 delivery/installed readback/cleanup. No tracked deferral. |
 
 ENV-01..04 belong to the current setup deliverable, not an artificial product
 implementation stage. See [setup evidence](verification/2026-10-28-setup.md).

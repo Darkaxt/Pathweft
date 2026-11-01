@@ -54,6 +54,10 @@ internal static class WindowsIntegration
                 yield return(shell+"\\"+verb+@"\command","DelegateExecute",RouterClsid);
             }
         }
+        // Chromium's Open downloads folder explicitly selects the Folder class
+        // and explore verb instead of resolving the filesystem Directory class.
+        yield return(Classes+@"Folder\shell\explore\command","",Command);
+        yield return(Classes+@"Folder\shell\explore\command","DelegateExecute",RouterClsid);
         foreach(var arch in new[]{"x64","x86"})
         {
             var key=Classes+(arch=="x86"?@"WOW6432Node\CLSID\":@"CLSID\")+RouterClsid+@"\InprocServer32";
@@ -99,7 +103,7 @@ internal static class WindowsIntegration
             }
         }
         Directory.CreateDirectory(Settings.Dir);
-        var registration=new Registration(2,values,created.OrderByDescending(x=>x.Length).ToList());
+        var registration=new Registration(3,values,created.OrderByDescending(x=>x.Length).ToList());
         // Required recovery record is durable before the first registry change.
         Settings.WriteAllLines(RecoveryPath,new[]{JsonSerializer.Serialize(registration)});
         try
@@ -131,8 +135,9 @@ internal static class WindowsIntegration
         Registration prior;
         try{prior=JsonSerializer.Deserialize<Registration>(File.ReadAllText(RecoveryPath));}
         catch(JsonException){return;} // normal recovery UI retains the invalid record
-        if(prior?.Version is not(1 or 2)||prior.Values==null)return;
-        var current=Values().Where(v=>prior.Version==2||!v.Key.Contains(@"\CLSID\",StringComparison.Ordinal)).ToArray();
+        if(prior?.Version is not(1 or 2 or 3)||prior.Values==null)return;
+        var current=Values().Where(v=>prior.Version>=3||v.Key!=Classes+@"Folder\shell\explore\command")
+            .Where(v=>prior.Version>=2||!v.Key.Contains(@"\CLSID\",StringComparison.Ordinal)).ToArray();
         if(prior.Values.Count!=current.Length||!current.All(item=>prior.Values.Any(v=>
             v.Key==item.Key&&v.Name==item.Name&&PriorWrittenValue(prior.Version,v,item.Value))))return;
         foreach(var value in prior.Values)
@@ -150,7 +155,7 @@ internal static class WindowsIntegration
             if(prior.Name=="DelegateExecute")return prior.Written=="";
             if(prior.Name==""&&Types.Any(type=>prior.Key==Classes+type+@"\shell"))return prior.Written is "open" or Verb;
         }
-        if(version==2&&prior.Name==""&&prior.Key.EndsWith(@"\InprocServer32",StringComparison.Ordinal))
+        if(version>=2&&prior.Name==""&&prior.Key.EndsWith(@"\InprocServer32",StringComparison.Ordinal))
         {
             var parts=Path.GetFileName(prior.Written)?.Split('-');
             return parts?.Length==3&&parts[0]=="PathweftShell"&&Version.TryParse(parts[1],out var parsed)&&parsed.Build>=0&&parsed.Revision<0&&
@@ -174,7 +179,7 @@ internal static class WindowsIntegration
         var allowedParents=new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach(var item in allowed)
             for(var path=item.Key;path.Length>Classes.Length;path=path[..path.LastIndexOf('\\')])allowedParents.Add(path);
-        if(registration?.Version is not(1 or 2) || registration.Values==null || registration.CreatedKeys==null ||
+        if(registration?.Version is not(1 or 2 or 3) || registration.Values==null || registration.CreatedKeys==null ||
            registration.Values.Any(v=>!allowed.Contains((v.Key,v.Name)) || v.Kind is not(RegistryValueKind.String or RegistryValueKind.ExpandString) || v.Existed && v.Value==null) ||
            registration.CreatedKeys.Any(k=>!allowedParents.Contains(k)))
             throw new InvalidDataException("The folder integration recovery record is invalid. No handlers were changed.");

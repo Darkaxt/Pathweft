@@ -1,4 +1,4 @@
-# Pathweft 1.1.11
+# Pathweft 1.1.12
 
 Windows 11 x64 is the qualified host. The .NET 10 desktop runtime and native
 archive/preview libraries are included. WebView2 Evergreen is required for the
@@ -14,7 +14,9 @@ column when empty. Archive working-copy launch failures follow the same rule.
 Folder routing is unchecked during installation. Settings > Windows integration
 owns folder routing, its restoration action, independent Win+E, and taskbar
 search. Navigation within an existing Explorer window stays in Explorer.
-The native 32/64-bit folder handler preserves a calling Shell browser's site;
+The native 32/64-bit folder handler includes explicit Folder/explore requests,
+such as Chromium/Helium's Open downloads folder action, under the same opt-in.
+It preserves a calling Shell browser's site;
 external filesystem requests launch Pathweft. Settings refreshes the current
 handler ownership when activated. An update migrates only an intact old opt-in.
 Explicit Explorer launches, virtual Shell locations and Open/Save
