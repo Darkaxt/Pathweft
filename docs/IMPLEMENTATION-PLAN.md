@@ -1,9 +1,35 @@
 # Implementation and reconciliation
 
-Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.30, 2026-11-01,
+Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.31, 2026-11-01,
 including the user-authorized continued comparison requirement TRANSFER-07.
 
-Current S8 status: ACTIVE for SHELL-02/03. The user extends the pending update
+Current S8 status: BLOCKED for SHELL-02; SHELL-03 is verified and delivered.
+Normal1.1.12 at363a266 is installed through the user's updater; all792 members,
+reopened main/helper ownership/readiness and actual desktop22 registry values
+pass. The user's real action was Show in folder. The native trace records
+SHOpenFolderAndSelectItems and a Folder/open activation; the trial returned
+REGDB_E_CLASSNOTREG. Only the added Folder/open test row is now disabled and
+Windows' original handler is restored. Other desired/applied routes are retained.
+
+Acceptance blocker: the real Helium request must open Pathweft and preserve its
+supplied file selection, alongside the separate Open downloads folder behavior.
+The caller and a fresh hidden child cannot see the registered Pathweft CLSID;
+fresh desktop-context reads can. The cause is unresolved. This is an external
+process/registry visibility impediment to the live acceptance check, not proof
+that a product source fix is complete. Package-hive read returned access denied;
+do not circumvent that boundary or copy registrations speculatively.
+Resolution condition/next action: normal state-preserving Helium exit and desktop
+relaunch, then repeat the bounded class-visibility check before the real request.
+The supported wrapper exposes no explicit healthy-browser restart action; the
+existing browser is user-owned and retained. User completion of that normal
+close/reopen is needed. Required native reveal behavior and the final browser
+acceptance remain unresolved; no dependent S8 completion/release claim is valid.
+No other ACTIVE stage and no tracked deferral. All original delivery scratch and
+the final REA staging are cleaned; retained authenticated diagnostic evidence is
+private. REA/AppControl sessions are closed. No additional product release was
+made for this investigation. Historical implementation checkpoint follows.
+
+Previous S8 status: ACTIVE for SHELL-02/03. The user extends the pending update
 with JSON-backed dynamic folder verbs and a Settings editor. Existing fixed
 registration/source checks pass; b3f583c's unpublished1.1.12 package is superseded.
 Dynamic configuration/editor, applied snapshot recovery, exact failed-apply
@@ -13,8 +39,11 @@ layouts pass; four screenshots are reviewed. The native router is unchanged.
 Closure assessment: configuration owns desired routes; recovery owns applied
 routes, using the existing native registration lifecycle. No speculative plugin
 framework or additional state owner, and no required consolidation finding.
-Remaining blockers: final1.1.12 package/release/retrieval,
-installed readback and user-controlled Helium action. One ACTIVE stage; no
+Normal1.1.12 is published at363a266. Local and independently downloaded six-asset
+packages pass actual shipped editor/JSON and hidden native32/64-bit/app checks.
+Remaining blockers: installed readback, user-controlled Helium action and final
+scratch cleanup. The user has been asked once to update and click Helium's real
+button; the active app remains untouched. One ACTIVE stage; no
 tracked deferral or postponed-stage implementation.
 
 SHELL-02 was already authorized by the user's go ahead.
@@ -245,7 +274,7 @@ plan neither authorizes itself nor adds approval checkpoints.
 | S5 - REA-driven transfer improvements | COMPLETE | TRANSFER-01..07, archive/caller and WIDGET-02 revalidation, affected CORE-02/03, LIFE-01/DELIVERY-03 | Initial S5 criteria passed at e478986; user extended comparison/implementation | Finite findings inventory resolved; source/target handle reuse, copy-time hashing, metadata/EOF reductions, storage decisions, matched profiles, actual callers, adverse/preservation/cleanup and Release checks pass; see [evidence](verification/2026-10-29-s5.md) |
 | S6 - Native StartAllBack search | BLOCKED | SAB-01..06, affected SEARCH/CORE/LIFE/DELIVERY criteria | Parked by explicit user-directed S8-first execution; resume only after reprioritization is lifted | Investigation only; no working patch or complete SAB criterion. All native groups/handoff/provider/lifecycle/routing criteria remain open. |
 | S7 - Everything filesystem search and Outlook indexing scope | NOT STARTED | EVERYWHERE-01..05, affected SEARCH/CORE/LIFE/SHELL criteria | S6 COMPLETE; finite consumer/semantics/scope inventory before migration | Native Everything file results with selected filesystem roots excluded from Windows indexing; WSearch/Outlook retained, explicit Windows-managed exceptions, local/mail/reboot/recovery verification |
-| S8 - Core integration and delivery | ACTIVE | SHELL-02; historical CORE-16/17, SHELL-01, CORE-03..15, PREVIEW-06..14, JUMP-03 research and DELIVERY-01..03 | Prior1.1.11 verified; explicit Folder/explore root cause identified | Missing route, migration/restoration and exact native-call verification; final1.1.12 delivery/installed readback/cleanup. No tracked deferral. |
+| S8 - Core integration and delivery | BLOCKED | SHELL-02/03; historical CORE-16/17, SHELL-01, CORE-03..15, PREVIEW-06..14, JUMP-03 research and DELIVERY-01..03 | Normal1.1.12 published/retrieved/installed; SHELL-03 editor/recovery and packaged native/app checks pass; scratch cleaned | SHELL-02 real Show in folder/file-selection and Open downloads folder boundary remain unresolved. Caller cannot see desktop COM registration. Need normal Helium desktop relaunch and bounded visibility readback. No tracked deferral. |
 
 ENV-01..04 belong to the current setup deliverable, not an artificial product
 implementation stage. See [setup evidence](verification/2026-10-28-setup.md).

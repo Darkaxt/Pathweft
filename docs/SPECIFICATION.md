@@ -1,10 +1,26 @@
 # Pathweft specification
 
-Version 0.30 - 2026-11-01. Owner: Darkaxt.
+Version 0.31 - 2026-11-01. Owner: Darkaxt.
 
 This is the authoritative specification. The derived plan must preserve every
 requirement and acceptance criterion. Material scope changes require explicit
 user direction recorded here; ordinary implementation choices need no new gate.
+
+SHELL-02 clarification (user: "I clicked Show in Folder", followed by permission
+to test while away): the actual failing Helium action is Show in folder. Its
+observed boundary is SHOpenFolderAndSelectItems, not the separate Open downloads
+folder command assumed below. The real Helium action remains a required S8
+integration criterion; shipping a Folder/explore mapping or editable JSON alone
+does not satisfy it. Preserve the requested file selection where the native
+request supplies it. This clarification supersedes the earlier exclusion of
+that action from this correction; it does not declare that API implemented.
+Retain the separate Open downloads folder criterion and prior Explorer/virtual
+folder protections. The user permits controlled tests while away; preserve
+unrelated running applications, browser state and other workflow ownership.
+The released1.1.12 dynamic editor remains verified separately. Do not ship a
+speculative follow-up or claim the real browser boundary passes.
+Publication occurred before the real Helium acceptance criterion passed; that
+delivery gap remains explicit. The release is not evidence of SHELL-02 completion.
 
 SHELL-03 (S8 ACTIVE, user-authorized extension before1.1.12 publication): store
 folder-class verb routes in folder-routes.json inside the selected settings

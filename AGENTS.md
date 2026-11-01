@@ -3,18 +3,28 @@
 Read `docs/SPECIFICATION.md` first. It is authoritative; the plan and this file
 do not change its requirements or the user's standing instructions.
 
-Current S8 ACTIVE: SHELL-02/03/spec0.30. The user extends the unpublished update
-with JSON-backed dynamic folder verbs and a themed Windows-integration editor.
-Do not publish the b3f583c package. Complete route configuration/editor, applied
-snapshot recovery, isolated/native/hidden UI checks, then one final1.1.12 release.
-Add explicit Folder/explore to the existing
-opt-in handler, preserve Explorer/virtual behavior and intact prior opt-in
-migration/restoration. Source registration and hidden native32/64-bit COM/browser
-checks pass. Host ShellExecute fixtures escaped SW_HIDE and were stopped; do not
-run more test-folder launches. Finish shipping-mapping/package checks, one normal
-1.1.12 release/retrieval/installed readback and user-controlled Helium click, then
-cleanup. No address-field
-change, reveal-file hook, Sandbox, desktop takeover or postponed-stage work.
+Current S8 BLOCKED: SHELL-02/03/spec0.31. Normal1.1.12 is published at363a266,
+independently retrieved/qualified and installed through the user's updater.
+All792 installed members, reopened main/helper ownership/readiness and actual
+desktop-context22 registry values pass. SHELL-03's dynamic editor/recovery is
+verified; SHELL-02's real Helium action is not. The user clarified that they
+clicked Show in folder: REA observed SHOpenFolderAndSelectItems, not Folder/explore.
+Enabling Folder/open produced REGDB_E_CLASSNOTREG in that caller. Disable only
+that test row (already done); the original Windows Folder/open handler is restored
+and the other routes remain enabled. Do not reenable the failed row blindly.
+Helium, its fresh hidden child and the tool context cannot read the Pathweft
+CLSID, while fresh desktop-context reads can. Cause of the split remains unknown;
+do not call it stale COM, security policy, MSIX or an Opus defect without proof.
+Read-only package-hive inspection returned access denied; do not bypass it.
+Next necessary boundary check: after a normal, state-preserving Helium exit and
+desktop relaunch, compare class visibility before retrying the real action.
+The shared browser remains running; the supported Helium wrapper currently has
+no explicit healthy-browser restart operation. Request that normal close/reopen
+when the user returns; do not kill it or bypass its lifecycle gate. S8 remains
+incomplete; no tracked deferral or other ACTIVE stage. REA is detached/released,
+AppControl read-only gate released, exact scratch cleanup applied. Private
+authenticated evidence is .local/evidence/2026-11-01-folder1112/helium-routing-final.json.
+No new source fix/release, Sandbox, desktop takeover or postponed-stage work.
 Historical S8 COMPLETE: CORE-16/17/spec0.28, normalv1.1.11 at76694a9.
 General Open/Message/editor/archive, real native32/64 desktop activation,
 non-system storage, cancelled-drag disposal and Change location pass source and
