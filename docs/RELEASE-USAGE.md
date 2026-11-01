@@ -1,4 +1,4 @@
-# Pathweft 1.1.14
+# Pathweft 1.1.15
 
 Windows 11 x64 is the qualified host. The .NET 10 desktop runtime and native
 archive/preview libraries are included. WebView2 Evergreen is required for the
@@ -163,6 +163,15 @@ Dolby Vision Profiles 5 and 8 are qualified for BT.709/sRGB SDR conversion using
 the native metadata and the Nuvio fork's BT.2390 curve. Native Dolby Vision display
 signaling and full Profile 7 FEL are not claimed. The corresponding-source asset
 includes pinned media sources and build recipes; MPV/ contains original notices.
+
+HTML previews display static HTML/CSS and local images/fonts, including resources
+inside archives. JavaScript, online content and downloads are disabled. Switch
+off HTML under Settings > Files > Preview modules to see source text instead.
+The existing Microsoft Edge WebView2 Runtime is required.
+
+3D GLB/glTF timelines automatically trim held endings when stored curves can be
+inspected. Right-click the timeline and uncheck **Trim idle tail** for its complete
+original range. The model file is never rewritten.
 
 Source builds also require Visual Studio C++ x86/x64 tools and Windows SDK
 10.0.26100.0 for the small native Shell handler. The installed runtime does not

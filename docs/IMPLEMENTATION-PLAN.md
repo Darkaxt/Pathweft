@@ -1,9 +1,23 @@
 # Implementation and reconciliation
 
-Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.34, 2026-11-01,
+Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.35, 2026-11-02,
 including the user-authorized continued comparison requirement TRANSFER-07.
 
-Current S8 status: COMPLETE through installed1.1.14 for UPDATE-01/PREVIEW-16.
+Current S8 status: ACTIVE for PREVIEW-17/18, already authorized. Implement the
+complete smart GLB/glTF timeline and static HTML viewer under one stage, verify
+actual native/rendered behavior and security/lifecycle boundaries, reconcile,
+then commit and release both together with independent delivery/installed checks.
+Both complete features pass the real native source workflow (PID143240), including
+SNES playback/seek/clip/full-range and actual local/archive HTML, source fallback,
+zero endpoint connections, boundaries and teardown. See
+[acceptance](verification/2026-11-02-preview115.md). Current advancement blockers:
+final package qualification, normal release/retrieval and installed updater check.
+No tracked deferrals.
+Use D:/Temp/pathweft-s8-delivery for native/browser/compiler I/O and clean spent
+output through transactional-cleanup. Retain required private evidence in
+.local/evidence/2026-11-02-preview115. No Sandbox or desktop takeover.
+
+Previous S8 status: COMPLETE through installed1.1.14 for UPDATE-01/PREVIEW-16.
 Implementation, normal release, independent delivery and installed verification
 pass. No stage is ACTIVE; no remaining S8 blocker or tracked deferral.
 Previous1.1.13 acceptance is COMPLETE:871 installed member hashes, reopened main

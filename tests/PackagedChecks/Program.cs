@@ -349,6 +349,7 @@ sealed class PackageProbe
             var archiveTree=target.Content as TreeView;
             Check((string)Get(session,"State")=="ready"&&archiveTree!=null&&archiveTree.Items.OfType<TreeViewItem>().Any(),"Delivered archive preview is a native themed tree rather than the old flat text dump");
             await VerifyMedia(target,session);
+            await VerifyPreview115(target,session);
 
             string model=Path.Combine(root,"triangle.glb");WriteTriangle(model);
             Settings.DisabledPreviewModules.Remove("f3d");
@@ -409,6 +410,55 @@ sealed class PackageProbe
             File.WriteAllText(Path.Combine(root,"results.json"),JsonSerializer.Serialize(new{result,pid=Environment.ProcessId,fixture=root,runtime=Environment.Version.ToString(),product=Product.Location,checks},new JsonSerializerOptions{WriteIndented=true}));
             Environment.ExitCode=result;app.Shutdown(result);
         }
+    }
+    async Task VerifyPreview115(ContentControl target,object previewSession)
+    {
+        var type=Type("Preview.PreviewSession");
+        async Task Show(string path){Call(type,previewSession,"Show",new Entry{Name=Path.GetFileName(path),Path=path});await (Task)Get(previewSession,"Completion");}
+        var parameters=new System.Windows.Interop.HwndSourceParameters("Pathweft hidden HTML qualification")
+        {Width=720,Height=540,PositionX=(int)(SystemParameters.VirtualScreenLeft+SystemParameters.VirtualScreenWidth+8192),WindowStyle=unchecked((int)0x80000000),ExtendedWindowStyle=0x08000080};
+        using var presentation=new System.Windows.Interop.HwndSource(parameters);presentation.RootVisual=target;
+        target.Width=720;target.Height=540;target.Measure(new Size(720,540));target.Arrange(new Rect(0,0,720,540));target.UpdateLayout();
+        string html=Path.Combine(root,"static.html"),css=Path.Combine(root,"static.css"),svg=Path.Combine(root,"static.svg");
+        File.WriteAllText(html,"<!doctype html><link rel='stylesheet' href='static.css'><h1>Delivered HTML</h1><img id='image' src='static.svg'><script>window.executed=true;fetch('https://example.invalid/leak')</script><iframe src='https://example.invalid/frame'></iframe>");
+        File.Copy(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Fonts),"segoeui.ttf"),Path.Combine(root,"static.ttf"));
+        File.WriteAllText(css,"@font-face{font-family:PreviewFont;src:url(static.ttf)} body{font-family:PreviewFont} h1 {color:rgb(32,96,160)}");File.WriteAllText(svg,"<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32'><rect width='32' height='32'/></svg>");
+        string zip=Path.Combine(root,"html-assets.zip");
+        using(var archive=System.IO.Compression.ZipFile.Open(zip,System.IO.Compression.ZipArchiveMode.Create))
+        foreach(string path in new[]{html,css,svg,Path.Combine(root,"static.ttf")})System.IO.Compression.ZipFileExtensions.CreateEntryFromFile(archive,path,"Takeout/"+Path.GetFileName(path));
+        Settings.DisabledPreviewModules.Remove("html");
+        try
+        {
+            foreach(string path in new[]{html,zip+@"\Takeout\static.html"})
+            {
+                await Show(path);Check((string)Get(previewSession,"State")=="ready"&&(string)Get(previewSession,"ModuleId")=="html","Delivered static HTML renders through the actual module: "+Path.GetFileName(path));
+                var viewer=type.GetField("viewer",Flags).GetValue(previewSession);var web=viewer.GetType().GetField("web",Flags).GetValue(viewer);var core=Get(web,"CoreWebView2");
+                string response=await (Task<string>)Call(core.GetType(),core,"CallDevToolsProtocolMethodAsync","Runtime.evaluate","{\"expression\":\"JSON.stringify({title:document.querySelector('h1').textContent,color:getComputedStyle(document.querySelector('h1')).color,image:document.getElementById('image').naturalWidth,script:typeof window.executed})\",\"returnByValue\":true}");
+                using var outer=JsonDocument.Parse(response);using var state=JsonDocument.Parse(outer.RootElement.GetProperty("result").GetProperty("value").GetString());
+                Check(state.RootElement.GetProperty("title").GetString()=="Delivered HTML"&&state.RootElement.GetProperty("color").GetString()=="rgb(32, 96, 160)"&&state.RootElement.GetProperty("image").GetInt32()==32&&state.RootElement.GetProperty("script").GetString()=="undefined","Delivered WebView2 renders local/archive CSS and images with page scripts inactive");
+                string font=await (Task<string>)Call(core.GetType(),core,"CallDevToolsProtocolMethodAsync","Runtime.evaluate","{\"expression\":\"document.fonts.ready.then(()=>document.fonts.size===1&&[...document.fonts].every(font=>font.status==='loaded'))\",\"awaitPromise\":true,\"returnByValue\":true}");
+                using(var fontState=JsonDocument.Parse(font))Check(fontState.RootElement.GetProperty("result").GetProperty("value").GetBoolean(),"Delivered HTML loads its local/archive font through the sanitized stylesheet");
+                var settings=Get(core,"Settings");Check(!(bool)Get(settings,"IsScriptEnabled")&&!(bool)Get(settings,"AreHostObjectsAllowed")&&!(bool)Get(settings,"IsWebMessageEnabled"),"Delivered HTML exposes no editor or native bridge");
+                string profile=(string)viewer.GetType().GetField("profile",Flags).GetValue(viewer);
+                Call(type,previewSession,"Clear");await (Task)Call(type,null,"DrainAsync");
+                Check(((Task)Get(viewer,"Closed")).IsCompletedSuccessfully&&!Directory.Exists(profile),"Delivered HTML observes browser exit and removes its unique profile");
+            }
+            Settings.DisabledPreviewModules.Add("html");await Show(html);
+            Check((string)Get(previewSession,"ModuleId")=="text","Delivered HTML disable switch restores source preview");Settings.DisabledPreviewModules.Remove("html");
+            string model=Path.Combine(root,"held.gltf"),binary=Path.Combine(root,"held.bin");
+            float[] data={-1,-1,0,1,-1,0,0,1,0,0,2,10,0,0,0,1,0,0,1,0,0};File.WriteAllBytes(binary,data.SelectMany(BitConverter.GetBytes).ToArray());
+            File.WriteAllText(model,"""
+            {"asset":{"version":"2.0"},"buffers":[{"uri":"held.bin","byteLength":84}],"bufferViews":[{"buffer":0,"byteLength":36},{"buffer":0,"byteOffset":36,"byteLength":12},{"buffer":0,"byteOffset":48,"byteLength":36}],"accessors":[{"bufferView":0,"componentType":5126,"count":3,"type":"VEC3","min":[-1,-1,0],"max":[1,1,0]},{"bufferView":1,"componentType":5126,"count":3,"type":"SCALAR","min":[0],"max":[10]},{"bufferView":2,"componentType":5126,"count":3,"type":"VEC3"}],"meshes":[{"primitives":[{"attributes":{"POSITION":0}}]}],"nodes":[{"mesh":0}],"scenes":[{"nodes":[0]}],"scene":0,"animations":[{"samplers":[{"input":1,"output":2}],"channels":[{"sampler":0,"target":{"node":0,"path":"translation"}}]}]}
+            """);
+            Settings.DisabledPreviewModules.Remove("f3d");await Show(model);
+            Check((string)Get(previewSession,"State")=="ready","Delivered F3D renders the held-pose animation");
+            var f3d=type.GetField("viewer",Flags).GetValue(previewSession);var timeline=Descendants<Slider>(target).Single();var frame=Get(f3d,"LastFrame");
+            Check(timeline.Maximum==2&&(double)Get(frame,"End")==10,"Delivered smart timeline trims the idle tail and preserves native duration");
+            var menu=(MenuItem)timeline.ContextMenu.Items[0];menu.IsChecked=false;Check(timeline.Maximum==10,"Delivered timeline exposes the full native range");menu.IsChecked=true;
+            ((System.Windows.Automation.Provider.IRangeValueProvider)new System.Windows.Automation.Peers.SliderAutomationPeer(timeline).GetPattern(System.Windows.Automation.Peers.PatternInterface.RangeValue)).SetValue(1);
+            await (Task)Get(f3d,"RenderCompletion");Check((double)f3d.GetType().GetField("animationTime",Flags).GetValue(f3d)==1,"Delivered smart timeline seeks to original model time");
+        }
+        finally{Call(type,previewSession,"Clear");await (Task)Call(type,null,"DrainAsync");presentation.RootVisual=null;}
     }
     async Task VerifyMedia(ContentControl target,object previewSession)
     {

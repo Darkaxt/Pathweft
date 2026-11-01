@@ -1,12 +1,49 @@
 # Pathweft specification
 
-Version 0.34 - 2026-11-01. Owner: Darkaxt.
+Version 0.35 - 2026-11-02. Owner: Darkaxt.
 
 This is the authoritative specification. The derived plan must preserve every
 requirement and acceptance criterion. Material scope changes require explicit
 user direction recorded here; ordinary implementation choices need no new gate.
 
-The previous S8 extension is COMPLETE through1.1.13: all871 installed members,
+S8 is ACTIVE for the user's authorized GLB/glTF smart timeline and isolated HTML
+viewer, released together after integrated qualification. No other stage is ACTIVE.
+
+PREVIEW-17: default GLB/glTF timelines omit only a trailing held pose using actual
+animation samples and scale-aware movement tolerance. Ignore exporter drift without
+discarding intentional small/slow motion or internal pauses. Preserve native clip
+identity, starts, playback/seek/drag/keyboard semantics, switching and cleanup.
+Offer the original full range through the existing themed timeline's context menu;
+do not add another toolbar row. Static, uninspectable/unsupported or genuinely
+changing clips retain the native full range. Never rewrite the source model.
+Verify the reported SNES model (visible motion to6.875s; native end55.416668s),
+late/slow motion, small animated parts, pauses, multiple clips, malformed metadata,
+and actual native rendered/playing/seeking/teardown results.
+
+PREVIEW-18: add an HTML module above generic text for .html/.htm, available in the
+existing Settings > Files preview-module section. Render static HTML/CSS and
+allow-listed local images/fonts, including relative assets inside a compressed
+folder. Isolate the WebView2 environment from the editor; do not expose messages,
+host objects, credentials or unrestricted disk access. JavaScript, network access,
+frames, permissions, form submission, downloads, popups and automatic navigation
+are disabled/blocked. Serve only checked document-scope resources; reject escapes,
+links/reparse paths and external/custom schemes. Sanitize HTML/CSS before browser
+parsing to prevent speculative connections. No blanket directory mapping or
+whole-archive extraction. Preserve document presentation inside Pathweft's themed
+preview frame; script-dependent controls remain inactive. HTML document/resource/
+total-resource budgets are16/64/128MiB, with explicit failure at the boundary. Disabled HTML returns
+to source preview; missing runtime/load failures are explicit. Observe completion,
+selection/module cancellation, archive source/resource lifetimes and browser teardown with
+no arbitrary delay. Verify actual WebView2 rendering, local/archive assets and
+negative boundary fixtures, source preservation, dark/light layouts and all preview
+surfaces, then the actual delivered package and installed updater result.
+
+Design direction: preserve existing Pathweft controls/spacing, using the installed
+Huashu production-UI guidance. One S8 stage owns both fully integrated features,
+focused source/native/UI acceptance, final reconciliation/commit, one normal release,
+independent retrieval and installed verification. No postponed-stage work.
+
+Historical1.1.14 acceptance follows. The previous S8 extension is COMPLETE through1.1.13: all871 installed members,
 reopened main/helper readiness and22 desktop route values pass after the user's
 update. The following corrections are published and independently qualified in
 normal1.1.14 at1d20122f52768c2760dd1f552d37e19f07ca67b0. S8 is COMPLETE:

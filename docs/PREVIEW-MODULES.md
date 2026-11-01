@@ -24,6 +24,27 @@ specialized format; otherwise the preview explicitly says no enabled module can
 display it. Decoder/load failures report an error rather than launching another
 product or silently claiming a successful preview.
 
+HTML (.html/.htm, priority90) renders static document layout, local CSS, images
+and fonts in an isolated WebView2 profile, separate from the internal editor.
+Scripts, online resources, frames, forms, popups, downloads and native bridges
+are disabled. Pinned HtmlSanitizer/AngleSharp HTML and CSS parsers remove active
+content and remote URLs before Chromium can preconnect. Sanitized presentation
+keeps supported static layout; unsupported/active constructs are removed.
+Resources stay within the document folder (or the containing
+archive); links/reparse paths and unsupported resource types are rejected.
+Archives stream only requested entries without extracting working copies.
+Documents are limited to16MiB, individual assets64MiB and the preview's total
+resource budget128MiB. Missing WebView2 or load failures are explicit; disabling
+HTML in Settings > Files returns to source text. Source styling remains intact.
+Selection/close observes browser exit before deleting its unique cache profile.
+
+GLB/glTF animation timelines inspect stored curves once at load and trim a held
+ending by default. The timeline's **Trim idle tail** context-menu checkbox restores
+the full original duration. Native time coordinates and source files are unchanged.
+Internal pauses, later movement and small/slow motion remain included; static,
+unsupported curves (including cubic/packed morph) or mismatched native ranges
+keep their full duration. No per-frame analysis or additional redraw is added.
+
 Each surface has its own request generation, viewer instance and cancellation
 source. A new selection clears the old content immediately. Rendering and page
 callbacks check the current generation; canceled work is observed through actual
@@ -75,8 +96,10 @@ contains a net8.0 assembly with no additional runtime dependency in that target.
 See its [package metadata](https://www.nuget.org/packages/Markdig/1.5.0),
 [parser source](https://github.com/xoofx/markdig/tree/9900e46eacd9e17ba32f1b441a349bcab61777af)
 and vendor/Markdig notices. WPF/WIC/PDF/media native components come from Windows
-and the selected desktop runtime, except media's bundled MPV dependency. No legacy .NET Framework QuickLook host, browser
-preview runtime or downloaded plugin assembly is introduced.
+and the selected desktop runtime, except media's bundled MPV dependency. No legacy
+.NET Framework QuickLook host or downloaded plugin assembly is introduced.
+Static HTML reuses the application's
+existing WebView2 dependency in its own environment, without the editor bridge.
 
 F3D is pinned to 4.0.0, source revision
 `b72c7b5c9244e4a0c12975ce6546645c1a8b2680`. The official Windows x64 SDK archive

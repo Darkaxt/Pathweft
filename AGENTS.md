@@ -3,7 +3,16 @@
 Read `docs/SPECIFICATION.md` first. It is authoritative; the plan and this file
 do not change its requirements or the user's standing instructions.
 
-Current S8 COMPLETE through installed1.1.14 for UPDATE-01/PREVIEW-16/spec0.34.
+Current S8 ACTIVE for PREVIEW-17/18/spec0.35. Both complete features pass native
+source acceptance PID143240: smart GLB/glTF trailing-hold trimming/full range,
+plus sanitized isolated static HTML preview and scoped
+local/archive resources. Both features precede one final release/retrieval/install
+verification. Use current Huashu/Pathweft UI guidance and hidden diagnostics; no
+desktop takeover, Sandbox or postponed-stage work. Exact native/browser/compiler
+scratch: D:/Temp/pathweft-s8-delivery; register before creation and clean spent
+outputs. Private evidence: .local/evidence/2026-11-02-preview115.
+
+Previous S8 COMPLETE through installed1.1.14 for UPDATE-01/PREVIEW-16/spec0.34.
 The user updated/reopened; fresh desktop-context verification on2026-11-02 passes
 all871 installed member hashes, reopened main132612/helper130388 ownership,
 helper readiness and22 actual desktop route values. Normal1.1.14 is published at

@@ -23,6 +23,7 @@ internal static class PreviewModules
         new("image", "Images", "WIC images, decoded to fit the preview without retaining the source file.", 90,
             new[] { ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".ico", ".tif", ".tiff", ".heic" }),
         new("pdf", "PDF", "Windows PDF rendering with page navigation; no document scripts.", 90, new[] { ".pdf" }),
+        new("html", "HTML", "Static HTML with local images and styling. Scripts, online content and downloads stay disabled.", 90, new[] { ".html", ".htm" }),
         new("executable", "Executable details", "Version resources, architecture and file details without running the application.", 90, new[] { ".exe" }),
         new("archive", "Folders and archives", "Expandable folder and archive trees without extracting or running entries.", 90, Array.Empty<string>()),
         new("media", "Video and audio", "Bundled MPV playback with hardware acceleration and Dolby Vision to SDR conversion.", 90,

@@ -1,0 +1,8 @@
+Static HTML preview uses HtmlSanitizer 9.2.1039 by Michael Ganss,
+AngleSharp 1.7.2 and AngleSharp.Css 1.0.2 by the AngleSharp contributors.
+All three are MIT licensed; complete licenses accompany this notice.
+Exact source revisions and runtime/source hashes are in runtime-manifest.json.
+The release dependency-source archive includes each complete pinned source tree.
+These parsers run without a network loader or script engine, before WebView2 sees
+the sanitized document and CSS. Remote resource URLs and active content are
+removed; Pathweft separately restricts WebView2 navigation, resources and bridges.

@@ -9,7 +9,7 @@
     <AssemblyName>Pathweft</AssemblyName>
     <Product>Pathweft</Product>
     <Company>Darkaxt</Company>
-    <Version>1.1.14</Version>
+    <Version>1.1.15</Version>
     <!-- WPF windows without their own Icon use this one, so every window gets it -->
     <ApplicationIcon>app.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
@@ -50,6 +50,9 @@
   <ItemGroup>
     <PackageReference Include="System.IO.Hashing" Version="10.0.14" />
     <PackageReference Include="Markdig" Version="1.5.0" />
+    <PackageReference Include="HtmlSanitizer" Version="9.2.1039" />
+    <PackageReference Include="AngleSharp" Version="1.7.2" />
+    <PackageReference Include="AngleSharp.Css" Version="1.0.2" />
     <Reference Include="SharpSevenZip">
       <HintPath>$(SharpSevenZipRuntimeRoot)\SharpSevenZip.dll</HintPath>
       <Private>true</Private>

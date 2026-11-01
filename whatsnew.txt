@@ -1,6 +1,10 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.15 | 2026-11-02 | Smart 3D timelines and static HTML
+- GLB/glTF timelines trim a held ending automatically while keeping pauses and later movement. Right-click the timeline and switch off Trim idle tail for the full range.
+- HTML preview renders static pages with local styling, images and fonts, including resources inside archives. Scripts, online content and downloads stay disabled. Turn off HTML in Settings > Files to view source text.
+
 ## 1.1.14 | 2026-11-01 | Update progress and timeline seeking
 - Updates show measured download progress and a matching themed deployment popup while Pathweft closes, installs and reopens.
 - Clicking a video or animated 3D timeline seeks immediately during playback. Dragging and keyboard seeking remain available.

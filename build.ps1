@@ -38,6 +38,8 @@ if($ResumeCandidateRun){
 }
 
 # Verify native library bytes against the qualified source/runtime inventory.
+$html=Get-Content -LiteralPath (Join-Path $root 'vendor/HTML/runtime-manifest.json') -Raw|ConvertFrom-Json
+foreach($file in $html){if((Get-FileHash -LiteralPath (Join-Path $publish $file.dll)).Hash -ne $file.sha256){throw ('HTML dependency changed: '+$file.id)}}
 $pins=@(
     @{path='SevenZip/7z.dll';manifest='vendor/SevenZip/runtime-manifest.json';field='dllSha256'},
     @{path='SharpSevenZip.dll';manifest='vendor/SharpSevenZip/runtime-manifest.json';field='dllSha256'},

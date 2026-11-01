@@ -15,7 +15,7 @@ namespace FileExplorer.Preview;
 internal sealed class F3dViewer(MainWindow owner) : IViewer
 {
     sealed record Request(string Operation, double X, double Y, TaskCompletionSource<Frame> Result);
-    internal sealed record Frame(BitmapSource Bitmap,byte[] Pixels,double[] Camera,bool Offscreen,uint Animations,double Start,double End,long Sequence,double RenderMilliseconds,double TransferMilliseconds,double[] Up,double[] Focal,double InputMilliseconds,int InputSamples,int InputRenderCalls)
+    internal sealed record Frame(BitmapSource Bitmap,byte[] Pixels,double[] Camera,bool Offscreen,uint Animations,double Start,double End,long Sequence,double RenderMilliseconds,double TransferMilliseconds,double[] Up,double[] Focal,double InputMilliseconds,int InputSamples,int InputRenderCalls,double? SmartEnd)
     {
         // Export only on explicit diagnostic/screenshot demand, never per gesture.
         internal byte[] Png {get{var encoder=new PngBitmapEncoder();encoder.Frames.Add(BitmapFrame.Create(Bitmap));using var stream=new MemoryStream();encoder.Save(stream);return stream.ToArray();}}
@@ -99,6 +99,17 @@ internal sealed class F3dViewer(MainWindow owner) : IViewer
         var clips = new ComboBox { MinWidth = 110, MinHeight = 32, MaxWidth = 200, Margin = new(4, 0, 8, 0),
             VerticalAlignment = VerticalAlignment.Center, Style = (Style)owner.FindResource("PreviewClipCombo") };
         var timeline = new PreviewTimeline { MinWidth = 80, VerticalAlignment = VerticalAlignment.Center };
+        var trimTail=new MenuItem {Header="Trim idle tail",IsCheckable=true,IsChecked=true};
+        timeline.ContextMenu=new ContextMenu();timeline.ContextMenu.Items.Add(trimTail);
+        void Range()
+        {
+            if(LastFrame is not {} frame)return;
+            timeline.Minimum=frame.Start;timeline.Maximum=Math.Max(frame.Start,trimTail.IsChecked?frame.SmartEnd??frame.End:frame.End);
+            trimTail.IsEnabled=frame.SmartEnd.HasValue;
+            timeline.ToolTip=frame.SmartEnd.HasValue?$"Animation position · {timeline.Maximum-frame.Start:0.##} s of {frame.End-frame.Start:0.##} s. Right-click to change idle-tail trimming.":"Animation position";
+            AutomationProperties.SetHelpText(timeline,timeline.ToolTip.ToString());
+        }
+        trimTail.Checked+=(_,_)=>Range();trimTail.Unchecked+=(_,_)=>Range();
         bool populatingClips=false;
         AutomationProperties.SetName(timeline, "Animation time"); AutomationProperties.SetName(clips, "Animation clip");
         DockPanel.SetDock(play, Dock.Left); DockPanel.SetDock(clips, Dock.Left);
@@ -127,7 +138,7 @@ internal sealed class F3dViewer(MainWindow owner) : IViewer
                         try{clips.Items.Clear();for(int i=0;i<frame.Animations;i++)clips.Items.Add("Animation "+(i+1));clips.SelectedIndex=0;}
                         finally{populatingClips=false;}
                     }
-                    timeline.Minimum=frame.Start;timeline.Maximum=Math.Max(frame.Start,frame.End);
+                    Range();
                 }
             }
             catch (OperationCanceledException) when (!context.IsCurrent) { }
@@ -138,7 +149,7 @@ internal sealed class F3dViewer(MainWindow owner) : IViewer
         play.Click+=(_,_)=>
         {
             if(playing){StopPlayback();return;}
-            if(LastFrame is not {End:var end,Start:var start}||end<=start)return;
+            if(LastFrame==null||timeline.Maximum<=timeline.Minimum)return;
             playing=true;playbackStart=animationTime;animationClock.Restart();PreviewControls.SetIcon(play,"Pause","\uE769");
             CompositionTarget.Rendering+=animationTick;
         };
@@ -146,7 +157,7 @@ internal sealed class F3dViewer(MainWindow owner) : IViewer
         {
             if(!context.IsCurrent){StopPlayback();return;}
             if(!RenderCompletion.IsCompleted||LastFrame==null||timeline.IsMouseCaptureWithin)return;
-            double length=LastFrame.End-LastFrame.Start;
+            double length=timeline.Maximum-LastFrame.Start;
             animationTime=LastFrame.Start+(playbackStart-LastFrame.Start+animationClock.Elapsed.TotalSeconds)%length;
             timeline.ReportPosition(animationTime);queue("time",animationTime,0);
         };
@@ -222,6 +233,7 @@ internal sealed class F3dViewer(MainWindow owner) : IViewer
     void RenderLoop()
     {
         IntPtr engine = IntPtr.Zero, window = IntPtr.Zero, camera = IntPtr.Zero, animation = IntPtr.Zero,interactor=IntPtr.Zero;
+        GltfTimeline ranges=null;int clipIndex=0;
         bool pointerDown=false,pointerPan=false;int pointerX=0,pointerY=0;
         F3dOrbit orbit=null;
         bool cameraMoved=false;double defaultAspect=4.0/3;
@@ -262,12 +274,13 @@ internal sealed class F3dViewer(MainWindow owner) : IViewer
                         F3dNative.f3d_camera_reset_to_bounds(camera, 0.9);
                         F3dNative.f3d_camera_set_current_as_default(camera);
                         animation = F3dNative.f3d_scene_get_animation(F3dNative.f3d_engine_get_scene(engine));
+                        ranges=GltfTimeline.Read(path);
                     }
                     var inputClock=System.Diagnostics.Stopwatch.StartNew();int inputSamples=0,inputRenderCalls=0;
                     foreach (var request in batch) switch (request.Operation)
                     {
                         case "time": F3dNative.f3d_animation_load_time(animation, request.X); break;
-                        case "clip": F3dNative.f3d_options_set_as_string(F3dNative.f3d_engine_get_options(engine), "scene.animation.indices", ((int)request.X).ToString(System.Globalization.CultureInfo.InvariantCulture)); F3dNative.f3d_animation_load_time(animation, 0); break;
+                        case "clip": clipIndex=(int)request.X;F3dNative.f3d_options_set_as_string(F3dNative.f3d_engine_get_options(engine), "scene.animation.indices", clipIndex.ToString(System.Globalization.CultureInfo.InvariantCulture)); F3dNative.f3d_animation_load_time(animation, 0); break;
                         case "orbit-start":case "pan-start":
                             pointerX=(int)(request.X*F3dNative.f3d_window_get_width(window));
                             pointerY=F3dNative.f3d_window_get_height(window)-1-(int)(request.Y*F3dNative.f3d_window_get_height(window));
@@ -345,7 +358,7 @@ internal sealed class F3dViewer(MainWindow owner) : IViewer
                     uint count=F3dNative.f3d_animation_count(animation);
                     double start=0,end=0;if(count>0)F3dNative.f3d_animation_get_time_range(animation,out start,out end);
                     var up=new double[3];var target=new double[3];F3dNative.f3d_camera_get_view_up(camera,up);F3dNative.f3d_camera_get_focal_point(camera,target);
-                    var frame = new Frame(bitmap,pixels,position,true,count,start,end,++renderedSequence,renderMs,clock.Elapsed.TotalMilliseconds,up,target,inputMs,inputSamples,inputRenderCalls);
+                    var frame = new Frame(bitmap,pixels,position,true,count,start,end,++renderedSequence,renderMs,clock.Elapsed.TotalMilliseconds,up,target,inputMs,inputSamples,inputRenderCalls,ranges.EndFor(clipIndex,start,end));
 #if DEBUG
                     BeforeFrameCompletionForVerification?.Invoke(frame);
 #endif

@@ -56,7 +56,8 @@ internal sealed class PreviewSession : IDisposable
         try
         {
             string path = entry.Path;
-            if (!entry.IsDir && PaneView.ArchiveOf(path) is { Inner.Length: > 0 })
+            bool scopedHtml=PreviewModules.Candidates(entry).FirstOrDefault()?.Id=="html";
+            if (!scopedHtml && !entry.IsDir && PaneView.ArchiveOf(path) is { Inner.Length: > 0 })
             {
                 var extracted = await Task.Run(() => ArchiveContent.Preview(path), token);
                 if (!Current() || token.IsCancellationRequested) { extracted.Dispose(); return; }
@@ -65,7 +66,7 @@ internal sealed class PreviewSession : IDisposable
             foreach (var module in PreviewModules.Candidates(entry))
             {
                 token.ThrowIfCancellationRequested();
-                IViewer candidate = module.Id == "f3d" ? new F3dViewer(owner) : new BuiltinViewer(module, owner, entry);
+                IViewer candidate = module.Id switch {"f3d"=>new F3dViewer(owner),"html"=>new HtmlViewer(entry),_=>new BuiltinViewer(module, owner, entry)};
                 if (!await Task.Run(() => candidate.CanHandle(path), token)) { candidate.Cleanup(); continue; }
                 if (!Current() || token.IsCancellationRequested) { candidate.Cleanup(); return; }
                 selected = viewer = candidate;
