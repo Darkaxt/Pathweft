@@ -36,7 +36,7 @@ public partial class PaneView
         if (details is not GridView grid) return;
         if(!widgetColumnsConfigured)
         {
-            foreach (var column in grid.Columns.Where(c => colKey.GetValueOrDefault(c) is "Version" or "Type").ToArray())grid.Columns.Remove(column);
+            foreach (var column in grid.Columns.Where(c => colKey.GetValueOrDefault(c) is "Version" or "Type" or "Message").ToArray())grid.Columns.Remove(column);
             NameColumn.CellTemplate=(DataTemplate)FindResource("WidgetNameCell");
             var location=new GridViewColumn{Header="Location",Width=220,CellTemplate=(DataTemplate)FindResource("WidgetLocationCell")};
             grid.Columns.Insert(1,location);colKey[location]="Location";

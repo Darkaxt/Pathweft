@@ -2216,8 +2216,11 @@ public partial class PaneView : UserControl
             if(List.View is GridView widgetGrid)
             {
                 double width=Math.Max(380,List.ActualWidth-42);
+                bool messages=widgetGrid.Columns.Any(c=>colKey.GetValueOrDefault(c)=="Message");
                 foreach(var column in widgetGrid.Columns)
-                    column.Width=width*(colKey.GetValueOrDefault(column) switch{"Name"=>0.34,"Location"=>0.36,"Size"=>0.10,_=>0.20});
+                    column.Width=width*(messages
+                        ? colKey.GetValueOrDefault(column) switch{"Name"=>0.25,"Location"=>0.25,"Size"=>0.08,"Modified"=>0.15,_=>0.27}
+                        : colKey.GetValueOrDefault(column) switch{"Name"=>0.34,"Location"=>0.36,"Size"=>0.10,_=>0.20});
             }
             return;
         }

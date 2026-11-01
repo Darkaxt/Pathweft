@@ -10,6 +10,7 @@ foreach($file in $manifest.files){if((Get-FileHash -LiteralPath (Join-Path $prod
 $fixture=Join-Path $run ('integration-'+[guid]::NewGuid().ToString('N'))
 [void][IO.Directory]::CreateDirectory($fixture)
 $env:PATHWEFT_PROFILE=Join-Path $fixture 'profile'
+[void][IO.Directory]::CreateDirectory($env:PATHWEFT_PROFILE)
 $env:TEMP=$env:TMP=Join-Path $run 'temp'
 & (Join-Path $PSScriptRoot 'Build-Development.ps1') -ScratchRoot (Join-Path $run 'probe-build') -Configuration Release -ProjectFile (Join-Path $project 'tests/PackagedChecks/PackagedChecks.csproj') -BuildProperty @("PathweftAssembly=$product\Pathweft.dll")
 if($LASTEXITCODE -ne 0){throw 'Independent delivered-assembly consumer did not compile.'}

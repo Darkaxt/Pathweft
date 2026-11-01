@@ -294,6 +294,11 @@ sealed class PackageProbe
                 input.Text="path:\""+Path.GetDirectoryName(known)+"\" \""+Path.GetFileName(known)+"\"";
                 await (Task)Get(widgetPane,"SearchCompletion");
                 Check(widgetPane.Items.Any(entry=>entry.Path.Equals(known,StringComparison.OrdinalIgnoreCase))&&ReferenceEquals(widgetList.ItemContainerStyle,widgetPane.FindResource("WidgetResultRow")),"Delivered compact popup queries the actual index as text changes and retains its plain result style");
+                var widgetRow=widgetPane.Items.Single(entry=>entry.Path.Equals(known,StringComparison.OrdinalIgnoreCase));widgetRow.Message="Could not open: packaged widget fixture";
+                await app.Dispatcher.InvokeAsync(()=>{},DispatcherPriority.ApplicationIdle);
+                Check(((GridView)widgetList.View).Columns.Count==5,"Delivered popup adds the Message column only for an actual row failure");
+                widgetRow.Message="";await app.Dispatcher.InvokeAsync(()=>{},DispatcherPriority.ApplicationIdle);
+                Check(((GridView)widgetList.View).Columns.Count==4,"Delivered popup removes the empty Message column again");
                 input.Text="";await (Task)Get(widgetPane,"SearchCompletion");
                 Check(!widgetPane.Items.Any(),"Clearing the delivered popup empties results instead of listing drives");
             }

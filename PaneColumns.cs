@@ -30,7 +30,7 @@ public partial class PaneView
     void TrackColumns()
     {
         StopColumns();
-        if(IsWidget||fileColumns==null)return;
+        if(fileColumns==null)return;
         foreach(var entry in items)ObserveColumnEntry(entry);
         columnCollection=items as INotifyCollectionChanged;
         if(columnCollection!=null)columnCollection.CollectionChanged+=ColumnsChanged;
@@ -39,7 +39,10 @@ public partial class PaneView
     void ObserveColumnEntry(Entry entry)
     {if(columnEntries.Add(entry))entry.PropertyChanged+=ColumnDataChanged;}
     void ColumnDataChanged(object sender,PropertyChangedEventArgs e)
-    {if(e.PropertyName is nameof(Entry.Size) or nameof(Entry.Version) or nameof(Entry.Modified) or nameof(Entry.Message))QueueColumns();}
+    {
+        if(IsWidget&&e.PropertyName!=nameof(Entry.Message))return;
+        if(e.PropertyName is nameof(Entry.Size) or nameof(Entry.Version) or nameof(Entry.Modified) or nameof(Entry.Message))QueueColumns();
+    }
     void ColumnsChanged(object sender,NotifyCollectionChangedEventArgs e)
     {
         if(e.Action==NotifyCollectionChangedAction.Reset)
@@ -58,7 +61,15 @@ public partial class PaneView
     }
     void ReconcileColumns()
     {
-        if(IsWidget||fileColumns==null||details is not GridView grid)return;
+        if(fileColumns==null||details is not GridView grid)return;
+        if(IsWidget)
+        {
+            var message=fileColumns.Single(column=>colKey[column]=="Message");
+            bool show=items.Any(entry=>entry.Message.Length>0);
+            if(show&&!grid.Columns.Contains(message))grid.Columns.Add(message);
+            else if(!show)grid.Columns.Remove(message);
+            FitName();return;
+        }
         bool drives=Dir==ThisPC&&!InSearch;
         var data=items.Where(e=>!e.IsUp).ToArray();
         bool Has(string key)=>key switch

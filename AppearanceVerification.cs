@@ -93,7 +93,23 @@ public partial class MainWindow
                 Check(((GridView)list.View).Columns.Select(c=>c.Header is Panel header?header.Children.OfType<TextBlock>().Last().Text:c.Header.ToString()).SequenceEqual(new[]{"Name","Location","Size","Modified"}),"The real result view has the four restrained reference columns");
                 input.Text="no_such_widget_result";input.Text="path:\"D:\\Projects\\Pathweft\" \"README.md\"";
                 await widget.Pane.SearchCompletion;await Settled();
+                File.WriteAllText(Path.Combine(root,"widget-query-state.json"),JsonSerializer.Serialize(new{known=Known(),request=widget.Pane.SearchRequest,text=input.Text,notice=widget.Pane.SearchNotice,items=widget.Pane.Items.Select(entry=>new{entry.Path,entry.Message})}));
                 Check(Known()&&widget.Pane.SearchRequest.Scope==1&&widget.Pane.SearchRequest.Query==input.Text,"Actual text changes query the global Everything index and a superseded query cannot overwrite newer results");
+                widget.Pane.List.SelectedItem=widget.Pane.Items.Single(entry=>entry.Path.Equals(known,StringComparison.OrdinalIgnoreCase));
+                bool originalAutoEditor=Settings.InternalEditor;Settings.InternalEditor=false;
+                var failedRow=widget.Pane.Selected.Single();var errorDelivered=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+                void OpeningFailed(object sender,System.ComponentModel.PropertyChangedEventArgs change){if(change.PropertyName==nameof(Entry.Message)&&failedRow.Message.StartsWith("Could not open:"))errorDelivered.TrySetResult();}
+                failedRow.PropertyChanged+=OpeningFailed;
+                try
+                {
+                    widget.Pane.ExternalOpenForVerification=_=>throw new System.ComponentModel.Win32Exception(2,"Widget opening fixture failure");
+                    widget.Pane.OpenSelected();await errorDelivered.Task;await Settled();
+                    Check(((GridView)list.View).Columns.Count==5&&failedRow.Message.StartsWith("Could not open:"),"A widget file-open failure adds only its useful Message column");
+                    var retried=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);widget.Pane.ExternalOpenForVerification=_=>retried.TrySetResult();
+                    widget.Pane.OpenSelected();await retried.Task;await Settled();
+                    Check(((GridView)list.View).Columns.Count==4,"Successful widget retry restores the compact four-column view");
+                }
+                finally{Settings.InternalEditor=originalAutoEditor;widget.Pane.ExternalOpenForVerification=null;failedRow.PropertyChanged-=OpeningFailed;}
                 Check(ReferenceEquals(list.ItemContainerStyle,widget.Pane.FindResource("WidgetResultRow")),"Live query results retain their plain popup row template without file-pane stripes or age bars");
                 widget.Pane.SearchInstance="Pathweft-missing-widget-verification-instance";
                 await Query("README");

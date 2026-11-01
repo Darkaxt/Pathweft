@@ -6,7 +6,7 @@ This is the authoritative specification. The derived plan must preserve every
 requirement and acceptance criterion. Material scope changes require explicit
 user direction recorded here; ordinary implementation choices need no new gate.
 
-CORE-17 (S8, user-authorized storage correction): keep small settings on C:;
+CORE-17 (S8, user-authorized storage correction): initially keep small settings on C:;
 place installed bulk archive working copies, folder-size caches, editor WebView2
 data, child-process runtime scratch and preview caches on D: under a per-user Pathweft data directory. A small
 data-root.txt setting may select another non-system data drive; never silently
