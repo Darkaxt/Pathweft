@@ -98,7 +98,7 @@ internal sealed class F3dViewer(MainWindow owner) : IViewer
         var play = PreviewControls.Icon(owner, "Play", "\uE768");
         var clips = new ComboBox { MinWidth = 110, MinHeight = 32, MaxWidth = 200, Margin = new(4, 0, 8, 0),
             VerticalAlignment = VerticalAlignment.Center, Style = (Style)owner.FindResource("PreviewClipCombo") };
-        var timeline = new Slider { MinWidth = 80, VerticalAlignment = VerticalAlignment.Center };
+        var timeline = new PreviewTimeline { MinWidth = 80, VerticalAlignment = VerticalAlignment.Center };
         bool populatingClips=false;
         AutomationProperties.SetName(timeline, "Animation time"); AutomationProperties.SetName(clips, "Animation clip");
         DockPanel.SetDock(play, Dock.Left); DockPanel.SetDock(clips, Dock.Left);
@@ -145,12 +145,18 @@ internal sealed class F3dViewer(MainWindow owner) : IViewer
         animationTick=(_,_)=>
         {
             if(!context.IsCurrent){StopPlayback();return;}
-            if(!RenderCompletion.IsCompleted||LastFrame==null)return;
+            if(!RenderCompletion.IsCompleted||LastFrame==null||timeline.IsMouseCaptureWithin)return;
             double length=LastFrame.End-LastFrame.Start;
             animationTime=LastFrame.Start+(playbackStart-LastFrame.Start+animationClock.Elapsed.TotalSeconds)%length;
-            timeline.SetCurrentValue(Slider.ValueProperty,animationTime);queue("time",animationTime,0);
+            timeline.ReportPosition(animationTime);queue("time",animationTime,0);
         };
-        timeline.ValueChanged+=(_,e)=>{if(!playing&&LastFrame!=null){animationTime=e.NewValue;queue("time",animationTime,0);}};
+        timeline.SeekRequested+=value=>
+        {
+            if(LastFrame==null)return;
+            animationTime=value;
+            if(playing){playbackStart=value;animationClock.Restart();}
+            queue("time",animationTime,0);
+        };
         clips.SelectionChanged+=(_,_)=>{if(!populatingClips&&clips.SelectedIndex>=0&&LastFrame!=null){StopPlayback();animationTime=0;queue("clip",clips.SelectedIndex,0);}};
         viewport.MouseDown += (_, e) =>
         {

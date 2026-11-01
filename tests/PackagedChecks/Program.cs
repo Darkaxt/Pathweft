@@ -128,6 +128,15 @@ sealed class PackageProbe
         catch(TargetInvocationException error){System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(error.InnerException).Throw();throw;}
     }
     static object Get(object target,string name)=>target.GetType().GetProperty(name,Flags).GetValue(target);
+    static IEnumerable<T> Descendants<T>(DependencyObject parent) where T:DependencyObject
+    {
+        for(int index=0;index<System.Windows.Media.VisualTreeHelper.GetChildrenCount(parent);index++)
+        {
+            var child=System.Windows.Media.VisualTreeHelper.GetChild(parent,index);
+            if(child is T match)yield return match;
+            foreach(var nested in Descendants<T>(child))yield return nested;
+        }
+    }
     // Force the receiving WPF object through the native data contract, rather
     // than letting it reuse the source's managed IDataObject directly.
     sealed class NativeDataConsumer(System.Runtime.InteropServices.ComTypes.IDataObject source):System.Runtime.InteropServices.ComTypes.IDataObject
@@ -426,6 +435,32 @@ sealed class PackageProbe
                 {
                     await (Task)Call(player.GetType(),player,"CommandAsync",new object[]{new[]{"screenshot-to-file",Path.Combine(root,"packaged-"+name+".png"),"window"}});
                     Check(new FileInfo(Path.Combine(root,"packaged-"+name+".png")).Length>1000,"Delivered native media output renders a real frame: "+name);
+                }
+                if(name=="sdr")
+                {
+                    var timeline=Descendants<Slider>(target).Single();
+                    Check(timeline.GetType().FullName=="FileExplorer.Preview.PreviewTimeline"&&timeline.IsMoveToPointEnabled,"Delivered media uses the corrected themed click-to-point timeline");
+                    var changed=player.GetType().GetEvent("Changed",Flags);
+                    foreach(bool paused in new[]{true,false})
+                    {
+                        await (Task)Call(player.GetType(),player,"CommandAsync",new object[]{new[]{"set","pause",paused?"yes":"no"}});
+                        double goal=paused?3:5;
+                        var reached=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+                        Action<string,object> position=(property,value)=>{if(property=="time-pos"&&value is double seconds&&Math.Abs(seconds-goal)<.3)reached.TrySetResult();};
+                        changed.GetAddMethod(true).Invoke(player,new object[]{position});
+                        try
+                        {
+                            ulong before=(ulong)player.GetType().GetField("commandId",Flags).GetValue(player);
+                            var peer=new System.Windows.Automation.Peers.SliderAutomationPeer(timeline);
+                            ((System.Windows.Automation.Provider.IRangeValueProvider)peer.GetPattern(System.Windows.Automation.Peers.PatternInterface.RangeValue)).SetValue(goal);
+                            Check((ulong)player.GetType().GetField("commandId",Flags).GetValue(player)>before,"Delivered timeline submits native seek immediately: "+(paused?"paused":"playing"));
+                            await reached.Task;
+                            Check((string)Call(player.GetType(),player,"Property","pause")== (paused?"yes":"no"),"Delivered native seek preserves playback state: "+(paused?"paused":"playing"));
+                        }
+                        finally{changed.GetRemoveMethod(true).Invoke(player,new object[]{position});}
+                    }
+                    var launch=(string[])Call(typeof(Updater),null,"InstallationArguments",123,456L,AppContext.BaseDirectory);
+                    Check(launch.Contains("/RESTARTAPP=1")&&launch.Any(value=>value.StartsWith("/UPDATETRACK="))&&launch.Any(value=>value.StartsWith("/UPDATEBACK="))&&launch.Any(value=>value.StartsWith("/UPDATEACCENT=")),"Delivered updater hands off restart intent and the current popup palette");
                 }
                 Call(type,previewSession,"Clear");await (Task)Call(type,null,"DrainAsync");
                 Check(((Task)Get(player,"Completion")).IsCompletedSuccessfully,"Delivered media teardown observes its actual native worker exit: "+name);

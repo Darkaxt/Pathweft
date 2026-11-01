@@ -1,6 +1,10 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.14 | 2026-11-01 | Update progress and timeline seeking
+- Updates show measured download progress and a matching themed deployment popup while Pathweft closes, installs and reopens.
+- Clicking a video or animated 3D timeline seeks immediately during playback. Dragging and keyboard seeking remain available.
+
 ## 1.1.13 | 2026-11-01 | Native media previews and file highlighting
 - Video and audio now use bundled libmpv with GPU playback and Dolby Vision Profile 5/8 to SDR conversion, based on the VLC and Nuvio forks. Existing preview settings and icon controls remain available.
 - Show in folder requests preserve the selected file through native Shell folder views, including inactive tabs. Explorer navigation and virtual-folder boundaries are preserved.

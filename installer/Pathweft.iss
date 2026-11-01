@@ -1,7 +1,9 @@
 ; One per-user installation. Build via build.ps1; all paths are explicit inputs.
 #define AppName "Pathweft"
 #define AppExe "Pathweft.exe"
-#define AppIdGuid "{A52C677C-5F24-45E2-B814-66DCAABFB71A}"
+#ifndef AppIdGuid
+  #define AppIdGuid "{A52C677C-5F24-45E2-B814-66DCAABFB71A}"
+#endif
 #ifndef AppVersion
   #error AppVersion is required
 #endif
@@ -56,7 +58,6 @@ Name: "{group}\Pathweft"; Filename: "{app}\{#AppExe}"
 Name: "{autodesktop}\Pathweft"; Filename: "{app}\{#AppExe}"; Tasks: desktopicon
 
 [Run]
-Filename: "{app}\{#AppExe}"; Parameters: "--desktop-launch"; Flags: nowait runhidden; Check: RestartRequested
 Filename: "{app}\{#AppExe}"; Parameters: "--desktop-launch"; Description: "Launch Pathweft"; Flags: nowait postinstall skipifsilent
 
 ; User settings, tabs, history, caches and recovery records are never swept by
@@ -76,6 +77,18 @@ function GetProcessTimes(Handle: THandle; var Created, Exited, Kernel, User: TCr
 function RestartRequested(): Boolean;
 begin
   Result := ExpandConstant('{param:RESTARTAPP|0}') = '1';
+end;
+
+#include "UpdateProgress.iss"
+
+procedure InitializeWizard;
+begin
+  InitializeDeployment;
+end;
+
+procedure CurInstallProgressChanged(CurProgress, MaxProgress: Integer);
+begin
+  DeploymentProgress(CurProgress, MaxProgress);
 end;
 
 function PrepareExisting(const Argument: String): String;
@@ -100,6 +113,8 @@ var
   Expected: String;
 begin
   Result := '';
+  DeploymentPhase('Closing Pathweft', 'Waiting for the current window to finish closing.');
+  DeploymentFailure := 'The updating process could not finish preparing its installation.';
   Pid := StrToIntDef(ExpandConstant('{param:WAITPID|0}'), 0);
   if Pid <> 0 then begin
     Expected := ExpandConstant('{param:WAITCREATED|}');
@@ -118,7 +133,7 @@ begin
           ownership is checked independently below before replacing any files. }
         if CompareText(Format('%.8x%.8x', [Created.High, Created.Low]), Expected) = 0 then begin
           Log('Waiting for the identified requesting process to exit.');
-          if WaitForSingleObject(Handle, $FFFFFFFF) <> 0 then begin
+          if WaitDeploymentHandle(Handle) <> 0 then begin
             Result := 'The updating Pathweft process could not be observed to exit.';
             Exit;
           end;
@@ -132,12 +147,18 @@ begin
     end;
   end;
   Result := PrepareExisting('--prepare-update');
+  DeploymentFailure := Result;
+  if Result = '' then DeploymentPhase('Installing update', 'Replacing application files.');
 end;
 
 procedure CurStepChanged(CurStep: TSetupStep);
 var
   Code: Integer;
 begin
+  if CurStep = ssPostInstall then begin
+    DeploymentPhase('Restoring integration', 'Restoring your enabled folder routes and keyboard helper.');
+    DeploymentFailure := 'Files were installed, but Windows integration could not be restored. Reopen Pathweft to review its status.';
+  end;
   if (CurStep = ssPostInstall) and WizardIsTaskSelected('defaultfm') then begin
     if not Exec(ExpandConstant('{app}\{#AppExe}'), '--set-default', '', SW_HIDE, ewWaitUntilTerminated, Code) or (Code <> 0) then
       RaiseException('Pathweft was installed, but folder integration was not enabled. Use Settings > Windows integration to inspect or restore it.');
@@ -146,6 +167,22 @@ begin
     if not Exec(ExpandConstant('{app}\{#AppExe}'), '--desktop-launch --resume-agent', '', SW_HIDE, ewWaitUntilTerminated, Code) or (Code <> 0) then
       RaiseException('Pathweft was installed, but its Win+E helper could not restart. Open Settings > Windows integration to inspect its status.');
   end;
+  if (CurStep = ssPostInstall) and RestartRequested() then begin
+    DeploymentPhase('Opening Pathweft', 'Launching the updated version in your desktop session.');
+    DeploymentFailure := 'The update was installed, but Pathweft could not reopen. Open it from Start.';
+    if not Exec(ExpandConstant('{app}\{#AppExe}'), '--desktop-launch', '', SW_HIDE, ewWaitUntilTerminated, Code) or (Code <> 0) then
+      RaiseException(DeploymentFailure);
+  end;
+  if CurStep = ssInstall then DeploymentFailure := 'The update could not replace its application files. Close any app using them, then try the update again.';
+  if CurStep = ssDone then begin
+    DeploymentFailure := '';
+    DeploymentPhase('Update installed', 'Pathweft has been launched.');
+  end;
+end;
+
+procedure DeinitializeSetup;
+begin
+  FinishDeployment;
 end;
 
 function InitializeUninstall(): Boolean;

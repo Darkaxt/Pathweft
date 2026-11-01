@@ -1,5 +1,5 @@
 [CmdletBinding()]
-param([Parameter(Mandatory)][string]$OutputRoot,[switch]$Verify,[string]$ProductDirectory,[switch]$RevealProbe)
+param([Parameter(Mandatory)][string]$OutputRoot,[switch]$Verify,[string]$ProductDirectory,[switch]$RevealProbe,[switch]$ProgressReceiver)
 $ErrorActionPreference='Stop'
 $root=Split-Path -Parent $PSScriptRoot
 $destination=[IO.Path]::GetFullPath($OutputRoot)
@@ -18,6 +18,11 @@ foreach($arch in @('x64','x86')){
     $link=@('/link',('/LIBPATH:'+(Join-Path $vc "lib/$arch")))
     foreach($kind in @('um','ucrt')){$link+='/LIBPATH:'+(Join-Path $sdk "Lib/$sdkVersion/$kind/$arch")}
     $link+=@('kernel32.lib','ole32.lib','oleaut32.lib','shell32.lib','shlwapi.lib','uuid.lib','advapi32.lib','user32.lib')
+    if($ProgressReceiver){
+        $test=@((Join-Path $root 'tests/InstallerProgressReceiver.cpp'),('/Fo'+$output+'\'))+$link+@(('/OUT:'+(Join-Path $output 'InstallerProgressReceiver.exe')),'/SUBSYSTEM:WINDOWS')
+        & (Join-Path $vc "bin/Hostx64/$arch/cl.exe") @arguments @test
+        if($LASTEXITCODE -ne 0){throw "Native $arch installer fixture compilation failed."}
+    }
     if($RevealProbe){
         $test=@((Join-Path $root 'tests/ShellRevealProbe.cpp'),('/Fo'+$output+'\'))+$link+@(('/OUT:'+(Join-Path $output 'ShellRevealProbe.exe')),'/SUBSYSTEM:CONSOLE')
         & (Join-Path $vc "bin/Hostx64/$arch/cl.exe") @arguments @test

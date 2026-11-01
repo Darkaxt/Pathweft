@@ -1,4 +1,4 @@
-# Pathweft 1.1.13
+# Pathweft 1.1.14
 
 Windows 11 x64 is the qualified host. The .NET 10 desktop runtime and native
 archive/preview libraries are included. WebView2 Evergreen is required for the
@@ -120,6 +120,13 @@ the actual requesting process to exit. Nothing is force-killed by image name.
 Uninstall restores registrations still owned by this installation and preserves
 settings/history and other applications' registrations. If restoration fails,
 resolve it in Settings > Windows integration before removing the executable.
+
+The updater reports downloaded bytes, checksum verification and installation
+phases in matching themed popups. Installation progress remains visible after
+the app exits; closing that popup hides progress without cancelling replacement.
+File percentages measure installer file work, not an estimated overall duration.
+Video and animated 3D timeline clicks seek immediately during playback and while
+paused; dragging and keyboard controls remain available.
 
 For portable use, extract Pathweft/ to a writable directory and launch
 Pathweft.exe. Settings live in Data/. Preserve Data/ when replacing the program

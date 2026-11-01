@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
 using System.Text.Json;
+using System.Windows.Media;
 
 namespace FileExplorer;
 
@@ -21,6 +22,7 @@ public static class Updater
     public const string Repo = "Darkaxt/Pathweft";
 
     public record Release(Version Version, string Tag, string Notes, string AssetUrl, long AssetSize, string Sha256);
+    public record DownloadProgress(string Stage,long Received,long Total);
 
     public static Version Current => typeof(Updater).Assembly.GetName().Version is { } v ? new Version(v.Major, v.Minor, v.Build) : new Version(0, 0, 0);
     static string dismissed; // tag the user said "Later" to; deliberately not persisted
@@ -72,15 +74,19 @@ public static class Updater
     public static void Dismiss(Release release) => dismissed = release.Tag;
 
     /// Downloads the installer, reporting 0..1 progress. Returns its path.
-    public static async Task<string> Download(Release release, IProgress<double> progress, CancellationToken token)
+    public static async Task<string> Download(Release release, IProgress<DownloadProgress> progress, CancellationToken token)
     {
         var path = Path.Combine(Path.GetTempPath(), $"Pathweft-{release.Version}-setup.exe");
+        bool complete=false,created=false;
+        try
+        {
         using (var response = await http.GetAsync(release.AssetUrl, HttpCompletionOption.ResponseHeadersRead, token))
         {
             response.EnsureSuccessStatusCode();
             var total = response.Content.Headers.ContentLength ?? release.AssetSize;
             using var source = await response.Content.ReadAsStreamAsync(token);
             using var file = File.Create(path);
+            created=true;
             var buffer = new byte[128 * 1024];
             long done = 0;
             int n;
@@ -88,10 +94,11 @@ public static class Updater
             {
                 await file.WriteAsync(buffer.AsMemory(0, n), token);
                 done += n;
-                progress?.Report(total > 0 ? (double)done / total : 0);
+                progress?.Report(new("Downloading",done,total));
             }
         }
         // Size check, as in Shelf: a truncated download would otherwise be run as an installer.
+        progress?.Report(new("Checking update",0,0));
         var length = new FileInfo(path).Length;
         if (length != release.AssetSize)
         {
@@ -103,14 +110,17 @@ public static class Updater
         if (release.Sha256 != null)
         {
             string actual;
-            using (var file = File.OpenRead(path)) actual = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(file));
+            using (var file = File.OpenRead(path)) actual = Convert.ToHexString(await System.Security.Cryptography.SHA256.HashDataAsync(file,token));
             if (!actual.Equals(release.Sha256, StringComparison.OrdinalIgnoreCase))
             {
                 File.Delete(path);
                 throw new IOException("The download doesn't match the checksum GitHub published for it");
             }
         }
-        return path;
+        token.ThrowIfCancellationRequested();
+        complete=true;return path;
+        }
+        finally{if(!complete&&created&&File.Exists(path))File.Delete(path);}
     }
 
     /// Start the per-user update. Setup observes this exact process's exit;
@@ -121,10 +131,22 @@ public static class Updater
         {
             var launch=new ProcessStartInfo(installer){UseShellExecute=false,CreateNoWindow=true,WindowStyle=ProcessWindowStyle.Hidden};
             using var caller=Process.GetCurrentProcess();
-            foreach(var argument in new[]{"/VERYSILENT","/SUPPRESSMSGBOXES","/NORESTART","/RESTARTAPP=1","/WAITPID="+caller.Id,"/WAITCREATED="+caller.StartTime.ToUniversalTime().ToFileTimeUtc().ToString("X16"),"/DIR="+AppContext.BaseDirectory.TrimEnd('\\')})launch.ArgumentList.Add(argument);
+            foreach(var argument in InstallationArguments(caller.Id,caller.StartTime.ToUniversalTime().ToFileTimeUtc(),AppContext.BaseDirectory))launch.ArgumentList.Add(argument);
             using var process=Process.Start(launch)??throw new IOException("The installer did not start.");
             return true;
         }
         catch (System.ComponentModel.Win32Exception ex) when (ex.NativeErrorCode == 1223) { return false; } // ERROR_CANCELLED: UAC declined
+    }
+    internal static string[] InstallationArguments(int pid,long created,string directory)
+    {
+        static string ColorArgument(string name,Color value)=>"/UPDATE"+name+"="+(value.R|value.G<<8|value.B<<16);
+        var background=Appearance.Background;
+        var track=Appearance.Resolve("#1AFFFFFF");
+        byte Blend(byte foreground,byte behind)=>(byte)((foreground*track.A+behind*(255-track.A)+127)/255);
+        var opaqueTrack=Color.FromRgb(Blend(track.R,background.R),Blend(track.G,background.G),Blend(track.B,background.B));
+        return new[]{"/VERYSILENT","/SUPPRESSMSGBOXES","/NORESTART","/RESTARTAPP=1","/WAITPID="+pid,
+            "/WAITCREATED="+created.ToString("X16"),"/DIR="+directory.TrimEnd('\\'),
+            ColorArgument("BACK",Appearance.Background),ColorArgument("INK",Appearance.Resolve("#E8EEF6")),
+            ColorArgument("MUTED",Appearance.Resolve("#8A97AA")),ColorArgument("ACCENT",Appearance.Accent),ColorArgument("TRACK",opaqueTrack)};
     }
 }

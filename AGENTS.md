@@ -3,7 +3,21 @@
 Read `docs/SPECIFICATION.md` first. It is authoritative; the plan and this file
 do not change its requirements or the user's standing instructions.
 
-Current S8 BLOCKED only on the installed1.1.13 updater readback for
+Current S8 ACTIVE for UPDATE-01/PREVIEW-16/spec0.34. Installed1.1.13 is verified:
+871 member hashes, reopened main/helper readiness and22 desktop route values.
+The user's themed updater popup and video/3D timeline fixes are integrated;
+fresh source/native light/dark100/150 checks, real seek/clock/download/hash/cancel,
+installer callbacks/error phases and hidden rendering pass. Finish current1.1.14
+final package after the complete candidate passed delivered native32/64/app/
+media checks. Scope assessment found no required consolidation. Finish verified commit, normal final
+release/retrieval and installed check. Retain installer ownership across exit;
+no updater service, arbitrary delays, forced close, Sandbox or desktop input.
+No other ACTIVE stage or deferral. Current native/build scratch
+is D:/Temp/pathweft-s8-delivery for small-file/native I/O, transaction
+3c1f187466b43f8bb132e78beaa50935. Clean spent output through the installed helper.
+Earlier1.1.13 checkpoint follows as history.
+
+Previous S8 BLOCKED only on the installed1.1.13 updater readback for
 SHELL-02/03, PREVIEW-15/spec0.33 and sidebar drive-label consistency.
 Normal1.1.13 is published at26143f4b1dee768e587da6e13704005bbc71fede.
 All six published asset digests/source tag match; the independently retrieved

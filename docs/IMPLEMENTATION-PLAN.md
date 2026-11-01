@@ -1,9 +1,43 @@
 # Implementation and reconciliation
 
-Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.33, 2026-11-01,
+Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.34, 2026-11-01,
 including the user-authorized continued comparison requirement TRANSFER-07.
 
-Current S8 status: BLOCKED only on installed1.1.13 verification.
+Current S8 status: ACTIVE for UPDATE-01 and PREVIEW-16, already authorized.
+Previous1.1.13 acceptance is COMPLETE:871 installed member hashes, reopened main
+PID125152/helperPID137620 readiness and22 actual desktop route values pass.
+Current scope: installer-owned themed deployment progress that survives parent
+exit, and video/3D timeline seeking while playing. Native installer progress
+callbacks own deployment state; existing WPF update UI owns download/checking.
+One shared preview timeline distinguishes user ValueChanged from engine feedback;
+3D seeks must re-anchor its running animation clock. No new updater service.
+Both features are integrated and source-qualified: real paused/playing libmpv
+and F3D seeks, retained dragging/clock/cleanup, actual HTTP download/checksum/
+cancellation, and hidden WPF/native light/dark100/150 layouts pass. The native
+installer reports real file callbacks, integration/reopen phases and preparation
+failure with no fake success. Its popup matches the existing updater's typography,
+spacing and low progress track; no foreground input is used. Native paint/DPI
+diagnostics resolved ParentBackground and capture-awareness defects, rather than
+accepting clipped/blank screenshots. Private receipts are retained in the audit.
+The complete1.1.14 candidate also passes its delivered native32/64 folder/reveal,
+real-index, archive, storage, preview and playback workflows, including actual
+paused/playing libmpv seeks and shipped updater palette arguments. Production
+output contains no debug verification hooks. Source/native receipts and relevant
+rendered states are retained privately; no live window was controlled.
+Scope-closure assessment: no required consolidation finding. The small shared
+timeline directly serves the two current engines; the existing installer owns
+deployment state and uses the real requesting-process/event lifetime. No new
+service, timer-based synchronization or competing state owner was introduced.
+Remaining current acceptance blockers are internal: committed final package,
+one normal1.1.14 release and independent retrieval; installed verification then
+depends on the user updating their active copy. No tracked
+deferrals, additional ACTIVE stage, Sandbox or desktop takeover.
+Temporary native/build I/O is D:/Temp/pathweft-s8-delivery (small-file compiler/
+installer I/O exception); register/clean it with transactional-cleanup. Ordinary
+private evidence is retained under .local/evidence/2026-11-01-update114.
+Earlier1.1.13 delivery checkpoint follows as history.
+
+Previous S8 status: BLOCKED only on installed1.1.13 verification.
 Normal1.1.13 is published at26143f4b1dee768e587da6e13704005bbc71fede;
 all six published assets match their source/tag and SHA-256 digests. Independent
 retrieval passes native32/64 browser routing/selection, actual app-host self-test,

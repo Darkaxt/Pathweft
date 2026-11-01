@@ -12,7 +12,7 @@ internal sealed class MpvViewer(MainWindow owner)
     MpvPlayer player;
     ContextObject context;
     Button play,mute;
-    Slider position;
+    PreviewTimeline position;
     TextBlock time;
     bool paused=true,muted;
     double seconds,duration;
@@ -34,10 +34,9 @@ internal sealed class MpvViewer(MainWindow owner)
         play=PreviewControls.Icon(owner,paused?"Play":"Pause",paused?"\uE768":"\uE769");play.IsEnabled=false;
         mute=PreviewControls.Icon(owner,muted?"Unmute":"Mute",muted?"\uE74F":"\uE767");
         play.Click+=(_,_)=>Toggle();mute.Click+=(_,_)=>{muted=!muted;player?.Command("set","mute",muted?"yes":"no");PreviewControls.SetIcon(mute,muted?"Unmute":"Mute",muted?"\uE74F":"\uE767");};
-        position=new Slider {Minimum=0,Maximum=0,MinWidth=50,Margin=new(8,0,8,0),VerticalAlignment=VerticalAlignment.Center,IsEnabled=false};
+        position=new PreviewTimeline {Minimum=0,Maximum=0,MinWidth=50,Margin=new(8,0,8,0),VerticalAlignment=VerticalAlignment.Center,IsEnabled=false};
         AutomationProperties.SetName(position,"Playback position");
-        position.PreviewMouseLeftButtonUp+=(_,_)=>Seek(position.Value);
-        position.KeyUp+=(_,args)=>{if(args.Key is Key.Left or Key.Right or Key.Home or Key.End)Seek(position.Value);};
+        position.SeekRequested+=Seek;
         time=new TextBlock {Text="0:00 / 0:00",VerticalAlignment=VerticalAlignment.Center,Margin=new(6)};
         var controls=new Grid {Margin=new(6)};
         foreach(var width in new[]{GridLength.Auto,GridLength.Auto,new GridLength(1,GridUnitType.Star),GridLength.Auto})controls.ColumnDefinitions.Add(new(){Width=width});
@@ -57,7 +56,7 @@ internal sealed class MpvViewer(MainWindow owner)
             if(cleaned||!context.IsCurrent)return;
             switch(name)
             {
-                case "time-pos":seconds=(double)value;if(!position.IsMouseCaptureWithin)position.Value=Math.Clamp(seconds,0,position.Maximum);break;
+                case "time-pos":seconds=(double)value;position.ReportPosition(seconds);break;
                 case "duration":duration=(double)value;position.Maximum=Math.Max(0,duration);break;
                 case "pause":paused=(bool)value;UpdatePlay();break;
                 case "eof-reached" when (bool)value:player.Command("set","pause","yes");player.Command("seek","0","absolute+exact");break;

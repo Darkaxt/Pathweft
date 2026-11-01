@@ -1,14 +1,46 @@
 # Pathweft specification
 
-Version 0.33 - 2026-11-01. Owner: Darkaxt.
+Version 0.34 - 2026-11-01. Owner: Darkaxt.
 
 This is the authoritative specification. The derived plan must preserve every
 requirement and acceptance criterion. Material scope changes require explicit
 user direction recorded here; ordinary implementation choices need no new gate.
 
-The current S8 extension remains open pending installed1.1.13 verification;
-source and independently retrieved final-release checks pass, as recorded in
-the implementation ledger. The user restarted Helium from Start and confirmed
+The previous S8 extension is COMPLETE through1.1.13: all871 installed members,
+reopened main/helper readiness and22 desktop route values pass after the user's
+update. S8 is ACTIVE for the following authorized update/progress and timeline
+corrections; one final release follows their integrated verification.
+
+UPDATE-01: the user requests a themed popup reporting deployment progress during
+updates. Retain the existing update action and verified per-user installer.
+Show actual downloading/checking progress before exit, then an installer-owned
+compact progress popup that remains while Pathweft closes and files are replaced.
+Report actual deployment, integration/helper restoration and reopening phases;
+percentages refer to measured work, never elapsed-time simulation. Preserve
+light/dark, accent, readable contrast and DPI scaling using Pathweft's existing
+palette, icon and typography. Visual contract: approximately520x240 DIP,20-DIP
+insets, concise heading/status, accent progress track and no debug/path dump.
+The deployment popup follows the existing updater UI: the same compact heading,
+subtitle, low progress track and bottom status row, including its current palette.
+Handle failed preparation/installation visibly without reporting completion.
+Keep download cancellation, checksum/size checks, active-work blockers, exact
+requesting-process wait and existing opt-in/recovery behavior. Do not introduce
+another updater service, arbitrary delays, forced exits or a new administrator
+requirement. Existing1.1.13 clients must receive deployment progress when they
+install this release, despite using the old very-silent launch switch. Verify
+real installer progress/phase/error callbacks and hidden dark/light100/150%
+layouts without altering the installed identity or taking desktop focus.
+
+PREVIEW-16: clicking the video/audio or3D animation timeline seeks directly to
+the clicked position while paused AND while playing. Playback position updates
+must not overwrite user seek intent before it is submitted. Dragging and keyboard
+seeking remain usable, and a seek while playing continues from the new position
+without restarting or pausing playback. Verify actual WPF timeline actions and
+native media/animation state with playback events and renderer completion.
+Release both corrections together, independently retrieve/check the delivered
+package and verify the installed updater result. No postponed-stage work.
+
+Historical1.1.13 requirements follow. The user restarted Helium from Start and confirmed
 folder opening works; native tracing verifies class lookup and handler activation
 now succeed. The user explicitly requests preserving file highlighting too.
 Complete that native selection handoff without taking over Explorer navigation,

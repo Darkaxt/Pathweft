@@ -26,6 +26,7 @@ if($env:PATHWEFT_VERIFY_RENDER_PERF -eq '1'){$start.Environment['PATHWEFT_VERIFY
 if($env:PATHWEFT_VERIFY_OPEN1111 -eq '1'){$start.Environment['PATHWEFT_VERIFY_OPEN1111']='1'}
 if($env:PATHWEFT_VERIFY_FOLDER112 -eq '1'){$start.Environment['PATHWEFT_VERIFY_FOLDER112']='1'}
 if($env:PATHWEFT_VERIFY_MEDIA113 -eq '1'){$start.Environment['PATHWEFT_VERIFY_MEDIA113']='1';$start.Environment['PATHWEFT_MEDIA113_INPUTS']=$env:PATHWEFT_MEDIA113_INPUTS}
+if($env:PATHWEFT_VERIFY_UPDATE114 -eq '1'){$start.Environment['PATHWEFT_VERIFY_UPDATE114']='1';$start.Environment['PATHWEFT_MEDIA113_INPUTS']=$env:PATHWEFT_MEDIA113_INPUTS}
 if($env:PATHWEFT_MEDIA113_CALLER){$start.Environment['PATHWEFT_MEDIA113_CALLER']=$env:PATHWEFT_MEDIA113_CALLER}
 if($Model){$start.Environment['PATHWEFT_VERIFY_MODEL']=$Model}
 if($Archive){$start.Environment['PATHWEFT_VERIFY_ARCHIVE']=$Archive}
