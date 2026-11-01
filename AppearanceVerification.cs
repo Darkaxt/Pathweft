@@ -319,7 +319,8 @@ public partial class MainWindow
             }
             var help=(Button)settings.FindName("SearchHelp");
             Check(help!=null,"Settings provides a deliberate Help entry for search documentation");
-            ((ListBox)settings.FindName("SettingsCategories")).SelectedIndex=5;await Settled();
+            var settingsCategories=(ListBox)settings.FindName("SettingsCategories");
+            settingsCategories.SelectedItem=settingsCategories.Items.Cast<ListBoxItem>().Single(item=>ReferenceEquals(item.Tag,settings.FindName("AboutCard")));await Settled();
             ((IInvokeProvider)new ButtonAutomationPeer(help).GetPattern(PatternInterface.Invoke)).Invoke();await Settled();
             Check(Application.Current.Windows.OfType<HelpWindow>().Any(),"The Settings Help action opens the actual searchable Help window");
             bool closed=false,canceled=false;

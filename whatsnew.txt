@@ -1,6 +1,11 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.11 | 2026-11-01 | File opening and data location
+- Windows file associations work from the normal desktop context after installation and updates. File-open errors appear beside their file in the Message column.
+- Settings > Storage includes Change location to move settings and runtime data with verified copying and automatic restart. Bulk data and runtime scratch use a data drive; Roaming keeps only the startup pointer after relocation.
+- Cancelled and failed archive drags discard their export copies. Accepted external handoffs keep files available for their consumer.
+
 ## 1.1.10 | 2026-11-01 | Responsive 3D interaction
 Camera movement now applies every mouse sample without redrawing the model for
 each one. The F3D fixed-up orbit and pole behavior are preserved, while each
