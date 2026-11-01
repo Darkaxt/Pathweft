@@ -141,6 +141,7 @@ public partial class HelpWindow : Window
         ("Windows integration", new[]
         {
             ("Default folder application", "Settings → Windows integration enables supported filesystem-folder and drive open/explore links. Switching off restores previous handlers still owned by Pathweft. Explicit Explorer launches, virtual Shell locations and Open/Save dialogs remain Windows surfaces; StartAllBack links are not yet supported."),
+            ("Folder routes", "Under Windows integration, enable or disable each route, add or remove rows, then Apply. Directory means filesystem folders, Drive means drive roots, and Folder handles explicit Shell folder-class requests. Open JSON edits folder-routes.json; Reload reads those edits before Apply. When folder integration is off, Apply only saves preferences."),
             ("Win+E", "Enabled separately under Windows integration. A windowless helper opens Pathweft at sign-in and stops when the option is disabled; this leaves the default-folder option unchanged."),
             ("Show in folder", "Pathweft Reveal and its /select command select the requested file. The separate Windows SHOpenFolderAndSelectItems API is unsupported: callers can receive E_ABORT and an opened folder without the requested selection. Keep folder integration off if these callers are essential."),
             ("Right-click a drive or a folder in the sidebar", "Windows' own menu for it: Properties, Eject, Format, BitLocker and what other apps add"),

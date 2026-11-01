@@ -31,6 +31,7 @@ public partial class SettingsWindow : Window
         ApplyTextSize();
         BuildPreviewModuleControls();
         ShowValues();
+        LoadFolderRoutes();
         Activated += (_, _) => {RefreshFolderIntegration();RefreshStorage();};
         // A double-click on a slider's handle puts it back to its default (Settings.cs), as in Frostpane: one
         // setting can be tried out and undone without a reset of them all.
@@ -644,7 +645,7 @@ public partial class SettingsWindow : Window
     void Default_Click(object s, RoutedEventArgs e)
     {
         try { Settings.SetDefaultFileManager(DefaultBox.IsChecked == true); }
-        catch (Exception ex) when (ex is UnauthorizedAccessException or System.Security.SecurityException or System.IO.IOException or InvalidOperationException)
+        catch (Exception ex) when (ex is UnauthorizedAccessException or System.Security.SecurityException or System.IO.IOException or System.IO.InvalidDataException or InvalidOperationException)
         {
             MessageBox.Show(this, ex.Message, "Couldn't change the default file manager");
         }

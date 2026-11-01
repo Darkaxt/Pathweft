@@ -272,6 +272,28 @@
                     AutomationProperties.Name="Restore previous folder handlers" Click="RestoreFolderHandlers_Click">
               <TextBlock Text="Restore previous folder handlers" TextWrapping="Wrap"/>
             </Button>
+            <TextBlock Text="Folder routes" FontWeight="SemiBold" Margin="0,12,0,6"/>
+            <TextBlock Style="{StaticResource Hint}" Text="Choose which folder commands open Pathweft. Apply after editing."/>
+            <ItemsControl x:Name="FolderRouteRows" AutomationProperties.Name="Folder routes">
+              <ItemsControl.ItemTemplate><DataTemplate>
+                <Grid Margin="0,0,0,6">
+                  <Grid.ColumnDefinitions><ColumnDefinition Width="42"/><ColumnDefinition Width="110"/><ColumnDefinition Width="*"/><ColumnDefinition Width="34"/></Grid.ColumnDefinitions>
+                  <CheckBox x:Name="RouteEnabled" IsChecked="{Binding Enabled}" VerticalAlignment="Center" AutomationProperties.Name="Enable folder route"/>
+                  <ComboBox x:Name="RouteClass" Grid.Column="1" Style="{StaticResource PreviewClipCombo}" Margin="0,0,6,0" ItemsSource="{Binding FolderClasses, RelativeSource={RelativeSource AncestorType=Window}}" SelectedItem="{Binding Class}" AutomationProperties.Name="Folder class"/>
+                  <Border Grid.Column="2" Background="{DynamicResource Palette.14FFFFFF}" BorderBrush="{DynamicResource Palette.2EFFFFFF}" BorderThickness="1" CornerRadius="5">
+                    <TextBox x:Name="RouteVerb" Style="{StaticResource Bare}" CaretBrush="{DynamicResource Palette.E8EEF6}" MinWidth="90" Padding="8,5" Text="{Binding Verb, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Windows verb"/>
+                  </Border>
+                  <Button x:Name="RemoveRoute" Grid.Column="3" Style="{StaticResource Ghost}" Padding="7,5" Content="&#xE74D;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" ToolTip="Remove route" AutomationProperties.Name="Remove folder route" Click="RemoveFolderRoute_Click"/>
+                </Grid>
+              </DataTemplate></ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <WrapPanel Margin="0,2,0,0">
+              <Button x:Name="AddFolderRoute" Content="Add route" Style="{StaticResource Tab}" Click="AddFolderRoute_Click"/>
+              <Button x:Name="ApplyFolderRoutes" Content="Apply" Style="{StaticResource Tab}" Click="ApplyFolderRoutes_Click"/>
+              <Button x:Name="ReloadFolderRoutes" Content="Reload" Style="{StaticResource Tab}" Click="ReloadFolderRoutes_Click"/>
+              <Button x:Name="OpenFolderRoutesJson" Content="Open JSON" Style="{StaticResource Tab}" Click="OpenFolderRoutesJson_Click"/>
+            </WrapPanel>
+            <TextBlock x:Name="FolderRoutesStatus" Style="{StaticResource Hint}" Margin="0,6,0,0" AutomationProperties.LiveSetting="Polite"/>
             <TextBlock Text="Keyboard" FontWeight="SemiBold" Margin="0,12,0,6"/>
             <CheckBox x:Name="WinEBox" Content="Win+E opens Pathweft" Click="WinE_Click"/>
             <TextBlock Style="{StaticResource Hint}" Text="Works independently of folder integration. Turning it off returns Win+E to Explorer."/>

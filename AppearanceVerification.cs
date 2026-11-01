@@ -24,7 +24,7 @@ public partial class MainWindow
         try
         {
             if(Environment.GetEnvironmentVariable("PATHWEFT_VERIFY_FOLDER112")=="1")
-            {VerifyFolderRouting112(Check);result=0;return;}
+            {await VerifyFolderRouting112(root,Check);result=0;return;}
             if(Environment.GetEnvironmentVariable("PATHWEFT_VERIFY_OPEN1111")=="1")
             {await VerifyOpen1111(root,Check);result=0;return;}
             if(Environment.GetEnvironmentVariable("PATHWEFT_VERIFY_ROUND118")=="1")

@@ -1,9 +1,23 @@
 # Implementation and reconciliation
 
-Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.29, 2026-11-01,
+Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.30, 2026-11-01,
 including the user-authorized continued comparison requirement TRANSFER-07.
 
-Current S8 status: ACTIVE for SHELL-02, already authorized by the user's go ahead.
+Current S8 status: ACTIVE for SHELL-02/03. The user extends the pending update
+with JSON-backed dynamic folder verbs and a Settings editor. Existing fixed
+registration/source checks pass; b3f583c's unpublished1.1.12 package is superseded.
+Dynamic configuration/editor, applied snapshot recovery, exact failed-apply
+rollback, malformed JSON handling and version1..4 migration pass the complete
+hidden feature check (PID113288). Actual row actions and dark/light100/150%
+layouts pass; four screenshots are reviewed. The native router is unchanged.
+Closure assessment: configuration owns desired routes; recovery owns applied
+routes, using the existing native registration lifecycle. No speculative plugin
+framework or additional state owner, and no required consolidation finding.
+Remaining blockers: final1.1.12 package/release/retrieval,
+installed readback and user-controlled Helium action. One ACTIVE stage; no
+tracked deferral or postponed-stage implementation.
+
+SHELL-02 was already authorized by the user's go ahead.
 Implement the missing explicit Folder/explore route using the existing opt-in
 native handler; verify migration/restoration, the exact shipping Folder/explore
 mapping, hidden32/64-bit COM/browser routing and a user-controlled final Helium

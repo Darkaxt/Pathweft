@@ -3,7 +3,11 @@
 Read `docs/SPECIFICATION.md` first. It is authoritative; the plan and this file
 do not change its requirements or the user's standing instructions.
 
-Current S8 ACTIVE: SHELL-02/spec0.29. Add explicit Folder/explore to the existing
+Current S8 ACTIVE: SHELL-02/03/spec0.30. The user extends the unpublished update
+with JSON-backed dynamic folder verbs and a themed Windows-integration editor.
+Do not publish the b3f583c package. Complete route configuration/editor, applied
+snapshot recovery, isolated/native/hidden UI checks, then one final1.1.12 release.
+Add explicit Folder/explore to the existing
 opt-in handler, preserve Explorer/virtual behavior and intact prior opt-in
 migration/restoration. Source registration and hidden native32/64-bit COM/browser
 checks pass. Host ShellExecute fixtures escaped SW_HIDE and were stopped; do not

@@ -2,6 +2,7 @@
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
 ## 1.1.12 | 2026-11-01 | Browser folder links
+- Windows integration now includes a Folder routes editor: enable or disable routes, add verbs, and edit or reload folder-routes.json without rebuilding Pathweft.
 - Open downloads folder requests that explicitly use Windows' Folder/explore route now use the existing opt-in Pathweft folder integration. Existing Explorer navigation and virtual folders keep their native behavior.
 - Updates extend an intact enabled registration; disabling integration restores the previous Folder/explore command and delegate.
 

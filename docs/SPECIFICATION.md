@@ -1,10 +1,28 @@
 # Pathweft specification
 
-Version 0.29 - 2026-11-01. Owner: Darkaxt.
+Version 0.30 - 2026-11-01. Owner: Darkaxt.
 
 This is the authoritative specification. The derived plan must preserve every
 requirement and acceptance criterion. Material scope changes require explicit
 user direction recorded here; ordinary implementation choices need no new gate.
+
+SHELL-03 (S8 ACTIVE, user-authorized extension before1.1.12 publication): store
+folder-class verb routes in folder-routes.json inside the selected settings
+directory. Settings > Windows integration includes a themed row editor with
+per-route enable checkboxes, class/verb fields, Add/remove and Apply controls;
+support editing/reloading the JSON without recompiling. Classes are the existing
+filesystem-folder classes Directory, Drive and Folder; verbs are editable Windows
+verb identifiers. Seed the existing routes, including Folder/explore. Master
+folder integration remains opt-in. Applying disabled/removed routes restores
+their prior values; recovery stores the applied route snapshot so later JSON
+edits cannot prevent disable/uninstall. Preserve later-manager changes. Validate
+duplicates/invalid identifiers and malformed JSON before native changes; keep
+existing configuration and binding when applying fails. Verify actual editor
+actions, persistence/reload, active/off behavior, old registration migration and
+restoration after removing a route, using isolated registry and hidden100/150%
+dark/light layouts. Reuse the current settings design; no additional approval
+gate or separate release. The unpublished b3f583c package is superseded; publish
+one final1.1.12 only after SHELL-02/03 and their integrated gates pass.
 
 SHELL-02 (S8 ACTIVE, already authorized): cover the explicit Folder-class explore
 request used by Chromium/Helium's Open downloads folder action through the

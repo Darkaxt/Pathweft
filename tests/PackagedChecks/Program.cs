@@ -25,6 +25,17 @@ sealed class PackageProbe
         var values=(IEnumerable<(string Key,string Name,string Value)>)integration.GetMethod("Values",Flags).Invoke(null,null);
         var folder=values.Where(v=>v.Key==@"Software\Classes\Folder\shell\explore\command").ToArray();
         Check(folder.Length==2&&folder.Any(v=>v.Name==""&&v.Value.Contains("%1"))&&folder.Any(v=>v.Name=="DelegateExecute"&&v.Value=="{CF5ABF8B-73EA-4DF9-A991-C163D76FE2A2}"),"Delivered opt-in registration covers the explicit Folder/explore command and native delegate");
+        var routes=Product.GetType("FileExplorer.FolderRoutes",true);
+        string path=(string)routes.GetProperty("FilePath",Flags).GetValue(null);
+        Check(path.StartsWith(root,StringComparison.OrdinalIgnoreCase),"Delivered route configuration is bound to the isolated selected profile");
+        bool existed=File.Exists(path);byte[] original=existed?File.ReadAllBytes(path):null;
+        try
+        {
+            File.WriteAllText(path,"[{\"Class\":\"Folder\",\"Verb\":\"opennewwindow\",\"Enabled\":true},{\"Class\":\"Folder\",\"Verb\":\"explore\",\"Enabled\":false}]");
+            var custom=((IEnumerable<(string Key,string Name,string Value)>)integration.GetMethod("Values",Flags).Invoke(null,null)).ToArray();
+            Check(custom.Any(v=>v.Key==@"Software\Classes\Folder\shell\opennewwindow\command"&&v.Name=="DelegateExecute")&&!custom.Any(v=>v.Key==@"Software\Classes\Folder\shell\explore\command"),"Delivered native mappings follow added and disabled JSON verbs without recompilation");
+        }
+        finally{if(existed)File.WriteAllBytes(path,original);else File.Delete(path);}
     }
     static string root,known;
     readonly List<object> checks=new();
@@ -276,6 +287,7 @@ sealed class PackageProbe
             var categories=(ListBox)settings.FindName("SettingsCategories");
             var cards=(StackPanel)settings.FindName("SettingsCards");
             Check(categories.Items.Count==7&&settings.Width>=740&&settings.FindName("ChangeDataLocation") is Button,"Delivered Settings includes Storage and its Change location action with the preserved content width");
+            Check(settings.FindName("FolderRouteRows") is ItemsControl routesEditor&&routesEditor.Items.Count==5&&new[]{"AddFolderRoute","ApplyFolderRoutes","ReloadFolderRoutes","OpenFolderRoutesJson"}.All(name=>settings.FindName(name) is Button),"Delivered Windows integration includes the persisted route editor and Add/Apply/Reload/Open JSON actions");
             foreach(ListBoxItem item in categories.Items)
             {
                 categories.SelectedItem=item;

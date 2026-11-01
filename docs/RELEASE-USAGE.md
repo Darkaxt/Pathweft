@@ -14,6 +14,14 @@ column when empty. Archive working-copy launch failures follow the same rule.
 Folder routing is unchecked during installation. Settings > Windows integration
 owns folder routing, its restoration action, independent Win+E, and taskbar
 search. Navigation within an existing Explorer window stays in Explorer.
+Folder routes in that section can be enabled, disabled, added or removed, then
+applied. Open JSON edits `folder-routes.json` in the selected settings directory;
+Reload reads external edits and Apply updates active handlers. When integration
+is off, Apply only saves preferences. Classes are Directory (filesystem folders),
+Drive (drive roots), and Folder (explicit Shell folder-class requests); verbs
+include open, explore and opennewwindow. The same native handler routes each
+enabled command; the editor does not change file associations. Recovery retains
+the applied snapshot even if the JSON is later edited or a route is removed.
 The native 32/64-bit folder handler includes explicit Folder/explore requests,
 such as Chromium/Helium's Open downloads folder action, under the same opt-in.
 It preserves a calling Shell browser's site;
