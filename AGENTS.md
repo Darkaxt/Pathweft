@@ -17,6 +17,11 @@ scratch: D:/Temp/pathweft-s8-delivery; register before creation and clean spent
 outputs. Root cleanup0a36020d41ddd9f62cc84f5ba802568e is applied without residuals.
 Preserve dist/1.1.15 and private evidence: .local/evidence/2026-11-02-preview115.
 
+S12 Tresorit capability investigation is planned, NOT STARTED (spec0.36,
+TRES-01..04). Assess supported API/client contracts before bounded REA and a
+verified implementation proposal. This documentation request does not activate
+an integration, change provider permissions or authorize cloud deletion.
+
 Previous S8 COMPLETE through installed1.1.14 for UPDATE-01/PREVIEW-16/spec0.34.
 The user updated/reopened; fresh desktop-context verification on2026-11-02 passes
 all871 installed member hashes, reopened main132612/helper130388 ownership,

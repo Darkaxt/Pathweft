@@ -1,6 +1,6 @@
 # Implementation and reconciliation
 
-Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.35, 2026-11-02,
+Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.36, 2026-11-02,
 including the user-authorized continued comparison requirement TRANSFER-07.
 
 Current S8 status: COMPLETE through installed1.1.15 for PREVIEW-17/18.
@@ -394,7 +394,7 @@ plan neither authorizes itself nor adds approval checkpoints.
 | S5 - REA-driven transfer improvements | COMPLETE | TRANSFER-01..07, archive/caller and WIDGET-02 revalidation, affected CORE-02/03, LIFE-01/DELIVERY-03 | Initial S5 criteria passed at e478986; user extended comparison/implementation | Finite findings inventory resolved; source/target handle reuse, copy-time hashing, metadata/EOF reductions, storage decisions, matched profiles, actual callers, adverse/preservation/cleanup and Release checks pass; see [evidence](verification/2026-10-29-s5.md) |
 | S6 - Native StartAllBack search | BLOCKED | SAB-01..06, affected SEARCH/CORE/LIFE/DELIVERY criteria | Parked by explicit user-directed S8-first execution; resume only after reprioritization is lifted | Investigation only; no working patch or complete SAB criterion. All native groups/handoff/provider/lifecycle/routing criteria remain open. |
 | S7 - Everything filesystem search and Outlook indexing scope | NOT STARTED | EVERYWHERE-01..05, affected SEARCH/CORE/LIFE/SHELL criteria | S6 COMPLETE; finite consumer/semantics/scope inventory before migration | Native Everything file results with selected filesystem roots excluded from Windows indexing; WSearch/Outlook retained, explicit Windows-managed exceptions, local/mail/reboot/recovery verification |
-| S8 - Core integration and delivery | ACTIVE | SHELL-02/03, reported sidebar label correction; historical CORE-16/17, SHELL-01, CORE-03..15, PREVIEW-06..14, JUMP-03 research and DELIVERY-01..03 | Normal1.1.12 published/retrieved/installed; SHELL-03 passes. Restarted real Helium caller opens Pathweft successfully and user confirms. | Explicit file highlighting, integrated label correction, affected verification and final delivery remain. Native selection still returns E_ABORT. No tracked deferral. |
+| S8 - Core integration and delivery | COMPLETE | Authorized core integration and corrections through PREVIEW-17/18, including SHELL-02/03 and DELIVERY-01..03 | Normal1.1.15 at85de43e published, independently retrieved and installed | Current source/native/app workflows, all878 installed members, main/helper readiness and22 desktop route values pass; see current checkpoint and preview115 evidence. No current blocker or deferral. |
 
 ENV-01..04 belong to the current setup deliverable, not an artificial product
 implementation stage. See [setup evidence](verification/2026-10-28-setup.md).
@@ -431,10 +431,12 @@ Post-release stage addition authorized 2026-10-31:
 | --- | --- | --- | --- |
 | S9 - Context menu reorganization | NOT STARTED | MENU-01..02, affected CORE-03/04 and archive/file actions | Inventory available actions and eligibility, group/prioritize existing commands, preserve native-menu choice and shortcuts, verify real commands/keyboard/layout/themes and final delivery. Begin only after the active S8 correction closes; S6/S7 remain parked under the current priority. No menu implementation is included in v1.1.1. |
 | S11 - Native pinned/recent folder Jump Lists | NOT STARTED | JUMP-01..02, affected CORE-01/02 and LIFE/DELIVERY | Native expandable Start-menu/taskbar folder destinations with pin/unpin/recent/removal/privacy and direct Pathweft cold/warm launches; useful tasks, stable application identity and update/uninstall preservation. Full folder-destination behavior must pass; Opus's Tasks-only example is not proof. Plan only during S8; no S6/Sandbox work. Stage number follows the user's explicit request. |
+| S12 - Tresorit capability investigation | NOT STARTED | TRES-01..04 | Inventory mounted-drive gaps; assess supported API/SDK/client commands first, then bounded version-qualified REA where needed. Deliver a verified capability matrix, integration decision and narrow implementation proposal. Plan only: no client configuration, cloud mutation or integration implementation now. |
 
 | Requirements | Owner | Later boundary |
 | --- | --- | --- |
 | ENV-01..04 | Setup | Committed/remote document and head readback at setup delivery |
+| TRES-01..04 | S12 | Evidence-backed Tresorit investigation and implementation proposal; execution remains NOT STARTED |
 | CORE-01 | S1 | Installer/update isolation S8 |
 | CORE-02 | S1, affected actions S2/S4/S5/S6/S7 | Integrated package S8 |
 | CORE-03 | Each changed interface in S1..S7 | Full changed-interface review S8 |

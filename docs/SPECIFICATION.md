@@ -1,6 +1,6 @@
 # Pathweft specification
 
-Version 0.35 - 2026-11-02. Owner: Darkaxt.
+Version 0.36 - 2026-11-02. Owner: Darkaxt.
 
 This is the authoritative specification. The derived plan must preserve every
 requirement and acceptance criterion. Material scope changes require explicit
@@ -876,6 +876,20 @@ as part of recording this plan.
 | JUMP-02 | Folder destinations launch Pathweft directly with the correct Unicode/quoted path in cold and running-instance states, independently of the optional default-folder setting. Qualify virtual/offline destinations explicitly and preserve existing open/reveal semantics. Add applicable tasks through existing application actions, not a second manager. Verify actual native Jump List contents and user pin/unpin/open/remove behavior, restart/update/uninstall ownership and final release delivery. StartAllBack is a caller-compatibility check for this native feature, not permission to resume S6 or restart Sandbox. |
 
 Native reference: [Microsoft WPF JumpList](https://learn.microsoft.com/en-us/dotnet/api/system.windows.shell.jumplist).
+
+### Tresorit capability investigation (S12)
+
+The user's 2026-11-02 request adds S12 as planned work, NOT STARTED.
+Recording this stage does not activate a client integration, change Tresorit
+configuration or authorize deleting cloud content. The reported main-folder
+deletion restriction is a provider capability boundary, not an NTFS ACL fix.
+
+| ID | Requirement and acceptance |
+| --- | --- |
+| TRES-01 | Inventory concrete gaps in the mounted-drive integration: main-folder versus child operations, deletion/recovery semantics, ownership/roles, actionable errors, trustworthy metadata/quota and cloud state. Distinguish verified client behavior, provider restrictions and possible improvements; do not promise unsupported capabilities. |
+| TRES-02 | Assess supported public APIs/SDKs and documented client commands first. Verify actual content-operation coverage versus administration/audit-only surfaces, account/tier availability, authentication/scopes, limits and terms. Produce a capability matrix with evidence; availability of a suitable API is an open question. |
+| TRES-03 | Where documented surfaces are insufficient, use the installed REA workflow and its storage/Coordinator guidance to inspect the exact signed installed client/version. Examine command/URI/Shell/IPC contracts before internal hooks. Qualify any candidate with bounded runtime evidence; record version coupling, maintenance and unsupported operations. Static analysis alone does not establish feasibility. No automatic Sandbox setup or credential extraction. |
+| TRES-04 | Deliver an evidence-backed integration decision and a narrow end-to-end implementation proposal with acceptance, lifecycle, recovery and release criteria. Preserve provider ownership, consent and permanent-delete semantics; never bypass permissions or silently substitute permanent deletion. Use disposable fixtures for later mutation tests and preserve existing cloud data. Any implementation remains separate from this plan-only request. |
 
 ### Lifecycle, shell integration and final delivery
 
