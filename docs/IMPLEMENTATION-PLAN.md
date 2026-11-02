@@ -3,16 +3,19 @@
 Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.35, 2026-11-02,
 including the user-authorized continued comparison requirement TRANSFER-07.
 
-Current S8 status: ACTIVE for PREVIEW-17/18, already authorized. Implement the
-complete smart GLB/glTF timeline and static HTML viewer under one stage, verify
-actual native/rendered behavior and security/lifecycle boundaries, reconcile,
-then commit and release both together with independent delivery/installed checks.
+Current S8 status: COMPLETE through installed1.1.15 for PREVIEW-17/18.
+Both features are implemented and released together;
+normal publication and independently downloaded native/app workflows pass at
+85de43ec3b9385b11e803409dc898ed948e79ede. No stage is ACTIVE.
 Both complete features pass the real native source workflow (PID143240), including
 SNES playback/seek/clip/full-range and actual local/archive HTML, source fallback,
 zero endpoint connections, boundaries and teardown. See
-[acceptance](verification/2026-11-02-preview115.md). Current advancement blockers:
-final package qualification, normal release/retrieval and installed updater check.
-No tracked deferrals.
+[acceptance](verification/2026-11-02-preview115.md). Package qualification,
+normal release/retrieval and the user-controlled installed update are verified,
+including actual local/archive fonts and matching source archives. All878
+installed members, restarted main/helper ownership/readiness and22 real desktop
+route values pass. Scratch cleanup0a36020d41ddd9f62cc84f5ba802568e is applied
+without residuals. No current advancement blocker or tracked deferral remains.
 Use D:/Temp/pathweft-s8-delivery for native/browser/compiler I/O and clean spent
 output through transactional-cleanup. Retain required private evidence in
 .local/evidence/2026-11-02-preview115. No Sandbox or desktop takeover.

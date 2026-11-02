@@ -6,8 +6,12 @@ This is the authoritative specification. The derived plan must preserve every
 requirement and acceptance criterion. Material scope changes require explicit
 user direction recorded here; ordinary implementation choices need no new gate.
 
-S8 is ACTIVE for the user's authorized GLB/glTF smart timeline and isolated HTML
-viewer, released together after integrated qualification. No other stage is ACTIVE.
+S8 is COMPLETE for the authorized GLB/glTF smart timeline and isolated HTML
+viewer. Both features, normal1.1.15 publication and independent delivered-package
+verification pass at85de43e. The user updated/reopened; all878 installed members,
+main/helper restart/readiness and22 actual desktop route values pass. Spent
+scratch cleanup is applied without residuals. No stage is ACTIVE and no current
+S8 blocker or tracked deferral remains.
 
 PREVIEW-17: default GLB/glTF timelines omit only a trailing held pose using actual
 animation samples and scale-aware movement tolerance. Ignore exporter drift without
