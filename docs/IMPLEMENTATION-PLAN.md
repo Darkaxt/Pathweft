@@ -3,16 +3,21 @@
 Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.37, 2026-11-02,
 including the user-authorized continued comparison requirement TRANSFER-07.
 
-Current S8 status: ACTIVE for PREVIEW-19/spec0.37. The mapped-drive HTML
+Current S8 status: COMPLETE through installed1.1.16 for PREVIEW-19/spec0.37.
+Normal release source35f01f6, six assets and matching sources pass. Independent
+delivered native/app workflows PID149196 pass, as do all878 installed members,
+restarted main134568/helper139436 readiness and22 actual desktop route values.
+The user confirms the reported file now renders. All task scratch is removed;
+no stage is ACTIVE and no current S8 blocker/tracked deferral remains.
+See [evidence](verification/2026-11-02-html116.md). S12 is NOT STARTED and plan-only.
+
+The mapped-drive HTML
 regression is confirmed by metadata-only opened handles: a drive-letter path
 resolves to its legitimate UNC share and fails literal path equality. Resolve
 only the drive/share root, preserve checked remaining path components and all
 static-resource restrictions. The complete source workflow passes in hidden
 native PID151332: provider mapped/extended paths, local/archive assets, source
-preservation, escape/junction rejection and browser teardown. Remaining internal
-delivery blocker: normal1.1.16 package/publication/retrieval verification.
-No tracked deferral. See [evidence](verification/2026-11-02-html116.md).
-S12 remains NOT STARTED and plan-only.
+preservation, escape/junction rejection and browser teardown.
 
 Previous S8 status: COMPLETE through installed1.1.15 for PREVIEW-17/18.
 Both features are implemented and released together;
@@ -405,7 +410,7 @@ plan neither authorizes itself nor adds approval checkpoints.
 | S5 - REA-driven transfer improvements | COMPLETE | TRANSFER-01..07, archive/caller and WIDGET-02 revalidation, affected CORE-02/03, LIFE-01/DELIVERY-03 | Initial S5 criteria passed at e478986; user extended comparison/implementation | Finite findings inventory resolved; source/target handle reuse, copy-time hashing, metadata/EOF reductions, storage decisions, matched profiles, actual callers, adverse/preservation/cleanup and Release checks pass; see [evidence](verification/2026-10-29-s5.md) |
 | S6 - Native StartAllBack search | BLOCKED | SAB-01..06, affected SEARCH/CORE/LIFE/DELIVERY criteria | Parked by explicit user-directed S8-first execution; resume only after reprioritization is lifted | Investigation only; no working patch or complete SAB criterion. All native groups/handoff/provider/lifecycle/routing criteria remain open. |
 | S7 - Everything filesystem search and Outlook indexing scope | NOT STARTED | EVERYWHERE-01..05, affected SEARCH/CORE/LIFE/SHELL criteria | S6 COMPLETE; finite consumer/semantics/scope inventory before migration | Native Everything file results with selected filesystem roots excluded from Windows indexing; WSearch/Outlook retained, explicit Windows-managed exceptions, local/mail/reboot/recovery verification |
-| S8 - Core integration and delivery | ACTIVE | PREVIEW-19 mapped/UNC identity correction; prior criteria through PREVIEW-17/18 and DELIVERY-01..03 | Installed1.1.15 preserved; provider alias root cause confirmed read-only | Source workflow PID151332 passes mapped/extended/local/archive preview, boundaries, preservation and cleanup. Internal delivery blocker: final1.1.16 package/publication/retrieval verification. No direct synthetic provider UNC access claim or tracked deferral. |
+| S8 - Core integration and delivery | COMPLETE | PREVIEW-19 mapped/UNC identity correction; prior criteria through PREVIEW-17/18 and DELIVERY-01..03 | Normal1.1.16 at35f01f6 published, independently retrieved and installed | Source workflow PID151332, delivered native/app PID149196, all878 installed members, helper readiness and22 desktop route values pass. User confirms reported preview. Scratch removed; no current blocker/deferral or direct synthetic-UNC access claim. |
 
 ENV-01..04 belong to the current setup deliverable, not an artificial product
 implementation stage. See [setup evidence](verification/2026-10-28-setup.md).
@@ -436,7 +441,8 @@ final character within the actual button at 440/660 DIP and both text scales.
 WIDGET-01/02 and CORE-03 acceptance require these workflows and final 1.1.2
 delivery verification; no required deferrals or new infrastructure are added.
 
-Post-release stage addition authorized 2026-10-31:
+Post-release stage additions authorized by the user (S9/S11 on2026-10-31,
+S12 on2026-11-02):
 
 | Stage | Status | Requirements | Acceptance / execution boundary |
 | --- | --- | --- | --- |

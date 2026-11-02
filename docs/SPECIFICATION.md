@@ -6,16 +6,21 @@ This is the authoritative specification. The derived plan must preserve every
 requirement and acceptance criterion. Material scope changes require explicit
 user direction recorded here; ordinary implementation choices need no new gate.
 
-S8 is ACTIVE for PREVIEW-19: correct static HTML preview on legitimate mapped
-drive/UNC aliases. Opened file identity must match the canonical drive/share
+S8 is COMPLETE through installed1.1.16 for PREVIEW-19. Normal publication at
+35f01f6, independently downloaded native/app workflows, matching sources and
+all878 installed members pass. Main/helper restart/readiness and22 actual
+desktop route values pass; the user confirms the reported HTML now renders.
+Scratch cleanup is applied without residuals. No stage is ACTIVE and no current
+S8 blocker or tracked deferral remains. S12 remains NOT STARTED and plan-only.
+
+PREVIEW-19: correct static HTML preview on legitimate mapped-drive/UNC aliases.
+Opened file identity must match the canonical drive/share
 root plus the checked relative path; do not authorize a substituted document
 directory or relax reparse, traversal, script or network restrictions. Verify
 the reported provider-backed file read-only, extended mapped-path access, normal local
 and archived assets, true escape rejection and cleanup. Complete normal1.1.16
 publication and independent package verification; preserve the user's update
-control. S12 remains NOT STARTED. Source acceptance passes in the real hidden
-browser workflow; final package/publication/retrieval verification remains an
-internal delivery blocker. No tracked deferral.
+control and verify the actual installed update.
 Tresorit's normalized UNC handle name is synthetic: direct reopening of that
 name returns ERROR_INVALID_NAME. Qualify its canonical identity through the
 working mapped and extended paths; do not claim direct provider UNC access.
