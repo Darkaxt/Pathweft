@@ -1,10 +1,10 @@
 {
-  "schema": 1,
+  "schema": 2,
   "donor": "https://github.com/Darkaxt/vlc",
   "donorTag": "redesign-v1.1.1",
   "donorCommit": "b84e7326e3d3e554120f3866fbe1c1acfa5ec6cc",
   "runtime": {
-    "libmpv-2.dll": "1a041ddf907e806c462ba3df7ca9b2e213aa6cfcc28647d8afea43538a37e806",
+    "libmpv-2.dll": "31bd4b46856e93a70c2b87df32d608be59b683f963b4841d984e11a5627a00d5",
     "libspirv-cross-c-shared.dll": "4a755f3b9ce13bb0290028bb9ac4be4e59e3dabce15ed15571d2370706a0b746"
   },
   "mpvCommit": "e471496c56f0f49c133bd88b50aed62b845f1909",
@@ -33,10 +33,6 @@
     {
       "name": "freetype-2.14.3.tar.xz",
       "sha256": "36bc4f1cc413335368ee656c42afca65c5a3987e8768cc28cf11ba775e785a5f"
-    },
-    {
-      "name": "fribidi-1.0.16.tar.xz",
-      "sha256": "1b1cde5b235d40479e91be2f0e88a309e3214c8ab470ec8a2744d82a5a9ea05c"
     },
     {
       "name": "glslang-168d452a4f460d24b588fed08477a81c44ee27a1.tar.gz",
@@ -81,7 +77,19 @@
     {
       "name": "zlib-1.3.2.tar.xz",
       "sha256": "d7a0654783a4da529d1bb793b7ad9c3318020af77667bcae35f95d0e42a792f3"
+    },
+    {
+      "name": "fribidi-1.0.18.tar.xz",
+      "sha256": "1de5e8073d035388b71d0b2d452b1da1f8caeea8a7702997b401fe1b6250727f"
     }
   ],
-  "output": "gpu-next/D3D11/libplacebo, BT.709 sRGB SDR; no native DV signaling or full P7 FEL claim"
+  "output": "gpu-next/D3D11/libplacebo, BT.709 sRGB SDR; no native DV signaling or full P7 FEL claim",
+  "cacheRevision": "e471496c56-pathweft.2",
+  "refresh": {
+    "fribidi": "1.0.18",
+    "recipe": "scripts/Rebuild-MpvFriBidi.py",
+    "recipeSha256": "4a3a06c4d662543762c83fa225d4c22d2af34c3a5612fc40286e87fafcb193b8",
+    "linkMapSha256": "b40327423d880b879536073217e4deb36f7bb4182c8d6d96905b3a16f98eed69",
+    "baseBuildInfoSha256": "e04a083d707e9c78a702d602aa855506ac5e8e21e2f9856c706e938ec4eb79fc"
+  }
 }

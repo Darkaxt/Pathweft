@@ -3,7 +3,24 @@
 Read `docs/SPECIFICATION.md` first. It is authoritative; the plan and this file
 do not change its requirements or the user's standing instructions.
 
-Current S8 COMPLETE through installed1.1.16 for PREVIEW-19/spec0.37.
+Current S8 ACTIVE for PREVIEW-20/spec0.38, only the user-approved Marked/FriBidi
+fixes. Fresh source PID194432 passes both actual workflows with the .2 runtime:
+editor50k Unicode regression/sandbox/formatting, RTL subtitles, SDR/audio and
+paused/playing DV P5/P8.1/P8.4 seeks/teardown. Paired native color captures match.
+Native173/3ff9a892cf4c49a4a7c315c714adf482 passes exact new FriBidi link/map,
+173 unchanged borrowed archives, group-empty/mount release and no OOM. Cache
+D:/BuildCache/Pathweft/mpv/e471496c56-pathweft.2 retains the qualified31bd4b46 DLL
+and full source/notices/provenance; .1 and the dirty donor checkout are preserved.
+Native task output is already removed through11096c40d939518f5bca3f733e72f3c2.
+Remaining advancement blockers: normal1.1.17 package/native/app checks, normal
+publication/independent retrieval, user-controlled installed readback and final
+cleanup. No tracked deferral. S12 remains NOT STARTED; no other ACTIVE stage.
+Audit .local/evidence/2026-11-02-deps117; see docs/verification/2026-11-02-deps117.md.
+Root cleanup b13e925a7126f7801d5a0d4a05b8d288 remains open/registered. No desktop
+takeover, Sandbox, donor edits or other dependency candidates. Preserve user
+update control. Next: source commit, final package and delivery qualification.
+
+Previous S8 COMPLETE through installed1.1.16 for PREVIEW-19/spec0.37.
 Normal release35f01f6, six assets, matching sources and independent delivered
 native/app workflows PID149196 pass. Source151332 passes provider mapped/extended
 and local/archive HTML with boundaries/preservation/cleanup intact. The user

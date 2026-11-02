@@ -1,6 +1,10 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.17 | 2026-11-02 | Markdown and subtitle maintenance
+- Markdown editor previews stay responsive with malformed links containing long runs of Unicode whitespace.
+- Updated the subtitle bidirectional-text library for robustness and isolate-heavy text, preserving the existing media codecs and Dolby Vision-to-SDR rendering.
+
 ## 1.1.16 | 2026-11-02 | HTML previews on mapped drives
 - HTML preview recognizes mapped-drive and network-share aliases, including Tresorit Drive, while preserving document-folder boundaries and offline static rendering.
 

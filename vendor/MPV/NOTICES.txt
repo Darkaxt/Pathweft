@@ -1,17 +1,23 @@
 Pathweft's media preview uses selected libmpv client API/native-window integration
-with the runtime built from Darkaxt/vlc tag redesign-v1.1.1, commit
+with the source baseline from Darkaxt/vlc tag redesign-v1.1.1, commit
 b84e7326e3d3e554120f3866fbe1c1acfa5ec6cc. The native-window gpu-next approach is
 also used by Darkaxt/NuvioDesktopDV. No Qt/Kotlin player interface is imported.
+Pathweft's e471496c56-pathweft.2 rebuild replaces static FriBidi1.0.16 with1.0.18,
+retaining the mpv/FFmpeg/libplacebo source revisions and WASAPI session patch.
 
 mpv contributors: GPL-2.0-or-later; the linked FFmpeg build is GPL/version3.
 libplacebo and every linked dependency retain their original terms. Complete
 original selected notices are distributed in MPV/licenses, with their verified
 source archive identities in its manifest. See runtime-manifest.json and the
-donor's MPV-BUILDINFO.json for exact revisions, build recipes and native hashes.
+shipped MPV-BUILDINFO.json for exact revisions, build recipes and native hashes.
 
 The matching dependency-source release includes full pinned native sources,
 the donor's build recipe, WASAPI session patch, SDK contrib recipes and runtime
-sources. Reproduce/import using scripts/Prepare-MpvDependency.py. Compatible
+sources. Prepare the unchanged donor baseline with scripts/Prepare-MpvDependency.py.
+The narrow refresh uses scripts/Rebuild-MpvFriBidi.py inside the original pinned
+toolchain through the installed WSL Coordinator gate and isolated output; import
+with scripts/Import-MpvFriBidi.py. Corresponding sources include the exact refresh
+recipe, archive pins, cross file, native input hashes and link map. Compatible
 replacement shared libraries are permitted; Pathweft does not signature-lock
 the native runtime. Do not omit original notices or corresponding source.
 

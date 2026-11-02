@@ -183,6 +183,11 @@ public sealed class EditorWindow : Window
     readonly TaskCompletionSource browserStopped=new(TaskCreationOptions.RunContinuationsAsynchronously);
     internal static Task AppearanceReadyForVerification=>instance.appearanceReady.Task;
     internal static Task BrowserStoppedForVerification=>instance.browserStopped.Task;
+    internal static async Task VerifyDependency117(string output,Action<bool,string> check)
+    {
+        await instance.appearanceReady.Task;await instance.documentReady.Task;
+        await Dependency117Checks.Editor(instance.web.CoreWebView2,output,check);
+    }
     internal static async Task CaptureForVerification(string path,bool light)
     {
         await instance.appearanceReady.Task;

@@ -349,6 +349,7 @@ sealed class PackageProbe
             var archiveTree=target.Content as TreeView;
             Check((string)Get(session,"State")=="ready"&&archiveTree!=null&&archiveTree.Items.OfType<TreeViewItem>().Any(),"Delivered archive preview is a native themed tree rather than the old flat text dump");
             await VerifyMedia(target,session);
+            await VerifyEditor117();
             await VerifyPreview115(target,session);
 
             string model=Path.Combine(root,"triangle.glb");WriteTriangle(model);
@@ -470,6 +471,40 @@ sealed class PackageProbe
         }
         finally{Call(type,previewSession,"Clear");await (Task)Call(type,null,"DrainAsync");presentation.RootVisual=null;}
     }
+    async Task VerifyEditor117()
+    {
+        string file=Path.Combine(root,"dependency117.md");File.WriteAllText(file,Dependency117Checks.Markdown);
+        var editorType=Type("EditorWindow");var editor=(Window)Activator.CreateInstance(editorType,true);
+        editor.ShowActivated=false;editor.ShowInTaskbar=false;editor.WindowStartupLocation=WindowStartupLocation.Manual;
+        editor.Left=SystemParameters.VirtualScreenLeft+SystemParameters.VirtualScreenWidth+8192;editor.Top=0;
+        editor.SourceInitialized+=(_,_)=>{
+            var handle=new System.Windows.Interop.WindowInteropHelper(editor).Handle;
+            SetWindowLong(handle,-20,GetWindowLong(handle,-20)|0x08000080);
+        };
+        var web=(Microsoft.Web.WebView2.Wpf.WebView2)editorType.GetField("web",Flags).GetValue(editor);
+        var document=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var stopped=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        web.CoreWebView2InitializationCompleted+=(_,e)=>{
+            if(!e.IsSuccess){document.TrySetException(e.InitializationException);return;}
+            web.CoreWebView2.WebMessageReceived+=(_,message)=>{
+                using var payload=JsonDocument.Parse(message.WebMessageAsJson);
+                if(payload.RootElement.GetProperty("type").GetString()=="active")document.TrySetResult();
+            };
+            web.CoreWebView2.Environment.BrowserProcessExited+=(_,_)=>stopped.TrySetResult();
+        };
+        Call(editorType,editor,"AddFile",file,true,1,1,false,null);
+        editor.Show();
+        try{await document.Task;await Dependency117Checks.Editor(web.CoreWebView2,Path.Combine(root,"editor117.json"),Check);}
+        finally
+        {
+            var closed=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            editor.Closed+=(_,_)=>closed.TrySetResult();editor.Close();await closed.Task;await stopped.Task;
+        }
+        Check(!editor.IsVisible,"Delivered editor closes its native window and browser process");
+    }
+    [DllImport("user32.dll",EntryPoint="GetWindowLongW")]static extern int GetWindowLong(IntPtr window,int index);
+    [DllImport("user32.dll",EntryPoint="SetWindowLongW")]static extern int SetWindowLong(IntPtr window,int index,int value);
+
     async Task VerifyMedia(ContentControl target,object previewSession)
     {
         string inventory=Environment.GetEnvironmentVariable("PATHWEFT_MEDIA113_INPUTS");
@@ -498,6 +533,7 @@ sealed class PackageProbe
                 }
                 if(name=="sdr")
                 {
+                    await Dependency117Checks.Subtitles(player,root,Check);
                     var timeline=Descendants<Slider>(target).Single();
                     Check(timeline.GetType().FullName=="FileExplorer.Preview.PreviewTimeline"&&timeline.IsMoveToPointEnabled,"Delivered media uses the corrected themed click-to-point timeline");
                     var changed=player.GetType().GetEvent("Changed",Flags);
@@ -522,6 +558,7 @@ sealed class PackageProbe
                     var launch=(string[])Call(typeof(Updater),null,"InstallationArguments",123,456L,AppContext.BaseDirectory);
                     Check(launch.Contains("/RESTARTAPP=1")&&launch.Any(value=>value.StartsWith("/UPDATETRACK="))&&launch.Any(value=>value.StartsWith("/UPDATEBACK="))&&launch.Any(value=>value.StartsWith("/UPDATEACCENT=")),"Delivered updater hands off restart intent and the current popup palette");
                 }
+                if(name.StartsWith("p"))await Dependency117Checks.DolbySeeks(player,name,Check);
                 Call(type,previewSession,"Clear");await (Task)Call(type,null,"DrainAsync");
                 Check(((Task)Get(player,"Completion")).IsCompletedSuccessfully,"Delivered media teardown observes its actual native worker exit: "+name);
             }

@@ -9,7 +9,7 @@
     <AssemblyName>Pathweft</AssemblyName>
     <Product>Pathweft</Product>
     <Company>Darkaxt</Company>
-    <Version>1.1.16</Version>
+    <Version>1.1.17</Version>
     <!-- WPF windows without their own Icon use this one, so every window gets it -->
     <ApplicationIcon>app.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
@@ -40,8 +40,10 @@
     <None Include="$(SevenZipRuntimeRoot)\License.txt" Link="SevenZip\License.txt" CopyToOutputDirectory="PreserveNewest" />
     <None Include="$(F3DRuntimeRoot)\share\licenses\**\*" Link="F3D\licenses\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <Compile Remove="tests\**\*.cs" />
+    <Compile Include="tests\Dependency117Checks.cs" Condition="'$(Configuration)' == 'Debug'" />
     <None Include="vendor\EverythingSDK\Everything64.dll" CopyToOutputDirectory="PreserveNewest" Link="Everything64.dll" />
     <None Include="vendor\**\*.txt" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="vendor\Marked\LICENSE.md" CopyToOutputDirectory="PreserveNewest" />
     <None Update="COPYING-GPL-3.0.txt" CopyToOutputDirectory="PreserveNewest" />
     <None Update="LICENSE" CopyToOutputDirectory="PreserveNewest" />
     <Using Remove="System.Windows.Forms" />

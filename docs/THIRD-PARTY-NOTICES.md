@@ -16,7 +16,9 @@ Those notices remain distributed with the application.
 | rars / Pathweft bridge | 0.12.3 / e2415a2 | Apache-2.0 donor, GPL-3.0-or-later bridge; Cargo.lock, native source and vendored locked dependencies |
 | F3D and linked runtime dependencies | 4.0.0 / b72c7b5 | BSD-3-Clause core; all supplied dependency licenses under F3D/licenses; matching source/build recipes |
 | FFmpeg / OpenH264 in F3D's runtime | 9.0.1 / 2.6.0 | Actual avcodec configuration reports LGPL-2.1-or-later and libopenh264; full source archives and matching superbuild configure/patch recipes |
-| MPV / media FFmpeg / libplacebo | e471496c56 / 9a861e9687 / 285d1cc8af | Native runtime built by Darkaxt/vlc redesign-v1.1.1; GPL/version3 linked media build. MPV/licenses contains verified linked-library notices; vendor/MPV identifies every source/hash; corresponding dependency source includes the native build/patch/SDK recipes. Separate from F3D's FFmpeg |
+| MPV / media FFmpeg / libplacebo | e471496c56 / 9a861e9687 / 285d1cc8af | Darkaxt/vlc redesign-v1.1.1 source baseline with Pathweft's isolated FriBidi refresh; GPL/version3 linked media build. MPV/licenses contains verified linked-library notices; vendor/MPV identifies every source/hash; corresponding dependency source includes the native build/patch/SDK recipes. Separate from F3D's FFmpeg |
+| FriBidi in libmpv/libass | 1.0.18 | LGPL-2.1-or-later; exact source/license and isolated Pathweft refresh recipe accompany the native runtime. Other media source revisions retain the donor baseline |
+| Marked in the editor | 18.1.2 / 5beecae42b | MIT, vendor/Marked/LICENSE.md; verified npm bundle plus complete pinned Git source in the dependency archive |
 | Markdig | 1.5.0 | BSD-2-Clause, vendor/Markdig |
 | System.IO.Hashing | 10.0.14 | MIT, Microsoft .NET runtime source/license |
 | WebView2 SDK | 1.0.4314.35 | Microsoft SDK terms; installed Evergreen runtime is a separate Windows dependency |

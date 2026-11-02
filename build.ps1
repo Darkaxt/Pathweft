@@ -38,6 +38,8 @@ if($ResumeCandidateRun){
 }
 
 # Verify native library bytes against the qualified source/runtime inventory.
+$marked=Get-Content -LiteralPath (Join-Path $root 'vendor/Marked/runtime-manifest.json') -Raw|ConvertFrom-Json
+if((Get-FileHash -LiteralPath (Join-Path $publish $marked.bundle)).Hash -ne $marked.bundleSha256){throw 'Pinned editor Markdown parser differs.'}
 $html=Get-Content -LiteralPath (Join-Path $root 'vendor/HTML/runtime-manifest.json') -Raw|ConvertFrom-Json
 foreach($file in $html){if((Get-FileHash -LiteralPath (Join-Path $publish $file.dll)).Hash -ne $file.sha256){throw ('HTML dependency changed: '+$file.id)}}
 $pins=@(
@@ -90,7 +92,7 @@ if($LASTEXITCODE -ne 0){throw 'Portable archive creation failed.'}
 # offline native Rust dependency sources, not only selected reference snippets.
 $sources=Join-Path $scratch 'corresponding-sources'
 if(!(Test-Path -LiteralPath (Join-Path $sources 'source-manifest.json'))){throw 'Prepare verified corresponding dependency sources first.'}
-$mpvSources=Join-Path $CacheRoot 'mpv/e471496c56-pathweft.1/sources'
+$mpvSources=Join-Path $CacheRoot 'mpv/e471496c56-pathweft.2/sources'
 foreach($file in $mpv.sources){
     if((Get-FileHash -LiteralPath (Join-Path $mpvSources $file.name)).Hash -ne $file.sha256){throw "Media corresponding source differs: $($file.name)"}
 }
@@ -98,6 +100,12 @@ if(!(Test-Path -LiteralPath (Join-Path $sources 'MPV'))){Copy-Item -LiteralPath 
 foreach($file in Get-ChildItem -LiteralPath $mpvSources -File -Recurse){
     $relative=[IO.Path]::GetRelativePath($mpvSources,$file.FullName)
     if((Get-FileHash -LiteralPath (Join-Path $sources ('MPV/'+$relative))).Hash -ne (Get-FileHash -LiteralPath $file.FullName).Hash){throw "Packaged media source or build recipe differs: $relative"}
+}
+$markedSources=Join-Path $sources 'Marked';[void][IO.Directory]::CreateDirectory($markedSources)
+foreach($item in @(@('marked-18.1.2.tgz',$marked.npmSha256),@($marked.sourceArchive,$marked.sourceSha256))){
+    $input=Join-Path $CacheRoot ('marked/18.1.2/'+$item[0])
+    if((Get-FileHash -LiteralPath $input).Hash -ne $item[1]){throw 'Pinned Marked source differs.'}
+    Copy-Item -LiteralPath $input -Destination $markedSources
 }
 & "$env:SystemRoot/System32/tar.exe" -a -c -f (Join-Path $delivery "Pathweft-$version-dependency-sources.zip") -C $sources .
 if($LASTEXITCODE -ne 0){throw 'Dependency-source archive creation failed.'}

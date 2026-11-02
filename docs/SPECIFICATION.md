@@ -1,12 +1,30 @@
 # Pathweft specification
 
-Version 0.37 - 2026-11-02. Owner: Darkaxt.
+Version 0.38 - 2026-11-02. Owner: Darkaxt.
 
 This is the authoritative specification. The derived plan must preserve every
 requirement and acceptance criterion. Material scope changes require explicit
 user direction recorded here; ordinary implementation choices need no new gate.
 
-S8 is COMPLETE through installed1.1.16 for PREVIEW-19. Normal publication at
+S8 is ACTIVE for PREVIEW-20, the user's authorized targeted upstream maintenance
+of Marked and FriBidi. Other review candidates and S12 remain unstarted.
+
+PREVIEW-20: replace the editor's Marked18.0.14 bundle with a source/hash-pinned
+patched stable release containing the Unicode-link cubic-backtracking fix.
+Replace FriBidi1.0.16 in the embedded media runtime with1.0.18 using a source-bound
+native build; retain existing mpv/FFmpeg/libplacebo revisions, WASAPI patch,
+Dolby Vision-to-SDR contract and native-window presentation. Preserve the running
+product, donor worktree and retained build inputs. Use the existing gated native
+toolchain and isolated task output. Provide exact notices, source/build recipes
+and packaged runtime identity. Verify ordinary and malformed/Unicode Markdown in
+the actual editor, RTL/isolate-heavy subtitles in actual native playback,
+SDR/DV P5/P8 color/seek/teardown, and all affected integration boundaries. Publish
+one normal1.1.17 release after both integrated workflows pass; independently
+retrieve it and verify the user-controlled installed update. All acceptance and
+delivery work remains an internal advancement blocker until verified; no tracked
+deferral or new integration stage is introduced.
+
+Previous S8 was COMPLETE through installed1.1.16 for PREVIEW-19. Normal publication at
 35f01f6, independently downloaded native/app workflows, matching sources and
 all878 installed members pass. Main/helper restart/readiness and22 actual
 desktop route values pass; the user confirms the reported HTML now renders.

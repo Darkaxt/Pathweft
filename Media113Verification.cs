@@ -82,6 +82,8 @@ public partial class MainWindow
             }
             if(name=="sdr"||name=="audio")
             {
+                if(name=="sdr"&&Environment.GetEnvironmentVariable("PATHWEFT_VERIFY_DEPS117")=="1")
+                    await Dependency117Checks.Subtitles(player,root,check);
                 var advanced=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
                 var reset=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);bool eof=false;
                 void Changed(string property,object value){if(property=="time-pos"&&value is double seconds&&seconds>0.1)advanced.TrySetResult();if(property=="eof-reached"&&value is true)eof=true;if(eof&&property=="time-pos"&&value is double at&&at<=0.01)reset.TrySetResult();}
@@ -90,6 +92,8 @@ public partial class MainWindow
                 finally{player.Changed-=Changed;}
                 check(player.Property("pause")=="yes","Native EOF resets the preview to its beginning and pauses: "+name);
             }
+            if(name.StartsWith("p")&&Environment.GetEnvironmentVariable("PATHWEFT_VERIFY_DEPS117")=="1")
+                await Dependency117Checks.DolbySeeks(player,name,check);
             sidePreview.Clear();await PreviewSession.DrainAsync();
             check(player.Completion.IsCompletedSuccessfully,"Selection cleanup joins the actual native media worker: "+name);
         }

@@ -1,0 +1,13 @@
+{
+  "version": "18.1.2",
+  "repository": "https://github.com/markedjs/marked",
+  "commit": "5beecae42b0beb07eaccc3a732560f56867a8301",
+  "fixCommit": "0d2022025d3cd44750a3ffbb77e2da60635589ee",
+  "npmUrl": "https://registry.npmjs.org/marked/-/marked-18.1.2.tgz",
+  "npmSha256": "9e3e0f5beb9c15a671025eb588c64dc8078a529121d1de809f8752bc422ad09d",
+  "sourceArchive": "marked-18.1.2-source.tar.gz",
+  "sourceSha256": "388b79545767527e6facb72de4714f91a97d534416867653467b651636234d21",
+  "bundle": "Editor/marked.umd.js",
+  "bundleSha256": "9eb730d2362ae1a8c6201698f17009e16671be6946d3d06503ddc0575283db7c",
+  "licenseSha256": "8e3a3f82f59a60958f56ca08f445647c32a4733dc7ca6c2c46f6eb898471ab9c"
+}

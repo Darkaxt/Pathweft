@@ -1,4 +1,4 @@
-# Pathweft 1.1.16
+# Pathweft 1.1.17
 
 Windows 11 x64 is the qualified host. The .NET 10 desktop runtime and native
 archive/preview libraries are included. WebView2 Evergreen is required for the
@@ -155,7 +155,7 @@ is GPL-3.0-or-later; dependencies retain their individual terms. You may replace
 compatible shared libraries; no signature restriction prevents relinking.
 
 Video and audio previews use bundled libmpv, FFmpeg and libplacebo from the
-source-pinned VLC fork. GPU playback uses D3D11 and gpu-next; media plays directly
+source-pinned VLC fork, with the isolated FriBidi 1.0.18 subtitle refresh. GPU playback uses D3D11 and gpu-next; media plays directly
 in the preview without an installed player or Windows codec dependency. Side
 previews begin paused; Space previews autoplay. Icon controls provide play/pause,
 mute and seeking. Shader caches use the selected runtime data location.

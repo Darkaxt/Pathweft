@@ -1,9 +1,25 @@
 # Implementation and reconciliation
 
-Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.37, 2026-11-02,
+Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.38, 2026-11-02,
 including the user-authorized continued comparison requirement TRANSFER-07.
 
-Current S8 status: COMPLETE through installed1.1.16 for PREVIEW-19/spec0.37.
+Current S8 status: ACTIVE for PREVIEW-20/spec0.38. The user authorized the two
+reviewed Marked/FriBidi fixes; do not adopt the other upstream candidates.
+Compact execution: pin/reproduce the parser changes, import patched Marked and
+rebuild the existing mpv runtime against FriBidi1.0.18 using isolated outputs and
+the existing supervised toolchain, then verify both complete app workflows and
+publish/retrieve/install1.1.17. Acceptance remaining: exact native linkage and
+source/notices, real editor Markdown, RTL subtitles and preserved SDR/DV playback,
+cleanup and final delivery. These are internal advancement blockers; no tracked
+deferral. Preserve the donor's dirty worktree and retained artifacts. S12 remains
+NOT STARTED; no other stage is ACTIVE.
+Fresh source acceptance PID194432 now passes both integrated workflows and
+source-bound SDR/DV color equality. Native173 passes new FriBidi link identity,
+unchanged borrowed inputs and group-empty lifecycle. Remaining advancement
+blockers are1.1.17 packaging/native/app checks, publication/retrieval, installed
+readback and final scratch cleanup. See verification/2026-11-02-deps117.md.
+
+Previous S8 status: COMPLETE through installed1.1.16 for PREVIEW-19/spec0.37.
 Normal release source35f01f6, six assets and matching sources pass. Independent
 delivered native/app workflows PID149196 pass, as do all878 installed members,
 restarted main134568/helper139436 readiness and22 actual desktop route values.
@@ -410,7 +426,7 @@ plan neither authorizes itself nor adds approval checkpoints.
 | S5 - REA-driven transfer improvements | COMPLETE | TRANSFER-01..07, archive/caller and WIDGET-02 revalidation, affected CORE-02/03, LIFE-01/DELIVERY-03 | Initial S5 criteria passed at e478986; user extended comparison/implementation | Finite findings inventory resolved; source/target handle reuse, copy-time hashing, metadata/EOF reductions, storage decisions, matched profiles, actual callers, adverse/preservation/cleanup and Release checks pass; see [evidence](verification/2026-10-29-s5.md) |
 | S6 - Native StartAllBack search | BLOCKED | SAB-01..06, affected SEARCH/CORE/LIFE/DELIVERY criteria | Parked by explicit user-directed S8-first execution; resume only after reprioritization is lifted | Investigation only; no working patch or complete SAB criterion. All native groups/handoff/provider/lifecycle/routing criteria remain open. |
 | S7 - Everything filesystem search and Outlook indexing scope | NOT STARTED | EVERYWHERE-01..05, affected SEARCH/CORE/LIFE/SHELL criteria | S6 COMPLETE; finite consumer/semantics/scope inventory before migration | Native Everything file results with selected filesystem roots excluded from Windows indexing; WSearch/Outlook retained, explicit Windows-managed exceptions, local/mail/reboot/recovery verification |
-| S8 - Core integration and delivery | COMPLETE | PREVIEW-19 mapped/UNC identity correction; prior criteria through PREVIEW-17/18 and DELIVERY-01..03 | Normal1.1.16 at35f01f6 published, independently retrieved and installed | Source workflow PID151332, delivered native/app PID149196, all878 installed members, helper readiness and22 desktop route values pass. User confirms reported preview. Scratch removed; no current blocker/deferral or direct synthetic-UNC access claim. |
+| S8 - Core integration and delivery | ACTIVE | PREVIEW-20 targeted Marked/FriBidi maintenance; prior core criteria and DELIVERY-01..03 | User-authorized reviewed fixes; installed1.1.16 preserved | Internal blockers: pinned patched parser/runtime and source closure, complete editor/subtitle/media workflows, cleanup and normal1.1.17 publication/retrieval/installed verification. No tracked deferral. |
 
 ENV-01..04 belong to the current setup deliverable, not an artificial product
 implementation stage. See [setup evidence](verification/2026-10-28-setup.md).
@@ -455,6 +471,7 @@ S12 on2026-11-02):
 | ENV-01..04 | Setup | Committed/remote document and head readback at setup delivery |
 | TRES-01..04 | S12 | Evidence-backed Tresorit investigation and implementation proposal; execution remains NOT STARTED |
 | PREVIEW-19 | S8 | Canonical drive/share identity for static HTML, retained isolation and final1.1.16 delivery |
+| PREVIEW-20 | S8 | Patched Marked and FriBidi, preserved native media contract, source/notice closure and final1.1.17 delivery |
 | CORE-01 | S1 | Installer/update isolation S8 |
 | CORE-02 | S1, affected actions S2/S4/S5/S6/S7 | Integrated package S8 |
 | CORE-03 | Each changed interface in S1..S7 | Full changed-interface review S8 |
