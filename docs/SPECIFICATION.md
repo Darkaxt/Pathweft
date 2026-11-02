@@ -1,12 +1,26 @@
 # Pathweft specification
 
-Version 0.36 - 2026-11-02. Owner: Darkaxt.
+Version 0.37 - 2026-11-02. Owner: Darkaxt.
 
 This is the authoritative specification. The derived plan must preserve every
 requirement and acceptance criterion. Material scope changes require explicit
 user direction recorded here; ordinary implementation choices need no new gate.
 
-S8 is COMPLETE for the authorized GLB/glTF smart timeline and isolated HTML
+S8 is ACTIVE for PREVIEW-19: correct static HTML preview on legitimate mapped
+drive/UNC aliases. Opened file identity must match the canonical drive/share
+root plus the checked relative path; do not authorize a substituted document
+directory or relax reparse, traversal, script or network restrictions. Verify
+the reported provider-backed file read-only, extended mapped-path access, normal local
+and archived assets, true escape rejection and cleanup. Complete normal1.1.16
+publication and independent package verification; preserve the user's update
+control. S12 remains NOT STARTED. Source acceptance passes in the real hidden
+browser workflow; final package/publication/retrieval verification remains an
+internal delivery blocker. No tracked deferral.
+Tresorit's normalized UNC handle name is synthetic: direct reopening of that
+name returns ERROR_INVALID_NAME. Qualify its canonical identity through the
+working mapped and extended paths; do not claim direct provider UNC access.
+
+Previous S8 was COMPLETE for the authorized GLB/glTF smart timeline and isolated HTML
 viewer. Both features, normal1.1.15 publication and independent delivered-package
 verification pass at85de43e. The user updated/reopened; all878 installed members,
 main/helper restart/readiness and22 actual desktop route values pass. Spent

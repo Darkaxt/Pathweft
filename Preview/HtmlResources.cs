@@ -72,13 +72,17 @@ internal sealed class HtmlResources
                     if(!path.StartsWith(prefix,StringComparison.OrdinalIgnoreCase))throw new IOException("HTML resource leaves its document folder.");
                     for(string current=path;current!=null;current=Path.GetDirectoryName(current))
                         if((File.Exists(current)||Directory.Exists(current))&&(File.GetAttributes(current)&FileAttributes.ReparsePoint)!=0)throw new IOException("HTML preview does not follow filesystem links.");
+                    // Resolve the drive/share alias, not the document directory:
+                    // resolving the latter could bless a substituted directory.
+                    // All remaining components must still match the checked path.
+                    string root=Path.GetPathRoot(path);
+                    using var volume=CreateFile(root,0,7,IntPtr.Zero,3,0x02000000,IntPtr.Zero);
+                    if(volume.IsInvalid)throw new IOException("Cannot verify the HTML resource volume.",new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error()));
+                    string expected=FinalPath(volume).TrimEnd('\\')+"\\"+path[root.Length..];
                     using var input=new FileStream(path,FileMode.Open,FileAccess.Read,FileShare.ReadWrite|FileShare.Delete);
                     // Check the opened handle too; a concurrent directory replacement
                     // must not turn a previously checked resource into an outside file.
-                    var name=new StringBuilder(32768);uint length=GetFinalPathNameByHandle(input.SafeFileHandle,name,(uint)name.Capacity,0);
-                    if(length==0||length>=name.Capacity)throw new IOException("Cannot verify the HTML resource path.");
-                    string final=name.ToString();if(final.StartsWith(@"\\?\UNC\",StringComparison.Ordinal))final=@"\\"+final[8..];else if(final.StartsWith(@"\\?\",StringComparison.Ordinal))final=final[4..];
-                    if(!final.Equals(path,StringComparison.OrdinalIgnoreCase))throw new IOException("HTML resource resolved outside its checked path.");
+                    if(!FinalPath(input.SafeFileHandle).Equals(expected,StringComparison.OrdinalIgnoreCase))throw new IOException("HTML resource resolved outside its checked path.");
                     if(input.Length>limit)throw new IOException("The HTML preview resource exceeds its size budget.");
                     using var memory=new MemoryStream();var buffer=new byte[64*1024];int count;
                     while((count=input.Read(buffer))!=0){token.ThrowIfCancellationRequested();if(memory.Length+count>limit)throw new IOException("The HTML preview resource grew beyond its size budget.");memory.Write(buffer,0,count);}
@@ -121,5 +125,14 @@ internal sealed class HtmlResources
         string result=mime=="text/html"?document.ToHtml():string.Join('\n',document.QuerySelectorAll("style").Select(style=>style.TextContent));
         return Encoding.UTF8.GetBytes(result);
     }
+    static string FinalPath(SafeFileHandle file)
+    {
+        var name=new StringBuilder(32768);uint length=GetFinalPathNameByHandle(file,name,(uint)name.Capacity,0);
+        if(length==0||length>=name.Capacity)throw new IOException("Cannot verify the HTML resource path.");
+        string final=name.ToString();
+        if(final.StartsWith(@"\\?\UNC\",StringComparison.Ordinal))return @"\\"+final[8..];
+        return final.StartsWith(@"\\?\",StringComparison.Ordinal)?final[4..]:final;
+    }
+    [DllImport("kernel32.dll",CharSet=CharSet.Unicode,SetLastError=true)]static extern SafeFileHandle CreateFile(string path,uint access,uint share,IntPtr security,uint disposition,uint flags,IntPtr template);
     [DllImport("kernel32.dll",CharSet=CharSet.Unicode,SetLastError=true)]static extern uint GetFinalPathNameByHandle(SafeFileHandle file,StringBuilder name,uint size,uint flags);
 }

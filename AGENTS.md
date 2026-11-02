@@ -3,7 +3,19 @@
 Read `docs/SPECIFICATION.md` first. It is authoritative; the plan and this file
 do not change its requirements or the user's standing instructions.
 
-Current S8 COMPLETE through installed1.1.15 for PREVIEW-17/18/spec0.35.
+Current S8 ACTIVE for PREVIEW-19/spec0.37, the mapped-drive HTML regression.
+Metadata-only handles confirm a legitimate drive-letter/UNC alias mismatch.
+Resolve only the drive/share root; preserve all checked relative components,
+reparse/traversal/offline restrictions. Verify native mapped/extended/local/archive
+workflows, cleanup and final1.1.16 release/retrieval. S12 stays NOT STARTED.
+Source acceptance PID151332 passes all scoped workflows; only final package,
+publication/retrieval and scratch cleanup remain. No production behavior changed
+beyond canonical root identity for HTML. Keep installed update user-controlled.
+Scratch root transaction9b8288ac6fbf8191907d32330e363a03 is registered;
+D:/Temp/pathweft-s8-delivery uses the native/browser/compiler I/O exception.
+Private evidence: .local/evidence/2026-11-02-html116. No host input/Sandbox.
+
+Previous S8 COMPLETE through installed1.1.15 for PREVIEW-17/18/spec0.35.
 Normal1.1.15 at85de43e is published; six assets,
 matching sources and independently downloaded native/app workflows pass.
 No stage is ACTIVE. Both complete features pass native

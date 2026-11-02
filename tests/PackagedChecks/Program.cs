@@ -443,6 +443,16 @@ sealed class PackageProbe
                 Call(type,previewSession,"Clear");await (Task)Call(type,null,"DrainAsync");
                 Check(((Task)Get(viewer,"Closed")).IsCompletedSuccessfully&&!Directory.Exists(profile),"Delivered HTML observes browser exit and removes its unique profile");
             }
+            if(Environment.GetEnvironmentVariable("PATHWEFT_HTML116_PATHS") is { } mappedInputs)
+            foreach(string path in JsonSerializer.Deserialize<string[]>(mappedInputs))
+            {
+                byte[] before=SHA256.HashData(File.ReadAllBytes(path));
+                await Show(path);
+                Check((string)Get(previewSession,"State")=="ready"&&(string)Get(previewSession,"ModuleId")=="html","Delivered HTML renders the actual provider mapped/extended input read-only");
+                var viewer=type.GetField("viewer",Flags).GetValue(previewSession);
+                Call(type,previewSession,"Clear");await (Task)Call(type,null,"DrainAsync");
+                Check(((Task)Get(viewer,"Closed")).IsCompletedSuccessfully&&before.SequenceEqual(SHA256.HashData(File.ReadAllBytes(path))),"Delivered provider preview closes cleanly and preserves the source");
+            }
             Settings.DisabledPreviewModules.Add("html");await Show(html);
             Check((string)Get(previewSession,"ModuleId")=="text","Delivered HTML disable switch restores source preview");Settings.DisabledPreviewModules.Remove("html");
             string model=Path.Combine(root,"held.gltf"),binary=Path.Combine(root,"held.bin");

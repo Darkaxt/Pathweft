@@ -23,6 +23,8 @@ public partial class MainWindow
         async Task Settled()=>await Dispatcher.InvokeAsync(UpdateLayout,System.Windows.Threading.DispatcherPriority.ApplicationIdle);
         try
         {
+            if(Environment.GetEnvironmentVariable("PATHWEFT_HTML116_PATHS") is not null)
+            {await VerifyHtml116(root,Check);result=0;return;}
             if(Environment.GetEnvironmentVariable("PATHWEFT_VERIFY_PREVIEW115")=="1")
             {await VerifyPreview115(root,Check);result=0;return;}
             if(Environment.GetEnvironmentVariable("PATHWEFT_VERIFY_UPDATE114")=="1")

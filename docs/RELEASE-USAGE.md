@@ -1,4 +1,4 @@
-# Pathweft 1.1.15
+# Pathweft 1.1.16
 
 Windows 11 x64 is the qualified host. The .NET 10 desktop runtime and native
 archive/preview libraries are included. WebView2 Evergreen is required for the
