@@ -3,26 +3,24 @@
 Read `docs/SPECIFICATION.md` first. It is authoritative; the plan and this file
 do not change its requirements or the user's standing instructions.
 
-S8 BLOCKED only on the user-controlled installed1.1.17 readback for PREVIEW-20/
-spec0.38. Normal release501988468abc29d8826d3e661be24e1d8b631644 is published;
-six assets, exact branch/main/tag, full source/notices and independently downloaded
-native/app checks pass (PID202232; local167100). Source194432 passes the actual
-editor50k Unicode/sandbox/formatting, RTL subtitles, SDR/audio, DV paused/playing
-seeks and teardown; SDR/P5/P8.1/P8.4 captures match accepted baselines exactly.
-Native173 verifies the new FriBidi link/map,173 unchanged borrowed archives,
-group-empty/mount release and no OOM. Qualified .2 cache31bd4b46 is retained;
-.1, the installed1.1.16 and dirty donor worktree are preserved. Other candidates
-and S12 remain NOT STARTED. No ACTIVE stage or tracked deferral.
-The update request was sent once through the async question. After the user
-reopens1.1.17, begin/register a new exact D:/Temp/pathweft-s8-delivery transaction
-before invoking .local/evidence/2026-11-02-deps117/Invoke-InstalledDesktop117.ps1.
-Its read-only desktop diagnostic checks all installed members, fresh main/helper
-identities/readiness and actual route values. Then clean its small scratch,
-reconcile S8 COMPLETE and sync the closure docs; no second software release.
-Root cleanup b13e925a7126f7801d5a0d4a05b8d288 is applied without residuals;
-D:/Temp/pathweft-s8-delivery and all three outside-Temp native outputs are absent.
-Preserve dist/1.1.17, active dependency caches and .local/evidence/2026-11-02-deps117.
-No desktop takeover, Sandbox, forced app exit or live handler rewrite.
+S8 COMPLETE through installed1.1.17 for PREVIEW-20/spec0.38. Normal release
+501988468abc29d8826d3e661be24e1d8b631644, six assets, matching source/notices and
+independently downloaded native/app workflows pass (PID202232; local167100).
+Source194432 verifies actual editor Unicode/sandbox/formatting, RTL subtitles,
+SDR/audio and paused/playing DV seeks/teardown; paired SDR/P5/P8.1/P8.4 pixels match.
+Native173 verifies new FriBidi linkage,173 unchanged borrowed archives, group-empty
+and mount release/no OOM. Qualified .2 cache31bd4b46 and original .1 are retained;
+the dirty donor worktree is preserved. No other dependency candidates adopted.
+The user updated/reopened; fresh desktop readback verifies all879 installed
+members, restarted main161564/helper167740, helper readiness and22 route values.
+Receipts installed117-via-updater.json and installed117-desktop.json are in
+.local/evidence/2026-11-02-deps117. No ACTIVE stage, blocker or tracked deferral.
+S12 remains NOT STARTED; do not resume postponed work automatically.
+Both root cleanup b13e925a7126f7801d5a0d4a05b8d288 and installed diagnostic
+cleanup f81e354c1f3c1658cae444d1cf8ea9f6 are applied without residuals. Task scratch
+and all three outside-Temp native outputs are absent. Preserve dist/1.1.17,
+active dependency caches and private audit. No desktop input, forced exit,
+handler rewrite, Sandbox or second software release.
 
 Previous S8 COMPLETE through installed1.1.16 for PREVIEW-19/spec0.37.
 Normal release35f01f6, six assets, matching sources and independent delivered
