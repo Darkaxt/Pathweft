@@ -1,7 +1,16 @@
 # Implementation and reconciliation
 
-Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.38, 2026-11-02,
+Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.39, 2026-11-02,
 including the user-authorized continued comparison requirement TRANSFER-07.
+
+Current plan revision (2026-11-02): add S13 for all fourteen remaining specialist
+preview categories, PREVIEW-21..36. Remaining execution order:
+**S13 -> S9 -> S11 -> S12 -> S6 -> S7**. Stage IDs are stable historical
+identifiers, not execution priority. Pathweft improvements precede the final
+StartAllBack/Windows-search block; S7 still depends on S6 before indexing changes.
+This is a documentation-only update. S13/S9/S11/S12/S7 are NOT STARTED; S6 stays
+BLOCKED/parked. No stage is ACTIVE, no implementation starts and the installed
+1.1.17/release state remains unchanged. Completed S8 evidence below is preserved.
 
 Current S8 status: COMPLETE through installed1.1.17 for PREVIEW-20/spec0.38.
 Both approved fixes are implemented and source-qualified (PID194432); native173
@@ -413,7 +422,7 @@ indexing-exclusion comparisons remain unverified. See
 Native source/SDK integration is preferred. This
 plan neither authorizes itself nor adds approval checkpoints.
 
-## Stage map
+## Stage map in execution order
 
 | Stage | Status | Requirements / complete outcome | Prerequisites | Acceptance evidence |
 | --- | --- | --- | --- | --- |
@@ -424,9 +433,13 @@ plan neither authorizes itself nor adds approval checkpoints.
 | S4R - Embedded writable RAR | COMPLETE | RAR-01..05, affected ARCHIVE-02..05/CORE/LIFE/DELIVERY-03 | S4 COMPLETE | Pinned loaded Rust DLL, real hidden pane/actions/queue, qualified solid/encrypted preservation and refusals, independent 7-Zip/UnRAR extraction, original/cut-source protection, clipboard rollback, cleanup and source commit/remote readback; see S4R evidence |
 | S4U - Read-only cues and hidden visibility | COMPLETE | FILEUI-01..03, affected CORE/SEARCH/ARCHIVE/LIFE | S4R COMPLETE; user-approved icon direction | Real hidden browser/widget/tree/archives and native index workflow, persisted global toggle, grayscale/lock rendering, preservation, focused regressions, exact cleanup and source commit/remote readback; see S4U evidence |
 | S5 - REA-driven transfer improvements | COMPLETE | TRANSFER-01..07, archive/caller and WIDGET-02 revalidation, affected CORE-02/03, LIFE-01/DELIVERY-03 | Initial S5 criteria passed at e478986; user extended comparison/implementation | Finite findings inventory resolved; source/target handle reuse, copy-time hashing, metadata/EOF reductions, storage decisions, matched profiles, actual callers, adverse/preservation/cleanup and Release checks pass; see [evidence](verification/2026-10-29-s5.md) |
-| S6 - Native StartAllBack search | BLOCKED | SAB-01..06, affected SEARCH/CORE/LIFE/DELIVERY criteria | Parked by explicit user-directed S8-first execution; resume only after reprioritization is lifted | Investigation only; no working patch or complete SAB criterion. All native groups/handoff/provider/lifecycle/routing criteria remain open. |
-| S7 - Everything filesystem search and Outlook indexing scope | NOT STARTED | EVERYWHERE-01..05, affected SEARCH/CORE/LIFE/SHELL criteria | S6 COMPLETE; finite consumer/semantics/scope inventory before migration | Native Everything file results with selected filesystem roots excluded from Windows indexing; WSearch/Outlook retained, explicit Windows-managed exceptions, local/mail/reboot/recovery verification |
 | S8 - Core integration and delivery | COMPLETE | PREVIEW-20 targeted Marked/FriBidi maintenance; prior core criteria and DELIVERY-01..03 | Source/native, delivered1.1.17 package/source and installed879-member/main/helper/route checks pass; scratch removed | None within S8. No tracked deferral. |
+| S13 - Remaining specialist preview modules | NOT STARTED | PREVIEW-21..36; affected PREVIEW-03/04, CORE-03, LIFE-01 and DELIVERY-01..03 | S8 COMPLETE; first remaining implementation stage when execution is authorized | All fourteen embedded specialist viewers, exact format/source/dependency matrix, real selection/render/navigation/toggle/release workflows, preservation/layout/lifecycle and one normal independently verified release plus installed update. See S13 contract below. |
+| S9 - Context menu reorganization | NOT STARTED | MENU-01..02; affected CORE-03/04 and archive/file actions | S13 COMPLETE; next in priority | Eligibility inventory, grouped common commands, native-menu choice and shortcuts, actual commands/keyboard/themes/layout and normal verified delivery. |
+| S11 - Native pinned/recent folder Jump Lists | NOT STARTED | JUMP-01..02; affected CORE-01/02 and LIFE/DELIVERY | S9 COMPLETE; next in priority | Native folder destinations, pin/unpin/recent/removal/privacy, direct cold/warm launches, stable identity/update/uninstall and normal verified delivery. Tasks-only is insufficient. |
+| S12 - Tresorit capability investigation | NOT STARTED | TRES-01..04 | S11 COMPLETE; next in priority | Supported API/client assessment, bounded REA as needed, evidence-backed capability matrix/decision and implementation proposal. Investigation only; no cloud mutation or integration implementation. |
+| S6 - Native StartAllBack search | BLOCKED | SAB-01..06; affected SEARCH/CORE/LIFE/DELIVERY criteria | Parked until Pathweft-first work S13/S9/S11/S12 is closed and execution is resumed; retain unresolved native feasibility boundaries | Investigation only; no complete SAB criterion. Qualify native groups/provider/cancellation/handoff/lifecycle/direct routing and independently verified adapter release in S6; no automatic Sandbox restart. |
+| S7 - Everything filesystem search and Outlook indexing scope | NOT STARTED | EVERYWHERE-01..05; affected SEARCH/CORE/LIFE/SHELL criteria | S6 COMPLETE; consumer/semantics/scope inventory before migration | Final dependent Windows-search work: real Everything file results with selected roots excluded from indexing, WSearch/Outlook retained, explicit exceptions, mail/reboot/recovery and verified migration/package delivery in S7. |
 
 ENV-01..04 belong to the current setup deliverable, not an artificial product
 implementation stage. See [setup evidence](verification/2026-10-28-setup.md).
@@ -457,24 +470,21 @@ final character within the actual button at 440/660 DIP and both text scales.
 WIDGET-01/02 and CORE-03 acceptance require these workflows and final 1.1.2
 delivery verification; no required deferrals or new infrastructure are added.
 
-Post-release stage additions authorized by the user (S9/S11 on2026-10-31,
-S12 on2026-11-02):
-
-| Stage | Status | Requirements | Acceptance / execution boundary |
-| --- | --- | --- | --- |
-| S9 - Context menu reorganization | NOT STARTED | MENU-01..02, affected CORE-03/04 and archive/file actions | Inventory available actions and eligibility, group/prioritize existing commands, preserve native-menu choice and shortcuts, verify real commands/keyboard/layout/themes and final delivery. Begin only after the active S8 correction closes; S6/S7 remain parked under the current priority. No menu implementation is included in v1.1.1. |
-| S11 - Native pinned/recent folder Jump Lists | NOT STARTED | JUMP-01..02, affected CORE-01/02 and LIFE/DELIVERY | Native expandable Start-menu/taskbar folder destinations with pin/unpin/recent/removal/privacy and direct Pathweft cold/warm launches; useful tasks, stable application identity and update/uninstall preservation. Full folder-destination behavior must pass; Opus's Tasks-only example is not proof. Plan only during S8; no S6/Sandbox work. Stage number follows the user's explicit request. |
-| S12 - Tresorit capability investigation | NOT STARTED | TRES-01..04 | Inventory mounted-drive gaps; assess supported API/SDK/client commands first, then bounded version-qualified REA where needed. Deliver a verified capability matrix, integration decision and narrow implementation proposal. Plan only: no client configuration, cloud mutation or integration implementation now. |
+Post-release additions are consolidated into the execution-ordered stage map
+above: S9/S11 were requested on2026-10-31 and S12/S13 on2026-11-02. Their
+requirements remain separate from completed S8. Each future implementation stage
+owns its complete release/delivery gate; S12 delivers research documents only.
 
 | Requirements | Owner | Later boundary |
 | --- | --- | --- |
 | ENV-01..04 | Setup | Committed/remote document and head readback at setup delivery |
 | TRES-01..04 | S12 | Evidence-backed Tresorit investigation and implementation proposal; execution remains NOT STARTED |
+| PREVIEW-21..36 | S13 | All fourteen remaining specialist categories, exact format coverage, integrated qualification and final release/installed verification in S13 |
 | PREVIEW-19 | S8 | Canonical drive/share identity for static HTML, retained isolation and final1.1.16 delivery |
 | PREVIEW-20 | S8 | Patched Marked and FriBidi, preserved native media contract, source/notice closure and final1.1.17 delivery |
 | CORE-01 | S1 | Installer/update isolation S8 |
 | CORE-02 | S1, affected actions S2/S4/S5/S6/S7 | Integrated package S8 |
-| CORE-03 | Each changed interface in S1..S7 | Full changed-interface review S8 |
+| CORE-03 | Each changed interface, including S9/S11/S13 | S8 verified core interfaces; each future stage verifies its own changed interfaces |
 | CORE-04..05 | S8 | Native theme/accent, upstream adoption and delivered regression verification |
 | SEARCH-01..04 | S1 | Widget S2, native adapters S6/S7, packaged engine S8 |
 | WIDGET-01..03 | S2 | Preview S3, archive S4, transfer S5, package S8 |
@@ -490,15 +500,63 @@ S12 on2026-11-02):
 | RAR-01..05 | S4R | Transfer revalidation S5; final package/source/license/install S8 |
 | FILEUI-01..03 | S4U | Delivered icon/visibility/settings package revalidation S8 |
 | TRANSFER-01..07 | S5 | Final package S8 |
-| SAB-01..06 | S6 | Reduced filesystem-index scope behavior S7; packaged adapter S8 |
-| EVERYWHERE-01..05 | S7 | Delivered migration/compatibility/recovery S8 |
-| LIFE-01 | Each implementing stage | Final lifecycle reconciliation S8 |
+| SAB-01..06 | S6 | Delivered adapter/recovery in S6; reduced filesystem-index scope behavior revalidated in S7 |
+| EVERYWHERE-01..05 | S7 | Delivered migration/compatibility/recovery in S7, after S6 |
+| LIFE-01 | Each implementing stage | S8 core reconciliation complete; future stages own affected lifecycle acceptance |
 | SHELL-01 | S7 for search migration, S8 for file-manager shell integration | Actual disable/uninstall readback |
-| DELIVERY-01..02 | S8 | Release retrieval/verification |
-| DELIVERY-03 | Each import stage; final S8 | Public source/asset review |
+| DELIVERY-01..02 | S8 core release; each future implementing stage | Normal release, independent retrieval/qualification and applicable installed verification for the completed stage outcome |
+| DELIVERY-03 | Each import/implementation stage | Public source/asset/license review for its actual delivered dependencies |
 
 Later packaging verification checks a different boundary; it does not defer
 required current-stage wiring or real behavior.
+
+## S13 execution and reconciliation contract
+
+Status: **NOT STARTED**. No acceptance criterion has been implemented or verified
+for S13. All PREVIEW-21..36 remain; there is no ACTIVE stage or tracked deferral.
+The next action on future implementation authorization is source/dependency and
+format qualification, followed by the first complete specialist preview workflow.
+
+1. Use the specification's fourteen-category matrix as the finite required scope:
+   Office, CSV tables, databases, mail, certificates, application packages, design
+   thumbnails, MediaInfo, hex/binary, ELF/Mach-O/UImage, crash dumps, Prefetch, CHM
+   and CLSID. Record exact pinned donor files, native/managed dependencies,
+   supported extensions/features, runtime requirements, licenses and acceptance
+   fixtures. Keep existing ten-module limits explicit; do not relabel raw text,
+   archive listings or icons as a specialist viewer. PluginInstaller and separate
+   QuickLook add-ons are excluded.
+2. Integrate one complete real selection -> table rendering -> navigation ->
+   close workflow first (CSV), using Preview/PreviewModules.cs,
+   Preview/PreviewSession.cs, Preview/IViewer.cs, BuiltinViewer where appropriate
+   and the existing Settings owner. Then finish the other required viewers within
+   this same stage, each with complete input/dispatch/render/cleanup wiring before
+   its acceptance checks. CLSID requires the real virtual-input boundary; it is
+   not a file-extension alias. Do not invent a dynamic plugin host or a second
+   application-action/lifecycle owner. No per-module stages or product releases.
+3. Qualify Office/native-handler and other unavoidable process boundaries before
+   relying on them; unavailable required support remains a concrete blocker.
+   Reuse the isolated HTML resource/security boundary for mail/CHM presentation,
+   and retain the accepted MPV/F3D paths. Inspect parsers read-only, bound large
+   inputs and preserve originals/sidecars. Do not execute inspected code/macros
+   or activate inspected CLSIDs, install certificates, persist secrets or initiate
+   unsolicited network access. Qualified renderer/preview-handler activation is
+   separate from executing inspected content.
+4. Extend the existing hidden app-owned preview/package diagnostics with actual
+   rendered or structured-value fixtures for every category, from eligible native
+   and archive paths on the side pane, Space and widget. Cover priority, settings
+   restart/active-disable, rapid selection, malformed/large/locked/encrypted and
+   missing-runtime inputs, readiness/cancellation, browser/native teardown and
+   post-close file release. Inspect accessible themed layouts at narrow/normal
+   sizes and100%/150%. Mocks/parser tests alone do not qualify the integrated
+   feature; revalidate affected current HTML/media/model workflows.
+5. Reconcile every PREVIEW-21..36 criterion and source/runtime/format matrix. S13
+   stays ACTIVE while required implementation is actionable; record exact
+   external impediments before justified parking. Do not defer a missing category
+   to S9 or call S13 complete with fewer than fourteen. After all integrated
+   criteria pass, commit and deliver one normal release through the established
+   build/package channel, independently retrieve and verify assets/behavior and
+   verify the actual installed update. Clean spent task output transactionally.
+   Only then close S13 and proceed in the recorded priority order.
 
 ## S5 execution and reconciliation
 
@@ -871,7 +929,11 @@ it may need only a Pathweft-side call rather than a StartAllBack hook.
 
 This sequence belongs only to S5, after S4U; it does not authorize later stages.
 
-## Current reconciliation ledger
+## Historical reconciliation ledger
+
+The rows below preserve earlier acceptance evidence. Current statuses and the
+remaining execution order are in the opening checkpoint and stage map; the
+historical ACTIVE/S8-first wording below does not resume work or supersede them.
 
 Prior post-v1.1.1 correction: S8 COMPLETE; WIDGET-01/02 and CORE-03 cover the
 compact search popup and full restore-action label plus v1.1.2 delivery. Historical S8 closure row below

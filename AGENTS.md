@@ -3,6 +3,15 @@
 Read `docs/SPECIFICATION.md` first. It is authoritative; the plan and this file
 do not change its requirements or the user's standing instructions.
 
+Current plan-only revision: spec0.39 adds S13 (PREVIEW-21..36) for all fourteen
+remaining specialist preview categories. Preserve existing stage IDs and follow
+remaining priority S13 -> S9 -> S11 -> S12 -> S6 -> S7. Pathweft improvements
+precede the final StartAllBack/Windows-search block; S7 still depends on S6 before
+indexing changes. S13/S9/S11/S12/S7 are NOT STARTED; S6 remains BLOCKED/parked.
+No stage is ACTIVE. This documentation request does not start implementation,
+restart Sandbox, change live configuration or authorize another software release.
+Future implementation stages own their release/delivery gates; S8 stays complete.
+
 S8 COMPLETE through installed1.1.17 for PREVIEW-20/spec0.38. Normal release
 501988468abc29d8826d3e661be24e1d8b631644, six assets, matching source/notices and
 independently downloaded native/app workflows pass (PID202232; local167100).
