@@ -6,8 +6,12 @@ This is the authoritative specification. The derived plan must preserve every
 requirement and acceptance criterion. Material scope changes require explicit
 user direction recorded here; ordinary implementation choices need no new gate.
 
-S8 is ACTIVE for PREVIEW-20, the user's authorized targeted upstream maintenance
-of Marked and FriBidi. Other review candidates and S12 remain unstarted.
+S8 is BLOCKED only on installed1.1.17 readback for PREVIEW-20. The authorized
+Marked/FriBidi implementation, source/native workflows, normal publication and
+independently downloaded package/source verification pass at5019884. The user
+update/reopen request is pending; do not infer installed parity. Task scratch is
+removed without residuals. No stage is ACTIVE and no tracked deferral remains.
+Other review candidates and S12 remain unstarted.
 
 PREVIEW-20: replace the editor's Marked18.0.14 bundle with a source/hash-pinned
 patched stable release containing the Unicode-link cubic-backtracking fix.

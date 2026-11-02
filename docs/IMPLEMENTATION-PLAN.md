@@ -3,21 +3,21 @@
 Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.38, 2026-11-02,
 including the user-authorized continued comparison requirement TRANSFER-07.
 
-Current S8 status: ACTIVE for PREVIEW-20/spec0.38. The user authorized the two
-reviewed Marked/FriBidi fixes; do not adopt the other upstream candidates.
-Compact execution: pin/reproduce the parser changes, import patched Marked and
-rebuild the existing mpv runtime against FriBidi1.0.18 using isolated outputs and
-the existing supervised toolchain, then verify both complete app workflows and
-publish/retrieve/install1.1.17. Acceptance remaining: exact native linkage and
-source/notices, real editor Markdown, RTL subtitles and preserved SDR/DV playback,
-cleanup and final delivery. These are internal advancement blockers; no tracked
-deferral. Preserve the donor's dirty worktree and retained artifacts. S12 remains
-NOT STARTED; no other stage is ACTIVE.
-Fresh source acceptance PID194432 now passes both integrated workflows and
-source-bound SDR/DV color equality. Native173 passes new FriBidi link identity,
-unchanged borrowed inputs and group-empty lifecycle. Remaining advancement
-blockers are1.1.17 packaging/native/app checks, publication/retrieval, installed
-readback and final scratch cleanup. See verification/2026-11-02-deps117.md.
+Current S8 status: BLOCKED only on installed1.1.17 readback for PREVIEW-20/spec0.38.
+Both approved fixes are implemented and source-qualified (PID194432); native173
+verifies exact new FriBidi linkage and unchanged borrowed libraries, with empty
+group/released mounts. Native RTL subtitles, editor50k Unicode/sandbox/formatting,
+SDR/audio and paused/playing DV seeks/teardown pass; paired SDR/DV pixels match.
+Normal1.1.17 at5019884 is published with six assets and matching source/notices.
+Local package167100 and independently downloaded package202232 pass complete
+native/app workflows, hashes and source/signing identity. All task scratch is
+removed. No internal blocker, tracked deferral or ACTIVE stage remains.
+External blocker: the user-controlled update/reopen confirmation is pending;
+installed files/main/helper/readiness/routes cannot yet be verified. Resolution:
+after reopen, run the prepared read-only desktop diagnostic, clean its new exact
+scratch transaction and close S8. Preserve installed1.1.16, dirty donor worktree,
+retained caches and release assets. Other candidates/S12 remain unstarted.
+See verification/2026-11-02-deps117.md and .local/evidence/2026-11-02-deps117.
 
 Previous S8 status: COMPLETE through installed1.1.16 for PREVIEW-19/spec0.37.
 Normal release source35f01f6, six assets and matching sources pass. Independent
@@ -426,7 +426,7 @@ plan neither authorizes itself nor adds approval checkpoints.
 | S5 - REA-driven transfer improvements | COMPLETE | TRANSFER-01..07, archive/caller and WIDGET-02 revalidation, affected CORE-02/03, LIFE-01/DELIVERY-03 | Initial S5 criteria passed at e478986; user extended comparison/implementation | Finite findings inventory resolved; source/target handle reuse, copy-time hashing, metadata/EOF reductions, storage decisions, matched profiles, actual callers, adverse/preservation/cleanup and Release checks pass; see [evidence](verification/2026-10-29-s5.md) |
 | S6 - Native StartAllBack search | BLOCKED | SAB-01..06, affected SEARCH/CORE/LIFE/DELIVERY criteria | Parked by explicit user-directed S8-first execution; resume only after reprioritization is lifted | Investigation only; no working patch or complete SAB criterion. All native groups/handoff/provider/lifecycle/routing criteria remain open. |
 | S7 - Everything filesystem search and Outlook indexing scope | NOT STARTED | EVERYWHERE-01..05, affected SEARCH/CORE/LIFE/SHELL criteria | S6 COMPLETE; finite consumer/semantics/scope inventory before migration | Native Everything file results with selected filesystem roots excluded from Windows indexing; WSearch/Outlook retained, explicit Windows-managed exceptions, local/mail/reboot/recovery verification |
-| S8 - Core integration and delivery | ACTIVE | PREVIEW-20 targeted Marked/FriBidi maintenance; prior core criteria and DELIVERY-01..03 | User-authorized reviewed fixes; installed1.1.16 preserved | Internal blockers: pinned patched parser/runtime and source closure, complete editor/subtitle/media workflows, cleanup and normal1.1.17 publication/retrieval/installed verification. No tracked deferral. |
+| S8 - Core integration and delivery | BLOCKED | PREVIEW-20 targeted Marked/FriBidi maintenance; prior core criteria and DELIVERY-01..03 | Source/native and delivered1.1.17 package/source checks pass; scratch removed | Only installed1.1.17 readback awaits the requested user-controlled update/reopen. No internal blocker or tracked deferral. |
 
 ENV-01..04 belong to the current setup deliverable, not an artificial product
 implementation stage. See [setup evidence](verification/2026-10-28-setup.md).

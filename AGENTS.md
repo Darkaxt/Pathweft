@@ -3,22 +3,26 @@
 Read `docs/SPECIFICATION.md` first. It is authoritative; the plan and this file
 do not change its requirements or the user's standing instructions.
 
-Current S8 ACTIVE for PREVIEW-20/spec0.38, only the user-approved Marked/FriBidi
-fixes. Fresh source PID194432 passes both actual workflows with the .2 runtime:
-editor50k Unicode regression/sandbox/formatting, RTL subtitles, SDR/audio and
-paused/playing DV P5/P8.1/P8.4 seeks/teardown. Paired native color captures match.
-Native173/3ff9a892cf4c49a4a7c315c714adf482 passes exact new FriBidi link/map,
-173 unchanged borrowed archives, group-empty/mount release and no OOM. Cache
-D:/BuildCache/Pathweft/mpv/e471496c56-pathweft.2 retains the qualified31bd4b46 DLL
-and full source/notices/provenance; .1 and the dirty donor checkout are preserved.
-Native task output is already removed through11096c40d939518f5bca3f733e72f3c2.
-Remaining advancement blockers: normal1.1.17 package/native/app checks, normal
-publication/independent retrieval, user-controlled installed readback and final
-cleanup. No tracked deferral. S12 remains NOT STARTED; no other ACTIVE stage.
-Audit .local/evidence/2026-11-02-deps117; see docs/verification/2026-11-02-deps117.md.
-Root cleanup b13e925a7126f7801d5a0d4a05b8d288 remains open/registered. No desktop
-takeover, Sandbox, donor edits or other dependency candidates. Preserve user
-update control. Next: source commit, final package and delivery qualification.
+S8 BLOCKED only on the user-controlled installed1.1.17 readback for PREVIEW-20/
+spec0.38. Normal release501988468abc29d8826d3e661be24e1d8b631644 is published;
+six assets, exact branch/main/tag, full source/notices and independently downloaded
+native/app checks pass (PID202232; local167100). Source194432 passes the actual
+editor50k Unicode/sandbox/formatting, RTL subtitles, SDR/audio, DV paused/playing
+seeks and teardown; SDR/P5/P8.1/P8.4 captures match accepted baselines exactly.
+Native173 verifies the new FriBidi link/map,173 unchanged borrowed archives,
+group-empty/mount release and no OOM. Qualified .2 cache31bd4b46 is retained;
+.1, the installed1.1.16 and dirty donor worktree are preserved. Other candidates
+and S12 remain NOT STARTED. No ACTIVE stage or tracked deferral.
+The update request was sent once through the async question. After the user
+reopens1.1.17, begin/register a new exact D:/Temp/pathweft-s8-delivery transaction
+before invoking .local/evidence/2026-11-02-deps117/Invoke-InstalledDesktop117.ps1.
+Its read-only desktop diagnostic checks all installed members, fresh main/helper
+identities/readiness and actual route values. Then clean its small scratch,
+reconcile S8 COMPLETE and sync the closure docs; no second software release.
+Root cleanup b13e925a7126f7801d5a0d4a05b8d288 is applied without residuals;
+D:/Temp/pathweft-s8-delivery and all three outside-Temp native outputs are absent.
+Preserve dist/1.1.17, active dependency caches and .local/evidence/2026-11-02-deps117.
+No desktop takeover, Sandbox, forced app exit or live handler rewrite.
 
 Previous S8 COMPLETE through installed1.1.16 for PREVIEW-19/spec0.37.
 Normal release35f01f6, six assets, matching sources and independent delivered
