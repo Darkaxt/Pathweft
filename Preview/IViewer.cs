@@ -20,8 +20,9 @@ internal sealed class ContextObject
     readonly Func<bool> current;
     readonly Action<UIElement> publish;
     readonly Action<Task> track;
-    internal ContextObject(CancellationToken token, Func<bool> current, Action<UIElement> publish, Action<Task> track, bool autoplay)
-    { Token = token; this.current = current; this.publish = publish; this.track = track; Autoplay = autoplay; }
+    readonly Action<string,string> renderer;
+    internal ContextObject(CancellationToken token, Func<bool> current, Action<UIElement> publish, Action<Task> track, bool autoplay,Action<string,string> renderer=null)
+    { Token = token; this.current = current; this.publish = publish; this.track = track; Autoplay = autoplay;this.renderer=renderer; }
     internal CancellationToken Token { get; }
     internal bool IsCurrent => !Token.IsCancellationRequested && current();
     internal bool Autoplay { get; }
@@ -29,4 +30,5 @@ internal sealed class ContextObject
     internal bool IsBusy { get; set; } = true;
     internal UIElement ViewerContent { set { if (IsCurrent) publish(value); } }
     internal void Track(Task work) => track(work);
+    internal void SetRenderer(string name,string details=null){if(IsCurrent)renderer?.Invoke(name,details);}
 }

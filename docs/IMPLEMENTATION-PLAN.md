@@ -1,7 +1,177 @@
 # Implementation and reconciliation
 
-Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.39, 2026-11-02,
+Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.51, 2026-11-04,
 including the user-authorized continued comparison requirement TRANSFER-07.
+
+Current execution checkpoint (2026-11-04): user authorization covers S13, S9 and
+S11 as one implementation/release outcome. S13 is COMPLETE against all assigned
+source/integration acceptance; S9 is COMPLETE for its assigned source/integration
+acceptance and S11 is ACTIVE. S12/S14 remain
+NOT STARTED and S6 remains parked. S13 owns PREVIEW-21..37, CORE-18 and the
+bounded MENU-03 presentation additions. S9 owns MENU-01/02 and the search-widget
+containing-folder/Properties actions; S11 follows verified S9 acceptance.
+S11 owns one shared final normal release and
+independent/installed delivery verification for all three stages. That required
+delivery work is tracked explicitly to S11, with no intermediate publication.
+No implementation stage is complete until its assigned criteria pass.
+
+Plan addition2026-11-04: S14 is NOT STARTED after the combined S13/S9/S11
+delivery. WINDOW-01..03/UPDATE-02 cover a complete auxiliary-window design
+inventory/contract, consistent actual layouts and immediate manual update-check
+feedback/results. Preserve quiet automatic checks and existing deployment
+protection/progress. It owns its later normal release and independent/installed
+verification. Priority: S13 -> S9 -> S11 -> S14 -> S12 -> S6 -> S7. No S14
+implementation or second ACTIVE stage is authorized by this plan-only request.
+The user's search-widget QoL request belongs to S9: result-context Open
+containing folder with selection and native Properties for the selected object
+(including the .lnk itself), keyboard access and capability-aware states.
+
+Latest user additions: S13 must replace the verbose Office recovery footer with
+a concise orange bottom-right `Error loading: {filename}` status and full hover
+details. The user's subsequent direct implementation request assigns MENU-03
+compact icons to S13; S9 owns MENU-01/02 and is COMPLETE as recorded below.
+Keep16-DIP command art in30x24 buttons and14-DIP pane art in28x22 buttons, no new
+toolbar row, with accessible names/shortcuts and current state on hover.
+Group creation, selected-item actions, transfers, Terminal and view controls with
+four narrow dividers; verify order and fit after the user's screenshot correction.
+Read installed SVGs with glyph compatibility; do not bundle Windows assets. Exact
+local SVG variants and source hashes are retained
+under .local/evidence/2026-11-04-specialists/explorer-icons; see EXPLORER-ICONS.md.
+
+User extension2026-11-04: PREVIEW-37 Windowed and PiP modes belong to S13. After
+Office integration, add adjacent mode icons. Windowed uses a resizable external
+window and restores the same preview to the sidebar when closed. PiP uses a compact
+corner overlay inside Pathweft, frees the column and offers return to sidebar.
+Preserve actual viewer state and ownership across host changes. Verify Office/
+media/3D/HTML/ordinary previews, navigation away, restoration, compact/narrow sizing,
+source/archive leases, active-disable and app-exit cleanup. This is
+assigned S13 acceptance, now verified below rather than moved to a later stage
+or separate release. Existing S9/S11 prerequisites remain unchanged.
+
+Office decision2026-11-04: use the pinned Craft source cores as they behave now,
+with thin native-library bridges and no bundled Craft GUI/CLI/MCP application.
+The user selected a small Pathweft-owned worker for genuine crash recovery and
+authorized LibreOffice fallback for unsupported Office formats and failed/crashed
+Craft rendering. Keep document state while navigating and render requested content
+directly. Preserve original/MOTW, macro/link policies and process ownership.
+New fallback starts only after actual primary failure/exit, once per request;
+cancellation or policy rejection cannot start it. Source integration must preserve
+upstream behavior, not invent missing Craft format implementations. No S9/S11 work
+begins before complete S13 implementation/integration acceptance.
+
+User extension2026-11-04: CORE-18 live ancestor-size updates belong to S13.
+Root cause: SizeCache trusted only a folder's own timestamp; the view watched
+direct children only, Patch updated directory sizes only when Modified differed,
+and queued sizing results lacked a generation check. Source PID84388 now verifies
+the complete CORE-18 workflow: external nested213MB installation, growth/shrink,
+rename/removal, both panes and return navigation, unchanged sibling cache,
+invalidated-scan rejection, overflow recovery and actual watcher teardown with
+zero foreground activation. The extended workflow also verifies that a refresh
+preserves selection atomically, without an intermediate empty-selection event
+disposing a live preview. Unknown totals show measuring/partial state.
+Source acceptance passes; shared final delivered-package verification remains
+assigned to S11. The complete S13 source closure is recorded below.
+
+S13 closure2026-11-04: all fourteen specialist categories now satisfy assigned
+source/integration acceptance. Source PID101788 verifies actual64-page Word,
+three-sheet workbook, distinct-slide navigation, native side/Space/widget/archive
+surfaces, active-disable/locked-input release, original/MOTW and Native/Original
+100%/150% layouts. PID117348 supplies the remaining DOC/DOCM/ODT/XLS/XLSB/ODS/XLSM
+and protected-document workflows. PID108864 verifies real PPT/ODP/VSD/VSDX,
+one fallback after exact primary-worker termination,64-page recovery, explicit
+combined failure and policy/cancellation exclusion with actual tree/workspace exit.
+No Craft GUI/CLI/MCP/installed product participates. Manifest status is qualified
+for this source integration; final delivery is explicitly still unmet in S11.
+
+PREVIEW-37 PID114112 verifies sidebar/in-app PiP/floating restoration, actual
+Office navigation including fallback icons/orange bottom-right warnings, table/
+HTML scroll, paused/playing native MPV HWND, F3D camera/animation and archive leases.
+Native light/dark/Original150% Office mode moves preserve the same worker/page;
+narrow sizing, active-disable and app-exit drainage pass. PID39948 verifies the
+compact grouped/native icons, terminal glyph, real Copy/Move, View/Sort, hover/
+keyboard/state, minimum sidebar/header and corrected About/child-row spacing,
+with actual96/144DPI transitions and zero foreground activation. An initial
+What’s New diagnostic exposed its missing Debug hidden guard; that guard is
+corrected and the complete affected workflow passes, without Release changes.
+
+Source/runtime closure:9584 Office runtime/manifest/notice members match;450
+notice hashes and actual142/93/100 Windows build graphs are retained. The actual
+176-query core/NuGet advisory review has only zip3.0.0 matches; selected read-only
+named-part import excludes the affected extraction/decryption/streaming paths.
+LibreOffice's233 distributed PE imports and149-entry official external build
+source universe are inventoried without claiming all platform/build inputs linked.
+622 corresponding-source members stage/hash-check successfully: complete donor/
+font packs,156 dependency archives,450 notices and complete official core/dictionary
+sources/recipes. Review the26.2 fallback maintenance transition before2026-11-30;
+current official advisories are fixed in the selected26.2.7. Source/package docs
+describe the actual DLL/worker architecture rather than the obsolete CLI baseline.
+
+Closure assessment: one existing preview/session owner serves all specialist and
+mode paths; native models/workers retain one explicit lifetime and one fallback
+boundary. No material consolidation is required before S9. No required S13
+implementation blocker or tracked implementation deferral remains. The only
+required later work is the explicitly assigned S11 final combined delivery.
+
+Spent candidate scratch and compiler/PDF-test output are removed through reviewed
+transactions6618f469/45582aca/4188d3e9 (all applied without residuals); source,
+native output baselines, lifecycle receipts and active dependency caches remain.
+The older cleanup30534b06 still has locked Office logs under the exact
+specialists-73d67fb1b8ed4fd1827e8a30c5b42d9c/temp path. WINWORD102304 remains
+alive; preserve that consumer and retry its original ticket after actual release.
+This residual is cleanup work, not evidence of passed Office integration.
+
+### Current acceptance ledger
+
+| Stage | Status | Satisfied | Remaining / blockers | Tracked delivery work |
+| --- | --- | --- | --- | --- |
+| S13 | COMPLETE | PREVIEW-21..37, CORE-18 and bounded MENU-03 source/integration acceptance pass. Thirteen specialist content/policy/lifecycle paths retain PID101932/102932/97712 and prior integrated receipts; Office closes with PID101788/117348/108864. CORE-18 PID84388, existing previews PID79048, shared PDF PID87760, modes PID114112 and compact/header/settings UI PID39948 pass. Source/license/runtime inventory and corresponding-source staging pass as recorded above | None within assigned source/integration acceptance | S11 final delivery: all S13 modules, CORE-18, modes and compact UI in the independently retrieved package and installed update |
+| S9 | COMPLETE | Inventory/grouped menus, routed keyboard/theme100/150%, real archive edits/extraction and widget reveal pass PID127940/122788. Native122788 verifies Windows clipboard Copy/Cut/Paste and actual Shell Open. Native128032 verifies exact file/folder/shortcut Properties visibility/shown state, search dismissal and actual HWND destruction, regular native recycle completion and exact hash-matched restore. Owned job empty, user input desktop unchanged, no host activation | None within assigned source/integration acceptance. Test observations distinguish noninteractive station from private WinSta0 desktop; no native reparenting or product recycling workaround | S11 final delivery: menu workflows in the actual package |
+| S11 | ACTIVE | S13/S9 prerequisites pass. Native PID126624 verifies accepted folder categories, independent native recent readback, real cold/warm launches, Unicode/UNC/root quoting, saved-removal/privacy inputs, refresh suppression and exact test-identity teardown without host activation. Candidate1.1.18 actual packaged PID108292 passes all fourteen specialist categories, Office navigation/crash recovery/legacy+Visio fallback, native destinations and existing media/model; original passing packaged32/64 Shell/selftest results reused for unchanged members | Actual installed pin/unpin/open/remove and StartAllBack presentation; shortcut/update ownership; committed final package/source/release/retrieval and installed verification | None beyond S11 |
+| S14 | NOT STARTED | Requirements recorded only | WINDOW-01..03/UPDATE-02; inventory/apply a consistent auxiliary-window contract and immediate manual check feedback after the current combined delivery | Its own normal release, independent package and installed-update verification |
+
+The earlier planning snapshot and historical per-stage delivery wording below
+are superseded only for this combined request's sequencing by spec0.40. No
+acceptance behavior or delivery evidence is waived. The stage map statuses will
+be reconciled at meaningful feature/stage checkpoints.
+
+S9 design/eligibility inventory is in CONTEXT-MENUS.md. Preserve existing action
+owners; group secondary native commands under Transfer, Copy details, Archive,
+Tools and More actions, with primary file commands at the root. Background uses
+New/View/Sort/Select/Tools groups. Writable/read-only archive capabilities remain
+explicit, and This PC/native extension ownership stays unchanged. The widget gets
+its own selection-bound actions and keyboard paths, never the main pane's state.
+S9 checkpoint: normal hidden source/UI PID127940 passes the complete menu/layout,
+routed Right/Left keyboard, archive preview/rename/delete/read-only extraction and
+widget reveal/dispatch workflow; retained receipts/PNG/JSON are private. Native
+PID130144 on a genuinely private window station also passes real Copy/Cut/Paste
+through the Windows clipboard and Ferry plus Shell Open of a windowless owned
+receiver. It fails at the first native Properties widget-ownership assertion;
+the observer may need to distinguish a child dialog from the top-level sheet,
+but that remains a hypothesis. Do not modify production behavior speculatively
+or claim native Properties/lifetime acceptance from the successful dispatch seam.
+
+S9 closure: accepted native diagnosis129196 identifies the Shell's StubWindow32
+owner; direct ownership of the invoking widget was an over-specified diagnostic.
+The DEBUG observer callback is rooted statically through hook disposal. Native
+122788 passes the complete clipboard/Open/grouped/archive/theme paths. Its final
+recycle restoration fails because Microsoft.VisualBasic ignores recycling when
+Environment.UserInteractive is false: this is a private-station test limitation,
+not evidence of normal product recycling. Native128032 on an exact private,
+never-switched WinSta0 desktop verifies actual visible Properties for all three
+object types, exact selection and keyboard/reveal, regular native recycle
+completion, exact restored hash, actual dialog destruction and full owned-tree
+exit. The launcher verifies the user's input desktop is unchanged; the observer
+distinguishes private-desktop activation from host-input-desktop activation.
+No user clipboard/input/installed settings change. Raw target/owner/style and
+lifecycle receipts remain private; do not claim an on-screen manual inspection.
+Stage-closure assessment: existing action owners and menu nodes remain the single
+source of behavior; no material consolidation is needed before S11. S9 has no
+remaining source/integration blocker or tracked implementation deferral. S11 owns
+its final delivery and is now the single ACTIVE stage.
+The source distribution staging remains for final S11 packaging; all622 staged
+sources and9584 Office runtime/notice members reverify against current pins.
+No final commit, version bump or publication has occurred; installed1.1.17 and
+its running main/helper remain unchanged.
 
 Current plan revision (2026-11-02): add S13 for all fourteen remaining specialist
 preview categories, PREVIEW-21..36. Remaining execution order:
@@ -434,10 +604,11 @@ plan neither authorizes itself nor adds approval checkpoints.
 | S4U - Read-only cues and hidden visibility | COMPLETE | FILEUI-01..03, affected CORE/SEARCH/ARCHIVE/LIFE | S4R COMPLETE; user-approved icon direction | Real hidden browser/widget/tree/archives and native index workflow, persisted global toggle, grayscale/lock rendering, preservation, focused regressions, exact cleanup and source commit/remote readback; see S4U evidence |
 | S5 - REA-driven transfer improvements | COMPLETE | TRANSFER-01..07, archive/caller and WIDGET-02 revalidation, affected CORE-02/03, LIFE-01/DELIVERY-03 | Initial S5 criteria passed at e478986; user extended comparison/implementation | Finite findings inventory resolved; source/target handle reuse, copy-time hashing, metadata/EOF reductions, storage decisions, matched profiles, actual callers, adverse/preservation/cleanup and Release checks pass; see [evidence](verification/2026-10-29-s5.md) |
 | S8 - Core integration and delivery | COMPLETE | PREVIEW-20 targeted Marked/FriBidi maintenance; prior core criteria and DELIVERY-01..03 | Source/native, delivered1.1.17 package/source and installed879-member/main/helper/route checks pass; scratch removed | None within S8. No tracked deferral. |
-| S13 - Remaining specialist preview modules | NOT STARTED | PREVIEW-21..36; affected PREVIEW-03/04, CORE-03, LIFE-01 and DELIVERY-01..03 | S8 COMPLETE; first remaining implementation stage when execution is authorized | All fourteen embedded specialist viewers, exact format/source/dependency matrix, real selection/render/navigation/toggle/release workflows, preservation/layout/lifecycle and one normal independently verified release plus installed update. See S13 contract below. |
-| S9 - Context menu reorganization | NOT STARTED | MENU-01..02; affected CORE-03/04 and archive/file actions | S13 COMPLETE; next in priority | Eligibility inventory, grouped common commands, native-menu choice and shortcuts, actual commands/keyboard/themes/layout and normal verified delivery. |
-| S11 - Native pinned/recent folder Jump Lists | NOT STARTED | JUMP-01..02; affected CORE-01/02 and LIFE/DELIVERY | S9 COMPLETE; next in priority | Native folder destinations, pin/unpin/recent/removal/privacy, direct cold/warm launches, stable identity/update/uninstall and normal verified delivery. Tasks-only is insufficient. |
-| S12 - Tresorit capability investigation | NOT STARTED | TRES-01..04 | S11 COMPLETE; next in priority | Supported API/client assessment, bounded REA as needed, evidence-backed capability matrix/decision and implementation proposal. Investigation only; no cloud mutation or integration implementation. |
+| S13 - Remaining specialist preview modules | COMPLETE | PREVIEW-21..37, CORE-18, bounded MENU-03; affected CORE/LIFE | S8 COMPLETE | All assigned source/integration criteria pass; S11 owns shared final independent/installed release verification. |
+| S9 - Context menu and command presentation | COMPLETE | MENU-01/02; affected CORE-03/04 and archive/file actions; MENU-03 compact presentation completed in S13 | S13 source/integration COMPLETE | Complete source/integration acceptance PID127940/122788/128032; S11 owns shared final delivery. |
+| S11 - Native pinned/recent folder Jump Lists | ACTIVE | JUMP-01..02; affected CORE-01/02 and LIFE/DELIVERY | S9 COMPLETE | Native folder destinations, pin/unpin/recent/removal/privacy, direct cold/warm launches, stable identity/update/uninstall and normal verified delivery. Tasks-only is insufficient. |
+| S14 - Window design consistency and update feedback | NOT STARTED | WINDOW-01..03, UPDATE-02; affected CORE-03/LIFE/DELIVERY | S11 combined delivery COMPLETE; plan-only addition | Shared design contract across the complete window inventory, immediate manual check/progress/results, retained quiet automatic checks and deployment protection, actual theme/narrow/DPI/keyboard/lifecycle qualification and one later verified release. |
+| S12 - Tresorit capability investigation | NOT STARTED | TRES-01..04 | S14 COMPLETE; next in priority | Supported API/client assessment, bounded REA as needed, evidence-backed capability matrix/decision and implementation proposal. Investigation only; no cloud mutation or integration implementation. |
 | S6 - Native StartAllBack search | BLOCKED | SAB-01..06; affected SEARCH/CORE/LIFE/DELIVERY criteria | Parked until Pathweft-first work S13/S9/S11/S12 is closed and execution is resumed; retain unresolved native feasibility boundaries | Investigation only; no complete SAB criterion. Qualify native groups/provider/cancellation/handoff/lifecycle/direct routing and independently verified adapter release in S6; no automatic Sandbox restart. |
 | S7 - Everything filesystem search and Outlook indexing scope | NOT STARTED | EVERYWHERE-01..05; affected SEARCH/CORE/LIFE/SHELL criteria | S6 COMPLETE; consumer/semantics/scope inventory before migration | Final dependent Windows-search work: real Everything file results with selected roots excluded from indexing, WSearch/Outlook retained, explicit exceptions, mail/reboot/recovery and verified migration/package delivery in S7. |
 
@@ -478,6 +649,7 @@ owns its complete release/delivery gate; S12 delivers research documents only.
 | Requirements | Owner | Later boundary |
 | --- | --- | --- |
 | ENV-01..04 | Setup | Committed/remote document and head readback at setup delivery |
+| WINDOW-01..03, UPDATE-02 | S14 | Planned auxiliary-window consistency/manual checking; later normal independently retrieved and installed release |
 | TRES-01..04 | S12 | Evidence-backed Tresorit investigation and implementation proposal; execution remains NOT STARTED |
 | PREVIEW-21..36 | S13 | All fourteen remaining specialist categories, exact format coverage, integrated qualification and final release/installed verification in S13 |
 | PREVIEW-19 | S8 | Canonical drive/share identity for static HTML, retained isolation and final1.1.16 delivery |

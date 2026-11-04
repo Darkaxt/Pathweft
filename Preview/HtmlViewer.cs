@@ -5,7 +5,7 @@ using Microsoft.Web.WebView2.Wpf;
 
 namespace FileExplorer.Preview;
 
-internal sealed class HtmlViewer(Entry entry):IViewer
+internal sealed class HtmlViewer(Entry entry,HtmlResources suppliedResources=null,string label="HTML"):IViewer
 {
     WebView2 web;
     CoreWebView2Environment environment;
@@ -19,12 +19,13 @@ internal sealed class HtmlViewer(Entry entry):IViewer
     bool cleaned,browserStarted,navigated;
     readonly List<Stream> responses=new();
     internal Task Closed {get;private set;}=Task.CompletedTask;
+    internal event Action<Uri> InternalLinkRequested;
     public bool CanHandle(string path)=>true;
     public void Init(){}
-    public void Prepare(string path,ContextObject value){context=value;value.Title=entry.Name+" · HTML";}
+    public void Prepare(string path,ContextObject value){context=value;value.Title=entry.Name+" · "+label;}
     public async Task View(string path,ContextObject value)
     {
-        resources=new(entry.Path,path,value.Token);
+        resources=suppliedResources??new(entry.Path,path,value.Token);
         await resources.Read(resources.Document); // Document errors are explicit, never a blank successful preview.
         value.Token.ThrowIfCancellationRequested();
         web=new WebView2 {DefaultBackgroundColor=System.Drawing.Color.FromArgb(Appearance.Background.R,Appearance.Background.G,Appearance.Background.B)};
@@ -67,6 +68,7 @@ internal sealed class HtmlViewer(Entry entry):IViewer
             bool same=Uri.TryCreate(args.Uri,UriKind.Absolute,out var uri)&&resources.SameDocument(uri);
             bool first=!navigated&&same&&uri.Fragment=="";
             args.Cancel=!first&&!(same&&uri.Fragment!=""&&args.IsUserInitiated);
+            if(args.Cancel&&args.IsUserInitiated&&uri!=null&&resources.LocalDocument(uri))InternalLinkRequested?.Invoke(uri);
             if(first)navigated=true;
         };
         core.FrameNavigationStarting+=(_,args)=>args.Cancel=true;

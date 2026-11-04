@@ -3,6 +3,82 @@
 Read `docs/SPECIFICATION.md` first. It is authoritative; the plan and this file
 do not change its requirements or the user's standing instructions.
 
+Current authorization2026-11-04/spec0.51: implement S13 -> S9 -> S11 as one
+combined release outcome. S13 is COMPLETE for assigned source/integration;
+S9 is COMPLETE for assigned source/integration and S11 ACTIVE. Close complete
+source/integration acceptance for each before advancing; S11 owns shared final
+publication, independent package/source verification and actual installed update
+for all three. No intermediate releases. S12/S6/S7 remain outside this request.
+Preserve user data/running state; use existing hidden app-owned diagnostics and
+the required source/dependency/license inventory. Earlier plan-only snapshots
+below remain historical and do not revoke this authorization.
+The user explicitly chose full embedded Office navigation with its larger
+runtime. Qualify the user-staged WordCraft/GridCraft/DeckCraft candidates under
+PREVIEW-22; preserve full format/navigation acceptance and assess actual output.
+Do not deploy new MCP/gate features; the user owns that support. Use borrowed
+Craft source cores through minimal native DLL bridges in a small Pathweft-owned
+worker; the user selected worker isolation for genuine crash recovery. Bundled
+LibreOffice handles unsupported Office formats and failed/crashed Craft rendering.
+Preserve current upstream behavior rather than inventing new Craft features.
+CORE-18 live nested folder-size updates
+are also assigned to current S13 by the user's latest request. Preserve source/MOTW,
+disable macros/link updates and own the exact renderer process/profile lifetime.
+PREVIEW-37 belongs to S13 after Office integration: Windowed is an external
+floating window whose closure restores the same preview to the sidebar; PiP is a
+compact corner overlay inside Pathweft that frees the column. Preserve current
+renderer/media/model/navigation state and offer return from PiP to sidebar.
+The user clarified that workload gates coordinate agent work/resources; borrowed
+libraries do not require new Craft gate identities or end-user Coordinator/MCP.
+The latest direct request adds compact native command/view icons (MENU-03) to
+active S13 now. Preserve Pathweft's spacing; broader MENU-01/02 remain in S9.
+Latest S13 UI corrections: sidebar version is removed; Update/What's new/Help/
+Settings move beside the name (below at narrow widths), while Drop bin stays
+below. About removes upstream author/promotion, retaining license notices and
+actual integrations. Indented child toggles keep standard6-DIP row spacing.
+Current source closure is recorded in the plan with native Office101788,
+remaining formats117348, fallback108864, modes114112 and compact/header39948.
+All Office runtime/notice members and corresponding-source staging match. S9
+owns MENU-01/02/widget actions next; final combined release stays in S11.
+S14 is newly planned, NOT STARTED: auxiliary-window design consistency and
+immediate manual update-check feedback (WINDOW-01..03/UPDATE-02). Priority after
+the combined delivery is S14 -> S12 -> S6 -> S7; do not activate it during S13.
+S9 also owns search-widget Open containing folder with selection and actual
+native Properties, including shortcuts themselves; retain keyboard eligibility.
+Current S9 checkpoint: source/UI PID127940 passes grouped menus, routed Left/Right
+navigation,100/150% themes, archive preview/rename/delete/extract and widget
+file/folder/shortcut reveal plus exact Properties dispatch. Actual private-station
+PID130144 also passes native clipboard Copy/Cut/Paste and real Shell Open.
+Native diagnosis129196/23008 confirms the actual file/folder/shortcut sheets use
+Windows' StubWindow32, so direct widget ownership was an over-specified test.
+Successful Properties now dismisses search, passing the main window to Shell;
+failure preserves search with a row error. PID23008 records matching targets,
+unchanged WS_VISIBLE before/after hide and actual HWND destruction. Private
+stations have no visible display surface; retain IsWindowVisible and station
+flags separately and do not claim on-screen property-sheet rendering. The test
+observer's GC callback failure is corrected with a static rooted delegate.
+S9 source/integration closes with native128032: exact file/folder/shortcut
+Properties are visible within a never-switched private WinSta0 desktop, survive
+search hide and close; regular Delete completes and its exact recycled fixture
+is restored/hash-verified for reviewed cleanup. Native122788 supplies real
+Copy/Cut/Paste/Open and the full menu/archive/theme workflows; its later recycle
+restore failure was a diagnosed noninteractive .NET test limitation. No product
+behavior changed to evade it. Both owned jobs exit;128032 confirms the input
+desktop unchanged and no host activation. S11 is now ACTIVE for JUMP-01/02 and
+the shared final release. No host clipboard/dialog fallback.
+S11 candidate1.1.18 passes actual delivered-assembly PID108292: all fourteen
+specialist categories, Word64pages/workbook sheets/slides, actual primary-worker
+exit/LibreOffice recovery and legacy PPT/ODP/VSD/VSDX, accepted native publisher,
+plus existing media/model and real32/64 Shell boundaries. Source/native Jump List
+PID126624 passes cold/warm launch and independent Windows recent readback.
+The isolated package profile is flat under its verification root because the
+native LibreOffice extension registry still has Win32 path-length limits; the
+same runtime's short/lengthened profile diagnostic isolates that boundary.
+Final committed package/source, normal release/retrieval and actual installed
+update/pin/unpin/StartAllBack checks remain in ACTIVE S11. S14 is not started.
+Installed1.1.17 remains untouched; no new commit or published release. Preserve current
+build inputs, S11 corresponding-source staging and the active Word consumer's
+old four logs. Clean spent trials through the installed helper.
+
 Current plan-only revision: spec0.39 adds S13 (PREVIEW-21..36) for all fourteen
 remaining specialist preview categories. Preserve existing stage IDs and follow
 remaining priority S13 -> S9 -> S11 -> S12 -> S6 -> S7. Pathweft improvements

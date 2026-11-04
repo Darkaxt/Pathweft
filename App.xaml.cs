@@ -9,6 +9,7 @@ namespace FileExplorer;
 // throttled laptop-like CPU). Switches (--agent, --selftest, …) always take the full start.
 static class Program
 {
+    internal static string Executable=>Path.Combine(AppContext.BaseDirectory,"Pathweft.exe");
     /// The folder of a portable copy: the exe's own, when a portable.txt sits beside it (the portable zip has one).
     /// Before PipeName, which reads it: static fields start in the order they are written.
     internal static readonly string PortableDir = File.Exists(Path.Combine(AppContext.BaseDirectory, "portable.txt")) ? AppContext.BaseDirectory.TrimEnd('\\') : null;
@@ -24,9 +25,29 @@ static class Program
     [STAThread]
     static void Main(string[] args)
     {
+        if(args.Length==1&&args[0]=="--office-preview-worker")
+        {Environment.ExitCode=Preview.OfficeWorker.Run().GetAwaiter().GetResult();return;}
         if(args.FirstOrDefault(a=>a.StartsWith("--relocate-profile=")) is { } relocation)
         { Environment.ExitCode=StorageLocation.Run(relocation["--relocate-profile=".Length..]);return; }
 #if DEBUG
+        if(args.Contains("--verify-jump-cleanup"))
+        {
+            if(Settings.Profile?.StartsWith(@"D:\Temp\pathweft-s13-s9-s11\specialists-",StringComparison.OrdinalIgnoreCase)!=true)throw new ArgumentException("Owned Jump List cleanup profile required");
+            NativeJumpList.RemoveOwned();return;
+        }
+        if(args.FirstOrDefault(a=>a.StartsWith("--verify-jump-args=")) is {} argumentProbe)
+        {
+            string receipt=Path.GetFullPath(argumentProbe["--verify-jump-args=".Length..]);
+            if(Settings.Profile?.StartsWith(@"D:\Temp\pathweft-s13-s9-s11\specialists-",StringComparison.OrdinalIgnoreCase)!=true||!receipt.StartsWith(Settings.Profile+"\\",StringComparison.OrdinalIgnoreCase))throw new ArgumentException("Owned Jump List argument receipt required.");
+            File.WriteAllText(receipt,System.Text.Json.JsonSerializer.Serialize(new{path=PathArg(args),pid=Environment.ProcessId}));return;
+        }
+        const string specialistSettings="--verify-specialist-settings=";
+        if(args.FirstOrDefault(a=>a.StartsWith(specialistSettings)) is {} settingsRequest)
+        {
+            string receipt=Path.GetFullPath(settingsRequest[specialistSettings.Length..]);
+            if(Settings.Profile?.StartsWith(@"D:\Temp\pathweft-s13-s9-s11\specialists-",StringComparison.OrdinalIgnoreCase)!=true||!receipt.StartsWith(Settings.Profile+"\\",StringComparison.OrdinalIgnoreCase))throw new ArgumentException("Owned specialist settings receipt required.");
+            Settings.Load();File.WriteAllText(receipt,System.Text.Json.JsonSerializer.Serialize(Settings.DisabledPreviewModules.Order().ToArray()));return;
+        }
         if(args.FirstOrDefault(a=>a.StartsWith("--storage-parent=")) is { } storageParent)
         {StorageLocation.StartVerificationParent(storageParent["--storage-parent=".Length..],args.Single(a=>a.StartsWith("--storage-parent-pipe="))["--storage-parent-pipe=".Length..]);return;}
         if(args.FirstOrDefault(a=>a.StartsWith("--desktop-test-profile=")) is { } testProfile)
@@ -188,11 +209,12 @@ public partial class App : Application
                         Settings.SetDefaultFileManager(false);
                         if(Agent.OwnsStartup)Agent.Disable();
                         Settings.RemoveOwnedStartup();
+                        NativeJumpList.RemoveOwned();
                     }
                 }
                 Shutdown(0);
             }
-            catch(Exception ex)when(ex is IOException or UnauthorizedAccessException or InvalidOperationException or System.Security.SecurityException or System.ComponentModel.Win32Exception){Shutdown(1);}
+            catch(Exception ex)when(ex is IOException or UnauthorizedAccessException or InvalidOperationException or System.Security.SecurityException or System.ComponentModel.Win32Exception or System.Runtime.InteropServices.COMException){Shutdown(1);}
             return;
         }
 #if DEBUG
@@ -231,6 +253,7 @@ public partial class App : Application
             listening = Listen();
         }
         Settings.Load(); // before any window: the panes read column widths while being built
+        ShellIdentity.Apply(); // stable process/shortcut identity, before creating any HWND
         if(Settings.Profile==null)
         {
             // This app and its children own their runtime scratch on the data drive.
@@ -264,6 +287,8 @@ public partial class App : Application
         if (e.Args.FirstOrDefault(a => a.StartsWith("--verify-s5=")) is { } transferVerification)
             window.ContentRendered += async (_, _) => await window.VerifyS5(transferVerification["--verify-s5=".Length..]);
         HiddenTrialPresentation.Prepare(window);
+        if(e.Args.FirstOrDefault(a=>a.StartsWith("--verify-jump-cold=")) is {} coldJump)
+            window.ContentRendered+=async(_,_)=>await window.VerifyColdJump11(coldJump["--verify-jump-cold=".Length..]);
         if(e.Args.FirstOrDefault(a=>a.StartsWith("--verify-s8-appearance=")) is { } appearanceCorrection)
             window.ContentRendered+=async(_,_)=>await window.VerifyAppearanceCorrection(appearanceCorrection["--verify-s8-appearance=".Length..]);
         if(S8ShellTrial.Enabled)

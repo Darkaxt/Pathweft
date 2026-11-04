@@ -48,6 +48,9 @@ public class WhatsNewWindow : Window
         Foreground = MainWindow.Hex("#E8EEF6");
         FontFamily = new FontFamily("Segoe UI Variable Text, Segoe UI");
         FontSize = 12;
+#if DEBUG
+        HiddenTrialPresentation.Prepare(this);
+#endif
         SourceInitialized += (_, _) => MainWindow.ApplyAcrylic(this);
         PreviewKeyDown += (_, e) =>
         {

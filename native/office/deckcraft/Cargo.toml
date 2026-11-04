@@ -1,0 +1,15 @@
+[package]
+name = "pathweft-deckcraft"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+rust-version = "1.95"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+deckcraft-model = { workspace = true }
+deckcraft-pptx = { workspace = true }
+deckcraft-render = { workspace = true }
+serde_json = { workspace = true }

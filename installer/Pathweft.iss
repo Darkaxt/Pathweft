@@ -54,8 +54,8 @@ Source: "{#PublishRoot}\*"; DestDir: "{app}"; Excludes: "PathweftShell-*.dll"; F
 Source: "{#PublishRoot}\PathweftShell-*.dll"; DestDir: "{app}"; Flags: ignoreversion uninsrestartdelete
 
 [Icons]
-Name: "{group}\Pathweft"; Filename: "{app}\{#AppExe}"
-Name: "{autodesktop}\Pathweft"; Filename: "{app}\{#AppExe}"; Tasks: desktopicon
+Name: "{group}\Pathweft"; Filename: "{app}\{#AppExe}"; AppUserModelID: "Darkaxt.Pathweft"
+Name: "{autodesktop}\Pathweft"; Filename: "{app}\{#AppExe}"; AppUserModelID: "Darkaxt.Pathweft"; Tasks: desktopicon
 
 [Run]
 Filename: "{app}\{#AppExe}"; Parameters: "--desktop-launch"; Description: "Launch Pathweft"; Flags: nowait postinstall skipifsilent

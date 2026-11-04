@@ -16,13 +16,20 @@ public partial class MainWindow
     [DllImport("dwmapi.dll")] static extern int DwmGetWindowAttribute(IntPtr window,int attribute,out uint value,int size);
     internal async Task VerifyAppearanceCorrection(string root)
     {
-        if(!HiddenTrialPresentation.Enabled||!Path.GetFullPath(root).StartsWith(@"D:\Temp\pathweft-s8-delivery\",StringComparison.OrdinalIgnoreCase))throw new ArgumentException("Owned hidden fixture required.");
+        if(!HiddenTrialPresentation.Enabled||!(Path.GetFullPath(root).StartsWith(@"D:\Temp\pathweft-s8-delivery\",StringComparison.OrdinalIgnoreCase)||Path.GetFullPath(root).StartsWith(@"D:\Temp\pathweft-s13-s9-s11\",StringComparison.OrdinalIgnoreCase)))throw new ArgumentException("Owned hidden fixture required.");
         Application.Current.ShutdownMode=ShutdownMode.OnExplicitShutdown;
         var checks=new List<object>(); int result=1; SettingsWindow settings=null;SearchWidgetWindow widget=null;
-        void Check(bool passed,string criterion){checks.Add(new{criterion,passed});if(!passed)throw new InvalidOperationException(criterion);}
+        void Check(bool passed,string criterion)
+        {
+            checks.Add(new{criterion,passed});
+            File.AppendAllText(Path.Combine(root,"verification-progress.jsonl"),JsonSerializer.Serialize(new{criterion,passed})+Environment.NewLine);
+            if(!passed)throw new InvalidOperationException(criterion);
+        }
         async Task Settled()=>await Dispatcher.InvokeAsync(UpdateLayout,System.Windows.Threading.DispatcherPriority.ApplicationIdle);
         try
         {
+            if(Environment.GetEnvironmentVariable("PATHWEFT_VERIFY_SPECIALISTS13")=="1")
+            {await VerifySpecialists13(root,Check);result=0;return;}
             if(Environment.GetEnvironmentVariable("PATHWEFT_VERIFY_DEPS117")=="1")
             {await VerifyDependencies117(root,Check);result=0;return;}
             if(Environment.GetEnvironmentVariable("PATHWEFT_HTML116_PATHS") is not null)
@@ -425,7 +432,7 @@ public partial class MainWindow
             {
                 var flags=System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic;
                 var watch=(FileSystemWatcher)typeof(PaneView).GetField("watcher",flags).GetValue(pane);
-                var pending=((System.Windows.Threading.DispatcherTimer)typeof(PaneView).GetField("debounce",flags).GetValue(pane)).IsEnabled;
+                var pending=((System.Windows.Threading.DispatcherOperation)typeof(PaneView).GetField("folderRefresh",flags).GetValue(pane))?.Status==System.Windows.Threading.DispatcherOperationStatus.Pending;
                 checks.Add(new{close=didClose,cancelled=closeCancelled,pane=pane.Name,watch=watch?.Path,pending});
                 if(watch!=null||pending)
                 {result=1;checks.Add(new{failure="Closing left a folder watcher/refresh timer alive after view resource teardown."});}

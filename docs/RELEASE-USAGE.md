@@ -1,4 +1,19 @@
-# Pathweft 1.1.17
+# Pathweft 1.1.18
+
+Specialist previews now include bundled Office rendering with page/sheet/slide
+navigation and LibreOffice fallback. No Craft application, MCP server or
+Coordinator installation is needed by an end user. The complete selected runtime
+and its notices ship with Pathweft; matching dependency sources ship separately.
+The preview header offers Sidebar, compact in-app PiP and external Windowed
+modes. Closing the external window restores its preview to the sidebar.
+
+The taskbar/Start app Jump List publishes Quick access and recent filesystem
+folders. Windows owns pinning and removal; history privacy preferences are
+respected. Links target Pathweft directly and do not require default-folder
+integration. Virtual Shell/archive locations are omitted; offline destinations
+remain explicit and report unavailable locations when opened. Portable copies
+and explicit profiles use separate application identities. Updates preserve the
+installed identity and pinned state; uninstall removes only its owned list.
 
 Windows 11 x64 is the qualified host. The .NET 10 desktop runtime and native
 archive/preview libraries are included. WebView2 Evergreen is required for the

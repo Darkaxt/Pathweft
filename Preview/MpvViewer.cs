@@ -18,6 +18,9 @@ internal sealed class MpvViewer(MainWindow owner)
     double seconds,duration;
     volatile bool cleaned;
     internal MpvPlayer Player=>player;
+#if DEBUG
+    internal MpvHost HostForVerification=>host;
+#endif
     internal Task Ready {get;private set;}=Task.CompletedTask;
     internal async Task View(string path,ContextObject current)
     {

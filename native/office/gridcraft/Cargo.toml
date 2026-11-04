@@ -1,0 +1,14 @@
+[package]
+name = "pathweft-gridcraft"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+rust-version = "1.95"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+gridcraft-engine = { workspace = true }
+gridcraft-xlsx = { workspace = true }
+serde_json = { workspace = true }

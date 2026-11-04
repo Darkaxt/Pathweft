@@ -70,13 +70,17 @@ internal sealed class BuiltinViewer(PreviewModule module, MainWindow owner, Entr
         pdfBytes = null;
     }
 
-    internal static TextBlock Message(string text) => new() { Text = text, TextWrapping = TextWrapping.Wrap, Margin = new(20), Foreground = MainWindow.Hex("#B3FFFFFF") };
-    internal static TextBox Text(string text) => new()
+    internal static TextBlock Message(string text)
     {
-        Text = text, IsReadOnly = true, FontFamily = new("Cascadia Mono, Consolas"), FontSize = 12,
-        Background = MainWindow.Hex("#59000000"), Foreground = MainWindow.Hex("#E6FFFFFF"), BorderThickness = new(0), Padding = new(14),
-        VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
-    };
+        var message=new TextBlock{Text=text,TextWrapping=TextWrapping.Wrap,Margin=new(20)};
+        message.SetResourceReference(TextBlock.ForegroundProperty,"Palette.E8EEF6");return message;
+    }
+    internal static TextBox Text(string text)
+    {
+        var content=new TextBox{Text=text,IsReadOnly=true,FontFamily=new("Cascadia Mono, Consolas"),FontSize=12,BorderThickness=new(0),Padding=new(14),
+            VerticalScrollBarVisibility=ScrollBarVisibility.Auto,HorizontalScrollBarVisibility=ScrollBarVisibility.Auto};
+        content.SetResourceReference(Control.BackgroundProperty,"Palette.08FFFFFF");content.SetResourceReference(Control.ForegroundProperty,"Palette.E8EEF6");return content;
+    }
     internal static async Task<string> ReadText(string path, int limit, CancellationToken token)
     {
         await using var file = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, 4096, true);
@@ -137,14 +141,22 @@ internal sealed class BuiltinViewer(PreviewModule module, MainWindow owner, Entr
 
     async Task Pdf(string path, ContextObject context)
     {
-        pdfBytes = await ReadBytes(path, 64L << 20, context.Token);
+        await PdfBytes(await ReadBytes(path,64L<<20,context.Token),context);
+    }
+    internal async Task PdfBytes(byte[] data,ContextObject context)
+    {
+        pdfBytes=data;
         context.Token.ThrowIfCancellationRequested();
         var root = new DockPanel();
         var controls = new WrapPanel { Margin = new(8) };
         var label = Message("Loading PDF…"); label.Margin = new(10, 5, 10, 5);
         var previous = PreviewControls.Icon(owner,"Previous page","\uE76B");
         var next = PreviewControls.Icon(owner,"Next page","\uE76C");
+        var number=new TextBox{Width=48,MinHeight=30,Margin=new(4),VerticalContentAlignment=VerticalAlignment.Center};
+        number.SetResourceReference(Control.BackgroundProperty,"Palette.08FFFFFF");number.SetResourceReference(Control.ForegroundProperty,"Palette.E8EEF6");
+        System.Windows.Automation.AutomationProperties.SetName(number,"Page number");number.ToolTip="Enter a page number and press Enter";
         controls.Children.Add(previous); controls.Children.Add(label); controls.Children.Add(next);
+        controls.Children.Add(number);
         DockPanel.SetDock(controls, Dock.Bottom); root.Children.Add(controls);
         var pageImage = new Image { Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly, Margin = new(12) };
         root.Children.Add(new ScrollViewer { Content = pageImage, VerticalScrollBarVisibility = ScrollBarVisibility.Auto });
@@ -172,14 +184,22 @@ internal sealed class BuiltinViewer(PreviewModule module, MainWindow owner, Entr
                 if (!context.IsCurrent || revision != pageRevision) return;
                 pageImage.Source = bitmap; current = index; total = document.PageCount;
                 label.Text = $"Page {index + 1} of {total}";
+                number.Text=(index+1).ToString(System.Globalization.CultureInfo.InvariantCulture);
                 previous.IsEnabled = index > 0; next.IsEnabled = index + 1 < total;
             }
             catch (OperationCanceledException) when (context.Token.IsCancellationRequested) { }
             catch (Exception ex) { if (context.IsCurrent && revision == pageRevision) label.Text = "PDF unavailable: " + ex.Message; }
         }
-        previous.Click += (_, _) => context.Track(Render(current - 1));
-        next.Click += (_, _) => context.Track(Render(current + 1));
-        await Render(0);
+        void Go(uint index){Ready=Render(index);context.Track(Ready);}
+        previous.Click += (_, _) => Go(current - 1);
+        next.Click += (_, _) => Go(current + 1);
+        number.PreviewKeyDown+=(_,args)=>
+        {
+            if(args.Key!=System.Windows.Input.Key.Enter)return;args.Handled=true;
+            if(uint.TryParse(number.Text,out uint page)&&page>0&&page<=total)Go(page-1);
+            else label.Text=$"Enter a page from 1 to {total}";
+        };
+        Ready=Render(0);await Ready;
         if (context.IsCurrent && total == 0) throw new InvalidDataException(label.Text);
     }
 

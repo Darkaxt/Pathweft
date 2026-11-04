@@ -9,7 +9,7 @@
     <AssemblyName>Pathweft</AssemblyName>
     <Product>Pathweft</Product>
     <Company>Darkaxt</Company>
-    <Version>1.1.17</Version>
+    <Version>1.1.18</Version>
     <!-- WPF windows without their own Icon use this one, so every window gets it -->
     <ApplicationIcon>app.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
@@ -36,13 +36,24 @@
     <None Include="$(RarsRuntimeRoot)\pathweft_rars.dll" Link="Rars\pathweft_rars.dll" CopyToOutputDirectory="PreserveNewest" />
     <None Include="$(MpvRuntimeRoot)\*.dll" Link="MPV\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <None Include="$(MpvRuntimeRoot)\MPV-BUILDINFO.json" Link="MPV\MPV-BUILDINFO.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="$(OfficeRuntimeRoot)\cores\**\*.dll" Link="Office\cores\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="$(OfficeRuntimeRoot)\libreoffice\runtime\**\*" Link="Office\LibreOffice\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="native\office\libreoffice\worker.py" Link="Office\libreoffice-worker.py" CopyToOutputDirectory="PreserveNewest" />
+    <None Remove="vendor\Office\licenses\**\*" />
+    <None Include="vendor\Office\licenses\**\*" Link="Office\licenses\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="vendor\Office\runtime-manifest.json" Link="Office\runtime-manifest.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="vendor\Office\libreoffice-runtime-manifest.json" Link="Office\libreoffice-runtime-manifest.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="vendor\Office\license-manifest.json" Link="Office\license-manifest.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="$(MpvRuntimeRoot)\licenses\**\*" Link="MPV\licenses\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="$(MediaInfoRuntimeRoot)\MediaInfo.dll" Link="runtimes\win-x64\native\MediaInfo.dll" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="$(MediaInfoRuntimeRoot)\licenses\*.txt" Link="licenses\MediaInfo\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <None Include="$(SevenZipRuntimeRoot)\License.txt" Link="SevenZip\License.txt" CopyToOutputDirectory="PreserveNewest" />
     <None Include="$(F3DRuntimeRoot)\share\licenses\**\*" Link="F3D\licenses\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <Compile Remove="tests\**\*.cs" />
     <Compile Include="tests\Dependency117Checks.cs" Condition="'$(Configuration)' == 'Debug'" />
+    <Compile Include="tests\UpdateProgressObserver.cs" Condition="'$(Configuration)' == 'Debug'" />
     <None Include="vendor\EverythingSDK\Everything64.dll" CopyToOutputDirectory="PreserveNewest" Link="Everything64.dll" />
-    <None Include="vendor\**\*.txt" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="vendor\**\*.txt" Exclude="vendor\Office\licenses\**\*" CopyToOutputDirectory="PreserveNewest" />
     <None Update="vendor\Marked\LICENSE.md" CopyToOutputDirectory="PreserveNewest" />
     <None Update="COPYING-GPL-3.0.txt" CopyToOutputDirectory="PreserveNewest" />
     <None Update="LICENSE" CopyToOutputDirectory="PreserveNewest" />
@@ -52,6 +63,24 @@
   <ItemGroup>
     <PackageReference Include="System.IO.Hashing" Version="10.0.14" />
     <PackageReference Include="Markdig" Version="1.5.0" />
+    <PackageReference Include="CsvHelper" Version="33.1.0" />
+    <PackageReference Include="Microsoft.Data.Sqlite.Core" Version="10.0.10" />
+    <PackageReference Include="SQLitePCLRaw.provider.winsqlite3" Version="2.1.11" />
+    <PackageReference Include="LiteDB" Version="5.0.21" />
+    <PackageReference Include="MimeKit" Version="4.15.1" />
+    <PackageReference Include="OpenMcdf" Version="3.1.4" />
+    <PackageReference Include="RtfPipe" Version="2.0.7677.4303" />
+    <PackageReference Include="ELFSharp" Version="2.17.3" />
+    <PackageReference Include="Prefetch" Version="2026.5.2" />
+    <PackageReference Include="QuickLook.MediaInfo" Version="26.5.0" />
+    <!-- The donor netstandard asset omits its required public.xml resource.
+         The same pinned package's net462 asset includes it and has no extra
+         runtime dependency. Qualify that assembly on the current .NET host. -->
+    <PackageReference Include="QuickLook.ApkReader" Version="2.1.0" ExcludeAssets="compile;runtime" GeneratePathProperty="true" />
+    <Reference Include="QuickLook.ApkReader">
+      <HintPath>$(PkgQuickLook_ApkReader)\lib\net462\QuickLook.ApkReader.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
     <PackageReference Include="HtmlSanitizer" Version="9.2.1039" />
     <PackageReference Include="AngleSharp" Version="1.7.2" />
     <PackageReference Include="AngleSharp.Css" Version="1.0.2" />
@@ -68,6 +97,7 @@
   <ItemGroup>
     <!-- the sidebar shows the app icon where the title bar used to -->
     <Resource Include="app.ico" />
+    <Resource Include="vendor\Office\icons\*.ico" />
     <!-- What's new: every release's notes, read from inside the exe (WhatsNewWindow.cs) -->
     <EmbeddedResource Include="whatsnew.txt" LogicalName="whatsnew.txt" />
     <!-- From 1.0.46, the banner of the month a release came out (the studio's collage, 1920 x 340) -->

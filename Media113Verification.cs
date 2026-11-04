@@ -15,9 +15,11 @@ public partial class MainWindow
     [DllImport("shell32.dll")]static extern int SHOpenFolderAndSelectItems(IntPtr folder,uint count,IntPtr[] children,uint flags);
     [DllImport("ole32.dll")]static extern int CoInitializeEx(IntPtr reserved,uint flags);
     [DllImport("ole32.dll")]static extern void CoUninitialize();
-    internal async Task VerifyMedia113(string root,Action<bool,string> check)
+    internal async Task VerifyMedia113(string root,Action<bool,string> check,bool qualifyFolderRouting=true)
     {
         async Task Settled()=>await Dispatcher.InvokeAsync(UpdateLayout,System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+        if(qualifyFolderRouting)
+        {
         var fixture=Directory.CreateDirectory(Path.Combine(root,"selection é 子")).FullName;
         foreach(string name in new[]{"selected.txt","second.txt"})File.WriteAllText(Path.Combine(fixture,name),name);
         await S1Verification.Navigate(Left,fixture);await S1Verification.Navigate(Right,PaneView.ThisPC);SetActive(Left);
@@ -57,6 +59,7 @@ public partial class MainWindow
             check(((StackPanel)node.Header).Children.OfType<TextBlock>().Single().Text==drive.Name.TrimEnd('\\')+"  "+drive.Label,"Folders and Drives share the real volume-label fallback: "+drive.Name);
         }
 
+        }
         string inputs=Environment.GetEnvironmentVariable("PATHWEFT_MEDIA113_INPUTS")??throw new ArgumentException("Media fixture inventory required.");
         using var inventory=JsonDocument.Parse(File.ReadAllText(inputs));var metadata=new List<object>();
         async Task<MpvPlayer> Show(string path)

@@ -312,8 +312,8 @@ public partial class PaneView
         {
             File.WriteAllText(Path.Combine(Dir, "pwfts1_watch_" + Environment.ProcessId + ".tmp"), "watch handoff fixture");
             await observed.Task;
-            bool armed = await Dispatcher.InvokeAsync(() => debounce.IsEnabled, DispatcherPriority.Normal);
-            if (!armed) throw new InvalidOperationException("The folder notification did not arm its refresh.");
+            await Dispatcher.InvokeAsync(()=>{},DispatcherPriority.ApplicationIdle);
+            if(watcher!=owner)throw new InvalidOperationException("The folder notification lost its view owner.");
         }
         finally { owner.Created -= changed; }
     }

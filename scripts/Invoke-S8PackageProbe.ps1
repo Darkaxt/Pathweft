@@ -9,7 +9,11 @@ $manifest=Get-Content -LiteralPath (Join-Path $product 'release-manifest.json') 
 foreach($file in $manifest.files){if((Get-FileHash -LiteralPath (Join-Path $product $file.path)).Hash -ne $file.sha256){throw "The actual delivered member changed: $($file.path)"}}
 $fixture=Join-Path $run ('integration-'+[guid]::NewGuid().ToString('N'))
 [void][IO.Directory]::CreateDirectory($fixture)
-$env:PATHWEFT_PROFILE=Join-Path $fixture 'profile'
+# Match the installed layout: one isolated profile beside its per-run fixtures.
+# LibreOffice adds Win32-limited extension paths below that profile.
+$profileIndex=0
+do{$probeProfile=Join-Path $run ('p'+$profileIndex);$profileIndex++}while(Test-Path -LiteralPath $probeProfile)
+$env:PATHWEFT_PROFILE=$probeProfile
 [void][IO.Directory]::CreateDirectory($env:PATHWEFT_PROFILE)
 $env:TEMP=$env:TMP=Join-Path $run 'temp'
 & (Join-Path $PSScriptRoot 'Build-Development.ps1') -ScratchRoot (Join-Path $run 'probe-build') -Configuration Release -ProjectFile (Join-Path $project 'tests/PackagedChecks/PackagedChecks.csproj') -BuildProperty @("PathweftAssembly=$product\Pathweft.dll")

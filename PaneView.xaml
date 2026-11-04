@@ -307,17 +307,11 @@
 
       <DockPanel DockPanel.Dock="Bottom" Margin="14,2,8,5">
         <!-- sorting, reachable in every view mode (the column headers only exist in Details) -->
-        <Button x:Name="SortButton" DockPanel.Dock="Right" Style="{StaticResource Ghost}" FontSize="11" Click="SortButton_Click" ToolTip="Sort">
-          <StackPanel Orientation="Horizontal">
-            <TextBlock x:Name="SortIcon" FontFamily="Segoe Fluent Icons" FontSize="12" Margin="0,1,6,0"/>
-            <TextBlock x:Name="SortName"/>
-          </StackPanel>
+        <Button x:Name="SortButton" DockPanel.Dock="Right" Style="{StaticResource CompactCommand}" Width="28" Height="22" Click="SortButton_Click" ToolTip="Sort" AutomationProperties.Name="Sort">
+          <Image x:Name="SortIcon" Width="14" Height="14" Source="{DynamicResource CommandIcon.Sort}"/>
         </Button>
-        <Button x:Name="ViewButton" DockPanel.Dock="Right" Style="{StaticResource Ghost}" FontSize="11" Click="ViewButton_Click" ToolTip="View (Ctrl+Shift+1…5)">
-          <StackPanel Orientation="Horizontal">
-            <TextBlock x:Name="ViewIcon" FontFamily="Segoe Fluent Icons" FontSize="12" Margin="0,1,6,0"/>
-            <TextBlock x:Name="ViewName"/>
-          </StackPanel>
+        <Button x:Name="ViewButton" DockPanel.Dock="Right" Style="{StaticResource CompactCommand}" Width="28" Height="22" Click="ViewButton_Click" ToolTip="View (Ctrl+Shift+1…5)" AutomationProperties.Name="View">
+          <Image x:Name="ViewIcon" Width="14" Height="14" Source="{DynamicResource CommandIcon.Details}"/>
         </Button>
         <TextBlock x:Name="Footer" Foreground="{DynamicResource Palette.80FFFFFF}" FontSize="11" VerticalAlignment="Center" Typography.NumeralAlignment="Tabular"/>
       </DockPanel>

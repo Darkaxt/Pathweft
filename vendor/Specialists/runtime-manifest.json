@@ -1,0 +1,654 @@
+{
+  "assets_sha256": "df36fcb28700b8e5a9b6c19a6e28a4d20d2fb2d7747f70802ed96d55d5db5f3a",
+  "packages": [
+    {
+      "id": "AngleSharp",
+      "version": "1.7.2",
+      "package_sha512": "r1rb5Qo/0KPzmP0nbSiXPDVfh4Ctu0B+y1RyyUq73g4sgAmEW7q10RDyTq2ZsILwtO9O2LAvMrUles7eD4zz1g==",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/AngleSharp/AngleSharp",
+        "branch": "refs/heads/main",
+        "commit": "3718d6804dd3a3781efcd1ccd7bdcb10a4352edd"
+      },
+      "license": {
+        "type": "expression",
+        "text": "MIT"
+      },
+      "project_url": "https://anglesharp.github.io/",
+      "targets": {
+        "net10.0-windows10.0.19041.0": {
+          "compile": {
+            "lib/net10.0/AngleSharp.dll": {
+              "related": ".xml"
+            }
+          },
+          "runtime": {
+            "lib/net10.0/AngleSharp.dll": {
+              "related": ".xml"
+            }
+          }
+        }
+      },
+      "selected_files": {
+        "lib/net10.0/AngleSharp.dll": "0c4f7898b15cc62adf65cd2e848bba38f58a4e577a7ed8e87159a6f41c838ba3"
+      }
+    },
+    {
+      "id": "AngleSharp.Css",
+      "version": "1.0.2",
+      "package_sha512": "XeBxh0h/73+MWFsGfeMwiK7xbzAK3YeHFdUIrMH1P90amIrDFD/vUDIrPlF3CixqaMH5MRIUvT6Ux+2zvhJ3SA==",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/AngleSharp/AngleSharp.Css",
+        "branch": "refs/heads/main",
+        "commit": "d158478f58882dad1d595dc7bb2286f3da4bf6ea"
+      },
+      "license": {
+        "type": "expression",
+        "text": "MIT"
+      },
+      "project_url": "https://anglesharp.github.io/",
+      "targets": {
+        "net10.0-windows10.0.19041.0": {
+          "dependencies": {
+            "AngleSharp": "[1.5.0, 2.0.0)"
+          },
+          "compile": {
+            "lib/net10.0/AngleSharp.Css.dll": {
+              "related": ".xml"
+            }
+          },
+          "runtime": {
+            "lib/net10.0/AngleSharp.Css.dll": {
+              "related": ".xml"
+            }
+          }
+        }
+      },
+      "selected_files": {
+        "lib/net10.0/AngleSharp.Css.dll": "c068d2a655ca14eb075d6ffcf76603f4c655c86c24113301d214f3703c3058b5"
+      }
+    },
+    {
+      "id": "BouncyCastle.Cryptography",
+      "version": "2.6.2",
+      "package_sha512": "7oWOcvnntmMKNzDLsdxAYqApt+AjpRpP2CShjMfIa3umZ42UQMvH0tl1qAliYPNYO6vTdcGMqnRrCPmsfzTI1w==",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/bcgit/bc-csharp",
+        "branch": "refs/heads/release/v2.6",
+        "commit": "b4f2f6ad76bcd1f11f365ee50cc7447fbce79077"
+      },
+      "license": {
+        "type": "expression",
+        "text": "MIT"
+      },
+      "project_url": "https://www.bouncycastle.org/stable/nuget/csharp/website",
+      "targets": {
+        "net10.0-windows10.0.19041.0": {
+          "compile": {
+            "lib/net6.0/BouncyCastle.Cryptography.dll": {
+              "related": ".xml"
+            }
+          },
+          "runtime": {
+            "lib/net6.0/BouncyCastle.Cryptography.dll": {
+              "related": ".xml"
+            }
+          }
+        }
+      },
+      "selected_files": {
+        "lib/net6.0/BouncyCastle.Cryptography.dll": "e5eeaf6d263c493619982fd3638e6135077311d08c961e1fe128f9107d29ebc6"
+      }
+    },
+    {
+      "id": "CsvHelper",
+      "version": "33.1.0",
+      "package_sha512": "kqfTOZGrn7NarNeXgjh86JcpTHUoeQDMB8t9NVa/ZtlSYiV1rxfRnQ49WaJsob4AiGrbK0XDzpyKkBwai4F8eg==",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/JoshClose/CsvHelper",
+        "branch": "refs/heads/master",
+        "commit": "5dad8b8b1d8b074f8353cfd482e939db788a8927"
+      },
+      "license": {
+        "type": "expression",
+        "text": "MS-PL OR Apache-2.0"
+      },
+      "project_url": "https://joshclose.github.io/CsvHelper/",
+      "targets": {
+        "net10.0-windows10.0.19041.0": {
+          "compile": {
+            "lib/net9.0/CsvHelper.dll": {
+              "related": ".xml"
+            }
+          },
+          "runtime": {
+            "lib/net9.0/CsvHelper.dll": {
+              "related": ".xml"
+            }
+          }
+        }
+      },
+      "selected_files": {
+        "lib/net9.0/CsvHelper.dll": "189a0d69f35a7e3827bfc35111d5d6e29d08bae60780cc48b215a06b18b6a852"
+      }
+    },
+    {
+      "id": "ELFSharp",
+      "version": "2.17.3",
+      "package_sha512": "BFKpnrs3yKH/jo1yewQdvLKMkEaxE6Wj3Lu5LHRNJfcAdOQ9YiY4dfQ5+5kz6ji1E/Xcxy5ta+qqKGA6KiVQMw==",
+      "repository": {
+        "type": "git",
+        "commit": "892ddfc054939c4ffe70830bf5873d4ac8fc3b96"
+      },
+      "license": {
+        "type": "expression",
+        "text": "MIT"
+      },
+      "project_url": "http://elfsharp.it/",
+      "targets": {
+        "net10.0-windows10.0.19041.0": {
+          "compile": {
+            "lib/netstandard2.0/ELFSharp.dll": {}
+          },
+          "runtime": {
+            "lib/netstandard2.0/ELFSharp.dll": {}
+          }
+        }
+      },
+      "selected_files": {
+        "lib/netstandard2.0/ELFSharp.dll": "a36c98e7ff31172d4c8ac8d6d4f5aef6db4ed1679092d9ac035795ca8acc045c"
+      }
+    },
+    {
+      "id": "HtmlSanitizer",
+      "version": "9.2.1039",
+      "package_sha512": "PKxy1hYknAij8YlHCC2a9GSqzUd4bh3IvY+abJBvOH1FKcZpbyafEHtdFcXQBt12Y7hNPkNEOP6Qa7uKNSs/yA==",
+      "repository": {
+        "type": "git",
+        "url": "git://github.com/mganss/HtmlSanitizer",
+        "commit": "0417018d81765e3e15126a65f5a49d71e55f0920"
+      },
+      "license": {
+        "type": "expression",
+        "text": "MIT"
+      },
+      "project_url": "https://github.com/mganss/HtmlSanitizer",
+      "targets": {
+        "net10.0-windows10.0.19041.0": {
+          "dependencies": {
+            "AngleSharp": "1.7.2",
+            "AngleSharp.Css": "1.0.2"
+          },
+          "compile": {
+            "lib/net8.0/HtmlSanitizer.dll": {
+              "related": ".xml"
+            }
+          },
+          "runtime": {
+            "lib/net8.0/HtmlSanitizer.dll": {
+              "related": ".xml"
+            }
+          }
+        }
+      },
+      "selected_files": {
+        "lib/net8.0/HtmlSanitizer.dll": "ff159273f6a601fd3222bfc30ebd6c5b5bf78b636c8e3781d1b98812de9adb34"
+      }
+    },
+    {
+      "id": "LiteDB",
+      "version": "5.0.21",
+      "package_sha512": "ykJ7ffFl7P9YQKR/PLci6zupiLrsSCNkOTiw6OtzntH7d2kCYp5L1+3a/pksKgTEHcJBoPXFtg7VZSGVBseN9w==",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/mbdavid/LiteDB",
+        "branch": "master",
+        "commit": "391cc9318c5be6e56cb71b3ce14b1ed9cb324763"
+      },
+      "license": {
+        "type": "expression",
+        "text": "MIT"
+      },
+      "project_url": "https://www.litedb.org/",
+      "targets": {
+        "net10.0-windows10.0.19041.0": {
+          "compile": {
+            "lib/netstandard2.0/LiteDB.dll": {
+              "related": ".xml"
+            }
+          },
+          "runtime": {
+            "lib/netstandard2.0/LiteDB.dll": {
+              "related": ".xml"
+            }
+          }
+        }
+      },
+      "selected_files": {
+        "lib/netstandard2.0/LiteDB.dll": "ae31ac6a93549217b9e8b81497d1ee831658ade6df9e1ee20f2838f22de5e218"
+      }
+    },
+    {
+      "id": "Markdig",
+      "version": "1.5.0",
+      "package_sha512": "oEm6N4PYFPUZiJ5e89993AE6hfC8EWRGD5M8nyoSJbwD4GgW818mjlQCk++SdTV4godaN50Ybcmm4j2Dp76oIQ==",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/xoofx/markdig",
+        "commit": "9900e46eacd9e17ba32f1b441a349bcab61777af"
+      },
+      "license": {
+        "type": "expression",
+        "text": "BSD-2-Clause"
+      },
+      "project_url": "https://xoofx.github.io/markdig",
+      "targets": {
+        "net10.0-windows10.0.19041.0": {
+          "compile": {
+            "lib/net10.0/Markdig.dll": {
+              "related": ".xml"
+            }
+          },
+          "runtime": {
+            "lib/net10.0/Markdig.dll": {
+              "related": ".xml"
+            }
+          }
+        }
+      },
+      "selected_files": {
+        "lib/net10.0/Markdig.dll": "4dab6e49268afc296e955658f7132eb172049d7da0837b170ba3aaedc8b7c8d9"
+      }
+    },
+    {
+      "id": "Microsoft.Data.Sqlite.Core",
+      "version": "10.0.10",
+      "package_sha512": "TPCs0ldm7AWqcKmp6f/Xr+14sat7hx4rHfRlS4RgCURBH2thEWbAKEyX7cCWr63zVJVOJIJZTg2cBiUXa8ys6g==",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/dotnet/dotnet",
+        "commit": "f7d90799ce4ef09a0bb257852a57248d2a8fb8dd"
+      },
+      "license": {
+        "type": "expression",
+        "text": "MIT"
+      },
+      "project_url": "https://docs.microsoft.com/dotnet/standard/data/sqlite/",
+      "targets": {
+        "net10.0-windows10.0.19041.0": {
+          "dependencies": {
+            "SQLitePCLRaw.core": "2.1.11"
+          },
+          "compile": {
+            "lib/net8.0/Microsoft.Data.Sqlite.dll": {
+              "related": ".xml"
+            }
+          },
+          "runtime": {
+            "lib/net8.0/Microsoft.Data.Sqlite.dll": {
+              "related": ".xml"
+            }
+          }
+        }
+      },
+      "selected_files": {
+        "lib/net8.0/Microsoft.Data.Sqlite.dll": "1078d41c6c0f2cee48a8b706e3a54ce145705993f19f703d2b3bdf2abcc59088"
+      }
+    },
+    {
+      "id": "Microsoft.Web.WebView2",
+      "version": "1.0.4314.35",
+      "package_sha512": "x5MFf2W03xueU1mMNvivXfHSsQ+ODo7vJ36qw/dLtU5Gs+8d7+7N7zzmNNDoT3ffosmcvZNBtUnlzyiDUuBkSQ==",
+      "repository": {},
+      "license": {
+        "type": "file",
+        "text": "LICENSE.txt"
+      },
+      "project_url": "https://aka.ms/webview",
+      "targets": {
+        "net10.0-windows10.0.19041.0": {
+          "runtimeTargets": {
+            "runtimes/win-arm64/native/WebView2Loader.dll": {
+              "assetType": "native",
+              "rid": "win-arm64"
+            },
+            "runtimes/win-x64/native/WebView2Loader.dll": {
+              "assetType": "native",
+              "rid": "win-x64"
+            },
+            "runtimes/win-x86/native/WebView2Loader.dll": {
+              "assetType": "native",
+              "rid": "win-x86"
+            }
+          },
+          "build": {
+            "buildTransitive/Microsoft.Web.WebView2.targets": {}
+          }
+        }
+      },
+      "selected_files": {
+        "runtimes/win-arm64/native/WebView2Loader.dll": "05429881d918fd64a3fe4955155c1af79e66d7b7d944034467874f420bc2265a",
+        "runtimes/win-x64/native/WebView2Loader.dll": "d3fce90bdeecb08596e377dea6a316354dd8949e32ff09b89d51be00c14e21b6",
+        "runtimes/win-x86/native/WebView2Loader.dll": "1d348d3c0a5cb0d985389b68a0fd9bf966c2aed65f5e44bbc0233739b7a57f9e"
+      }
+    },
+    {
+      "id": "MimeKit",
+      "version": "4.15.1",
+      "package_sha512": "cxCcQhD0zhboFoG136jJuJtQjNRDJ+BxBm3f2vWn+53bff/CRo+K1mAkWjsW4Wuyy5O22F40MdMG2nRzQu1cJw==",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/jstedfast/MimeKit"
+      },
+      "license": {
+        "type": "expression",
+        "text": "MIT"
+      },
+      "project_url": "https://www.mimekit.net/",
+      "targets": {
+        "net10.0-windows10.0.19041.0": {
+          "dependencies": {
+            "BouncyCastle.Cryptography": "2.6.2"
+          },
+          "compile": {
+            "lib/net10.0/MimeKit.dll": {
+              "related": ".dll.config;.pdb;.xml"
+            }
+          },
+          "runtime": {
+            "lib/net10.0/MimeKit.dll": {
+              "related": ".dll.config;.pdb;.xml"
+            }
+          }
+        }
+      },
+      "selected_files": {
+        "lib/net10.0/MimeKit.dll": "4547580419c402f7ea3712e7c3ed276e5826602d9a1025f20c60eb02f7fed7c6"
+      }
+    },
+    {
+      "id": "OpenMcdf",
+      "version": "3.1.4",
+      "package_sha512": "ncchtCh9YKqutHTlUCrr1llXA65ijGOCjXBM0mL1+WaGouApWDEACWbBHGzuYcAvB+rgW6IgO4AKgmZ2v1moNA==",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/openmcdf/openmcdf",
+        "commit": "11ffb7cafff6eea99639df6b2b249dcf6bcca3ef"
+      },
+      "license": {
+        "type": "expression",
+        "text": "MPL-2.0"
+      },
+      "project_url": "https://openmcdf.github.io/openmcdf/",
+      "targets": {
+        "net10.0-windows10.0.19041.0": {
+          "compile": {
+            "lib/net10.0/OpenMcdf.dll": {
+              "related": ".xml"
+            }
+          },
+          "runtime": {
+            "lib/net10.0/OpenMcdf.dll": {
+              "related": ".xml"
+            }
+          }
+        }
+      },
+      "selected_files": {
+        "lib/net10.0/OpenMcdf.dll": "b374acd4c865e83a7c47b6d311042dcabad83c4b5253e3b106ff83fe9866309c"
+      }
+    },
+    {
+      "id": "Prefetch",
+      "version": "2026.5.2",
+      "package_sha512": "wMpTbCDU9k+HFghsjzSSGPakApx7izzDMr+xL4fj3eK+OhZVqxoZnUtoLiZJEQJakT1maAdnrClw5j+zppNvcA==",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/EricZimmerman/Prefetch",
+        "branch": "refs/tags/2026.5.2",
+        "commit": "54a3ac0d6d0006d3836c9bd368dfe32cbcaa131d"
+      },
+      "license": {
+        "type": "expression",
+        "text": "MIT"
+      },
+      "project_url": "https://github.com/EricZimmerman/Prefetch",
+      "targets": {
+        "net10.0-windows10.0.19041.0": {
+          "dependencies": {
+            "Serilog": "4.3.1"
+          },
+          "compile": {
+            "lib/netstandard2.0/Prefetch.dll": {
+              "related": ".xml"
+            }
+          },
+          "runtime": {
+            "lib/netstandard2.0/Prefetch.dll": {
+              "related": ".xml"
+            }
+          }
+        }
+      },
+      "selected_files": {
+        "lib/netstandard2.0/Prefetch.dll": "a786bbfe6b8a86acb5ed966932be60943604d0a423af1323a5aee8524399bb38"
+      }
+    },
+    {
+      "id": "QuickLook.ApkReader",
+      "version": "2.1.0",
+      "package_sha512": "KGzvdMMuU9nLf3x60I28RdWNVhZTzseKZPWFuY40Ip8nNu5FEPxdVIw0IOBfYoHzZ88Kt2dS9P1kFMrs9LhQmg==",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/Soar360/apk-reader",
+        "commit": "22b32f7cf136664a2f5a017c4626ee00f1078b52"
+      },
+      "license": {
+        "type": "expression",
+        "text": "MIT"
+      },
+      "project_url": "https://github.com/Soar360/apk-reader",
+      "targets": {
+        "net10.0-windows10.0.19041.0": {
+          "compile": {
+            "lib/netstandard2.1/_._": {
+              "related": ".xml"
+            }
+          },
+          "runtime": {
+            "lib/netstandard2.1/_._": {
+              "related": ".xml"
+            }
+          }
+        }
+      },
+      "selected_files": {
+        "lib/net462/QuickLook.ApkReader.dll": "b00b1b604b79d5e57db9904be1a5b8bee815ba3a33181d7e80613fba31669397"
+      }
+    },
+    {
+      "id": "QuickLook.MediaInfo",
+      "version": "26.5.0",
+      "package_sha512": "226KDrU3Y/J/vAc1M9PA8PIKZr6xump4YayBxbSLNutuYq5I+eErCmPqsanO/sGbKT1X7Wd7dWRuRidNgWaf+g==",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/QL-Win/QuickLook.MediaInfo",
+        "commit": "91fd489fd7dd6ed0d31091f9fbe7a2b50c52b5e1"
+      },
+      "license": {
+        "type": "file",
+        "text": "LICENSE"
+      },
+      "project_url": "https://github.com/QL-Win/QuickLook.MediaInfo",
+      "targets": {
+        "net10.0-windows10.0.19041.0": {
+          "compile": {
+            "lib/net10.0/QuickLook.MediaInfo.dll": {}
+          },
+          "runtime": {
+            "lib/net10.0/QuickLook.MediaInfo.dll": {}
+          }
+        }
+      },
+      "selected_files": {
+        "lib/net10.0/QuickLook.MediaInfo.dll": "3d77d2a2aae1f104dbd725068e745dd0e8332aa8c266fc73e970d65bbad2b4d3"
+      }
+    },
+    {
+      "id": "RtfPipe",
+      "version": "2.0.7677.4303",
+      "package_sha512": "ek6wuC69GYVJr0b/C5mcgbFUHPLL11iAbUFqQphdBaqSoEjOdSB/HWCID5nneA5exM88UZzOTCJCMpftDYnCZA==",
+      "repository": {
+        "type": "git",
+        "url": "git://github.com/erdomke/RtfPipe"
+      },
+      "license": {},
+      "project_url": "https://github.com/erdomke/RtfPipe",
+      "targets": {
+        "net10.0-windows10.0.19041.0": {
+          "compile": {
+            "lib/netstandard2.0/RtfPipe.dll": {}
+          },
+          "runtime": {
+            "lib/netstandard2.0/RtfPipe.dll": {}
+          }
+        }
+      },
+      "selected_files": {
+        "lib/netstandard2.0/RtfPipe.dll": "3fec26e220c13e669b4955bf0776e1cb4e400ffa3e7273e6a5654d7d84e45c09"
+      }
+    },
+    {
+      "id": "Serilog",
+      "version": "4.3.1",
+      "package_sha512": "savYe7h5yRlkqBVOwP8cIRDOdqKiPmYCU4W87JH38sBmcKD5EBoXvQIw6bNEvZ/pTe1gsiye3VFCzBsoppGkXQ==",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/serilog/serilog",
+        "branch": "refs/heads/main",
+        "commit": "5625030e8f8fceca2e3180575aba174751ef7add"
+      },
+      "license": {
+        "type": "expression",
+        "text": "Apache-2.0"
+      },
+      "project_url": "https://serilog.net/",
+      "targets": {
+        "net10.0-windows10.0.19041.0": {
+          "compile": {
+            "lib/net10.0/Serilog.dll": {
+              "related": ".xml"
+            }
+          },
+          "runtime": {
+            "lib/net10.0/Serilog.dll": {
+              "related": ".xml"
+            }
+          },
+          "build": {
+            "buildTransitive/Serilog.targets": {}
+          }
+        }
+      },
+      "selected_files": {
+        "lib/net10.0/Serilog.dll": "e6b551a75ff7fff20dd0024670d5c42dfb74afa16d54aa0201106dea400a9505"
+      }
+    },
+    {
+      "id": "SQLitePCLRaw.core",
+      "version": "2.1.11",
+      "package_sha512": "PK0GLFkfhZzLQeR3PJf71FmhtHox+U3vcY6ZtswoMjrefkB9k6ErNJEnwXqc5KgXDSjige2XXrezqS39gkpQKA==",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/ericsink/SQLitePCL.raw"
+      },
+      "license": {
+        "type": "expression",
+        "text": "Apache-2.0"
+      },
+      "project_url": null,
+      "targets": {
+        "net10.0-windows10.0.19041.0": {
+          "compile": {
+            "lib/netstandard2.0/SQLitePCLRaw.core.dll": {}
+          },
+          "runtime": {
+            "lib/netstandard2.0/SQLitePCLRaw.core.dll": {}
+          }
+        }
+      },
+      "selected_files": {
+        "lib/netstandard2.0/SQLitePCLRaw.core.dll": "3d2ed8e186f124f988ebdb45d0354185b424357be2433bba0033ab9ec31bd25b"
+      }
+    },
+    {
+      "id": "SQLitePCLRaw.provider.winsqlite3",
+      "version": "2.1.11",
+      "package_sha512": "UpH9v68yuLAN3nvXB96s6GE3/tQhG1WnXenNJL/HulgfJAQ5S6ZT6BUy/sDFo5WpqaS0npBbW1z6szWlu6a4Xg==",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/ericsink/SQLitePCL.raw"
+      },
+      "license": {
+        "type": "expression",
+        "text": "Apache-2.0"
+      },
+      "project_url": null,
+      "targets": {
+        "net10.0-windows10.0.19041.0": {
+          "dependencies": {
+            "SQLitePCLRaw.core": "2.1.11"
+          },
+          "compile": {
+            "lib/netstandard2.0/SQLitePCLRaw.provider.winsqlite3.dll": {}
+          },
+          "runtime": {
+            "lib/netstandard2.0/SQLitePCLRaw.provider.winsqlite3.dll": {}
+          }
+        }
+      },
+      "selected_files": {
+        "lib/netstandard2.0/SQLitePCLRaw.provider.winsqlite3.dll": "9eb05d6065cffb66a5a5489316dfd9e2f595098069fb33d04a02b50052dc2209"
+      }
+    },
+    {
+      "id": "System.IO.Hashing",
+      "version": "10.0.14",
+      "package_sha512": "lVqovhCt3HlZe7ONG5ydaj6BYwYI004gldVfMMkJl/lR5ueeCtWNpW4nejOX75sPmzm8vXCxB69GqwHaYCnyUQ==",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/dotnet/dotnet",
+        "commit": "0427b9abbead3fa64c6655eb4290c537397131fa"
+      },
+      "license": {
+        "type": "expression",
+        "text": "MIT"
+      },
+      "project_url": "https://dot.net/",
+      "targets": {
+        "net10.0-windows10.0.19041.0": {
+          "compile": {
+            "lib/net10.0/System.IO.Hashing.dll": {
+              "related": ".xml"
+            }
+          },
+          "runtime": {
+            "lib/net10.0/System.IO.Hashing.dll": {
+              "related": ".xml"
+            }
+          },
+          "build": {
+            "buildTransitive/net8.0/_._": {}
+          }
+        }
+      },
+      "selected_files": {
+        "lib/net10.0/System.IO.Hashing.dll": "649ad5b26c96c3e4494a0879ffa8d1e7cce296754b40bb207c3ca938e3567a4e"
+      }
+    }
+  ]
+}

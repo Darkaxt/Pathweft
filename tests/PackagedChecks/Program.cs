@@ -15,7 +15,7 @@ using FileExplorer;
 // Independent consumer of an extracted, hash-checked delivered application.
 // This probe is copied beside the verification copy, never into a release asset.
 // It creates no visible window, global hook, clipboard or default-handler change.
-sealed class PackageProbe
+sealed partial class PackageProbe
 {
     static readonly BindingFlags Flags=BindingFlags.Public|BindingFlags.NonPublic|BindingFlags.Instance|BindingFlags.Static;
     static readonly Assembly Product=typeof(App).Assembly;
@@ -27,7 +27,7 @@ sealed class PackageProbe
         Check(folder.Length==2&&folder.Any(v=>v.Name==""&&v.Value.Contains("%1"))&&folder.Any(v=>v.Name=="DelegateExecute"&&v.Value=="{CF5ABF8B-73EA-4DF9-A991-C163D76FE2A2}"),"Delivered opt-in registration covers the explicit Folder/explore command and native delegate");
         var routes=Product.GetType("FileExplorer.FolderRoutes",true);
         string path=(string)routes.GetProperty("FilePath",Flags).GetValue(null);
-        Check(path.StartsWith(root,StringComparison.OrdinalIgnoreCase),"Delivered route configuration is bound to the isolated selected profile");
+        Check(path.StartsWith(Path.GetFullPath(Environment.GetEnvironmentVariable("PATHWEFT_PROFILE"))+"\\",StringComparison.OrdinalIgnoreCase),"Delivered route configuration is bound to the isolated selected profile");
         bool existed=File.Exists(path);byte[] original=existed?File.ReadAllBytes(path):null;
         try
         {
@@ -90,7 +90,11 @@ sealed class PackageProbe
         app.InitializeComponent();
         app.Exit+=(_,_)=>app.Dispatcher.BeginInvokeShutdown(DispatcherPriority.Background);
         var probe=new PackageProbe();
-        app.Dispatcher.BeginInvoke(()=>_ = probe.RunAsync(app));
+        app.Dispatcher.BeginInvoke(async ()=>
+        {
+            try{await probe.RunAsync(app);}
+            catch(Exception error){File.WriteAllText(Path.Combine(root,"fatal-probe-error.txt"),error.ToString());Console.Error.WriteLine(error);Environment.ExitCode=1;app.Shutdown(1);}
+        });
         Dispatcher.Run();
     }
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]delegate IntPtr NativeText();
@@ -166,7 +170,7 @@ sealed class PackageProbe
             Check(app.Windows.Count==0,"The owned WPF startup operation was cancelled before dispatch and creates no application window");
             CheckExplicitFolderRegistration();
             Settings.Load();
-            Check(Path.GetFullPath(Settings.Dir).StartsWith(root+"\\",StringComparison.OrdinalIgnoreCase),"The delivered assembly uses only the explicit verification profile");
+            Check(Path.GetFullPath(Settings.Dir)==Path.GetFullPath(Environment.GetEnvironmentVariable("PATHWEFT_PROFILE"))&&Path.GetFullPath(Settings.Dir).StartsWith(Path.GetDirectoryName(root)+"\\",StringComparison.OrdinalIgnoreCase),"The delivered assembly uses only the explicit profile inside this exact owned verification root");
             string bulk=(string)Type("DataFolder").GetProperty("Bulk",Flags).GetValue(null);
             Check(bulk==Path.Combine(Settings.Dir,"Runtime")&&((string)Type("DataFolder").GetProperty("WebView2",Flags).GetValue(null)).StartsWith(bulk+"\\",StringComparison.OrdinalIgnoreCase),"Delivered bulk and editor data use the isolated runtime root, separate from small settings");
             string remembered=Directory.CreateDirectory(Path.Combine(root,"remembered-size")).FullName;
@@ -351,6 +355,7 @@ sealed class PackageProbe
             await VerifyMedia(target,session);
             await VerifyEditor117();
             await VerifyPreview115(target,session);
+            await VerifySpecialists118(target,session);
 
             string model=Path.Combine(root,"triangle.glb");WriteTriangle(model);
             Settings.DisabledPreviewModules.Remove("f3d");
@@ -407,7 +412,7 @@ sealed class PackageProbe
                 await closed.Task; // the first Close waits for owned preview/archive work
             }
             if(owner!=null)
-                Check(new[]{"Left","Right"}.All(name=>typeof(PaneView).GetField("watcher",Flags).GetValue(owner.FindName(name))==null&&!((DispatcherTimer)typeof(PaneView).GetField("debounce",Flags).GetValue(owner.FindName(name))).IsEnabled),"Closing the actual window releases both folder watchers and pending refresh timers before resource teardown");
+                Check(new[]{"Left","Right"}.All(name=>typeof(PaneView).GetField("watcher",Flags).GetValue(owner.FindName(name))==null&&typeof(PaneView).GetField("folderRefresh",Flags).GetValue(owner.FindName(name))==null),"Closing the actual window releases both folder watchers and pending event-driven refresh operations before resource teardown");
             File.WriteAllText(Path.Combine(root,"results.json"),JsonSerializer.Serialize(new{result,pid=Environment.ProcessId,fixture=root,runtime=Environment.Version.ToString(),product=Product.Location,checks},new JsonSerializerOptions{WriteIndented=true}));
             Environment.ExitCode=result;app.Shutdown(result);
         }
@@ -540,7 +545,8 @@ sealed class PackageProbe
                     foreach(bool paused in new[]{true,false})
                     {
                         await (Task)Call(player.GetType(),player,"CommandAsync",new object[]{new[]{"set","pause",paused?"yes":"no"}});
-                        double goal=paused?3:5;
+                        Check(timeline.Maximum>1,"Delivered timeline exposes the actual positive media duration");
+                        double goal=timeline.Maximum*(paused?.35:.65);
                         var reached=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
                         Action<string,object> position=(property,value)=>{if(property=="time-pos"&&value is double seconds&&Math.Abs(seconds-goal)<.3)reached.TrySetResult();};
                         changed.GetAddMethod(true).Invoke(player,new object[]{position});

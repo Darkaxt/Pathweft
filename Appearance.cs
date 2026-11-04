@@ -211,6 +211,8 @@ internal static class Appearance
         SetBrush("TabStripBg",Resolve("#2E000000"));
         SetBrush("AgeBackground",SystemParameters.HighContrast?SystemColors.WindowColor:Light?Color.FromRgb(232,232,232):Color.FromRgb(55,55,55));
         SetBrush("AgeForeground",SystemParameters.HighContrast?SystemColors.WindowTextColor:Light?Color.FromRgb(64,64,64):Color.FromRgb(232,232,232));
+        SetBrush("PreviewWarning",SystemParameters.HighContrast?SystemColors.WindowTextColor:Light?Color.FromRgb(155,69,0):Color.FromRgb(255,180,84));
+        ExplorerIcons.Apply();
         foreach(Window current in Application.Current.Windows)
         {
             current.Foreground=Brush("#E8E8E8");

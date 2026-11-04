@@ -1,10 +1,157 @@
 # Pathweft specification
 
-Version 0.39 - 2026-11-02. Owner: Darkaxt.
+Version 0.51 - 2026-11-04. Owner: Darkaxt.
 
 This is the authoritative specification. The derived plan must preserve every
 requirement and acceptance criterion. Material scope changes require explicit
 user direction recorded here; ordinary implementation choices need no new gate.
+
+On2026-11-04 the user authorized implementation of S13, S9 and S11 together.
+Execute them in that order with at most one ACTIVE stage. Current execution
+checkpoint: S13 and S9's assigned source/integration acceptance is COMPLETE;
+S11 is ACTIVE. Advance only after each predecessor's complete
+implementation/integration acceptance passes. Deliver one normal release for the complete combined outcome at the end
+of S11, with independent package/source retrieval and actual installed-update
+verification for all three stages. This shared final delivery assignment
+supersedes the earlier per-stage publication sequence without removing any
+verification criterion. S13/S9 close against their complete source/integration
+criteria; their release verification is explicitly owned by S11, and overall
+completion requires it. S12 and S6/S7 remain outside this implementation request.
+Preserve the running product, existing user state and completed S8 evidence.
+
+The user adds planned S14 (NOT STARTED) for consistent auxiliary-window design
+and immediate manual update-check feedback, after the currently authorized
+combined S13/S9/S11 delivery. Priority becomes
+S13 -> S9 -> S11 -> S14 -> S12 -> S6 -> S7. This is a plan addition, not authority
+to activate S14 or expand the current combined release. S9's menu work also
+includes search-widget result actions: open containing folder in Pathweft while
+preserving result selection, and native Properties for the actual selected
+file/folder/shortcut, with equivalent keyboard access and truthful eligibility.
+S9 clarification from native diagnosis129196: Windows hosts its Properties
+sheets through a same-process StubWindow32, rather than directly owning them
+with the invoking search widget. Direct GW_OWNER equality was an over-specified
+diagnostic condition, not part of the requested QoL behavior. Preserve the actual
+native sheet and selected object, including shortcuts. Like opening a result,
+successful Properties dispatch dismisses search; the native sheet must survive
+that popup hide and close normally. A failed native dispatch keeps search visible
+and reports the row error. Pass the main application window to the existing Shell
+API; do not reparent or redesign native property sheets. Complete actual native
+target/visibility/lifetime and Delete verification before S9 closure and S11.
+
+User additions2026-11-04 to the current S13 interface work: remove the version
+from the sidebar header and move Update, What's new, Help and Settings beside
+the app name. Keep Drop bin at the bottom. Use compact icon buttons and retain
+tooltips, keyboard access, the draggable brand area and existing actions. At a
+narrow sidebar, put those four controls immediately below the brand instead of
+clipping them; preserve usability at100%/150% text/sidebar scale. About keeps
+Pathweft's version and Darkaxt identity, its own project link and existing help,
+settings-folder and update actions. Remove upstream-author branding, feedback
+and promotional links from About; preserve all distributed source/license notices
+and actual optional integrations. Child settings toggles retain their indentation
+and use the standard6-DIP vertical separation, including taskbar embedding,
+autoscroll direction, compact summary cards and startup options.
+
+User additions2026-11-04: S13 Office recovery feedback must use a concise orange
+bottom-right status, such as `Error loading: {filename}`, with full diagnostics
+on hover instead of a wrapped technical error paragraph beneath the document.
+Retain the actual renderer icon to show successful LibreOffice recovery. S9 also
+owns MENU-03: simplify the bottom command area with familiar Explorer-style icons
+and tooltips containing command names and shortcuts, preserving accessible names,
+keyboard actions, eligibility and the existing Native/Original theme behavior.
+Recover the native toolbar and View-menu artwork from the supplied references;
+prefer exact scalable system assets over screenshot crops or approximate symbols.
+On2026-11-04 the user then explicitly directed implementing the recovered icons
+now, preserving Pathweft's proportions rather than Explorer's larger spacing.
+Assign that bounded MENU-03 presentation integration to active S13; MENU-01/02
+remain in S9 after S13 acceptance, and final release stays in S11. This addition
+does not mark the broader context-menu stage active or complete. Keep the bottom
+bar at its compact scale:16-DIP command artwork,30x24-DIP buttons,14-DIP pane
+view/sort artwork in28x22-DIP buttons, with no new toolbar row. Keep all existing
+actions and shortcuts; show names/shortcuts/current view or sort on hover. Preserve
+keyboard focus visibility, disabled/toggled states and narrow/100%/150% layouts.
+The user's subsequent grouping correction requires coherent compact groups:
+New folder/New file; Open/Rename/Delete; Copy/Move/Transfers; Terminal;
+Hidden/Panes/Preview. Separate groups with restrained1-DIP dividers and4-DIP
+side margins; preserve command semantics and match keyboard order to visual order.
+At narrow widths reduce button width only, down to22 DIP, to keep the16-DIP art
+and every command on one row at150% text scale; do not enlarge the bar or hide actions.
+The terminal command uses the user-selected terminal-window `>_` glyph (Segoe
+Fluent Icons U+E756), replacing the folder/play artwork of Explorer's PowerShell
+asset. Keep its existing launch action and Ctrl+` tooltip.
+Use installed native SVGs without redistributing Windows assets; preserve glyph
+compatibility when that Windows resource set is absent.
+
+On2026-11-04 the user added and clarified PREVIEW-37 in active S13: provide two
+distinct preview modes through accessible icon controls next to the sidebar's
+close button. Windowed moves the preview into its own resizable floating window;
+closing that window MUST restore the same preview to the side column. PiP moves
+the preview into a compact corner overlay inside Pathweft, freeing the whole
+sidebar column; it is not another external floating window. Provide a return-to-
+sidebar control in PiP. Preserve the viewed item, page/sheet/slide, media position/
+play state and 3D view/animation state; changing hosts must not restart or duplicate
+the renderer. Detached modes stay on their item while the browser navigates
+elsewhere. Retain the original close-preview action separately from window-close
+restoration. Reuse Pathweft's theme, selection/lifetime and floating-window
+infrastructure. Implement after Office integration, within the same ACTIVE stage
+and combined release; verify actual relevant native surfaces and app-exit cleanup.
+
+The user also clarified that workload gates coordinate agent threads and resource
+use. Borrowed source libraries and the shipped Pathweft worker do not require a
+Craft application gate identity, Coordinator or MCP. Keep the prescribed managed
+routes for actual registered development-tool workloads without turning them into
+product dependencies or inventing a library-admission blocker.
+
+Office architecture decision2026-11-04: resume implementation using the pinned
+Craft source cores as they currently behave, with minimal native-library bridges.
+Preserve their rendering semantics and current limitations; this does not require
+reimplementing Microsoft Office or adding missing formats to Craft. Keep our bridge
+separate from upstream so reviewed fixes can be incorporated later. No Craft GUI,
+CLI application, MCP service or separately installed Office product is required by
+the delivered viewer. A small Pathweft-owned preview worker hosts the bundled
+libraries; the user explicitly selected this arrangement for native-crash recovery.
+
+LibreOffice is the required bundled fallback for declared Office formats that Craft
+does not import, including legacy PPT/ODP and Visio, and for failed Craft imports,
+renders or abnormal worker exits. A fallback must actually render inside Pathweft
+with the same page/sheet/slide navigation. Use one fallback attempt per failed
+request; observe original worker exit and ownership before switching engines.
+Cancellation, disabled modules and source/policy limits must not start fallback
+work. Preserve source bytes/MOTW and never execute macros or update external links.
+If both engines fail, report an explicit preview error with truthful engine context.
+Public interest in future Craft Visio/Project/OneNote applications is a monitoring
+signal, not evidence of an existing importer. Resolve their actual LibreOffice
+coverage before claiming or extending supported formats; do not substitute a
+metadata-only view for promised document rendering.
+
+On2026-11-04 the user explicitly chose full Office page/sheet/slide navigation
+with an embedded renderer, accepting an additional runtime of several hundred
+MB rather than limiting support to installed Windows Office handlers. The user
+subsequently directed qualification of Storytold's WordCraft, GridCraft and
+DeckCraft renderers and installed their portable candidates. Assess actual
+release-pinned rendering, format coverage and renderer-only footprint before
+selection; alpha labels or an assumed coverage percentage are not evidence.
+LibreOffice remains a candidate where required formats need it. Do not deploy
+MCP/gate features: the user owns enabling those identities. Render
+the result inside Pathweft with real navigation. Do not open an associated Office
+UI or install/change a system Office application. Use an owned isolated profile,
+explicit read-only loading, never-execute macro and never-update link policies,
+deterministic process/cancellation/cleanup, original byte/Zone.Identifier
+preservation and complete native/source/license provenance. Missing/protected
+inputs remain explicit. The earlier native-handler-only matrix is superseded
+for Office, not a waiver of PREVIEW-22/36. Stage order and one final release stay
+unchanged; S13 remains ACTIVE.
+
+On2026-11-04 the user added live folder-size correction to this round after
+installing nested Craft release folders left their ancestor rows at zero until
+F5. CORE-18 belongs to current S13 and its shared S11 delivery gate: observe
+nested creates/writes/deletes/renames, invalidate affected cached ancestors,
+and remeasure/update visible rows, selected totals and folder summary together
+without manual refresh. Preserve selection/scroll, unchanged sibling cache,
+navigation/cancellation ownership, and prevent an obsolete sizing result from
+overwriting newer state. Handle watcher overflow explicitly. Unknown or ongoing
+measurements must not claim an exact empty-folder result. Verify real external
+nested mutations, growth/shrink, both panes/return navigation, and source/state
+preservation; do not add timer polling or periodic full-drive rescans.
 
 On 2026-11-02 the user requested a plan stage implementing all fourteen missing
 QuickLook viewer categories identified in the preview comparison, and requested
@@ -800,6 +947,7 @@ add QuickLook's plugin installer/marketplace. Existing gaps remain documented.
 | PREVIEW-34 | ChmViewer | Read-only embedded CHM topic/content navigation with bounded resource access. Block scripts, external navigation, downloads and active content; verify internal topic links, images, malformed archives and source preservation. Opening the system Help application is not acceptance. |
 | PREVIEW-35 | CLSIDViewer | Inspect supported Shell namespace inputs of the form ::{GUID} and show resolved identity/registration metadata. This is a virtual-input viewer, not an invented file extension. Wire actual selection/input into the preview host and verify known, unknown and malformed identifiers without COM activation, registry writes or executing a registered command. |
 | PREVIEW-36 | Integrated qualification and delivery | Demonstrate every category through actual complete selection -> rendering/inspection -> navigation -> close workflows, including eligible native/archive and side/Space/widget surfaces; document genuine input/surface exclusions. Verify per-module toggles and restart persistence, deterministic overlaps, active-disable, rapid selection, malformed/large/encrypted/locked/missing-runtime states, cancellation and post-close rename/delete with source hashes unchanged. Inspect themed accessible controls at narrow/normal sizes and100%/150% scaling. Revalidate affected existing previews and HTML/media/3D lifecycle boundaries. S13 closes only after all fourteen specialist outcomes pass, source/license/runtime inventory is complete, one normal release is independently retrieved/qualified and its actual installed update is verified. No per-module intermediate product releases. |
+| PREVIEW-37 | Windowed and in-app PiP preview | Add themed accessible mode icons beside sidebar close. Show the actual renderer's app icon on the left of the filename instead of labels such as WordCraft. The icon must switch to LibreOffice when fallback takes over, including after primary failure; expose the engine/recovery reason in its tooltip. Keep sidebar, PiP and Windowed identification consistent. Windowed uses a resizable external floating window and restores the same preview to the side column upon window closure. PiP uses a compact corner overlay inside Pathweft, releases the sidebar column and offers return to sidebar. Retain item, renderer/navigation/playback/camera state and pin content while browsing elsewhere. Keep explicit close-preview distinct from window-close restoration. Verify actual Office/media/3D/HTML/ordinary transfers, restoration, compact/narrow sizing, active-disable, cancellation and app-exit cleanup without duplicate renderers or lost source/archive leases. |
 
 At S13 activation, qualify dependencies and exact formats against the pinned
 upstream implementation and available runtime rather than accepting marketing
@@ -940,6 +1088,15 @@ Primary sources: [Windows indexing scope](https://support.microsoft.com/en-us/wi
 [Outlook indexing/service checks](https://support.microsoft.com/en-gb/outlook/troubleshooting-outlook-search-issues?nochrome=true),
 [local versus service search](https://support.microsoft.com/en-us/support/known-issues/outlook-search-might-not-display-recent-emails-on-windows-11).
 
+### Window consistency and update feedback (S14, planned)
+
+| ID | Requirement and acceptance |
+| --- | --- |
+| WINDOW-01 | Inventory Pathweft-owned auxiliary windows, including Settings, Help, What's new, updater/check/deployment, transfers, search/preview and action/error dialogs. Establish one concrete design contract using Native/Original palettes: consistent typography/hierarchy, margins, content/title alignment, navigation/selected states, cards, buttons/icons, scrollbars and resize/minimum-size behavior. Preserve each window's purpose and existing functionality; do not redesign native OS dialogs or third-party interfaces. Reuse existing resources where appropriate without speculative framework work. |
+| WINDOW-02 | Apply that contract to all inventoried windows and verify actual screenshots/behavior in Native light/dark and Original at narrow/normal sizes and100%/150% text/DPI scales. Preserve Help's reading-section highlight, settings tabs, keyboard/focus/accessibility, window ownership/reuse/close and preview state. Resolve every in-scope inconsistency or record its exact blocker; palette changes alone are insufficient. |
+| UPDATE-02 | Clicking manual Check for updates in the sidebar or Settings immediately shows nearby visible/accessibility feedback, followed by a clear result: Checking, up to date with installed version, update available with version/action, or check failed with explanation/explicit retry. Use a discoverable themed update surface/in-control status; the main bottom-right status line alone is insufficient. Observe the real task, prevent duplicate concurrent checks and avoid artificial completion delays. Automatic checks stay quiet when unchanged; preserve download/hash/cancel/deployment progress, transfer/editor protection and user-controlled restart. Verify no-update/available/network-failure and progress/result behavior through actual application workflows. |
+| WINDOW-03 | Reconcile WINDOW-01/02 and UPDATE-02 against the complete inventory, revalidate affected updater/window lifecycle, then deliver one normal S14 release through the established channel. Independently retrieve the actual package, verify matching source/runtime/notices and packaged workflows, and verify the installed update. No per-window intermediate release or unsolicited system/theme/settings changes. |
+
 ### Context menu reorganization (S9)
 
 The user's 2026-10-31 request adds S9 to the plan, without starting it during the
@@ -950,6 +1107,7 @@ authorize redesigning Windows' native third-party menu or starting S6/S7.
 | --- | --- |
 | MENU-01 | Inventory current commands and their eligibility for files, folders, mixed/multiple selections, empty space and archive entries. Reorganize related commands into clear groups/submenus, prioritize common file operations and remove duplicate presentation while preserving supported actions, keyboard access and existing shortcuts. Define the final grouping when S9 becomes ACTIVE using the existing Native/Original design contract. |
 | MENU-02 | Preserve the selectable native Windows context-menu path, Shell extension behavior and capability-aware unsupported/read-only states. Verify real open/copy/cut/paste/rename/delete and archive operations through the reorganized menu, keyboard navigation, narrow/small-display placement and both themes at 100%/150%. Publish and verify the completed S9 change through the existing release channel. |
+| MENU-03 | Replace bottom command text with familiar Explorer-style icons, keeping names and shortcuts in hover tooltips and accessible names. Recover exact toolbar and View-menu SVG artwork where available; use verified Fluent glyphs for structural controls. Preserve supported actions, state/eligibility, shortcuts and Native/Original styling. Verify recognizable active/disabled states, keyboard/focus access, narrow layouts and 100%/150% rendering in both themes. Native icon recovery is research until S9 becomes ACTIVE; source provenance and distribution/runtime-use decisions must be explicit. Shared final delivery belongs to S11. |
 
 ### Native Jump Lists (S11)
 

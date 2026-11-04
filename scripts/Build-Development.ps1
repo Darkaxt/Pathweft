@@ -67,6 +67,8 @@ try {
             ('-p:SharpSevenZipRuntimeRoot=' + (Join-Path $cache 'sharpsevenzip/2.0.130-pathweft.1'))
             ('-p:RarsRuntimeRoot=' + (Join-Path $cache 'rars/0.12.3-pathweft.1'))
             ('-p:MpvRuntimeRoot=' + (Join-Path $cache 'mpv/e471496c56-pathweft.2'))
+            ('-p:MediaInfoRuntimeRoot=' + (Join-Path $cache 'mediainfo/26.10'))
+            ('-p:OfficeRuntimeRoot=' + (Join-Path $cache 'office'))
             ('-p:EverythingRuntimeRoot=' + (Join-Path $cache 'everything/1.4.1.1032'))
             ('-p:ShellRouterRoot=' + $shellOutput)
         )

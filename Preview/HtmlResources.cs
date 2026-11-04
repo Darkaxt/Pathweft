@@ -17,6 +17,7 @@ internal sealed class HtmlResources
     const long DocumentLimit=16*1024*1024,ResourceLimit=64*1024*1024,Budget=128*1024*1024;
     readonly string folder,archive,documentPath;
     readonly CancellationToken token;
+    readonly byte[] generatedDocument;
     readonly Dictionary<string,Task<Resource>> cache=new(StringComparer.OrdinalIgnoreCase);
     readonly SemaphoreSlim reading=new(1,1);
     Dictionary<string,Archive.Raw> entries;
@@ -31,6 +32,18 @@ internal sealed class HtmlResources
         else{folder=Path.GetDirectoryName(Path.GetFullPath(extracted));documentPath=Path.GetFileName(extracted);}
         Document=new("https://"+Guid.NewGuid().ToString("N")+".preview.pathweft.invalid/"+string.Join('/',documentPath.Split('/').Select(Uri.EscapeDataString)));
     }
+    internal HtmlResources(byte[] markup,CancellationToken cancellation)
+    {
+        token=cancellation;generatedDocument=markup;documentPath="message.html";
+        Document=new("https://"+Guid.NewGuid().ToString("N")+".preview.pathweft.invalid/message.html");
+    }
+    internal static HtmlResources CompiledHelp(string container,string document,CancellationToken cancellation)=>new(container,document,cancellation,true);
+    HtmlResources(string container,string document,CancellationToken cancellation,bool compiledHelp)
+    {
+        token=cancellation;archive=container;documentPath=Archive.Clean(document);
+        Document=new("https://"+Guid.NewGuid().ToString("N")+".preview.pathweft.invalid/"+string.Join('/',documentPath.Split('/').Select(Uri.EscapeDataString)));
+    }
+    internal bool LocalDocument(Uri uri)=>uri.Scheme==Uri.UriSchemeHttps&&uri.Host==Host&&uri.IsDefaultPort&&uri.UserInfo==""&&uri.Query==""&&Path.GetExtension(uri.AbsolutePath).ToLowerInvariant() is ".html" or ".htm";
     internal bool SameDocument(Uri uri)=>uri.Scheme==Uri.UriSchemeHttps&&uri.Host==Host&&uri.IsDefaultPort&&uri.UserInfo==""&&uri.AbsolutePath==Document.AbsolutePath&&uri.Query=="";
     internal Task<Resource> Read(Uri uri)
     {
@@ -58,7 +71,12 @@ internal sealed class HtmlResources
             {
                 token.ThrowIfCancellationRequested();long limit=Math.Min(mime=="text/html"?DocumentLimit:ResourceLimit,Budget-consumed);
                 byte[] bytes;
-                if(archive!=null)
+                if(generatedDocument!=null)
+                {
+                    if(!relative.Equals(documentPath,StringComparison.Ordinal))throw new IOException("Only the selected message body is available.");
+                    bytes=generatedDocument;if(bytes.LongLength>limit)throw new IOException("Message body exceeds its preview budget.");
+                }
+                else if(archive!=null)
                 {
                     entries??=Archive.Read(archive).ToDictionary(item=>item.Path,StringComparer.OrdinalIgnoreCase);
                     if(!entries.TryGetValue(relative,out var entry)||entry.IsDir)throw new FileNotFoundException("HTML resource is absent from its archive.");

@@ -1,6 +1,6 @@
 # Internal preview inventory
 
-S3 source inventory. Runtime acceptance is tracked separately in the stage plan.
+Source inventory through S13. Runtime acceptance is tracked separately in the stage plan.
 Modules are compiled in, selected lazily and controlled by one persisted disabled
 module set in Pathweft Settings → Files → Preview modules. Space, the side pane
 and taskbar Preview/Space share the same selection and lifecycle implementation.
@@ -10,7 +10,7 @@ and taskbar Preview/Space share the same selection and lifecycle implementation.
 | Text and code | Files passing bounded text/binary detection; BOM-aware UTF-8/UTF-16; read-only source text, including HTML/RTF/XML/code | First 256 KiB, visible truncation; .NET StreamReader and WPF TextBox | QuickLook TextViewer detection/priority adapted; File Labs read-only text presentation |
 | Markdown | .md, .markdown, .mdx, .mmd, .mkd, .mdwn, .mdown, .mdc, .qmd, .rmd, .rmarkdown, .apib, .mdtxt, .mdtext; CommonMark headings, paragraphs, lists, emphasis, code, quotes and rules | First 1 MiB, visible truncation; Markdig 1.5.0 and native WPF FlowDocument; embedded HTML is inert, links are labels, images show alt labels; no remote resource loading or embedded script/diagram execution | QuickLook MarkdownViewer extension/selection/lifecycle adapted; its browser/template pipeline replaced by native WPF |
 | Images | .jpg, .jpeg, .png, .gif, .bmp, .webp, .ico, .tif, .tiff, .heic through available WIC decoders; first frame | 64 MiB / 200 megapixels; decoded longest dimension at most 2,000 pixels; optional HEIC/WebP availability depends on installed codecs | Selected QuickLook image lifecycle/format contract; existing File Labs WPF BitmapImage path, now backed by a closed source read |
-| PDF | .pdf with Previous/Next page controls and a truthful page indicator; document scripts do not run | 64 MiB; Windows.Data.Pdf with in-memory source, one page render requested at 1,400 DIP per request (physical pixels depend on Windows rendering scale); password/encryption/renderer failures report unavailable | Existing File Labs Windows PDF renderer adapted to module ownership and bounded page navigation |
+| PDF | .pdf with Previous/Next icons, direct page-number entry and a truthful page indicator; document scripts do not run | 64 MiB; Windows.Data.Pdf with in-memory source, one page render requested at 1,400 DIP per request (physical pixels depend on Windows rendering scale); password/encryption/renderer failures report unavailable | Existing File Labs Windows PDF renderer adapted to module ownership and bounded page navigation |
 | Archive and folder listing | Native archive formats listed in [ARCHIVES.md](ARCHIVES.md); expandable folder/file tree with icons, concise names and sizes for containers/virtual directories; existing Stash/Backup Labs explicit actions | All archive metadata, WPF rows created on expansion with virtualization; filesystem folder text remains limited to 1,000 names; no archive extraction or execution | Selected QuickLook selection/lifecycle; File Labs sidebar tree presentation; S4 native archive integration |
 | Video and audio | .mp4, .m4v, .mov, .wmv, .avi, .mkv, .webm, .mpg, .mpeg, .3gp, .ts; .mp3, .wav, .wma, .m4a, .aac, .flac, .ogg, .opus | Bundled libmpv/FFmpeg/libplacebo, native D3D11 gpu-next child window with hardware decoding; Dolby Vision metadata maps to BT.709/sRGB SDR. Space autoplays; side pane pauses until Play; icon playback/mute controls, seek and duration. Native events drive state and cleanup. No installed codec/player dependency | Selected native-window/client API approach from Darkaxt/vlc and Darkaxt/NuvioDesktopDV; exact runtime/source pin under vendor/MPV; retained optional Reel metadata |
 | Fonts | .ttf, .otf specimen at several sizes; no installation | 16 MiB; WPF font rendering; scrollable sample | Selected QuickLook font selection/lifecycle; File Labs native specimen |
@@ -74,11 +74,37 @@ follows WPF frame events with one pending render, and releases that subscription
 on pause, selection change, disable and close. Gesture requests arriving during
 a render are applied together before the next frame. No delay controls completion.
 
-Standalone QuickLook named-pipe dispatch and Windows shell preview handlers are
-absent from this governed path. The retained PreviewHandler.cs source is not
-instantiated by these modules. Executables/macros/scripts are never invoked by
-preview selection. Explicit existing user actions such as Open backup/Reel remain
+Standalone QuickLook named-pipe dispatch is absent. Office uses pinned source-built
+WordCraft/GridCraft/DeckCraft DLLs in a Pathweft-owned worker, with real page/sheet/
+slide navigation. Word/Deck return rasters; Grid retains an in-memory print display
+list rendered by Windows PDF inside that worker. Bundled LibreOffice handles
+unsupported formats (including legacy PPT/ODP and Visio) and primary import/render/
+crash failure after the old worker has actually exited. Cancellation/policy failure
+cannot trigger fallback. Original bytes/MOTW stay intact; macros/link updates stay
+disabled. No Craft CLI/GUI, installed Office, MCP or Coordinator is required.
+Actual renderer icons precede filenames; recovery shows LibreOffice with a concise
+orange bottom-right warning and full diagnostics on hover. Source acceptance and
+final delivered acceptance remain separately tracked in the stage plan; this
+inventory does not assert a published S13 release. Missing runtimes and protected/
+unsupported inputs give explicit errors. Existing user actions such as Open backup/Reel remain
 separate clickable actions, with no automatic dispatch.
+
+Preview headers offer sidebar, Windowed and in-app PiP hosts. Host changes retain
+the same viewer, item and page/media/model state; detached modes pin that item
+while browsing elsewhere. Closing the floating window restores the sidebar.
+PiP frees the column and offers return to sidebar. Explicit preview close still
+disposes the viewer; app exit drains actual owned work.
+
+Fourteen specialist categories have source integration under the same host and settings;
+see [the exact format/dependency matrix](PREVIEW-S13.md). This covers navigable
+CSV/SQLite/LiteDB, EML/MSG bodies, public certificate/provisioning details,
+structured application packages, embedded design images, a selectable MediaInfo
+report, hex/ASCII, ELF/Mach-O/UImage, minidumps, Prefetch, CHM topics, actual
+Shell identifiers and the embedded Office candidate. Title/body context menus
+choose an enabled alternative (such as MediaInfo instead of playback). Priority95
+specialists precede generic viewers; CLSID110 is exclusive to virtual identifiers.
+Hex is explicit for other files and preferred for .bin/.hex only. Module failure
+is an error in that specialist, not an automatic raw-text success claim.
 
 ## Pinned source and distribution
 

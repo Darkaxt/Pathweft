@@ -12,6 +12,10 @@ namespace FileExplorer;
 // IContextMenu2/3, hence the window hook while the menu is open.
 public static class ShellMenu
 {
+    // GetUIObjectOf consumes child PIDLs relative to one IShellFolder. Search
+    // results from unrelated parents cannot be combined through this API.
+    internal static bool CanShowItems(IReadOnlyList<string> items)=>items.Count<=1||
+        items.Select(path=>Path.GetDirectoryName(path.TrimEnd('\\'))).Distinct(StringComparer.OrdinalIgnoreCase).ToArray() is {Length:1} parents&&parents[0]!=null;
     /// Shows the menu for items (all in one folder) or, with none, the folder's background menu.
     /// Returns the verb the user picked when Pathweft should handle it itself (e.g. "rename"), else null.
     /// `view`: Pathweft' View modes, as a View submenu at the top of the folder's menu, where Explorer has its own
@@ -22,6 +26,7 @@ public static class ShellMenu
     public static string Show(Window owner, string folder, IReadOnlyList<string> items, IReadOnlyList<(string Text, bool On, Action Run)> view = null, bool rename = true,
         IReadOnlyList<(string Text, Action Run)> top = null)
     {
+        if(!CanShowItems(items))return null;
         var hwnd = new WindowInteropHelper(owner).Handle;
         var pidls = new List<IntPtr>();
         IntPtr menu = IntPtr.Zero;
@@ -64,6 +69,20 @@ public static class ShellMenu
                 return IntPtr.Zero;
             };
             source.AddHook(hook);
+#if DEBUG
+            if (HiddenTrialPresentation.Enabled && InspectForVerification != null)
+            {
+                var verbs = new List<string>();
+                for (int index=0;index<GetMenuItemCount(menu);index++)
+                {
+                    var entry=new MENUITEMINFO {cbSize=Marshal.SizeOf<MENUITEMINFO>(),fMask=MIIM_ID};
+                    if(GetMenuItemInfo(menu,(uint)index,true,ref entry)&&entry.wID>=FirstId&&entry.wID<=LastId)
+                        verbs.Add(Verb(ctx,entry.wID-FirstId));
+                }
+                InspectForVerification(items,verbs,top?.Select(item=>item.Text).ToArray()??Array.Empty<string>());
+                return null;
+            }
+#endif
 
             GetCursorPos(out var pt);
             int cmd = TrackPopupMenuEx(menu, TPM_RETURNCMD | TPM_RIGHTBUTTON, pt.X, pt.Y, hwnd, IntPtr.Zero);
@@ -84,6 +103,9 @@ public static class ShellMenu
             foreach (var p in pidls) Marshal.FreeCoTaskMem(p);
         }
     }
+#if DEBUG
+    internal static Action<IReadOnlyList<string>,IReadOnlyList<string>,IReadOnlyList<string>> InspectForVerification;
+#endif
 
     /// Runs the command `offset` of a menu the shell (or one extension) filled, for these items, as Explorer does.
     static void Invoke(Window owner, IContextMenu ctx, int offset, string folder, IReadOnlyList<string> items, POINT pt)

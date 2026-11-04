@@ -1,9 +1,16 @@
 [CmdletBinding()]
-param([Parameter(Mandatory)][string]$DeliveryRoot,[switch]$InstallTrial,[string]$MediaInputs=$env:PATHWEFT_MEDIA113_INPUTS)
+param([Parameter(Mandatory)][string]$DeliveryRoot,[switch]$InstallTrial,[string]$MediaInputs=$env:PATHWEFT_MEDIA113_INPUTS,[string]$SpecialistInputs=$env:PATHWEFT_SPECIALIST_INPUTS)
 $ErrorActionPreference='Stop'
 $project=Split-Path -Parent $PSScriptRoot
 $scratch='D:\Temp\pathweft-s8-delivery'
 $run=Join-Path $scratch ('verification-'+[guid]::NewGuid().ToString('N'))
+$cleanup='C:/Users/darka/.agents/skills/transactional-cleanup/scripts/invoke_transactional_cleanup.py'
+$registered=& python $cleanup begin --workspace $project --scan-root $run
+if($LASTEXITCODE -ne 0){throw 'Could not inventory package verification scratch.'}
+$transaction=($registered -join "`n"|ConvertFrom-Json).transaction_id
+$registered=& python $cleanup register --transaction $transaction --path $run --kind compiler-output --evidence 'Independently extracted Pathweft package, native checks and hidden app-owned integration fixtures'
+if($LASTEXITCODE -ne 0){throw 'Could not register package verification output.'}
+Write-Output ('Cleanup transaction: '+$transaction)
 [void][IO.Directory]::CreateDirectory($run)
 $env:TEMP=$env:TMP=Join-Path $run 'temp'
 [void][IO.Directory]::CreateDirectory($env:TEMP)
@@ -29,6 +36,8 @@ function Verify-Members([string]$directory){
 Verify-Members $product
 if(!$MediaInputs -or !(Test-Path -LiteralPath $MediaInputs)){throw 'Supply the source-bound SDR/audio/DV fixture inventory with -MediaInputs.'}
 $env:PATHWEFT_MEDIA113_INPUTS=[IO.Path]::GetFullPath($MediaInputs)
+if(!$SpecialistInputs -or !(Test-Path -LiteralPath (Join-Path $SpecialistInputs 'manifest.json'))){throw 'Supply the pinned specialist fixture inventory with -SpecialistInputs.'}
+$env:PATHWEFT_SPECIALIST_INPUTS=[IO.Path]::GetFullPath($SpecialistInputs)
 & (Join-Path $PSScriptRoot 'Build-ShellRouter.ps1') -OutputRoot (Join-Path $run 'native-shell') -Verify -RevealProbe -ProductDirectory $product
 $env:PATHWEFT_PROFILE=Join-Path $run 'profile'
 [void][IO.Directory]::CreateDirectory($env:PATHWEFT_PROFILE)

@@ -161,7 +161,7 @@ public partial class MainWindow
             var menu = Menu(pane);
             try
             {
-                var item = menu.Items.OfType<MenuItem>().Single(i => i.Header?.ToString() == action);
+                var item = MenuCommands(menu).Single(i => i.Header?.ToString() == action);
                 Check(item.IsEnabled, "Actual pane action is enabled: " + action);
                 item.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
             }

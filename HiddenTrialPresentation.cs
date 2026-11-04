@@ -13,7 +13,7 @@ internal static class HiddenTrialPresentation
     static IntPtr activationHook;
     static readonly HashSet<IntPtr> noninteractiveWindows = new();
     static readonly CbtEvent activationCallback = (code, window, details) =>
-        code == 5 && noninteractiveWindows.Contains(window) ? new IntPtr(1) : CallNextHookEx(activationHook, code, window, details);
+        code == 5 && (noninteractiveWindows.Contains(window)||noninteractiveWindows.Contains(GetAncestor(window,2))) ? new IntPtr(1) : CallNextHookEx(activationHook, code, window, details);
     static readonly HashSet<IntPtr> monitorHidden = new();
     static readonly HashSet<IntPtr> interactiveWindows = new();
     internal static string Phase { get; set; } = "startup";
@@ -21,13 +21,28 @@ internal static class HiddenTrialPresentation
     internal static List<object> ActivationMessages { get; } = new();
     static readonly ForegroundEvent foregroundCallback = (_, _, hwnd, _, _, _, nativeTime) =>
     {
-        GetWindowThreadProcessId(hwnd, out uint process);
+        uint thread=GetWindowThreadProcessId(hwnd, out uint process);
         if (process == Environment.ProcessId && !interactiveWindows.Contains(hwnd))
         {
+            // A native sheet can activate on a never-switched private desktop.
+            // That is not activation on the user's input desktop. Distinguish
+            // the actual desktop objects rather than assuming one per station.
+            if(Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO")=="menus-shell"&&IsPrivateDesktop(thread))return;
             ++ForegroundViolations;
             ForegroundEvents.Add(new { phase = Phase, window = Application.Current.Windows.Cast<Window>().FirstOrDefault(w => new WindowInteropHelper(w).Handle == hwnd)?.GetType().Name, hwnd = hwnd.ToInt64(), nativeTime, callbackTime = Environment.TickCount, currentForeground = GetForegroundWindow().ToInt64() });
         }
     };
+    static bool IsPrivateDesktop(uint thread)
+    {
+        var input=OpenInputDesktop(0,false,1);
+        if(input==IntPtr.Zero)return false;
+        try
+        {
+            var ownName=new System.Text.StringBuilder(256);var inputName=new System.Text.StringBuilder(256);
+            return GetUserObjectInformation(GetThreadDesktop(thread),2,ownName,512,out _)&&
+                GetUserObjectInformation(input,2,inputName,512,out _)&&ownName.ToString().StartsWith("PathweftMenu-",StringComparison.Ordinal)&&ownName.ToString()!=inputName.ToString();
+        }finally{CloseDesktop(input);}
+    }
     internal static int ForegroundViolations { get; private set; }
     internal static bool ForegroundObserverActive => foregroundHook != IntPtr.Zero;
     internal static bool IsOutsideDisplays(Window window)
@@ -42,6 +57,7 @@ internal static class HiddenTrialPresentation
          Settings.Profile?.StartsWith(@"D:\Temp\pathweft-s4-", StringComparison.OrdinalIgnoreCase) == true ||
          Settings.Profile?.StartsWith(@"D:\Temp\pathweft-s5-native\", StringComparison.OrdinalIgnoreCase) == true ||
          Settings.Profile?.StartsWith(@"D:\Temp\pathweft-s8-delivery\", StringComparison.OrdinalIgnoreCase) == true ||
+         Settings.Profile?.StartsWith(@"D:\Temp\pathweft-s13-s9-s11\", StringComparison.OrdinalIgnoreCase) == true ||
          Settings.Profile?.StartsWith(@"D:\Temp\pathweft-rars-native\", StringComparison.OrdinalIgnoreCase) == true);
     internal static bool SuppressFocus(Window window) => Enabled && !(window is SearchWidgetWindow && Environment.GetEnvironmentVariable("PATHWEFT_S2_NATIVE_ONLY") == "1");
 
@@ -106,6 +122,19 @@ internal static class HiddenTrialPresentation
         var handle = new WindowInteropHelper(window).Handle;
         monitorHidden.Add(handle);
     }
+    internal static void PreparePopup(System.Windows.FrameworkElement popup)
+    {
+        if(!Enabled||PresentationSource.FromVisual(popup) is not HwndSource source)return;
+        var handle=source.Handle;noninteractiveWindows.Add(handle);
+        SetWindowLong(handle,-20,GetWindowLong(handle,-20)|0x08000080);
+        TaskbarSearchHost.Native.SetWindowPos(handle,IntPtr.Zero,GetSystemMetrics(76)+GetSystemMetrics(78)+8192,GetSystemMetrics(77),0,0,0x0015);
+        source.AddHook((IntPtr h,int message,IntPtr w,IntPtr l,ref bool handled)=>
+        {
+            if(message==0x0046&&l!=IntPtr.Zero){var position=Marshal.PtrToStructure<WindowPosition>(l);position.X=GetSystemMetrics(76)+GetSystemMetrics(78)+8192;position.Y=GetSystemMetrics(77);position.Flags=(position.Flags&~0x0002u)|0x0014u;Marshal.StructureToPtr(position,l,false);}
+            return IntPtr.Zero;
+        });
+        source.Disposed+=(_,_)=>noninteractiveWindows.Remove(handle);
+    }
     internal static bool IsNativelyHidden(Window window) => !IsWindowVisible(new WindowInteropHelper(window).Handle);
     internal static void StopObserver()
     {
@@ -129,6 +158,11 @@ internal static class HiddenTrialPresentation
     [StructLayout(LayoutKind.Sequential)] struct NativeRect { internal int Left, Top, Right, Bottom; }
     [DllImport("user32.dll")] static extern bool GetWindowRect(IntPtr hwnd, out NativeRect rect);
     [DllImport("user32.dll")] static extern bool IsWindowVisible(IntPtr hwnd);
+    [DllImport("user32.dll")] static extern IntPtr GetAncestor(IntPtr hwnd,uint flags);
     [DllImport("user32.dll")] static extern IntPtr GetForegroundWindow();
+    [DllImport("user32.dll")]static extern IntPtr GetThreadDesktop(uint thread);
+    [DllImport("user32.dll")]static extern IntPtr OpenInputDesktop(uint flags,bool inherit,uint access);
+    [DllImport("user32.dll")]static extern bool CloseDesktop(IntPtr desktop);
+    [DllImport("user32.dll",CharSet=CharSet.Unicode)]static extern bool GetUserObjectInformation(IntPtr handle,int index,System.Text.StringBuilder buffer,int bytes,out int needed);
 }
 #endif

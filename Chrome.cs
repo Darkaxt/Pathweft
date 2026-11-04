@@ -16,7 +16,6 @@ public partial class MainWindow
 
     void SetUpChrome()
     {
-        VersionText.Text = Updater.Current.ToString();
         StateChanged += (_, _) => ApplyWindowState();
         SourceInitialized += (_, _) =>
         {
@@ -38,6 +37,20 @@ public partial class MainWindow
         ApplyTray();
     }
 
+    void SidebarHeader_SizeChanged(object sender,SizeChangedEventArgs e)
+    {
+        // Keep the brand and every utility visible at the existing160-DIP
+        // minimum sidebar width, including independent sidebar/text scaling.
+        if(SidebarHeaderActions==null)return;
+        bool narrow=e.NewSize.Width<216;
+        Grid.SetRow(SidebarHeaderActions,narrow?1:0);
+        Grid.SetColumn(SidebarHeaderActions,narrow?0:1);
+        Grid.SetColumnSpan(SidebarHeaderActions,narrow?2:1);
+        SidebarHeaderActions.Margin=new Thickness(0,narrow?4:0,0,0);
+        foreach(var button in SidebarHeaderActions.Children.OfType<Button>())
+            button.Width=Math.Min(28,e.NewSize.Width/4);
+    }
+
     /// A maximized window without a title bar reaches past the screen by its resize border; the margin takes
     /// that back so nothing is cut off. The glyph follows the state, as in Windows' own button.
     void ApplyWindowState()
@@ -54,7 +67,7 @@ public partial class MainWindow
     void PlaceCaption()
     {
         var rightmost = Settings.SinglePane ? Left : Right;
-        bool preview=PreviewPane.Visibility==Visibility.Visible;
+        bool preview=previewMode==PreviewMode.Sidebar&&PreviewPane.Visibility==Visibility.Visible;
         Left.ReserveCaption(!preview && rightmost == Left ? CaptionWidth : 0);
         Right.ReserveCaption(!preview && rightmost == Right ? CaptionWidth : 0);
         PreviewHeader.Margin = new Thickness(12, preview ? 40 : 6, 6, 4);

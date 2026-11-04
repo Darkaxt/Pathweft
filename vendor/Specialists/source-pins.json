@@ -1,0 +1,16 @@
+[
+  {"id":"BouncyCastle.Cryptography","version":"2.6.2","repo":"bcgit/bc-csharp","revision":"b4f2f6ad76bcd1f11f365ee50cc7447fbce79077","license":"MIT"},
+  {"id":"CsvHelper","version":"33.1.0","repo":"JoshClose/CsvHelper","revision":"5dad8b8b1d8b074f8353cfd482e939db788a8927","license":"Apache-2.0"},
+  {"id":"ELFSharp","version":"2.17.3","repo":"konrad-kruczynski/elfsharp","revision":"892ddfc054939c4ffe70830bf5873d4ac8fc3b96","license":"MIT"},
+  {"id":"LiteDB","version":"5.0.21","repo":"mbdavid/LiteDB","revision":"391cc9318c5be6e56cb71b3ce14b1ed9cb324763","license":"MIT"},
+  {"id":"Microsoft.Data.Sqlite.Core","version":"10.0.10","repo":"dotnet/efcore","revision":"db55508a7fbc1535bdb65b85159a8d0d36d6942a","license":"MIT","provenance":"NuGet VMR dotnet/dotnet f7d90799ce4ef09a0bb257852a57248d2a8fb8dd src/source-manifest.json maps src/efcore to this exact component revision"},
+  {"id":"MimeKit","version":"4.15.1","repo":"jstedfast/MimeKit","revision":"5c79dcc7c7c6c238aec40747ecf7481393a3d04e","license":"MIT","provenance":"Official signed tag 4.15.1, tag object 8d91c45b849d1375b26ac5307df8f1930e49bee9"},
+  {"id":"OpenMcdf","version":"3.1.4","repo":"openmcdf/openmcdf","revision":"11ffb7cafff6eea99639df6b2b249dcf6bcca3ef","license":"MPL-2.0"},
+  {"id":"Prefetch","version":"2026.5.2","repo":"EricZimmerman/Prefetch","revision":"54a3ac0d6d0006d3836c9bd368dfe32cbcaa131d","license":"MIT"},
+  {"id":"QuickLook.ApkReader","version":"2.1.0","repo":"QL-Win/QuickLook.ApkReader","revision":"22b32f7cf136664a2f5a017c4626ee00f1078b52","license":"MIT","provenance":"Original nuspec repository Soar360/apk-reader moved; the same commit exists at QL-Win. Explicit resource-complete net462 DLL selected."},
+  {"id":"QuickLook.MediaInfo","version":"26.5.0","repo":"QL-Win/QuickLook.MediaInfo","revision":"91fd489fd7dd6ed0d31091f9fbe7a2b50c52b5e1","license":"MIT","provenance":"Managed C API only; native DLL separately pinned to official MediaArea26.10."},
+  {"id":"RtfPipe","version":"2.0.7677.4303","repo":"erdomke/RtfPipe","revision":"2aedbf288eb012e2993330d334cf1a27f2026f7e","license":"MIT","provenance":"Nearest official build-version commit before assembly timestamp; NuGet omits SourceLink/repository revision. Exact package-to-commit identity is not asserted. Retain original NuGet bytes and this source snapshot with the uncertainty explicit."},
+  {"id":"Serilog","version":"4.3.1","repo":"serilog/serilog","revision":"5625030e8f8fceca2e3180575aba174751ef7add","license":"Apache-2.0"},
+  {"id":"SQLitePCLRaw.core","version":"2.1.11","repo":"ericsink/SQLitePCL.raw","revision":"fe99a5c9ea3bdb07c431b3945eed5c3e4f548e1a","license":"Apache-2.0"},
+  {"id":"SQLitePCLRaw.provider.winsqlite3","version":"2.1.11","repo":"ericsink/SQLitePCL.raw","revision":"fe99a5c9ea3bdb07c431b3945eed5c3e4f548e1a","license":"Apache-2.0"}
+]

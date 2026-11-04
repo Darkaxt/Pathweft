@@ -22,7 +22,7 @@ public partial class MainWindow
         async Task Select(string path)
         {
             await S1Verification.Navigate(Left,Path.GetDirectoryName(path));SetActive(Left);
-            Left.List.SelectedItem=Left.Items.Single(item=>item.Path.Equals(path,StringComparison.OrdinalIgnoreCase));PreviewFollow();
+            Left.List.SelectedItem=Left.Items.Single(item=>item.Path.Equals(path,StringComparison.OrdinalIgnoreCase));ApplyPreview();
             await sidePreview.Completion;await Settled();
         }
         await S1Verification.Navigate(Left,root);SetActive(Left);Settings.Preview=true;ApplyPreview();

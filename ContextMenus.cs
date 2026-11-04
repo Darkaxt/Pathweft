@@ -16,7 +16,11 @@ public partial class MainWindow
 #if DEBUG
     ContextMenu archiveMenuForVerification;
     bool captureS4Menu;
+    internal static IEnumerable<MenuItem> MenuCommands(ItemsControl menu)
+    {foreach(var item in menu.Items.OfType<MenuItem>()){yield return item;foreach(var child in MenuCommands(item))yield return child;}}
 #endif
+    long contextMenuRequest;
+    readonly HashSet<Task> contextMenuInspections=new();
     void HookContextMenu(PaneView p)
     {
         p.List.ContextMenuOpening += (_, e) =>
@@ -35,6 +39,8 @@ public partial class MainWindow
     /// The menu for the pane's selection, or for its folder when nothing is selected.
     async void ShowMenu(PaneView p)
     {
+        if(closingPreviews)return;
+        long request=++contextMenuRequest;string originalDirectory=p.Dir;
         // This PC: Windows' menu for the drive (Properties, Eject, Format…), or for This PC itself (Map network drive…)
         if (p.Dir == PaneView.ThisPC && !p.InSearch)
         {
@@ -71,7 +77,7 @@ public partial class MainWindow
                 if (rows.Count == 1) am.Items.Add(WriteAction("Rename", "F2", p.BeginRename));
                 am.Items.Add(Item("Extract to other pane", "", "Ctrl+F5", () => ExtractFromArchive(p, Other.Dir), !Settings.SinglePane && !PaneView.IsVirtual(Other.Dir)));
                 am.Items.Add(Item("Extract to…", "", "", () => ExtractFromArchiveTo(p)));
-                if (writable) am.Items.Add(Item("Delete from archive", "", "Del", () => DeleteFromArchive(p)));
+                am.Items.Add(WriteAction("Delete from archive", "Del", () => DeleteFromArchive(p)));
             }
             am.Items.Add(WriteAction("Paste", "Ctrl+V", () => ClipboardPaste(), HasTransferClipboard()));
             am.Items.Add(Item("Enter archive password…", "", "", () => ArchivePassword(p)));
@@ -79,7 +85,7 @@ public partial class MainWindow
             am.Items.Add(Item("Archive working copies…", "", "", ShowArchiveWorkingCopies));
             am.Items.Add(new Separator());
             am.Items.Add(Item("Show the archive", "", "", () => p.Navigate(Path.GetDirectoryName(archive), Path.GetFileName(archive))));
-            am.PlacementTarget = p.List;
+            GroupArchiveMenu(am);PrepareContextMenu(am,p.List);
 #if DEBUG
             archiveMenuForVerification = am;
             if (captureS4Menu) return;
@@ -88,24 +94,26 @@ public partial class MainWindow
             return;
         }
         var sel = p.Selected;
-        if (Settings.NativeMenu)
+        if (Settings.NativeMenu&&ShellMenu.CanShowItems(sel.Select(entry=>entry.Path).ToArray()))
         {
             // the folder's menu gets Pathweft' View submenu; Paste on a folder, or a shortcut to one, is Windows' own here
             if (ShellMenu.Show(this, p.Dir, sel.Select(x => x.Path).ToList(), sel.Count == 0 ? p.ViewChoices() : null) == "rename") Rename();
             p.Refresh();
             return;
         }
-        // A file named like a Stash or Backup Labs backup is looked into off the UI thread (it may be on a share that is
-        // asleep); the menu waits for that at most 150 ms, then opens without "Open in …". Other files cost nothing here.
+        // Observe the actual optional metadata read. A changed selection/folder
+        // or closing browser invalidates this menu request, without a timer race.
         Backups.Info backup = null;
         if (sel.Count == 1 && !sel[0].IsDir && Backups.Named(sel[0].Path))
         {
             var path = sel[0].Path;
             var look = Task.Run(() => Backups.Inspect(path) is { Unreadable: false } b && BackupStart(b.Id, path) == null ? b : null);
-            if (await Task.WhenAny(look, Task.Delay(150)) == look) backup = look.Result;
+            contextMenuInspections.Add(look);
+            try{backup=await look;}finally{contextMenuInspections.Remove(look);}
+            if(closingPreviews||request!=contextMenuRequest||p.Dir!=originalDirectory||!sel.Select(entry=>entry.Path).SequenceEqual(p.Selected.Select(entry=>entry.Path)))return;
         }
         var menu = sel.Count > 0 ? ItemMenu(p, sel, backup) : FolderMenu(p);
-        menu.PlacementTarget = p.List;
+        PrepareContextMenu(menu,p.List);
 #if DEBUG
         archiveMenuForVerification = menu;
         if (captureS4Menu) return;
@@ -205,13 +213,19 @@ public partial class MainWindow
     static void OpenBackup(string id, string path) =>
         Process.Start(BackupStart(id, path) ?? new ProcessStartInfo(BackupApps[id].Page) { UseShellExecute = true });
 
-    static MenuItem Item(string header, string glyph, string gesture, Action run, bool enabled = true)
+    internal static MenuItem Item(string header, string glyph, string gesture, Action run, bool enabled = true)
     {
         var mi = new MenuItem
         {
             Header = header, InputGestureText = gesture, IsEnabled = enabled,
             Icon = new TextBlock { Text = glyph, FontFamily = new FontFamily("Segoe Fluent Icons"), FontSize = 13 },
         };
+        string icon=header switch{
+            "Open"=>"Open","Copy"=>"Copy","Cut"=>"Cut","Paste" or "Paste into folder"=>"Paste",
+            "Rename" or "Rename all…"=>"Rename","Delete" or "Delete permanently"=>"Delete",
+            "Quick View" or "Preview"=>"Preview","New folder"=>"NewFolder","Open terminal here"=>"Terminal",_=>null};
+        if(icon!=null)mi.Icon=ExplorerIcons.Image(icon,14);
+        System.Windows.Automation.AutomationProperties.SetName(mi,header);
         mi.Click += (_, _) => run();
         return mi;
     }
@@ -233,14 +247,14 @@ public partial class MainWindow
         if (dir)
         {
             m.Items.Add(Item("Open in new tab", "", "Middle click", () => { p.NewTab(); p.Navigate(first.Path); }));
-            m.Items.Add(Item("Open in other pane", "", "", () => Other.Navigate(first.Path)));
+            m.Items.Add(Item("Open in other pane", "", "", () => Other.Navigate(first.Path),!Settings.SinglePane));
             m.Items.Add(Item("Find duplicates in folder…", "", "", () => FindDuplicates(first.Path)));
         }
         else if (sel.Count(x => x.FolderTarget != null) > 1) // several folders: compared with each other
             m.Items.Add(Item("Find duplicates in these folders…", "", "", () => FindDuplicates(sel.Where(x => x.FolderTarget != null).Select(x => x.FolderTarget).ToArray())));
         // Windows' Open with list (its apps in Windows' order, Choose another app, the Store), for several files too
         if (!AddShell(m, shell, "openwith") && one && !dir)
-            m.Items.Add(Item("Open with…", "", "", () => Process.Start("rundll32.exe", $"shell32.dll,OpenAs_RunDLL {first.Path}")));
+            m.Items.Add(Item("Open with…", "", "", () => OpenWith(first.Path)));
         if (one && !dir)
         {
             if (Runnable.Contains(ext)) m.Items.Add(Item("Run as administrator", "", "", () => RunAsAdmin(first.Path)));
@@ -252,7 +266,7 @@ public partial class MainWindow
         if (NotepadPlusPlus is { } npp && sel.Any(x => !x.IsDir))
             m.Items.Add(Item("Edit with Notepad++", "", "", () =>
                 Process.Start(npp, string.Join(" ", sel.Where(x => !x.IsDir).Select(x => $"\"{x.Path}\"")))));
-        m.Items.Add(Item("Quick View", "", "Space", QuickView));
+        m.Items.Add(Item("Quick View", "", "Space", QuickView,one));
         m.Items.Add(new Separator());
         m.Items.Add(Item("Cut", "", "Ctrl+X", () => ClipboardPut(cut: true)));
         m.Items.Add(Item("Copy", "", "Ctrl+C", () => ClipboardPut(cut: false)));
@@ -260,8 +274,8 @@ public partial class MainWindow
         var into = one ? first.FolderTarget : null;
         m.Items.Add(into != null ? Item("Paste into folder", "", "", () => ClipboardPaste(into), HasTransferClipboard())
                                  : Item("Paste", "", "Ctrl+V", () => ClipboardPaste(), HasTransferClipboard()));
-        m.Items.Add(Item("Copy to other pane", "", "Ctrl+F5", () => Transfer(false)));
-        m.Items.Add(Item("Move to other pane", "", "F6", () => Transfer(true)));
+        m.Items.Add(Item("Copy to other pane", "", "Ctrl+F5", () => Transfer(false),!Settings.SinglePane));
+        m.Items.Add(Item("Move to other pane", "", "F6", () => Transfer(true),!Settings.SinglePane));
         m.Items.Add(SendTo("Copy to", "\uE8C8", p, sel, move: false));
         m.Items.Add(SendTo("Move to", "\uE8DE", p, sel, move: true));
         m.Items.Add(Item("Group into new folder…", "\uE8F4", "", () => GroupIntoFolder(p, sel)));
@@ -299,16 +313,42 @@ public partial class MainWindow
         if (sel.All(x => x.IsDir || ReelVideo.Contains(Path.GetExtension(x.Name))))
             m.Items.Add(Item("Add to Reel", "\uE8B2", "", () => HandTo("reel", ReelPage, sel.Select(x => x.Path))));
         m.Items.Add(Item("Back up with Backup Labs", "\uE81C", "", () => HandTo("backuplabs", BackupPage, sel.Select(x => x.Path))));
-        m.Items.Add(Item("Windows menu…", "", "", () => { if (ShellMenu.Show(this, p.Dir, sel.Select(x => x.Path).ToList()) == "rename") Rename(); }));
-        m.Items.Add(Item("Properties", "", "Alt+Enter", () => Properties(sel.Select(x => x.Path).ToList())));
+        var paths=sel.Select(entry=>entry.Path).ToArray();
+        var windows=Item("Windows menu…", "", "", () => { if (ShellMenu.Show(this, p.Dir, paths) == "rename") Rename(); },ShellMenu.CanShowItems(paths));
+        if(!windows.IsEnabled){windows.ToolTip="Select items from one containing folder for the Windows menu.";ToolTipService.SetShowOnDisabled(windows,true);}m.Items.Add(windows);
+        var properties=Item("Properties", "", "Alt+Enter", () => Properties(paths),SupportsProperties(paths));
+        if(!properties.IsEnabled){properties.ToolTip="Select items on the same drive or share for combined Properties.";ToolTipService.SetShowOnDisabled(properties,true);}m.Items.Add(properties);
+        GroupItemMenu(m);
         return m;
+    }
+
+    // Reparent the existing command nodes, preserving their exact callbacks,
+    // predicates, native-extension children and disposal lifetime.
+    static void GroupItemMenu(ContextMenu menu)
+    {
+        var remaining=menu.Items.OfType<MenuItem>().ToList();menu.Items.Clear();
+        var windows=remaining.Single(item=>item.Header as string=="Windows menu…");remaining.Remove(windows);
+        var properties=remaining.Single(item=>item.Header as string=="Properties");remaining.Remove(properties);
+        void Take(ItemsControl target,Func<MenuItem,bool> predicate){foreach(var item in remaining.Where(predicate).ToArray()){remaining.Remove(item);target.Items.Add(item);}}
+        void Group(string name,string glyph,Func<MenuItem,bool> predicate){var group=Item(name,glyph,"",()=>{});Take(group,predicate);if(group.Items.Count>0)menu.Items.Add(group);}
+        static bool Named(MenuItem item,params string[] labels)=>labels.Contains(item.Header as string);
+        Take(menu,item=>Named(item,"Open","Open with…","Open in new tab","Open in other pane","Open file location","Edit","Quick View")||item.Tag as string=="shell:openwith"||(item.Header as string)?.StartsWith("Open in ")==true&&item.Header as string!="Open in File Explorer");
+        menu.Items.Add(new Separator());
+        Take(menu,item=>Named(item,"Cut","Copy","Paste","Paste into folder","Rename","Rename all…","Delete","Delete permanently"));
+        menu.Items.Add(new Separator());
+        Group("Transfer","\uE8DE",item=>Named(item,"Copy to other pane","Move to other pane","Copy to","Move to","Group into new folder…","Add to Drop bin"));
+        Group("Copy details","\uE8C8",item=>Named(item,"Copy path","Copy name"));
+        Group("Archive","\uF012",item=>(item.Header as string)?.StartsWith("Compress to ")==true||(item.Header as string)?.StartsWith("Extract ")==true||item.Tag as string is "shell:7-zip" or "shell:winrar");
+        Group("Tools","\uE713",item=>Named(item,"Run as administrator","Compare in editor","Edit with Notepad++","Checksum (SHA-256)","Create shortcut","Mount")||(item.Header as string)?.StartsWith("Find duplicates")==true);
+        Group("More actions","\uE712",_=>true);
+        menu.Items.Add(new Separator());menu.Items.Add(windows);menu.Items.Add(properties);
     }
 
     /// Adds what a shell extension offered for the selection (ShellMenu.Extensions); false when it offered nothing.
     static bool AddShell(ItemsControl menu, ShellMenu.Extensions shell, string name)
     {
         if (!shell.Found.TryGetValue(name, out var nodes)) return false;
-        foreach (var n in nodes) menu.Items.Add(ShellItem(n));
+        foreach (var n in nodes){var item=ShellItem(n);if(item is MenuItem command)command.Tag="shell:"+name;menu.Items.Add(item);}
         return true;
     }
 
@@ -362,7 +402,62 @@ public partial class MainWindow
         m.Items.Add(new Separator());
         m.Items.Add(Item("Windows menu…", "", "", () => ShellMenu.Show(this, p.Dir, Array.Empty<string>())));
         m.Items.Add(Item("Properties", "", "", () => Properties(p.Dir)));
+        GroupFolderMenu(m);
         return m;
+    }
+
+    static void GroupFolderMenu(ContextMenu menu)
+    {
+        var remaining=menu.Items.OfType<MenuItem>().ToList();menu.Items.Clear();
+        void Take(ItemsControl target,Func<MenuItem,bool> predicate){foreach(var item in remaining.Where(predicate).ToArray()){remaining.Remove(item);target.Items.Add(item);}}
+        void Group(string name,string glyph,Func<MenuItem,bool> predicate){var group=Item(name,glyph,"",()=>{});Take(group,predicate);if(group.Items.Count>0)menu.Items.Add(group);}
+        Take(menu,item=>item.Header as string=="Paste"||(item.Header as string)?.StartsWith("Undo ")==true);
+        Group("New","\uE710",item=>item.Header as string is "New folder" or "New file…");
+        menu.Items.Add(new Separator());
+        Take(menu,item=>(item.Header as string)?.StartsWith("View  ·")==true||(item.Header as string)?.StartsWith("Sort by  ·")==true);
+        Group("Select","\uE762",item=>item.Header as string is "Select by pattern…" or "Invert selection");
+        Take(menu,item=>item.Header as string is "Refresh" or "Show hidden files" or "Hide hidden files");
+        menu.Items.Add(new Separator());
+        Group("Tools","\uE713",item=>item.Header as string is "Compare with other pane" or "Open terminal here"||(item.Header as string)?.StartsWith("Find duplicates")==true);
+        Group("More actions","\uE712",item=>item.Header as string is not ("Windows menu…" or "Properties"));
+        menu.Items.Add(new Separator());Take(menu,_=>true);
+    }
+
+    static void OpenWith(string path)
+    {
+        var start=new ProcessStartInfo("rundll32.exe");
+        start.ArgumentList.Add("shell32.dll,OpenAs_RunDLL");start.ArgumentList.Add(path);Process.Start(start);
+    }
+
+    static void GroupArchiveMenu(ContextMenu menu)
+    {
+        var remaining=menu.Items.OfType<MenuItem>().ToList();menu.Items.Clear();
+        void Take(ItemsControl target,Func<MenuItem,bool> predicate){foreach(var item in remaining.Where(predicate).ToArray()){remaining.Remove(item);target.Items.Add(item);}}
+        Take(menu,item=>item.Header as string is "Open" or "Preview");
+        if(menu.Items.Count>0)menu.Items.Add(new Separator());
+        Take(menu,item=>item.Header as string is "Copy" or "Cut" or "Paste" or "Rename" or "Delete from archive");
+        var extract=Item("Extract","\uF012","",()=>{});Take(extract,item=>(item.Header as string)?.StartsWith("Extract ")==true);
+        if(extract.Items.Count>0){menu.Items.Add(new Separator());menu.Items.Add(extract);}
+        var tools=Item("Archive tools","\uE713","",()=>{});Take(tools,item=>item.Header as string!="Show the archive");menu.Items.Add(tools);
+        menu.Items.Add(new Separator());Take(menu,_=>true);
+    }
+
+    internal static void PrepareContextMenu(ContextMenu menu,FrameworkElement target)
+    {
+        menu.PlacementTarget=target;
+        double scale=Math.Max(1,Settings.TextScale);
+        menu.LayoutTransform=scale>1?new ScaleTransform(scale,scale):null;
+        menu.Opened+=(_,_)=>
+        {
+            var source=PresentationSource.FromVisual(target) as System.Windows.Interop.HwndSource;
+            var screen=System.Windows.Forms.Screen.FromHandle(source?.Handle??IntPtr.Zero);
+            var dpi=VisualTreeHelper.GetDpi(target);
+            menu.Resources["MenuPopupMaxHeight"]=Math.Max(100,screen.WorkingArea.Height/dpi.DpiScaleY/scale-24);
+            menu.Resources["MenuPopupMaxWidth"]=Math.Max(220,screen.WorkingArea.Width/dpi.DpiScaleX/scale-24);
+#if DEBUG
+            HiddenTrialPresentation.PreparePopup(menu);
+#endif
+        };
     }
 
     /// Copy to / Move to: the folders copies and moves went to lately, then any folder. The folder shown is left
@@ -433,25 +528,39 @@ public partial class MainWindow
     // Several items get Explorer's combined dialog (total size, counts). The shell wants them as IDs
     // relative to one folder (relative to the desktop it answers "properties not available"), so
     // that folder is the deepest one they share — search results from several subfolders work too.
-    void Properties(IReadOnlyList<string> paths)
+    internal bool Properties(IReadOnlyList<string> paths,Window owner=null)
     {
-        if (paths.Count == 1) { SHObjectProperties(new System.Windows.Interop.WindowInteropHelper(this).Handle, 2 /* SHOP_FILEPATH */, paths[0], null); return; }
+        if(!SupportsProperties(paths))return false;
+        owner??=this;
+#if DEBUG
+        if(PropertiesForVerification is {} dispatch){dispatch(owner,paths);return true;}
+#endif
+        if (paths.Count == 1) return SHObjectProperties(new System.Windows.Interop.WindowInteropHelper(owner).Handle, 2 /* SHOP_FILEPATH */, paths[0], null);
         var common = paths.Select(p => Path.GetDirectoryName(p.TrimEnd('\\')) ?? p).Aggregate(SharedFolder);
-        if (common == null) { Status.Text = "Properties of items on different drives can't be shown together"; return; }
+        if (common == null) { Status.Text = "Properties of items on different drives can't be shown together"; return false; }
         var pidls = new List<IntPtr>();
         try
         {
-            if (SHParseDisplayName(common, IntPtr.Zero, out var folder, 0, out _) != 0) return;
+            if (SHParseDisplayName(common, IntPtr.Zero, out var folder, 0, out _) != 0) return false;
             pidls.Add(folder);
             var children = new List<IntPtr>();
             foreach (var p in paths)
                 if (SHParseDisplayName(p, IntPtr.Zero, out var pidl, 0, out _) == 0) { pidls.Add(pidl); children.Add(ILFindChild(folder, pidl)); }
             var iid = new Guid("0000010e-0000-0000-C000-000000000046"); // IDataObject
             if (children.Count > 0 && SHCreateDataObject(folder, (uint)children.Count, children.ToArray(), IntPtr.Zero, ref iid, out var data) == 0)
-                SHMultiFileProperties(data, 0);
+            {
+                try{return SHMultiFileProperties(data, 0)>=0;}
+                finally{Marshal.ReleaseComObject(data);}
+            }
+            return false;
         }
         finally { foreach (var p in pidls) Marshal.FreeCoTaskMem(p); }
     }
+    internal static bool SupportsProperties(IReadOnlyList<string> paths)=>paths.Count==1||paths.Count>1&&
+        paths.Select(Path.GetPathRoot).Distinct(StringComparer.OrdinalIgnoreCase).Count()==1;
+#if DEBUG
+    internal Action<Window,IReadOnlyList<string>> PropertiesForVerification;
+#endif
 
     /// The deepest folder containing both, or null when they're on different drives.
     static string SharedFolder(string a, string b)

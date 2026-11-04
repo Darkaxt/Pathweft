@@ -1,6 +1,13 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.18 | 2026-11-05 | Specialist previews and native folder destinations
+- Preview Office pages, sheets and slides with bundled document engines and LibreOffice recovery for unsupported formats or a failed primary renderer.
+- Added table, database, mail, certificate, app-package, design-thumbnail, media-info, binary, ELF, dump, prefetch, Shell-class and compiled-help previews.
+- Keep a preview in a compact in-app PiP corner or detach it into a floating window. Closing that window restores the same preview to the sidebar.
+- Folder sizes update after nested changes. Compact grouped command icons, native menu actions and search-result containing-folder/Properties commands simplify navigation.
+- Native Jump Lists expose Quick access and recent folder destinations that open Pathweft directly. Windows controls pinning, removal and recent-items privacy.
+
 ## 1.1.17 | 2026-11-02 | Markdown and subtitle maintenance
 - Markdown editor previews stay responsive with malformed links containing long runs of Unicode whitespace.
 - Updated the subtitle bidirectional-text library for robustness and isolate-heavy text, preserving the existing media codecs and Dolby Vision-to-SDR rendering.

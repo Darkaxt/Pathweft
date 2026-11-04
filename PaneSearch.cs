@@ -133,6 +133,11 @@ public partial class PaneView
     {
         text=text.Trim();
         if(text.Length==0){ClearFilter();return;}
+        if(Preview.ShellClassInspection.IsInput(text))
+        {
+            InspectRequested?.Invoke(new Entry{Path=text,Name=text});
+            return;
+        }
         int generation=navVersion,revision=suggestVersion;
         string origin=Dir;
         Suggest.IsOpen=false;

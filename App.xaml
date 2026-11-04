@@ -1,5 +1,5 @@
 <Application x:Class="FileExplorer.App" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:sys="clr-namespace:System;assembly=mscorlib">
   <Application.Resources>
     <SolidColorBrush x:Key="Accent" Color="{DynamicResource Color.4C8DFF}"/>
     <!-- the accent at the three transparencies the UI needs; all four follow the colour chosen in Settings -->
@@ -262,6 +262,25 @@
         </Setter.Value>
       </Setter>
     </Style>
+    <Style x:Key="CompactCommand" TargetType="Button" BasedOn="{StaticResource Ghost}">
+      <Setter Property="Width" Value="30"/>
+      <Setter Property="Height" Value="24"/>
+      <Setter Property="ToolTipService.ShowOnDisabled" Value="True"/>
+      <Setter Property="HorizontalContentAlignment" Value="Center"/>
+      <Setter Property="Template">
+        <Setter.Value><ControlTemplate TargetType="Button">
+          <Border x:Name="Bd" Background="Transparent" CornerRadius="5" BorderThickness="1" BorderBrush="Transparent">
+            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+          </Border>
+          <ControlTemplate.Triggers>
+            <Trigger Property="Tag" Value="on"><Setter TargetName="Bd" Property="Background" Value="{DynamicResource AccentSoft}"/></Trigger>
+            <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Bd" Property="Background" Value="{DynamicResource Palette.14FFFFFF}"/></Trigger>
+            <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource Accent}"/></Trigger>
+            <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.4"/></Trigger>
+          </ControlTemplate.Triggers>
+        </ControlTemplate></Setter.Value>
+      </Setter>
+    </Style>
     <Style x:Key="PreviewIcon" TargetType="Button" BasedOn="{StaticResource Ghost}">
       <Style.Triggers><Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.4"/></Trigger></Style.Triggers>
     </Style>
@@ -479,6 +498,8 @@
 
     <!-- Menus stay opaque (Branding: menus on glass become unreadable) -->
     <!-- Context menu: opaque (menus on glass become unreadable), rounded, icon | text | shortcut -->
+    <sys:Double x:Key="MenuPopupMaxHeight">580</sys:Double>
+    <sys:Double x:Key="MenuPopupMaxWidth">800</sys:Double>
     <Style TargetType="ContextMenu">
       <Setter Property="Foreground" Value="{DynamicResource Palette.E8EEF6}"/>
       <Setter Property="FontSize" Value="12"/>
@@ -488,7 +509,7 @@
           <ControlTemplate TargetType="ContextMenu">
             <Border Background="{DynamicResource Palette.1C2029}" BorderBrush="{DynamicResource Palette.2EFFFFFF}" BorderThickness="1" CornerRadius="8" Padding="0,4" MinWidth="220" Margin="0,0,6,6">
               <Border.Effect><DropShadowEffect BlurRadius="14" ShadowDepth="3" Opacity="0.45"/></Border.Effect>
-              <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Cycle"/>
+              <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" MaxHeight="{DynamicResource MenuPopupMaxHeight}" MaxWidth="{DynamicResource MenuPopupMaxWidth}"><ItemsPresenter KeyboardNavigation.DirectionalNavigation="Cycle"/></ScrollViewer>
             </Border>
           </ControlTemplate>
         </Setter.Value>
@@ -518,7 +539,7 @@
                      AllowsTransparency="True" Focusable="False" PopupAnimation="{DynamicResource {x:Static SystemParameters.MenuPopupAnimationKey}}">
                 <Border Background="{DynamicResource Palette.1C2029}" BorderBrush="{DynamicResource Palette.2EFFFFFF}" BorderThickness="1" CornerRadius="8" Padding="0,4" MinWidth="160" Margin="0,0,6,6">
                   <Border.Effect><DropShadowEffect BlurRadius="14" ShadowDepth="3" Opacity="0.45"/></Border.Effect>
-                  <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Cycle"/>
+                  <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" MaxHeight="{DynamicResource MenuPopupMaxHeight}" MaxWidth="{DynamicResource MenuPopupMaxWidth}"><ItemsPresenter KeyboardNavigation.DirectionalNavigation="Cycle"/></ScrollViewer>
                 </Border>
               </Popup>
             </Grid>

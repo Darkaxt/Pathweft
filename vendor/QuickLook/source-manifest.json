@@ -58,5 +58,1049 @@
     "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
     "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/LICENSE-GPL.txt",
     "sha256": "B3D1EAE7F524FC9DDD48562A4652EFD2BCD848E38B03F05E388BCCE943E73DF2"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.AppViewer/InfoPanels/ApkInfoPanel.xaml",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.AppViewer/InfoPanels/ApkInfoPanel.xaml",
+    "sha256": "3B5685B2BD6A60136517EA2CE219BCCF5D2E7AE5CCCFD9DD842179846699E4D2"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.AppViewer/InfoPanels/ApkInfoPanel.xaml.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.AppViewer/InfoPanels/ApkInfoPanel.xaml.cs",
+    "sha256": "0003F1B35E7E08076374A29B3F634873B1891613985DA215C21DB33947423D37"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.AppViewer/InfoPanels/AppImageInfoPanel.xaml",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.AppViewer/InfoPanels/AppImageInfoPanel.xaml",
+    "sha256": "A7E3BE05096B96F44B258313971FCA0C22661C08FB746E7DB1049CF857F53A05"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.AppViewer/InfoPanels/AppImageInfoPanel.xaml.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.AppViewer/InfoPanels/AppImageInfoPanel.xaml.cs",
+    "sha256": "BAAC9E6E3CC442770FA6936DBFE355238BB7B49B9C45E178EBC2824E4E2C08FE"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.AppViewer/InfoPanels/AppxInfoPanel.xaml",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.AppViewer/InfoPanels/AppxInfoPanel.xaml",
+    "sha256": "139D0E13DF6A3D867E512D9B8A827C47DCB09585A3F67F4CE7CA1534A37631A5"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.AppViewer/InfoPanels/AppxInfoPanel.xaml.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.AppViewer/InfoPanels/AppxInfoPanel.xaml.cs",
+    "sha256": "C364EA27390EA7D55623F3AFC40BFE6799C3AC33D680E7EF61F66E8F405F3A27"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.AppViewer/InfoPanels/DebInfoPanel.xaml",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.AppViewer/InfoPanels/DebInfoPanel.xaml",
+    "sha256": "2B6B8CCD006B501EF5506AC973B42C3F76E406BC3F8BF60BE98976753E60BF2B"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.AppViewer/InfoPanels/DebInfoPanel.xaml.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.AppViewer/InfoPanels/DebInfoPanel.xaml.cs",
+    "sha256": "C88AFA72A11E324D049C4AFD6A07862F36C36131B0FAE714FFF4D1CD04533619"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.AppViewer/InfoPanels/DmgInfoPanel.xaml",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.AppViewer/InfoPanels/DmgInfoPanel.xaml",
+    "sha256": "7168E12CD2D64E94C802378ADBA7B7707E2E85A11FEE8CBBDF52224BD8FF10E2"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.AppViewer/InfoPanels/DmgInfoPanel.xaml.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.AppViewer/InfoPanels/DmgInfoPanel.xaml.cs",
+    "sha256": "0037A0ADC046E26204B7372F90D276C325231D2E730C2E1B5DAC2049940E7E99"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.AppViewer/InfoPanels/GroupBox.xaml",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.AppViewer/InfoPanels/GroupBox.xaml",
+    "sha256": "35012804498BD2AD6208C5DBA1F26467987CED829F72EBDD1C6742EAFF3FF41B"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.AppViewer/InfoPanels/HapInfoPanel.xaml",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.AppViewer/InfoPanels/HapInfoPanel.xaml",
+    "sha256": "2DD9CEFC5D6D53CDF11D5D57C4F2999F967B46781C6AC4B5B6EBFC2C84A7B1A5"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.AppViewer/InfoPanels/HapInfoPanel.xaml.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.AppViewer/InfoPanels/HapInfoPanel.xaml.cs",
+    "sha256": "0208A0328C2748B31296AEEBC2372F83D24C55C4316BF3071CAB2EAF22D8B55A"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.AppViewer/InfoPanels/IAppInfoPanel.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.AppViewer/InfoPanels/IAppInfoPanel.cs",
+    "sha256": "157076722CE0F16FEE64A95377DD3A67DA5CF2861C9E868ED268E555849016DA"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.AppViewer/InfoPanels/IpaInfoPanel.xaml",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.AppViewer/InfoPanels/IpaInfoPanel.xaml",
+    "sha256": "17A62F113D328D13EA3E477814ECA7C95D5CB857C2FE755A1DFDB7613729E6E1"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.AppViewer/InfoPanels/IpaInfoPanel.xaml.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.AppViewer/InfoPanels/IpaInfoPanel.xaml.cs",
+    "sha256": "2099906CB457C6187ACC68F60A77E6EEC4250D9EAF296EC33C58823741F85146"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.AppViewer/InfoPanels/MsiInfoPanel.xaml",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.AppViewer/InfoPanels/MsiInfoPanel.xaml",
+    "sha256": "747AE2F8F83CA0DA1CF02DE18771DF9C9505C693985C76684E9490537EB585DD"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.AppViewer/InfoPanels/MsiInfoPanel.xaml.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.AppViewer/InfoPanels/MsiInfoPanel.xaml.cs",
+    "sha256": "1B35365D3466BED53A974C1270043FCF74BAA77508C3890D80424FCB25FA7287"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.AppViewer/InfoPanels/MspInfoPanel.xaml",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.AppViewer/InfoPanels/MspInfoPanel.xaml",
+    "sha256": "7AB4F7AD76D8C5D5E8319CB56F77FD4F59BF32E1560AF980EFE78AD15B63A060"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.AppViewer/InfoPanels/MspInfoPanel.xaml.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.AppViewer/InfoPanels/MspInfoPanel.xaml.cs",
+    "sha256": "A07DBF8462EA06DA3815FF16CE806A11F1D775BCA0168F00FB1F31DE588FC0F0"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.AppViewer/InfoPanels/NugetInfoPanel.xaml",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.AppViewer/InfoPanels/NugetInfoPanel.xaml",
+    "sha256": "850DDEADAAA6DF88C6241E5557749BDC90685B89B196293D4B4C737A5748E3B7"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.AppViewer/InfoPanels/NugetInfoPanel.xaml.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.AppViewer/InfoPanels/NugetInfoPanel.xaml.cs",
+    "sha256": "1E6ED9AD275C0EE621C1A0ADA4992A8B23B989CC5F07F17FF9B81A6717BCA4F5"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.AppViewer/InfoPanels/RpmInfoPanel.xaml",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.AppViewer/InfoPanels/RpmInfoPanel.xaml",
+    "sha256": "4F7C854038906F1C77E2C33EE87E606D855948B2DA818FB7D0E7730070D76DA9"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.AppViewer/InfoPanels/RpmInfoPanel.xaml.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.AppViewer/InfoPanels/RpmInfoPanel.xaml.cs",
+    "sha256": "68ABF29B4355126075E1F3AA9745B8FB1D39776D991652A95ABCCF3BE59EF14B"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.AppViewer/InfoPanels/WgtInfoPanel.xaml",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.AppViewer/InfoPanels/WgtInfoPanel.xaml",
+    "sha256": "9D354AF24BE2CB4A4E5265CD7B7FF605ED00C9410C423CCCDF01125159899E77"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.AppViewer/InfoPanels/WgtInfoPanel.xaml.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.AppViewer/InfoPanels/WgtInfoPanel.xaml.cs",
+    "sha256": "21C14E6A033FA8EBB30C6B65984F8AF0C69A8529082D7579A8F6E8973B21F6E7"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.AppViewer/PackageParsers/Apk/AabInfo.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.AppViewer/PackageParsers/Apk/AabInfo.cs",
+    "sha256": "1DD11F07556A67A9E55E4CB25395140F0F2A41B618F084C3302828A48EF7359F"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.AppViewer/PackageParsers/Apk/AabParser.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.AppViewer/PackageParsers/Apk/AabParser.cs",
+    "sha256": "680E4754270D2F66474CAA8744A2E828B3A4C423190A01284DF29A0099A21ECB"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.AppViewer/PackageParsers/Apk/ApiLevel.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.AppViewer/PackageParsers/Apk/ApiLevel.cs",
+    "sha256": "8DDBA65DB2FBB971330FBF2711383FA05FBB9461B28C6626F4326213C6C0A667"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.AppViewer/PackageParsers/Apk/ApkInfo.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.AppViewer/PackageParsers/Apk/ApkInfo.cs",
+    "sha256": "AAAD698563FCC43DD7FE98FF48FD980C9EE9A7B0D9AE31BA0FAAD8081FAC1E1A"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.AppViewer/PackageParsers/Apk/ApkParser.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.AppViewer/PackageParsers/Apk/ApkParser.cs",
+    "sha256": "3B880FD3FC0D8D50C55F9DB0D5FCC7982B8AABA7300A7036D188CA79678C5D53"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.AppViewer/PackageParsers/Apk/IApkInfo.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.AppViewer/PackageParsers/Apk/IApkInfo.cs",
+    "sha256": "4E639E98A747E400A033A32AD624B720D484D03D3B046981AF746594DEDAAF55"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.AppViewer/PackageParsers/AppImage/AppImageInfo.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.AppViewer/PackageParsers/AppImage/AppImageInfo.cs",
+    "sha256": "5D94FA9F456689F6625C8FE406DFF3232879AC6B4C7C2C15C9E9A76D5282C801"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.AppViewer/PackageParsers/AppImage/AppImageParser.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.AppViewer/PackageParsers/AppImage/AppImageParser.cs",
+    "sha256": "EBB3636AAB36B76435A4542AEB4151218EB37B5F0B78C639D4166B95151A375A"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.AppViewer/PackageParsers/AppImage/AppImageReader.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.AppViewer/PackageParsers/AppImage/AppImageReader.cs",
+    "sha256": "0563B9F152A19DB10B015C09EBBE22D40962B1FCC3D00ACD3037226FC37788DE"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.AppViewer/PackageParsers/Appx/AppxBundleReader.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.AppViewer/PackageParsers/Appx/AppxBundleReader.cs",
+    "sha256": "EABC29B0700B7880883925C454276FE1A06E644F044B33FD0E0B552920FA2A43"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.AppViewer/PackageParsers/Appx/AppxInfo.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.AppViewer/PackageParsers/Appx/AppxInfo.cs",
+    "sha256": "17B890100D47F3930CD0D31CD9F2B15494F22A2ECD7FC1F64CB4C996AD6B6C00"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.AppViewer/PackageParsers/Appx/AppxParser.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.AppViewer/PackageParsers/Appx/AppxParser.cs",
+    "sha256": "88A71B97E8935F49459912D3C223C9FBFAF29DCFE0118F62A15639A3A0CAB8CA"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.AppViewer/PackageParsers/Appx/AppxReader.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.AppViewer/PackageParsers/Appx/AppxReader.cs",
+    "sha256": "7F5CCF8BC62E80BE8DA855191C28BB7C054F8FBB0B2B1D432FDF544DFBB41636"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.AppViewer/PackageParsers/Deb/ArReader.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.AppViewer/PackageParsers/Deb/ArReader.cs",
+    "sha256": "4C8C0A5C9BA026C4D3CC667F313E71F13286DCAFC4268760321484EF0A947C0F"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.AppViewer/PackageParsers/Deb/DebInfo.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.AppViewer/PackageParsers/Deb/DebInfo.cs",
+    "sha256": "0A5D6E563520E26C322275D6E691E122FD4B90CB437F9DF9099A301E546074FE"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.AppViewer/PackageParsers/Deb/DebParser.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.AppViewer/PackageParsers/Deb/DebParser.cs",
+    "sha256": "0B6BC484E1DD2A55AE4CF40ACD06C87C2A8485DCD5B40F9A508B8C9C028BD2A5"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.AppViewer/PackageParsers/Deb/DebReader.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.AppViewer/PackageParsers/Deb/DebReader.cs",
+    "sha256": "5B47B519E40D76804429E09F38399C456CDFF4FB38340C81E2326DE4FC897907"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.AppViewer/PackageParsers/Dmg/DmgArchive.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.AppViewer/PackageParsers/Dmg/DmgArchive.cs",
+    "sha256": "05E486A9FC904AF2E32022E57743D76F483AC1EF8FCC7931EF8E032107ABFE58"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.AppViewer/PackageParsers/Dmg/DmgInfo.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.AppViewer/PackageParsers/Dmg/DmgInfo.cs",
+    "sha256": "BBF168DCAFB34968593DB46B1C8B80C2E7065B5920ED144618ADF4F04DC7FC5B"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.AppViewer/PackageParsers/Dmg/DmgParser.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.AppViewer/PackageParsers/Dmg/DmgParser.cs",
+    "sha256": "1407F7F1EF6C7DB3997B7F6087A5FEDF1D329176DF5742F6344A5C27D00ED4EF"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.AppViewer/PackageParsers/Dmg/DmgReader.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.AppViewer/PackageParsers/Dmg/DmgReader.cs",
+    "sha256": "28D0AD4590707A0C0C13E1C5FA86EB9EE40229338A5531D429531635E957065C"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.AppViewer/PackageParsers/Dmg/IcnsParser.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.AppViewer/PackageParsers/Dmg/IcnsParser.cs",
+    "sha256": "733F69298CFB716ADBC736530A1175F3C61AFD15E5C93A8BC75F337D3B4BAE85"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.AppViewer/PackageParsers/Hap/HapInfo.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.AppViewer/PackageParsers/Hap/HapInfo.cs",
+    "sha256": "246878F319FB866CC21F5C8E9A2E47963F2C9CA6F9AFE3507E0139BA3F7A705A"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.AppViewer/PackageParsers/Hap/HapParser.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.AppViewer/PackageParsers/Hap/HapParser.cs",
+    "sha256": "1CB331615BE8D75C7FDFC88780F02E2DE856C1458D1405460E1D4B86DD2123EF"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.AppViewer/PackageParsers/Ipa/IpaInfo.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.AppViewer/PackageParsers/Ipa/IpaInfo.cs",
+    "sha256": "5A6455B0C9C0ED211E07FF30A5663090FA750F924A1FEA94F918E7F76E31FBF6"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.AppViewer/PackageParsers/Ipa/IpaParser.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.AppViewer/PackageParsers/Ipa/IpaParser.cs",
+    "sha256": "EF4F6AA9AFE7163440D751BE155CAEB8564389B14D42996B3AF5DDA6551D969A"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.AppViewer/PackageParsers/Ipa/IpaReader.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.AppViewer/PackageParsers/Ipa/IpaReader.cs",
+    "sha256": "8507867A39E19A1D0A75BCF3F4C27BA5DF44476C3B07424DE8F51499845715E2"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.AppViewer/PackageParsers/Ipa/Plist.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.AppViewer/PackageParsers/Ipa/Plist.cs",
+    "sha256": "211DB068A56EFAE7CC426315748A8AE50398B86B5AA8D123A919DF89957072E9"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.AppViewer/PackageParsers/Msi/MsiInfo.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.AppViewer/PackageParsers/Msi/MsiInfo.cs",
+    "sha256": "B5F847D10DB159AEB360E8FC7025CC5F6DE681C2D3EB4121093A44FAE6762A68"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.AppViewer/PackageParsers/Msi/MsiParser.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.AppViewer/PackageParsers/Msi/MsiParser.cs",
+    "sha256": "0D3CE91444486F9AD05FFE93710B01CD4C8E492442AFF4207BAAAB4D03EBF5B8"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.AppViewer/PackageParsers/Msp/MspInfo.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.AppViewer/PackageParsers/Msp/MspInfo.cs",
+    "sha256": "CEFBA963B3CC4B0A3D43C6E3B4A637A42E4577FA121DF8F6BB71C3E67B5EA536"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.AppViewer/PackageParsers/Msp/MspParser.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.AppViewer/PackageParsers/Msp/MspParser.cs",
+    "sha256": "7255CFE66F335E955625B8815CCA69445A480AEE26DF144E6B9795D54F2A0D73"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.AppViewer/PackageParsers/Nuget/NugetInfo.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.AppViewer/PackageParsers/Nuget/NugetInfo.cs",
+    "sha256": "D68536D31C4986C071C0444498937C53B11FA36CE1387EE7262689B8450F0E77"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.AppViewer/PackageParsers/Nuget/NugetParser.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.AppViewer/PackageParsers/Nuget/NugetParser.cs",
+    "sha256": "0F2B1F9D283605B67A20FD590872D2891F5B35C396D0A55470E1DE9CDCA3241A"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.AppViewer/PackageParsers/Rpm/RpmInfo.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.AppViewer/PackageParsers/Rpm/RpmInfo.cs",
+    "sha256": "E794A435403125392875AE0C60361188CA3327CD3A22B9E8A51D01DED0BCC127"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.AppViewer/PackageParsers/Rpm/RpmParser.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.AppViewer/PackageParsers/Rpm/RpmParser.cs",
+    "sha256": "A72C9718CECDADC1EC7188D581EB74B95744855518C40BB1676FD36FD3153CCA"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.AppViewer/PackageParsers/Wgt/WgtInfo.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.AppViewer/PackageParsers/Wgt/WgtInfo.cs",
+    "sha256": "41D326FE2267A6EE114FCE09923FD11CA4708715FEC3D99777F2C2312FA30E4C"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.AppViewer/PackageParsers/Wgt/WgtParser.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.AppViewer/PackageParsers/Wgt/WgtParser.cs",
+    "sha256": "6E5083C831CB9216470FEB49C34CB4927B7A3250DFB53A7BEBEE8ED83E11F46A"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.AppViewer/Plugin.MoreMenu.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.AppViewer/Plugin.MoreMenu.cs",
+    "sha256": "0417FDC8FE07A6B4C913A67A1B4C9EDF97381D5B1541A3731853E062F096C29F"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.AppViewer/Plugin.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.AppViewer/Plugin.cs",
+    "sha256": "A1FBA2FB39F89E245B70FBAAF5F4DA72CD39A9F1776130309CFA36D16D972B91"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.AppViewer/Properties/AssemblyInfo.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.AppViewer/Properties/AssemblyInfo.cs",
+    "sha256": "78261AB9F121DEFE9AE037482257E45C99221966A148649375D8589CFC7B4F58"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.AppViewer/QuickLook.Plugin.AppViewer.csproj",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.AppViewer/QuickLook.Plugin.AppViewer.csproj",
+    "sha256": "E4B99F36A367CBE3941143A0C4E3122DDDE09CCD59188F4D50C3F19115790078"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.AppViewer/WindowsThumbnailProvider.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.AppViewer/WindowsThumbnailProvider.cs",
+    "sha256": "D5D1AB34522839763BAC6164441046FA6AD60980AC881D7BFE4AF8299DDF7C6F"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.BinaryViewer/BinaryViewerPanel.xaml",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.BinaryViewer/BinaryViewerPanel.xaml",
+    "sha256": "8A701E97E0B7C7939911E2F55C433A7F8BB6E3C2E1A6503665B6905D860607A4"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.BinaryViewer/BinaryViewerPanel.xaml.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.BinaryViewer/BinaryViewerPanel.xaml.cs",
+    "sha256": "6F1AB0B63F21FDDBBBF743AF144DBEDBCBE926A1C76E6799F8053F6E5E1A9B2F"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.BinaryViewer/Plugin.MoreMenu.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.BinaryViewer/Plugin.MoreMenu.cs",
+    "sha256": "F08249C067A237F7EC891E7B63703064F7731D1E933920F15C5132D1AC616DEF"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.BinaryViewer/Plugin.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.BinaryViewer/Plugin.cs",
+    "sha256": "C3776E2B07F03277682AF83C5C2CD8A6B3C7C2BFF462AC092FFFF1C9432C9325"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.BinaryViewer/Properties/AssemblyInfo.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.BinaryViewer/Properties/AssemblyInfo.cs",
+    "sha256": "3C8287F23B71BFCE6457B31DA417C241900CAB21047059AF14D7D15B0F87ABB0"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.BinaryViewer/QuickLook.Plugin.BinaryViewer.csproj",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.BinaryViewer/QuickLook.Plugin.BinaryViewer.csproj",
+    "sha256": "2D2474FCEC5CB0FD87043B90C2B4ED0689B65020D7FEDCFE81FDA841F7559201"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.CLSIDViewer/CLSIDInfoPanel.xaml",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.CLSIDViewer/CLSIDInfoPanel.xaml",
+    "sha256": "98B12206CE0374F8C45B2466C972C865350D7719A632136646221DD28C2E2D11"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.CLSIDViewer/CLSIDInfoPanel.xaml.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.CLSIDViewer/CLSIDInfoPanel.xaml.cs",
+    "sha256": "F8808310B535B439C80D8A007E14735ED61890D967D55B7D38095714E52634EF"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.CLSIDViewer/CLSIDRegister.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.CLSIDViewer/CLSIDRegister.cs",
+    "sha256": "16F124AB8C6822863CF8227BB2D8B1D9AC2EF01AE28E4C23B01F30BCC8A6AB01"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.CLSIDViewer/Plugin.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.CLSIDViewer/Plugin.cs",
+    "sha256": "229FBCCD9918664275BAC83BE03BAF69F78348527192AC6621E2E8FB8F47BBD3"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.CLSIDViewer/Properties/AssemblyInfo.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.CLSIDViewer/Properties/AssemblyInfo.cs",
+    "sha256": "2DEB0B17648F7F65C131144E08A55EFC9EB9608D0568CCE62FCCA8B7B2D4D9DC"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.CLSIDViewer/QuickLook.Plugin.CLSIDViewer.csproj",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.CLSIDViewer/QuickLook.Plugin.CLSIDViewer.csproj",
+    "sha256": "30A1962B0A8C0E2F46F4F74716C6A9385BB54566DE79DD6A8651AB0FC5210B5B"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.CLSIDViewer/RecycleBinPanel.xaml",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.CLSIDViewer/RecycleBinPanel.xaml",
+    "sha256": "4A8F90D341D03FB651B4E3031CD47F2BC28409F861F6D5132ED2FD44C9F35D35"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.CLSIDViewer/RecycleBinPanel.xaml.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.CLSIDViewer/RecycleBinPanel.xaml.cs",
+    "sha256": "A8E53020E01F8A0BB740927BAE77812389CEBBE8F6823032430F6F852BAAD2A9"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.CLSIDViewer/ThisPCPanel.xaml",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.CLSIDViewer/ThisPCPanel.xaml",
+    "sha256": "E435C5ED27635A141C06A5142EB87A2B4D455E9DA742D801C089834DD0490517"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.CLSIDViewer/ThisPCPanel.xaml.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.CLSIDViewer/ThisPCPanel.xaml.cs",
+    "sha256": "08F3BB8495BAB021FD5E07F3B4C4A6A86F5151EB864437A90EE8C33DEB5C3DA1"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.CertViewer/CertLoadResult.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.CertViewer/CertLoadResult.cs",
+    "sha256": "6B9590295D15535F69A02B3119D5D350DA502A5EF1481F42ADDE9E7BDF701685"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.CertViewer/CertUtils.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.CertViewer/CertUtils.cs",
+    "sha256": "DA93AF70CF5F737B88B9F297F16CFB3B42094CFD326D157FE16741189BD40C7A"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.CertViewer/CertViewerControl.xaml",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.CertViewer/CertViewerControl.xaml",
+    "sha256": "6D11AEE36B8DA176557149CF3050E5B083AB8575195CF8FD3B9CFD13E5D58E83"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.CertViewer/CertViewerControl.xaml.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.CertViewer/CertViewerControl.xaml.cs",
+    "sha256": "764F01958D26F6C01F8AD09A0687BD1A4C10C17DC6CBA4528DC28FEB20CCBF83"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.CertViewer/Plugin.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.CertViewer/Plugin.cs",
+    "sha256": "E4A77EE0FEC5D984EEB95128954FB22EFF423B79077AFD1B387E435407A798B3"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.CertViewer/QuickLook.Plugin.CertViewer.csproj",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.CertViewer/QuickLook.Plugin.CertViewer.csproj",
+    "sha256": "A55A34A9EBE7C920780CB0602AC6578098ED006A562523FC965BEAB515D5167F"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.ChmViewer/ChmWebpagePanel.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.ChmViewer/ChmWebpagePanel.cs",
+    "sha256": "2E193FF6DF2AA6B453BF4F80B7C018F8B3E779BE5ED085520A9936C97D80FF3E"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.ChmViewer/Plugin.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.ChmViewer/Plugin.cs",
+    "sha256": "8E3EFACDA494C3D6F860AFE017F0CC1212B315495F487DF777AFC126F4D38CF3"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.ChmViewer/QuickLook.Plugin.ChmViewer.csproj",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.ChmViewer/QuickLook.Plugin.ChmViewer.csproj",
+    "sha256": "0404E3669CBC1B16A0297414E4E1D585A91CA735F247022856AF3A6625A139B6"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.CsvViewer/CsvViewerPanel.xaml",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.CsvViewer/CsvViewerPanel.xaml",
+    "sha256": "7DDF4C38BA3F38A194AAE9157EA41D8B254A884FA05E08D938A8217BECA7FEDF"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.CsvViewer/CsvViewerPanel.xaml.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.CsvViewer/CsvViewerPanel.xaml.cs",
+    "sha256": "13F161AEF1D35DB10B15FFD5DF7874503C84DD89F0FE0A0DDDF2B1A80AFA5EE3"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.CsvViewer/DataGrid.xaml",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.CsvViewer/DataGrid.xaml",
+    "sha256": "F132FE1D407D7D4407A2F88FDBD3DD51FD2E0077CFA7E74D029C0A6EE32B419E"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.CsvViewer/Plugin.MoreMenu.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.CsvViewer/Plugin.MoreMenu.cs",
+    "sha256": "5B946A1ADBB5F7E838668FF6AD37C5B483C4F51045CC70650AC5C27487E31E4A"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.CsvViewer/Plugin.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.CsvViewer/Plugin.cs",
+    "sha256": "B51F422A6961124EF8CAF04FB13DE3E1E48C1EA1B76860718983C1DC55D67D8C"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.CsvViewer/Properties/AssemblyInfo.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.CsvViewer/Properties/AssemblyInfo.cs",
+    "sha256": "418CF95280CB9C1C3F6C3A8ACE5570BDB42C8C81785A17D84EE0E0BA028DD00C"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.CsvViewer/QuickLook.Plugin.CsvViewer.csproj",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.CsvViewer/QuickLook.Plugin.CsvViewer.csproj",
+    "sha256": "6D5AD33C5EE2C3FC47637888FE6E68FC8697754FE6DBE90BBD2F8FED0B63458F"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.CsvViewer/SearchPanel.xaml",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.CsvViewer/SearchPanel.xaml",
+    "sha256": "09FAFB6C9D7D71A4356AF8035213EDF145BAEAFE1F1702D5488AB30CA3E3AEAB"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.CsvViewer/SearchPanel.xaml.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.CsvViewer/SearchPanel.xaml.cs",
+    "sha256": "F31E59656A298E9CCFD2B76FE56C2A40643E3EE870EE13898A7A04730DD0C397"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.DbViewer/DbViewerPanel.xaml",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.DbViewer/DbViewerPanel.xaml",
+    "sha256": "91CF3FA52D7EFF134166B01B7108FE18334033B456B6B7DEAA040585F95EA32A"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.DbViewer/DbViewerPanel.xaml.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.DbViewer/DbViewerPanel.xaml.cs",
+    "sha256": "D8AAB12DF7981DD44F8FBC08ADD71E0ABBC251BFB7E915AB720153ADC8545A2A"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.DbViewer/Pagination.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.DbViewer/Pagination.cs",
+    "sha256": "E1D6301F0C2670799C27B90C6FED9166CBDA8A4AAA3D10CC705D2DD4B5AB83B9"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.DbViewer/Pagination.xaml",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.DbViewer/Pagination.xaml",
+    "sha256": "008C87211360A929E56C9DF09FABB8C101D2A65BF074DE36B79C87F846CBA302"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.DbViewer/PaginationButton.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.DbViewer/PaginationButton.cs",
+    "sha256": "4EB8740EF7EFD64DACF049F50F309DBFAD3759B1522668A61E37589235612BCB"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.DbViewer/PasswordControl.xaml",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.DbViewer/PasswordControl.xaml",
+    "sha256": "39F955B6147E6DEBCAAA19D27C4222E13D956004852B28AAA42CF79E89BBCDC3"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.DbViewer/PasswordControl.xaml.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.DbViewer/PasswordControl.xaml.cs",
+    "sha256": "1C338D89940204A86B677E86491B72ED88B6A6717355CABF356143791D42EF79"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.DbViewer/Plugin.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.DbViewer/Plugin.cs",
+    "sha256": "9C015076826F21635715F60DE5ADB24E3F2EC5F8D2EED974C867D67AA2B4BFBE"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.DbViewer/QuickLook.Plugin.DbViewer.csproj",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.DbViewer/QuickLook.Plugin.DbViewer.csproj",
+    "sha256": "C2128CCB5257DCBE60B0805B94C1FDCB396FCD051B1D9A6F8A172194F5B6AD36"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.DumpViewer/DumpInfo.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.DumpViewer/DumpInfo.cs",
+    "sha256": "2A1BFC59B2C3398591167F3BB1143F172CEBA892717A7D082ED9E94037AB3AC0"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.DumpViewer/DumpInfoPanel.xaml",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.DumpViewer/DumpInfoPanel.xaml",
+    "sha256": "CF5AC5D7B47DA876D87FDA9E6A8AEF99B20CF0FAD097672F97A3C61E80A87074"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.DumpViewer/DumpInfoPanel.xaml.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.DumpViewer/DumpInfoPanel.xaml.cs",
+    "sha256": "38D00B964132B52EED596CDB9DA19A4005BB678426F811C8E4F0B91EDB93F163"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.DumpViewer/MinidumpReader.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.DumpViewer/MinidumpReader.cs",
+    "sha256": "5A9CED0432DCCD021B811763EAA43AB37B04F4844705972A42B35710AFE67571"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.DumpViewer/Plugin.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.DumpViewer/Plugin.cs",
+    "sha256": "1B2CCDB20E6AC6E85E52D27DA8497738F0A356380E15AF54FF96028E9396F374"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.DumpViewer/Properties/AssemblyInfo.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.DumpViewer/Properties/AssemblyInfo.cs",
+    "sha256": "4D64198E212125767981872C6E76E1BB48705934FDB1AAAACD6E3465E1498A6E"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.DumpViewer/QuickLook.Plugin.DumpViewer.csproj",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.DumpViewer/QuickLook.Plugin.DumpViewer.csproj",
+    "sha256": "08CDD5784374AEB9ABD3114FFB34E247504159C9B960F25CC7284E983B5F8682"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.ELFViewer/InfoPanels/ELFInfoPanel.xaml",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.ELFViewer/InfoPanels/ELFInfoPanel.xaml",
+    "sha256": "10733D5DFF279876701CB784A73437D2EFAF39A4322496C226F9904C337CE255"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.ELFViewer/InfoPanels/ELFInfoPanel.xaml.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.ELFViewer/InfoPanels/ELFInfoPanel.xaml.cs",
+    "sha256": "DF66F941F7347909777B4C476578F990F86372D69FCCEAA686964222AA00303E"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.ELFViewer/InfoPanels/FluentBorder.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.ELFViewer/InfoPanels/FluentBorder.cs",
+    "sha256": "FFA951F17BE5D972D4F9E97E27D02E76ECB009007F2571840F60F1350753641B"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.ELFViewer/InfoPanels/IInfoPanel.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.ELFViewer/InfoPanels/IInfoPanel.cs",
+    "sha256": "351AB87E10F56C6FC09C6100484BDB7EA757F4DBA3013CC1791D12F4E4921782"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.ELFViewer/InfoPanels/MachOInfoPanel.xaml",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.ELFViewer/InfoPanels/MachOInfoPanel.xaml",
+    "sha256": "22075BA3F8A77344991F819CBE4160D92BB5AC1FCC6C94B19715FC916064272C"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.ELFViewer/InfoPanels/MachOInfoPanel.xaml.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.ELFViewer/InfoPanels/MachOInfoPanel.xaml.cs",
+    "sha256": "5EAA35A9A165862E9BCC1CCC99B400ADA567ADBD57D43D3F48B1C1C4E7759E5B"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.ELFViewer/InfoPanels/UImageInfoPanel.xaml",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.ELFViewer/InfoPanels/UImageInfoPanel.xaml",
+    "sha256": "4B143D5664E1387743B550354D9E054656C5B6409499D9918F4D110E39BE14EF"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.ELFViewer/InfoPanels/UImageInfoPanel.xaml.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.ELFViewer/InfoPanels/UImageInfoPanel.xaml.cs",
+    "sha256": "B9C76EBF52C0D06855DA86925AE6C905E934F0568E73C994D057B6955FAAFB34"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.ELFViewer/Plugin.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.ELFViewer/Plugin.cs",
+    "sha256": "189D4A5A96B708562D3072A79F33D2813505A59D0626C2A25F01CABBAB11B629"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.ELFViewer/Properties/AssemblyInfo.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.ELFViewer/Properties/AssemblyInfo.cs",
+    "sha256": "D2148FBD2ACEB19BE9EB9EA2431473D51BE83E4EC1F28034770D1D2351081546"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.ELFViewer/QuickLook.Plugin.ELFViewer.csproj",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.ELFViewer/QuickLook.Plugin.ELFViewer.csproj",
+    "sha256": "3F17F6058259079A84FBA7F8EEE32A19302A056B51134A7212DDCC23F553CF30"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.MailViewer/Plugin.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.MailViewer/Plugin.cs",
+    "sha256": "36511BF606605EB948CD6951315844B0FFC456A4D838C8B70365D09AEDB99712"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.MailViewer/Properties/AssemblyInfo.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.MailViewer/Properties/AssemblyInfo.cs",
+    "sha256": "5B129AC06F0AAC5A94E99E491FF84AE3E0CEFF859AC8526EEEEC91029188C266"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.MailViewer/QuickLook.Plugin.MailViewer.csproj",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.MailViewer/QuickLook.Plugin.MailViewer.csproj",
+    "sha256": "1CFE4A9E1A6FD5361F1D438F4A38D0E8F6D443C72B707012FB244C56AA24C61F"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.MediaInfoViewer/Exporter.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.MediaInfoViewer/Exporter.cs",
+    "sha256": "C6E9D610D2ACEF66D82B81079F110B852B873C565602CC24C29345BF35DC758F"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.MediaInfoViewer/MediaInfoTablePanel.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.MediaInfoViewer/MediaInfoTablePanel.cs",
+    "sha256": "9549CD703A5D27385635B2D767C5D4BA49406F752FD096C2AF5C84B10354A2B0"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.MediaInfoViewer/Plugin.MoreMenu.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.MediaInfoViewer/Plugin.MoreMenu.cs",
+    "sha256": "F55460FE84E855D99742CDD865C3A9A81CCF3DDE46FFB2336505CD4502AEF4A2"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.MediaInfoViewer/Plugin.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.MediaInfoViewer/Plugin.cs",
+    "sha256": "833EB10706F6C5CF3C394D36005F57F0B612D61D007A9B409317FB392F2C5721"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.MediaInfoViewer/Properties/AssemblyInfo.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.MediaInfoViewer/Properties/AssemblyInfo.cs",
+    "sha256": "30A924141420D8F0D49FEA13A23009AF0BF89DBA3720D8FA63CBF49C114C47F1"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.MediaInfoViewer/QuickLook.Plugin.MediaInfoViewer.csproj",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.MediaInfoViewer/QuickLook.Plugin.MediaInfoViewer.csproj",
+    "sha256": "4C21278675BCE9F063076E5BF9FD1B78A1AC8FCBBD8B31ED7E270A006D78C005"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.MediaInfoViewer/TextViewerPanel.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.MediaInfoViewer/TextViewerPanel.cs",
+    "sha256": "A9D0F3759573B1BD0267733A9F8D8C4482A1B92ED733974D26722E1577CA3C09"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.OfficeViewer/CLSIDRegister.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.OfficeViewer/CLSIDRegister.cs",
+    "sha256": "7EDD32E7743FDA29BF7C4DF571F871304FA0AAFAA143846A69D2419960FAE5BE"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.OfficeViewer/IClassFactory.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.OfficeViewer/IClassFactory.cs",
+    "sha256": "01801EAB2619B8A5902549E2A41FF3397A66CFF2090CF34EDB05024350ECB787"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.OfficeViewer/IInitializeWithFile.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.OfficeViewer/IInitializeWithFile.cs",
+    "sha256": "1B38D6C55B1672A985487330FAF8FA95523237EF3CFC0D5F150117250626161A"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.OfficeViewer/IInitializeWithItem.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.OfficeViewer/IInitializeWithItem.cs",
+    "sha256": "2DFEC67F8347A43E5956439EDCF8CB463B53505469FF19B669D72B644F5E0A89"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.OfficeViewer/IInitializeWithStream.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.OfficeViewer/IInitializeWithStream.cs",
+    "sha256": "3DFB3A4195BD858C31987630EAD12DA1E7A692A6AE36DA2C4F4D66C07866A3AB"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.OfficeViewer/IPreviewHandler.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.OfficeViewer/IPreviewHandler.cs",
+    "sha256": "0E4DB0190CDF8C77E8AB111EBDA1CE916D0EADD6C58B86DCF44822A687683213"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.OfficeViewer/IShellItem.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.OfficeViewer/IShellItem.cs",
+    "sha256": "AF0EB040244BFA7D70621F96FDD3CE2F58F54B32BF8E389E22865B729C545EFE"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.OfficeViewer/IStreamWrapper.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.OfficeViewer/IStreamWrapper.cs",
+    "sha256": "E30069EE239FA1E3353125CDE7B2E4C8A6F51B6CBDA347F52C36E3ADDAA2D1FB"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.OfficeViewer/Plugin.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.OfficeViewer/Plugin.cs",
+    "sha256": "114B996E753A333B26227D0716415FB0B3E8B8F50CA2002851002F59331095F3"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.OfficeViewer/PreviewHandlerHost.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.OfficeViewer/PreviewHandlerHost.cs",
+    "sha256": "A6B9E0A792EFF1213B46806DA7BCD5974840FB8C9485C9EEEB17D7CFF72B0328"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.OfficeViewer/PreviewPanel.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.OfficeViewer/PreviewPanel.cs",
+    "sha256": "A15D2E771A4E9D31ED2EF4CE7FD46E3F298C1CEC73AA310C59DD757FB56C9C2A"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.OfficeViewer/PreviewPanel.xaml",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.OfficeViewer/PreviewPanel.xaml",
+    "sha256": "B248D19DDDD7BEB4653555ACBEAC04A662C40061D1B834A4DC5BEA3E1CDC9630"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.OfficeViewer/Properties/AssemblyInfo.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.OfficeViewer/Properties/AssemblyInfo.cs",
+    "sha256": "BA51F2BA2401AC0F3E41D93907F83AFA932137D300AACEDDF972F9A7DEB6E42A"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.OfficeViewer/QuickLook.Plugin.OfficeViewer.csproj",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.OfficeViewer/QuickLook.Plugin.OfficeViewer.csproj",
+    "sha256": "9C5B3124447430980C1C9D50AB3BEAF424149E664AFBB55CD39182991ECE8971"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.OfficeViewer/ShellExRegister.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.OfficeViewer/ShellExRegister.cs",
+    "sha256": "B2E22E59A2EAB74E96BECFE8BAAFC1C10D259A4B7DB7F35CF5D0BC195217A260"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.PrefetchViewer/Plugin.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.PrefetchViewer/Plugin.cs",
+    "sha256": "78FF8C4212CB0F995DCDB7D4C2B12AA4F7B0B37C791514CE8B9AF310270E8629"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.PrefetchViewer/PrefetchInfoPanel.xaml",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.PrefetchViewer/PrefetchInfoPanel.xaml",
+    "sha256": "36643542B37F694378BAFBF74D3DD3588B328866E9B5164DAE8DEF16B0034815"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.PrefetchViewer/PrefetchInfoPanel.xaml.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.PrefetchViewer/PrefetchInfoPanel.xaml.cs",
+    "sha256": "601B43EC9D90A612BF21B0CC6688E5EAAEE0CD3306A1C3BE2221D961776D9253"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.PrefetchViewer/Properties/AssemblyInfo.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.PrefetchViewer/Properties/AssemblyInfo.cs",
+    "sha256": "A50420E47C621EB056BEDAEDEA0340BC8D2CA8E4CA502CB650260EA13FC90E28"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.PrefetchViewer/QuickLook.Plugin.PrefetchViewer.csproj",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.PrefetchViewer/QuickLook.Plugin.PrefetchViewer.csproj",
+    "sha256": "2CECF9DB43B128A3349FA6B6A5DB340270108B4B6DAFFD8E5B405B33F7B5282F"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.ThumbnailViewer/Handler.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.ThumbnailViewer/Handler.cs",
+    "sha256": "0C49E659A277B7630957661DED083BD6B4633D2CF6384533BF378D02BE040EE3"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.ThumbnailViewer/Helper.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.ThumbnailViewer/Helper.cs",
+    "sha256": "8EB1BF6C043297F3CD86BB1C52C885DA4F12260DE24129E10622B4196B067C70"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.ThumbnailViewer/Plugin.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.ThumbnailViewer/Plugin.cs",
+    "sha256": "7E7EA6687EAD0009450E34D0D8F9B9A135D97E7EA23EA0A58D8A79A97F391E94"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.ThumbnailViewer/Properties/AssemblyInfo.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.ThumbnailViewer/Properties/AssemblyInfo.cs",
+    "sha256": "F731EC09647FD7FEF28E959BC599B21C12453EF29AAE065F45E80896CE93D32A"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.ThumbnailViewer/Providors/AbstractProvidor.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.ThumbnailViewer/Providors/AbstractProvidor.cs",
+    "sha256": "3E5E69725C867AFF29E1261258B143CE570FDDCAF2002C9AD6D5D3FF3F13102E"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.ThumbnailViewer/Providors/CdrProvider.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.ThumbnailViewer/Providors/CdrProvider.cs",
+    "sha256": "62256024EA96360EE2177F41C0849EBCB64461C32544A546535C2B06B87BB2D4"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.ThumbnailViewer/Providors/FigProvidor.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.ThumbnailViewer/Providors/FigProvidor.cs",
+    "sha256": "2EDE94D741182E8C03D0D4406CE1A24198CA5067928E41D2B2A412668E1805CC"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.ThumbnailViewer/Providors/KraProvidor.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.ThumbnailViewer/Providors/KraProvidor.cs",
+    "sha256": "5DA5D18E4D8EDC21B7722053E425F380B428C67E9E604E7927899FCD4F8FEE3D"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.ThumbnailViewer/Providors/PdnProvider.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.ThumbnailViewer/Providors/PdnProvider.cs",
+    "sha256": "7374332D017BFBE206C8D64251D1EB2DA684ED170C6893961302A96898405973"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.ThumbnailViewer/Providors/PixProvidor.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.ThumbnailViewer/Providors/PixProvidor.cs",
+    "sha256": "7624D64A83C66754253E5DF9FDCEF3EE9925214035066C5AABE6C192EEC52767"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.ThumbnailViewer/Providors/SketchProvidor.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.ThumbnailViewer/Providors/SketchProvidor.cs",
+    "sha256": "4AD0688E799DBC19434574D7F1A6E0A15E00DD83339FF77574734F5C546BE21E"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.ThumbnailViewer/Providors/XdProvidor.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.ThumbnailViewer/Providors/XdProvidor.cs",
+    "sha256": "E1ED6CF59F0BE31547601BA5A894D0D125AD943C0E8FD2A3DE044161103321BC"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.ThumbnailViewer/Providors/XmindProvidor.cs",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.ThumbnailViewer/Providors/XmindProvidor.cs",
+    "sha256": "01126C5ECEC8C5819582562F04D98ABC68E335A03F03495C3EF645F98ADE62C1"
+  },
+  {
+    "file": "QuickLook.Plugin/QuickLook.Plugin.ThumbnailViewer/QuickLook.Plugin.ThumbnailViewer.csproj",
+    "commit": "2ec219aa18416c6e3b89d6aad3d82d10610f917f",
+    "url": "https://raw.githubusercontent.com/QL-Win/QuickLook/2ec219aa18416c6e3b89d6aad3d82d10610f917f/QuickLook.Plugin/QuickLook.Plugin.ThumbnailViewer/QuickLook.Plugin.ThumbnailViewer.csproj",
+    "sha256": "17989CAA144F337710B8E18B3A4FF5EF102E89B62E13D159F8BAAA05E1612903"
   }
 ]

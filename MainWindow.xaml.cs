@@ -17,6 +17,7 @@ namespace FileExplorer;
 public partial class MainWindow : Window
 {
     PaneView active;
+    readonly FolderJumpList folderJumpList;
     PaneView Other => active == Left ? Right : Left;
     internal string UpdateInstallationBlocker=>jobs.Any(job=>job.Active)?"Finish or cancel the active transfers before installing the update."
         :EditorWindow.HasOpenWindow?"Close the editor after saving your work, then install the update.":null;
@@ -56,6 +57,7 @@ public partial class MainWindow : Window
         };
         Closed += (_, _) =>
         {
+            folderJumpList?.Dispose();
             shellFolderViews?.Dispose();
             foreach(var pane in new[]{Left,Right})pane.CloseView();
             taskbarSearch?.Dispose();tray?.Dispose();
@@ -71,6 +73,7 @@ public partial class MainWindow : Window
             p.Error += msg => Status.Text = msg;
             p.FilesDropped += (files, dest, move) => Submit(files, dest, move);
             p.OpenArchived += e => OpenFromArchive(p, e);
+            p.InspectRequested += entry=>InspectShellClass(p,entry);
             p.RenameCommitted += (entry, name) => RenameCommitted(p, entry, name);
         }
 
@@ -136,6 +139,8 @@ public partial class MainWindow : Window
         ApplyCloseEmptyPane();
         var arg = Program.PathArg(Environment.GetCommandLineArgs().Skip(1));
         if (arg != "") OpenPath(Left, arg);
+        folderJumpList=FolderJumpList.Create(()=>pinned);
+        foreach(var pane in new[]{Left,Right})pane.FolderVisited+=path=>folderJumpList?.Visit(path);
         ApplyPreview();
         Loaded += (_, _) =>
         {
@@ -293,6 +298,7 @@ public partial class MainWindow : Window
         foreach(var widget in Application.Current.Windows.OfType<SearchWidgetWindow>()) widget.Pane.RefreshAppearance();
         taskbarSearch?.Widget?.ApplyTextScale();
         ApplyPreviewAppearance();
+        UpdateCommandStates();
         ApplyArchiveAppearance();
         BgImage.Source = BackgroundPicture(Settings.BackgroundImage);
         BgLayer.Visibility = !Appearance.Native && BgImage.Source != null ? Visibility.Visible : Visibility.Collapsed;
@@ -497,6 +503,7 @@ public partial class MainWindow : Window
         if (!string.IsNullOrEmpty(path)) OpenPath(active, path);
 #if DEBUG
         if(S8ShellTrial.Enabled){CaptureShellRequest(path);return;}
+        if(HiddenTrialPresentation.SuppressFocus(this))return;
 #endif
         if (WindowState == WindowState.Minimized) WindowState = WindowState.Normal;
         // Win+E arrives straight from the agent now, which can't pass on the right to take focus (a
@@ -518,7 +525,7 @@ public partial class MainWindow : Window
         {
             if (File.Exists(path)) { folder = Path.GetDirectoryName(Path.GetFullPath(path)); select = Path.GetFileName(path); }
             else if (PaneView.IsRemote(path) || Directory.Exists(path)) folder = Path.GetFullPath(path);
-            else return;
+            else { Status.Text="Location unavailable: "+path;return; }
         }
         catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException) { return; }
         if (TabShowing(folder) is var (open, i))
@@ -573,6 +580,7 @@ public partial class MainWindow : Window
         cols[2].Width = new GridLength(one ? 0 : 1 - Settings.Split, GridUnitType.Star);
         if (one && active == Right) SetActive(Left);
         FitPreview(); // one pane leaves the preview more room
+        UpdateCommandStates();
         PlaceCaption();
     }
 
@@ -821,6 +829,7 @@ public partial class MainWindow : Window
             QuickAccess.Children.Add(b);
         }
         QuickHint.Visibility = pinned.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        folderJumpList?.Schedule();
     }
 
     void SaveQuickAccess()
@@ -1041,7 +1050,7 @@ public partial class MainWindow : Window
         var all = active.Items.ToList();
         FolderCard.Visibility=all.Count>0?Visibility.Visible:Visibility.Collapsed;
         int folders = all.Count(e => e.IsDir);
-        StatFolder.Text = Fmt(active.FolderTotal);
+        StatFolder.Text = active.SizesPending ? active.FolderTotal>0?Fmt(active.FolderTotal)+"+":"measuring…" : Fmt(active.FolderTotal);
         StatFolderSub.Text = $"{folders} folder{(folders == 1 ? "" : "s")} · {all.Count - folders} file{(all.Count - folders == 1 ? "" : "s")}"
                              + (active.SizesPending ? " · measuring…" : "");
         var kinds = all.Where(e => e.Size > 0).GroupBy(e => e.KindColor).Select(g => (Color: g.Key, Bytes: g.Sum(e => e.Size)))
@@ -1188,7 +1197,9 @@ public partial class MainWindow : Window
             jobs.CollectionChanged += (_, _) =>
             {
                 TransfersButton.Visibility = jobs.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
-                TransfersText.Text = jobs.Count > 1 ? $"Transfers ({jobs.Count})" : "Transfers";
+                TransfersButton.ToolTip=jobs.Count>1?$"Transfers ({jobs.Count})":"Transfers";
+                System.Windows.Automation.AutomationProperties.SetName(TransfersButton,(string)TransfersButton.ToolTip);
+                UpdateCommandSpacing();
                 if (jobs.Count == 0) { w.Hide(); totalChart.Clear(); } // the last one dismissed
             };
             TransfersButton.Visibility = Visibility.Visible;
@@ -1454,6 +1465,9 @@ public partial class MainWindow : Window
 
     /// Deletes through the shell, to the Recycle Bin unless `permanent`. Also used by Undo, quietly. `done` runs on this
     /// thread when it has finished (Find duplicates takes the files that went out of its list).
+#if DEBUG
+    internal Action<IReadOnlyList<string>,string> RecycleFinishedForVerification;
+#endif
     internal void Recycle(List<string> paths, UIOption ui, bool permanent = false, Action done = null)
     {
         if (paths.Count == 0) return;
@@ -1480,6 +1494,9 @@ public partial class MainWindow : Window
                 Left.Refresh(); Right.Refresh();
                 RefreshDrives(); UpdateStats();
                 done?.Invoke();
+#if DEBUG
+                RecycleFinishedForVerification?.Invoke(paths,error);
+#endif
             });
         }) { IsBackground = false }; // finishing a delete beats closing fast
         t.SetApartmentState(ApartmentState.STA);
@@ -1573,6 +1590,7 @@ public partial class MainWindow : Window
     {
         Settings.ShowHidden = !Settings.ShowHidden;
         Settings.Save();
+        UpdateCommandStates();
         RefreshPanes();
         Status.Text = PaneView.ShowHidden ? "Showing hidden and dot-prefixed files" : "Hiding hidden and dot-prefixed files";
     }

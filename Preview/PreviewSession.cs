@@ -21,22 +21,28 @@ internal sealed class PreviewSession : IDisposable
     long generation;
     internal Entry Entry { get; private set; }
     internal string ModuleId { get; private set; }
+    internal string RendererId {get;private set;}
+    internal string RendererDescription {get;private set;}
+    string preferredModule;
+    internal ContextMenu Menu {get;}=new();
     internal string State { get; private set; } = "empty";
     internal Task Completion { get; private set; } = Task.CompletedTask;
     internal long Generation => generation;
 #if DEBUG
     internal IViewer ViewerForVerification => viewer;
+    internal string ArchiveDirectoryForVerification=>archiveContent?.Directory;
 #endif
     internal Dictionary<string, int> Initializations { get; } = new();
 
     internal PreviewSession(MainWindow owner, ContentControl target, Action<string> title, bool autoplay = false)
-    { this.owner = owner; this.target = target; this.title = title; this.autoplay = autoplay; sessions.Add(this); }
+    { this.owner = owner; this.target = target; this.title = title; this.autoplay = autoplay; sessions.Add(this); target.ContextMenu=Menu;Menu.Opened+=(_,_)=>FillMenu(); }
 
-    internal void Show(Entry entry)
+    internal void Show(Entry entry,string moduleId=null)
     {
         if (disposed) return;
         Clear();
         Entry = entry;
+        preferredModule=moduleId;
         if (entry == null || entry.IsUp) return;
         var revision = generation;
         cancellation = new();
@@ -56,28 +62,38 @@ internal sealed class PreviewSession : IDisposable
         try
         {
             string path = entry.Path;
-            bool scopedHtml=PreviewModules.Candidates(entry).FirstOrDefault()?.Id=="html";
+            var candidates=PreviewModules.Candidates(entry).Where(m=>preferredModule==null||m.Id==preferredModule).ToArray();
+            bool scopedHtml=candidates.FirstOrDefault()?.Id=="html";
             if (!scopedHtml && !entry.IsDir && PaneView.ArchiveOf(path) is { Inner.Length: > 0 })
             {
                 var extracted = await Task.Run(() => ArchiveContent.Preview(path), token);
                 if (!Current() || token.IsCancellationRequested) { extracted.Dispose(); return; }
                 archiveContent = extracted; path = extracted.File;
             }
-            foreach (var module in PreviewModules.Candidates(entry))
+            foreach (var module in candidates)
             {
                 token.ThrowIfCancellationRequested();
-                IViewer candidate = module.Id switch {"f3d"=>new F3dViewer(owner),"html"=>new HtmlViewer(entry),_=>new BuiltinViewer(module, owner, entry)};
+                IViewer candidate = module.Id switch
+                {
+                    "f3d"=>new F3dViewer(owner),"html"=>new HtmlViewer(entry),"csv"=>new CsvViewer(owner),
+                    "database"=>new DatabaseViewer(owner),"mail"=>new MailViewer(entry),"certificate"=>new CertificateViewer(owner),
+                    "design"=>new DesignThumbnailViewer(),"binary"=>new BinaryViewer(owner),"office"=>new OfficeViewer(owner,entry),"chm"=>new CompiledHelpViewer(owner,entry),
+                    "app" or "elf" or "dump" or "prefetch" or "clsid" or "mediainfo"=>new InspectionViewer(module.Id),
+                    _=>new BuiltinViewer(module, owner, entry)
+                };
                 if (!await Task.Run(() => candidate.CanHandle(path), token)) { candidate.Cleanup(); continue; }
                 if (!Current() || token.IsCancellationRequested) { candidate.Cleanup(); return; }
                 selected = viewer = candidate;
                 ModuleId = module.Id;
+                RendererId=module.Id;RendererDescription=module.Name;
                 Initializations[module.Id] = Initializations.GetValueOrDefault(module.Id) + 1;
                 candidate.Init();
-                var context = new ContextObject(token, Current, content => target.Content = content, task => { work.Add(task); Track(task); }, autoplay);
+                var context = new ContextObject(token, Current, content => target.Content = content, task => { work.Add(task); Track(task); }, autoplay,
+                    (name,details)=>{RendererId=name;RendererDescription=string.IsNullOrWhiteSpace(details)?name:name+"\n"+details;title(entry.Name);});
                 candidate.Prepare(path, context);
                 await candidate.View(path, context);
                 if (Current() && !token.IsCancellationRequested)
-                { State = "ready"; title(context.Title); context.IsBusy = false; }
+                { State = "ready"; title(entry.Name); context.IsBusy = false; }
                 return;
             }
             if (Current() && !token.IsCancellationRequested)
@@ -109,10 +125,20 @@ internal sealed class PreviewSession : IDisposable
             archiveContent = null;
             Track(ReleaseContent(extracted, Completion, requestWork));
         }
-        target.Content = null; title("");
+        RendererId=RendererDescription=null;target.Content = null; title("");
         Entry = null; ModuleId = null; State = "empty";
     }
-    internal void Refresh() { if (Entry is { } entry) Show(entry); }
+    internal void Refresh() { if (Entry is { } entry) Show(entry,PreviewModules.All.Any(m=>m.Id==preferredModule&&m.Enabled)?preferredModule:null); }
+    void FillMenu()
+    {
+        Menu.Items.Clear();var entry=Entry;if(entry==null)return;
+        long current=generation;
+        foreach(var module in PreviewModules.Candidates(entry))
+        {
+            var item=new MenuItem{Header=module.Name,IsCheckable=true,IsChecked=ModuleId==module.Id};
+            item.Click+=(_,_)=>{if(!disposed&&current==generation)Show(entry,module.Id);};Menu.Items.Add(item);
+        }
+    }
     static async Task ReleaseContent(ArchiveContent.Lease extracted, Task load, List<Task> work)
     {
         try

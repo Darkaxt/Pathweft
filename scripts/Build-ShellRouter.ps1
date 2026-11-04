@@ -1,5 +1,5 @@
 [CmdletBinding()]
-param([Parameter(Mandatory)][string]$OutputRoot,[switch]$Verify,[string]$ProductDirectory,[switch]$RevealProbe,[switch]$ProgressReceiver)
+param([Parameter(Mandatory)][string]$OutputRoot,[switch]$Verify,[string]$ProductDirectory,[switch]$RevealProbe,[switch]$ProgressReceiver,[switch]$MenuDesktop)
 $ErrorActionPreference='Stop'
 $root=Split-Path -Parent $PSScriptRoot
 $destination=[IO.Path]::GetFullPath($OutputRoot)
@@ -18,6 +18,16 @@ foreach($arch in @('x64','x86')){
     $link=@('/link',('/LIBPATH:'+(Join-Path $vc "lib/$arch")))
     foreach($kind in @('um','ucrt')){$link+='/LIBPATH:'+(Join-Path $sdk "Lib/$sdkVersion/$kind/$arch")}
     $link+=@('kernel32.lib','ole32.lib','oleaut32.lib','shell32.lib','shlwapi.lib','uuid.lib','advapi32.lib','user32.lib')
+    if($MenuDesktop -and $arch -eq 'x64'){
+        $test=@((Join-Path $root 'tests/MenuDesktop.cpp'),('/Fo'+$output+'\'))+$link+@(('/OUT:'+(Join-Path $output 'MenuDesktop.exe')),'/SUBSYSTEM:CONSOLE')
+        & (Join-Path $vc "bin/Hostx64/$arch/cl.exe") @arguments @test
+        if($LASTEXITCODE -ne 0){throw 'Private menu desktop fixture compilation failed.'}
+        # Shell Open may delegate process creation; this finite receiver creates
+        # no windows and has no console even if Windows selects another desktop.
+        $receiver=@((Join-Path $root 'tests/MenuDesktop.cpp'),('/Fo'+$output+'\'))+$link+@(('/OUT:'+(Join-Path $output 'MenuOpenProbe.exe')),'/SUBSYSTEM:WINDOWS','/ENTRY:wmainCRTStartup')
+        & (Join-Path $vc "bin/Hostx64/$arch/cl.exe") @arguments @receiver
+        if($LASTEXITCODE -ne 0){throw 'Windowless Shell-open fixture compilation failed.'}
+    }
     if($ProgressReceiver){
         $test=@((Join-Path $root 'tests/InstallerProgressReceiver.cpp'),('/Fo'+$output+'\'))+$link+@(('/OUT:'+(Join-Path $output 'InstallerProgressReceiver.exe')),'/SUBSYSTEM:WINDOWS')
         & (Join-Path $vc "bin/Hostx64/$arch/cl.exe") @arguments @test

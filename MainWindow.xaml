@@ -39,7 +39,7 @@
         </Setter.Value>
       </Setter>
     </Style>
-    <!-- the sidebar's bottom row: Drop bin, updates, what's new, help, settings as icons with tooltips -->
+    <!-- Compact sidebar utility icons; Drop bin remains at the bottom. -->
     <Style x:Key="IconButton" TargetType="Button" BasedOn="{StaticResource Ghost}">
       <Setter Property="FontFamily" Value="Segoe Fluent Icons"/>
       <Setter Property="FontSize" Value="14"/>
@@ -47,6 +47,13 @@
       <Setter Property="Width" Value="34"/>
       <Setter Property="Height" Value="30"/>
       <Setter Property="HorizontalContentAlignment" Value="Center"/>
+    </Style>
+    <Style x:Key="CommandDivider" TargetType="Border">
+      <Setter Property="Width" Value="1"/>
+      <Setter Property="Height" Value="12"/>
+      <Setter Property="Margin" Value="4,0"/>
+      <Setter Property="Background" Value="{DynamicResource Palette.20FFFFFF}"/>
+      <Setter Property="VerticalAlignment" Value="Center"/>
     </Style>
     <Style x:Key="StatValue" TargetType="TextBlock">
       <Setter Property="FontSize" Value="20"/>
@@ -189,17 +196,22 @@
     <!-- Sidebar: a bit more opaque, it sits over whatever is behind the window -->
     <DockPanel x:Name="SidebarPanel" Background="{DynamicResource Palette.40000000}">
       <!-- the app's name, where the title bar used to say it; it moves the window like one -->
-      <DockPanel DockPanel.Dock="Top" Margin="18,13,8,0" Height="26" Background="Transparent" MouseDown="Caption_MouseDown">
-        <Image Source="/app.ico" Width="16" Height="16" Margin="0,0,10,0" RenderOptions.BitmapScalingMode="HighQuality"/>
-        <TextBlock Text="Pathweft" FontWeight="SemiBold" FontSize="13" VerticalAlignment="Center"/>
-        <TextBlock x:Name="VersionText" Foreground="{DynamicResource Muted}" FontSize="11" Margin="8,1,0,0" VerticalAlignment="Center"/>
-      </DockPanel>
-      <DockPanel DockPanel.Dock="Bottom" Margin="8,4,8,8">
-        <Button DockPanel.Dock="Right" Style="{StaticResource IconButton}" Content="&#xE713;" Click="Settings_Click" ToolTip="Settings (Ctrl+,)" AutomationProperties.Name="Settings"/>
-        <Button DockPanel.Dock="Right" Style="{StaticResource IconButton}" Content="&#xE897;" Click="Help_Click" ToolTip="Help: everything Pathweft does (F1)" AutomationProperties.Name="Help"/>
-        <Button DockPanel.Dock="Right" Style="{StaticResource IconButton}" Content="&#xE789;" Click="WhatsNew_Click" ToolTip="What&#x2019;s new" AutomationProperties.Name="What&#x2019;s new"/>
-        <Button x:Name="UpdateButton" DockPanel.Dock="Right" Style="{StaticResource IconButton}" Content="&#xE895;" Click="CheckUpdates_Click"
+      <Grid x:Name="SidebarHeader" DockPanel.Dock="Top" Margin="8,10,8,0" SizeChanged="SidebarHeader_SizeChanged">
+        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+        <DockPanel x:Name="SidebarBrand" Background="Transparent" MouseDown="Caption_MouseDown" Height="28" ToolTip="Pathweft">
+          <Image Source="/app.ico" Width="16" Height="16" Margin="8,0,8,0" RenderOptions.BitmapScalingMode="HighQuality"/>
+          <TextBlock Text="Pathweft" FontWeight="SemiBold" FontSize="13" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+        </DockPanel>
+        <StackPanel x:Name="SidebarHeaderActions" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+        <Button x:Name="UpdateButton" Style="{StaticResource IconButton}" Width="28" Height="28" Content="&#xE895;" Click="CheckUpdates_Click"
                 ToolTip="Check for updates (it also checks by itself every hour)" AutomationProperties.Name="Check for updates"/>
+        <Button x:Name="WhatsNewButton" Style="{StaticResource IconButton}" Width="28" Height="28" Content="&#xE789;" Click="WhatsNew_Click" ToolTip="What&#x2019;s new" AutomationProperties.Name="What&#x2019;s new"/>
+        <Button x:Name="HelpButton" Style="{StaticResource IconButton}" Width="28" Height="28" Content="&#xE897;" Click="Help_Click" ToolTip="Help: everything Pathweft does (F1)" AutomationProperties.Name="Help"/>
+        <Button x:Name="SettingsButton" Style="{StaticResource IconButton}" Width="28" Height="28" Content="&#xE713;" Click="Settings_Click" ToolTip="Settings (Ctrl+,)" AutomationProperties.Name="Settings"/>
+        </StackPanel>
+      </Grid>
+      <DockPanel x:Name="SidebarFooter" DockPanel.Dock="Bottom" Margin="8,4,8,8">
         <!-- the Drop bin: a click shows it, and files dropped on the button go in -->
         <Button x:Name="BinButton" DockPanel.Dock="Left" Style="{StaticResource IconButton}" Width="Auto" HorizontalAlignment="Left"
                 Click="BinButton_Click" AutomationProperties.Name="Drop bin" AllowDrop="True" DragOver="Bin_DragOver" Drop="Bin_Drop"
@@ -345,7 +357,25 @@
         <DockPanel>
           <DockPanel x:Name="PreviewHeader" DockPanel.Dock="Top" Margin="12,6,6,4">
             <Button DockPanel.Dock="Right" Style="{StaticResource Ghost}" Content="&#xE711;" FontFamily="Segoe Fluent Icons" FontSize="10"
+                    x:Name="PreviewCloseButton" AutomationProperties.Name="Close preview" MinWidth="32" MinHeight="32"
                     ToolTip="Close the preview (Alt+P)" Click="Preview_Click"/>
+            <Button x:Name="PreviewWindowButton" DockPanel.Dock="Right" Style="{StaticResource Ghost}" Content="&#xE8A7;" FontFamily="Segoe Fluent Icons" FontSize="14"
+                    MinWidth="32" MinHeight="32" AutomationProperties.Name="Open preview in a floating window" ToolTip="Open preview in a floating window" Click="PreviewWindow_Click"/>
+            <Button x:Name="PreviewPipButton" DockPanel.Dock="Right" Style="{StaticResource Ghost}" MinWidth="32" MinHeight="32"
+                    AutomationProperties.Name="Picture in picture inside Pathweft" ToolTip="Picture in picture inside Pathweft" Click="PreviewPip_Click">
+              <Viewbox Width="18" Height="18">
+                <Canvas Width="24" Height="24">
+                  <Path Data="M3,4 H21 V20 H3 Z" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.5"/>
+                  <Path Data="M12,11 H19 V18 H12 Z" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"/>
+                </Canvas>
+              </Viewbox>
+            </Button>
+            <Grid DockPanel.Dock="Left" Width="18" Height="18" Margin="0,0,8,0" VerticalAlignment="Center">
+              <TextBlock Text="{Binding Icon}" Foreground="{Binding IconBrush}" FontFamily="Segoe Fluent Icons" FontSize="16" VerticalAlignment="Center">
+                <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding Source, ElementName=PreviewAppIcon}" Value="{x:Null}"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></TextBlock.Style>
+              </TextBlock>
+              <Image x:Name="PreviewAppIcon" Stretch="Uniform" AutomationProperties.Name="Preview renderer icon"/>
+            </Grid>
             <TextBlock x:Name="PreviewTitle" Foreground="{DynamicResource Muted}" FontSize="11" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
           </DockPanel>
           <ContentControl x:Name="PreviewBody" Focusable="False" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"/>
@@ -356,24 +386,31 @@
       <!-- Ferry transfers live in a window of their own (MainWindow.ShowTransfers): under the panes they took the files' room -->
 
       <!-- Command bar -->
-      <DockPanel Grid.Row="3" Margin="0,6,0,6">
+      <DockPanel x:Name="CommandBar" Grid.Row="3" Margin="0,6,0,6" SizeChanged="CommandBar_SizeChanged">
         <!-- the buttons first: a long status message is trimmed, it never pushes the last buttons out -->
-        <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" TextElement.FontSize="11">
-          <Button Style="{StaticResource Ghost}" Click="Rename_Click"><TextBlock><Run Foreground="{DynamicResource Muted}">F2</Run> Rename</TextBlock></Button>
-          <Button Style="{StaticResource Ghost}" Click="Open_Click"><TextBlock><Run Foreground="{DynamicResource Muted}">F3</Run> Open</TextBlock></Button>
-          <Button x:Name="CopyButton" Style="{StaticResource Ghost}" Click="Copy_Click" ToolTip="Copy to the other pane (Ctrl+F5). F5 refreshes."><TextBlock><Run Foreground="{DynamicResource Muted}">Ctrl+F5</Run> Copy</TextBlock></Button>
-          <Button x:Name="MoveButton" Style="{StaticResource Ghost}" Click="Move_Click"><TextBlock><Run Foreground="{DynamicResource Muted}">F6</Run> Move</TextBlock></Button>
-          <Button Style="{StaticResource Ghost}" Click="MkDir_Click" ToolTip="New folder (F7 or Ctrl+Shift+N)"><TextBlock><Run Foreground="{DynamicResource Muted}">F7</Run> New folder</TextBlock></Button>
-          <Button Style="{StaticResource Ghost}" Click="NewFile_Click" ToolTip="New file (Ctrl+N)"><TextBlock><Run Foreground="{DynamicResource Muted}">Ctrl+N</Run> New file</TextBlock></Button>
-          <Button Style="{StaticResource Ghost}" Click="Delete_Click"><TextBlock><Run Foreground="{DynamicResource Muted}">F8</Run> Delete</TextBlock></Button>
-          <Button Style="{StaticResource Ghost}" Click="Terminal_Click"><TextBlock><Run Foreground="{DynamicResource Muted}">Ctrl+`</Run> Terminal</TextBlock></Button>
-          <Button x:Name="HiddenToggle" Style="{StaticResource Ghost}" Click="Hidden_Click" ToolTip="Show or hide Windows hidden and dot-prefixed files (Ctrl+H)"><TextBlock><Run Foreground="{DynamicResource Muted}">Ctrl+H</Run> Hidden</TextBlock></Button>
+        <StackPanel x:Name="CommandButtons" DockPanel.Dock="Left" Orientation="Horizontal">
+          <!-- Create -->
+          <Button x:Name="NewFolderCommand" Style="{StaticResource CompactCommand}" Click="MkDir_Click" ToolTip="New folder (F7 or Ctrl+Shift+N)" AutomationProperties.Name="New folder"><Image Width="16" Height="16" Source="{DynamicResource CommandIcon.NewFolder}"/></Button>
+          <Button x:Name="NewFileCommand" Style="{StaticResource CompactCommand}" Click="NewFile_Click" ToolTip="New file (Ctrl+N)" AutomationProperties.Name="New file"><Image Width="16" Height="16" Source="{DynamicResource CommandIcon.NewFile}"/></Button>
+          <Border Style="{StaticResource CommandDivider}"/>
+          <!-- Selected item -->
+          <Button x:Name="OpenCommand" Style="{StaticResource CompactCommand}" Click="Open_Click" ToolTip="Open (F3 or Enter)" AutomationProperties.Name="Open"><Image Width="16" Height="16" Source="{DynamicResource CommandIcon.Open}"/></Button>
+          <Button x:Name="RenameCommand" Style="{StaticResource CompactCommand}" Click="Rename_Click" ToolTip="Rename (F2)" AutomationProperties.Name="Rename"><Image Width="16" Height="16" Source="{DynamicResource CommandIcon.Rename}"/></Button>
+          <Button x:Name="DeleteCommand" Style="{StaticResource CompactCommand}" Click="Delete_Click" ToolTip="Delete (F8 or Delete)" AutomationProperties.Name="Delete"><Image Width="16" Height="16" Source="{DynamicResource CommandIcon.Delete}"/></Button>
+          <Border Style="{StaticResource CommandDivider}"/>
+          <!-- Transfers -->
+          <Button x:Name="CopyButton" Style="{StaticResource CompactCommand}" Click="Copy_Click" ToolTip="Copy to the other pane (Ctrl+F5). F5 refreshes." AutomationProperties.Name="Copy to the other pane"><Image Width="16" Height="16" Source="{DynamicResource CommandIcon.Copy}"/></Button>
+          <Button x:Name="MoveButton" Style="{StaticResource CompactCommand}" Click="Move_Click" ToolTip="Move to the other pane (F6)" AutomationProperties.Name="Move to the other pane"><Image Width="16" Height="16" Source="{DynamicResource CommandIcon.Move}"/></Button>
+          <Button x:Name="TransfersButton" Style="{StaticResource CompactCommand}" Click="Transfers_Click" Visibility="Collapsed" ToolTip="Transfers" AutomationProperties.Name="Transfers"><Image Width="16" Height="16" Source="{DynamicResource CommandIcon.Transfers}"/></Button>
+          <Border Style="{StaticResource CommandDivider}"/>
+          <!-- Tools -->
+          <Button x:Name="TerminalCommand" Style="{StaticResource CompactCommand}" Click="Terminal_Click" ToolTip="Open terminal (Ctrl+`)" AutomationProperties.Name="Open terminal"><Image Width="16" Height="16" Source="{DynamicResource CommandIcon.Terminal}"/></Button>
+          <Border Style="{StaticResource CommandDivider}"/>
+          <!-- View -->
+          <Button x:Name="HiddenToggle" Style="{StaticResource CompactCommand}" Click="Hidden_Click" ToolTip="Show or hide Windows hidden and dot-prefixed files (Ctrl+H)" AutomationProperties.Name="Show hidden files"><Image Width="16" Height="16" Source="{DynamicResource CommandIcon.Hidden}"/></Button>
           <!-- in screen order: first pane, second pane, preview -->
-          <Button Style="{StaticResource Ghost}" Click="Panes_Click" ToolTip="One pane or two (Ctrl+P)"><TextBlock><Run Foreground="{DynamicResource Muted}">Ctrl+P</Run> One / two panes</TextBlock></Button>
-          <Button Style="{StaticResource Ghost}" Click="Preview_Click" ToolTip="Show the selected file beside the panes"><TextBlock><Run Foreground="{DynamicResource Muted}">Alt+P</Run> Preview</TextBlock></Button>
-          <!-- brings the Transfers window back; there while any copy or move is listed -->
-          <Button x:Name="TransfersButton" Style="{StaticResource Ghost}" Click="Transfers_Click" Visibility="Collapsed" ToolTip="Show the copies and moves">
-            <TextBlock><Run FontFamily="Segoe Fluent Icons" Foreground="{DynamicResource Accent}" Text="&#xE8AB;"/> <Run x:Name="TransfersText" Text="Transfers"/></TextBlock></Button>
+          <Button x:Name="PanesCommand" Style="{StaticResource CompactCommand}" Click="Panes_Click" ToolTip="One pane or two (Ctrl+P)" AutomationProperties.Name="One or two panes"><Image Width="16" Height="16" Source="{DynamicResource CommandIcon.Panes}"/></Button>
+          <Button x:Name="PreviewCommand" Style="{StaticResource CompactCommand}" Click="Preview_Click" ToolTip="Show the selected file beside the panes (Alt+P)" AutomationProperties.Name="Preview pane"><Image Width="16" Height="16" Source="{DynamicResource CommandIcon.Preview}"/></Button>
         </StackPanel>
         <TextBlock x:Name="Status" Foreground="{DynamicResource Muted}" FontSize="11" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="420" HorizontalAlignment="Right" Margin="12,0,0,0"/>
       </DockPanel>

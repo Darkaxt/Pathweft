@@ -1,0 +1,22 @@
+{
+  "version": "26.10",
+  "dllSha256": "8AA4687977E8624DC78504D83C51BEC9FC6CA6A1DF01444FB51D0B61F4C8B29C",
+  "signer": "CN=MEDIAAREA.NET, O=MEDIAAREA.NET, L=Curienne, S=Auvergne-Rhône-Alpes, C=FR",
+  "signerThumbprint": "2B4651E0FF6F2822809AB584ED68C9941151EE48",
+  "archives": [
+    {
+      "name": "MediaInfo_DLL_26.10_Windows_x64_WithoutInstaller.zip",
+      "url": "https://mediaarea.net/download/binary/libmediainfo0/26.10/MediaInfo_DLL_26.10_Windows_x64_WithoutInstaller.zip",
+      "bytes": 4467447,
+      "sha256": "4EFE172DF014693732E8B64A004CF382B8599EAF86BE26A9B38C0D2993E60E1D"
+    },
+    {
+      "name": "libmediainfo_26.10_AllInclusive.7z",
+      "url": "https://mediaarea.net/download/source/libmediainfo/26.10/libmediainfo_26.10_AllInclusive.7z",
+      "bytes": 3002424,
+      "sha256": "4AF638EC0DA9A81736A0FF02294F55EDD91ACF385CB4E3F8A0DD0B2F2D88FBED"
+    }
+  ],
+  "consumer": "Pathweft specialist MediaInfo inspector builds and final release",
+  "sourceBoundary": "Official all-inclusive MediaInfoLib, ZenLib and zlib; original MSVC2022 DLL/library build projects"
+}

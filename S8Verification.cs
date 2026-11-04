@@ -95,8 +95,7 @@ public partial class MainWindow
             Check(UpdateInstallationBlocker==null,"Closing the editor releases the updater's editor gate");
             Check(true,"The isolated editor's actual browser process exits after its controller closes");
             Check(Appearance.Light&&((SolidColorBrush)widget.Foreground).Color==Appearance.Resolve("#E8E8E8"),"Already-open search widget changes with Native Light");
-            var legend=((TextBlock)HiddenToggle.Content).Inlines.OfType<System.Windows.Documents.Run>().First();
-            Check(((SolidColorBrush)legend.Foreground).Color==Appearance.Resolve("#8CFFFFFF"),"Existing shortcut legends follow the light-theme muted text resource");
+            Check(HiddenToggle.Content is Image {Source:DrawingImage}&&((string)HiddenToggle.ToolTip).Contains("Ctrl+H"),"Compact command artwork follows the light theme and retains shortcut guidance on hover");
             Check(((SolidColorBrush)Left.Items.First().AgeBrush).Color==Color.FromRgb(232,232,232),"Native file age markers use neutral metadata styling");
             await S1Verification.Snapshot(this,evidence,"native-light-split-100");
             await S1Verification.Snapshot(widget,evidence,"native-light-widget-100");

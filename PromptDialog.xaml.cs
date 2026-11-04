@@ -47,6 +47,9 @@ public partial class PromptDialog : Window
             ShowInTaskbar = false, Background = System.Windows.Media.Brushes.Transparent,
             Foreground = MainWindow.Hex("#E8EEF6"), FontFamily = new System.Windows.Media.FontFamily("Segoe UI Variable Text, Segoe UI"), FontSize = 12,
         };
+#if DEBUG
+        HiddenTrialPresentation.Prepare(w);
+#endif
         w.SourceInitialized += (_, _) => MainWindow.ApplyAcrylic(w);
         int result = -1;
         var panel = new System.Windows.Controls.StackPanel { Margin = new(20, 18, 18, 14) };

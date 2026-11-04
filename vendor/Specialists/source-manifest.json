@@ -1,0 +1,267 @@
+[
+  {
+    "id": "BouncyCastle.Cryptography",
+    "version": "2.6.2",
+    "repo": "bcgit/bc-csharp",
+    "revision": "b4f2f6ad76bcd1f11f365ee50cc7447fbce79077",
+    "license": "MIT",
+    "sourceArchive": "bcgit-bc-csharp-b4f2f6ad76bcd1f11f365ee50cc7447fbce79077.zip",
+    "sourceUrl": "https://codeload.github.com/bcgit/bc-csharp/zip/b4f2f6ad76bcd1f11f365ee50cc7447fbce79077",
+    "sourceSha256": "52b43b16bab2f47377d5c6a602a91ac5fa1c64a78fb86409844c58265f6af77f",
+    "packageArchive": "bouncycastle.cryptography.2.6.2.nupkg",
+    "packageSha256": "623936fb1fd171579c706390390711282898cf2c759a5167852e5ab82208f8cb",
+    "notices": [
+      {
+        "path": "vendor/Specialists/licenses/BouncyCastle.Cryptography/LICENSE.md.txt",
+        "sha256": "eb52875c9b7de8271dd835af14fd598cdaa09e9e061f86e954cda564ef6b06e6"
+      }
+    ]
+  },
+  {
+    "id": "CsvHelper",
+    "version": "33.1.0",
+    "repo": "JoshClose/CsvHelper",
+    "revision": "5dad8b8b1d8b074f8353cfd482e939db788a8927",
+    "license": "Apache-2.0",
+    "sourceArchive": "JoshClose-CsvHelper-5dad8b8b1d8b074f8353cfd482e939db788a8927.zip",
+    "sourceUrl": "https://codeload.github.com/JoshClose/CsvHelper/zip/5dad8b8b1d8b074f8353cfd482e939db788a8927",
+    "sourceSha256": "085c15fb3e6bbd8dbc728cc679f149b7d7c6dd38059152350c0430ccad5a46ee",
+    "packageArchive": "csvhelper.33.1.0.nupkg",
+    "packageSha256": "a447d7e28eb7c6ea48eeebb07baa9ad393a77b4a49ed46f3cc9a8b8784a18eef",
+    "notices": [
+      {
+        "path": "vendor/Specialists/licenses/CsvHelper/LICENSE.txt.txt",
+        "sha256": "8444a77d74bd5e4f607222be36fb68b47986c73f318d374695a1055737a2f3c0"
+      }
+    ]
+  },
+  {
+    "id": "ELFSharp",
+    "version": "2.17.3",
+    "repo": "konrad-kruczynski/elfsharp",
+    "revision": "892ddfc054939c4ffe70830bf5873d4ac8fc3b96",
+    "license": "MIT",
+    "sourceArchive": "konrad-kruczynski-elfsharp-892ddfc054939c4ffe70830bf5873d4ac8fc3b96.zip",
+    "sourceUrl": "https://codeload.github.com/konrad-kruczynski/elfsharp/zip/892ddfc054939c4ffe70830bf5873d4ac8fc3b96",
+    "sourceSha256": "78e1a6057ebcfbc677226865bf382f458a0b9d789c73e913448b69fb23808e95",
+    "packageArchive": "elfsharp.2.17.3.nupkg",
+    "packageSha256": "f0e68090bc696b9ac88716e60d29ca2de634ea34bb9d5eba2e30635f11e739bd",
+    "notices": [
+      {
+        "path": "vendor/Specialists/licenses/ELFSharp/LICENSE.txt",
+        "sha256": "820aaf58932c589683409fd03c818e32b302ddf287fa8adc0c2f7565e9135bcd"
+      }
+    ]
+  },
+  {
+    "id": "LiteDB",
+    "version": "5.0.21",
+    "repo": "mbdavid/LiteDB",
+    "revision": "391cc9318c5be6e56cb71b3ce14b1ed9cb324763",
+    "license": "MIT",
+    "sourceArchive": "mbdavid-LiteDB-391cc9318c5be6e56cb71b3ce14b1ed9cb324763.zip",
+    "sourceUrl": "https://codeload.github.com/mbdavid/LiteDB/zip/391cc9318c5be6e56cb71b3ce14b1ed9cb324763",
+    "sourceSha256": "7978ae600e759d8be9d1e991ccef7b73fbbd84db292f8ad5a711735c460dfe92",
+    "packageArchive": "litedb.5.0.21.nupkg",
+    "packageSha256": "938a4f5f9d6a28383de8ccfcbdb8897e78432399215232cf38dbf147e03ec167",
+    "notices": [
+      {
+        "path": "vendor/Specialists/licenses/LiteDB/LICENSE.txt",
+        "sha256": "0f077c548c9f6f6181d59a6dc1ddca08f35968a9b38b7f45932932b0cb082081"
+      }
+    ]
+  },
+  {
+    "id": "Microsoft.Data.Sqlite.Core",
+    "version": "10.0.10",
+    "repo": "dotnet/efcore",
+    "revision": "db55508a7fbc1535bdb65b85159a8d0d36d6942a",
+    "license": "MIT",
+    "provenance": "NuGet VMR dotnet/dotnet f7d90799ce4ef09a0bb257852a57248d2a8fb8dd src/source-manifest.json maps src/efcore to this exact component revision",
+    "sourceArchive": "dotnet-efcore-db55508a7fbc1535bdb65b85159a8d0d36d6942a.zip",
+    "sourceUrl": "https://codeload.github.com/dotnet/efcore/zip/db55508a7fbc1535bdb65b85159a8d0d36d6942a",
+    "sourceSha256": "690de390471ba2d6190d104e99296202b435653264b60d1ccabe15fdb2b8a8c8",
+    "packageArchive": "microsoft.data.sqlite.core.10.0.10.nupkg",
+    "packageSha256": "dd5fc629b84581e5b6a31d9d6d1186997ced72d9ea62b825f1cf0abc76abe695",
+    "notices": [
+      {
+        "path": "vendor/Specialists/licenses/Microsoft.Data.Sqlite.Core/LICENSE.txt.txt",
+        "sha256": "ae48df11a335dc1a615f4f938b69cba73bcf4485c4f97af49b38efb0f216353b"
+      }
+    ]
+  },
+  {
+    "id": "MimeKit",
+    "version": "4.15.1",
+    "repo": "jstedfast/MimeKit",
+    "revision": "5c79dcc7c7c6c238aec40747ecf7481393a3d04e",
+    "license": "MIT",
+    "provenance": "Official signed tag 4.15.1, tag object 8d91c45b849d1375b26ac5307df8f1930e49bee9",
+    "sourceArchive": "jstedfast-MimeKit-5c79dcc7c7c6c238aec40747ecf7481393a3d04e.zip",
+    "sourceUrl": "https://codeload.github.com/jstedfast/MimeKit/zip/5c79dcc7c7c6c238aec40747ecf7481393a3d04e",
+    "sourceSha256": "7787ef5c66afeb949ac760bc6db9dcb06a402d974d3c6345ad730e2b3328f365",
+    "packageArchive": "mimekit.4.15.1.nupkg",
+    "packageSha256": "308e16afe256a3147dc2c6212a65bc8f511d279f56fcee23bf90fd65bf26114c",
+    "notices": [
+      {
+        "path": "vendor/Specialists/licenses/MimeKit/LICENSE.txt",
+        "sha256": "c613af70a219d1cafd732f2cefd4fca9f1462ac5696f8461108a7d643513f3bf"
+      }
+    ]
+  },
+  {
+    "id": "OpenMcdf",
+    "version": "3.1.4",
+    "repo": "openmcdf/openmcdf",
+    "revision": "11ffb7cafff6eea99639df6b2b249dcf6bcca3ef",
+    "license": "MPL-2.0",
+    "sourceArchive": "openmcdf-openmcdf-11ffb7cafff6eea99639df6b2b249dcf6bcca3ef.zip",
+    "sourceUrl": "https://codeload.github.com/openmcdf/openmcdf/zip/11ffb7cafff6eea99639df6b2b249dcf6bcca3ef",
+    "sourceSha256": "4c914692d0767e103868b5fd354150508636967430fc14a2b6090c398106c31c",
+    "packageArchive": "openmcdf.3.1.4.nupkg",
+    "packageSha256": "fa9290d5491361b7c69c5fbe7ce1c6be5a08f7d6d2ad4e8d2940f80224b73cc4",
+    "notices": [
+      {
+        "path": "vendor/Specialists/licenses/OpenMcdf/License.txt.txt",
+        "sha256": "4b89d4518bd135ab4ee154a7bce722246b57a98c3d7efc1a09409898160c2bd1"
+      }
+    ]
+  },
+  {
+    "id": "Prefetch",
+    "version": "2026.5.2",
+    "repo": "EricZimmerman/Prefetch",
+    "revision": "54a3ac0d6d0006d3836c9bd368dfe32cbcaa131d",
+    "license": "MIT",
+    "sourceArchive": "EricZimmerman-Prefetch-54a3ac0d6d0006d3836c9bd368dfe32cbcaa131d.zip",
+    "sourceUrl": "https://codeload.github.com/EricZimmerman/Prefetch/zip/54a3ac0d6d0006d3836c9bd368dfe32cbcaa131d",
+    "sourceSha256": "83218a3b8c24919e3568019185448f333c9789e7bdbd82aac992619e6dd28b8c",
+    "packageArchive": "prefetch.2026.5.2.nupkg",
+    "packageSha256": "b24a511f287d89084c0863c1468387401be0c72fed30a5c8badb2fa8a482a418",
+    "notices": [
+      {
+        "path": "vendor/Specialists/licenses/Prefetch/license.txt",
+        "sha256": "dbf4a79e5fc96e1f5b51d33d24fba721af1e23e12c303f19cf73b1575e126228"
+      }
+    ]
+  },
+  {
+    "id": "QuickLook.ApkReader",
+    "version": "2.1.0",
+    "repo": "QL-Win/QuickLook.ApkReader",
+    "revision": "22b32f7cf136664a2f5a017c4626ee00f1078b52",
+    "license": "MIT",
+    "provenance": "Original nuspec repository Soar360/apk-reader moved; the same commit exists at QL-Win. Explicit resource-complete net462 DLL selected.",
+    "sourceArchive": "QL-Win-QuickLook.ApkReader-22b32f7cf136664a2f5a017c4626ee00f1078b52.zip",
+    "sourceUrl": "https://codeload.github.com/QL-Win/QuickLook.ApkReader/zip/22b32f7cf136664a2f5a017c4626ee00f1078b52",
+    "sourceSha256": "c057be25b41e8ec34691bb8110e77a7b89193be60cac6f28465514d26fac387c",
+    "packageArchive": "quicklook.apkreader.2.1.0.nupkg",
+    "packageSha256": "e94769ff613fb4248f11f2439987269aa1be01bd82011f7973bfacb74e317843",
+    "notices": [
+      {
+        "path": "vendor/Specialists/licenses/QuickLook.ApkReader/NuGet-MIT.txt",
+        "sha256": "63967fc2b727de9138f92bbd549ae6edb52eb08be4e54c669e968912b17f6f8f"
+      }
+    ]
+  },
+  {
+    "id": "QuickLook.MediaInfo",
+    "version": "26.5.0",
+    "repo": "QL-Win/QuickLook.MediaInfo",
+    "revision": "91fd489fd7dd6ed0d31091f9fbe7a2b50c52b5e1",
+    "license": "MIT",
+    "provenance": "Managed C API only; native DLL separately pinned to official MediaArea26.10.",
+    "sourceArchive": "QL-Win-QuickLook.MediaInfo-91fd489fd7dd6ed0d31091f9fbe7a2b50c52b5e1.zip",
+    "sourceUrl": "https://codeload.github.com/QL-Win/QuickLook.MediaInfo/zip/91fd489fd7dd6ed0d31091f9fbe7a2b50c52b5e1",
+    "sourceSha256": "609cf5dadcf4f7335f7e9b5e99d72b874a96e15d1ac73bf6611d975ccb1d402a",
+    "packageArchive": "quicklook.mediainfo.26.5.0.nupkg",
+    "packageSha256": "4d07ca051226bc039e75cb1f1e0a9dcef379436405f29ad5435f6b7fdf4b0ffb",
+    "notices": [
+      {
+        "path": "vendor/Specialists/licenses/QuickLook.MediaInfo/LICENSE.txt",
+        "sha256": "45f1559a893c13a7c4d7d39b685287daffc03d7e4f5b81495bdee6f63452c606"
+      }
+    ]
+  },
+  {
+    "id": "RtfPipe",
+    "version": "2.0.7677.4303",
+    "repo": "erdomke/RtfPipe",
+    "revision": "2aedbf288eb012e2993330d334cf1a27f2026f7e",
+    "license": "MIT",
+    "provenance": "Nearest official build-version commit before assembly timestamp; NuGet omits SourceLink/repository revision. Exact package-to-commit identity is not asserted. Retain original NuGet bytes and this source snapshot with the uncertainty explicit.",
+    "sourceArchive": "erdomke-RtfPipe-2aedbf288eb012e2993330d334cf1a27f2026f7e.zip",
+    "sourceUrl": "https://codeload.github.com/erdomke/RtfPipe/zip/2aedbf288eb012e2993330d334cf1a27f2026f7e",
+    "sourceSha256": "7c346e0f39c8a271199742c72e62342a8e64a4f28702a561a1fa73b252d62a4c",
+    "packageArchive": "rtfpipe.2.0.7677.4303.nupkg",
+    "packageSha256": "6fda38d33bec61adc5895af39ddc343b2b5f4fb19291d9347e756f1a5f6f85bd",
+    "notices": [
+      {
+        "path": "vendor/Specialists/licenses/RtfPipe/LICENSE.txt",
+        "sha256": "5dfbb3096a1887fdc75be19f9215f79863379a16dfb1aae04d482789258cdcbc"
+      }
+    ]
+  },
+  {
+    "id": "Serilog",
+    "version": "4.3.1",
+    "repo": "serilog/serilog",
+    "revision": "5625030e8f8fceca2e3180575aba174751ef7add",
+    "license": "Apache-2.0",
+    "sourceArchive": "serilog-serilog-5625030e8f8fceca2e3180575aba174751ef7add.zip",
+    "sourceUrl": "https://codeload.github.com/serilog/serilog/zip/5625030e8f8fceca2e3180575aba174751ef7add",
+    "sourceSha256": "63f266813372ba0c0aa13f7e8e66b918342f4fd371b438f1752d436ace258f51",
+    "packageArchive": "serilog.4.3.1.nupkg",
+    "packageSha256": "4d8f86690627c837ce1a5d208baef10f250c3ae57f9a3cfc054ebafd4b264ad2",
+    "notices": [
+      {
+        "path": "vendor/Specialists/licenses/Serilog/LICENSE.txt",
+        "sha256": "73ba74dfaa520b49a401b5d21459a8523a146f3b7518a833eea5efa85130bf68"
+      }
+    ]
+  },
+  {
+    "id": "SQLitePCLRaw.core",
+    "version": "2.1.11",
+    "repo": "ericsink/SQLitePCL.raw",
+    "revision": "fe99a5c9ea3bdb07c431b3945eed5c3e4f548e1a",
+    "license": "Apache-2.0",
+    "sourceArchive": "ericsink-SQLitePCL.raw-fe99a5c9ea3bdb07c431b3945eed5c3e4f548e1a.zip",
+    "sourceUrl": "https://codeload.github.com/ericsink/SQLitePCL.raw/zip/fe99a5c9ea3bdb07c431b3945eed5c3e4f548e1a",
+    "sourceSha256": "00d41f4d21942653761ce5ee3d84b0f99560e216d746d9e2bbb8657bf6db8484",
+    "packageArchive": "sqlitepclraw.core.2.1.11.nupkg",
+    "packageSha256": "b3f7f112862535ff5cd82e0766e78cccf081be98958835654a983b7a90741976",
+    "notices": [
+      {
+        "path": "vendor/Specialists/licenses/SQLitePCLRaw.core/LICENSE.TXT.txt",
+        "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+      },
+      {
+        "path": "vendor/Specialists/licenses/SQLitePCLRaw.core/NOTICE.TXT.txt",
+        "sha256": "485b276b3d2bfaa26df348e1e5c84df3648981e09b88531a6a53006f0705c24b"
+      }
+    ]
+  },
+  {
+    "id": "SQLitePCLRaw.provider.winsqlite3",
+    "version": "2.1.11",
+    "repo": "ericsink/SQLitePCL.raw",
+    "revision": "fe99a5c9ea3bdb07c431b3945eed5c3e4f548e1a",
+    "license": "Apache-2.0",
+    "sourceArchive": "ericsink-SQLitePCL.raw-fe99a5c9ea3bdb07c431b3945eed5c3e4f548e1a.zip",
+    "sourceUrl": "https://codeload.github.com/ericsink/SQLitePCL.raw/zip/fe99a5c9ea3bdb07c431b3945eed5c3e4f548e1a",
+    "sourceSha256": "00d41f4d21942653761ce5ee3d84b0f99560e216d746d9e2bbb8657bf6db8484",
+    "packageArchive": "sqlitepclraw.provider.winsqlite3.2.1.11.nupkg",
+    "packageSha256": "100ff501124785b50a381d8fa6bd23943493d48e112b453ab2761ce892b1464f",
+    "notices": [
+      {
+        "path": "vendor/Specialists/licenses/SQLitePCLRaw.provider.winsqlite3/LICENSE.TXT.txt",
+        "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+      },
+      {
+        "path": "vendor/Specialists/licenses/SQLitePCLRaw.provider.winsqlite3/NOTICE.TXT.txt",
+        "sha256": "485b276b3d2bfaa26df348e1e5c84df3648981e09b88531a6a53006f0705c24b"
+      }
+    ]
+  }
+]

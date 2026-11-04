@@ -1,0 +1,31 @@
+[
+  {
+    "id": "wordcraft",
+    "source": "https://codeload.github.com/storytold/wordcraft/zip/08afab50b6a1ed19f9af55bb9f74d18f5e17bfa0",
+    "member": "assets/app-icon/wordcraft.ico",
+    "sha256": "53a23dcf66260f44d87d4d143d633395f3e967f391eda47e6e9cc3a52f820225",
+    "license": "MIT OR Apache-2.0; see the pinned ATTRIBUTION.md app-icon entries"
+  },
+  {
+    "id": "gridcraft",
+    "source": "https://codeload.github.com/storytold/gridcraft/zip/85e51e009c24fad47575f04d3c08f12342615d82",
+    "member": "assets/app-icon/gridcraft.ico",
+    "sha256": "f5693fcf3f71695d5ab332d24377c80e0315f952c24ae1eb3b4203bad9ea7f07",
+    "license": "MIT OR Apache-2.0; see the pinned ATTRIBUTION.md app-icon entries"
+  },
+  {
+    "id": "deckcraft",
+    "source": "https://codeload.github.com/storytold/deckcraft/zip/3e178d8f5a59c787a6a53a7ed0f052b3e4a1489f",
+    "member": "assets/app-icon/deckcraft.ico",
+    "sha256": "ceb73e008aa2cdf4d05d6375da32c5536a2bc2637bee59cdf441e2f9f792a9cd",
+    "license": "MIT OR Apache-2.0; see the pinned ATTRIBUTION.md app-icon entries"
+  },
+  {
+    "id": "libreoffice",
+    "source": "https://download.documentfoundation.org/libreoffice/stable/26.2.7/win/x86_64/LibreOffice_26.2.7_Win_x86-64.msi",
+    "member": "program/soffice.exe RT_GROUP_ICON 1",
+    "runtimeSha256": "6c55b6200376b5b6cf75971f3985606c6c0886460d7c83caa39a1ccf531142f1",
+    "sha256": "9e83d313fe5a46c276b4aff00a47f54e576b1c0065a16d3c5aff8cbc5169a25a",
+    "license": "Unmodified LibreOffice identification icon; see bundled LibreOffice LICENSE.html and NOTICE"
+  }
+]

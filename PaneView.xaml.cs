@@ -289,9 +289,12 @@ public partial class PaneView : UserControl
     string itemsFolder;
     public event Action<string> Error;
     public event Action<Entry> OpenArchived; // Enter on a file inside an archive: MainWindow opens it from a temp copy
+    internal event Action<Entry> InspectRequested;
     public event Action<List<string>, string, bool> FilesDropped; // sources, destination, move
     public event Action RightDragSelected; // a right-button rectangle was let go: the menu for what it selected
     public static event Action<string> Visited;   // every folder a pane shows, for the history menu
+    internal event Action<string> FolderVisited;
+    string lastVisitedFolder;
     public static event Action<string> TabClosed; // for Reopen closed tab (Ctrl+Shift+T)
 
     readonly List<string> tabs = new() { "" };
@@ -303,7 +306,7 @@ public partial class PaneView : UserControl
     string sortKey = "Name"; bool sortDesc;
     CancellationTokenSource sizing;
     FileSystemWatcher watcher;
-    readonly DispatcherTimer debounce = new() { Interval = TimeSpan.FromMilliseconds(400) };
+    DispatcherOperation folderRefresh;
 
     public PaneView()
     {
@@ -406,7 +409,7 @@ public partial class PaneView : UserControl
         // Not a row, so DropTarget gives the folder shown: the strip always means "here".
         FolderStrip.DragOver += Drop_Over;
         FolderStrip.Drop += (s, e) => { FolderStrip.Background = Brushes.Transparent; Drop_Drop(s, e); };
-        debounce.Tick += (_, _) => { debounce.Stop(); Refresh(); };
+        SizeCache.Invalidated += SizeInvalidated;
 
         // Drags start from the strip, not from a tab button: the strip is rebuilt whenever the tabs
         // change, and a button that disappears mid-press takes the mouse capture with it.
@@ -531,6 +534,8 @@ public partial class PaneView : UserControl
         }
 
         int v = GoTo(di.FullName, record);
+        // Observe before reading or sizing: an installation can finish during either operation.
+        if(watcher?.Path!=di.FullName)Watch();
 
         // Show the folder as we last saw it, immediately; the read below replaces it a moment later.
         // Without this, every tab switch waits on the disk — measured at 1.2 s for a cold folder.
@@ -741,6 +746,8 @@ public partial class PaneView : UserControl
         ArchiveRoot = null; // NavigateArchive sets it again right after
         DriveInfoText.ToolTip = null;
         Visited?.Invoke(path);
+        if(!string.Equals(lastVisitedFolder,path,StringComparison.OrdinalIgnoreCase))
+        {lastVisitedFolder=path;FolderVisited?.Invoke(path);}
         // each folder keeps the order it was last sorted in; the rest are by name. Set before its rows are shown.
         var (key, desc) = Settings.FolderSorts.TryGetValue(path, out var sort) ? sort : ("Name", false);
         if (key != sortKey || desc != sortDesc) ShowSort(key, desc);
@@ -765,6 +772,9 @@ public partial class PaneView : UserControl
         // where the first selected row sat: if the selection is gone (deleted), the row that moved up into its place
         int firstSelected = keep && view != null && List.SelectedItems.Count > 0 ? List.SelectedItems.Cast<object>().Min(view.IndexOf) : -1;
         var left = items;
+        bool wasBulk=bulkSelect;bulkSelect=true;
+        try
+        {
         items = list;
         itemsFolder=Dir;
         TrackColumns();
@@ -794,6 +804,9 @@ public partial class PaneView : UserControl
         // the rows the keyboard was on are gone; without this the next arrow key started over at the first row
         if (focused) Dispatcher.BeginInvoke(FocusSelectedRow, DispatcherPriority.Loaded);
         if (animate) FadeInList();
+        }
+        finally{bulkSelect=wasBulk;}
+        if(wasBulk)return;
         UpdateFooter();
         StatsChanged?.Invoke();
     }
@@ -918,6 +931,9 @@ public partial class PaneView : UserControl
                 if (!e.IsDir && Archive.IsArchiveName(e.Path)) { e.RestrictionChecked = false; reicon.Add(e); }
             }
             if (!e.IsDir && e.Size != f.Size) e.Size = f.Size;
+            // Deep writes do not update this directory's own timestamp. Cache invalidation is
+            // independent of Modified; replace its size in the same UI transaction as the totals.
+            if(e.IsDir&&e.Size!=f.Size){e.Size=f.Size;resize|=f.Size==-1;}
         }
         if (resize) StartSizing();
         if (rethumb) StartThumbs();
@@ -1297,7 +1313,14 @@ public partial class PaneView : UserControl
                 long total;
                 try { total = Measure(new DirectoryInfo(e.Path), cts.Token); }
                 catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return; } // gone or unreadable: leave it at "…"
-                Dispatcher.BeginInvoke(() => { e.Size = total; UpdateFooter(); StatsChanged?.Invoke(); });
+                Dispatcher.BeginInvoke(() =>
+                {
+                    if(cts.IsCancellationRequested||sizing!=cts||!items.Contains(e))return;
+                    // A native change may already have invalidated this result while its UI
+                    // notification is still queued. Never publish that superseded snapshot.
+                    if(SizeCache.Peek(e.Path,new DirectoryInfo(e.Path).LastWriteTimeUtc)!=total)return;
+                    e.Size = total; UpdateFooter(); StatsChanged?.Invoke();
+                });
             });
         }, cts.Token).ContinueWith(_ => { }); // swallow cancellation
     }
@@ -1310,6 +1333,10 @@ public partial class PaneView : UserControl
     /// up from everything it had finished.
     internal static long Measure(DirectoryInfo dir, CancellationToken token)
     {
+        while(true)
+        {
+        token.ThrowIfCancellationRequested();
+        using var snapshot=new SizeCache.Measurement(dir.FullName);
         long bytes = 0;
         foreach (var fsi in dir.EnumerateFileSystemInfos("*", OneLevel))
         {
@@ -1323,8 +1350,9 @@ public partial class PaneView : UserControl
         // (what a listing reads), and opening the folder to walk it is what brings that copy up to
         // date. Stored from before the walk, it looked changed at the next visit and was walked again.
         dir.Refresh();
-        SizeCache.Set(dir.FullName, dir.LastWriteTimeUtc, bytes);
-        return bytes;
+        token.ThrowIfCancellationRequested();
+        if(snapshot.Complete(dir.LastWriteTimeUtc,bytes))return bytes;
+        }
     }
 
     // File versions for exe/dll (OneCommander-style column), off the UI thread: network drives can be slow.
@@ -1357,6 +1385,7 @@ public partial class PaneView : UserControl
         // Closing is the end of this view's ownership, including reads already
         // queued on the dispatcher. A hidden/tray window has not closed.
         ++navVersion;++suggestVersion;
+        SizeCache.Invalidated-=SizeInvalidated;
         StopFolderWatch();
         indexedSearch=false;
         StopColumns();
@@ -1366,7 +1395,7 @@ public partial class PaneView : UserControl
 
     void StopFolderWatch()
     {
-        debounce.Stop();
+        folderRefresh?.Abort();folderRefresh=null;
         var previous = watcher;
         watcher = null;
         previous?.Dispose();
@@ -1377,19 +1406,35 @@ public partial class PaneView : UserControl
         StopFolderWatch();
         try
         {
-            var owner = watcher = new FileSystemWatcher(Dir) { NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName | NotifyFilters.LastWrite | NotifyFilters.Size | NotifyFilters.Attributes };
-            void QueueRefresh(object sender, FileSystemEventArgs args) => Dispatcher.BeginInvoke(() =>
+            var owner = watcher = new FileSystemWatcher(Dir) { IncludeSubdirectories=true, NotifyFilter = NotifyFilters.FileName | NotifyFilters.DirectoryName | NotifyFilters.LastWrite | NotifyFilters.Size | NotifyFilters.Attributes };
+            void Changed(object sender, FileSystemEventArgs args)
             {
-                // Disposed watchers can already have a callback queued on WPF.
-                // That callback no longer owns the view after navigation/search.
-                if (watcher != owner || searchQuery != null) return;
-                debounce.Stop(); debounce.Start();
-            });
-            owner.Created += QueueRefresh; owner.Deleted += QueueRefresh; owner.Changed += QueueRefresh;
-            owner.Renamed += (sender, args) => QueueRefresh(sender, args);
+                if(watcher!=owner)return;
+                SizeCache.Invalidate(args.FullPath,args.ChangeType==WatcherChangeTypes.Deleted||args is RenamedEventArgs);
+                if(args is RenamedEventArgs renamed)SizeCache.Invalidate(renamed.OldFullPath,true);
+            }
+            owner.Created += Changed; owner.Deleted += Changed; owner.Changed += Changed;owner.Renamed+=Changed;
+            // Overflow loses the identity of changed descendants. Invalidate this observed
+            // subtree, then re-read it; keeping previous totals would assert false precision.
+            owner.Error+=(_,_)=>{if(watcher==owner)SizeCache.Invalidate(owner.Path,true);};
             owner.EnableRaisingEvents = true;
         }
         catch (Exception ex) when (ex is IOException or ArgumentException or UnauthorizedAccessException) { watcher = null; } // some drives can't be watched; manual refresh still works
+    }
+
+    void SizeInvalidated(string path)
+    {
+        Dispatcher.BeginInvoke(() =>
+        {
+            if(watcher==null||searchQuery!=null||path!=null&&!SizeCache.Within(path,Dir)&&!SizeCache.Within(Dir,path))return;
+            if(folderRefresh is {Status:DispatcherOperationStatus.Pending})return;
+            var owner=watcher;
+            folderRefresh=Dispatcher.BeginInvoke(() =>
+            {
+                folderRefresh=null;
+                if(watcher==owner&&searchQuery==null)Refresh();
+            },DispatcherPriority.Background);
+        });
     }
 
     void UpdateFooter()
@@ -1406,7 +1451,7 @@ public partial class PaneView : UserControl
         var sel = Selected;
         int folders = Items.Count(e => e.IsDir), files = Items.Count() - folders;
         Footer.Text = sel.Count > 0
-            ? $"{sel.Count} selected  ·  {MainWindow.Fmt(sel.Sum(e => Math.Max(0, e.Size)))}"
+            ? $"{sel.Count} selected  ·  {(sel.Any(e=>e.Size<0)?sel.Count==1?"measuring…":MainWindow.Fmt(sel.Sum(e=>Math.Max(0,e.Size)))+"+":MainWindow.Fmt(sel.Sum(e=>e.Size)))}"
             : searchQuery != null
                 ? $"{items.Count} found for “{searchQuery}”{(searching ? "  ·  searching…" : items.Count >= MaxResults ? $"  ·  stopped at {MaxResults}" : "")}  ·  Esc goes back"
             : view?.Filter != null
@@ -1826,13 +1871,14 @@ public partial class PaneView : UserControl
 
     public void SetSelection(Func<Entry, bool> keep)
     {
-        bulkSelect = true;
+        bool wasBulk=bulkSelect;bulkSelect = true;
         try
         {
             List.SelectedItems.Clear();
             foreach (Entry e in view) if (!e.IsUp && keep(e)) List.SelectedItems.Add(e);
         }
-        finally { bulkSelect = false; }
+        finally { bulkSelect = wasBulk; }
+        if(wasBulk)return;
         UpdateFooter();
         StatsChanged?.Invoke();
     }
@@ -2159,8 +2205,8 @@ public partial class PaneView : UserControl
     {
         sortKey = key; sortDesc = desc;
         ShowSortArrow();
-        SortIcon.Text = desc ? "" : ""; // down / up arrow
-        SortName.Text = key;
+        SortButton.ToolTip=$"Sort: {key}, {(desc?"descending":"ascending")}";
+        System.Windows.Automation.AutomationProperties.SetName(SortButton,$"Sort by {key}, {(desc?"descending":"ascending")}");
     }
 
     // The column headers are only there in Details, so every mode gets this menu.
@@ -2253,8 +2299,8 @@ public partial class PaneView : UserControl
     public enum ViewMode { Details, List, IconsM, IconsL, IconsXL }
     static readonly (ViewMode mode, string name, string glyph, int size)[] Modes =
     {
-        (ViewMode.IconsXL, "XL Icons", "\uE8B9", 192), (ViewMode.IconsL, "L Icons", "\uE8B9", 112),
-        (ViewMode.IconsM, "M Icons", "\uE8B9", 64), (ViewMode.List, "List", "\uE8FD", 0), (ViewMode.Details, "Details", "\uE8EF", 0),
+        (ViewMode.IconsXL, "Extra large icons", "\uE7F4", 192), (ViewMode.IconsL, "Large icons", "\uE770", 112),
+        (ViewMode.IconsM, "Medium icons", "\uE770", 64), (ViewMode.List, "List", "\uEA37", 0), (ViewMode.Details, "Details", "\uE700", 0),
     };
     ViewBase details;
     public ViewMode Mode { get; private set; } = ViewMode.Details;
@@ -2277,7 +2323,7 @@ public partial class PaneView : UserControl
         Mode = mode;
         PlaceNameEdge();
         var m = Modes.First(x => x.mode == mode);
-        ViewIcon.Text = m.glyph; ViewName.Text = m.name;
+        ShowViewChoice();
         if(!IsWidget)Settings.Views[Name] = mode;
         var sel = List.SelectedItem;
         // Template, item style and panel are three separate changes, and the list would rebuild its
@@ -2395,7 +2441,7 @@ public partial class PaneView : UserControl
         {
             Mode = mode;
             var m = Modes.First(x => x.mode == mode);
-            ViewIcon.Text = m.glyph; ViewName.Text = m.name;
+            ShowViewChoice();
             Settings.Views[Name] = mode;
         }
         StartThumbs(); // a bigger size may want the larger thumbnails; ones already big enough are kept
@@ -2440,7 +2486,7 @@ public partial class PaneView : UserControl
             var mi = new MenuItem
             {
                 Header = m.name, InputGestureText = $"Ctrl+Shift+{Modes.Length - n++}",
-                Icon = new TextBlock { Text = m.glyph, FontFamily = new FontFamily("Segoe Fluent Icons"), FontSize = 13 },
+                Icon = ExplorerIcons.Image(mode.ToString()),
                 FontWeight = mode == Mode ? FontWeights.SemiBold : FontWeights.Normal,
             };
             mi.Click += (_, _) => SetView(mode);
@@ -2449,6 +2495,13 @@ public partial class PaneView : UserControl
     }
 
     public string ViewModeName => Modes.First(x => x.mode == Mode).name;
+
+    void ShowViewChoice()
+    {
+        ViewIcon.SetResourceReference(Image.SourceProperty,"CommandIcon."+Mode);
+        ViewButton.ToolTip=$"View: {ViewModeName} (Ctrl+Shift+1…5)";
+        System.Windows.Automation.AutomationProperties.SetName(ViewButton,"View: "+ViewModeName);
+    }
 
     // Real Windows icons for Details/List rows (instead of outline glyphs). Plain files share one icon
     // per extension, so those are looked up once; exe/lnk/ico and folders carry their own.

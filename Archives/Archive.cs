@@ -52,7 +52,17 @@ internal static partial class Archive
     static SharpSevenZipExtractor Open(string path)
     {
         _ = native.Value;
-        try { return new SharpSevenZipExtractor(path, passwords.GetValueOrDefault(path, "")); }
+        try
+        {
+            // These are declared ZIP containers. SharpSevenZip's extension
+            // inference does not know APK/NuGet/JAR names when the signature is
+            // invalid; select the declared container instead of throwing an
+            // unrelated ArgumentException on the icon worker.
+            string extension=System.IO.Path.GetExtension(path).ToLowerInvariant();
+            return extension is ".apk" or ".nupkg" or ".jar" or ".vsix" or ".whl"
+                ?new SharpSevenZipExtractor(path,passwords.GetValueOrDefault(path,""),InArchiveFormat.Zip)
+                :new SharpSevenZipExtractor(path,passwords.GetValueOrDefault(path,""));
+        }
         catch (SharpSevenZipException ex) { throw new IOException("Archive unavailable: unsupported/corrupt data, a missing volume or a password may be required.", ex); }
     }
 

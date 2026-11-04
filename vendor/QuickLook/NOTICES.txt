@@ -7,7 +7,8 @@ Copyright (c) 2017-2026 QL-Win Contributors
 Selected source files and SHA256 values: source-manifest.json.
 Unmodified inspection sources: original/ (plain .cs.txt, not compiled).
 Adapted, compiled source: Preview/IViewer.cs, Preview/PreviewSession.cs,
-Preview/PreviewModules.cs, Preview/BuiltinViewer.cs, Preview/MarkdownContent.cs.
+Preview/PreviewModules.cs, Preview/BuiltinViewer.cs, Preview/MarkdownContent.cs,
+and the specialist viewers/inspectors under Preview/ listed in docs/PREVIEW-S13.md.
 
 IViewer/ContextObject: prepare/view/cleanup lifecycle and per-viewer context.
 TextViewer/Plugin.cs: bounded text/binary detection and low-priority text choice.
@@ -17,6 +18,17 @@ script resources and network/file resource bridge are replaced with native WPF.
 ImageViewer/ArchiveViewer/FontViewer Plugin.cs: selected format and lifecycle
 contracts; existing File Labs WPF/Windows renderers serve the bounded inventory.
 Donor scope is selective; see docs/PREVIEW-MODULES.md for exact included formats.
+
+S13 imports selected source for CsvViewer, DbViewer, MailViewer, CertViewer,
+AppViewer, ThumbnailViewer, MediaInfoViewer, BinaryViewer, ELFViewer, DumpViewer,
+PrefetchViewer, ChmViewer, CLSIDViewer and OfficeViewer. Their original source
+and hashes are preserved beside the earlier imports. Pathweft adapts the format,
+inspection and lifecycle boundaries to its existing WPF/HTML/native host; donor
+export/edit functions, unrestricted browsers, HexEditor, automatic unblocking,
+standalone services and plugin downloading are not imported. Office uses a
+qualified installed Windows preview handler inside the existing PreviewHost.
+Exact separately licensed parser sources/packages/notices and native MediaInfo
+are recorded under vendor/Specialists and included in corresponding sources.
 
 The selected source files carry GPL-3.0-or-later headers, including IViewer.cs,
 despite the directory-level Common MIT license. Preserve both notices. The
