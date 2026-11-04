@@ -3,7 +3,7 @@
 Read `docs/SPECIFICATION.md` first. It is authoritative; the plan and this file
 do not change its requirements or the user's standing instructions.
 
-Current authorization2026-11-04/spec0.51: implement S13 -> S9 -> S11 as one
+Current authorization2026-11-04/spec0.52: implement S13 -> S9 -> S11 as one
 combined release outcome. S13 is COMPLETE for assigned source/integration;
 S9 is COMPLETE for assigned source/integration and S11 ACTIVE. Close complete
 source/integration acceptance for each before advancing; S11 owns shared final
@@ -12,6 +12,20 @@ for all three. No intermediate releases. S12/S6/S7 remain outside this request.
 Preserve user data/running state; use existing hidden app-owned diagnostics and
 the required source/dependency/license inventory. Earlier plan-only snapshots
 below remain historical and do not revoke this authorization.
+2026-11-05 checkpoint: normal1.1.18 at8191b559 is published, independently
+retrieved/qualified and installed with10672 matching members, restarted main/
+helper, readiness,22 routes and shortcut identity. User confirms working native
+StartAllBack presentation, but pin/unpin/remove/restart remain unproven. Their
+new JUMP-01 correction requires Explorer's actual Pinned/Frequent structure;
+the old custom categories/tasks are still shipped. S11 stays ACTIVE for this
+internal acceptance blocker and corrected qualification/delivery; no second
+implementation stage is ACTIVE. S14 popup/update feedback remains outstanding.
+Diskweft evaluation is documented in docs/DISKWEFT-INTEGRATION.md. The user
+selects a current-pane analysis toggle beside Terminal with tree/Space used/
+descending order and exact view restore, using Pathweft's style and current path.
+No full donor UI, separate window/tab, endpoint app or MCP dependency. This is
+evaluation only; no scanner import or new implementation stage is activated.
+Latest delivery/assessment paragraphs supersede stale candidate-only snapshots.
 The user explicitly chose full embedded Office navigation with its larger
 runtime. Qualify the user-staged WordCraft/GridCraft/DeckCraft candidates under
 PREVIEW-22; preserve full format/navigation acceptance and assess actual output.

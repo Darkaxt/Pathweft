@@ -1,6 +1,6 @@
 # Implementation and reconciliation
 
-Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.51, 2026-11-04,
+Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.52, 2026-11-05,
 including the user-authorized continued comparison requirement TRANSFER-07.
 
 Current execution checkpoint (2026-11-04): user authorization covers S13, S9 and
@@ -14,6 +14,31 @@ S11 owns one shared final normal release and
 independent/installed delivery verification for all three stages. That required
 delivery work is tracked explicitly to S11, with no intermediate publication.
 No implementation stage is complete until its assigned criteria pass.
+
+Delivery checkpoint2026-11-05: normal1.1.18 is published at8191b55972700af87f963f6266c6373f61d64dc2.
+All six published asset digests, independently retrieved source/dependencies and
+native/app packaged workflows pass. Actual installed readback verifies10672
+members, restarted main123876/helper130928, readiness,22 route values and
+Darkaxt.Pathweft shortcut identity. Final local package127596/independent29992 receipts and
+the installed receipt remain private; the prior candidate-only checkpoint below
+is historical. S13/S9's shared delivery assignments are now satisfied.
+The user shows StartAllBack's actual Pathweft destinations and confirms working.
+Full native pin/unpin/remove/restart acceptance is still not independently proven.
+The requested Explorer-style category correction is an additional internal
+JUMP-01 acceptance blocker:1.1.18 still publishes custom groups/tasks. Keep S11
+ACTIVE until native Pinned/Frequent publication, privacy/removal/direct launch
+and final delivery of the correction are qualified. The resolution condition is
+actual corrected native behavior, not renaming custom headings or relying on
+the existing1.1.18 package. No other implementation stage is ACTIVE.
+
+Current bounded investigation: [Diskweft source-integration assessment](DISKWEFT-INTEGRATION.md).
+The user selected a reversible analysis mode in the current pane: Terminal-adjacent
+toggle, Pathweft styling, current-path root, expandable tree, Space used column,
+largest-first sibling order and exact standard-view restore. No standalone UI,
+new window or new tab. Source feasibility is assessed; runtime/performance and
+integration acceptance are unverified. No new implementation stage is activated.
+S14 remains outstanding and ahead of unrelated StartAllBack work; the assessment
+does not reprioritize or silently implement its proposed scanner integration.
 
 Plan addition2026-11-04: S14 is NOT STARTED after the combined S13/S9/S11
 delivery. WINDOW-01..03/UPDATE-02 cover a complete auxiliary-window design
@@ -124,9 +149,9 @@ This residual is cleanup work, not evidence of passed Office integration.
 
 | Stage | Status | Satisfied | Remaining / blockers | Tracked delivery work |
 | --- | --- | --- | --- | --- |
-| S13 | COMPLETE | PREVIEW-21..37, CORE-18 and bounded MENU-03 source/integration acceptance pass. Thirteen specialist content/policy/lifecycle paths retain PID101932/102932/97712 and prior integrated receipts; Office closes with PID101788/117348/108864. CORE-18 PID84388, existing previews PID79048, shared PDF PID87760, modes PID114112 and compact/header/settings UI PID39948 pass. Source/license/runtime inventory and corresponding-source staging pass as recorded above | None within assigned source/integration acceptance | S11 final delivery: all S13 modules, CORE-18, modes and compact UI in the independently retrieved package and installed update |
-| S9 | COMPLETE | Inventory/grouped menus, routed keyboard/theme100/150%, real archive edits/extraction and widget reveal pass PID127940/122788. Native122788 verifies Windows clipboard Copy/Cut/Paste and actual Shell Open. Native128032 verifies exact file/folder/shortcut Properties visibility/shown state, search dismissal and actual HWND destruction, regular native recycle completion and exact hash-matched restore. Owned job empty, user input desktop unchanged, no host activation | None within assigned source/integration acceptance. Test observations distinguish noninteractive station from private WinSta0 desktop; no native reparenting or product recycling workaround | S11 final delivery: menu workflows in the actual package |
-| S11 | ACTIVE | S13/S9 prerequisites pass. Native PID126624 verifies accepted folder categories, independent native recent readback, real cold/warm launches, Unicode/UNC/root quoting, saved-removal/privacy inputs, refresh suppression and exact test-identity teardown without host activation. Candidate1.1.18 actual packaged PID108292 passes all fourteen specialist categories, Office navigation/crash recovery/legacy+Visio fallback, native destinations and existing media/model; original passing packaged32/64 Shell/selftest results reused for unchanged members | Actual installed pin/unpin/open/remove and StartAllBack presentation; shortcut/update ownership; committed final package/source/release/retrieval and installed verification | None beyond S11 |
+| S13 | COMPLETE | PREVIEW-21..37, CORE-18 and bounded MENU-03 source/integration acceptance pass. Thirteen specialist content/policy/lifecycle paths retain PID101932/102932/97712 and prior integrated receipts; Office closes with PID101788/117348/108864. CORE-18 PID84388, existing previews PID79048, shared PDF PID87760, modes PID114112 and compact/header/settings UI PID39948 pass. Source/license/runtime inventory and corresponding-source staging pass as recorded above. Shared1.1.18 independent/installed delivery passes | None within assigned source/integration acceptance | Shared S11 delivery assignment satisfied in1.1.18 |
+| S9 | COMPLETE | Inventory/grouped menus, routed keyboard/theme100/150%, real archive edits/extraction and widget reveal pass PID127940/122788. Native122788 verifies Windows clipboard Copy/Cut/Paste and actual Shell Open. Native128032 verifies exact file/folder/shortcut Properties visibility/shown state, search dismissal and actual HWND destruction, regular native recycle completion and exact hash-matched restore. Owned job empty, user input desktop unchanged, no host activation. Actual independently retrieved/installed1.1.18 delivery passes | None within assigned source/integration acceptance. Test observations distinguish noninteractive station from private WinSta0 desktop; no native reparenting or product recycling workaround | Shared S11 delivery assignment satisfied in1.1.18 |
+| S11 | ACTIVE | S13/S9 prerequisites and normal1.1.18 independent/installed delivery pass. Native PID126624 verifies accepted folder links, independent recent readback, real cold/warm launches, Unicode/UNC/root quoting, saved-removal/privacy inputs and scoped teardown. Final package PID127596 and independent PID29992 pass actual specialist/Office/fallback/native/existing workflows. User confirms working StartAllBack presentation | Internal JUMP-01 blocker: replace custom Quick access/Recent folders and Home/Downloads tasks with actual native Pinned/Frequent behavior; verify real Frequent readback/privacy/direct links and corrected delivery. External JUMP-02 evidence gap: actual user pin/unpin/remove/restart actions are not all independently observed; retain criteria and existing pending question | None beyond S11 |
 | S14 | NOT STARTED | Requirements recorded only | WINDOW-01..03/UPDATE-02; inventory/apply a consistent auxiliary-window contract and immediate manual check feedback after the current combined delivery | Its own normal release, independent package and installed-update verification |
 
 The earlier planning snapshot and historical per-stage delivery wording below

@@ -1,6 +1,6 @@
 # Pathweft specification
 
-Version 0.51 - 2026-11-04. Owner: Darkaxt.
+Version 0.52 - 2026-11-05. Owner: Darkaxt.
 
 This is the authoritative specification. The derived plan must preserve every
 requirement and acceptance criterion. Material scope changes require explicit
@@ -18,6 +18,27 @@ verification criterion. S13/S9 close against their complete source/integration
 criteria; their release verification is explicitly owned by S11, and overall
 completion requires it. S12 and S6/S7 remain outside this implementation request.
 Preserve the running product, existing user state and completed S8 evidence.
+
+2026-11-05 delivery readback: normal1.1.18 at8191b55972700af87f963f6266c6373f61d64dc2
+is published and independently retrieved/qualified. The actual installed update
+matches all10672 manifest members; restarted main/helper, readiness,22 folder
+route values and the shortcut AppID pass. The user's screenshot confirms native
+StartAllBack folder-menu presentation and reports it working. This does not
+independently demonstrate every pin/unpin/remove/restart action in JUMP-02.
+Their subsequent correction requires Explorer's native Pinned/Frequent category
+structure rather than the custom Quick access/Recent folders and Home/Downloads
+Tasks in1.1.18. S11 remains ACTIVE for that correction and its qualification;
+do not label the requested revision delivered based on the existing release.
+
+The user reiterates S14's outstanding popup unification and manual update-check
+confirmation, ahead of unrelated StartAllBack work. They request an evaluation
+of borrowing Diskweft's engine, clarifying that it must use Pathweft's own style
+and the currently open path, and then selecting a reversible mode in the current
+pane: a compact button beside Terminal, expandable folder tree, Space used
+column and descending size order; clicking again restores the standard view.
+No separate Diskweft UI/window is wanted. See [the assessment](DISKWEFT-INTEGRATION.md).
+This evaluation does not activate another implementation stage or authorize a
+standalone-app/MCP dependency. S14 remains NOT STARTED; S6/S7 stay postponed.
 
 The user adds planned S14 (NOT STARTED) for consistent auxiliary-window design
 and immediate manual update-check feedback, after the currently authorized
@@ -1120,7 +1141,7 @@ as part of recording this plan.
 
 | ID | Requirement and acceptance |
 | --- | --- |
-| JUMP-01 | Qualify supported native Shell/WPF Jump List APIs and stable Pathweft application identity. Show pinned destinations and recent/frequent folder destinations in the expandable app entry and taskbar Jump List. Preserve Windows-controlled pin/unpin/removal and recent-items privacy preferences; do not overwrite Explorer/Opus lists. Respect removed/rejected items and retain pinned state across updates. A Tasks-only menu does not satisfy folder-destination acceptance. |
+| JUMP-01 | Qualify supported native Shell/WPF Jump List APIs and stable Pathweft application identity. Match Explorer's native Pinned and Frequent category structure in the expandable app entry and taskbar Jump List. Windows owns pinning and frequent ordering; do not imitate these with custom categories or substitute Quick access/Recent folders or Home/Downloads tasks. Preserve Windows-controlled pin/unpin/removal and recent-items privacy preferences; do not overwrite or copy Explorer/Opus lists. Respect removed/rejected items and retain pinned state across updates. Qualify actual native Frequent readback for Pathweft's argument-bearing folder links; a property assignment or renamed custom category alone does not pass. A Tasks-only menu does not satisfy folder-destination acceptance. |
 | JUMP-02 | Folder destinations launch Pathweft directly with the correct Unicode/quoted path in cold and running-instance states, independently of the optional default-folder setting. Qualify virtual/offline destinations explicitly and preserve existing open/reveal semantics. Add applicable tasks through existing application actions, not a second manager. Verify actual native Jump List contents and user pin/unpin/open/remove behavior, restart/update/uninstall ownership and final release delivery. StartAllBack is a caller-compatibility check for this native feature, not permission to resume S6 or restart Sandbox. |
 
 Native reference: [Microsoft WPF JumpList](https://learn.microsoft.com/en-us/dotnet/api/system.windows.shell.jumplist).
