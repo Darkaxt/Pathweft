@@ -1,6 +1,6 @@
 # Implementation and reconciliation
 
-Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.64, 2026-11-05,
+Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.65, 2026-11-06,
 including the user-authorized continued comparison requirement TRANSFER-07.
 
 Current next-update request: S17 ACTIVE for TRANSFER-16, differences-first
@@ -17,7 +17,7 @@ behavior. Qualify each complete feature sequentially, then integrate and deliver
 the combined outcome. Previous host-mode state/restore/lifecycle criteria remain.
 Explicit pin is also authorized: default follows; pinned retains the current
 preview; unpin catches up immediately in the same host. The subsequently approved
-CORE-12 folder/compass icon joins this same release, with transparent multiresolution
+CORE-22 folder/compass icon joins this same release, with transparent multiresolution
 assets and preserved Windows identity. Source preview-selection61048 and broader
 modes57588 pass actual following/pin/unpin and existing renderer/host lifecycle.
 At that checkpoint transfer review, icon and final combined delivery remained;
@@ -25,12 +25,15 @@ the current source reconciliation below supersedes those implementation gaps.
 Source60620 now verifies TRANSFER-16 actual four-choice outcomes, filtered metadata
 matches with different contents, precise size/time differences, matching-file
 binding and all-matching review. Rendered dark/light100/150 and prior virtualized
-120-file/cancellation behavior pass. CORE-12 master/ICO size-sheet checks pass;
+120-file/cancellation behavior pass. CORE-22 master/ICO size-sheet checks pass;
 embedded final-package/Windows identity checks remain. Reconciliation/refactoring
 assessment: one preview session still owns content; explicit pin replaces the old
 implicit guard, and one filtered projection leaves the transfer plan authoritative.
 No additional abstraction or consolidation stage is required. Final combined1.1.24
 package/publication/independent/installed gates remain internal advancement blockers.
+Reconciliation correction: the icon is CORE-22. CORE-12 already belongs to the
+delivered useful-statistics behavior; this numbering correction preserves both
+requirements and their original scope. No production behavior changes here.
 
 The prior authorized round below is complete.
 
@@ -314,7 +317,7 @@ This residual is cleanup work, not evidence of passed Office integration.
 | S11 | COMPLETE | Corrected native126032 source/integration: actual Frequent readback/removal/privacy/reconstruction, cold/warm links and installed-list preservation; user reports pin/restart persistence | None in assigned source/integration scope | S15 final packaged/independent/installed delivery, including native menu update preservation |
 | S14 | COMPLETE | Native91140 verifies shared layouts/themes/text/96-144DPI, navigation, actual updater HTTP/retry/cancellation/download/handoff.102436 verifies real successful transfer dismissal, Undo and adverse/multi-job retention.103700 verifies preview host/session/lease/lifecycle preservation. Scope reconciliation and closure assessment pass | None within assigned source/integration acceptance | S15 combined final release/independent/installed delivery |
 | S15 | COMPLETE | SPACE/CORE source workflows44956/19244/51812/48584, transfer53320 and private native clipboard26532 pass. Full final57312/independent51296 verify actual1.1.23 package, sources and native/app boundaries. Installed58076 verifies10674 members, restarted main/helper/readiness,22 routes and shortcut/pin identity | None in assigned scope | None; combined normal1.1.23 delivery verified, no later stage activated |
-| S17 | ACTIVE | PREVIEW-38 source61048/57588 verifies selection-following, pin/unpin and renderer/host lifecycle; TRANSFER-16 and CORE-12 contracts established | Implement/qualify differences-first review and approved folder/compass icon; normal combined release/independent/installed gates | None deferred; this stage owns its complete next-update outcome |
+| S17 | ACTIVE | PREVIEW-38 source61048/57588 verifies selection-following, pin/unpin and renderer/host lifecycle; TRANSFER-16 source60620 and CORE-22 ICO sizes pass | Actual combined package, normal release, independent and installed verification remain | None deferred; this stage owns its complete next-update outcome |
 
 The earlier planning snapshot and historical per-stage delivery wording below
 are superseded only for this combined request's sequencing by spec0.40. No
@@ -796,7 +799,7 @@ plan neither authorizes itself nor adds approval checkpoints.
 | S11 - Native pinned/frequent folder Jump Lists | COMPLETE | JUMP-01..02; affected CORE-01/02 and LIFE/DELIVERY | S9 COMPLETE | Corrected native126032 source/integration passes; S15 owns combined final delivery/native update preservation. |
 | S14 - Window design consistency and update feedback | COMPLETE | WINDOW-01..03, UPDATE-02, TRANSFER-14; affected CORE-03/LIFE/DELIVERY | S11 source/integration COMPLETE | Actual auxiliary/HTTP/update91140, real completion/error/multi-job transfer102436 and floating-preview lifecycle103700 pass. Combined delivery remains S15. |
 | S15 - Current-pane disk analysis | COMPLETE | SPACE-01..05, CORE-11/19..21, TRANSFER-15; affected CORE/LIFE/DELIVERY | S14 source/integration COMPLETE | Source/native acceptance plus full final57312/independent51296 and installed58076 close normal1.1.23 delivery. No required blocker or deferral remains. |
-| S17 - Transfer review, preview and icon refinements | ACTIVE | TRANSFER-16, PREVIEW-38, CORE-12; affected LIFE/DELIVERY | S15 delivered | Difference-only review/newer warnings/full-set actions; selection-following/pinned PiP/Windowed; approved transparent folder/compass icon with preserved Windows identity. Complete feature qualifications then one combined verified normal release. |
+| S17 - Transfer review, preview and icon refinements | ACTIVE | TRANSFER-16, PREVIEW-38, CORE-22; affected LIFE/DELIVERY | S15 delivered | Difference-only review/newer warnings/full-set actions; selection-following/pinned PiP/Windowed; approved transparent folder/compass icon with preserved Windows identity. Complete feature qualifications then one combined verified normal release. |
 | S16 - Craft core refresh and additional renderers (proposed) | NOT STARTED | Scope assessment in CRAFT-CORE-REVIEW.md; implementation requirements to establish before activation | S15 delivered; Pathweft-related work precedes unrelated shell integration | Evaluate existing Office core refresh and additional Photo/Vector/Fig/PDF libraries using source-built DLLs/owned workers; no installed-product or MCP dependency. No implementation started. |
 | S12 - Tresorit capability investigation | NOT STARTED | TRES-01..04 | S15 delivered; proposed S16 considered first | Supported API/client assessment, bounded REA as needed, evidence-backed capability matrix/decision and implementation proposal. Investigation only; no cloud mutation or integration implementation. |
 | S6 - Native StartAllBack search | BLOCKED | SAB-01..06; affected SEARCH/CORE/LIFE/DELIVERY criteria | Parked until Pathweft-first work S13/S9/S11/S12 is closed and execution is resumed; retain unresolved native feasibility boundaries | Investigation only; no complete SAB criterion. Qualify native groups/provider/cancellation/handoff/lifecycle/direct routing and independently verified adapter release in S6; no automatic Sandbox restart. |
@@ -844,7 +847,7 @@ owns its complete release/delivery gate; S12 delivers research documents only.
 | CORE-11, TRANSFER-15 | S15 | Shared capacity-health colors, content-ready conflict table, clean Cancel dismissal after exit, native clipboard preservation/repeat Paste and visible actual file errors |
 | TRANSFER-16 | S17 | Metadata-difference review, newer-destination ordering/warnings, matching-file reveal, full-set choices, distinguishing values and verified next release |
 | PREVIEW-38 | S17 | Selection-following PiP/Windowed, preserved host state/teardown, small accessible glyphs and combined next release |
-| CORE-12 | S17 | Approved yellow folder/darker compass icon, transparent multiresolution assets, embedded WPF/native use and unchanged Windows identity |
+| CORE-22 | S17 | Approved yellow folder/darker compass icon, transparent multiresolution assets, embedded WPF/native use and unchanged Windows identity |
 | TRES-01..04 | S12 | Evidence-backed Tresorit investigation and implementation proposal; execution remains NOT STARTED |
 | PREVIEW-21..36 | S13 | All fourteen remaining specialist categories, exact format coverage, integrated qualification and final release/installed verification in S13 |
 | PREVIEW-19 | S8 | Canonical drive/share identity for static HTML, retained isolation and final1.1.16 delivery |

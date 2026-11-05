@@ -1,8 +1,8 @@
 # Pathweft specification
 
-Version 0.64 - 2026-11-05. Owner: Darkaxt.
+Version 0.65 - 2026-11-06. Owner: Darkaxt.
 
-Approved branding direction2026-11-05, CORE-12, assigned to ACTIVE S17:
+Approved branding direction2026-11-05, CORE-22, assigned to ACTIVE S17:
 replace the application icon with the user-approved yellow folder and compass.
 Use a clear darker compass silhouette at small title/taskbar sizes; retain
 polished depth/detail at larger sizes without fine lettering becoming noise.
@@ -19,7 +19,7 @@ default unpinned follows selection; pinned retains the displayed item while
 browsing/no selection, across host changes. Unpin immediately follows the current
 selection in the same host. Keep pin state visibly/accessibly distinct and clear
 it on explicit preview close; it is a session control, not a new persisted setting.
-The user's subsequent approval activates CORE-12's folder/compass replacement.
+The user's subsequent approval activates CORE-22's folder/compass replacement.
 Preserve the selected host mode/bounds on file changes; replace content/title/
 icon and release the previous renderer/source lease correctly. Obsolete async
 completions must not overwrite the latest selection. Keep mode-only transitions
@@ -994,7 +994,7 @@ criteria apply within the implementing stage and again at the packaged boundary.
 | CORE-09 | S8 This PC drive capacity/free/usage and network details plus truthful external connection speeds, as specified in current scope. Verify actual inventory, live refresh/navigation, unknown media/speed, native USB evidence and dark/light responsive layout. |
 | CORE-10 | S8 dynamic detail columns described in current scope; verify data-driven visibility, asynchronous metadata/results, width/sort preservation and contextual navigation. |
 | CORE-11 | S8 measured free-space percentages, shared capacity warning colors and provider-based cloud drive identity, as specified in current scope. Verify actual mounts and unavailable capacity. |
-| CORE-12 | S17 approved yellow-folder/dark-compass application icon. Transparent multiresolution assets must remain legible at small sizes, retain polished larger detail, appear in embedded WPF/native/package surfaces, and preserve the existing Windows application/shortcut/Jump List identity. |
+| CORE-22 | S17 approved yellow-folder/dark-compass application icon. Transparent multiresolution assets must remain legible at small sizes, retain polished larger detail, appear in embedded WPF/native/package surfaces, and preserve the existing Windows application/shortcut/Jump List identity. |
 
 On 2026-10-31, the user also requested EverythingToolbar's four inline search
 toggles: Match case, Match whole word, Match path and Regex. They belong at the
