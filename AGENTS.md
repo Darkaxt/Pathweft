@@ -1,5 +1,15 @@
 # Pathweft development
 
+Final2026-11-05: S15 COMPLETE through normal1.1.23/fc01ce1, published six assets,
+verified remote source/tag/digests and independently retrieved sources/runtime.
+Actual final57312 and independently downloaded51296 pass full native/app workflows.
+Installed readback58076 verifies10674 members, new main14168/helper52016, helper
+readiness,22 owned routes and unchanged Darkaxt.Pathweft shortcut/pin identity.
+User-owned updater and profile bindings are preserved. TRANSFER-15, startup and
+blue capacity-color corrections are delivered; no required blocker/deferral remains
+in this round. S11/S14/S15 COMPLETE, no ACTIVE stage. S16/S12/S6/S7 are not activated.
+The dated checkpoints below are historical and must not restart completed work.
+
 Current2026-11-05/spec0.60: S15 ACTIVE, correction1.1.23 not published.
 Cancelled optional SDK calls release their caller without abandoning the native
 dispatcher; analysis uses the existing filesystem fallback while that send drains.
