@@ -704,9 +704,7 @@ public partial class MainWindow : Window
         size.Text=d.Total<=0?"Quota unavailable":d.CloudQuota?$"{used/1073741824:N0} / {d.Total/1073741824.0:N0} GiB":$"{used/1e9:N0} / {d.Total/1e9:N0} GB";
         var bar = new Grid { Height = 2, Margin = new(0, 4, 0, 1),Visibility=d.Total>0?Visibility.Visible:Visibility.Collapsed };
         bar.Children.Add(new Border { Background = Hex("#1AFFFFFF") });
-        var fill = new Border { Background = (Brush)FindResource("Accent"), HorizontalAlignment = HorizontalAlignment.Left };
-        int warning=DrivePresentation.Warning(d.Total,d.Free);
-        if(warning>0)fill.Background=Hex(warning==2?"#E5484D":"#D99024");
+        var fill = new Border { Background = DrivePresentation.Fill(d.Total,d.Free), HorizontalAlignment = HorizontalAlignment.Left };
         bar.SizeChanged += (_, e) => fill.Width = e.NewSize.Width * frac;
         bar.Children.Add(fill);
         Grid.SetColumn(name, 1); Grid.SetColumn(size, 2);
@@ -1004,8 +1002,8 @@ public partial class MainWindow : Window
         DrivePct.Text = $"{used * 100:0}% full";
         DriveBar.ColumnDefinitions[0].Width = new GridLength(used, GridUnitType.Star);
         DriveBar.ColumnDefinitions[1].Width = new GridLength(1 - used, GridUnitType.Star);
-        bool full = used > 0.9; // the same warning as the sidebar's drive bars
-        var colour = full ? Hex("#FF3347") : (Brush)FindResource("Accent");
+        bool full = DrivePresentation.Warning(d.Total,d.Free)==2;
+        var colour = DrivePresentation.Fill(d.Total,d.Free);
         DriveFill.Background = DriveIcon.Foreground = colour;
         DrivePct.Foreground = full ? colour : (Brush)FindResource("Muted");
         DriveFill.Effect = full ? FullGlow : null;
@@ -1153,17 +1151,12 @@ public partial class MainWindow : Window
         if (transfersWindow == null)
         {
             jobView = new System.Windows.Data.ListCollectionView(jobs);
-            jobView.GroupDescriptions.Add(new System.Windows.Data.PropertyGroupDescription(nameof(Job.StateGroup)));
             jobView.SortDescriptions.Add(new System.ComponentModel.SortDescription(nameof(Job.StateOrder), System.ComponentModel.ListSortDirection.Ascending));
             jobView.SortDescriptions.Add(new System.ComponentModel.SortDescription(nameof(Job.Seq), System.ComponentModel.ListSortDirection.Descending));
             var list = new ItemsControl { ItemTemplate = (DataTemplate)FindResource("JobCard"), ItemsSource = jobView };
-            var header = new FrameworkElementFactory(typeof(TextBlock));
-            header.SetBinding(TextBlock.TextProperty, new System.Windows.Data.Binding("Name"));
-            header.SetValue(TextBlock.ForegroundProperty, FindResource("Muted"));
-            header.SetValue(MarginProperty, new Thickness(2, 6, 0, 6));
-            list.GroupStyle.Add(new GroupStyle { HeaderTemplate = new DataTemplate { VisualTree = header } });
 
-            totalSpeed = new TextBlock { FontSize = 26, FontWeight = FontWeights.SemiBold, Margin = new(0, 0, 12, 0) };
+            totalSpeed = new TextBlock { FontSize = 18, FontWeight = FontWeights.SemiBold, Margin = new(0, 0, 12, 0) };
+            totalSpeed.ToolTip="Combined copying and verification throughput";
             totalLegend = new TextBlock { Foreground = (Brush)FindResource("Muted"), VerticalAlignment = VerticalAlignment.Bottom, Margin = new(0, 0, 0, 5), TextTrimming = TextTrimming.CharacterEllipsis };
             var top = new DockPanel { Margin = new(0,0,0,8) };
             DockPanel.SetDock(totalSpeed, Dock.Left);
@@ -1219,9 +1212,9 @@ public partial class MainWindow : Window
         bool busy = jobs.Any(j => j.Active);
         transfersTop.Visibility = busy ? Visibility.Visible : Visibility.Collapsed;
         totalChart.Visibility = busy && totalChart.HasData ? Visibility.Visible : Visibility.Collapsed;
-        totalSpeed.Text = running.Count > 0 ? $"{Fmt((long)total)}/s" : jobs.Any(j => j.HasConflicts) ? "Waiting for you" : jobs.Any(j => j.Active) ? "Waiting" : "Done";
+        totalSpeed.Text = running.Count > 0 ? $"{Fmt((long)total)}/s" : jobs.Any(j => j.HasConflicts) ? "Review replacements" : jobs.Any(j=>j.Phase==Phase.Scanning)?"Scanning files…":jobs.Any(j => j.Active) ? "Queued" : "Done";
         totalLegend.Inlines.Clear();
-        foreach (var j in running)
+        foreach (var j in running.Count>1?running:new List<Job>())
         {
             if (totalLegend.Inlines.Count > 0) totalLegend.Inlines.Add(new System.Windows.Documents.Run("   "));
             totalLegend.Inlines.Add(new System.Windows.Documents.Run("■ ") { Foreground = j.Hue });
@@ -1273,16 +1266,20 @@ public partial class MainWindow : Window
         }
         Left.Refresh(); Right.Refresh();
         RefreshDrives(); UpdateStats(); // a finished copy or move changes what's free
-        // Completion owns dismissal, after Undo and arrival selection have been
-        // recorded. Partial, cancelled and failed jobs remain available to review.
-        if(job.Successful)DismissJob(job);
+        // Completion owns dismissal, after Undo and arrival selection. Explicit
+        // clean cancellation dismisses only after the worker actually finishes.
+        if(job.Successful||job.DismissWhenCancelled&&job.Phase==Phase.Cancelled&&!job.HasTransferErrors)DismissJob(job);
     });
 
-    void JobCard_Loaded(object s, RoutedEventArgs e) => Motion.Enter((UIElement)s, rise: 10); // a new transfer slides up into place
+    void ConflictTable_SizeChanged(object sender,SizeChangedEventArgs args)
+    {
+        var list=(ListView)sender;
+        if(list.View is GridView grid)grid.Columns[0].Width=Math.Max(100,list.ActualWidth-324);
+    }
 
     static Job JobOf(object sender) => (Job)((FrameworkElement)sender).DataContext;
     void JobPause_Click(object s, RoutedEventArgs e) { var j = JobOf(s); if (j.Paused) j.Resume(); else j.Pause(); }
-    void JobCancel_Click(object s, RoutedEventArgs e) => JobOf(s).Cancel();
+    void JobCancel_Click(object s, RoutedEventArgs e){var job=JobOf(s);job.DismissWhenCancelled=true;job.Cancel();}
     void JobDismiss_Click(object s, RoutedEventArgs e) => DismissJob(JobOf(s));
     void DismissJob(Job job)
     {

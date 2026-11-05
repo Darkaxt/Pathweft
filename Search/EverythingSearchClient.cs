@@ -25,6 +25,12 @@ internal sealed class EverythingSearchClient
     readonly TaskCompletionSource stopped = new(TaskCreationOptions.RunContinuationsAsynchronously);
     readonly Queue<Request> queue = new();
     Request current;
+    // Read by optional folder-size callers. A cancelled native send remains
+    // owned by this dispatcher, but must not hold filesystem analysis behind it.
+    volatile Request sending;
+#if DEBUG
+    internal static Action<CancellationToken> BeforeNativeSend;
+#endif
     HwndSource window;
     uint nextReply;
     bool closing;
@@ -58,6 +64,8 @@ internal sealed class EverythingSearchClient
     internal static string FolderExpression(IEnumerable<string> paths)=>"folder: <"+string.Join(" | ",paths.Select(path=>"path:wfn:\""+System.IO.Path.TrimEndingDirectorySeparator(System.IO.Path.GetFullPath(path))+"\""))+">";
     internal async Task<Dictionary<string,long>> FolderSizesAsync(IEnumerable<string> paths,string instance,CancellationToken token)
     {
+        if(sending is {} blocked&&blocked.Token.IsCancellationRequested)
+            throw new InvalidOperationException("Everything IPC is still finishing a cancelled request. Folder sizes require filesystem measurement.");
         var result=new Dictionary<string,long>(StringComparer.OrdinalIgnoreCase);
         foreach(var batch in paths.Distinct(StringComparer.OrdinalIgnoreCase).Chunk(64))
         {
@@ -78,7 +86,9 @@ internal sealed class EverythingSearchClient
             request.Completion.TrySetCanceled(token);
             dispatcher.BeginInvoke(ProcessNext);
         });
-        await dispatcher.InvokeAsync(() =>
+        // Cancellation belongs to the request completion, not execution of its
+        // queued dispatcher callback. Native IPC may still own that dispatcher.
+        _ = dispatcher.BeginInvoke(() =>
         {
             if (closing) request.Completion.TrySetException(new ObjectDisposedException(nameof(EverythingSearchClient)));
             else { queue.Enqueue(request); ProcessNext(); }
@@ -117,8 +127,13 @@ internal sealed class EverythingSearchClient
         {
             if (request.Token.IsCancellationRequested) continue;
             current = request;
+            sending=request;
             try
             {
+#if DEBUG
+                BeforeNativeSend?.Invoke(request.Token);
+#endif
+                request.Token.ThrowIfCancellationRequested();
                 string cls = "EVERYTHING_TASKBAR_NOTIFICATION" + (request.Instance.Length == 0 ? "" : "_(" + request.Instance + ")");
                 var engine = Native.FindWindowW(cls, null);
                 if (engine == IntPtr.Zero) throw new InvalidOperationException("Everything is unavailable. Start Everything, then search again.");
@@ -142,8 +157,11 @@ internal sealed class EverythingSearchClient
                 // The pinned official SDK targets the default instance. Do not
                 // redirect a named-instance request into another user's index.
                 if (request.Instance.Length != 0) throw new InvalidOperationException("This build supports the existing default Everything instance only.");
+                request.Token.ThrowIfCancellationRequested();
                 if (!Native.Everything_IsDBLoaded()) throw new InvalidOperationException("Everything is loading its index. Search again after it is ready; no filesystem fallback was started.");
+                request.Token.ThrowIfCancellationRequested();
                 request.FolderSizesIndexed=Native.Everything_IsFileInfoIndexed(2);
+                request.Token.ThrowIfCancellationRequested();
                 if(request.FolderSizes&&!request.FolderSizesIndexed)
                 {request.Completion.TrySetResult(new(Array.Empty<IndexedHit>(),0,request.Engine,false));request.Dispose();current=null;continue;}
                 Native.Everything_Reset();
@@ -159,6 +177,7 @@ internal sealed class EverythingSearchClient
                 return;
             }
             catch (Exception ex) { request.Completion.TrySetException(ex); request.Dispose(); current = null; }
+            finally{sending=null;}
         }
     }
 

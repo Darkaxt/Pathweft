@@ -18,6 +18,7 @@ sealed partial class PackageProbe
     }
     async Task VerifySpaceEntry122()
     {
+        await VerifyCancelledIndexDispatch();
         var pane=(PaneView)owner.FindName("Left");var list=(ListView)pane.FindName("List");
         var admission=typeof(PaneView).GetField("SpaceAdmission",Flags);
         var previous=admission.GetValue(pane);
@@ -37,7 +38,8 @@ sealed partial class PackageProbe
         {
             button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await entered.Task;
             var startup=(Task)Get(pane,"SpaceCompletion");
-            Check(!startup.IsCompleted&&((GridView)list.View).Columns.Any(c=>c.Header as string=="Space used"),"Analysis presents its actual mode immediately and owns pending admission in its completion task");
+            var activity=(ProgressBar)pane.FindName("SpaceActivity");
+            Check(!startup.IsCompleted&&((GridView)list.View).Columns.Any(c=>c.Header as string=="Space used")&&activity.Visibility==Visibility.Visible&&((TextBlock)pane.FindName("Footer")).Text=="Preparing space analysis…","Analysis presents its mode and loading feedback immediately and owns pending admission in its completion task");
             button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             await owner.Dispatcher.InvokeAsync(()=>{},DispatcherPriority.ApplicationIdle);
@@ -46,7 +48,7 @@ sealed partial class PackageProbe
             await owner.Dispatcher.InvokeAsync(()=>{},DispatcherPriority.ApplicationIdle);
             Check(!(bool)Get(pane,"SpaceAnalyzing")&&((GridView)list.View).Columns.SequenceEqual(columns)&&list.Items.Count==1,"Cancelling during admission restores the original rows and exact columns after the original task completes");
             button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await (Task)Get(pane,"SpaceCompletion");
-            Check((bool)Get(pane,"SpaceAnalyzing")&&list.Items.Count==1&&pane.FolderTotal==3&&ReferenceEquals(list.SelectedItem,pane.Items.First()),"Re-entering after cancelled admission shows the current tree, exact total and first selection without an obsolete entry clearing rows");
+            Check((bool)Get(pane,"SpaceAnalyzing")&&list.Items.Count==1&&pane.FolderTotal==3&&ReferenceEquals(list.SelectedItem,pane.Items.First())&&activity.Visibility==Visibility.Collapsed,"Re-entering after cancelled admission shows the current tree, exact total and first selection, and ends loading feedback");
             await (Task)Call(typeof(PaneView),pane,"EndSpaceAsync");
             await (Task)Get(pane,"SizingCompletion");
             var navigationHeld=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -66,5 +68,32 @@ sealed partial class PackageProbe
             finally{navigationHeld.TrySetResult();}
         }
         finally{held.TrySetResult();admission.SetValue(pane,previous);}
+    }
+
+    async Task VerifyCancelledIndexDispatch()
+    {
+        var type=Type("Search.EverythingSearchClient");var client=type.GetProperty("Shared",Flags).GetValue(null);
+        var dispatcher=await ((TaskCompletionSource<Dispatcher>)type.GetField("ready",Flags).GetValue(client)).Task;
+        using var release=new ManualResetEventSlim();
+        var entered=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var held=dispatcher.InvokeAsync(()=>{entered.TrySetResult();release.Wait();});
+        await entered.Task;
+        using var cancel=new CancellationTokenSource();
+        var query=(Task)Call(type,client,"QueryAsync","folder:","",0u,1u,"Name",false,cancel.Token);
+        bool cancelledWithoutDispatch=false;
+        try
+        {
+            cancel.Cancel();
+            // Observation bound only: never cancels or abandons the native owner.
+            // The held dispatcher is released and the original task drained below.
+            await Task.WhenAny(query,Task.Delay(1000));
+            cancelledWithoutDispatch=query.IsCanceled;
+        }
+        finally
+        {
+            release.Set();await held;
+            try{await query;}catch(OperationCanceledException){}
+        }
+        Check(cancelledWithoutDispatch,"Cancelling an index request completes its caller while the SDK dispatcher is occupied, without releasing or abandoning the original dispatcher operation");
     }
 }

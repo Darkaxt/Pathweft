@@ -1,10 +1,22 @@
 # Pathweft specification
 
-Version 0.58 - 2026-11-05. Owner: Darkaxt.
+Version 0.60 - 2026-11-05. Owner: Darkaxt.
 
 This is the authoritative specification. The derived plan must preserve every
 requirement and acceptance criterion. Material scope changes require explicit
 user direction recorded here; ordinary implementation choices need no new gate.
+
+2026-11-05 resumed S15 correction: the user reports that1.1.22 still leaves an
+empty Pending tree. SPACE-01..03 require startup to proceed after cancelled
+ordinary sizing, including when its optional index dispatcher is occupied.
+Present initial loading activity while startup is genuinely waiting; respect
+reduced motion and retain quiet completed values during background refresh.
+CORE-11 is amended in S15: healthy disk-capacity bars stay blue independently
+of the theme accent; retain amber from80% and red from90% used on every disk
+capacity surface. This does not change ordinary accent-based progress controls.
+The user's pause is superseded by their subsequent "continue". S15 remains
+ACTIVE; the reported Pending bug, final correction delivery and installed
+readback remain acceptance blockers. No later stage is activated.
 
 2026-11-05 current S15 regression: the installed1.1.21 analysis button can leave
 an empty tree after overlapping delayed entry/exit/re-entry. SPACE-01..03 and
@@ -13,6 +25,29 @@ completion/cancellation, immediate mode presentation and preservation of the
 current tree when old operations finish. Qualify repeated real button events,
 navigation during held admission, exact restore and corrected final delivery.
 This clarifies existing lifecycle acceptance; no later stage is activated.
+
+User-authorized S15 addition2026-11-05, TRANSFER-15: redesign the Transfers
+popup using Huashu within the existing WPF auxiliary design. Keep its compact
+640-DIP default width and content-sized height; use the existing palette, Segoe
+type,12/13-DIP body and18-DIP aggregate heading,12/16-DIP spacing and32-DIP
+actions. Conflict content is an actual virtualized comparison table (File,
+Incoming, Existing; paired size/date values), with a bounded240-DIP scrollable
+viewport, readable full-path tooltips and keyboard navigation. Populate/layout
+new content without an opacity-zero entrance; automatic growth must be driven
+by actual content, not a speculative blank area. Preserve user resizing,
+multiple jobs and100/150% dark/light layouts. Display aggregate speed once for
+one job; show per-job legend rates only when several jobs run. Do not confuse
+combined copy/verification throughput with copied-payload throughput.
+Explicitly cancelling a transfer dismisses it only after actual worker exit,
+unless errors require review; preserve other active/adverse jobs and existing
+completion/Undo/arrival semantics. This explicitly supersedes TRANSFER-14's
+requirement to retain an otherwise clean cancelled card. Cancelling a paste
+must preserve its copied/cut clipboard formats and allow another Paste, without
+overwriting newer clipboard contents. Reproduce real copy/conflict/cancel/paste
+and compare native formats/sequence on an isolated clipboard. Show actual
+file-specific failures first; harmless metadata notes belong in Details, not
+an error summary that hides the failure. This addition stays in ACTIVE S15 and
+the combined final release; S14 is not reopened and no second stage is ACTIVE.
 
 Current authorization2026-11-05: "continue working then" authorizes implementing
 the recorded native-category correction, S14 window/update feedback and the
@@ -663,7 +698,7 @@ not complete the separately postponed S6/S7 or unstarted S9/S11 requirements.
 Additional user-directed S8 refinements (2026-10-31), CORE-11 and PREVIEW-08:
 show rounded free-space percentages beside the measured free-space number in
 This PC, computed from each volume's real available/total values. Share usage
-warning colors between This PC and sidebar: theme accent below 80% used,
+warning colors between This PC and sidebar: blue below 80% used,
 amber from 80% and red from 90%. These are explicit Pathweft thresholds, not a
 claim that Explorer implements an amber tier. The user's subsequent clarification
 requires unavailable/no-media drives hidden in This PC as in the sidebar;
@@ -1178,7 +1213,8 @@ Primary sources: [Windows indexing scope](https://support.microsoft.com/en-us/wi
 | WINDOW-01 | Inventory Pathweft-owned auxiliary windows, including Settings, Help, What's new, updater/check/deployment, transfers, search/preview and action/error dialogs. Establish one concrete design contract using Native/Original palettes: consistent typography/hierarchy, margins, content/title alignment, navigation/selected states, cards, buttons/icons, scrollbars and resize/minimum-size behavior. Preserve each window's purpose and existing functionality; do not redesign native OS dialogs or third-party interfaces. Reuse existing resources where appropriate without speculative framework work. |
 | WINDOW-02 | Apply that contract to all inventoried windows and verify actual screenshots/behavior in Native light/dark and Original at narrow/normal sizes and100%/150% text/DPI scales. Preserve Help's reading-section highlight, settings tabs, keyboard/focus/accessibility, window ownership/reuse/close and preview state. Resolve every in-scope inconsistency or record its exact blocker; palette changes alone are insufficient. |
 | UPDATE-02 | Clicking manual Check for updates in the sidebar or Settings immediately shows nearby visible/accessibility feedback, followed by a clear result: Checking, up to date with installed version, update available with version/action, or check failed with explanation/explicit retry. Use a discoverable themed update surface/in-control status; the main bottom-right status line alone is insufficient. Observe the real task, prevent duplicate concurrent checks and avoid artificial completion delays. Automatic checks stay quiet when unchanged; preserve download/hash/cancel/deployment progress, transfer/editor protection and user-controlled restart. Verify no-update/available/network-failure and progress/result behavior through actual application workflows. |
-| TRANSFER-14 | On actual successful transfer completion, automatically dismiss that job through the existing Transfers UI owner and hide the window when no cards remain. Retain active/queued/paused/conflicting and failed/cancelled/partial/error outcomes. Preserve completion notifications, Undo, arrival selection, source/destination refresh and reusable close-to-hide behavior. Use completion events, with no simulated click, delay or polling deadline. Verify real copy/move, multiple jobs and unsuccessful outcomes; successful completion must not hide outstanding work or erase its errors. |
+| TRANSFER-14 | On actual successful transfer completion, automatically dismiss that job through the existing Transfers UI owner and hide the window when no cards remain. Retain active/queued/paused/conflicting and failed/partial/error outcomes; explicit clean cancellation follows TRANSFER-15. Preserve completion notifications, Undo, arrival selection, source/destination refresh and reusable close-to-hide behavior. Use completion events, with no simulated click, delay or polling deadline. Verify real copy/move, multiple jobs and unsuccessful outcomes; successful completion must not hide outstanding work or erase its errors. |
+| TRANSFER-15 | The S15 transfer popup amendment in current scope governs compact content-ready sizing, a real virtualized conflict table, clean explicit-cancel dismissal after worker completion, unchanged native clipboard data and repeat Paste, nonduplicated speed, and visible file-specific errors with secondary informational details. Qualify real job actions, isolated native clipboard, multiple jobs, resizing, keyboard, dark/light and100/150% rendering. |
 | WINDOW-03 | Reconcile WINDOW-01/02 and UPDATE-02 against the complete inventory, revalidate affected updater/window lifecycle, then deliver one normal S14 release through the established channel. Independently retrieve the actual package, verify matching source/runtime/notices and packaged workflows, and verify the installed update. No per-window intermediate release or unsolicited system/theme/settings changes. |
 
 ### Current-pane disk analysis (S15)

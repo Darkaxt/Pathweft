@@ -50,7 +50,7 @@ public partial class PaneView
         internal string[] Selected;
         internal double Vertical,Horizontal;
         internal bool RefreshRequested,Changed,Stopping;
-        internal bool SelectFirst=true,QuietRefresh,FullRefresh;
+        internal bool SelectFirst=true,QuietRefresh,FullRefresh,Starting=true;
         internal HashSet<string> Dirty=new(StringComparer.OrdinalIgnoreCase);
     }
     SpaceView space;
@@ -110,7 +110,11 @@ public partial class PaneView
                 await RunSpaceAsync(current,preferIndex:true);
             }
             catch(OperationCanceledException)when(current.Cancellation.IsCancellationRequested){}
-            catch(Exception error){if(space==current&&!current.Stopping)Error?.Invoke("Space analysis: "+error.Message);}
+            catch(Exception error)
+            {
+                if(space==current&&!current.Stopping){var root=current.Nodes[current.Root];root.State=SpaceState.Failed;root.Failure=error.Message;Error?.Invoke("Space analysis: "+error.Message);}
+            }
+            finally{current.Starting=false;if(space==current&&!current.Stopping){UpdateSpaceFooter();StatsChanged?.Invoke();}}
         }
     }
     async Task RunSpaceAsync(SpaceView current,bool preferIndex)
@@ -130,7 +134,7 @@ public partial class PaneView
             DrainSpace(current);
         }
         catch(OperationCanceledException)when(current.Cancellation.IsCancellationRequested){}
-        catch(Exception error){if(space==current&&!current.Stopping)Error?.Invoke("Space analysis: "+error.Message);}
+        catch(Exception error){if(space==current&&!current.Stopping){var root=current.Nodes[current.Root];root.State=SpaceState.Failed;root.Failure=error.Message;UpdateSpaceFooter();Error?.Invoke("Space analysis: "+error.Message);}}
     }
     void QueueSpace(SpaceView current,SpaceUpdate update)
     {
@@ -255,7 +259,10 @@ public partial class PaneView
     void UpdateSpaceFooter()
     {
         if(space is not {} current)return;var root=current.Nodes[current.Root];
-        Footer.Text=$"{MainWindow.Fmt(Math.Max(0,root.DisplaySize))} logical · {root.SpaceStatus.ToLowerInvariant()}"+(current.Nodes.Values.Any(row=>row.State==SpaceState.Indexed)?" · indexed sizes may omit excluded files":"")+(Selected.Count>0?$" · {Selected.Count} selected":"");
+        SpaceActivity.Visibility=current.Starting?Visibility.Visible:Visibility.Collapsed;
+        SpaceActivity.IsIndeterminate=current.Starting&&Motion.On;
+        SpaceActivity.Value=35;
+        Footer.Text=(current.Starting&&root.State==SpaceState.Pending?"Preparing space analysis…":$"{MainWindow.Fmt(Math.Max(0,root.DisplaySize))} logical · {root.SpaceStatus.ToLowerInvariant()}")+(current.Nodes.Values.Any(row=>row.State==SpaceState.Indexed)?" · indexed sizes may omit excluded files":"")+(Selected.Count>0?$" · {Selected.Count} selected":"");
     }
     internal (long Bytes,long Files,long Folders,string Status) SpaceSummary
     {get{var root=space.Nodes[space.Root];return(Math.Max(0,root.DisplaySize),root.Files,root.Folders,root.SpaceStatus);}}
@@ -266,6 +273,7 @@ public partial class PaneView
         try{await current.Work;}catch(OperationCanceledException)when(current.Cancellation.IsCancellationRequested){}
         if(space!=current)return;
         current.Present?.Stop();current.Publication?.Abort();current.Cancellation.Dispose();space=null;List.PreviewKeyDown-=SpaceKey;
+        SpaceActivity.IsIndeterminate=false;SpaceActivity.Visibility=Visibility.Collapsed;
         List.ItemsSource=null;List.View=null;items=current.SavedItems;view=current.SavedView;SetView(current.Mode);List.ItemsSource=view;TrackColumns();
         var grid=(GridView)details;grid.Columns.Clear();for(int i=0;i<current.Columns.Length;i++){grid.Columns.Add(current.Columns[i]);current.Columns[i].Width=current.Widths[i];}
         bool previous=bulkSelect;bulkSelect=true;try{SetSelection(entry=>current.Selected.Contains(entry.Path,StringComparer.OrdinalIgnoreCase));}finally{bulkSelect=previous;}

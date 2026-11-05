@@ -108,21 +108,21 @@
     <!-- the conflict choices: four equal buttons on one row, text only, smaller than the job's own buttons -->
     <Style x:Key="JobChoice" TargetType="Button" BasedOn="{StaticResource JobAction}">
       <Setter Property="Padding" Value="8,4"/>
-      <Setter Property="MinHeight" Value="28"/>
+      <Setter Property="MinHeight" Value="32"/>
       <Setter Property="FontSize" Value="12"/>
       <Setter Property="HorizontalContentAlignment" Value="Center"/>
       <Setter Property="Margin" Value="0,0,6,0"/>
     </Style>
-    <!-- One Ferry job in the Transfers window: a band of its colour on the left (the same colour as its part of the
-         chart above), progress, figures, and what it needs from you -->
+    <!-- One Ferry job: its chart colour, progress, figures and any decision needed. -->
     <DataTemplate x:Key="JobCard">
-      <!-- a new transfer slides up into place (Motion.Enter, off with reduced motion) -->
-      <Border Background="{DynamicResource Palette.0DFFFFFF}" BorderBrush="{Binding Hue}" BorderThickness="3,0,0,0" CornerRadius="4,10,10,4" Margin="0,0,0,8" Loaded="JobCard_Loaded">
-        <Border BorderBrush="{DynamicResource Palette.16FFFFFF}" BorderThickness="0,1,1,1" CornerRadius="0,10,10,0" Padding="12,10">
+      <!-- Content is opaque at its first layout; automatic window growth never
+           reveals a card held transparent by an entrance animation. -->
+      <Border x:Name="TransferCard" Style="{StaticResource AuxiliaryCard}" Padding="12" Margin="0,0,0,8">
         <StackPanel>
           <DockPanel>
             <TextBlock DockPanel.Dock="Right" Text="{Binding PercentText}" FontSize="13" Typography.NumeralAlignment="Tabular" Margin="12,0,0,0"/>
-            <TextBlock Text="{Binding Title}" FontWeight="SemiBold" FontSize="13" TextTrimming="CharacterEllipsis"/>
+            <Border Width="6" Height="6" Background="{Binding Hue}" CornerRadius="3" DockPanel.Dock="Left" Margin="0,0,8,0" VerticalAlignment="Center"/>
+            <TextBlock Text="{Binding Title}" ToolTip="{Binding Title}" FontWeight="SemiBold" FontSize="13" TextTrimming="CharacterEllipsis"/>
           </DockPanel>
           <ProgressBar Value="{Binding Fraction, Mode=OneWay}" Foreground="{Binding Hue}" Height="6" Margin="0,8,0,6"/>
           <DockPanel Visibility="{Binding Copying, Converter={StaticResource Vis}}" Margin="0,0,0,4">
@@ -130,14 +130,17 @@
             <TextBlock Text="{Binding Current}" Foreground="{DynamicResource Palette.8A97AA}" FontSize="11" TextTrimming="CharacterEllipsis"/>
           </DockPanel>
           <TextBlock Text="{Binding ErrorSummary}" ToolTip="{Binding ErrorDetail}" TextWrapping="Wrap" FontSize="11" Margin="0,0,0,4"
-                     Visibility="{Binding HasErrors, Converter={StaticResource Vis}}">
+                     Visibility="{Binding HasTransferErrors, Converter={StaticResource Vis}}">
             <TextBlock.Style>
               <Style TargetType="TextBlock">
                 <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
-                <Style.Triggers><DataTrigger Binding="{Binding HasTransferErrors}" Value="True"><Setter Property="Foreground" Value="{DynamicResource Palette.F87171}"/></DataTrigger></Style.Triggers>
+                <Style.Triggers><DataTrigger Binding="{Binding HasTransferErrors}" Value="True"><Setter Property="Foreground" Value="{DynamicResource TransferError}"/></DataTrigger></Style.Triggers>
               </Style>
             </TextBlock.Style>
           </TextBlock>
+          <Expander Header="Details" Visibility="{Binding HasErrors, Converter={StaticResource Vis}}" Margin="0,2,0,8" Foreground="{DynamicResource Muted}">
+            <TextBlock Text="{Binding ErrorDetail}" TextWrapping="Wrap" Margin="0,6,0,2" FontSize="11"/>
+          </Expander>
           <!-- figures on the left, its buttons on the right -->
           <DockPanel>
             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
@@ -152,29 +155,42 @@
           </DockPanel>
 
           <StackPanel Visibility="{Binding HasConflicts, Converter={StaticResource Vis}}" Margin="0,10,0,0">
-            <TextBlock Text="{Binding ConflictTitle}" Foreground="{DynamicResource Palette.FFD23F}" FontWeight="SemiBold"/>
-            <ItemsControl ItemsSource="{Binding Conflicts}" MaxHeight="96" Margin="0,4,0,8">
-              <ItemsControl.Template>
-                <ControlTemplate><ScrollViewer VerticalScrollBarVisibility="Auto"><ItemsPresenter/></ScrollViewer></ControlTemplate>
-              </ItemsControl.Template>
-              <ItemsControl.ItemTemplate>
-                <DataTemplate>
-                  <DockPanel Margin="0,1">
-                    <TextBlock DockPanel.Dock="Right" Text="{Binding Detail}" Foreground="{DynamicResource Palette.8A97AA}" FontSize="11" Typography.NumeralAlignment="Tabular"/>
-                    <TextBlock Text="{Binding Name}" FontSize="11" TextTrimming="CharacterEllipsis" Margin="0,0,12,0"/>
-                  </DockPanel>
-                </DataTemplate>
-              </ItemsControl.ItemTemplate>
-            </ItemsControl>
+            <TextBlock Text="{Binding ConflictTitle}" Foreground="{DynamicResource Palette.E8EEF6}" FontWeight="SemiBold"/>
+            <ListView x:Name="ConflictTable" ItemsSource="{Binding Conflicts}" Height="{Binding ConflictHeight}" Margin="0,8,0,12" Background="Transparent" BorderThickness="0" SizeChanged="ConflictTable_SizeChanged"
+                      AutomationProperties.Name="Files already in the destination" VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling" VirtualizingPanel.ScrollUnit="Pixel" ScrollViewer.CanContentScroll="True" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+              <ListView.ItemContainerStyle><Style TargetType="ListViewItem">
+                <Setter Property="MinHeight" Value="44"/><Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                <Setter Property="Foreground" Value="{DynamicResource Palette.E8EEF6}"/><Setter Property="Padding" Value="8,2"/>
+                <Setter Property="ToolTip" Value="{Binding Name}"/>
+                <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="ListViewItem">
+                  <Border x:Name="Row" Background="Transparent" BorderBrush="Transparent" BorderThickness="1" CornerRadius="3" Padding="{TemplateBinding Padding}"><GridViewRowPresenter/></Border>
+                  <ControlTemplate.Triggers>
+                    <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Row" Property="Background" Value="{DynamicResource Palette.0DFFFFFF}"/></Trigger>
+                    <Trigger Property="IsSelected" Value="True"><Setter TargetName="Row" Property="Background" Value="{DynamicResource AccentSelect}"/><Setter Property="Foreground" Value="{DynamicResource AccentSelectText}"/></Trigger>
+                    <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Row" Property="BorderBrush" Value="{DynamicResource AccentEdge}"/></Trigger>
+                  </ControlTemplate.Triggers>
+                </ControlTemplate></Setter.Value></Setter>
+              </Style></ListView.ItemContainerStyle>
+              <ListView.View><GridView AllowsColumnReorder="False">
+                <GridViewColumn Header="File" Width="220"><GridViewColumn.CellTemplate><DataTemplate>
+                  <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                </DataTemplate></GridViewColumn.CellTemplate></GridViewColumn>
+                <GridViewColumn Header="Incoming" Width="140"><GridViewColumn.CellTemplate><DataTemplate>
+                  <StackPanel Margin="0,3"><TextBlock Text="{Binding IncomingSize}" Typography.NumeralAlignment="Tabular"/><TextBlock Text="{Binding SourceModified, StringFormat={}{0:yyyy-MM-dd HH:mm}}" Foreground="{DynamicResource Muted}" FontSize="11"/></StackPanel>
+                </DataTemplate></GridViewColumn.CellTemplate></GridViewColumn>
+                <GridViewColumn Header="Existing" Width="140"><GridViewColumn.CellTemplate><DataTemplate>
+                  <StackPanel Margin="0,3"><TextBlock Text="{Binding ExistingSize}" Typography.NumeralAlignment="Tabular"/><TextBlock Text="{Binding TargetModified, StringFormat={}{0:yyyy-MM-dd HH:mm}}" Foreground="{DynamicResource Muted}" FontSize="11"/></StackPanel>
+                </DataTemplate></GridViewColumn.CellTemplate></GridViewColumn>
+              </GridView></ListView.View>
+            </ListView>
             <UniformGrid Rows="1" Margin="0,0,-6,0">
               <Button Style="{StaticResource JobChoice}" Tag="on" Click="JobResolve_Click" CommandParameter="Rename" Content="Keep both"/>
-              <Button Style="{StaticResource JobChoice}" Click="JobResolve_Click" CommandParameter="Newer" Content="Replace if newer"/>
+              <Button Style="{StaticResource JobChoice}" Click="JobResolve_Click" CommandParameter="Newer"><TextBlock Text="Replace if newer" TextWrapping="Wrap" TextAlignment="Center"/></Button>
               <Button Style="{StaticResource JobChoice}" Click="JobResolve_Click" CommandParameter="Overwrite" Content="Replace"/>
               <Button Style="{StaticResource JobChoice}" Click="JobResolve_Click" CommandParameter="Skip" Content="Skip"/>
             </UniformGrid>
           </StackPanel>
         </StackPanel>
-        </Border>
       </Border>
     </DataTemplate>
 

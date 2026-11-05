@@ -1,6 +1,13 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.23 | 2026-11-05 | Clearer transfers and reliable analysis startup
+- Transfers use a compact comparison table for existing files, with content visible as the window grows. Single-transfer speed is shown once, and actual file errors are displayed separately from metadata notes.
+- Cancelling a transfer dismisses it after its worker stops, unless an error needs review. Cancelled Copy preserves the clipboard for another Paste.
+- Cancelling background indexed sizing no longer waits for its queued SDK callback before starting space analysis. A cancelled native IPC operation remains owned while analysis uses filesystem measurements.
+- Initial analysis shows loading activity immediately, with a static indicator when animations are disabled. Completed background refreshes remain quiet.
+- Healthy disk-capacity bars stay blue regardless of the accent color. Address, sidebar, This PC and summary bars share amber from 80% used and red from 90% used.
+
 ## 1.1.22 | 2026-11-05 | Reliable analysis entry
 - Analyze space switches the pane into analysis mode immediately while previous sizing work drains.
 - Exiting or navigating during startup waits for that exact operation. An older entry can no longer resume over a newer tree and leave an empty list with valid totals.

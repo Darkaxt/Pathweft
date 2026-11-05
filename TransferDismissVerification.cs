@@ -54,6 +54,8 @@ public partial class MainWindow
 
         var failed=Submit(new(){Path.Combine(source,"missing.txt")},target,false);await failed.Completion;await Settle();
         check(!failed.Successful&&jobs.Contains(failed)&&transfersWindow.IsVisible,"A genuine missing-source transfer remains visible for review");
+        failed.Notes.Enqueue("Some stored timestamps differ from the source.");failed.Refresh();await Settle();
+        check(PreviewChildren<TextBlock>(transfersWindow).Any(text=>text.IsVisible&&text.Text==failed.Errors.First())&&failed.ErrorSummary==failed.Errors.First(),"The actual failed file is visible in the card while metadata notes stay in collapsed Details");
         async Task<Job> Conflict(string name,bool cancel)
         {
             string path=Write(name);File.WriteAllText(Path.Combine(target,name),"Existing different bytes");
@@ -64,15 +66,20 @@ public partial class MainWindow
             {
                 job=Submit(new(){path},target,false);await reached.Task;await Settle();
                 check(jobs.Contains(job)&&job.HasConflicts&&transfersWindow.IsVisible,"Unresolved real conflicts remain displayed");
-                if(cancel)job.Cancel();else job.Resolve(Choice.Skip);
+                if(cancel)
+                {
+                    var button=PreviewChildren<Button>(transfersWindow).Single(button=>ReferenceEquals(button.DataContext,job)&&button.Content is TextBlock text&&new System.Windows.Documents.TextRange(text.ContentStart,text.ContentEnd).Text.Contains("Cancel"));
+                    button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                }
+                else job.Resolve(Choice.Skip);
                 await job.Completion;await Settle();return job;
             }
             finally{Ferry.VerificationBoundary=null;if(job?.Active==true){job.Cancel();await job.Completion;}}
         }
         var partial=await Conflict("skip.txt",false);var cancelled=await Conflict("cancel.txt",true);
-        check(partial.Partial&&!partial.Successful&&jobs.Contains(partial)&&cancelled.Phase==Phase.Cancelled&&jobs.Contains(cancelled),"Skipped/partial and cancelled transfers remain available for manual review");
+        check(partial.Partial&&!partial.Successful&&jobs.Contains(partial)&&cancelled.Phase==Phase.Cancelled&&!jobs.Contains(cancelled),"Skipped/partial outcomes remain available; explicit clean cancellation dismisses after actual completion");
         var last=Submit(new(){Write("last.txt")},target,false);await last.Completion;await Settle();
-        check(last.Successful&&!jobs.Contains(last)&&jobs.Contains(failed)&&jobs.Contains(partial)&&jobs.Contains(cancelled)&&transfersWindow.IsVisible,"Another success preserves all outstanding unsuccessful cards and their window");
+        check(last.Successful&&!jobs.Contains(last)&&jobs.Contains(failed)&&jobs.Contains(partial)&&transfersWindow.IsVisible,"Another success preserves all outstanding unsuccessful cards and their window");
         await S1Verification.Snapshot(transfersWindow,root,"transfers-needs-review");
         foreach(var job in jobs.ToArray())
         {
@@ -81,6 +88,7 @@ public partial class MainWindow
             dismiss.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         }
         check(jobs.Count==0&&!transfersWindow.IsVisible,"The retained outcomes still dismiss through the actual existing command");
+        await VerifyTransferDesign15(root,check);
         check(HiddenTrialPresentation.ForegroundViolations==0,"Transfer completion and review workflows cause no host-desktop activation");
     }
 }

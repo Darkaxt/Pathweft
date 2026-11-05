@@ -25,6 +25,7 @@ public partial class MainWindow
 {
     internal async Task VerifySpecialists13(string root, Action<bool,string> check)
     {
+        if(Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO")=="space-entry"){await VerifySpaceStartup23(root,check);return;}
         if(Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO") is "space-refresh" or "space-ui"){await VerifySpaceRefresh21(root,check);return;}
         if(Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO")=="live-indexed-sizes"){await VerifyLiveIndexedSizes15(root,check);return;}
         if(Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO")=="indexed-sizes"){await VerifyIndexedSizes15(root,check);return;}
@@ -34,6 +35,7 @@ public partial class MainWindow
         if(Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO")=="jump-lists"){await VerifyJumpLists11(root,check);return;}
         if(Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO")=="windows"){await VerifyAuxiliaryWindows14(root,check);return;}
         if(Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO")=="transfers"){await VerifyTransferDismiss14(root,check);return;}
+        if(Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO")=="transfers-clipboard"){await VerifyTransferClipboard15(root,check);return;}
         if(Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO") is "menus" or "menus-ui"){await VerifyMenus9(root,check);return;}
         if(Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO")=="icons"){await VerifyCommandIcons13(root,check);return;}
         if(Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO")=="sizes"){await VerifySizes18(root,check);return;}

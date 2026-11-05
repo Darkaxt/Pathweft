@@ -16,6 +16,8 @@ public enum Choice { Skip, Overwrite, Rename, Newer }
 public record Conflict(int File, string Name, long SourceSize, DateTime SourceModified, long TargetSize, DateTime TargetModified)
 {
     public string Detail => $"{MainWindow.Fmt(SourceSize)}, {SourceModified:yyyy-MM-dd HH:mm}  →  existing {MainWindow.Fmt(TargetSize)}, {TargetModified:yyyy-MM-dd HH:mm}";
+    public string IncomingSize=>MainWindow.Fmt(SourceSize);
+    public string ExistingSize=>MainWindow.Fmt(TargetSize);
 }
 
 public class Job : INotifyPropertyChanged
@@ -41,6 +43,7 @@ public class Job : INotifyPropertyChanged
     readonly ManualResetEventSlim resumed = new(true);
     public bool Paused => state == 1 && Active;
     public bool IsCancelled => state == 2;
+    internal bool DismissWhenCancelled;
     public void Pause() { lock (resumed) { if (Active && state == 0) { state = 1; resumed.Reset(); } } Refresh(); }
     public void Resume() { lock (resumed) { if (state == 1) { state = 0; resumed.Set(); } } Refresh(); }
     public void Cancel() { lock (resumed) { if (!Active) return; state = 2; resumed.Set(); } resolved.TrySetResult(null); Refresh(); }
@@ -131,8 +134,6 @@ public class Job : INotifyPropertyChanged
             var s = $"{DoneFiles}/{TotalFiles} files · {MainWindow.Fmt(DoneBytes)} processed";
             if (ArchiveOperation) { if (SkippedFiles > 0) s += $" · {SkippedFiles} skipped"; }
             else s += $" · {VerifiedFiles} verified" + (RenamedFiles > 0 ? $" · {RenamedFiles} renamed" : "") + (SkippedFiles > 0 ? $" · {SkippedFiles} skipped" : "");
-            if (Copying && !Paused && rate > 0)
-                s += $" · {MainWindow.Fmt((long)rate)}/s I/O";
             return s;
         }
     }
@@ -141,9 +142,10 @@ public class Job : INotifyPropertyChanged
     public bool Copying => Phase is Phase.Copying or Phase.Verifying;
     public bool HasConflicts => Phase == Phase.Conflicts;
     public string ConflictTitle => $"{Conflicts.Count} file(s) already exist in the destination";
+    public double ConflictHeight=>Math.Min(240,32+Conflicts.Count*44);
     public bool HasErrors => Errors.Count > 0 || Notes.Count > 0;
     public bool HasTransferErrors => !Errors.IsEmpty;
-    public string ErrorSummary => string.Join("  ·  ", new[] { Errors.Count > 0 ? $"{Errors.Count} error(s)" : null }.Concat(Notes).Where(x => x != null));
+    public string ErrorSummary => Errors.TryPeek(out var first)?first+(Errors.Count>1?$" (+{Errors.Count-1} more; see Details)":""):"";
     public string ErrorDetail => string.Join("\n", Errors.Take(50).Concat(Notes));
     public string PauseGlyph => Paused ? "\uE768" : "\uE769";
     public string PauseText => Paused ? "Resume" : "Pause";
@@ -501,7 +503,7 @@ public static class Ferry
     }
     static void MetadataPrecision(Job job)
     {
-        const string note = "Destination filesystem timestamp precision differs; stored timestamps were rounded.";
+        const string note = "Some stored timestamps differ from the source.";
         if (!job.Notes.Contains(note)) job.Notes.Enqueue(note);
     }
     static void RequireStreams(string source, IReadOnlyList<TransferFile.StreamEntry> expected)

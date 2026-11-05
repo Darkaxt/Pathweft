@@ -153,11 +153,7 @@
           <TextBlock Text="{Binding DriveLocation}" Foreground="{DynamicResource Palette.8A97AA}" TextTrimming="CharacterEllipsis">
             <TextBlock.Style><Style TargetType="TextBlock"><Style.Triggers><DataTrigger Binding="{Binding DriveLocation}" Value=""><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers></Style></TextBlock.Style>
           </TextBlock>
-          <ProgressBar Minimum="0" Maximum="100" Value="{Binding DriveUsedPercent, Mode=OneWay}" Height="5" Margin="0,4,0,3">
-            <ProgressBar.Style><Style TargetType="ProgressBar" BasedOn="{StaticResource {x:Type ProgressBar}}">
-              <Setter Property="Foreground" Value="{DynamicResource Accent}"/>
-              <Style.Triggers><DataTrigger Binding="{Binding DriveWarning}" Value="1"><Setter Property="Foreground" Value="#D99024"/></DataTrigger><DataTrigger Binding="{Binding DriveWarning}" Value="2"><Setter Property="Foreground" Value="#E5484D"/></DataTrigger></Style.Triggers>
-            </Style></ProgressBar.Style>
+          <ProgressBar Minimum="0" Maximum="100" Value="{Binding DriveUsedPercent, Mode=OneWay}" Foreground="{Binding DriveColor}" Height="5" Margin="0,4,0,3">
             <ProgressBar.Visibility><Binding Path="HasDriveCapacity"><Binding.Converter><BooleanToVisibilityConverter/></Binding.Converter></Binding></ProgressBar.Visibility>
           </ProgressBar>
           <TextBlock Text="{Binding CapacityText}" Foreground="{DynamicResource Palette.8A97AA}" FontSize="11"/>
@@ -317,7 +313,7 @@
                    Typography.NumeralAlignment="Tabular"/>
         <Grid VerticalAlignment="Center" Height="3">
           <Border Background="{DynamicResource Palette.1AFFFFFF}" CornerRadius="1.5"/>
-          <Border x:Name="UsedBar" Background="{DynamicResource Accent}" CornerRadius="1.5" HorizontalAlignment="Left"/>
+          <Border x:Name="UsedBar" Background="#0078D4" CornerRadius="1.5" HorizontalAlignment="Left"/>
         </Grid>
       </DockPanel>
       </Border>
@@ -330,6 +326,7 @@
         <Button x:Name="ViewButton" DockPanel.Dock="Right" Style="{StaticResource CompactCommand}" Width="28" Height="22" Click="ViewButton_Click" ToolTip="View (Ctrl+Shift+1…5)" AutomationProperties.Name="View">
           <Image x:Name="ViewIcon" Width="14" Height="14" Source="{DynamicResource CommandIcon.Details}"/>
         </Button>
+        <ProgressBar x:Name="SpaceActivity" Width="40" Height="3" Margin="0,0,8,0" VerticalAlignment="Center" Visibility="Collapsed" AutomationProperties.Name="Loading space analysis"/>
         <TextBlock x:Name="Footer" Foreground="{DynamicResource Palette.80FFFFFF}" FontSize="11" VerticalAlignment="Center" Typography.NumeralAlignment="Tabular"/>
       </DockPanel>
 

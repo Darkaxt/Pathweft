@@ -212,6 +212,7 @@ internal static class Appearance
         SetBrush("AgeBackground",SystemParameters.HighContrast?SystemColors.WindowColor:Light?Color.FromRgb(232,232,232):Color.FromRgb(55,55,55));
         SetBrush("AgeForeground",SystemParameters.HighContrast?SystemColors.WindowTextColor:Light?Color.FromRgb(64,64,64):Color.FromRgb(232,232,232));
         SetBrush("PreviewWarning",SystemParameters.HighContrast?SystemColors.WindowTextColor:Light?Color.FromRgb(155,69,0):Color.FromRgb(255,180,84));
+        SetBrush("TransferError",SystemParameters.HighContrast?SystemColors.WindowTextColor:Light?Color.FromRgb(180,35,24):Color.FromRgb(248,113,113));
         ExplorerIcons.Apply();
         foreach(Window current in Application.Current.Windows)
         {

@@ -119,6 +119,7 @@ public class Entry : INotifyPropertyChanged
     public bool HasDriveCapacity=>IsDrive&&DriveTotal>0;
     public double DriveUsedPercent=>DrivePresentation.UsedPercent(DriveTotal,DriveFree);
     public int DriveWarning=>DrivePresentation.Warning(DriveTotal,DriveFree);
+    public Brush DriveColor=>DrivePresentation.Fill(DriveTotal,DriveFree);
     public string CapacityText=>DrivePresentation.Capacity(DriveTotal,DriveFree,DriveCloudQuota);
     public string TotalText=>HasDriveCapacity?DrivePresentation.Size(DriveTotal,DriveCloudQuota):DriveCloudQuota?"Unavailable":"";
     public string FreeText=>DrivePresentation.FreeText(DriveTotal,DriveFree,DriveCloudQuota);
@@ -609,6 +610,7 @@ public partial class PaneView : UserControl
                 if (driveText != null)
                 {
                     UsedBar.SetBinding(WidthProperty, new Binding("ActualWidth") { Source = UsedBar.Parent, Converter = new Scale(used) });
+                    UsedBar.Background=DrivePresentation.Fill(used*100);
                     DriveInfoText.Text = driveText;
                     DriveInfoText.ToolTip=driveTip;
                 }
@@ -647,6 +649,7 @@ public partial class PaneView : UserControl
         var drive=rows.FirstOrDefault(d=>d.Name.Equals(root,StringComparison.OrdinalIgnoreCase));
         if(drive==null)return;
         UsedBar.SetBinding(WidthProperty,new Binding("ActualWidth"){Source=UsedBar.Parent,Converter=new Scale(DrivePresentation.UsedPercent(drive.Total,drive.Free)/100)});
+        UsedBar.Background=DrivePresentation.Fill(drive.Total,drive.Free);
         DriveInfoText.Text=DrivePresentation.Capacity(drive.Total,drive.Free,drive.CloudQuota);
         DriveInfoText.ToolTip=drive.CloudQuota?DrivePresentation.CloudSource:null;
     }

@@ -1,5 +1,28 @@
 # Pathweft development
 
+Current2026-11-05/spec0.60: S15 ACTIVE, correction1.1.23 not published.
+Cancelled optional SDK calls release their caller without abandoning the native
+dispatcher; analysis uses the existing filesystem fallback while that send drains.
+Source44956 verifies the reported Modern VLC path, loading/motion and capacity
+colors.33020/19244/51812/48584 supply broader unchanged source acceptance.
+TRANSFER-15 joins this release: Huashu compact conflict table, opaque first layout,
+one single-job rate, actual error first/metadata Details and explicit clean Cancel
+dismissal only after worker exit. Source51824 passes rendered dark/light100/150
+layouts and cancellation. Private native26532 verifies two Copy/Paste/Cancel
+iterations preserve all clipboard formats/sequence and allow Paste again; exact
+private-station receipt proves empty job and unchanged input desktop. No production
+clipboard rewrite was needed. Final53320 additionally passes actual failed-file
+visibility and final wording. Actual package/source/retrieval/installed acceptance
+remain. No later stage activated.
+
+Resumed2026-11-05 on the user's "continue" after cleanup/pause. S15 ACTIVE;
+1.1.22/c3463e7 is published with local final consumer30252 passing, but actual
+retrieved21780 failed the live index/widget check and the user still reports
+an empty Pending tree. Do not claim full resolution or installed parity.
+Resolve startup/cancelled optional-SDK admission and initial loading feedback,
+then CORE-11 healthy disk bars fixed blue with existing amber/red thresholds.
+No later stage or shared-engine settings/restart is authorized by this fix.
+
 Current2026-11-05 S15 correction: installed1.1.21 can show an empty analysis tree
 after delayed entry/exit/re-entry. Actual delivered reproduction keeps43 current
 nodes while an obsolete entry replaces visible rows with zero. Startup/admission

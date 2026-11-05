@@ -2,6 +2,9 @@ namespace FileExplorer;
 
 internal static class DrivePresentation
 {
+    static readonly System.Windows.Media.Brush Healthy=MainWindow.Hex("#0078D4"),Amber=MainWindow.Hex("#D99024"),Red=MainWindow.Hex("#E5484D");
+    internal static System.Windows.Media.Brush Fill(double usedPercent)=>usedPercent>=90?Red:usedPercent>=80?Amber:Healthy;
+    internal static System.Windows.Media.Brush Fill(long total,long free)=>Fill(UsedPercent(total,free));
     internal static double UsedPercent(long total,long free)=>total>0?Math.Clamp(100.0*(total-free)/total,0,100):0;
     internal static int Warning(long total,long free)=>total<=0?0:UsedPercent(total,free)>=90?2:UsedPercent(total,free)>=80?1:0;
     internal static string Size(long value,bool cloud=false)

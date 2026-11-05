@@ -21,7 +21,7 @@ public partial class MainWindow
         await S1Verification.Navigate(Left,PaneView.ThisPC);await Left.driveListingWork;await Settle();
         RefreshDrives();await driveRefreshWork;await Settle();
         check(DrivePresentation.FreeText(1000,152)=="152 bytes (15%)"&&DrivePresentation.FreeText(0,0)=="","Free space shows rounded free/total percentage without inventing unavailable capacity");
-        check(new[]{201L,200L,101L,100L,0L}.Select(f=>DrivePresentation.Warning(1000,f)).SequenceEqual(new[]{0,1,1,2,2}),"Capacity warning boundaries are consistent: accent below 80%, amber from 80%, red from 90% used");
+        check(new[]{201L,200L,101L,100L,0L}.Select(f=>DrivePresentation.Warning(1000,f)).SequenceEqual(new[]{0,1,1,2,2}),"Capacity warning boundaries are consistent: blue below 80%, amber from 80%, red from 90% used");
         check(CloudVolumes.ReadGoogleRoots(new byte[]{10,4,18,2,88,58}).SetEquals(new[]{"X:\\"})&&CloudVolumes.ReadGoogleRoots(new byte[]{10,255}).Count==0,"Provider mount metadata follows registered roots rather than fixed letters and rejects truncated records");
         var registeredCloud=CloudVolumes.GoogleRoots();
         foreach(var cloud in Left.Items.Where(e=>registeredCloud.Contains(e.Path)))
