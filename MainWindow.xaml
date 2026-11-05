@@ -156,15 +156,20 @@
 
           <StackPanel Visibility="{Binding HasConflicts, Converter={StaticResource Vis}}" Margin="0,10,0,0">
             <TextBlock Text="{Binding ConflictTitle}" Foreground="{DynamicResource Palette.E8EEF6}" FontWeight="SemiBold"/>
-            <ListView x:Name="ConflictTable" ItemsSource="{Binding Conflicts}" Height="{Binding ConflictHeight}" Margin="0,8,0,12" Background="Transparent" BorderThickness="0" SizeChanged="ConflictTable_SizeChanged"
+            <TextBlock Text="{Binding ConflictScope}" Foreground="{DynamicResource Muted}" FontSize="11" Margin="0,4,0,0" TextWrapping="Wrap"/>
+            <CheckBox x:Name="ShowMatchingConflicts" Content="{Binding MatchingConflictsLabel}" IsChecked="{Binding ShowMatchingConflicts, Mode=TwoWay}" Visibility="{Binding HasMatchingConflicts, Converter={StaticResource Vis}}" Margin="0,8,0,0"
+                      ToolTip="Matching size and date do not prove identical contents. Choices still apply to every file."/>
+            <ListView x:Name="ConflictTable" ItemsSource="{Binding ConflictRows}" Height="{Binding ConflictHeight}" Margin="0,8,0,8" Background="Transparent" BorderThickness="0" SizeChanged="ConflictTable_SizeChanged"
                       AutomationProperties.Name="Files already in the destination" VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling" VirtualizingPanel.ScrollUnit="Pixel" ScrollViewer.CanContentScroll="True" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
               <ListView.ItemContainerStyle><Style TargetType="ListViewItem">
                 <Setter Property="MinHeight" Value="44"/><Setter Property="HorizontalContentAlignment" Value="Stretch"/>
                 <Setter Property="Foreground" Value="{DynamicResource Palette.E8EEF6}"/><Setter Property="Padding" Value="8,2"/>
-                <Setter Property="ToolTip" Value="{Binding Name}"/>
+                <Setter Property="ToolTip" Value="{Binding Detail}"/>
+                <Setter Property="AutomationProperties.Name" Value="{Binding Name}"/><Setter Property="AutomationProperties.HelpText" Value="{Binding Detail}"/>
                 <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="ListViewItem">
                   <Border x:Name="Row" Background="Transparent" BorderBrush="Transparent" BorderThickness="1" CornerRadius="3" Padding="{TemplateBinding Padding}"><GridViewRowPresenter/></Border>
                   <ControlTemplate.Triggers>
+                    <DataTrigger Binding="{Binding ExistingNewer}" Value="True"><Setter Property="Foreground" Value="{DynamicResource PreviewWarning}"/></DataTrigger>
                     <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Row" Property="Background" Value="{DynamicResource Palette.0DFFFFFF}"/></Trigger>
                     <Trigger Property="IsSelected" Value="True"><Setter TargetName="Row" Property="Background" Value="{DynamicResource AccentSelect}"/><Setter Property="Foreground" Value="{DynamicResource AccentSelectText}"/></Trigger>
                     <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Row" Property="BorderBrush" Value="{DynamicResource AccentEdge}"/></Trigger>
@@ -173,16 +178,17 @@
               </Style></ListView.ItemContainerStyle>
               <ListView.View><GridView AllowsColumnReorder="False">
                 <GridViewColumn Header="File" Width="220"><GridViewColumn.CellTemplate><DataTemplate>
-                  <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                  <StackPanel VerticalAlignment="Center"><TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis"/><TextBlock Text="{Binding ReviewHint}" FontSize="11"/></StackPanel>
                 </DataTemplate></GridViewColumn.CellTemplate></GridViewColumn>
                 <GridViewColumn Header="Incoming" Width="140"><GridViewColumn.CellTemplate><DataTemplate>
-                  <StackPanel Margin="0,3"><TextBlock Text="{Binding IncomingSize}" Typography.NumeralAlignment="Tabular"/><TextBlock Text="{Binding SourceModified, StringFormat={}{0:yyyy-MM-dd HH:mm}}" Foreground="{DynamicResource Muted}" FontSize="11"/></StackPanel>
+                  <StackPanel Margin="0,3"><TextBlock Text="{Binding IncomingSize}" Visibility="{Binding SizeDiffers, Converter={StaticResource Vis}}" Typography.NumeralAlignment="Tabular"/><TextBlock Text="{Binding IncomingTime}" Visibility="{Binding TimeDiffers, Converter={StaticResource Vis}}" TextWrapping="Wrap" FontSize="11" Typography.NumeralAlignment="Tabular"/></StackPanel>
                 </DataTemplate></GridViewColumn.CellTemplate></GridViewColumn>
                 <GridViewColumn Header="Existing" Width="140"><GridViewColumn.CellTemplate><DataTemplate>
-                  <StackPanel Margin="0,3"><TextBlock Text="{Binding ExistingSize}" Typography.NumeralAlignment="Tabular"/><TextBlock Text="{Binding TargetModified, StringFormat={}{0:yyyy-MM-dd HH:mm}}" Foreground="{DynamicResource Muted}" FontSize="11"/></StackPanel>
+                  <StackPanel Margin="0,3"><TextBlock Text="{Binding ExistingSize}" Visibility="{Binding SizeDiffers, Converter={StaticResource Vis}}" Typography.NumeralAlignment="Tabular"/><TextBlock Text="{Binding ExistingTime}" Visibility="{Binding TimeDiffers, Converter={StaticResource Vis}}" TextWrapping="Wrap" FontSize="11" Typography.NumeralAlignment="Tabular"/></StackPanel>
                 </DataTemplate></GridViewColumn.CellTemplate></GridViewColumn>
               </GridView></ListView.View>
             </ListView>
+            <TextBlock Text="No size or date differences. You can show matching files above." Visibility="{Binding NoConflictDifferences, Converter={StaticResource Vis}}" Foreground="{DynamicResource Muted}" TextWrapping="Wrap" FontSize="11" Margin="0,0,0,8"/>
             <UniformGrid Rows="1" Margin="0,0,-6,0">
               <Button Style="{StaticResource JobChoice}" Tag="on" Click="JobResolve_Click" CommandParameter="Rename" Content="Keep both"/>
               <Button Style="{StaticResource JobChoice}" Click="JobResolve_Click" CommandParameter="Newer"><TextBlock Text="Replace if newer" TextWrapping="Wrap" TextAlignment="Center"/></Button>
@@ -375,17 +381,19 @@
             <Button DockPanel.Dock="Right" Style="{StaticResource Ghost}" Content="&#xE711;" FontFamily="Segoe Fluent Icons" FontSize="10"
                     x:Name="PreviewCloseButton" AutomationProperties.Name="Close preview" MinWidth="32" MinHeight="32"
                     ToolTip="Close the preview (Alt+P)" Click="Preview_Click"/>
-            <Button x:Name="PreviewWindowButton" DockPanel.Dock="Right" Style="{StaticResource Ghost}" Content="&#xE8A7;" FontFamily="Segoe Fluent Icons" FontSize="14"
+            <Button x:Name="PreviewWindowButton" DockPanel.Dock="Right" Style="{StaticResource Ghost}" Content="&#xE8A7;" FontFamily="Segoe Fluent Icons" FontSize="10"
                     MinWidth="32" MinHeight="32" AutomationProperties.Name="Open preview in a floating window" ToolTip="Open preview in a floating window" Click="PreviewWindow_Click"/>
             <Button x:Name="PreviewPipButton" DockPanel.Dock="Right" Style="{StaticResource Ghost}" MinWidth="32" MinHeight="32"
                     AutomationProperties.Name="Picture in picture inside Pathweft" ToolTip="Picture in picture inside Pathweft" Click="PreviewPip_Click">
-              <Viewbox Width="18" Height="18">
+              <Viewbox Width="12" Height="12">
                 <Canvas Width="24" Height="24">
                   <Path Data="M3,4 H21 V20 H3 Z" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.5"/>
                   <Path Data="M12,11 H19 V18 H12 Z" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"/>
                 </Canvas>
               </Viewbox>
             </Button>
+            <Button x:Name="PreviewPinButton" DockPanel.Dock="Right" Style="{StaticResource CompactCommand}" Width="32" Height="32" MinWidth="32" MinHeight="32" Content="&#xE718;" FontFamily="Segoe Fluent Icons" FontSize="10"
+                    AutomationProperties.Name="Pin this preview" ToolTip="Pin this preview" Click="PreviewPin_Click"/>
             <Grid DockPanel.Dock="Left" Width="18" Height="18" Margin="0,0,8,0" VerticalAlignment="Center">
               <TextBlock Text="{Binding Icon}" Foreground="{Binding IconBrush}" FontFamily="Segoe Fluent Icons" FontSize="16" VerticalAlignment="Center">
                 <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding Source, ElementName=PreviewAppIcon}" Value="{x:Null}"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></TextBlock.Style>

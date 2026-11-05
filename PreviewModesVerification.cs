@@ -26,7 +26,7 @@ public partial class MainWindow
         async Task Select(string path)
         {
             if(previewMode!=PreviewMode.Sidebar)MovePreviewHost(PreviewMode.Sidebar);
-            restoredPreview=false;previewShown=null;Settings.Preview=true;
+            previewPinned=false;previewShown=null;Settings.Preview=true;
             Left.List.SelectedItem=Left.Items.Single(item=>item.Path.Equals(path,StringComparison.OrdinalIgnoreCase));ApplyPreview();PreviewFollow();
             await sidePreview.Completion;await Layout();check(sidePreview.State=="ready","Mode workflow loads actual preview: "+Path.GetFileName(path));
             await Left.IconsCompletionForVerification;await Layout();
@@ -40,8 +40,9 @@ public partial class MainWindow
             PreviewPipButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await Layout();
             check(previewMode==PreviewMode.PictureInPicture&&previewWindow==null&&Application.Current.Windows.Count==windows&&PreviewColumn.Width.Value==0&&PreviewGap.Width.Value==0&&PreviewSplitter.Visibility==Visibility.Collapsed,"PiP is an in-app corner overlay and releases the full sidebar column: "+label);
             check(PreviewPane.ActualWidth<=400.1&&PreviewPane.ActualHeight<=320.1&&PreviewPane.ActualWidth>200&&PreviewPane.ActualHeight>100,"PiP has compact measured client bounds: "+label);
+            if(!previewPinned)PreviewPinButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             Left.List.SelectedItem=Left.Items.Single(item=>item.Path==Path.Combine(root,"other.txt"));PreviewFollow();
-            check(sidePreview.Entry==entry&&sidePreview.Generation==generation,"Browsing elsewhere keeps the detached item pinned: "+label);
+            check(previewPinned&&sidePreview.Entry==entry&&sidePreview.Generation==generation,"Explicit pin keeps the detached item while browsing: "+label);
             state();await S1Verification.Snapshot(this,root,label+"-pip");
             PreviewWindowButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await Layout();
             check(previewMode==PreviewMode.Windowed&&previewWindow!=null&&previewWindow.Content==PreviewPane&&PreviewColumn.Width.Value==0,"Windowed uses an independent resizable floating window: "+label);
@@ -51,6 +52,8 @@ public partial class MainWindow
             previewWindow.Close();await Layout();
             check(previewMode==PreviewMode.Sidebar&&previewWindow==null&&PreviewColumn.Width.Value==Settings.PreviewWidth&&PreviewPane.Parent==PaneArea&&sidePreview.Entry==entry,"Closing the floating window restores the same preview to its saved sidebar: "+label);
             PreviewFollow();check(sidePreview.Entry==entry&&sidePreview.Generation==generation,"Restoration is stable until the user changes selection again: "+label);state();
+            if(Left.Items.FirstOrDefault(item=>item.Path==entry.Path) is {} selected)
+            {Left.List.SelectedItem=selected;PreviewPinButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await sidePreview.Completion;}
         }
         await Select(Path.Combine(root,"document-pages.docx"));var office=(OfficeViewer)sidePreview.ViewerForVerification;
         var number=PreviewChildren<TextBox>(PreviewBody).Single(box=>AutomationProperties.GetName(box)=="Page number");number.Text="64";
@@ -89,6 +92,7 @@ public partial class MainWindow
         var up=renderer.LastFrame.Up.ToArray();var focal=renderer.LastFrame.Focal.ToArray();
         // For the navigation-away check use a real sibling selection in this folder.
         PreviewPipButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await Layout();
+        PreviewPinButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         await S1Verification.Navigate(Left,root);MovePreviewHost(PreviewMode.Sidebar);await Layout();
         await Moves("model",()=>check(renderer.WorkerAlive&&timeline.Value==position,"Model host changes keep the native worker and animation position"));
         await renderer.RenderCompletion;check(up.Zip(renderer.LastFrame.Up).All(pair=>Math.Abs(pair.First-pair.Second)<1e-6)&&focal.Zip(renderer.LastFrame.Focal).All(pair=>Math.Abs(pair.First-pair.Second)<1e-6),"Model camera orientation and focal point survive host-size changes");
@@ -96,7 +100,7 @@ public partial class MainWindow
         await Moves("folder",()=>check(ReferenceEquals(tree,PreviewChildren<TreeView>(PreviewBody).Single()),"Native folder tree remains the same expanded-view instance"));
         await S1Verification.Navigate(Left,archive);await Select(archive+"\\note.txt");
         string lease=sidePreview.ArchiveDirectoryForVerification;long archiveGeneration=sidePreview.Generation;
-        PreviewPipButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await Layout();await S1Verification.Navigate(Left,root);PreviewFollow();
+        PreviewPipButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));PreviewPinButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await Layout();await S1Verification.Navigate(Left,root);PreviewFollow();
         check(lease!=null&&Directory.Exists(lease)&&sidePreview.Generation==archiveGeneration,"PiP browsing preserves its archive extraction lease");
         PreviewWindowButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await Layout();previewWindow.Close();await Layout();
         check(Directory.Exists(lease)&&sidePreview.Generation==archiveGeneration,"Windowed restoration retains the same archive input lease");

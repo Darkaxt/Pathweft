@@ -128,7 +128,7 @@ sealed partial class PackageProbe
         var pixels=new byte[bitmap.PixelWidth*bitmap.PixelHeight*4];bitmap.CopyPixels(pixels,bitmap.PixelWidth*4,0);
         int yellow=0,brown=0;
         for(int i=0;i<pixels.Length;i+=4){int b=pixels[i],g=pixels[i+1],r=pixels[i+2],a=pixels[i+3];if(a>200&&r>180&&g>110&&b<130)yellow++;if(a>200&&r>40&&r<170&&g<110&&b<65)brown++;}
-        Check(pixels[3]==0&&pixels[^1]==0&&yellow>bitmap.PixelWidth*bitmap.PixelHeight/4&&brown>bitmap.PixelWidth*bitmap.PixelHeight/30,criterion);
+        Check(pixels[3]==0&&pixels[^1]==0&&yellow>bitmap.PixelWidth*bitmap.PixelHeight/4&&brown>bitmap.PixelWidth*bitmap.PixelHeight/(bitmap.PixelWidth<24?50:30),criterion);
     }
     static string NativeTextValue(string library,string export)
     {
@@ -278,7 +278,11 @@ sealed partial class PackageProbe
             Check(((string[])received.GetData(DataFormats.FileDrop)).SequenceEqual(new[]{payload})&&((string[])received.GetData(DataFormats.FileDrop)).SequenceEqual(new[]{payload})&&exports==1,"Delivered Windows file-drop export stays compatible across native OLE and materializes once on demand");
             new System.Windows.Interop.WindowInteropHelper(owner).EnsureHandle(); // an owned, never-shown HWND is required by WPF's Owner contract
             using(var icon=Application.GetResourceStream(new Uri("/Pathweft;component/app.ico",UriKind.Relative)).Stream)
-                VerifyIcon(System.Windows.Media.Imaging.BitmapDecoder.Create(icon,System.Windows.Media.Imaging.BitmapCreateOptions.PreservePixelFormat,System.Windows.Media.Imaging.BitmapCacheOption.OnLoad).Frames[0],"Delivered WPF app icon has a transparent background, yellow folder and contrasting brown marks");
+            {
+                var frames=System.Windows.Media.Imaging.BitmapDecoder.Create(icon,System.Windows.Media.Imaging.BitmapCreateOptions.PreservePixelFormat,System.Windows.Media.Imaging.BitmapCacheOption.OnLoad).Frames;
+                Check(new[]{16,24,32,48,64,128,256}.All(size=>frames.Any(frame=>frame.PixelWidth==size&&frame.PixelHeight==size)),"Delivered WPF icon contains every required Windows size");
+                foreach(var iconFrame in frames)VerifyIcon(iconFrame,"Delivered WPF folder/compass icon retains transparency and contrast: "+iconFrame.PixelWidth);
+            }
             IntPtr largeIcon=IntPtr.Zero,smallIcon=IntPtr.Zero;
             try
             {
@@ -370,6 +374,7 @@ sealed partial class PackageProbe
             Check((string)Get(session,"State")=="ready"&&target.Content is TreeView,"Delivered native folder preview uses the shared file tree");
             Settings.Preview=true;Call(typeof(MainWindow),owner,"ApplyPreview");((ListView)left.FindName("List")).UnselectAll();Call(typeof(MainWindow),owner,"PreviewFollow");
             Check(((FrameworkElement)owner.FindName("PreviewPane")).Visibility==Visibility.Collapsed&&((ColumnDefinition)owner.FindName("PreviewColumn")).Width.Value==0&&Settings.Preview,"Delivered empty-selection preview releases its complete column without disabling the preference");
+            await VerifyRefinements124(left);
             var markdown=Path.Combine(root,"preview.md");File.WriteAllText(markdown,"# Packaged Markdown\n\nReadable **content**.");
             Call(previewType,session,"Show",new Entry{Name="preview.md",Path=markdown});await (Task)Get(session,"Completion");
             Check((string)Get(session,"State")=="ready"&&(string)Get(session,"ModuleId")=="markdown"&&target.Content!=null,"Delivered internal Markdown module renders through the actual preview session");

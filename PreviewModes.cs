@@ -11,8 +11,14 @@ public partial class MainWindow
     enum PreviewMode { Sidebar, PictureInPicture, Windowed }
     PreviewMode previewMode;
     Window previewWindow;
-    bool changingPreviewHost,restoredPreview;
-    string selectionAtPreviewRestore;
+    bool changingPreviewHost,previewPinned;
+
+    void PreviewPin_Click(object sender,RoutedEventArgs args)
+    {
+        if(sidePreview?.Entry==null)return;
+        previewPinned=!previewPinned;UpdatePreviewModeButtons();
+        if(!previewPinned)PreviewFollow();
+    }
 
     void UpdateSidePreviewHeading(string text)
     {
@@ -23,6 +29,7 @@ public partial class MainWindow
         PreviewAppIcon.ToolTip=sidePreview?.RendererDescription;
         AutomationProperties.SetName(PreviewAppIcon,sidePreview?.RendererDescription??"Preview icon");
         if(previewWindow!=null){previewWindow.Title=text;previewWindow.Icon=icon??sidePreview?.Entry?.SmallIcon;}
+        UpdatePreviewModeButtons();
     }
 
     void PreviewWindow_Click(object sender,RoutedEventArgs args)
@@ -55,7 +62,7 @@ public partial class MainWindow
                 var window=previewWindow=new Window
                 {
                     Owner=this,Content=PreviewPane,Title=PreviewTitle.Text,Width=840,Height=680,MinWidth=360,MinHeight=260,
-                    WindowStartupLocation=WindowStartupLocation.CenterOwner,ShowInTaskbar=false,
+                    WindowStartupLocation=WindowStartupLocation.CenterOwner,ShowInTaskbar=false,ShowActivated=false,
                     Background=Hex("#161B24"),Foreground=Foreground,FontFamily=FontFamily,FontSize=FontSize
                 };
                 window.Icon=PreviewControls.RendererIcon(sidePreview.RendererId)??sidePreview.Entry.SmallIcon;
@@ -86,10 +93,6 @@ public partial class MainWindow
                 }
                 else
                 {
-                    // Browsing while detached must not discard the restored
-                    // item immediately. Resume following on the next selection.
-                    restoredPreview=sidePreview?.Entry!=null;
-                    selectionAtPreviewRestore=(active?.List.SelectedItem as Entry)?.Path;
                     previewShown=sidePreview?.Entry?.Path;
                 }
             }
@@ -107,6 +110,10 @@ public partial class MainWindow
     }
     void UpdatePreviewModeButtons()
     {
+        string pin=previewPinned?"Unpin preview and follow selection":"Pin this preview";
+        PreviewPinButton.ToolTip=pin;AutomationProperties.SetName(PreviewPinButton,pin);
+        AutomationProperties.SetItemStatus(PreviewPinButton,previewPinned?"Pinned":"Following selection");
+        PreviewPinButton.Tag=previewPinned?"on":null;PreviewPinButton.IsEnabled=sidePreview?.Entry!=null;
         string floating=previewMode==PreviewMode.Windowed?"Return preview to sidebar":"Open preview in a floating window";
         string pip=previewMode==PreviewMode.PictureInPicture?"Return preview to sidebar":"Picture in picture inside Pathweft";
         PreviewWindowButton.ToolTip=floating;AutomationProperties.SetName(PreviewWindowButton,floating);

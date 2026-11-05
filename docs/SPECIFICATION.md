@@ -1,6 +1,52 @@
 # Pathweft specification
 
-Version 0.60 - 2026-11-05. Owner: Darkaxt.
+Version 0.64 - 2026-11-05. Owner: Darkaxt.
+
+Approved branding direction2026-11-05, CORE-12, assigned to ACTIVE S17:
+replace the application icon with the user-approved yellow folder and compass.
+Use a clear darker compass silhouette at small title/taskbar sizes; retain
+polished depth/detail at larger sizes without fine lettering becoming noise.
+Provide transparent multiresolution Windows icon assets, verify 16/24/32/48/64/
+128/256 sizes on light/dark surfaces and actual embedded WPF/native/package use.
+Preserve Darkaxt.Pathweft application/shortcut/Jump List identity and all settings.
+This joins TRANSFER-16/PREVIEW-38 in one final next update, not a separate release.
+
+Additional S17 next-update request2026-11-05, PREVIEW-38: PiP and Windowed
+previews follow the active file selection instead of keeping the original item
+pinned. This explicitly supersedes PREVIEW-37's pin-while-browsing behavior.
+The user subsequently requested an explicit pin icon alongside PiP/Windowed/close:
+default unpinned follows selection; pinned retains the displayed item while
+browsing/no selection, across host changes. Unpin immediately follows the current
+selection in the same host. Keep pin state visibly/accessibly distinct and clear
+it on explicit preview close; it is a session control, not a new persisted setting.
+The user's subsequent approval activates CORE-12's folder/compass replacement.
+Preserve the selected host mode/bounds on file changes; replace content/title/
+icon and release the previous renderer/source lease correctly. Obsolete async
+completions must not overwrite the latest selection. Keep mode-only transitions
+state-preserving and floating-window closure restoring the sidebar. Clear stale
+content for no selection under the existing preview enablement rules. Scale the
+PiP and Windowed glyphs to the close icon's small visual proportion while keeping
+accessible tooltips and usable hit targets. Qualify actual selection changes in
+both hosts, rapid replacement, renderer/lease teardown and dark/light/scaled UI.
+Implement this alongside TRANSFER-16 in S17's one combined next release; no
+second stage is ACTIVE and S15 remains delivered.
+
+New authorized next-update scope2026-11-05, TRANSFER-16, assigned to S17:
+prioritize existing destination files newer than their incoming replacements at
+the top of the conflict table, using readable orange and a textual/accessibility
+cue. By default show files whose size or modification timestamp differs, and
+render only the differing properties in their Incoming/Existing cells. Hide
+matching property values; offer Show matching files with accurate shown/total
+counts and explicit action scope. Matching size/date is not a claim of identical
+contents: this review uses existing metadata, without additional content reads,
+hashing or cloud hydration. Keep the complete conflict set and existing four
+resolution choices; filtering must never silently skip files. Display enough
+size/time precision to distinguish unequal values, including subsecond changes.
+Use the existing compact table/virtualization and application design; qualify
+mixed/all-matching conflicts, newer-destination ordering/cues, show-all, actual
+resolution outcomes, keyboard and dark/light100/150% rendering. S17 owns the
+normal next release, independent retrieval and installed verification. S15 is
+already delivered; S17 alone is ACTIVE, with later stages unchanged.
 
 Execution reconciliation2026-11-05: S11/S14/S15 COMPLETE through normal1.1.23
 at fc01ce1. Actual final57312, independently downloaded51296 and installed
@@ -948,6 +994,7 @@ criteria apply within the implementing stage and again at the packaged boundary.
 | CORE-09 | S8 This PC drive capacity/free/usage and network details plus truthful external connection speeds, as specified in current scope. Verify actual inventory, live refresh/navigation, unknown media/speed, native USB evidence and dark/light responsive layout. |
 | CORE-10 | S8 dynamic detail columns described in current scope; verify data-driven visibility, asynchronous metadata/results, width/sort preservation and contextual navigation. |
 | CORE-11 | S8 measured free-space percentages, shared capacity warning colors and provider-based cloud drive identity, as specified in current scope. Verify actual mounts and unavailable capacity. |
+| CORE-12 | S17 approved yellow-folder/dark-compass application icon. Transparent multiresolution assets must remain legible at small sizes, retain polished larger detail, appear in embedded WPF/native/package surfaces, and preserve the existing Windows application/shortcut/Jump List identity. |
 
 On 2026-10-31, the user also requested EverythingToolbar's four inline search
 toggles: Match case, Match whole word, Match path and Regex. They belong at the
@@ -1072,7 +1119,8 @@ add QuickLook's plugin installer/marketplace. Existing gaps remain documented.
 | PREVIEW-34 | ChmViewer | Read-only embedded CHM topic/content navigation with bounded resource access. Block scripts, external navigation, downloads and active content; verify internal topic links, images, malformed archives and source preservation. Opening the system Help application is not acceptance. |
 | PREVIEW-35 | CLSIDViewer | Inspect supported Shell namespace inputs of the form ::{GUID} and show resolved identity/registration metadata. This is a virtual-input viewer, not an invented file extension. Wire actual selection/input into the preview host and verify known, unknown and malformed identifiers without COM activation, registry writes or executing a registered command. |
 | PREVIEW-36 | Integrated qualification and delivery | Demonstrate every category through actual complete selection -> rendering/inspection -> navigation -> close workflows, including eligible native/archive and side/Space/widget surfaces; document genuine input/surface exclusions. Verify per-module toggles and restart persistence, deterministic overlaps, active-disable, rapid selection, malformed/large/encrypted/locked/missing-runtime states, cancellation and post-close rename/delete with source hashes unchanged. Inspect themed accessible controls at narrow/normal sizes and100%/150% scaling. Revalidate affected existing previews and HTML/media/3D lifecycle boundaries. S13 closes only after all fourteen specialist outcomes pass, source/license/runtime inventory is complete, one normal release is independently retrieved/qualified and its actual installed update is verified. No per-module intermediate product releases. |
-| PREVIEW-37 | Windowed and in-app PiP preview | Add themed accessible mode icons beside sidebar close. Show the actual renderer's app icon on the left of the filename instead of labels such as WordCraft. The icon must switch to LibreOffice when fallback takes over, including after primary failure; expose the engine/recovery reason in its tooltip. Keep sidebar, PiP and Windowed identification consistent. Windowed uses a resizable external floating window and restores the same preview to the side column upon window closure. PiP uses a compact corner overlay inside Pathweft, releases the sidebar column and offers return to sidebar. Retain item, renderer/navigation/playback/camera state and pin content while browsing elsewhere. Keep explicit close-preview distinct from window-close restoration. Verify actual Office/media/3D/HTML/ordinary transfers, restoration, compact/narrow sizing, active-disable, cancellation and app-exit cleanup without duplicate renderers or lost source/archive leases. |
+| PREVIEW-37 | Windowed and in-app PiP preview | Add themed accessible mode icons beside sidebar close. Show the actual renderer's app icon on the left of the filename instead of labels such as WordCraft. The icon must switch to LibreOffice when fallback takes over, including after primary failure; expose the engine/recovery reason in its tooltip. Keep sidebar, PiP and Windowed identification consistent. Windowed uses a resizable external floating window and restores the same preview to the side column upon window closure. PiP uses a compact corner overlay inside Pathweft, releases the sidebar column and offers return to sidebar. Retain renderer/navigation/playback/camera state during mode changes. The former pin-while-browsing behavior is explicitly superseded by PREVIEW-38. Keep explicit close-preview distinct from window-close restoration. Verify actual Office/media/3D/HTML/ordinary transfers, restoration, compact/narrow sizing, active-disable, cancellation and app-exit cleanup without duplicate renderers or lost source/archive leases. |
+| PREVIEW-38 | Selection-following and explicitly pinned preview hosts | S17: default PiP/Windowed follows selection with updated content/title/icon, preserved host mode/bounds, correct previous renderer/lease teardown and stale-async protection. Explicit pin beside the three header buttons retains the displayed item across browsing/empty selection/host changes; unpin follows current selection immediately. Clear pin on explicit close and expose visible/accessibility state. Unpinned empty selection clears stale content. Preserve mode-switch state/restoration semantics; small glyphs with usable accessible targets. Verify actual replacement/pin/unpin, rapid changes, lease/player cleanup, themes and scaling. |
 
 At S13 activation, qualify dependencies and exact formats against the pinned
 upstream implementation and available runtime rather than accepting marketing
@@ -1222,6 +1270,7 @@ Primary sources: [Windows indexing scope](https://support.microsoft.com/en-us/wi
 | UPDATE-02 | Clicking manual Check for updates in the sidebar or Settings immediately shows nearby visible/accessibility feedback, followed by a clear result: Checking, up to date with installed version, update available with version/action, or check failed with explanation/explicit retry. Use a discoverable themed update surface/in-control status; the main bottom-right status line alone is insufficient. Observe the real task, prevent duplicate concurrent checks and avoid artificial completion delays. Automatic checks stay quiet when unchanged; preserve download/hash/cancel/deployment progress, transfer/editor protection and user-controlled restart. Verify no-update/available/network-failure and progress/result behavior through actual application workflows. |
 | TRANSFER-14 | On actual successful transfer completion, automatically dismiss that job through the existing Transfers UI owner and hide the window when no cards remain. Retain active/queued/paused/conflicting and failed/partial/error outcomes; explicit clean cancellation follows TRANSFER-15. Preserve completion notifications, Undo, arrival selection, source/destination refresh and reusable close-to-hide behavior. Use completion events, with no simulated click, delay or polling deadline. Verify real copy/move, multiple jobs and unsuccessful outcomes; successful completion must not hide outstanding work or erase its errors. |
 | TRANSFER-15 | The S15 transfer popup amendment in current scope governs compact content-ready sizing, a real virtualized conflict table, clean explicit-cancel dismissal after worker completion, unchanged native clipboard data and repeat Paste, nonduplicated speed, and visible file-specific errors with secondary informational details. Qualify real job actions, isolated native clipboard, multiple jobs, resizing, keyboard, dark/light and100/150% rendering. |
+| TRANSFER-16 | S17: differences-first metadata review, newer destination files first in orange with noncolor cue, only differing size/date values rendered at distinguishing precision, explicit matching-file reveal/counts/action scope and unchanged full-set transfer decisions. No extra content reads or identity claim from equal metadata. Verify real conflicts/resolution, compact themes/scaling and final independent/installed release. |
 | WINDOW-03 | Reconcile WINDOW-01/02 and UPDATE-02 against the complete inventory, revalidate affected updater/window lifecycle, then deliver one normal S14 release through the established channel. Independently retrieve the actual package, verify matching source/runtime/notices and packaged workflows, and verify the installed update. No per-window intermediate release or unsolicited system/theme/settings changes. |
 
 ### Current-pane disk analysis (S15)

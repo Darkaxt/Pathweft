@@ -28,6 +28,7 @@ public partial class MainWindow
         {
             if (previewCloseAccepted) return;
             closingPreviews = true;
+            previewPinned=false;
             PreviewSession.ClearAll();
             previewShown = quickShown = null;
             if (change.Cancel) { MovePreviewHost(PreviewMode.Sidebar);closingPreviews = false; return; } // normal notification-area hide
@@ -48,14 +49,19 @@ public partial class MainWindow
     void ApplyPreview()
     {
         UpdateCommandStates();
-        if(previewMode==PreviewMode.Sidebar&&!restoredPreview)previewShown = null;
+        if(previewMode==PreviewMode.Sidebar&&!previewPinned)previewShown = null;
         if(Settings.Preview)PreviewFollow();
-        else{MovePreviewHost(PreviewMode.Sidebar);restoredPreview=false;previewShown=null;SetPreviewVisible(false);sidePreview?.Clear();}
+        else{previewPinned=false;MovePreviewHost(PreviewMode.Sidebar);previewShown=null;SetPreviewVisible(false);sidePreview?.Clear();UpdatePreviewModeButtons();}
     }
     void SetPreviewVisible(bool visible)
     {
         bool column=visible&&previewMode==PreviewMode.Sidebar;
         PreviewPane.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
+        if(previewWindow is {} window)
+        {
+            if(!visible)window.Hide();
+            else if(!window.IsVisible)window.Show();
+        }
         PreviewSplitter.Visibility = column ? Visibility.Visible : Visibility.Collapsed;
         if(column== (PreviewColumn.Width.Value>0))return;
         PreviewColumn.MinWidth = column ? 200 : 0;
@@ -77,7 +83,6 @@ public partial class MainWindow
     void PreviewFollow()
     {
         if (closingPreviews) return;
-        if(previewMode!=PreviewMode.Sidebar){SetPreviewVisible(sidePreview?.Entry!=null);return;}
         if (quick != null)
         {
             SetPreviewVisible(false);
@@ -88,14 +93,10 @@ public partial class MainWindow
         if (!Settings.Preview || sidePreview == null) return;
         var entry = active?.List.SelectedItem as Entry;
         if(entry?.IsUp==true)entry=null;
-        if(restoredPreview)
-        {
-            if(entry?.Path==selectionAtPreviewRestore){SetPreviewVisible(sidePreview.Entry!=null);return;}
-            restoredPreview=false;
-        }
+        if(previewPinned&&sidePreview.Entry!=null){SetPreviewVisible(true);return;}
         SetPreviewVisible(entry!=null);
         if (entry?.Path == previewShown) return;
-        previewShown = entry?.Path; sidePreview.Show(entry);
+        previewShown = entry?.Path; sidePreview.Show(entry);UpdatePreviewModeButtons();
     }
     void QuickView() => ToggleQuickView(active, this);
     internal void InspectShellClass(PaneView source,Entry entry,Window previewOwner=null)
@@ -108,7 +109,7 @@ public partial class MainWindow
     {
         if(previewMode!=PreviewMode.Sidebar)MovePreviewHost(PreviewMode.Sidebar);
         if (quick != null) { quick.Close(); return; }
-        sidePreview.Clear(); previewShown = null; quickSource = source;
+        sidePreview.Clear(); previewPinned=false;previewShown = null; quickSource = source;UpdatePreviewModeButtons();
         quickBody = new ContentControl { HorizontalContentAlignment = HorizontalAlignment.Stretch, VerticalContentAlignment = VerticalAlignment.Stretch };
         quick = new Window
         {

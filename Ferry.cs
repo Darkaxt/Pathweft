@@ -15,9 +15,22 @@ public enum Choice { Skip, Overwrite, Rename, Newer }
 
 public record Conflict(int File, string Name, long SourceSize, DateTime SourceModified, long TargetSize, DateTime TargetModified)
 {
-    public string Detail => $"{MainWindow.Fmt(SourceSize)}, {SourceModified:yyyy-MM-dd HH:mm}  →  existing {MainWindow.Fmt(TargetSize)}, {TargetModified:yyyy-MM-dd HH:mm}";
-    public string IncomingSize=>MainWindow.Fmt(SourceSize);
-    public string ExistingSize=>MainWindow.Fmt(TargetSize);
+    public string SourcePath { get; init; }
+    public string TargetPath { get; init; }
+    public bool SizeDiffers => SourceSize != TargetSize;
+    public bool TimeDiffers => SourceModified.ToUniversalTime() != TargetModified.ToUniversalTime();
+    public bool MetadataMatches => !SizeDiffers && !TimeDiffers;
+    public bool ExistingNewer => TargetModified.ToUniversalTime() > SourceModified.ToUniversalTime();
+    public bool IncomingNewer => SourceModified.ToUniversalTime() > TargetModified.ToUniversalTime();
+    public string ReviewHint => ExistingNewer ? "Newer existing file" : MetadataMatches ? "Same size and date" : "";
+    public string Detail => $"Incoming: {SourcePath ?? Name}\n{SourceSize:N0} bytes · {SourceModified:O}\nExisting: {TargetPath ?? Name}\n{TargetSize:N0} bytes · {TargetModified:O}\n{ReviewHint}";
+    bool RoundedSizesMatch => MainWindow.Fmt(SourceSize) == MainWindow.Fmt(TargetSize);
+    public string IncomingSize => SizeDiffers ? RoundedSizesMatch ? $"{SourceSize:N0} bytes" : MainWindow.Fmt(SourceSize) : "";
+    public string ExistingSize => SizeDiffers ? RoundedSizesMatch ? $"{TargetSize:N0} bytes" : MainWindow.Fmt(TargetSize) : "";
+    string DateFormat => SourceModified.ToString("yyyy-MM-dd HH:mm:ss") == TargetModified.ToString("yyyy-MM-dd HH:mm:ss")
+        ? "yyyy-MM-dd HH:mm:ss.fffffff zzz" : "yyyy-MM-dd HH:mm:ss";
+    public string IncomingTime => TimeDiffers ? SourceModified.ToString(DateFormat) : "";
+    public string ExistingTime => TimeDiffers ? TargetModified.ToString(DateFormat) : "";
 }
 
 public class Job : INotifyPropertyChanged
@@ -54,6 +67,31 @@ public class Job : INotifyPropertyChanged
     public int TotalFiles, DoneFiles;
     public string Current { get; internal set; } = "";
     public List<Conflict> Conflicts { get; internal set; } = new();
+    List<Conflict> reviewSource, reviewRows;
+    bool showMatchingConflicts;
+    public bool ShowMatchingConflicts
+    {
+        get => showMatchingConflicts;
+        set { if (showMatchingConflicts == value) return; showMatchingConflicts = value; reviewSource = null; Refresh(); }
+    }
+    public IReadOnlyList<Conflict> ConflictRows
+    {
+        get
+        {
+            if (!ReferenceEquals(reviewSource, Conflicts))
+            {
+                reviewSource = Conflicts;
+                reviewRows = Conflicts.Where(c => ShowMatchingConflicts || !c.MetadataMatches)
+                    .OrderByDescending(c => c.ExistingNewer).ThenBy(c => c.Name, StringComparer.OrdinalIgnoreCase).ThenBy(c => c.File).ToList();
+            }
+            return reviewRows;
+        }
+    }
+    public int MatchingConflictCount => Conflicts.Count(c => c.MetadataMatches);
+    public bool HasMatchingConflicts => MatchingConflictCount > 0;
+    public bool NoConflictDifferences => ConflictRows.Count == 0;
+    public string MatchingConflictsLabel => $"Show {MatchingConflictCount:N0} file(s) with the same size and date";
+    public string ConflictScope => $"Showing {ConflictRows.Count:N0} of {Conflicts.Count:N0} files. Choices below apply to all {Conflicts.Count:N0}.";
     public bool Merged { get; internal set; } // a folder went into a folder of the same name that was already there
     public readonly Dictionary<string, string> Duplicates = new(StringComparer.OrdinalIgnoreCase); // source → its "- Copy" beside it, which Undo removes
     public readonly System.Collections.Concurrent.ConcurrentQueue<string> Errors = new(); // written by the worker, read by the UI
@@ -142,7 +180,7 @@ public class Job : INotifyPropertyChanged
     public bool Copying => Phase is Phase.Copying or Phase.Verifying;
     public bool HasConflicts => Phase == Phase.Conflicts;
     public string ConflictTitle => $"{Conflicts.Count} file(s) already exist in the destination";
-    public double ConflictHeight=>Math.Min(240,32+Conflicts.Count*44);
+    public double ConflictHeight=>Math.Min(240,32+ConflictRows.Count*56);
     public bool HasErrors => Errors.Count > 0 || Notes.Count > 0;
     public bool HasTransferErrors => !Errors.IsEmpty;
     public string ErrorSummary => Errors.TryPeek(out var first)?first+(Errors.Count>1?$" (+{Errors.Count-1} more; see Details)":""):"";
@@ -319,7 +357,8 @@ public static class Ferry
             if (target.Exists)
             {
                 var existing = TransferFile.Inspect(target.FullName);
-                plan.Conflicts.Add(new Conflict(i, plan.Files[i].Relative, plan.Files[i].Snapshot.Size, DateTime.FromFileTimeUtc(plan.Files[i].Snapshot.Modified).ToLocalTime(), existing.Size, DateTime.FromFileTimeUtc(existing.Modified).ToLocalTime()));
+                plan.Conflicts.Add(new Conflict(i, plan.Files[i].Relative, plan.Files[i].Snapshot.Size, DateTime.FromFileTimeUtc(plan.Files[i].Snapshot.Modified).ToLocalTime(), existing.Size, DateTime.FromFileTimeUtc(existing.Modified).ToLocalTime())
+                    { SourcePath = plan.Files[i].Source, TargetPath = target.FullName });
             }
         }
         job.ExcludedItems = links;
@@ -349,7 +388,7 @@ public static class Ferry
             bool overwrite = false;
             if (conflicts.TryGetValue(i, out var c))
             {
-                var ch = choice == Choice.Newer && c.SourceModified <= c.TargetModified ? Choice.Skip : choice;
+                var ch = choice == Choice.Newer && !c.IncomingNewer ? Choice.Skip : choice;
                 if (ch == Choice.Skip) { job.SkippedFiles++; continue; }
                 if (ch == Choice.Rename) target = UniqueName(target, reserved);
                 else overwrite = true;

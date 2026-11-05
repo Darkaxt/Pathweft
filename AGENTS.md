@@ -1,5 +1,28 @@
 # Pathweft development
 
+Next-update request2026-11-05/spec0.64: S17 ACTIVE for TRANSFER-16/PREVIEW-38/CORE-12. Default
+conflict table shows only size/date differences and only differing properties;
+existing destination files newer than incoming go first in orange with a textual
+cue. Preserve all planned conflicts and four resolution actions, reveal matching
+metadata on request with clear scope/counts, and distinguish unequal rounded
+sizes/subsecond timestamps. Metadata matches do not prove byte identity; no new
+content reads/hydration. S17 owns source/UI/actual choices and normal next-release/
+independent/installed verification. S15 stays COMPLETE, S16/S12/etc not activated.
+PiP/Windowed now must follow selected files (explicitly superseding S13's pinned
+behavior), preserve their mode/bounds and replace content/title/icon with correct
+renderer/lease teardown/stale-completion protection. Shrink host glyphs to the
+close icon's visual size. Qualify complete features sequentially in one S17 release.
+Explicit pin now belongs beside those buttons: default follow, pinned retention
+across selections/hosts, immediate catch-up on unpin, clear on explicit close and
+visible/accessibility state. User subsequently approved CORE-12 folder/compass
+branding in this same update: transparent multiresolution yellow folder/darker
+compass, preserve Windows identity. Preview source61048/57588 passes; transfer,
+icon and combined final delivery remain. One stage ACTIVE, no partial release.
+Source60620 now passes actual differences/full-set resolution and rendered compact
+themes/scales. CORE-12 actual ICO sizes pass. Next gate is combined1.1.24 package,
+normal publication, independent retrieval and installed verification. Preserve all
+later-stage boundaries; no shared Everything or live app changes are needed.
+
 Final2026-11-05: S15 COMPLETE through normal1.1.23/fc01ce1, published six assets,
 verified remote source/tag/digests and independently retrieved sources/runtime.
 Actual final57312 and independently downloaded51296 pass full native/app workflows.
