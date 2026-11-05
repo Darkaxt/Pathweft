@@ -1,7 +1,48 @@
 # Implementation and reconciliation
 
-Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.52, 2026-11-05,
+Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.55, 2026-11-05,
 including the user-authorized continued comparison requirement TRANSFER-07.
+
+Current authorized round2026-11-05: continue implementing the native-category
+correction, popup/update feedback and current-pane disk analysis. Sequence:
+S11 COMPLETE -> S14 COMPLETE -> S15 ACTIVE. No second ACTIVE stage.
+S11/S14 source/integration criteria close before advancement; S15 owns the one
+combined normal release, independent source/package and installed verification
+for this round. This supersedes their earlier plan-only/per-stage-delivery
+wording without weakening any acceptance criteria. Source-only closure of a
+predecessor does not claim final delivery. S12/S6/S7 remain outside this request.
+The user confirms real folder pinning and restart persistence in installed1.1.18.
+Native removal/reconstruction is verified by126032; do not request redundant
+manual upstream checks. Installed update identity/pin preservation remains.
+
+Latest S14 addition: TRANSFER-14 automatically dismisses successful transfers
+and hides an empty Transfers window; unsuccessful/active work stays available.
+Source acceptance includes real completion, multi-job and failure/cancel/partial
+regressions; delivery remains the combined S15 release.
+
+Current source checkpoint: S11/S14 COMPLETE for assigned source/integration
+acceptance; S15 ACTIVE. Native91140 qualifies shared auxiliary/HTTP/update,
+102436 transfer completion/adverse outcomes and103700 preview host/lifecycle.
+See [S14 reconciliation](verification/2026-11-05-s14-windows.md). The unchanged
+publisher reproduction133840 fails the native category contract. Corrected
+native126032 passes actual Frequent readback/removal/privacy/reconstruction,
+direct cold/warm launches and installed-list preservation. See
+[the S11 reconciliation](verification/2026-11-05-s11-categories.md).
+S15 explicitly owns actual packaged source/runtime/release/installed acceptance
+and installed update/identity/pin-preservation evidence. These
+do not gate independent S14 source work; they are required before overall
+completion. No intermediate publication and no second ACTIVE stage.
+
+S15 sizing addition already authorized2026-11-05: CORE-20/21 reuse Everything's
+available indexed totals first, scoped metadata traversal otherwise, a bounded
+RAM cache and transactional SQLite fallback persistence. The user subsequently
+authorized enabling folder-size indexing in the existing engine; normal background
+restart58916 and actual SDK/ordinary/analysis/mutation121860 pass. No engine
+upgrade or other setting/scope/service changes. CORE-19 regression103988 passes;
+metadata workflow22428 and isolated million-record migration/memory comparisons
+pass. Current136168 passes the full analysis workflow, including repeated mutation,
+real IPC coverage, bounded hot-cache persistence and virtual-pane ownership.
+Final actual Release package/release/installed checks remain before S15 closure.
 
 Current execution checkpoint (2026-11-04): user authorization covers S13, S9 and
 S11 as one implementation/release outcome. S13 is COMPLETE against all assigned
@@ -151,8 +192,9 @@ This residual is cleanup work, not evidence of passed Office integration.
 | --- | --- | --- | --- | --- |
 | S13 | COMPLETE | PREVIEW-21..37, CORE-18 and bounded MENU-03 source/integration acceptance pass. Thirteen specialist content/policy/lifecycle paths retain PID101932/102932/97712 and prior integrated receipts; Office closes with PID101788/117348/108864. CORE-18 PID84388, existing previews PID79048, shared PDF PID87760, modes PID114112 and compact/header/settings UI PID39948 pass. Source/license/runtime inventory and corresponding-source staging pass as recorded above. Shared1.1.18 independent/installed delivery passes | None within assigned source/integration acceptance | Shared S11 delivery assignment satisfied in1.1.18 |
 | S9 | COMPLETE | Inventory/grouped menus, routed keyboard/theme100/150%, real archive edits/extraction and widget reveal pass PID127940/122788. Native122788 verifies Windows clipboard Copy/Cut/Paste and actual Shell Open. Native128032 verifies exact file/folder/shortcut Properties visibility/shown state, search dismissal and actual HWND destruction, regular native recycle completion and exact hash-matched restore. Owned job empty, user input desktop unchanged, no host activation. Actual independently retrieved/installed1.1.18 delivery passes | None within assigned source/integration acceptance. Test observations distinguish noninteractive station from private WinSta0 desktop; no native reparenting or product recycling workaround | Shared S11 delivery assignment satisfied in1.1.18 |
-| S11 | ACTIVE | S13/S9 prerequisites and normal1.1.18 independent/installed delivery pass. Native PID126624 verifies accepted folder links, independent recent readback, real cold/warm launches, Unicode/UNC/root quoting, saved-removal/privacy inputs and scoped teardown. Final package PID127596 and independent PID29992 pass actual specialist/Office/fallback/native/existing workflows. User confirms working StartAllBack presentation | Internal JUMP-01 blocker: replace custom Quick access/Recent folders and Home/Downloads tasks with actual native Pinned/Frequent behavior; verify real Frequent readback/privacy/direct links and corrected delivery. External JUMP-02 evidence gap: actual user pin/unpin/remove/restart actions are not all independently observed; retain criteria and existing pending question | None beyond S11 |
-| S14 | NOT STARTED | Requirements recorded only | WINDOW-01..03/UPDATE-02; inventory/apply a consistent auxiliary-window contract and immediate manual check feedback after the current combined delivery | Its own normal release, independent package and installed-update verification |
+| S11 | COMPLETE | Corrected native126032 source/integration: actual Frequent readback/removal/privacy/reconstruction, cold/warm links and installed-list preservation; user reports pin/restart persistence | None in assigned source/integration scope | S15 final packaged/independent/installed delivery, including native menu update preservation |
+| S14 | COMPLETE | Native91140 verifies shared layouts/themes/text/96-144DPI, navigation, actual updater HTTP/retry/cancellation/download/handoff.102436 verifies real successful transfer dismissal, Undo and adverse/multi-job retention.103700 verifies preview host/session/lease/lifecycle preservation. Scope reconciliation and closure assessment pass | None within assigned source/integration acceptance | S15 combined final release/independent/installed delivery |
+| S15 | ACTIVE | SPACE-01..04 and source acceptance of SPACE-05/CORE-19..21 pass:136168 real tree/accounting/restore/mutation/cancellation/virtual ownership,103988 stable ordinary values,121860 actual enabled index and isolated transactional migration/memory/concurrency evidence. Selected donor provenance and closure assessment recorded | SPACE-05 final actual Release package, corresponding sources, independent published retrieval and installed update/identity/pin preservation remain | One combined S11/S14/S15 normal release, independent sources/package and installed verification |
 
 The earlier planning snapshot and historical per-stage delivery wording below
 are superseded only for this combined request's sequencing by spec0.40. No
@@ -631,8 +673,9 @@ plan neither authorizes itself nor adds approval checkpoints.
 | S8 - Core integration and delivery | COMPLETE | PREVIEW-20 targeted Marked/FriBidi maintenance; prior core criteria and DELIVERY-01..03 | Source/native, delivered1.1.17 package/source and installed879-member/main/helper/route checks pass; scratch removed | None within S8. No tracked deferral. |
 | S13 - Remaining specialist preview modules | COMPLETE | PREVIEW-21..37, CORE-18, bounded MENU-03; affected CORE/LIFE | S8 COMPLETE | All assigned source/integration criteria pass; S11 owns shared final independent/installed release verification. |
 | S9 - Context menu and command presentation | COMPLETE | MENU-01/02; affected CORE-03/04 and archive/file actions; MENU-03 compact presentation completed in S13 | S13 source/integration COMPLETE | Complete source/integration acceptance PID127940/122788/128032; S11 owns shared final delivery. |
-| S11 - Native pinned/recent folder Jump Lists | ACTIVE | JUMP-01..02; affected CORE-01/02 and LIFE/DELIVERY | S9 COMPLETE | Native folder destinations, pin/unpin/recent/removal/privacy, direct cold/warm launches, stable identity/update/uninstall and normal verified delivery. Tasks-only is insufficient. |
-| S14 - Window design consistency and update feedback | NOT STARTED | WINDOW-01..03, UPDATE-02; affected CORE-03/LIFE/DELIVERY | S11 combined delivery COMPLETE; plan-only addition | Shared design contract across the complete window inventory, immediate manual check/progress/results, retained quiet automatic checks and deployment protection, actual theme/narrow/DPI/keyboard/lifecycle qualification and one later verified release. |
+| S11 - Native pinned/frequent folder Jump Lists | COMPLETE | JUMP-01..02; affected CORE-01/02 and LIFE/DELIVERY | S9 COMPLETE | Corrected native126032 source/integration passes; S15 owns combined final delivery/native update preservation. |
+| S14 - Window design consistency and update feedback | COMPLETE | WINDOW-01..03, UPDATE-02, TRANSFER-14; affected CORE-03/LIFE/DELIVERY | S11 source/integration COMPLETE | Actual auxiliary/HTTP/update91140, real completion/error/multi-job transfer102436 and floating-preview lifecycle103700 pass. Combined delivery remains S15. |
+| S15 - Current-pane disk analysis | ACTIVE | SPACE-01..05, CORE-19; affected CORE/LIFE/DELIVERY | S14 source/integration COMPLETE | Borrow selected pinned Diskweft scanner, reversible current-pane tree/Space used/descending order, stable measured size refresh and preserved file actions/state; real scan/UX/lifecycle qualification and combined normal release/independent/installed delivery. |
 | S12 - Tresorit capability investigation | NOT STARTED | TRES-01..04 | S14 COMPLETE; next in priority | Supported API/client assessment, bounded REA as needed, evidence-backed capability matrix/decision and implementation proposal. Investigation only; no cloud mutation or integration implementation. |
 | S6 - Native StartAllBack search | BLOCKED | SAB-01..06; affected SEARCH/CORE/LIFE/DELIVERY criteria | Parked until Pathweft-first work S13/S9/S11/S12 is closed and execution is resumed; retain unresolved native feasibility boundaries | Investigation only; no complete SAB criterion. Qualify native groups/provider/cancellation/handoff/lifecycle/direct routing and independently verified adapter release in S6; no automatic Sandbox restart. |
 | S7 - Everything filesystem search and Outlook indexing scope | NOT STARTED | EVERYWHERE-01..05; affected SEARCH/CORE/LIFE/SHELL criteria | S6 COMPLETE; consumer/semantics/scope inventory before migration | Final dependent Windows-search work: real Everything file results with selected roots excluded from indexing, WSearch/Outlook retained, explicit exceptions, mail/reboot/recovery and verified migration/package delivery in S7. |
@@ -674,7 +717,8 @@ owns its complete release/delivery gate; S12 delivers research documents only.
 | Requirements | Owner | Later boundary |
 | --- | --- | --- |
 | ENV-01..04 | Setup | Committed/remote document and head readback at setup delivery |
-| WINDOW-01..03, UPDATE-02 | S14 | Planned auxiliary-window consistency/manual checking; later normal independently retrieved and installed release |
+| WINDOW-01..03, UPDATE-02, TRANSFER-14 | S14 | Shared auxiliary windows, immediate manual check/results and successful-transfer dismissal; combined S15 independently retrieved/installed release |
+| SPACE-01..05, CORE-19 | S15 | Current-pane disk analysis, stable displayed sizes during refresh and one shared S11/S14/S15 final independent/installed release |
 | TRES-01..04 | S12 | Evidence-backed Tresorit investigation and implementation proposal; execution remains NOT STARTED |
 | PREVIEW-21..36 | S13 | All fourteen remaining specialist categories, exact format coverage, integrated qualification and final release/installed verification in S13 |
 | PREVIEW-19 | S8 | Canonical drive/share identity for static HTML, retained isolation and final1.1.16 delivery |

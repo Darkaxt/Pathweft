@@ -12,7 +12,7 @@ using System.Windows.Threading;
 namespace FileExplorer.Search;
 
 internal sealed record IndexedHit(string Path, bool IsFolder, long Size, DateTime Modified);
-internal sealed record IndexedPage(IReadOnlyList<IndexedHit> Hits, uint Total, string Engine);
+internal sealed record IndexedPage(IReadOnlyList<IndexedHit> Hits, uint Total, string Engine, bool FolderSizesIndexed=false);
 
 // One SDK state owner for both panes. Native SendMessage calls and the reply
 // window live on a dedicated STA dispatcher; an indexing stall never blocks WPF.
@@ -50,11 +50,29 @@ internal sealed class EverythingSearchClient
         thread.Start();
     }
 
-    internal async Task<IndexedPage> QueryAsync(string expression, string instance, uint offset, uint count, string sort, bool descending, CancellationToken token)
+    internal Task<IndexedPage> QueryAsync(string expression,string instance,uint offset,uint count,string sort,bool descending,CancellationToken token)
+        =>QueryCoreAsync(expression,instance,offset,count,sort,descending,token,false);
+
+    // Exact folder queries only; never copy or enumerate the external full index.
+    // A missing size/index entry is unknown, not a zero-byte directory.
+    internal static string FolderExpression(IEnumerable<string> paths)=>"folder: <"+string.Join(" | ",paths.Select(path=>"path:wfn:\""+System.IO.Path.TrimEndingDirectorySeparator(System.IO.Path.GetFullPath(path))+"\""))+">";
+    internal async Task<Dictionary<string,long>> FolderSizesAsync(IEnumerable<string> paths,string instance,CancellationToken token)
+    {
+        var result=new Dictionary<string,long>(StringComparer.OrdinalIgnoreCase);
+        foreach(var batch in paths.Distinct(StringComparer.OrdinalIgnoreCase).Chunk(64))
+        {
+            token.ThrowIfCancellationRequested();
+            var page=await QueryCoreAsync(FolderExpression(batch),instance,0,(uint)batch.Length,"Name",false,token,true).ConfigureAwait(false);
+            if(!page.FolderSizesIndexed)break;
+            foreach(var hit in page.Hits)if(hit.IsFolder&&hit.Size>=0)result[System.IO.Path.TrimEndingDirectorySeparator(hit.Path)]=hit.Size;
+        }
+        return result;
+    }
+    async Task<IndexedPage> QueryCoreAsync(string expression, string instance, uint offset, uint count, string sort, bool descending, CancellationToken token,bool folderSizes)
     {
         var dispatcher = await ready.Task.ConfigureAwait(false);
         token.ThrowIfCancellationRequested();
-        var request = new Request(expression, instance, offset, count, Sort(sort, descending), token);
+        var request = new Request(expression, instance, offset, count, Sort(sort, descending), token,folderSizes);
         using var cancellation = token.Register(() =>
         {
             request.Completion.TrySetCanceled(token);
@@ -125,6 +143,9 @@ internal sealed class EverythingSearchClient
                 // redirect a named-instance request into another user's index.
                 if (request.Instance.Length != 0) throw new InvalidOperationException("This build supports the existing default Everything instance only.");
                 if (!Native.Everything_IsDBLoaded()) throw new InvalidOperationException("Everything is loading its index. Search again after it is ready; no filesystem fallback was started.");
+                request.FolderSizesIndexed=Native.Everything_IsFileInfoIndexed(2);
+                if(request.FolderSizes&&!request.FolderSizesIndexed)
+                {request.Completion.TrySetResult(new(Array.Empty<IndexedHit>(),0,request.Engine,false));request.Dispose();current=null;continue;}
                 Native.Everything_Reset();
                 Native.Everything_SetSearchW(request.Expression);
                 Native.Everything_SetRequestFlags(0x4 | 0x10 | 0x40);
@@ -162,7 +183,7 @@ internal sealed class EverythingSearchClient
                     hits.Add(new(path.ToString(), !Native.Everything_IsFileResult(i), sizeKnown ? size : -2,
                         dateKnown && date > 0 ? DateTime.FromFileTime(date) : default));
                 }
-                completed.Completion.TrySetResult(new(hits, Native.Everything_GetTotResults(), completed.Engine));
+                completed.Completion.TrySetResult(new(hits, Native.Everything_GetTotResults(), completed.Engine,completed.FolderSizesIndexed));
             }
         }
         catch (Exception ex) { completed.Completion.TrySetException(ex); }
@@ -172,11 +193,13 @@ internal sealed class EverythingSearchClient
         return new IntPtr(1);
     }
 
-    sealed class Request(string expression, string instance, uint offset, uint count, uint sort, CancellationToken token) : IDisposable
+    sealed class Request(string expression, string instance, uint offset, uint count, uint sort, CancellationToken token,bool folderSizes) : IDisposable
     {
         internal readonly string Expression = expression, Instance = instance;
         internal readonly uint Offset = offset, Count = count, Sort = sort;
         internal readonly CancellationToken Token = token;
+        internal readonly bool FolderSizes=folderSizes;
+        internal bool FolderSizesIndexed;
         internal uint Reply;
         internal string Engine;
         internal Process Process;
@@ -197,6 +220,7 @@ internal sealed class EverythingSearchClient
         [DllImport("user32.dll")] internal static extern bool IsHungAppWindow(IntPtr hwnd);
         [DllImport("user32.dll")] internal static extern uint GetWindowThreadProcessId(IntPtr hwnd, out uint pid);
         [DllImport(Dll)] internal static extern bool Everything_IsDBLoaded();
+        [DllImport(Dll)] internal static extern bool Everything_IsFileInfoIndexed(uint information);
         [DllImport(Dll)] internal static extern void Everything_Reset();
         [DllImport(Dll, CharSet = CharSet.Unicode)] internal static extern void Everything_SetSearchW(string search);
         [DllImport(Dll)] internal static extern void Everything_SetRequestFlags(uint flags);

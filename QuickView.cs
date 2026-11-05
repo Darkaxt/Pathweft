@@ -32,6 +32,8 @@ public partial class MainWindow
             previewShown = quickShown = null;
             if (change.Cancel) { MovePreviewHost(PreviewMode.Sidebar);closingPreviews = false; return; } // normal notification-area hide
             change.Cancel = true;
+            await StopUpdateChecks();
+            await Task.WhenAll(Left.DrainSpaceAndSizesAsync(),Right.DrainSpaceAndSizesAsync());
             await PreviewSession.DrainAsync();
             await driveRefreshWork;
             await Task.WhenAll(contextMenuInspections.ToArray());
@@ -114,6 +116,7 @@ public partial class MainWindow
             WindowStartupLocation = WindowStartupLocation.CenterOwner, Content = quickBody,
             Background = Hex("#161B24"), Foreground = Foreground, FontFamily = FontFamily, FontSize = 12, ShowInTaskbar = false
         };
+        AuxiliaryWindows.Prepare(quick,quickBody,scaleContent:false);
 #if DEBUG
         HiddenTrialPresentation.Prepare(quick);
 #endif

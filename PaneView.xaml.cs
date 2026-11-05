@@ -54,7 +54,18 @@ public class Entry : INotifyPropertyChanged
     public string Where => Location == "" ? "" : "   in " + Location;
 
     long size = -1; // -1 = folder size still computing, -2 = not measured (network shares)
-    public long Size { get => size; set { size = value; Changed(nameof(Size)); Changed(nameof(SizeText)); Changed(nameof(Tip)); } }
+    long lastMeasuredSize=-1;
+    public long Size { get => size; set { size = value;if(value>=0)lastMeasuredSize=value; Changed(nameof(Size));Changed(nameof(DisplaySize)); Changed(nameof(SizeText)); Changed(nameof(Tip)); } }
+    // Invalidating a measurement must not erase its last presentation. Size
+    // remains -1 until a valid replacement arrives; this never revalidates cache.
+    public long DisplaySize=>size==-1?lastMeasuredSize:size;
+    string sizeSource="";
+    public string SizeSource{get=>sizeSource;set{sizeSource=value;Changed(nameof(SizeSource));Changed(nameof(Tip));}}
+    internal void PreserveSizeDisplay(Entry previous)
+    {
+        if(IsDir&&size==-1&&lastMeasuredSize<0&&previous.IsDir&&previous.DisplaySize>=0)
+            lastMeasuredSize=previous.DisplaySize;
+    }
     ImageSource thumb;
     public ImageSource Thumb { get => thumb; set { thumb = value; grayThumb = null; Changed(nameof(Thumb)); Changed(nameof(DisplayThumb)); Changed(nameof(NoThumb)); } }
     ImageSource grayThumb, graySmallIcon;
@@ -94,7 +105,7 @@ public class Entry : INotifyPropertyChanged
     string version = "";
     public string Version { get => version; set { version = value; Changed(nameof(Version)); } }
     public string Ext => IsDir ? "" : System.IO.Path.GetExtension(Name).TrimStart('.').ToLowerInvariant();
-    public string SizeText => IsUp || size == -2 ? "" : size < 0 ? "…" : MainWindow.Fmt(size);
+    public string SizeText => IsUp || DisplaySize == -2 ? "" : DisplaySize < 0 ? "…" : MainWindow.Fmt(DisplaySize);
     public bool IsDrive {get;init;}
     public long DriveTotal {get;init;}
     public long DriveFree {get;init;}
@@ -114,7 +125,7 @@ public class Entry : INotifyPropertyChanged
     bool NoDate => IsUp || Modified == default; // network shares have no date
 
     public event PropertyChangedEventHandler PropertyChanged;
-    void Changed(string p) => PropertyChanged?.Invoke(this, new(p));
+    protected void Changed(string p) => PropertyChanged?.Invoke(this, new(p));
 
     static readonly Dictionary<string, (string, string)> Kinds = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -190,7 +201,7 @@ public class Entry : INotifyPropertyChanged
         Name, Message.Length>0?Message:null, IsReadOnly ? ReadOnlyReason : null, Location != "" ? "In: " + Location : null, "Type: " + Thumbnails.TypeName(Name, IsDir),
         IsDrive?CapacityText:null,DriveConnection.Length>0?DriveConnection:null,DriveRawFormat.Length>0?"Reported filesystem: "+DriveRawFormat:null,DriveLocation.Length>0?DriveLocation:null,
         DriveCloudQuota?DrivePresentation.CloudSource+"\nMount-reported space (cache constrained): "+DrivePresentation.Capacity(DriveMountTotal,DriveMountFree):null,
-        size >= 0 ? "Size: " + MainWindow.Fmt(size) : null, NoDate ? null : "Date modified: " + Modified.ToString("yyyy-MM-dd HH:mm:ss"),
+        DisplaySize >= 0 ? "Size: " + MainWindow.Fmt(DisplaySize) : null, SizeSource.Length>0?SizeSource:null, NoDate ? null : "Date modified: " + Modified.ToString("yyyy-MM-dd HH:mm:ss"),
     }.Where(line => line != null));
 }
 
@@ -218,7 +229,7 @@ class EntrySort(string key, bool desc) : IComparer
         if (Folder(x) != Folder(y)) return Folder(x) ? -1 : 1;
         int r = key switch
         {
-            "Size" => x.Size.CompareTo(y.Size),
+            "Size" => x.DisplaySize.CompareTo(y.DisplaySize),
             "Capacity"=>x.DriveTotal.CompareTo(y.DriveTotal),
             "Free space"=>x.DriveFree.CompareTo(y.DriveFree),
             "Filesystem"=>ExplorerOrder.Instance.Compare(x.DriveFormat,y.DriveFormat),
@@ -305,6 +316,8 @@ public partial class PaneView : UserControl
     ListCollectionView view;
     string sortKey = "Name"; bool sortDesc;
     CancellationTokenSource sizing;
+    Task sizingWork=Task.CompletedTask;
+    readonly HashSet<string> dirtySizes=new(StringComparer.OrdinalIgnoreCase);
     FileSystemWatcher watcher;
     DispatcherOperation folderRefresh;
 
@@ -474,8 +487,8 @@ public partial class PaneView : UserControl
     // This PC's rows are drive roots: nothing that copies, moves, deletes, renames or drags them may get them, so in
     // This PC the selection is empty to every command (the menu there is Windows' own, MainWindow.ShowMenu).
     public List<Entry> Selected => !InSearch && Dir == ThisPC ? new() : List.SelectedItems.Cast<Entry>().Where(e => !e.IsUp).ToList();
-    public long FolderTotal => Items.Sum(e => Math.Max(0, e.Size));
-    public bool SizesPending => Items.Any(e => e.Size == -1);
+    public long FolderTotal => SpaceAnalyzing?SpaceSummary.Bytes:Items.Sum(e => Math.Max(0, e.DisplaySize));
+    public bool SizesPending => SpaceAnalyzing?space.Nodes[space.Root].State is SpaceState.Pending or SpaceState.Scanning:Items.Any(e => e.Size == -1);
 
     // Active pane: lighter surface and accent edge. Inactive: darker and slightly faded, so it recedes.
     // The three changes are animated together, or switching panes reads as a flash.
@@ -515,6 +528,7 @@ public partial class PaneView : UserControl
 
     public void Navigate(string dir, string select = null, bool record = true)
     {
+        if(SpaceAnalyzing){AfterSpace(()=>Navigate(dir,select,record));return;}
         if (dir.Equals(ThisPC, StringComparison.OrdinalIgnoreCase)) { NavigateThisPC(select ?? Dir, record); return; }
         if (ArchiveOf(dir) is { } inArchive) { NavigateArchive(dir.TrimEnd('\\'), inArchive, select ?? ChildToward(dir, Dir), record); return; }
         select ??= ChildToward(dir, Dir);
@@ -772,6 +786,11 @@ public partial class PaneView : UserControl
         // where the first selected row sat: if the selection is gone (deleted), the row that moved up into its place
         int firstSelected = keep && view != null && List.SelectedItems.Count > 0 ? List.SelectedItems.Cast<object>().Min(view.IndexOf) : -1;
         var left = items;
+        if(itemsFolder==Dir&&!ReferenceEquals(left,list))
+        {
+            var measured=left.Where(entry=>entry.IsDir&&entry.DisplaySize>=0).ToDictionary(entry=>entry.Path,StringComparer.OrdinalIgnoreCase);
+            foreach(var entry in list)if(measured.TryGetValue(entry.Path,out var previous))entry.PreserveSizeDisplay(previous);
+        }
         bool wasBulk=bulkSelect;bulkSelect=true;
         try
         {
@@ -1271,6 +1290,7 @@ public partial class PaneView : UserControl
     /// `force` re-reads even if the folder's timestamp says nothing changed (Ctrl+R).
     public void Refresh(bool force = false)
     {
+        if(SpaceAnalyzing){RefreshSpace();return;}
         if (force) lock (listCache) listCache.Remove(Dir); // rebuilt from scratch: folder sizes are measured again
         if (searchQuery != null) Search(searchQuery);
         // Without force the rows on screen keep their own selection and scroll; rebuilt, the list is told
@@ -1301,29 +1321,51 @@ public partial class PaneView : UserControl
     // Folder sizes: walk each subfolder in the background, fill cells as they finish.
     void StartSizing()
     {
-        sizing?.Cancel();
+        var previousCancellation=sizing;sizing?.Cancel();
         if (indexedSearch) return; // indexed metadata only; never crawl result folders
         var cts = sizing = new CancellationTokenSource();
-        var todo = items.Where(e => e.IsDir && !e.IsUp && e.Size == -1).ToList();
+        if(SpaceAnalyzing||suspendSizing||IsVirtual(Dir)||IsServer(Dir))return;
+        // A hot fallback value can paint immediately, but must not prevent an
+        // available indexed total from becoming the preferred source.
+        var todo = items.Where(e => e.IsDir && !e.IsUp).ToList();
         if (todo.Count == 0) return;
-        Task.Run(() =>
+        var previous=sizingWork;
+        var dirty=dirtySizes.ToArray();dirtySizes.Clear();
+        sizingWork=SizeRows();
+        async Task SizeRows()
         {
-            Parallel.ForEach(todo, new ParallelOptions { MaxDegreeOfParallelism = 4, CancellationToken = cts.Token }, e =>
+            try
             {
-                long total;
-                try { total = Measure(new DirectoryInfo(e.Path), cts.Token); }
-                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return; } // gone or unreadable: leave it at "…"
-                Dispatcher.BeginInvoke(() =>
+                await previous;
+                previousCancellation?.Dispose();
+                cts.Token.ThrowIfCancellationRequested();
+                var indexed=new Dictionary<string,long>(StringComparer.OrdinalIgnoreCase);
+                var candidates=todo.Where(e=>!dirty.Any(path=>path==null||SizeCache.Within(path,e.Path)||SizeCache.Within(e.Path,path))).Select(e=>e.Path).ToArray();
+                if(candidates.Length>0)try{indexed=await FileExplorer.Search.EverythingSearchClient.Shared.FolderSizesAsync(candidates,SearchInstance,cts.Token);}
+                catch(Exception ex)when(ex is InvalidOperationException or System.ComponentModel.Win32Exception or DllNotFoundException or EntryPointNotFoundException){} // unavailable metadata: actual scoped traversal below
+                await Task.Run(()=>Parallel.ForEach(todo,new ParallelOptions{MaxDegreeOfParallelism=2,CancellationToken=cts.Token},e=>
                 {
-                    if(cts.IsCancellationRequested||sizing!=cts||!items.Contains(e))return;
-                    // A native change may already have invalidated this result while its UI
-                    // notification is still queued. Never publish that superseded snapshot.
-                    if(SizeCache.Peek(e.Path,new DirectoryInfo(e.Path).LastWriteTimeUtc)!=total)return;
-                    e.Size = total; UpdateFooter(); StatsChanged?.Invoke();
-                });
-            });
-        }, cts.Token).ContinueWith(_ => { }); // swallow cancellation
+                    using var publication=new SizeCache.Measurement(e.Path);
+                    long total;bool fromIndex=indexed.TryGetValue(Path.TrimEndingDirectorySeparator(e.Path),out total);
+                    try{if(!fromIndex){var directory=new DirectoryInfo(e.Path);total=SizeCache.Get(e.Path,directory.LastWriteTimeUtc);if(total<0)total=Measure(directory,cts.Token);}}
+                    catch(Exception ex)when(ex is IOException or UnauthorizedAccessException){return;}
+                    // Await dispatch so the invalidation registration survives until
+                    // publication; eviction from the bounded hot cache is irrelevant.
+                    Dispatcher.InvokeAsync(()=>
+                    {
+                        if(cts.IsCancellationRequested||sizing!=cts||!items.Contains(e)||publication.Invalid)return;
+                        e.SizeSource=fromIndex?"Everything index · excluded files may be omitted":"Filesystem measurement";
+                        e.Size=total;UpdateFooter();StatsChanged?.Invoke();
+                    }).Task.GetAwaiter().GetResult();
+                }),cts.Token);
+            }
+            catch(OperationCanceledException)when(cts.IsCancellationRequested){}
+        }
     }
+
+    bool suspendSizing;
+    internal Task SizingCompletion=>sizingWork;
+    internal async Task StopSizingAsync(){sizing?.Cancel();await sizingWork;}
 
     static readonly EnumerationOptions OneLevel = new() { IgnoreInaccessible = true, AttributesToSkip = FileAttributes.ReparsePoint };
 
@@ -1410,6 +1452,9 @@ public partial class PaneView : UserControl
             void Changed(object sender, FileSystemEventArgs args)
             {
                 if(watcher!=owner)return;
+                // A view containing Pathweft's cache must not start another
+                // sizing pass because that pass committed its own measurements.
+                if(SizeCache.OwnPersistence(args.FullPath))return;
                 SizeCache.Invalidate(args.FullPath,args.ChangeType==WatcherChangeTypes.Deleted||args is RenamedEventArgs);
                 if(args is RenamedEventArgs renamed)SizeCache.Invalidate(renamed.OldFullPath,true);
             }
@@ -1427,6 +1472,10 @@ public partial class PaneView : UserControl
         Dispatcher.BeginInvoke(() =>
         {
             if(watcher==null||searchQuery!=null||path!=null&&!SizeCache.Within(path,Dir)&&!SizeCache.Within(Dir,path))return;
+#if DEBUG
+            if(SpaceAnalyzing)SpaceScan.IndexObserved?.Invoke(Dir,"Invalidated: "+path);
+#endif
+            dirtySizes.Add(path);
             if(folderRefresh is {Status:DispatcherOperationStatus.Pending})return;
             var owner=watcher;
             folderRefresh=Dispatcher.BeginInvoke(() =>
@@ -1439,6 +1488,7 @@ public partial class PaneView : UserControl
 
     void UpdateFooter()
     {
+        if(SpaceAnalyzing){UpdateSpaceFooter();return;}
         if(Dir==ThisPC&&!InSearch)
         {
             int count=Items.Count();Footer.Text=$"{count:N0} location{(count==1?"":"s")}";return;
@@ -1451,12 +1501,13 @@ public partial class PaneView : UserControl
         var sel = Selected;
         int folders = Items.Count(e => e.IsDir), files = Items.Count() - folders;
         Footer.Text = sel.Count > 0
-            ? $"{sel.Count} selected  ·  {(sel.Any(e=>e.Size<0)?sel.Count==1?"measuring…":MainWindow.Fmt(sel.Sum(e=>Math.Max(0,e.Size)))+"+":MainWindow.Fmt(sel.Sum(e=>e.Size)))}"
+            ? $"{sel.Count} selected  ·  {(sel.Any(e=>e.DisplaySize<0)?sel.Count==1?"measuring…":MainWindow.Fmt(sel.Sum(e=>Math.Max(0,e.DisplaySize)))+"+":MainWindow.Fmt(sel.Sum(e=>e.DisplaySize)))}"
             : searchQuery != null
                 ? $"{items.Count} found for “{searchQuery}”{(searching ? "  ·  searching…" : items.Count >= MaxResults ? $"  ·  stopped at {MaxResults}" : "")}  ·  Esc goes back"
             : view?.Filter != null
                 ? $"{view.Cast<Entry>().Count(e => !e.IsUp):N0} of {folders + files:N0} match “{FilterBox.Text.Trim()}”"
             : $"{folders} folders  ·  {files} files  ·  {MainWindow.Fmt(FolderTotal)}{Pending()}";
+        if(Items.Any(entry=>entry.SizeSource.StartsWith("Everything",StringComparison.Ordinal)))Footer.Text+=" · indexed sizes";
 
         string Pending()
         {
@@ -2178,6 +2229,7 @@ public partial class PaneView : UserControl
     /// The user's choice: applied, and remembered for this folder (Name ascending is the default, kept as nothing).
     public void SetSort(string key, bool desc)
     {
+        if(SpaceAnalyzing)return; // sibling usage order belongs to this temporary view
         if (indexedSearch)
         {
             if (key == "Version") { SearchCoverage.Text = "Everything does not index file versions. Choose Name, Size, Type or Modified."; return; }
@@ -2258,7 +2310,7 @@ public partial class PaneView : UserControl
     void ApplyGrouping()
     {
         if (view == null) return;
-        bool on = Mode == ViewMode.Details && Settings.DateGroupFolders.Contains(Dir) && searchQuery == null;
+        bool on = !SpaceAnalyzing&&Mode == ViewMode.Details && Settings.DateGroupFolders.Contains(Dir) && searchQuery == null;
         if (on == view.GroupDescriptions.Count > 0) return;
         if (on)
         {
@@ -2273,6 +2325,7 @@ public partial class PaneView : UserControl
 
     void FitName()
     {
+        if(SpaceAnalyzing){if(spaceNameColumn!=null)spaceNameColumn.Width=Math.Max(170,List.ActualWidth-365);return;}
         if(IsWidget)
         {
             if(List.View is GridView widgetGrid)
@@ -2309,7 +2362,7 @@ public partial class PaneView : UserControl
     /// selection rectangle instead of picking up the file (Drag_Down), and the line shows where that begins.
     void PlaceNameEdge()
     {
-        bool show = Mode == ViewMode.Details&&!IsWidget;
+        bool show = Mode == ViewMode.Details&&!IsWidget&&!SpaceAnalyzing;
         NameEdge.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
         if (!show) return;
         // the same boundary Drag_Down tests, mapped through the list's text-size scale like the marquee
@@ -2319,6 +2372,7 @@ public partial class PaneView : UserControl
 
     public void SetView(ViewMode mode)
     {
+        if(SpaceAnalyzing){AfterSpace(()=>SetView(mode));return;}
         if(IsWidget)mode=ViewMode.Details;
         Mode = mode;
         PlaceNameEdge();

@@ -41,6 +41,7 @@ internal sealed class SearchWidgetWindow : Window
         root = new DockPanel { Margin = new(16) };
         DockPanel.SetDock(Notice, Dock.Bottom); root.Children.Add(Notice);
         root.Children.Add(Pane); Content = root;
+        AuxiliaryWindows.Prepare(this,root,scaleContent:false);
         query = (TextBox)Pane.FindName("FilterBox");
         Pane.ConfigureWidgetColumns();
         Pane.Loaded += (_, _) => Pane.ConfigureWidgetColumns();

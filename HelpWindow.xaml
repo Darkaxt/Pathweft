@@ -6,20 +6,22 @@
         Foreground="{DynamicResource Palette.E8EEF6}" FontFamily="Segoe UI Variable Text, Segoe UI" FontSize="12">
   <Grid x:Name="Root" Background="{DynamicResource Palette.B30A0D13}">
     <!-- shown once the empty window is on screen (HelpWindow.xaml.cs) -->
-    <DockPanel x:Name="Body" Margin="18,14,18,14" Visibility="Collapsed">
-      <Border DockPanel.Dock="Top" Background="{DynamicResource Palette.12FFFFFF}" CornerRadius="6" Margin="0,0,0,12">
+    <DockPanel x:Name="Body" Margin="{StaticResource AuxiliaryMargin}" Visibility="Collapsed">
+      <Border DockPanel.Dock="Top" Style="{StaticResource AuxiliaryField}" Margin="0,0,0,12">
         <Grid>
-          <TextBlock x:Name="FindHint" Text="Find a key or a feature" Foreground="{DynamicResource Palette.66FFFFFF}" Margin="10,0" VerticalAlignment="Center" IsHitTestVisible="False"/>
-          <TextBox x:Name="Find" Background="Transparent" BorderThickness="0" Foreground="{DynamicResource Palette.E8EEF6}" CaretBrush="#E8EEF6" Padding="6,6" TextChanged="Find_Changed"/>
+          <TextBlock x:Name="FindHint" Text="Find a key or a feature" Foreground="{DynamicResource Palette.66FFFFFF}" VerticalAlignment="Center" IsHitTestVisible="False"/>
+          <TextBox x:Name="Find" Background="Transparent" BorderThickness="0" Foreground="{DynamicResource Palette.E8EEF6}" CaretBrush="{DynamicResource Palette.E8EEF6}" Padding="0" MinHeight="20" TextChanged="Find_Changed" AutomationProperties.Name="Find a key or a feature"/>
         </Grid>
       </Border>
       <!-- the topics: a click jumps to one -->
-      <ScrollViewer DockPanel.Dock="Left" Width="190" VerticalScrollBarVisibility="Auto" Margin="0,0,16,0">
+      <ScrollViewer DockPanel.Dock="Left" Width="{StaticResource AuxiliaryNavigationWidth}" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="0,0,16,0">
         <StackPanel x:Name="Topics"/>
       </ScrollViewer>
-      <ScrollViewer x:Name="Scroller" VerticalScrollBarVisibility="Auto">
-        <StackPanel x:Name="Sections" Margin="0,0,8,0"/>
-      </ScrollViewer>
+      <Border Style="{StaticResource AuxiliaryCard}">
+        <ScrollViewer x:Name="Scroller" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,8,0">
+          <StackPanel x:Name="Sections"/>
+        </ScrollViewer>
+      </Border>
     </DockPanel>
   </Grid>
 </Window>

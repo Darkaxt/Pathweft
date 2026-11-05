@@ -1,8 +1,16 @@
 # Diskweft integration assessment
 
-2026-11-05. Source inspection and integration proposal, not a runtime qualification
-or implementation. The user requested evaluation before unrelated StartAllBack
-work. Popup unification and immediate manual update-check feedback remain S14.
+2026-11-05. The selected current-pane integration is now implemented in active
+S15. Actual metadata workflow22428 passes recursive totals, progressive display,
+expansion, exact restore, denied/reparse/Unicode/long paths, repeated writes,
+two-pane ownership, real copy and cancellation. S11/S14 source criteria pass;
+the combined normal release and installed verification remain outstanding.
+
+Everything-first sizing and bounded SQLite persistence are now part of the
+authorized scope. The user separately authorized enabling folder-size indexing
+in their existing Everything1.4 instance; its service/version/scope are preserved.
+Indexed coverage and metadata fallback remain distinct. The earlier assessment
+below records the selected source and boundaries; it is not a release claim.
 
 ## Selected interaction
 

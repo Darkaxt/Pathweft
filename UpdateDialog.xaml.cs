@@ -7,31 +7,62 @@ namespace FileExplorer;
 // "Update available": the new version's notes, Later or Update now. (What's new after an update is WhatsNewWindow.)
 public partial class UpdateDialog : Window
 {
-    readonly Updater.Release release;
+    Updater.Release release;
+    internal Updater.Release OfferedRelease=>release;
+    internal string CheckState{get;private set;}
     readonly CancellationTokenSource cancel = new();
 
-    public UpdateDialog(Window owner, Updater.Release release)
+    public UpdateDialog(Window owner, Updater.Release release=null)
     {
         InitializeComponent();
         Owner = owner;
-        this.release = release;
+        AuxiliaryWindows.Prepare(this,Root);
+#if DEBUG
+        HiddenTrialPresentation.Prepare(this);
+#endif
         SourceInitialized += (_, _) => MainWindow.ApplyAcrylic(this);
         Root.Background = MainWindow.Tint();
-        Notes.Text = release.Notes.Trim() == "" ? "No release notes." : release.Notes.Trim();
-
-        Heading.Text = $"Pathweft {release.Version} is available";
-        Sub.Text = $"You have {Updater.Current}. The installer is {MainWindow.Fmt(release.AssetSize)}.";
+        if(release!=null)ShowRelease(release);else ShowChecking();
         Closed += (_, _) => cancel.Cancel();
     }
 
     void Later_Click(object s, RoutedEventArgs e) => Close();
 
+    internal void ShowChecking()
+    {
+        release=null;CheckState="checking";
+        Heading.Text="Checking for updates…";Sub.Text=$"Installed version: Pathweft {Updater.Current}";
+        Status.Text="";NotesCard.Visibility=UpdateButton.Visibility=Visibility.Collapsed;
+        Progress.Visibility=Visibility.Visible;Progress.IsIndeterminate=true;
+        LaterButton.Content="Close";LaterButton.IsEnabled=true;
+        Height=Math.Min(MaxHeight,240*Math.Max(1,Settings.TextScale));MinHeight=200;
+    }
+    internal void ShowCheckResult(bool failed,string message)
+    {
+        CheckState=failed?"failed":"current";
+        Heading.Text=failed?"Couldn't check for updates":$"Pathweft {Updater.Current} is up to date";
+        Sub.Text=message;Status.Text="";Progress.Visibility=NotesCard.Visibility=Visibility.Collapsed;
+        UpdateButton.Content=failed?"Retry":"Check again";UpdateButton.Visibility=Visibility.Visible;UpdateButton.IsEnabled=true;
+        LaterButton.Content="Close";LaterButton.IsEnabled=true;
+    }
+    internal void ShowRelease(Updater.Release available)
+    {
+        release=available;CheckState="available";
+        Heading.Text=$"Pathweft {release.Version} is available";
+        Sub.Text=$"You have {Updater.Current}. The installer is {MainWindow.Fmt(release.AssetSize)}.";
+        Notes.Text=string.IsNullOrWhiteSpace(release.Notes)?"No release notes.":release.Notes.Trim();
+        NotesCard.Visibility=UpdateButton.Visibility=Visibility.Visible;Progress.Visibility=Visibility.Collapsed;Status.Text="";
+        UpdateButton.Content="Update now";LaterButton.Content="Later";UpdateButton.IsEnabled=LaterButton.IsEnabled=true;
+        Height=Math.Min(MaxHeight,440*Math.Max(1,Settings.TextScale));MinHeight=300;
+    }
+
     internal void BeginDownload()
     {
+        CheckState="downloading";
         UpdateButton.Visibility=NotesCard.Visibility=Visibility.Collapsed;
         LaterButton.Content="Cancel";
         LaterButton.IsEnabled=true;
-        Progress.Visibility=Visibility.Visible;Height=240;MinHeight=220;
+        Progress.Visibility=Visibility.Visible;Height=Math.Min(MaxHeight,260*Math.Max(1,Settings.TextScale));MinHeight=220;
         Heading.Text=$"Updating Pathweft to {release.Version}";
         Sub.Text="Pathweft will reopen when the update is installed.";
         Status.Text="Downloading…";
@@ -45,6 +76,7 @@ public partial class UpdateDialog : Window
 
     async void Update_Click(object s, RoutedEventArgs e)
     {
+        if(release==null){if(Owner is MainWindow main)await main.CheckForUpdate(manual:true);return;}
         // a portable copy isn't installed: its update is the new zip, unpacked over this folder (Data stays as it is)
         if (Settings.Portable != null)
         {

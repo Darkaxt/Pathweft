@@ -11,6 +11,7 @@ public partial class PromptDialog : Window
     PromptDialog(Window owner, string title, string label, string text, string okText, bool selectAll)
     {
         InitializeComponent();
+        AuxiliaryWindows.Prepare(this,Root);
         Owner = owner;
         Title = title;
         Label.Text = label;
@@ -20,7 +21,10 @@ public partial class PromptDialog : Window
         Root.Background = MainWindow.Tint();
         Loaded += (_, _) =>
         {
-            Input.Focus();
+#if DEBUG
+            if(!HiddenTrialPresentation.SuppressFocus(this))
+#endif
+                Input.Focus();
             // select the name without its extension: renaming report.txt usually keeps the .txt
             var dot = Path.GetFileNameWithoutExtension(text).Length;
             Input.Select(0, dot > 0 && !selectAll ? dot : text.Length);
@@ -52,7 +56,7 @@ public partial class PromptDialog : Window
 #endif
         w.SourceInitialized += (_, _) => MainWindow.ApplyAcrylic(w);
         int result = -1;
-        var panel = new System.Windows.Controls.StackPanel { Margin = new(20, 18, 18, 14) };
+        var panel = new System.Windows.Controls.StackPanel { Margin = (Thickness)Application.Current.FindResource("AuxiliaryMargin") };
         panel.Children.Add(new System.Windows.Controls.TextBlock { Text = question, FontSize = 14, TextWrapping = TextWrapping.Wrap });
         if (!string.IsNullOrEmpty(detail))
             panel.Children.Add(new System.Windows.Controls.TextBlock { Text = detail, Foreground = MainWindow.Hex("#8A97AA"), TextWrapping = TextWrapping.Wrap, Margin = new(0, 8, 0, 0) });
@@ -62,7 +66,7 @@ public partial class PromptDialog : Window
             int index = i;
             var b = new System.Windows.Controls.Button
             {
-                Content = buttons[i], Style = (Style)Application.Current.FindResource("Tab"), Padding = new(14, 6, 14, 6), Margin = new(6, 0, 0, 0),
+                Content = buttons[i], Style = (Style)Application.Current.FindResource("AuxiliaryAction"), Margin = new(6, 0, 0, 0),
                 Tag = i == 0 ? "on" : null, IsDefault = i == 0, MaxWidth = double.PositiveInfinity,
             };
             b.Click += (_, _) => { result = index; w.Close(); };
@@ -70,6 +74,7 @@ public partial class PromptDialog : Window
         }
         panel.Children.Add(row);
         w.Content = new System.Windows.Controls.Grid { Background = MainWindow.Tint(), Children = { panel } };
+        AuxiliaryWindows.Prepare(w,(FrameworkElement)w.Content);
         w.KeyDown += (_, e) => { if (e.Key == Key.Escape) w.Close(); };
         w.ShowDialog();
         return result;

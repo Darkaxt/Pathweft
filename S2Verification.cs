@@ -43,7 +43,9 @@ public partial class MainWindow
                 var submitted = selectedJob();
                 if (submitted == null) throw new InvalidOperationException("Transfer was not submitted.");
                 var job = await done.Task;
-                Check(ReferenceEquals(submitted, job) && jobs.Contains(job) && job.Phase == Phase.Done, "WIDGET-02 one tracked Ferry job completes for the actual caller");
+                await job.Completion;
+                await Dispatcher.InvokeAsync(()=>{},System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+                Check(ReferenceEquals(submitted, job) && !jobs.Contains(job) && job.Successful, "WIDGET-02 the actual caller's tracked Ferry job completes and auto-dismisses after success");
                 return job;
             }
             finally { Ferry.Finished -= Completed; }

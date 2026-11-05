@@ -54,6 +54,23 @@
       <Setter Property="IsHitTestVisible" Value="False"/>
       <Setter Property="Visibility"><Setter.Value><Binding Path="IsReadOnly"><Binding.Converter><BooleanToVisibilityConverter/></Binding.Converter></Binding></Setter.Value></Setter>
     </Style>
+    <DataTemplate x:Key="SpaceNameCell">
+      <DockPanel Margin="{Binding TreeIndent}">
+        <Button DockPanel.Dock="Left" Width="18" Height="20" Padding="0" Margin="0,0,3,0" Style="{StaticResource Ghost}" Click="SpaceExpand_Click"
+                Visibility="{Binding ExpandVisible}" ToolTip="Expand or collapse folder" AutomationProperties.Name="Expand or collapse folder">
+          <TextBlock Text="{Binding ExpandGlyph}" FontFamily="Segoe Fluent Icons" FontSize="9"/>
+        </Button>
+        <ContentPresenter Content="{Binding}" ContentTemplate="{DynamicResource NameCell}"/>
+      </DockPanel>
+    </DataTemplate>
+    <DataTemplate x:Key="SpaceSizeCell"><TextBlock Text="{Binding SizeText}" TextAlignment="Right" VerticalAlignment="Center" Margin="6,0,8,0"/></DataTemplate>
+    <DataTemplate x:Key="SpaceStatusCell"><TextBlock Text="{Binding SpaceStatus}" ToolTip="{Binding SpaceTip}" Foreground="{DynamicResource Muted}" VerticalAlignment="Center" Margin="8,0"/></DataTemplate>
+    <DataTemplate x:Key="SpaceUsageCell">
+      <Grid Margin="8,0"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="42"/></Grid.ColumnDefinitions>
+        <ProgressBar Height="4" Minimum="0" Maximum="100" Value="{Binding Usage, Mode=OneWay}" VerticalAlignment="Center"/>
+        <TextBlock Grid.Column="1" Text="{Binding UsageText}" FontSize="11" TextAlignment="Right" VerticalAlignment="Center"/>
+      </Grid>
+    </DataTemplate>
     <DataTemplate x:Key="NameCell">
       <!-- a DockPanel, not a horizontal StackPanel: the name gets the column's width, so a long name is
            trimmed and the rename box scrolls to its end instead of running on, cut off, past the column -->

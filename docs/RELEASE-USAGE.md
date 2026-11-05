@@ -1,4 +1,4 @@
-# Pathweft 1.1.18
+# Pathweft 1.1.19
 
 Specialist previews now include bundled Office rendering with page/sheet/slide
 navigation and LibreOffice fallback. No Craft application, MCP server or
@@ -7,13 +7,22 @@ and its notices ship with Pathweft; matching dependency sources ship separately.
 The preview header offers Sidebar, compact in-app PiP and external Windowed
 modes. Closing the external window restores its preview to the sidebar.
 
-The taskbar/Start app Jump List publishes Quick access and recent filesystem
-folders. Windows owns pinning and removal; history privacy preferences are
+The taskbar/Start app Jump List uses Windows' Pinned and Frequent filesystem
+folders. Windows owns ranking, pinning and removal; history privacy preferences are
 respected. Links target Pathweft directly and do not require default-folder
 integration. Virtual Shell/archive locations are omitted; offline destinations
 remain explicit and report unavailable locations when opened. Portable copies
 and explicit profiles use separate application identities. Updates preserve the
 installed identity and pinned state; uninstall removes only its owned list.
+
+Analyze space beside Terminal turns the current filesystem folder into an
+expandable tree of logical sizes. Toggle it again to restore the original view.
+Available Everything file/folder-size indexes provide totals; disabled indexing
+or uncovered paths use filesystem metadata. Indexed totals may omit excluded
+files and are labelled accordingly. Pathweft does not silently change an existing
+Everything configuration. Folder history lives in SQLite under the selected bulk
+cache root, with a bounded hot memory cache. Existing text history migrates in
+the background; displayed sizes remain visible during a refresh.
 
 Windows 11 x64 is the qualified host. The .NET 10 desktop runtime and native
 archive/preview libraries are included. WebView2 Evergreen is required for the
@@ -71,6 +80,13 @@ a second index, change its service or alter its settings. The unchanged pinned
 Everything 1.4.1.1032 portable engine is included in Everything/. If there is no
 existing instance, configure/start that engine explicitly using its own UI and
 license; indexing privileges and indexed folders remain an explicit choice.
+For indexed sizing, enable file-size and folder-size indexing in Everything's
+index options (`index_size=1` and `index_folder_size=1`) and include the desired
+paths in its index. Merely having the executable installed is insufficient.
+Pathweft detects the capability through the SDK and labels indexed totals; it
+uses metadata sizing for disabled or uncovered paths, preserving basic browsing
+without requiring index configuration. This release does not add automatic
+Everything installation/configuration or silently expand an existing index.
 The single address/search field resolves existing paths first on Enter, then
 searches Everything in the current folder. Search from This PC for all indexed
 files. Four inline switches control case, whole words, path matching and Regex.

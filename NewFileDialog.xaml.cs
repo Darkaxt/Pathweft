@@ -21,12 +21,19 @@ public partial class NewFileDialog : Window
     public NewFileDialog(Window owner)
     {
         InitializeComponent();
+        AuxiliaryWindows.Prepare(this,Root);
         Owner = owner;
         SourceInitialized += (_, _) => MainWindow.ApplyAcrylic(this);
         Root.Background = MainWindow.Tint();
         Types.ItemsSource = ReadShellNewTypes();
         Types.SelectedIndex = 0;
-        Loaded += (_, _) => { NameBox.Focus(); SelectBaseName(); };
+        Loaded += (_, _) => {
+#if DEBUG
+            if(!HiddenTrialPresentation.SuppressFocus(this))
+#endif
+                NameBox.Focus();
+            SelectBaseName();
+        };
     }
 
     static List<FileType> ReadShellNewTypes()

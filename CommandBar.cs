@@ -7,6 +7,13 @@ public partial class MainWindow
 {
     void UpdateCommandStates()
     {
+        if(AnalyzeSpaceCommand!=null)
+        {
+            AnalyzeSpaceCommand.IsEnabled=active?.CanAnalyzeSpace==true;
+            AnalyzeSpaceCommand.Tag=active?.SpaceAnalyzing==true?"on":null;
+            AnalyzeSpaceCommand.ToolTip=active?.SpaceAnalyzing==true?"Restore the previous view":"Analyze space in this folder";
+            System.Windows.Automation.AutomationProperties.SetItemStatus(AnalyzeSpaceCommand,active?.SpaceAnalyzing==true?"On":"Off");
+        }
         HiddenToggle.Tag=Settings.ShowHidden?"on":null;
         PanesCommand.Tag=Settings.SinglePane?null:"on";
         PreviewCommand.Tag=Settings.Preview?"on":null;
@@ -18,6 +25,12 @@ public partial class MainWindow
         UpdateCommandSpacing();
     }
     void CommandBar_SizeChanged(object sender,SizeChangedEventArgs args)=>UpdateCommandSpacing();
+    async void AnalyzeSpace_Click(object sender,RoutedEventArgs args)
+    {
+        try{await active.ToggleSpaceAsync();}
+        catch(Exception error){Status.Text="Space analysis: "+error.Message;}
+        finally{UpdateCommandStates();}
+    }
     void UpdateCommandSpacing()
     {
         if(CommandBar.ActualWidth<=0)return;

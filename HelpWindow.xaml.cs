@@ -150,7 +150,7 @@ public partial class HelpWindow : Window
         }),
         ("Works with other apps", new[]
         {
-            ("Scan with SpaceScan", "What takes the room in a folder or drive"),
+            ("Analyze space", "Beside Terminal: show this folder as a largest-first tree with logical sizes and usage bars. Expand with the arrows or Left/Right. Indexed sizes may omit Everything exclusions. Click again to restore the exact previous view."),
             ("Add to Shelf", "Folders and games (.exe) into Shelf's library"),
             ("Add to Reel", "Folders and videos into Reel"),
             ("Back up with Backup Labs", "The selection, or the folder you are in"),
@@ -172,10 +172,7 @@ public partial class HelpWindow : Window
     {
         InitializeComponent();
         Owner = owner;
-        double scale=Math.Max(1,Settings.TextScale);
-        Root.LayoutTransform=scale>1?new ScaleTransform(scale,scale):null;
-        Width=Math.Min(SystemParameters.WorkArea.Width,900*scale);MinWidth=Math.Min(Width,560*scale);
-        Height=Math.Min(SystemParameters.WorkArea.Height,740*scale);
+        AuxiliaryWindows.Prepare(this,Root);
 #if DEBUG
         HiddenTrialPresentation.Prepare(this);
 #endif
@@ -184,9 +181,16 @@ public partial class HelpWindow : Window
         PreviewKeyDown += (_, e) => { if (e.Key == Key.Escape) Close(); };
         // Laying out every topic took 150-250 ms before the first frame; the window comes up empty and they follow on
         // the next one, while it fades in (Motion).
-        ContentRendered += (_, _) => { Body.Visibility = Visibility.Visible; Find.Focus(); };
+        ContentRendered += (_, _) => {
+            Body.Visibility = Visibility.Visible;
+#if DEBUG
+            if(!HiddenTrialPresentation.SuppressFocus(this))
+#endif
+                Find.Focus();
+        };
         Scroller.ScrollChanged+=(_,_)=>HighlightReadingSection();
         Sections.SizeChanged+=(_,_)=>HighlightReadingSection();
+        Scroller.SizeChanged+=(_,_)=>FitHelpRows();
         Show("");
     }
 
@@ -209,7 +213,8 @@ public partial class HelpWindow : Window
             if (hits.Count == 0) continue;
             var heading = new TextBlock { Text = section, FontSize = 14, FontWeight = FontWeights.SemiBold, Margin = new(0, Sections.Children.Count == 0 ? 0 : 18, 0, 6) };
             Sections.Children.Add(heading);
-            var topic = new Button { Content = $"{section}", Style = (Style)FindResource("Side"), Margin = new(0, 1, 0, 1), HorizontalContentAlignment = HorizontalAlignment.Left };
+            var topic = new Button { Content = new TextBlock{Text=section,TextWrapping=TextWrapping.Wrap}, Style = (Style)FindResource("AuxiliaryNavigation") };
+            System.Windows.Automation.AutomationProperties.SetName(topic,section);
             topic.Click += (_, _) => Scroller.ScrollToVerticalOffset(Scroller.VerticalOffset + heading.TranslatePoint(new Point(0, 0), Scroller).Y);
             Topics.Children.Add(topic);
             sectionTopics.Add((heading,topic));
@@ -229,6 +234,7 @@ public partial class HelpWindow : Window
         if (Sections.Children.Count == 0)
             Sections.Children.Add(new TextBlock { Text = "Nothing matches.", Foreground = MainWindow.Hex("#8A97AA") });
         Scroller.ScrollToTop();
+        FitHelpRows();
         Sections.Dispatcher.InvokeAsync(HighlightReadingSection,System.Windows.Threading.DispatcherPriority.Loaded);
     }
     void HighlightReadingSection()
@@ -241,6 +247,11 @@ public partial class HelpWindow : Window
             if(heading.TranslatePoint(new Point(),Scroller).Y<=2)current=topic;
         if(Scroller.ScrollableHeight>0&&Scroller.VerticalOffset>=Scroller.ScrollableHeight-1)current=sectionTopics[^1].Topic;
         foreach(var (_,topic) in sectionTopics)
-        {topic.FontWeight=ReferenceEquals(topic,current)?FontWeights.Bold:FontWeights.Normal;System.Windows.Automation.AutomationProperties.SetItemStatus(topic,ReferenceEquals(topic,current)?"Current section":"");}
+        {topic.Tag=ReferenceEquals(topic,current)?"on":null;topic.FontWeight=ReferenceEquals(topic,current)?FontWeights.Bold:FontWeights.Normal;System.Windows.Automation.AutomationProperties.SetItemStatus(topic,ReferenceEquals(topic,current)?"Current section":"");}
+    }
+    void FitHelpRows()
+    {
+        double width=Math.Min(210,Math.Max(90,Scroller.ActualWidth*.34));
+        foreach(var row in Sections.Children.OfType<Grid>())row.ColumnDefinitions[0].Width=new GridLength(width);
     }
 }

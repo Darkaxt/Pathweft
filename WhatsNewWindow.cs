@@ -58,15 +58,13 @@ public class WhatsNewWindow : Window
             else if (e.Key is Key.Down or Key.Up && e.OriginalSource is not TextBox) { Show(Math.Clamp(shown + (e.Key == Key.Down ? 1 : -1), 0, releases.Count - 1)); e.Handled = true; }
         };
 
-        var close = new Button { Content = "Close", Style = (Style)FindResource("Tab"), Tag = "on", Padding = new(16, 6, 16, 6), HorizontalAlignment = HorizontalAlignment.Right, Margin = new(0, 12, 0, 0) };
+        var close = new Button { Content = "Close", Style = (Style)FindResource("AuxiliaryAction"), Tag = "on", HorizontalAlignment = HorizontalAlignment.Right, Margin = new(0, 12, 0, 0) };
         close.Click += (_, _) => Close();
 
-        var navScroll = new ScrollViewer { Content = nav, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Width = 200, Margin = new(0, 0, 16, 0) };
-        notesScroll = new ScrollViewer { Content = notes, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Padding = new(0, 0, 8, 0) };
-        var right = new DockPanel();
-        DockPanel.SetDock(banner, Dock.Top);
-        right.Children.Add(banner);
-        right.Children.Add(notesScroll);
+        var navScroll = new ScrollViewer { Content = nav, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility=ScrollBarVisibility.Disabled, Width = (double)FindResource("AuxiliaryNavigationWidth"), Margin = new(0, 0, 16, 0) };
+        var article=new StackPanel();article.Children.Add(banner);article.Children.Add(notes);
+        notesScroll = new ScrollViewer { Content = article, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility=ScrollBarVisibility.Disabled, Padding = new(0, 0, 8, 0) };
+        var right = new Border{Style=(Style)FindResource("AuxiliaryCard"),Child=notesScroll};
 
         var body = new DockPanel();
         DockPanel.SetDock(close, Dock.Bottom);
@@ -74,7 +72,8 @@ public class WhatsNewWindow : Window
         body.Children.Add(close);
         body.Children.Add(navScroll);
         body.Children.Add(right);
-        Content = new Grid { Background = MainWindow.Tint(), Children = { new Border { Padding = new(18, 16, 18, 14), Child = body } } };
+        var root=new Grid { Background = MainWindow.Tint(), Children = { new Border { Padding = (Thickness)FindResource("AuxiliaryMargin"), Child = body } } };
+        Content=root;AuxiliaryWindows.Prepare(this,root);
 
         BuildNav();
         // the version running, which is the newest unless this build is older than its own notes
@@ -100,7 +99,7 @@ public class WhatsNewWindow : Window
             row.Children.Add(when);
             row.Children.Add(new TextBlock { Text = r.Version, VerticalAlignment = VerticalAlignment.Center });
             // the tab look: Tag "on" marks the release shown
-            var b = new Button { Content = row, Style = (Style)FindResource("Tab"), MaxWidth = double.PositiveInfinity, FontSize = 12, Margin = new(0, 1, 0, 1), ToolTip = r.Title };
+            var b = new Button { Content = row, Style = (Style)FindResource("AuxiliaryNavigation"), HorizontalContentAlignment=HorizontalAlignment.Stretch, ToolTip = r.Title };
             System.Windows.Automation.AutomationProperties.SetName(b, $"{r.Version}, {r.Title}");
             b.Click += (_, _) => Show(idx);
             nav.Children.Add(b);
@@ -119,6 +118,7 @@ public class WhatsNewWindow : Window
 
         banner.Child = new Viewbox { Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly, Child = Banner(r) };
         notes.Children.Clear();
+        notes.Children.Add(new TextBlock{Text=$"{r.Version} · {r.Title}",Style=(Style)FindResource("AuxiliaryHeading")});
         notes.Children.Add(new TextBlock { Text = r.Date.ToString("d MMMM yyyy", System.Globalization.CultureInfo.InvariantCulture), Foreground = (Brush)FindResource("Muted"), Margin = new(0, 0, 0, 8) });
         foreach (var line in r.Lines)
         {

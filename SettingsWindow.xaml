@@ -5,32 +5,11 @@
         WindowStartupLocation="CenterOwner" ShowInTaskbar="True" Background="Transparent"
         Foreground="{DynamicResource Palette.E8EEF6}" FontFamily="Segoe UI Variable Text, Segoe UI" FontSize="12">
   <Window.Resources>
-    <Style x:Key="SettingsCategory" TargetType="ListBoxItem">
-      <Setter Property="Padding" Value="12,10"/>
-      <Setter Property="Margin" Value="0,1"/>
-      <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-      <Setter Property="Foreground" Value="{DynamicResource Palette.E8EEF6}"/>
-      <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="ListBoxItem">
-        <Border x:Name="Surface" Background="Transparent" CornerRadius="6" Padding="{TemplateBinding Padding}"><ContentPresenter/></Border>
-        <ControlTemplate.Triggers>
-          <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Surface" Property="Background" Value="{DynamicResource Palette.12FFFFFF}"/></Trigger>
-          <Trigger Property="IsSelected" Value="True"><Setter TargetName="Surface" Property="Background" Value="{DynamicResource AccentSoft}"/><Setter Property="FontWeight" Value="SemiBold"/></Trigger>
-        </ControlTemplate.Triggers>
-      </ControlTemplate></Setter.Value></Setter>
-    </Style>
-    <Style x:Key="Card" TargetType="Border">
-      <Setter Property="Background" Value="{DynamicResource Palette.0AFFFFFF}"/>
-      <Setter Property="BorderBrush" Value="{DynamicResource Palette.16FFFFFF}"/>
-      <Setter Property="BorderThickness" Value="1"/>
-      <Setter Property="CornerRadius" Value="12"/>
-      <Setter Property="Padding" Value="16,12"/>
+    <Style x:Key="SettingsCategory" TargetType="ListBoxItem" BasedOn="{StaticResource AuxiliaryNavigationItem}"/>
+    <Style x:Key="Card" TargetType="Border" BasedOn="{StaticResource AuxiliaryCard}">
       <Setter Property="Margin" Value="0,0,0,12"/>
     </Style>
-    <Style x:Key="H" TargetType="TextBlock">
-      <Setter Property="FontSize" Value="13"/>
-      <Setter Property="FontWeight" Value="SemiBold"/>
-      <Setter Property="Margin" Value="0,0,0,8"/>
-    </Style>
+    <Style x:Key="H" TargetType="TextBlock" BasedOn="{StaticResource AuxiliaryHeading}"/>
     <Style x:Key="Hint" TargetType="TextBlock">
       <Setter Property="Foreground" Value="{DynamicResource Palette.8A97AA}"/>
       <Setter Property="FontSize" Value="11"/>
@@ -44,12 +23,12 @@
 
   <Grid x:Name="Root" Background="{DynamicResource Palette.B30A0D13}">
     <!-- shown once the empty window is on screen (SettingsWindow.xaml.cs) -->
-    <Grid x:Name="Body" Visibility="Collapsed" Margin="12,16,0,0">
-      <Grid.ColumnDefinitions><ColumnDefinition Width="168"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-      <ListBox x:Name="SettingsCategories" BorderThickness="0" Background="Transparent" Margin="0,0,12,16"
+    <Grid x:Name="Body" Visibility="Collapsed" Margin="{StaticResource AuxiliaryMargin}">
+      <Grid.ColumnDefinitions><ColumnDefinition Width="180"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+      <ListBox x:Name="SettingsCategories" BorderThickness="0" Background="Transparent" Margin="0,0,16,0"
                ItemContainerStyle="{StaticResource SettingsCategory}" ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                AutomationProperties.Name="Settings categories"/>
-      <ScrollViewer x:Name="CategoryScroll" Grid.Column="1" VerticalScrollBarVisibility="Auto" Padding="0,0,18,16">
+      <ScrollViewer x:Name="CategoryScroll" Grid.Column="1" VerticalScrollBarVisibility="Auto" Padding="0,0,8,0">
       <StackPanel x:Name="SettingsCards">
         <Border x:Name="AppearanceCard" Style="{StaticResource Card}">
           <StackPanel>

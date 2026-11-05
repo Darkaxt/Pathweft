@@ -5,12 +5,7 @@
         WindowStartupLocation="CenterOwner" ShowInTaskbar="False" Background="Transparent"
         Foreground="{DynamicResource Palette.E8EEF6}" FontFamily="Segoe UI Variable Text, Segoe UI" FontSize="12">
   <Window.Resources>
-    <Style x:Key="Field" TargetType="Border">
-      <Setter Property="Background" Value="{DynamicResource Palette.12FFFFFF}"/>
-      <Setter Property="CornerRadius" Value="6"/>
-      <Setter Property="Padding" Value="9,6"/>
-      <Setter Property="BorderBrush" Value="{DynamicResource Palette.2EFFFFFF}"/>
-      <Setter Property="BorderThickness" Value="1"/>
+    <Style x:Key="Field" TargetType="Border" BasedOn="{StaticResource AuxiliaryField}">
       <Setter Property="Margin" Value="0,0,0,10"/>
     </Style>
     <Style x:Key="Caption" TargetType="TextBlock">
@@ -19,7 +14,7 @@
     </Style>
   </Window.Resources>
   <Grid x:Name="Root" Background="{DynamicResource Palette.B30A0D13}">
-    <StackPanel Margin="18,16,18,14">
+    <StackPanel Margin="{StaticResource AuxiliaryMargin}">
       <Grid>
         <Grid.ColumnDefinitions>
           <ColumnDefinition Width="2*"/>
@@ -58,7 +53,7 @@
       </Grid>
 
       <!-- before → after, live -->
-      <Border Background="{DynamicResource Palette.40000000}" CornerRadius="6" Padding="10,6">
+      <Border Style="{StaticResource AuxiliaryField}">
         <ScrollViewer MaxHeight="300" VerticalScrollBarVisibility="Auto">
           <ItemsControl x:Name="Preview">
             <ItemsControl.ItemTemplate>
@@ -81,8 +76,8 @@
 
       <DockPanel Margin="0,14,0,0">
         <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
-          <Button Content="Cancel" Style="{StaticResource Tab}" Padding="14,6" Margin="0,0,6,0" Click="Cancel_Click"/>
-          <Button x:Name="OkButton" Content="Rename" Style="{StaticResource Tab}" Tag="on" Padding="16,6" Click="Ok_Click"/>
+          <Button Content="Cancel" Style="{StaticResource AuxiliaryAction}" Margin="0,0,6,0" Click="Cancel_Click"/>
+          <Button x:Name="OkButton" Content="Rename" Style="{StaticResource AuxiliaryAction}" Tag="on" Click="Ok_Click"/>
         </StackPanel>
         <TextBlock x:Name="Problem" Foreground="{DynamicResource Palette.F87171}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
       </DockPanel>

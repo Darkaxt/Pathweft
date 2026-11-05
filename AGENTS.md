@@ -1,5 +1,34 @@
 # Pathweft development
 
+Latest authorization2026-11-05/spec0.55: continue S11 native Pinned/Frequent
+correction -> S14 auxiliary-window/update-feedback implementation -> S15
+current-pane disk analysis. Current source checkpoint: S11/S14 COMPLETE;
+S15 ACTIVE. Native91140 verifies auxiliary/update workflows,102436 successful
+transfer dismissal/adverse outcomes and103700 preview-host lifecycle. See the
+2026-11-05 S14 reconciliation. Actual126032 verifies Frequent/readback/removal/privacy,
+reconstruction/cold/warm launches and installed-list preservation after a failing
+unchanged-publisher reproduction133840. See the2026-11-05 S11 verification.
+User confirms pin/restart persistence; native removal/reconstruction is already
+verified by126032. Do not request repetitive manual upstream pin/unpin checks.
+Installed update/identity and pin preservation remain S15 delivery criteria.
+Each predecessor closes complete source/integration acceptance; S15 owns one
+combined normal release/independent sources+package/installed verification.
+Earlier plan-only and individual-release wording below is historical. Do not
+resume S12/S6/S7. User confirms an actual native pin survives app restart;
+preserve it and qualify correction/update/removal through actual boundaries.
+S15 uses Pathweft's current pane/style, selected Diskweft source, a Terminal-
+adjacent toggle, progressive tree/Space used/descending order and exact restore.
+The user additionally authorized Everything-first sizes, bounded RAM and SQLite
+fallback cache persistence (CORE-20/21) in S15. The user subsequently authorized
+enabling folder-size indexing on this machine; the exact background restart and
+real SDK path passed. Preserve all other settings, scope, service and version.
+Retain indexed coverage, traversal fallback and stable values on other machines.
+No whole donor UI, new window/tab, endpoint app or MCP dependency. Read the
+SPACE-01..05 contract and assessment; do not import unrelated donor features.
+Latest direct addition: completed S14 owns TRANSFER-14, automatic dismissal/hide after
+actual successful completion, preserving unsuccessful/active jobs, Undo and
+arrival refresh. No completion delay, simulated click or premature cancellation.
+
 Read `docs/SPECIFICATION.md` first. It is authoritative; the plan and this file
 do not change its requirements or the user's standing instructions.
 

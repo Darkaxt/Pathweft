@@ -165,6 +165,7 @@ public partial class DuplicatesWindow : Window
     public DuplicatesWindow(MainWindow owner, IEnumerable<string> folders)
     {
         InitializeComponent();
+        AuxiliaryWindows.Prepare(this,Root);
         Owner = main = owner;
         this.folders = folders.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
         SourceInitialized += (_, _) => MainWindow.ApplyAcrylic(this);

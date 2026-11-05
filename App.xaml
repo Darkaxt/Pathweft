@@ -345,6 +345,72 @@
         </Setter.Value>
       </Setter>
     </Style>
+    <!-- Auxiliary windows share Settings' compact navigation/card language. -->
+    <Thickness x:Key="AuxiliaryMargin">16</Thickness>
+    <sys:Double x:Key="AuxiliaryNavigationWidth">180</sys:Double>
+    <Style x:Key="AuxiliaryWindow" TargetType="Window">
+      <Setter Property="FontFamily" Value="Segoe UI Variable Text, Segoe UI"/>
+      <Setter Property="FontSize" Value="12"/>
+      <Setter Property="Foreground" Value="{DynamicResource Palette.E8EEF6}"/>
+      <Setter Property="Background" Value="Transparent"/>
+    </Style>
+    <Style x:Key="AuxiliaryCard" TargetType="Border">
+      <Setter Property="Background" Value="{DynamicResource Palette.0AFFFFFF}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource Palette.16FFFFFF}"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="CornerRadius" Value="12"/>
+      <Setter Property="Padding" Value="16,12"/>
+    </Style>
+    <Style x:Key="AuxiliaryHeading" TargetType="TextBlock">
+      <Setter Property="FontSize" Value="14"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+      <Setter Property="Margin" Value="0,0,0,8"/>
+      <Setter Property="TextWrapping" Value="Wrap"/>
+    </Style>
+    <Style x:Key="AuxiliaryField" TargetType="Border">
+      <Setter Property="Background" Value="{DynamicResource Palette.12FFFFFF}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource Palette.16FFFFFF}"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="CornerRadius" Value="6"/>
+      <Setter Property="Padding" Value="10,6"/>
+    </Style>
+    <Style x:Key="AuxiliaryAction" TargetType="Button" BasedOn="{StaticResource Ghost}">
+      <Setter Property="Foreground" Value="{DynamicResource Palette.E8EEF6}"/>
+      <Setter Property="FontSize" Value="12"/>
+      <Setter Property="MinHeight" Value="30"/>
+      <Setter Property="Padding" Value="12,6"/>
+      <Setter Property="HorizontalContentAlignment" Value="Center"/>
+      <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="Button">
+        <Border x:Name="Surface" Background="Transparent" BorderBrush="Transparent" BorderThickness="1" CornerRadius="6" Padding="{TemplateBinding Padding}">
+          <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="Center" RecognizesAccessKey="True"/>
+        </Border>
+        <ControlTemplate.Triggers>
+          <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Surface" Property="Background" Value="{DynamicResource Palette.12FFFFFF}"/></Trigger>
+          <Trigger Property="Tag" Value="on"><Setter TargetName="Surface" Property="Background" Value="{DynamicResource AccentSoft}"/><Setter Property="FontWeight" Value="SemiBold"/></Trigger>
+          <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Surface" Property="BorderBrush" Value="{DynamicResource AccentEdge}"/></Trigger>
+          <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.45"/></Trigger>
+        </ControlTemplate.Triggers>
+      </ControlTemplate></Setter.Value></Setter>
+    </Style>
+    <Style x:Key="AuxiliaryNavigation" TargetType="Button" BasedOn="{StaticResource AuxiliaryAction}">
+      <Setter Property="Padding" Value="12,10"/>
+      <Setter Property="Margin" Value="0,1"/>
+      <Setter Property="HorizontalContentAlignment" Value="Left"/>
+    </Style>
+    <Style x:Key="AuxiliaryNavigationItem" TargetType="ListBoxItem">
+      <Setter Property="Padding" Value="12,10"/>
+      <Setter Property="Margin" Value="0,1"/>
+      <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+      <Setter Property="Foreground" Value="{DynamicResource Palette.E8EEF6}"/>
+      <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="ListBoxItem">
+        <Border x:Name="Surface" Background="Transparent" BorderBrush="Transparent" BorderThickness="1" CornerRadius="6" Padding="{TemplateBinding Padding}"><ContentPresenter/></Border>
+        <ControlTemplate.Triggers>
+          <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Surface" Property="Background" Value="{DynamicResource Palette.12FFFFFF}"/></Trigger>
+          <Trigger Property="IsSelected" Value="True"><Setter TargetName="Surface" Property="Background" Value="{DynamicResource AccentSoft}"/><Setter Property="FontWeight" Value="SemiBold"/></Trigger>
+          <Trigger Property="IsKeyboardFocusWithin" Value="True"><Setter TargetName="Surface" Property="BorderBrush" Value="{DynamicResource AccentEdge}"/></Trigger>
+        </ControlTemplate.Triggers>
+      </ControlTemplate></Setter.Value></Setter>
+    </Style>
     <Style x:Key="BrowserTab" TargetType="Button">
       <Setter Property="Foreground" Value="{DynamicResource Palette.B4BECC}"/>
       <Setter Property="FontSize" Value="12"/>

@@ -29,10 +29,25 @@ public partial class MainWindow
         check(ReferenceEquals(Left.Selected.Single(),row)&&Left.FolderTotal==213_000_037,"Nested external installation updates the same selected ancestor row and folder total without refresh");
         await S1Verification.Navigate(Right,package);
         await Sizes(Right,()=>Right.Items.Single().Size==213_000_000);
+        bool blinked=false,totalDropped=false;
+        long retainedTotal=Left.FolderTotal;
+        void ObserveRefresh()
+        {
+            var current=Left.Items.SingleOrDefault(e=>e.Name=="DeckCraft");
+            if(current!=null)blinked|=current.SizeText=="…";
+            totalDropped|=Left.FolderTotal<retainedTotal;
+        }
+        System.ComponentModel.PropertyChangedEventHandler observeRow=(_,_)=>ObserveRefresh();
+        row.PropertyChanged+=observeRow;Left.StatsChanged+=ObserveRefresh;
         var grown=Sizes(Left,()=>row.Size==214_000_000);
         var rightGrown=Sizes(Right,()=>Right.Items.Single().Size==214_000_000);
-        await Task.Run(()=>{using var stream=File.OpenWrite(file);stream.SetLength(214_000_000);});
-        await Task.WhenAll(grown,rightGrown);
+        try
+        {
+            await Task.Run(()=>{using var stream=File.OpenWrite(file);stream.SetLength(214_000_000);});
+            await Task.WhenAll(grown,rightGrown);
+            check(!blinked&&!totalDropped,"A real nested rewrite keeps the last displayed folder size and summary total until the valid replacement arrives");
+        }
+        finally{row.PropertyChanged-=observeRow;Left.StatsChanged-=ObserveRefresh;}
         check(Left.FolderTotal==214_000_037&&Right.FolderTotal==214_000_000,"A rewrite with unchanged ancestor timestamps updates both open views and totals");
         string renamed=Path.Combine(release,"renamed.bin");
         await Task.Run(()=>File.Move(file,renamed));

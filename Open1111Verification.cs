@@ -137,7 +137,7 @@ public partial class MainWindow
             check(systemRefused,"Unavailable/invalid bulk configuration never silently falls back to system storage");
             var cacheFolder=Directory.CreateDirectory(Path.Combine(root,"cached-folder"));
             SizeCache.Set(cacheFolder.FullName,cacheFolder.LastWriteTimeUtc,12345);SizeCache.Save();
-            check(File.ReadLines(SizeCache.FilePath).Any(line=>line.EndsWith("|"+cacheFolder.FullName))&&SizeCache.FilePath.StartsWith(DataFolder.Cache+"\\",StringComparison.OrdinalIgnoreCase),"Folder-size persistence writes actual data under the bulk cache root");
+            check(SizeCache.Get(cacheFolder.FullName,cacheFolder.LastWriteTimeUtc)==12345&&File.Exists(SizeCache.FilePath)&&SizeCache.FilePath.StartsWith(DataFolder.Cache+"\\",StringComparison.OrdinalIgnoreCase),"Folder-size persistence writes actual data under the bulk cache root");
             check(Directory.Exists(DataFolder.WebView2)&&DataFolder.WebView2.StartsWith(DataFolder.Bulk+"\\",StringComparison.OrdinalIgnoreCase),"The actual served editor creates its WebView2 profile under bulk storage");
             await VerifyStorageLocation1111(root,check);
             check(HiddenTrialPresentation.ForegroundViolations==0,"Opening/error/editor checks did not activate a host test window");

@@ -40,9 +40,9 @@ public static class Updater
 
     /// The latest release when it is newer than what's running, else null. Throws when the check
     /// itself failed (see Failed).
-    public static async Task<Release> Check(bool manual)
+    public static async Task<Release> Check(bool manual,CancellationToken token=default)
     {
-        var release = await Latest();
+        var release = await Latest(token);
         if (release == null) return null;
         if (release.Version <= Current) return null;
         if (!manual && release.Tag == dismissed) return null; // "Later" must not become a nag
@@ -51,13 +51,13 @@ public static class Updater
 
     /// The latest release as published, whatever its version; null when it has no installer.
     /// Throws when GitHub couldn't be asked or its answer couldn't be read.
-    public static async Task<Release> Latest()
+    public static async Task<Release> Latest(CancellationToken token=default)
     {
-        var request = new HttpRequestMessage(HttpMethod.Get, Feed);
+        using var request = new HttpRequestMessage(HttpMethod.Get, Feed);
         request.Headers.UserAgent.ParseAdd("Pathweft");
-        using var response = await http.SendAsync(request);
+        using var response = await http.SendAsync(request,token);
         response.EnsureSuccessStatusCode(); // 403 (rate limit) and 5xx are failures, not "nothing new"
-        using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync(token));
         var root = json.RootElement;
         var tag = root.GetProperty("tag_name").GetString() ?? "";
         if (!Version.TryParse(tag.TrimStart('v', 'V'), out var version)) throw new JsonException($"tag {tag} is not a version");
@@ -72,6 +72,7 @@ public static class Updater
     }
 
     public static void Dismiss(Release release) => dismissed = release.Tag;
+    internal static bool IsDismissed(Release release)=>release.Tag==dismissed;
 
     /// Downloads the installer, reporting 0..1 progress. Returns its path.
     public static async Task<string> Download(Release release, IProgress<DownloadProgress> progress, CancellationToken token)

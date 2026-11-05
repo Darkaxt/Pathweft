@@ -104,13 +104,13 @@ sealed partial class PackageProbe
         Check(((string)identity.GetProperty("Current",Flags).GetValue(null)).StartsWith("Darkaxt.Pathweft.Copy.",StringComparison.Ordinal),"Delivered Shell verification is scoped to this explicit profile's separate application identity");
         Call(identity,null,"Apply");
         var jumpType=Type("FolderJumpList");
-        Func<IEnumerable<string>> quick=()=>new[]{work};
-        var publisher=Activator.CreateInstance(jumpType,Flags,null,new object[]{quick},null);
+        var publisher=Activator.CreateInstance(jumpType,Flags,null,Array.Empty<object>(),null);
         try
         {
             Call(jumpType,publisher,"Publish");
             var destinations=((IEnumerable)Get(publisher,"Published")).Cast<System.Windows.Shell.JumpTask>().ToArray();
-            Check(((string[])Get(publisher,"Rejections")).Length==0&&destinations.Any(item=>item.CustomCategory=="Quick access"&&item.ApplicationPath==Path.Combine(AppContext.BaseDirectory,"Pathweft.exe")&&item.Description==work),"Actual delivered publisher submits accepted native folder destinations targeting its packaged application host");
+            var shellList=(System.Windows.Shell.JumpList)jumpType.GetField("list",Flags).GetValue(publisher);
+            Check(((string[])Get(publisher,"Rejections")).Length==0&&destinations.Length==0&&shellList.ShowFrequentCategory&&!shellList.ShowRecentCategory,"Actual delivered publisher uses native Frequent/Pinned without custom categories or folder tasks");
             Call(jumpType,publisher,"Visit",work);
         }
         finally{((IDisposable)publisher).Dispose();Call(Type("NativeJumpList"),null,"RemoveOwned");}

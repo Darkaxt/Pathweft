@@ -5,12 +5,12 @@
         WindowStartupLocation="CenterOwner" ShowInTaskbar="False" Background="Transparent"
         Foreground="{DynamicResource Palette.E8EEF6}" FontFamily="Segoe UI Variable Text, Segoe UI" FontSize="12">
   <Grid x:Name="Root" Background="{DynamicResource Palette.B30A0D13}">
-    <DockPanel Margin="16,14,16,14">
+    <DockPanel Margin="{StaticResource AuxiliaryMargin}">
       <TextBlock DockPanel.Dock="Top" Text="File type" Foreground="{DynamicResource Palette.8A97AA}" Margin="2,0,0,6"/>
       <DockPanel DockPanel.Dock="Bottom" Margin="0,12,0,0">
-        <Button DockPanel.Dock="Right" Content="Create" Style="{StaticResource Tab}" Tag="on" Padding="16,6" Click="Create_Click"/>
-        <Button DockPanel.Dock="Right" Content="Cancel" Style="{StaticResource Tab}" Padding="14,6" Margin="0,0,6,0" Click="Cancel_Click"/>
-        <Border Background="{DynamicResource Palette.12FFFFFF}" CornerRadius="6" Padding="8,5">
+        <Button DockPanel.Dock="Right" Content="Create" Style="{StaticResource AuxiliaryAction}" Tag="on" Click="Create_Click"/>
+        <Button DockPanel.Dock="Right" Content="Cancel" Style="{StaticResource AuxiliaryAction}" Margin="0,0,6,0" Click="Cancel_Click"/>
+        <Border Style="{StaticResource AuxiliaryField}">
           <TextBox x:Name="NameBox" Style="{StaticResource Bare}" KeyDown="Name_KeyDown"/>
         </Border>
       </DockPanel>

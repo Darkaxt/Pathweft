@@ -9,6 +9,7 @@ public partial class SettingsWindow : Window
     public SettingsWindow(MainWindow owner)
     {
         InitializeComponent();
+        AuxiliaryWindows.Prepare(this,Root,scaleContent:false);
         Owner = main = owner;
         Width=Math.Min(SystemParameters.WorkArea.Width,740*Math.Max(1,Settings.TextScale));
         MinWidth=Math.Min(Width,620*Math.Max(1,Settings.TextScale));

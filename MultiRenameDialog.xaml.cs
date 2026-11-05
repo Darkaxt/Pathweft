@@ -15,11 +15,18 @@ public partial class MultiRenameDialog : Window
     MultiRenameDialog(Window owner, List<Entry> items)
     {
         InitializeComponent();
+        AuxiliaryWindows.Prepare(this,Root);
         Owner = owner;
         this.items = items;
         SourceInitialized += (_, _) => MainWindow.ApplyAcrylic(this);
         Root.Background = MainWindow.Tint();
-        Loaded += (_, _) => { NameBox.Focus(); NameBox.SelectAll(); };
+        Loaded += (_, _) => {
+#if DEBUG
+            if(!HiddenTrialPresentation.SuppressFocus(this))
+#endif
+                NameBox.Focus();
+            NameBox.SelectAll();
+        };
         PreviewKeyDown += (_, e) =>
         {
             if (e.Key == Key.Escape) Close();

@@ -47,14 +47,16 @@ public partial class PaneView
             ((FrameworkElement)TabBand.Parent).Visibility=Visibility.Collapsed;
             FolderStrip.Visibility=Visibility.Collapsed;((FrameworkElement)Footer.Parent).Visibility=Visibility.Collapsed;
             foreach(var button in PathBar.Children.OfType<Button>())button.Visibility=Visibility.Collapsed;
-            PathBar.Margin=new(0,0,0,10);AddressField.CornerRadius=new(18);AddressField.Padding=new(12,3,8,3);AddressField.MinHeight=38;
+            PathBar.Margin=new(0,0,0,12);
+            AddressField.ClearValue(Border.CornerRadiusProperty);AddressField.ClearValue(Border.PaddingProperty);
+            AddressField.SetResourceReference(StyleProperty,"AuxiliaryField");AddressField.MinHeight=34;
             AddressField.ToolTip="Search files and folders with Everything";
             var field=(DockPanel)AddressField.Child;
             var icon=new TextBlock{Text="\uE721",FontFamily=new("Segoe Fluent Icons"),VerticalAlignment=VerticalAlignment.Center,Margin=new(0,0,8,0),IsHitTestVisible=false};
             DockPanel.SetDock(icon,Dock.Left);field.Children.Insert(0,icon);
             Card.BorderThickness=new(0);Card.Background=System.Windows.Media.Brushes.Transparent;Glow.Visibility=Visibility.Collapsed;
             FilterBox.Visibility=Visibility.Visible;Crumbs.Visibility=Visibility.Collapsed;
-            FilterBox.FontSize=14;FilterHint.Text="Search files and folders";
+            FilterBox.FontSize=12;FilterHint.Text="Search files and folders";
             System.Windows.Automation.AutomationProperties.SetName(FilterBox,"Search all files and folders");
             tabs[tab]=ThisPC;
             widgetColumnsConfigured=true;
@@ -168,6 +170,7 @@ public partial class PaneView
 
     public void Search(string query)
     {
+        if(SpaceAnalyzing){AfterSpace(()=>Search(query));return;}
 #if DEBUG
         VerificationQueryEvents?.Add("SEARCH " + query + "\n" + Environment.StackTrace);
 #endif

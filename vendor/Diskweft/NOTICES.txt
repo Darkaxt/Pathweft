@@ -1,0 +1,31 @@
+Selected source adapted from Diskweft
+Repository: https://github.com/Darkaxt/Diskweft
+Revision: 82ac41c9a74f3cd0ee6ae44c6bdeb0c7328eb980
+SpaceScan.cs SHA256: 936A77BB87449C7076DB8C701ADCA79EC21F16E84C1FE4135CF3C59DE97673DD
+LiveScan.cs SHA256: F174F81207D0F54157BD12A2ECA0443891C4EEC21368DED083038C8E3443A8A0
+Adapted into SpaceScan.cs: native metadata enumeration/long paths, scoped
+directory traversal/accounting, progressive immutable value publication.
+Pathweft owns cancellation, SQLite fallback measurements, SDK queries and UI.
+No donor app/static state, MFT/raw-volume access, search/duplicate/history UI,
+endpoint application, MCP or Coordinator runtime is imported.
+
+MIT License
+Copyright (c) 2026 Protagonist Labs
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

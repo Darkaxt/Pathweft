@@ -29,6 +29,7 @@ public partial class RecycleBinWindow : Window
     public RecycleBinWindow(Window owner, Action changed)
     {
         InitializeComponent();
+        AuxiliaryWindows.Prepare(this,Root);
         Owner = owner;
         this.changed = changed;
         SourceInitialized += (_, _) => MainWindow.ApplyAcrylic(this);

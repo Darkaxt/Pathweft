@@ -22,6 +22,7 @@ public partial class MainWindow
         File.WriteAllText(Path.Combine(folder,"cold-result.txt"),"Actual cold launch target");
         File.WriteAllText(Path.Combine(warm,"warm-result.txt"),"Actual running-instance target");
         var before=ReadNativeRecent(ShellIdentity.Installed);
+        var beforeFrequent=ReadNativeRecent(ShellIdentity.Installed,1);
         bool cleared=false;
         try
         {
@@ -31,9 +32,8 @@ public partial class MainWindow
             var published=folderJumpList.Published;
             File.WriteAllText(Path.Combine(root,"jump-published.json"),JsonSerializer.Serialize(new{appId=ShellIdentity.Current,historyAllowed=folderJumpList.HistoryEnabled,folderJumpList.Issue,folderJumpList.Rejections,items=published.Select(item=>new{item.Title,item.ApplicationPath,item.Arguments,item.CustomCategory,item.Description,item.IconResourcePath,item.IconResourceIndex})}));
             check(folderJumpList.HistoryEnabled,"The existing Windows privacy policy permits this native destination qualification; no policy setting was changed");
-            check(folderJumpList.Rejections.Length==0&&published.Count(item=>!string.IsNullOrEmpty(item.CustomCategory))==3,"The actual Shell accepts Quick access and Recent folders, including drive root and offline UNC destinations");
-            check(published.All(item=>item.ApplicationPath==Environment.ProcessPath&&item.Arguments.Length>0)&&published.Count(item=>item.Arguments==FolderJumpList.Quote(folder))==1,"Destinations launch this executable with arguments and deduplicate across categories; they are not folder-default-handler links");
-            check(published.Where(item=>item.CustomCategory==null).Select(item=>item.Title).SequenceEqual(new[]{"Home","Downloads"}),"Useful tasks reuse the existing Home and Downloads navigation");
+            var shellList=(JumpList)typeof(FolderJumpList).GetField("list",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic).GetValue(folderJumpList);
+            check(folderJumpList.Rejections.Length==0&&shellList.ShowFrequentCategory&&!shellList.ShowRecentCategory&&published.Count==0,"The publisher requests native Frequent with Windows-owned Pinned, without custom groups or Home/Downloads tasks");
             check(!FolderJumpList.TryFolder(PaneView.ThisPC,out _)&&!FolderJumpList.TryFolder(Path.Combine(root,"virtual.zip","inner"),out _),"Shell namespace and compressed virtual locations are explicitly omitted");
             check(FolderJumpList.TryFolder(Directory.CreateDirectory(Path.Combine(root,"real folder.zip")).FullName,out _),"A physical local folder remains eligible even when its name has an archive extension");
 
@@ -56,18 +56,23 @@ public partial class MainWindow
             var nativeRecent=ReadNativeRecent(ShellIdentity.Current);
             File.WriteAllText(Path.Combine(root,"jump-native-recent.json"),JsonSerializer.Serialize(nativeRecent.Select(item=>new{item.path,item.arguments})));
             check(nativeRecent.Any(item=>item.path.Equals(Environment.ProcessPath,StringComparison.OrdinalIgnoreCase)&&item.arguments==FolderJumpList.Quote(folder)),"Independent IApplicationDocumentLists readback finds the real visited folder link under the exact test AppID");
+            var frequent=ReadNativeRecent(ShellIdentity.Current,1);
+            File.WriteAllText(Path.Combine(root,"jump-native-frequent.json"),JsonSerializer.Serialize(frequent.Select(item=>new{item.path,item.arguments})));
+            check(frequent.Any(item=>item.path.Equals(Environment.ProcessPath,StringComparison.OrdinalIgnoreCase)&&item.arguments==FolderJumpList.Quote(folder)),"Independent native Frequent readback contains the actual visited argument-bearing folder link targeting this executable");
 
-            var task=folderJumpList.Published.Single(item=>item.Arguments==FolderJumpList.Quote(folder));
-            folderJumpList.RemoveForVerification(task);folderJumpList.Publish();
-            check(folderJumpList.Published.All(item=>item.Arguments!=task.Arguments),"Shell-removal event handling suppresses the exact destination on reconstruction (diagnostic event input, not a simulated user pin/remove claim)");
+            RemoveNativeVisit11(folder);folderJumpList.Publish();
+            check(!ReadNativeRecent(ShellIdentity.Current).Any(item=>item.arguments==FolderJumpList.Quote(folder))&&!ReadNativeRecent(ShellIdentity.Current,1).Any(item=>item.arguments==FolderJumpList.Quote(folder)),"Actual Windows removal clears Recent/Frequent and publisher refresh does not reintroduce it from local history or Quick access");
             folderJumpList.Dispose();
-            using(var restarted=FolderJumpList.Create(()=>pinned))
+            using(var restarted=FolderJumpList.Create())
             {
-                restarted.Publish();check(restarted.Published.All(item=>item.Arguments!=task.Arguments),"Recorded destination removal survives publisher reconstruction using the actual saved profile");
+                restarted.Publish();check(!ReadNativeRecent(ShellIdentity.Current,1).Any(item=>item.arguments==FolderJumpList.Quote(folder)),"Windows-owned removal survives publisher reconstruction without a second local removal database");
                 restarted.Visit(folder);restarted.Publish();
-                check(restarted.Published.Any(item=>item.Arguments==task.Arguments),"A genuine folder visit can reintroduce its own previously removed destination");
+                check(ReadNativeRecent(ShellIdentity.Current,1).Any(item=>item.arguments==FolderJumpList.Quote(folder)),"A genuine folder visit records new native usage for its previously removed destination");
                 restarted.HistoryForVerification=false;restarted.Publish();
-                check(restarted.Published.Count==2&&restarted.Published.All(item=>item.CustomCategory==null),"Privacy-disabled publication retains tasks and omits all folder categories (isolated policy input, no Windows setting change)");
+                var privateList=(JumpList)typeof(FolderJumpList).GetField("list",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic).GetValue(restarted);
+                var usageBefore=ReadNativeRecent(ShellIdentity.Current,1);
+                restarted.Visit(warm);
+                check(!privateList.ShowFrequentCategory&&!privateList.ShowRecentCategory&&restarted.Published.Count==0&&usageBefore.SequenceEqual(ReadNativeRecent(ShellIdentity.Current,1)),"Privacy-disabled publication hides native usage and records no visits (isolated policy input; Windows preferences and pins unchanged)");
             }
             var navigated=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
             void Ready(){if(new[]{Left,Right}.Any(pane=>pane.Dir==warm&&pane.Items.Any(entry=>entry.Name=="warm-result.txt")))navigated.TrySetResult();}
@@ -96,6 +101,7 @@ public partial class MainWindow
             NativeJumpList.RemoveOwned();cleared=true;
             check(ReadNativeRecent(ShellIdentity.Current).Length==0,"Uninstall's supported Shell cleanup clears only this test AppID's recorded usage");
             check(before.SequenceEqual(ReadNativeRecent(ShellIdentity.Installed)),"The installed application's native recent destinations remain unchanged");
+            check(beforeFrequent.SequenceEqual(ReadNativeRecent(ShellIdentity.Installed,1)),"The installed application's Frequent data remains unchanged throughout the isolated native correction checks");
             check(HiddenTrialPresentation.ForegroundObserverActive&&HiddenTrialPresentation.ForegroundViolations==0,"Native list publication and real cold/warm launches never activate a host-desktop window");
         }
         finally{folderJumpList.Dispose();if(!cleared)NativeJumpList.RemoveOwned();}
@@ -112,12 +118,42 @@ public partial class MainWindow
         finally{Left.StatsChanged-=Listed;Right.StatsChanged-=Listed;Quit();}
     }
 
-    static (string path,string arguments)[] ReadNativeRecent(string id)
+    static void RemoveNativeVisit11(string folder)
+    {
+        if(ShellIdentity.Current==ShellIdentity.Installed)throw new InvalidOperationException("Native test removal requires the isolated application identity.");
+        object native=Activator.CreateInstance(Type.GetTypeFromCLSID(new Guid("86c14003-4d6b-4ef3-a7b4-0506663b2e68")));
+        object listsNative=Activator.CreateInstance(Type.GetTypeFromCLSID(new Guid("86bec222-30f2-47e0-9f25-60d11cd75c28")));object raw=null;
+        try
+        {
+            var destinations=(IApplicationDestinations11)native;destinations.SetAppID(ShellIdentity.Current);
+            var lists=(IApplicationDocumentLists11)listsNative;lists.SetAppID(ShellIdentity.Current);
+            var arrayId=typeof(IObjectArray11).GUID;lists.GetList(0,0,ref arrayId,out raw);
+            var array=(IObjectArray11)raw;array.GetCount(out uint count);var linkId=typeof(IShellLinkW).GUID;
+            for(uint index=0;index<count;index++)
+            {
+                array.GetAt(index,ref linkId,out object item);var arguments=Marshal.AllocHGlobal(32768*2);
+                try
+                {
+                    ((IShellLinkW)item).GetArguments(arguments,32768);
+                    if(Marshal.PtrToStringUni(arguments)==FolderJumpList.Quote(folder)){destinations.RemoveDestination(item);return;}
+                }finally{Marshal.FreeHGlobal(arguments);Marshal.ReleaseComObject(item);}
+            }
+            throw new InvalidOperationException("The actual native destination to remove was not found.");
+        }finally{if(raw!=null)Marshal.ReleaseComObject(raw);Marshal.ReleaseComObject(listsNative);Marshal.ReleaseComObject(native);}
+    }
+    [ComImport,InterfaceType(ComInterfaceType.InterfaceIsIUnknown),Guid("12337d35-94c6-48a0-bce7-6a9c69d4d600")]
+    interface IApplicationDestinations11
+    {
+        void SetAppID([MarshalAs(UnmanagedType.LPWStr)]string id);
+        void RemoveDestination([MarshalAs(UnmanagedType.IUnknown)]object destination);
+        void RemoveAllDestinations();
+    }
+    static (string path,string arguments)[] ReadNativeRecent(string id,int kind=0)
     {
         object native=Activator.CreateInstance(Type.GetTypeFromCLSID(new Guid("86bec222-30f2-47e0-9f25-60d11cd75c28")));object raw=null;
         try
         {
-            var lists=(IApplicationDocumentLists11)native;lists.SetAppID(id);var arrayId=typeof(IObjectArray11).GUID;lists.GetList(0,Settings.RecentMax,ref arrayId,out raw);
+            var lists=(IApplicationDocumentLists11)native;lists.SetAppID(id);var arrayId=typeof(IObjectArray11).GUID;lists.GetList(kind,Settings.RecentMax,ref arrayId,out raw);
             var array=(IObjectArray11)raw;array.GetCount(out uint count);var result=new List<(string,string)>();var linkId=typeof(IShellLinkW).GUID;
             for(uint index=0;index<count;index++)
             {

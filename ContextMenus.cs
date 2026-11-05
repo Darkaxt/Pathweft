@@ -121,20 +121,6 @@ public partial class MainWindow
         menu.IsOpen = true;
     }
 
-    // SpaceScan (sister app) publishes where it is installed (before its ecosystem card); without it the menu item sends the user to its page.
-    const string SpaceScanPage = "https://protagonistlabs.app/spacescan/?utm_source=pathweft&utm_medium=app&utm_campaign=scan-with-spacescan";
-
-    static string SpaceScanExe
-    {
-        get
-        {
-            var exe = Microsoft.Win32.Registry.GetValue(@"HKEY_CURRENT_USER\Software\SpaceScan", "ExePath", null) as string;
-            return exe != null && File.Exists(exe) ? exe : null;
-        }
-    }
-
-    static void ScanWithSpaceScan(string path) => HandTo("spacescan", SpaceScanPage, new[] { path });
-
     // Shelf, Reel and Backup Labs (sister apps) take folders and files on the command line, already
     // running or not: Shelf (3.59.0) and Reel (1.9.11) offer to add them, Backup Labs (1.0.2) makes a
     // new job of them. Each is found through its card, else the uninstall entry its installer writes; without either
@@ -157,13 +143,11 @@ public partial class MainWindow
     /// A sister's exe: its ecosystem card first (Sisters.cs), else what older versions left in the registry; null = not installed.
     internal static string SisterExe(string id) => Sisters.Exe(id) ?? id switch
     {
-        "spacescan" => SpaceScanExe ?? Uninstalled(SpaceScanKey),
         "shelf" => Uninstalled(ShelfKey),
         "reel" => Uninstalled(ReelKey),
         "backuplabs" => Uninstalled(BackupKey),
         _ => null,
     };
-    const string SpaceScanKey = "{5B7F3C21-9D4A-4E86-B0C7-2A9E6F1D8B53}_is1";
 
     // Since ecosystem v3 the studio's apps install per machine (Program Files\ProtagonistLabs), so their uninstall entry is
     // in HKLM, in the 64-bit view (Inno in 64-bit mode) or the 32-bit one (an NSIS installer); a per-user install in HKCU.
@@ -307,7 +291,7 @@ public partial class MainWindow
         if (LumeItem(sel.Select(x => x.Path).ToList()) is { } lume) m.Items.Add(lume);
         m.Items.Add(Item("Show in File Explorer", "", "", () => OpenInExplorer($"/select,\"{first.Path}\"")));
         AddShell(m, shell, "drive");
-        m.Items.Add(Item("Scan with SpaceScan", "", "", () => ScanWithSpaceScan(first.IsDir ? first.Path : Path.GetDirectoryName(first.Path)!)));
+        m.Items.Add(Item(p.SpaceAnalyzing?"Restore previous view":"Analyze space in this folder","\uE9F5","",()=>AnalyzeSpace_Click(null,new()),p.CanAnalyzeSpace));
         if (sel.All(x => x.IsDir || Path.GetExtension(x.Name).Equals(".exe", StringComparison.OrdinalIgnoreCase)))
             m.Items.Add(Item("Add to Shelf", "\uE7FC", "", () => HandTo("shelf", ShelfPage, sel.Select(x => x.Path))));
         if (sel.All(x => x.IsDir || ReelVideo.Contains(Path.GetExtension(x.Name))))
@@ -397,7 +381,7 @@ public partial class MainWindow
         if (LumeItem(new[] { p.Dir }) is { } lume) m.Items.Add(lume);
         m.Items.Add(Item("Open terminal here", "", "Ctrl+`", OpenTerminal));
         m.Items.Add(Item("Open in File Explorer", "", "", () => OpenInExplorer($"\"{p.Dir}\"")));
-        m.Items.Add(Item("Scan with SpaceScan", "", "", () => ScanWithSpaceScan(p.Dir)));
+        m.Items.Add(Item(p.SpaceAnalyzing?"Restore previous view":"Analyze space in this folder","\uE9F5","",()=>AnalyzeSpace_Click(null,new()),p.CanAnalyzeSpace));
         m.Items.Add(Item("Back up with Backup Labs", "\uE81C", "", () => HandTo("backuplabs", BackupPage, new[] { p.Dir })));
         m.Items.Add(new Separator());
         m.Items.Add(Item("Windows menu…", "", "", () => ShellMenu.Show(this, p.Dir, Array.Empty<string>())));

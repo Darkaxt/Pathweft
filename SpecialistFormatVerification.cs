@@ -24,7 +24,7 @@ public partial class MainWindow
         {using var archive=ZipFile.Open(file,ZipArchiveMode.Create);using var output=archive.CreateEntry(entry).Open();output.Write(bytes);}
         try
         {
-            SQLitePCL.raw.SetProvider(new SQLitePCL.SQLite3Provider_winsqlite3());
+            SqliteRuntime.Ensure();
             string live=Path.Combine(root,"wal-writer.sqlite"),snapshot=Path.Combine(root,"wal-records.sqlite");
             using(var connection=new SqliteConnection(new SqliteConnectionStringBuilder{DataSource=live,Pooling=false}.ToString()))
             {

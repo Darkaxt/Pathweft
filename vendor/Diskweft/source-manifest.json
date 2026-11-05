@@ -1,0 +1,12 @@
+{
+  "component": "Diskweft selected metadata scanner",
+  "repository": "https://github.com/Darkaxt/Diskweft",
+  "revision": "82ac41c9a74f3cd0ee6ae44c6bdeb0c7328eb980",
+  "license": "MIT",
+  "files": [
+    {"upstream": "SpaceScan.cs", "sha256": "936A77BB87449C7076DB8C701ADCA79EC21F16E84C1FE4135CF3C59DE97673DD"},
+    {"upstream": "LiveScan.cs", "sha256": "F174F81207D0F54157BD12A2ECA0443891C4EEC21368DED083038C8E3443A8A0"}
+  ],
+  "adaptations": ["SpaceScan.cs", "PaneSpace.cs"],
+  "scope": "Native metadata enumeration, scoped traversal/accounting and coalesced value publication; no external executable or runtime dependency"
+}

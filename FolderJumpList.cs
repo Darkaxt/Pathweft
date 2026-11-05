@@ -16,24 +16,19 @@ internal static class ShellIdentity
     [DllImport("shell32.dll",CharSet=CharSet.Unicode)]static extern int SetCurrentProcessExplicitAppUserModelID(string appId);
 }
 
-// One native list for the existing main-window history and selected Quick list.
-// Windows alone owns pinned destinations, removed-item decisions and placement.
+// Visits feed the Shell's native Frequent list. Windows owns pinning, ranking
+// and removal; rebuilding the menu never replays local history or Quick access.
 internal sealed class FolderJumpList : IDisposable
 {
     readonly JumpList list=new();
-    readonly Func<IEnumerable<string>> quick;
-    readonly HashSet<string> removed=new(StringComparer.OrdinalIgnoreCase);
-    readonly string removalFile=Path.Combine(Settings.Dir,"jumplist-removed.txt");
     DispatcherOperation pending;
     bool disposed;
-    bool storageFailed;
     internal string Issue {get;private set;}="";
 #if DEBUG
     internal bool? HistoryForVerification;
-    internal void RemoveForVerification(JumpTask item)=>RememberRemoved(new[]{item});
 #endif
     internal string[] Rejections {get;private set;}=Array.Empty<string>();
-    internal bool HistoryEnabled=>!storageFailed&&
+    internal bool HistoryEnabled=>
 #if DEBUG
         (HistoryForVerification??HistoryAllowed());
 #else
@@ -41,7 +36,7 @@ internal sealed class FolderJumpList : IDisposable
 #endif
     internal IReadOnlyList<JumpTask> Published=>list.JumpItems.OfType<JumpTask>().ToArray();
 
-    internal static FolderJumpList Create(Func<IEnumerable<string>> quick)
+    internal static FolderJumpList Create()
     {
         // Other diagnostics must never modify any Shell destination list.
         if(Settings.Profile!=null
@@ -49,40 +44,22 @@ internal sealed class FolderJumpList : IDisposable
             &&Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO")!="jump-lists"
 #endif
             )return null;
-        return new FolderJumpList(quick);
+        return new FolderJumpList();
     }
-    FolderJumpList(Func<IEnumerable<string>> quickFolders)
+    FolderJumpList()
     {
-        quick=quickFolders;
-        try{if(File.Exists(removalFile))foreach(string line in File.ReadAllLines(removalFile))if(!string.IsNullOrWhiteSpace(line))removed.Add(line);}
-        catch(Exception error)when(error is IOException or UnauthorizedAccessException or System.Security.SecurityException){storageFailed=true;Issue=error.Message;}
-        list.JumpItemsRemovedByUser+=(_,args)=>RememberRemoved(args.RemovedItems);
         list.JumpItemsRejected+=(_,args)=>
         {
             Rejections=args.RejectionReasons.Select(reason=>reason.ToString()).ToArray();
-            RememberRemoved(args.RejectedItems.Where((_,index)=>args.RejectionReasons[index]==JumpItemRejectionReason.RemovedByUser));
         };
         Schedule();
     }
-    void RememberRemoved(IEnumerable<JumpItem> entries)
-    {
-        bool changed=false;
-        foreach(var entry in entries.OfType<JumpTask>())
-            if(string.Equals(entry.ApplicationPath,Program.Executable,StringComparison.OrdinalIgnoreCase)&&!string.IsNullOrEmpty(entry.Arguments))changed|=removed.Add(entry.Arguments);
-        if(changed)SaveRemoved();
-    }
-    void SaveRemoved()
-    {
-        try{Directory.CreateDirectory(Settings.Dir);Settings.WriteAllLines(removalFile,removed.Order(StringComparer.OrdinalIgnoreCase));}
-        catch(Exception error)when(error is IOException or UnauthorizedAccessException or System.Security.SecurityException){storageFailed=true;Issue=error.Message;}
-    }
     internal void Visit(string path)
     {
-        if(!TryFolder(path,out string folder))return;
+        if(disposed||!TryFolder(path,out string folder))return;
         if(HistoryEnabled)
         {
             var destination=Destination(folder,null);
-            if(removed.Remove(destination.Arguments))SaveRemoved();
             try{NativeJumpList.RecordVisit(destination);}
             catch(COMException error){Issue=error.Message;}
         }
@@ -97,19 +74,10 @@ internal sealed class FolderJumpList : IDisposable
     {
         if(disposed)return;
         Rejections=Array.Empty<string>();list.JumpItems.Clear();
-        var used=new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        void AddFolders(IEnumerable<string> paths,string category)
-        {
-            foreach(string path in paths)
-                if(TryFolder(path,out string folder)&&used.Add(folder))
-                {
-                    var item=Destination(folder,category);
-                    if(!removed.Contains(item.Arguments))list.JumpItems.Add(item);
-                }
-        }
-        if(HistoryEnabled){AddFolders(quick(),"Quick access");AddFolders(Settings.RecentFolders,"Recent folders");}
-        var home=Destination(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),null);home.Title="Home";list.JumpItems.Add(home);
-        var downloads=Destination(MainWindow.DownloadsFolder(),null);downloads.Title="Downloads";list.JumpItems.Add(downloads);
+        list.ShowRecentCategory=false;
+        list.ShowFrequentCategory=HistoryEnabled;
+        // Apply replaces only our custom portion. It neither clears Windows'
+        // usage data nor alters user pins, including pins made before an update.
         list.Apply();
     }
     internal static JumpTask Destination(string folder,string category)=>new()

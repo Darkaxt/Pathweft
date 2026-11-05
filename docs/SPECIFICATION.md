@@ -1,10 +1,35 @@
 # Pathweft specification
 
-Version 0.52 - 2026-11-05. Owner: Darkaxt.
+Version 0.55 - 2026-11-05. Owner: Darkaxt.
 
 This is the authoritative specification. The derived plan must preserve every
 requirement and acceptance criterion. Material scope changes require explicit
 user direction recorded here; ordinary implementation choices need no new gate.
+
+Current authorization2026-11-05: "continue working then" authorizes implementing
+the recorded native-category correction, S14 window/update feedback and the
+selected current-pane Diskweft integration. Execute S11 -> S14 -> S15 with one
+ACTIVE implementation stage. S11/S14 close their complete source/integration
+acceptance before advancement; S15 owns one combined normal release and
+independent source/package/installed verification for this round. No per-stage
+release. Earlier plan-only wording below is historical for these now-authorized
+items. S12/S6/S7 remain outside this request. The user confirms an actual native
+folder pin survives restarting1.1.18; preserve existing pins during correction.
+The user additionally requests automatic dismissal of successful transfers;
+TRANSFER-14 belongs to the currently ACTIVE S14. Keep unsuccessful outcomes
+available for review and preserve operation completion, Undo and arrival selection.
+
+The user's subsequent "Follow your best recommendation choice" authorizes
+Everything-first folder sizing in S15: reuse available indexed folder totals,
+retain metadata-only traversal for uncovered scopes, and replace the unbounded
+eager text-cache load with a bounded hot cache and disk-backed fallback records.
+Do not change the external Everything index/configuration or require an engine
+upgrade. Preserve indexed-versus-scanned coverage and last measured UI values.
+On2026-11-05 the user explicitly authorized enabling folder-size indexing in
+their existing Everything instance. This is a scoped machine-setting exception:
+preserve its other settings, service, index scope and version, restart normally
+in the background and verify actual indexed sizing. Product fallback remains
+required when another user's index is disabled or a path is uncovered.
 
 On2026-11-04 the user authorized implementation of S13, S9 and S11 together.
 Execute them in that order with at most one ACTIVE stage. Current execution
@@ -1073,7 +1098,7 @@ Evidence, close owned analysis and verify worker exit before cleaning scratch.
 | SAB-03 | Reuse the deliberately selected Everything instance and shared Pathweft search behavior; do not start a duplicate index. Keep the native shell adapter limited to the required query/result boundary and existing application ownership; do not host the full managed file manager inside Explorer. Own rapid-query cancellation, result identity, paging/bounds and thread/COM lifetimes through actual state/events. Verify Unicode/spaces, rapid typing, empty results, deleted/offline paths and real index unavailability; never label stale/partial results complete. The exact ABI/transport is selected from SAB-01 evidence, not assumed by this plan. |
 | SAB-04 | Version/hash-bind any runtime hook to the exact validated host/module/Windows combination and verify expected target identities before attachment. Keep integration opt-in under Pathweft settings, with visible compatibility/readiness state. Unknown updates, missing owners and failed attachment leave normal StartAllBack search usable and report the integration unavailable; no guessed offsets or automatic patch retries. Preserve original installed binaries, licensing state, settings and unrelated hooks. Supply verified disable/uninstall/recovery and actual attach/detach/Explorer-restart behavior. |
 | SAB-05 | Validate the complete integration in an isolated matching Windows/StartAllBack environment before a coordinated live-shell trial. Exercise enable/disable, actual native input, Explorer restart, relevant DPI/monitor/focus behavior, unavailable backend, host/app exit and an unsupported-version case. Verify restoration of normal StartAllBack search and absence of persistent orphan hooks. Use hidden diagnostics where possible; physical Start-menu acceptance requires actual visible input. S6 owns its final release: package only Pathweft-owned adapter/source with exact supported-version notes and verify the delivered integration. The completed S8 core release does not satisfy this future gate. |
-| SAB-06 | Route ordinary filesystem-folder links and folder-result open/reveal actions originating in StartAllBack directly to Pathweft, preserving the requested folder and selected file where applicable. Preserve app/Settings/command launches and explicitly inventory virtual Shell locations that Pathweft cannot render. Test cold/warm Pathweft, Unicode/quoted paths, native selection, no duplicate or transient Explorer window for covered routes, and disable/recovery. Reuse the application launch/selection boundary; do not activate the inherited timed Explorer-window hiding/polling/closing watcher. Broader system-wide default-folder registration belongs to SHELL-01 in S8. |
+| SAB-06 | Route ordinary filesystem-folder links and folder-result open/reveal actions originating in StartAllBack directly to Pathweft, preserving the requested folder and selected file where applicable. Include built-in Documents and other known-folder shortcuts that bypass ordinary folder verbs: establish their actual Shell/known-folder/library call path under the Everything wiring procedure before selecting an adapter. The user's2026-11-05 clarification keeps this investigation and correction here, outside current S11/S14/S15. Preserve app/Settings/command launches and explicitly inventory virtual Shell locations that Pathweft cannot render. Test cold/warm Pathweft, Unicode/quoted paths, native selection, no duplicate or transient Explorer window for covered routes, and disable/recovery. Reuse the application launch/selection boundary; do not activate the inherited timed Explorer-window hiding/polling/closing watcher. Broader system-wide default-folder registration belongs to SHELL-01 in S8. |
 
 The user calls this "inject Everything"; the required outcome is native in-menu
 grouped file/folder subsets plus a full-results view, not preserving Windows
@@ -1116,7 +1141,25 @@ Primary sources: [Windows indexing scope](https://support.microsoft.com/en-us/wi
 | WINDOW-01 | Inventory Pathweft-owned auxiliary windows, including Settings, Help, What's new, updater/check/deployment, transfers, search/preview and action/error dialogs. Establish one concrete design contract using Native/Original palettes: consistent typography/hierarchy, margins, content/title alignment, navigation/selected states, cards, buttons/icons, scrollbars and resize/minimum-size behavior. Preserve each window's purpose and existing functionality; do not redesign native OS dialogs or third-party interfaces. Reuse existing resources where appropriate without speculative framework work. |
 | WINDOW-02 | Apply that contract to all inventoried windows and verify actual screenshots/behavior in Native light/dark and Original at narrow/normal sizes and100%/150% text/DPI scales. Preserve Help's reading-section highlight, settings tabs, keyboard/focus/accessibility, window ownership/reuse/close and preview state. Resolve every in-scope inconsistency or record its exact blocker; palette changes alone are insufficient. |
 | UPDATE-02 | Clicking manual Check for updates in the sidebar or Settings immediately shows nearby visible/accessibility feedback, followed by a clear result: Checking, up to date with installed version, update available with version/action, or check failed with explanation/explicit retry. Use a discoverable themed update surface/in-control status; the main bottom-right status line alone is insufficient. Observe the real task, prevent duplicate concurrent checks and avoid artificial completion delays. Automatic checks stay quiet when unchanged; preserve download/hash/cancel/deployment progress, transfer/editor protection and user-controlled restart. Verify no-update/available/network-failure and progress/result behavior through actual application workflows. |
+| TRANSFER-14 | On actual successful transfer completion, automatically dismiss that job through the existing Transfers UI owner and hide the window when no cards remain. Retain active/queued/paused/conflicting and failed/cancelled/partial/error outcomes. Preserve completion notifications, Undo, arrival selection, source/destination refresh and reusable close-to-hide behavior. Use completion events, with no simulated click, delay or polling deadline. Verify real copy/move, multiple jobs and unsuccessful outcomes; successful completion must not hide outstanding work or erase its errors. |
 | WINDOW-03 | Reconcile WINDOW-01/02 and UPDATE-02 against the complete inventory, revalidate affected updater/window lifecycle, then deliver one normal S14 release through the established channel. Independently retrieve the actual package, verify matching source/runtime/notices and packaged workflows, and verify the installed update. No per-window intermediate release or unsolicited system/theme/settings changes. |
+
+### Current-pane disk analysis (S15)
+
+The source assessment in [DISKWEFT-INTEGRATION.md](DISKWEFT-INTEGRATION.md) is now
+authorized for implementation within the focused mode below. Import selected
+scanner source, not Diskweft's application UI, installation, settings or MCP.
+
+| ID | Required outcome and acceptance |
+| --- | --- |
+| SPACE-01 | A compact Analyze space toggle beside Terminal uses Pathweft's existing proportions, theme, tooltip, accessible name and keyboard/focus conventions; use a disk/blocks motif reflecting the supplied defrag reference. Analyze only the active pane's current filesystem path. Replace the old external Scan with SpaceScan menu/Help routes with this same action. State unsupported virtual/search/This PC eligibility honestly; do not silently extract archives or scan all drives. |
+| SPACE-02 | Morph that pane into a virtualized expandable directory/file tree with Space used totals and root-relative usage bars/percentages, descending size ordering among siblings and stable selection/viewport while totals grow. Publish useful progressive recursive totals before completion. Distinguish pending, measured empty, incomplete/denied, cancelled and failed results. The current donor measures logical file lengths: do not present them as allocated disk clusters or cloud account quota. |
+| SPACE-03 | The same toggle restores the prior standard view mode, exact columns/order/widths, sort/direction, path, selection and scroll. Own each pane's root/session, reject old generations, and await actual cancellation/worker completion on exit/navigation/close. Preserve ordinary navigation, selection, preview and real file actions; do not create a second mutation owner or let updates from an old scan overwrite the restored view. |
+| SPACE-04 | Borrow and pin selected Diskweft traversal/accounting/progressive source with MIT provenance/notices and upstream-review inventory. Scope mutable state/cancellation/statistics to the scan; do not import shared static donor application state, a new endpoint app, background service or Coordinator/MCP requirement. Do not follow reparse points or read cloud file contents merely for sizing. Avoid duplicate measurement of the same scope through existing SizeCache; promote only complete valid totals under its invalidation contract. Ordinary subtree traversal is required; no automatic raw-volume elevation or unrelated donor search/duplicate/history/reporting features. |
+| SPACE-05 | Verify the real nested-folder toggle workflow, exact terminal totals, progressive/largest-first/selection/expansion behavior, cancelled/denied/reparse/Unicode/long paths, actual nested mutation invalidation, two-pane ownership and shutdown; compare actual scan/display overhead and retained memory against the selected donor on the same fixture without promising unmeasured performance. Verify Native light/dark/Original, narrow/normal,100/150% and keyboard/accessibility. Reconcile S11/S14/S15 and deliver one normal release with corresponding sources/notices, independently retrieved actual packaged workflows and installed verification. Preserve the running app and user data until its normal updater/restart. |
+| CORE-19 | For ordinary folder-size refreshes, preserve the last measured displayed value while invalidation/recalculation runs. Atomically replace it when a new valid measurement arrives; use the unknown placeholder only before any measurement exists. Cover repeated background writes, row refresh/reconciliation and summary/selection totals, without accepting invalid/incomplete measurements as completed cache values. The user's continuously changing folder reproduction belongs to S15's sizing integration and final release, not a separate intermediate release. |
+| CORE-20 | Prefer Everything's available indexed folder sizes for visible ordinary rows and expanded analysis branches through the existing serialized SDK owner. Detect disabled folder-size indexing and unknown/uncovered paths; use metadata traversal when unavailable without altering Everything settings, requiring an engine upgrade or loading its whole index into Pathweft. Identify indexed coverage in the UI; an indexed total may omit excluded files and is not a verified complete physical-disk scan. Sizes remain logical lengths, not allocated bytes or cloud account quota. Archive sizing remains with its archive owner. |
+| CORE-21 | Replace eager in-memory folder-size persistence with a bounded hot cache and indexed on-disk fallback measurements under the existing bulk cache root. Migrate existing text records transactionally without loading them all into RAM, preserve correctness across interrupted migration, and use targeted ancestor/subtree invalidation under the existing measurement publication contract. Avoid full-map snapshots/rewrites and per-record invalidation allocations. Verify actual legacy migration, persistence, concurrency, invalidation, bounded retained memory and unchanged storage relocation; compare the installed-code baseline and corrected data path on the same fixture. |
 
 ### Context menu reorganization (S9)
 

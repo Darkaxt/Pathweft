@@ -3,7 +3,7 @@
 param(
     [Parameter(Mandatory)][string]$Executable,
     [string]$ScratchRoot='D:\Temp\pathweft-s13-s9-s11',
-    [ValidateSet('full','office','office-fallback','office-formats','policies','formats','runtime','sizes','existing','pdf','modes','icons','menus','menus-ui','menus-properties','menus-shell','jump-lists')][string]$Scenario='full',
+    [ValidateSet('full','office','office-fallback','office-formats','policies','formats','runtime','sizes','space','indexed-sizes','live-indexed-sizes','existing','pdf','modes','icons','menus','menus-ui','menus-properties','menus-shell','jump-lists','windows','transfers')][string]$Scenario='full',
     [string]$MenuDesktop,
     [string]$FixtureSource,
     [string]$MediaInputs,
@@ -17,7 +17,7 @@ if($scratch -ne 'D:\Temp\pathweft-s13-s9-s11'){throw 'Exact registered task root
 $run=Join-Path $scratch ('specialists-'+[guid]::NewGuid().ToString('N'))
 $cleanup='C:/Users/darka/.agents/skills/transactional-cleanup/scripts/invoke_transactional_cleanup.py'
 $registration=& python $cleanup begin --workspace (Split-Path -Parent $PSScriptRoot) --scan-root $run
-if($LASTEXITCODE -ne 0){throw 'Could not register the exact trial root.'}
+if($LASTEXITCODE -ne 0){throw ('Could not register the exact trial root: '+($registration -join "`n"))}
 $transaction=($registration -join "`n"|ConvertFrom-Json).transaction_id
 $registered=& python $cleanup register --transaction $transaction --path $run --kind compiler-output --evidence 'Owned hidden S13 app workflow; no installed profile or desktop input'
 if($LASTEXITCODE -ne 0){throw 'Could not register the hidden trial output.'}
@@ -36,13 +36,13 @@ if($WithoutMediaInfo){
 }
 $start=[Diagnostics.ProcessStartInfo]::new([IO.Path]::GetFullPath($Executable))
 $start.ArgumentList.Add('--verify-s8-appearance='+$run)
-if($Scenario -in @('menus','menus-properties','menus-shell')){
+if($Scenario -in @('menus','menus-properties','menus-shell','indexed-sizes')){
     if(!$MenuDesktop -or !(Test-Path -LiteralPath $MenuDesktop)){throw 'Menu checks require the private native desktop launcher.'}
     $start.FileName=[IO.Path]::GetFullPath($MenuDesktop)
     $start.ArgumentList.Clear()
     $start.ArgumentList.Add([IO.Path]::GetFullPath($Executable))
     $start.ArgumentList.Add($run)
-    if($Scenario -eq 'menus-shell'){$start.ArgumentList.Add('--shell-only')}
+    if($Scenario -in @('menus-shell','indexed-sizes')){$start.ArgumentList.Add('--shell-only')}
 }
 $start.UseShellExecute=$false
 $start.CreateNoWindow=$true
@@ -69,13 +69,13 @@ $receiptPath=Join-Path $run 'results.json'
 if(!(Test-Path -LiteralPath $receiptPath)){throw "Original verification process $($process.Id) exited $($process.ExitCode) without a receipt: $run"}
 $receipt=Get-Content -LiteralPath $receiptPath -Raw | ConvertFrom-Json
 $expectedPid=$process.Id
-if($Scenario -in @('menus','menus-properties','menus-shell')){
+if($Scenario -in @('menus','menus-properties','menus-shell','indexed-sizes')){
     $desktop=Get-Content (Join-Path $run 'desktop-receipt.json') -Raw|ConvertFrom-Json
     if(!$desktop.jobEmpty -or $desktop.exitCode -ne $process.ExitCode){throw 'Private native desktop tree is not verified empty.'}
     $expectedPid=$desktop.childPid
 }
 if($receipt.pid -ne $expectedPid -or $receipt.result -ne $process.ExitCode){throw 'Original process and verification receipt differ.'}
-if($Scenario -in @('existing','icons','office','office-fallback','office-formats','modes','menus','menus-ui','menus-properties','menus-shell','jump-lists')){
+if($Scenario -in @('existing','icons','office','office-fallback','office-formats','modes','menus','menus-ui','menus-properties','menus-shell','jump-lists','windows','transfers')){
     @{pid=$receipt.pid;result=$receipt.result;checks=$receipt.checks.Count;failures=@($receipt.checks|Where-Object {$_.passed -eq $false -or $_.failure});receipt=$receiptPath}|ConvertTo-Json -Depth 10
 }else{$receipt | ConvertTo-Json -Depth 10}
 Write-Output ('Fixture: '+$run)

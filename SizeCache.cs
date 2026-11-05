@@ -1,160 +1,175 @@
-using System.Collections.Concurrent;
 using System.Globalization;
 using System.IO;
+using Microsoft.Data.Sqlite;
 
 namespace FileExplorer;
 
-// Folder sizes, remembered between sessions: walking a full 12 TB drive takes minutes, and the
-// answer rarely changes. Every folder a scan passes through is kept, so opening any folder under a
-// scanned one shows its sizes at once, and a scan cut short resumes from what it had finished.
-// Timestamps detect changes outside an observed view. Recursive notifications from open views
-// invalidate the changed branch and its ancestors, including during a sizing pass.
+// Fallback measurements only. Everything owns its index; Pathweft retains at
+// most HotLimit recent records, never a second disk-wide in-memory dictionary.
 public static class SizeCache
 {
-    record Entry(long Size, long Stamp, long UsedAt); // Stamp = folder's LastWriteTimeUtc ticks
-
-    static readonly ConcurrentDictionary<string, Entry> map = new(StringComparer.OrdinalIgnoreCase);
-    static readonly object state = new();
-    static readonly HashSet<Measurement> measuring = new();
+    record Entry(string Key,long Size,long Stamp);
+    static readonly object state=new(),gate=new(),opening=new();
+    static readonly Dictionary<string,LinkedListNode<Entry>> hot=new(StringComparer.Ordinal);
+    static readonly LinkedList<Entry> recent=new();
+    static readonly HashSet<Measurement> measuring=new();
+    internal const int HotLimit=2048;
+    internal static int HotCount{get{lock(state)return hot.Count;}}
     internal static event Action<string> Invalidated;
-    internal static string FilePath => Path.Combine(DataFolder.Cache, "folder-sizes.txt");
-    const int MaxEntries = 1_000_000; // Entry bound; byte size depends on path lengths. Least recently used go first.
+    internal static string FilePath=>Path.Combine(DataFolder.Cache,"folder-sizes.sqlite");
+    internal static string LegacyPath=>Path.Combine(DataFolder.Cache,"folder-sizes.txt");
+    internal static bool OwnPersistence(string path)=>path.Equals(FilePath,StringComparison.OrdinalIgnoreCase)||path.Equals(FilePath+"-wal",StringComparison.OrdinalIgnoreCase)||path.Equals(FilePath+"-shm",StringComparison.OrdinalIgnoreCase);
+    static SqliteConnection database;
+    static Task loading;
+    public static void StartLoading(){lock(gate)loading??=Task.Run(Load);}
+    static void Ready(){StartLoading();loading.GetAwaiter().GetResult();}
+    static string Key(string path)=>Path.TrimEndingDirectorySeparator(Path.GetFullPath(path)).ToUpperInvariant();
 
-    // Read in the background after the window's first frame (MainWindow), or as soon as something needs a size.
-    // Read at startup, a big cache delayed the first frame: its parse and garbage collections took 0.8 s of the
-    // UI thread here and 2.2 s on a throttled CPU (1.0.44). Callers of Get are all off the UI thread and wait for it,
-    // so nothing is measured twice for having asked too early; a listing Peeks instead and never waits.
-    static Task loading; // null until something asks
-    static readonly object gate = new();
-    public static void StartLoading() { lock (gate) loading ??= Task.Run(Load); }
-    static void Ready() { StartLoading(); loading.Wait(); }
-
-    /// For a listing: the remembered size if the cache is already read, else -1 (the sizing pass fills it in). Never waits.
-    public static long Peek(string path, DateTime lastWriteUtc) => loading is { IsCompleted: true } ? Get(path, lastWriteUtc) : -1;
-
-    /// The remembered size, or -1 when unknown or the folder has changed since. Call off the UI thread.
-    public static long Get(string path, DateTime lastWriteUtc)
+    // Listing reads only the hot cache: no WPF wait for import or database I/O.
+    public static long Peek(string path,DateTime lastWriteUtc)
     {
-        Ready();
+        string key=Key(path);if(!Monitor.TryEnter(state))return -1;
+        try{return hot.TryGetValue(key,out var node)&&node.Value.Stamp==lastWriteUtc.Ticks?node.Value.Size:-1;}
+        finally{Monitor.Exit(state);}
+    }
+    public static long Get(string path,DateTime lastWriteUtc)
+    {
+        Ready();string key=Key(path);bool stale=false;
         lock(state)
         {
-            if (!map.TryGetValue(path, out var e)) return -1;
-            if (e.Stamp == lastWriteUtc.Ticks)
+            if(hot.TryGetValue(key,out var node))
             {
-                map[path] = e with { UsedAt = DateTime.UtcNow.Ticks };
-                return e.Size;
+                if(node.Value.Stamp==lastWriteUtc.Ticks){recent.Remove(node);recent.AddFirst(node);return node.Value.Size;}
+                stale=true;
+            }
+            else
+            {
+                using var command=database.CreateCommand();command.CommandText="SELECT bytes,stamp FROM sizes WHERE path=$path";
+                command.Parameters.AddWithValue("$path",key);using var row=command.ExecuteReader();
+                if(row.Read())
+                {
+                    if(row.GetInt64(1)==lastWriteUtc.Ticks){long size=row.GetInt64(0);Remember(new(key,size,lastWriteUtc.Ticks));return size;}
+                    stale=true;
+                }
             }
         }
-        Invalidate(path);
-        return -1;
+        if(stale)Invalidate(path);return -1;
     }
-
-    /// A folder changed: its size is stale, and so is the total of every folder that contains it.
-    internal static bool Within(string path,string folder) => path.Equals(folder,StringComparison.OrdinalIgnoreCase)
-        || path.StartsWith(Path.TrimEndingDirectorySeparator(folder)+Path.DirectorySeparatorChar,StringComparison.OrdinalIgnoreCase);
-
-    internal static void Invalidate(string path, bool subtree = false)
+    static void Remember(Entry entry)
     {
-        Ready();
+        if(hot.Remove(entry.Key,out var previous))recent.Remove(previous);
+        hot[entry.Key]=recent.AddFirst(entry);
+        if(hot.Count>HotLimit){hot.Remove(recent.Last.Value.Key);recent.RemoveLast();}
+    }
+    internal static bool Within(string path,string folder)
+    {
+        if(path.Equals(folder,StringComparison.OrdinalIgnoreCase))return true;
+        var prefix=Path.TrimEndingDirectorySeparator(folder);
+        return path.Length>prefix.Length&&path.StartsWith(prefix,StringComparison.OrdinalIgnoreCase)&&path[prefix.Length]==Path.DirectorySeparatorChar;
+    }
+    internal static void Invalidate(string path,bool subtree=false)
+    {
+        Ready();string key=Key(path),prefix=key.TrimEnd('\\')+"\\";
         lock(state)
         {
-            if(subtree)foreach(var key in map.Keys.Where(key=>Within(key,path)))map.TryRemove(key,out _);
-            for(var p=path;p!=null;p=Path.GetDirectoryName(p))map.TryRemove(p,out _);
-            foreach(var scan in measuring)
-                if(Within(path,scan.Path)||subtree&&Within(scan.Path,path))scan.Invalid=true;
-            changed=true;
+            using var transaction=database.BeginTransaction();using var command=database.CreateCommand();command.Transaction=transaction;
+            // The separator range uses the BINARY primary-key index. No map.Keys
+            // snapshot or prefix reconstruction per record during watcher events.
+            if(subtree)
+            {
+                command.CommandText="DELETE FROM sizes WHERE path >= $lo AND path < $hi";
+                command.Parameters.AddWithValue("$lo",prefix);command.Parameters.AddWithValue("$hi",prefix[..^1]+"]");
+                command.ExecuteNonQuery();command.Parameters.Clear();
+                foreach(var entry in recent.Where(e=>Within(e.Key,key)).ToArray())RemoveHot(entry.Key);
+            }
+            command.CommandText="DELETE FROM sizes WHERE path=$path";var parameter=command.Parameters.Add("$path",SqliteType.Text);
+            for(string p=key;p!=null;p=Path.GetDirectoryName(p)){string ancestor=Key(p);parameter.Value=ancestor;command.ExecuteNonQuery();RemoveHot(ancestor);}
+            transaction.Commit();
+            foreach(var scan in measuring)if(Within(path,scan.Path)||subtree&&Within(scan.Path,path))scan.Invalid=true;
         }
         Invalidated?.Invoke(path);
     }
-
-    public static void Set(string path, DateTime lastWriteUtc, long size)
+    static void RemoveHot(string key){if(hot.Remove(key,out var node))recent.Remove(node);}
+    static void Put(string key,DateTime stamp,long bytes)
     {
-        lock(state){map[path] = new Entry(size, lastWriteUtc.Ticks, DateTime.UtcNow.Ticks);changed = true;}
+        using var command=database.CreateCommand();command.CommandText="INSERT OR REPLACE INTO sizes(path,bytes,stamp) VALUES($path,$bytes,$stamp)";
+        command.Parameters.AddWithValue("$path",key);command.Parameters.AddWithValue("$bytes",bytes);command.Parameters.AddWithValue("$stamp",stamp.Ticks);
+        command.ExecuteNonQuery();Remember(new(key,bytes,stamp.Ticks));
     }
-
+    public static void Set(string path,DateTime lastWriteUtc,long size){Ready();lock(state)Put(Key(path),lastWriteUtc,size);}
     public static void Clear()
     {
-        Ready();lock(state){map.Clear();foreach(var scan in measuring)scan.Invalid=true;changed=true;}
+        Ready();lock(state)
+        {
+            using var command=database.CreateCommand();command.CommandText="DELETE FROM sizes";command.ExecuteNonQuery();
+            hot.Clear();recent.Clear();foreach(var scan in measuring)scan.Invalid=true;
+        }
         Invalidated?.Invoke(null);
     }
-
-    // Registration and publication share the invalidation lock. A notification arriving during
-    // enumeration prevents that snapshot from entering the cache; callers repeat from actual state.
-    internal sealed class Measurement : IDisposable
+    internal sealed class Measurement:IDisposable
     {
-        internal string Path {get;}
+        internal string Path{get;}
         internal bool Invalid;
         internal Measurement(string path){Ready();Path=path;lock(state)measuring.Add(this);}
-        internal bool Complete(DateTime stamp,long bytes)
+        internal bool Complete(DateTime stamp,long bytes){lock(state){if(Invalid)return false;Put(Key(Path),stamp,bytes);return true;}}
+        internal void Discard()
         {
+            // Measurement failure is not another filesystem change. Remove its
+            // old validity without starting an endless denied-folder rescan.
             lock(state)
             {
-                if(Invalid)return false;
-                map[Path]=new(bytes,stamp.Ticks,DateTime.UtcNow.Ticks);changed=true;
-                return true;
+                Invalid=true;string key=Key(Path);using var command=database.CreateCommand();
+                command.CommandText="DELETE FROM sizes WHERE path=$path";command.Parameters.AddWithValue("$path",key);command.ExecuteNonQuery();RemoveHot(key);
             }
         }
         public void Dispose(){lock(state)measuring.Remove(this);}
     }
-
-    static volatile bool changed; // since the last save
-
-    /// Written every few minutes, not only on exit: a crash or a power cut lost a whole session's
-    /// measuring (a full drive is minutes of walking).
-    public static void SaveIfChanged()
-    {
-        if (!changed) return;
-        changed = false;
-        Save();
-    }
-
     public static void Load()
     {
-        // Read the old cache once if necessary; all future writes use bulk storage.
-        string source = File.Exists(FilePath) ? FilePath : Path.Combine(Settings.Dir, "folder-sizes.txt");
-        if (!File.Exists(source)) return;
-        try
+        lock(opening)
         {
-            foreach (var line in File.ReadLines(source))
+            if(database!=null)return;
+            SqliteRuntime.Ensure();Directory.CreateDirectory(DataFolder.Cache);
+            var connection=new SqliteConnection(new SqliteConnectionStringBuilder{DataSource=FilePath,Pooling=false}.ToString());connection.Open();
+            try
             {
-                var p = line.Split('|', 4);
-                if (p.Length == 4 && long.TryParse(p[0], out var size) && long.TryParse(p[1], out var stamp) && long.TryParse(p[2], out var used)
-                    && !Loops(p[3]))
-                    map[p[3]] = new Entry(size, stamp, used);
+                using var command=connection.CreateCommand();
+                command.CommandText="PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL; PRAGMA cache_size=-4096; CREATE TABLE IF NOT EXISTS sizes(path TEXT PRIMARY KEY COLLATE BINARY,bytes INTEGER NOT NULL,stamp INTEGER NOT NULL) WITHOUT ROWID; CREATE TABLE IF NOT EXISTS metadata(name TEXT PRIMARY KEY,value TEXT NOT NULL) WITHOUT ROWID;";command.ExecuteNonQuery();
+                command.CommandText="SELECT value FROM metadata WHERE name='legacy-import'";bool imported=command.ExecuteScalar()!=null;
+                string source=File.Exists(LegacyPath)?LegacyPath:Path.Combine(Settings.Dir,"folder-sizes.txt");
+                if(!imported)
+                {
+                    // Interrupted imports roll back; original remains until the
+                    // migration marker commits with all streamed records.
+                    using var transaction=connection.BeginTransaction();command.Transaction=transaction;
+                    command.CommandText="INSERT OR REPLACE INTO sizes(path,bytes,stamp) VALUES($path,$bytes,$stamp)";
+                    var path=command.Parameters.Add("$path",SqliteType.Text);var bytes=command.Parameters.Add("$bytes",SqliteType.Integer);var stamp=command.Parameters.Add("$stamp",SqliteType.Integer);
+                    if(File.Exists(source))foreach(string line in File.ReadLines(source))
+                    {
+                        var parts=line.Split('|',4);
+                        if(parts.Length!=4||!long.TryParse(parts[0],NumberStyles.Integer,CultureInfo.InvariantCulture,out long size)||size<0||!long.TryParse(parts[1],out long ticks)||Loops(parts[3])||!Path.IsPathFullyQualified(parts[3]))continue;
+                        path.Value=Key(parts[3]);bytes.Value=size;stamp.Value=ticks;command.ExecuteNonQuery();
+                    }
+                    command.Parameters.Clear();command.CommandText="INSERT INTO metadata VALUES('legacy-import','1')";command.ExecuteNonQuery();transaction.Commit();command.Transaction=null;
+                }
+                database=connection;
+                // Old application cache, removed only after the import commit.
+                try{if(File.Exists(source))File.Delete(source);}catch(IOException){}catch(UnauthorizedAccessException){}
             }
+            catch{connection.Dispose();throw;}
         }
-        catch (IOException) { } // unreadable cache is not worth a message; it just rebuilds
     }
-
-    /// A path that goes round a loop: the same three folders twice in a row of its parts. A junction pointing back up
-    /// its own tree, copied once as real folders (moving a pnpm workspace to another drive did it), left 563,000 such
-    /// entries and a 277 MB cache that was parsed at every start. Real paths that long almost never repeat like that;
-    /// one that does is only measured again. Checked only past 200 characters, where loops end up.
     internal static bool Loops(string path)
     {
-        if (path.Length <= 200) return false;
-        var parts = path.Split('\\');
-        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        for (int i = 0; i + 3 <= parts.Length; i++)
-            if (!seen.Add(string.Join('\\', parts, i, 3))) return true;
-        return false;
+        if(path.Length<=200)return false;var parts=path.Split('\\');var seen=new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        for(int i=0;i+3<=parts.Length;i++)if(!seen.Add(string.Join('\\',parts,i,3)))return true;return false;
     }
-
+    // Measurements are individually committed. Only checkpoint the WAL: no
+    // dictionary snapshot, sort, or complete-file rewrite on timer/shutdown.
+    public static void SaveIfChanged()=>Save();
     public static void Save()
     {
-        if (loading == null) return; // never read: saving would replace the file with nothing
-        Ready();                     // still reading: saving now would write half of it
-        try
-        {
-            Directory.CreateDirectory(DataFolder.Cache);
-            // ConcurrentDictionary's own snapshot holds its collection locks.
-            // LINQ's ICollection fast path reads Count and later calls CopyTo;
-            // a sizing worker can add entries between those two operations.
-            var keep = map.ToArray().OrderByDescending(kv => kv.Value.UsedAt).Take(MaxEntries);
-            Settings.WriteAllLines(FilePath, keep.Select(kv =>
-                string.Create(CultureInfo.InvariantCulture, $"{kv.Value.Size}|{kv.Value.Stamp}|{kv.Value.UsedAt}|{kv.Key}")));
-        }
-        catch (IOException) { }
-        catch (UnauthorizedAccessException) { }
+        if(loading==null)return;Ready();lock(state)
+        {using var command=database.CreateCommand();command.CommandText="PRAGMA wal_checkpoint(PASSIVE)";command.ExecuteNonQuery();}
     }
 }

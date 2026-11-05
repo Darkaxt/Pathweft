@@ -59,6 +59,7 @@ public partial class MainWindow
                     Background=Hex("#161B24"),Foreground=Foreground,FontFamily=FontFamily,FontSize=FontSize
                 };
                 window.Icon=PreviewControls.RendererIcon(sidePreview.RendererId)??sidePreview.Entry.SmallIcon;
+                AuxiliaryWindows.Prepare(window,PreviewPane,scaleContent:false);
 #if DEBUG
                 HiddenTrialPresentation.Prepare(window);
 #endif

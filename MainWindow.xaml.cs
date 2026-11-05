@@ -69,6 +69,12 @@ public partial class MainWindow : Window
         foreach (var p in new[] { Left, Right })
         {
             p.Activated += () => SetActive(p);
+            p.SpaceAdmission=()=>Task.WhenAll(Left.StopSizingAsync(),Right.StopSizingAsync());
+            p.SpaceModeChanged+=()=>
+            {
+                bool analyzing=Left.SpaceAnalyzing||Right.SpaceAnalyzing;
+                Left.SetSizingSuspended(analyzing);Right.SetSizingSuspended(analyzing);UpdateCommandStates();
+            };
             p.StatsChanged += () => { if (p == active) { UpdateStats(); PreviewFollow(); } FilesShown(); };
             p.Error += msg => Status.Text = msg;
             p.FilesDropped += (files, dest, move) => Submit(files, dest, move);
@@ -139,7 +145,7 @@ public partial class MainWindow : Window
         ApplyCloseEmptyPane();
         var arg = Program.PathArg(Environment.GetCommandLineArgs().Skip(1));
         if (arg != "") OpenPath(Left, arg);
-        folderJumpList=FolderJumpList.Create(()=>pinned);
+        folderJumpList=FolderJumpList.Create();
         foreach(var pane in new[]{Left,Right})pane.FolderVisited+=path=>folderJumpList?.Visit(path);
         ApplyPreview();
         Loaded += (_, _) =>
@@ -375,49 +381,36 @@ public partial class MainWindow : Window
 
     // 3 s after launch, then every hour — the app stays open for days.
     readonly System.Windows.Threading.DispatcherTimer updateTimer = new() { Interval = TimeSpan.FromMinutes(60) };
+    readonly System.Windows.Threading.DispatcherTimer firstUpdateTimer = new() { Interval = TimeSpan.FromSeconds(3) };
     UpdateDialog updateDialog;
 
     void StartUpdateChecks()
     {
-        var first = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
-        first.Tick += async (_, _) =>
+        firstUpdateTimer.Tick += async (_, _) =>
         {
-            first.Stop();
+            firstUpdateTimer.Stop();
             // started hidden at sign-in: What's new and an update offer wait for the window to be opened
-            if (!IsVisible || startHidden) { await WhenVisible(); await Task.Delay(1500); }
+            if (!IsVisible || startHidden)
+            {
+                try{await WhenVisible(updateShutdown.Token);}catch(OperationCanceledException)when(updateShutdown.IsCancellationRequested){return;}
+            }
+            if(updateChecksStopped)return;
             ShowWhatsNew();
             await CheckForUpdate(manual: false);
         };
-        first.Start();
+        firstUpdateTimer.Start();
         updateTimer.Tick += async (_, _) => await CheckForUpdate(manual: false);
         updateTimer.Start();
     }
 
-    Task WhenVisible()
+    async Task WhenVisible(CancellationToken token)
     {
         var shown = new TaskCompletionSource();
         DependencyPropertyChangedEventHandler h = null;
         h = (_, _) => { if (IsVisible) { IsVisibleChanged -= h; shown.TrySetResult(); } };
         IsVisibleChanged += h;
-        return shown.Task;
-    }
-
-    /// Returns what to tell the user (only used by the manual check in Settings).
-    public async Task<string> CheckForUpdate(bool manual)
-    {
-        if (updateDialog != null) { Bring(updateDialog); return null; }
-        Updater.Release release;
-        try { release = await Updater.Check(manual); }
-        catch (Exception ex) when (Updater.Failed(ex))
-        {
-            return manual ? Updater.CheckFailed : null; // the automatic check stays quiet and tries again next hour
-        }
-        if (release == null) return manual ? $"Pathweft {Updater.Current} is the latest version." : null;
-
-        updateDialog = new UpdateDialog(this, release);
-        updateDialog.Closed += (_, _) => { Updater.Dismiss(release); updateDialog = null; };
-        updateDialog.Show();
-        return null;
+        using var cancellation=token.Register(()=>shown.TrySetCanceled(token));
+        try{await shown.Task;}finally{IsVisibleChanged-=h;}
     }
 
     // First launch after an update: the release notes for the version now running.
@@ -446,6 +439,9 @@ public partial class MainWindow : Window
     /// where it is, so the gear did nothing then (1.0.48 report).
     static void Bring(Window w)
     {
+#if DEBUG
+        if(HiddenTrialPresentation.SuppressFocus(w))return;
+#endif
         if (w.WindowState == WindowState.Minimized) SystemCommands.RestoreWindow(w); // as its taskbar button does: maximized again if it was
         w.Activate();
     }
@@ -475,19 +471,12 @@ public partial class MainWindow : Window
     }
     void Help_Click(object s, RoutedEventArgs e) => OpenHelp();
 
-    // The same check the timer runs, on demand. A new version opens the update dialog; otherwise the
-    // answer ("… is the latest version") goes to the status bar, so nothing pops up for nothing.
+    // Both entry points share the visible checker and the same in-flight task.
     async void CheckUpdates_Click(object s, RoutedEventArgs e)
     {
         UpdateButton.IsEnabled = false;
-        Status.Text = "Checking for updates…";
-        var answer = await CheckForUpdate(manual: true);
-        UpdateButton.IsEnabled = true;
-        // The status line is the folder's and is rewritten when the folder changes, which is fine for an answer
-        // read at once; the button's tooltip keeps it until the next check.
-        var text = answer == null ? "" : answer == Updater.CheckFailed ? "Couldn't check for updates · try later" : $"Up to date · Pathweft {Updater.Current}";
-        Status.Text = text;
-        UpdateButton.ToolTip = answer == null ? "Check for updates (it also checks by itself every hour)" : text;
+        try{await CheckForUpdate(manual:true);}
+        finally{UpdateButton.IsEnabled=true;}
     }
 
     // A second launch sent us a folder → new tab in the active pane; a file → its folder, with the file selected
@@ -829,7 +818,6 @@ public partial class MainWindow : Window
             QuickAccess.Children.Add(b);
         }
         QuickHint.Visibility = pinned.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
-        folderJumpList?.Schedule();
     }
 
     void SaveQuickAccess()
@@ -1047,13 +1035,19 @@ public partial class MainWindow : Window
     void ShowFolderStats(bool applicable)
     {
         if(!applicable){FolderCard.Visibility=Visibility.Collapsed;return;}
+        if(active.SpaceAnalyzing)
+        {
+            var summary=active.SpaceSummary;FolderCard.Visibility=Visibility.Visible;
+            StatFolder.Text=Fmt(summary.Bytes);StatFolderSub.Text=active.SpaceCountsKnown?$"{summary.Folders:N0} folders · {summary.Files:N0} files · {summary.Status}":"Indexed logical total · item counts unavailable";
+            KindBar.Children.Clear();KindBar.ColumnDefinitions.Clear();kindsShown=null;return;
+        }
         var all = active.Items.ToList();
         FolderCard.Visibility=all.Count>0?Visibility.Visible:Visibility.Collapsed;
         int folders = all.Count(e => e.IsDir);
-        StatFolder.Text = active.SizesPending ? active.FolderTotal>0?Fmt(active.FolderTotal)+"+":"measuring…" : Fmt(active.FolderTotal);
+        StatFolder.Text = active.SizesPending ? active.FolderTotal>0||all.All(e=>e.DisplaySize>=0)?Fmt(active.FolderTotal)+"+":"measuring…" : Fmt(active.FolderTotal);
         StatFolderSub.Text = $"{folders} folder{(folders == 1 ? "" : "s")} · {all.Count - folders} file{(all.Count - folders == 1 ? "" : "s")}"
                              + (active.SizesPending ? " · measuring…" : "");
-        var kinds = all.Where(e => e.Size > 0).GroupBy(e => e.KindColor).Select(g => (Color: g.Key, Bytes: g.Sum(e => e.Size)))
+        var kinds = all.Where(e => e.DisplaySize > 0).GroupBy(e => e.KindColor).Select(g => (Color: g.Key, Bytes: g.Sum(e => e.DisplaySize)))
                        .OrderByDescending(k => k.Bytes).ToList();
         long total = kinds.Sum(k => k.Bytes);
         var signature = string.Join("|", kinds.Select(k => $"{k.Color}:{k.Bytes * 200 / Math.Max(1, total)}"));
@@ -1081,10 +1075,10 @@ public partial class MainWindow : Window
         if (sel.Count > 0)
         {
             SelectionCard.Visibility=Visibility.Visible;
-            long bytes = sel.Sum(e => Math.Max(0, e.Size)), folder = active.FolderTotal;
+            long bytes = sel.Sum(e => Math.Max(0, e.DisplaySize)), folder = active.FolderTotal;
             SelIcon.Text = "\uE8B3";
             SelTitle.Text = sel.Count == 1 ? "Selected" : $"{sel.Count} selected";
-            SelValue.Text = sel.Any(e => e.Size == -1) ? (sel.Count == 1 ? "measuring…" : Fmt(bytes) + "+") : Fmt(bytes); // a folder still being measured
+            SelValue.Text = sel.Any(e => e.DisplaySize == -1) ? (sel.Count == 1 ? "measuring…" : Fmt(bytes) + "+") : Fmt(bytes); // retain the last known number while refreshing
             SelSub.Text = sel.Count == 1 ? sel[0].Name : folder > 0 ? $"{100.0 * bytes / folder:0.#}% of this folder" : "";
             return;
         }
@@ -1168,15 +1162,15 @@ public partial class MainWindow : Window
 
             totalSpeed = new TextBlock { FontSize = 26, FontWeight = FontWeights.SemiBold, Margin = new(0, 0, 12, 0) };
             totalLegend = new TextBlock { Foreground = (Brush)FindResource("Muted"), VerticalAlignment = VerticalAlignment.Bottom, Margin = new(0, 0, 0, 5), TextTrimming = TextTrimming.CharacterEllipsis };
-            var top = new DockPanel { Margin = new(14, 12, 14, 0) };
+            var top = new DockPanel { Margin = new(0,0,0,8) };
             DockPanel.SetDock(totalSpeed, Dock.Left);
             top.Children.Add(totalSpeed); top.Children.Add(totalLegend);
-            totalChart = new TotalChart { Height = 110, Margin = new(6, 6, 14, 4) }; // as wide as the window, whatever its size
+            totalChart = new TotalChart { Height = 110, Margin = new(0,0,0,12) }; // as wide as the window, whatever its size
 
-            var root = new DockPanel { Background = Tint() };
+            var root = new DockPanel { Background = Tint(),Margin=(Thickness)FindResource("AuxiliaryMargin") };
             DockPanel.SetDock(top, Dock.Top); DockPanel.SetDock(totalChart, Dock.Top);
             root.Children.Add(top); root.Children.Add(totalChart);
-            root.Children.Add(new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Content = list, Padding = new(14, 6, 14, 8) });
+            root.Children.Add(new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Content = list });
             transfersTop = top;
             var w = transfersWindow = new Window
             {
@@ -1188,6 +1182,7 @@ public partial class MainWindow : Window
                 Foreground = Hex("#E8EEF6"), FontFamily = FontFamily, FontSize = 12, Content = root,
             };
             w.SourceInitialized += (_, _) => ApplyAcrylic(w);
+            AuxiliaryWindows.Prepare(w,root);
 #if DEBUG
             HiddenTrialPresentation.Prepare(w);
 #endif
@@ -1275,6 +1270,9 @@ public partial class MainWindow : Window
         }
         Left.Refresh(); Right.Refresh();
         RefreshDrives(); UpdateStats(); // a finished copy or move changes what's free
+        // Completion owns dismissal, after Undo and arrival selection have been
+        // recorded. Partial, cancelled and failed jobs remain available to review.
+        if(job.Successful)DismissJob(job);
     });
 
     void JobCard_Loaded(object s, RoutedEventArgs e) => Motion.Enter((UIElement)s, rise: 10); // a new transfer slides up into place
@@ -1282,7 +1280,15 @@ public partial class MainWindow : Window
     static Job JobOf(object sender) => (Job)((FrameworkElement)sender).DataContext;
     void JobPause_Click(object s, RoutedEventArgs e) { var j = JobOf(s); if (j.Paused) j.Resume(); else j.Pause(); }
     void JobCancel_Click(object s, RoutedEventArgs e) => JobOf(s).Cancel();
-    void JobDismiss_Click(object s, RoutedEventArgs e) { var j = JobOf(s); jobs.Remove(j); askedForward.Remove(j); shownState.Remove(j); }
+    void JobDismiss_Click(object s, RoutedEventArgs e) => DismissJob(JobOf(s));
+    void DismissJob(Job job)
+    {
+        jobs.Remove(job);askedForward.Remove(job);shownState.Remove(job);
+        if(watchingJobs&&!jobs.Any(item=>item.Active))
+        {
+            CompositionTarget.Rendering-=JobFrame;watchingJobs=false;
+        }
+    }
     void JobResolve_Click(object s, RoutedEventArgs e) => JobOf(s).Resolve(Enum.Parse<Choice>((string)((Button)s).CommandParameter));
 
     // Clipboard in Explorer's own format (CF_HDROP + Preferred DropEffect), so copy/paste works both ways.

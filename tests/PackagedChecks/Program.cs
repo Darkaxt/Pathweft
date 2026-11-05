@@ -180,16 +180,20 @@ sealed partial class PackageProbe
             Check(SizeCache.Get(remembered,stamp)==23456,"Delivered cache reads legacy Roaming records without losing remembered sizes");
             SizeCache.Save();
             string newCache=(string)typeof(SizeCache).GetProperty("FilePath",Flags).GetValue(null);
-            Check(newCache.StartsWith(bulk+"\\",StringComparison.OrdinalIgnoreCase)&&File.ReadAllText(newCache).Contains(remembered),"Delivered cache saves preserved records in bulk storage");
+            Check(newCache.StartsWith(bulk+"\\",StringComparison.OrdinalIgnoreCase)&&File.Exists(newCache)&&SizeCache.Get(remembered,stamp)==23456,"Delivered cache saves preserved records in bulk storage");
             string moveRoot=Directory.CreateDirectory(Path.Combine(root,"relocation")).FullName;
             string moveSettings=Directory.CreateDirectory(Path.Combine(moveRoot,"settings")).FullName;
             string moveBulk=Directory.CreateDirectory(Path.Combine(moveRoot,"bulk")).FullName;
             string moveTarget=Path.Combine(moveRoot,"chosen"),movePointer=Path.Combine(moveRoot,"location.txt");
             File.WriteAllText(Path.Combine(moveSettings,"settings.txt"),"theme.native=1\n");File.WriteAllBytes(Path.Combine(moveBulk,"data.bin"),new byte[]{3,7,11});
+            using(var persisted=new Microsoft.Data.Sqlite.SqliteConnection("Data Source="+Path.Combine(moveBulk,"folder-sizes.sqlite")+";Pooling=False"))
+            {persisted.Open();using var command=persisted.CreateCommand();command.CommandText="PRAGMA journal_mode=WAL;CREATE TABLE sizes(path TEXT PRIMARY KEY,bytes INTEGER);INSERT INTO sizes VALUES('remembered',23456)";command.ExecuteNonQuery();}
             var relocation=Type("StorageLocation");var requestType=relocation.GetNestedType("Request",BindingFlags.NonPublic);
             var moveRequest=Activator.CreateInstance(requestType,new object[]{moveSettings,moveBulk,moveTarget,0,0L});
             Call(relocation,null,"Move",moveRequest,movePointer,null);
             Check(File.ReadAllLines(movePointer).Single()==moveTarget&&File.ReadAllText(Path.Combine(moveTarget,"settings.txt"))=="theme.native=1\n"&&File.ReadAllBytes(Path.Combine(moveTarget,"Runtime","data.bin")).SequenceEqual(new byte[]{3,7,11})&&!Directory.Exists(moveSettings)&&!Directory.Exists(moveBulk),"Delivered relocation preserves settings/runtime bytes, commits its pointer and removes the verified source members");
+            using(var relocated=new Microsoft.Data.Sqlite.SqliteConnection("Data Source="+Path.Combine(moveTarget,"Runtime","folder-sizes.sqlite")+";Pooling=False"))
+            {relocated.Open();using var command=relocated.CreateCommand();command.CommandText="SELECT bytes FROM sizes WHERE path='remembered'";Check((long)command.ExecuteScalar()==23456,"Delivered relocation preserves a real closed SQLite/WAL cache and its remembered record");}
             Call(Type("Appearance"),null,"Initialize");
             using var deliveredManifest=JsonDocument.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory,"release-manifest.json")));
             Check(Product.GetName().Version.ToString(3)==deliveredManifest.RootElement.GetProperty("version").GetString()&&Product.GetType("FileExplorer.S8ShellTrial")==null&&Product.GetType("FileExplorer.HiddenTrialPresentation")==null&&Product.GetType("FileExplorer.MainWindow").GetMethod("VerifyAppearanceCorrection",Flags)==null,"Delivered version and absence of Debug trial hooks");
@@ -237,6 +241,9 @@ sealed partial class PackageProbe
             }
 
             owner=new MainWindow(); // construct real controls/resources, never show
+            new System.Windows.Interop.WindowInteropHelper(owner).EnsureHandle(); // Owner requires an HWND; never show the host window.
+            VerifyWindows119();
+            await VerifySizing119();
             string downloads=(string)Call(typeof(MainWindow),null,"DownloadsFolder");
             Check(((Panel)owner.FindName("Favorites")).Children.OfType<Button>().Any(button=>button.ToolTip as string==downloads),"Delivered Favorites contains the actual Windows Downloads location");
             int exports=0;

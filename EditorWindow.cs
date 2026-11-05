@@ -75,11 +75,12 @@ public sealed class EditorWindow : Window
 #if DEBUG
         HiddenTrialPresentation.Prepare(this);
 #endif
-        Width = 1200; Height = 800;
+        Width = 1200; Height = 800; MinWidth=640;MinHeight=400;
         WindowStartupLocation = WindowStartupLocation.CenterScreen;
         Background = MainWindow.Hex("#0f131b");
         Title = "Pathweft editor";
         Content = web;
+        AuxiliaryWindows.Prepare(this,web,scaleContent:false);
         ApplyWebBackground();
         SourceInitialized += (_, _) => MainWindow.ApplyAcrylic(this);
         Loaded += async (_, _) => await Start();

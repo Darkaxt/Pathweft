@@ -10,6 +10,7 @@ Those notices remain distributed with the application.
 | File Labs | imported a8d5a5c, selected fixes through 9bfbbce | Original MIT LICENSE; Pathweft source/tag and upstream history |
 | EverythingToolbar | a4379f181ea8e9b4d3ff8b0e5178d8d39491830c | MIT, vendor/EverythingSDK/NOTICES.txt |
 | Everything SDK / engine | API2 / 1.4.1.1032 x64 | Native SDK and unchanged engine licenses/notices, Everything/License.txt |
+| Diskweft selected scanner source | 82ac41c9a74f3cd0ee6ae44c6bdeb0c7328eb980 | MIT, Protagonist Labs copyright and complete terms in vendor/Diskweft/NOTICES.txt; selected original file hashes and adapted Pathweft source in the application source archive. No standalone Diskweft app ships |
 | QuickLook selected viewers | 2ec219aa18416c6e3b89d6aad3d82d10610f917f | Selected file GPL headers plus Common MIT notice; full adapted source and original references |
 | 7-Zip | 26.05 | LGPL/BSD/unRAR terms under SevenZip/ and vendor/SevenZip; full matching source archive |
 | SharpSevenZip | 2.0.130-pathweft.1, upstream 9b2379b | LGPL-3.0-or-later; full original source, reviewed empty-directory.patch and reproduction scripts |

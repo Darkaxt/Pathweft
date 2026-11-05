@@ -25,9 +25,14 @@ public partial class MainWindow
 {
     internal async Task VerifySpecialists13(string root, Action<bool,string> check)
     {
+        if(Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO")=="live-indexed-sizes"){await VerifyLiveIndexedSizes15(root,check);return;}
+        if(Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO")=="indexed-sizes"){await VerifyIndexedSizes15(root,check);return;}
+        if(Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO")=="space"){await VerifySpace15(root,check);return;}
         if(Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO")=="menus-properties"){await DiagnosePropertyOwner9(root,check);return;}
         if(Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO")=="menus-shell"){await VerifyShellMenus9(root,check);return;}
         if(Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO")=="jump-lists"){await VerifyJumpLists11(root,check);return;}
+        if(Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO")=="windows"){await VerifyAuxiliaryWindows14(root,check);return;}
+        if(Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO")=="transfers"){await VerifyTransferDismiss14(root,check);return;}
         if(Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO") is "menus" or "menus-ui"){await VerifyMenus9(root,check);return;}
         if(Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO")=="icons"){await VerifyCommandIcons13(root,check);return;}
         if(Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO")=="sizes"){await VerifySizes18(root,check);return;}
@@ -128,7 +133,7 @@ public partial class MainWindow
         using(var output=File.Create(pdn)){output.Write(new byte[]{80,68,78,(byte)pdnXml.Length,(byte)(pdnXml.Length>>8),(byte)(pdnXml.Length>>16)});output.Write(pdnXml);}
         await Show(pdn,"design");
         string sqlite=Path.Combine(root,"records.sqlite");
-        SQLitePCL.raw.SetProvider(new SQLitePCL.SQLite3Provider_winsqlite3());
+        SqliteRuntime.Ensure();
         using(var connection=new SqliteConnection(new SqliteConnectionStringBuilder{DataSource=sqlite,Pooling=false}.ToString()))
         {
             connection.Open();using var command=connection.CreateCommand();command.CommandText="CREATE TABLE people(id INTEGER, name TEXT, bytes BLOB); INSERT INTO people VALUES (42,'é 子',X'0102')";command.ExecuteNonQuery();

@@ -61,6 +61,7 @@ public partial class PaneView
     }
     void ReconcileColumns()
     {
+        if(SpaceAnalyzing)return;
         if(fileColumns==null||details is not GridView grid)return;
         if(IsWidget)
         {
@@ -75,7 +76,7 @@ public partial class PaneView
         bool Has(string key)=>key switch
         {
             "Name"=>true,"Version"=>data.Any(e=>e.Version.Length>0),"Type"=>data.Any(e=>e.Ext.Length>0),
-            "Size"=>data.Any(e=>e.Size>=0),"Modified"=>data.Any(e=>e.Modified!=default),
+            "Size"=>data.Any(e=>e.DisplaySize>=0),"Modified"=>data.Any(e=>e.Modified!=default),
             "Message"=>data.Any(e=>e.Message.Length>0),
             "Capacity" or "Free space"=>data.Any(e=>e.HasDriveCapacity),"Filesystem"=>data.Any(e=>e.DriveFormat.Length>0),
             "Connection"=>data.Any(e=>e.DriveConnection.Length>0),"Location"=>data.Any(e=>e.DriveLocation.Length>0),_=>false

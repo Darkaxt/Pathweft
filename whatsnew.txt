@@ -1,6 +1,15 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.19 | 2026-11-05 | Space analysis and consistent windows
+- Settings, Help, What's new and other owned windows share the same themed layout and spacing.
+- Check for updates immediately shows its progress and a clear result, with Retry after a failed check.
+- Successful transfers dismiss automatically; unfinished or unsuccessful jobs remain available.
+- Analyze space beside Terminal turns this folder into an expandable size tree. Toggle it again to restore the previous view.
+- Available Everything folder totals speed up sizing; uncovered paths use filesystem metadata. Coverage remains explicit.
+- Folder sizes stay visible while refreshing. A bounded memory cache and SQLite persistence replace loading the entire size history into RAM.
+- Windows owns the taskbar/Start menu's Pinned and Frequent folder categories.
+
 ## 1.1.18 | 2026-11-05 | Specialist previews and native folder destinations
 - Preview Office pages, sheets and slides with bundled document engines and LibreOffice recovery for unsupported formats or a failed primary renderer.
 - Added table, database, mail, certificate, app-package, design-thumbnail, media-info, binary, ELF, dump, prefetch, Shell-class and compiled-help previews.

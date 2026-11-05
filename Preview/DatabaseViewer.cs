@@ -12,7 +12,7 @@ internal sealed class DatabaseViewer(MainWindow owner):IViewer
     internal sealed record Catalog(bool Sqlite,string[] Tables);
     ContextObject context;string path;ComboBox tables;ContentControl body;long revision;
     CancellationTokenSource reading;bool disposed;Task loading=Task.CompletedTask;
-    static DatabaseViewer()=>SQLitePCL.raw.SetProvider(new SQLitePCL.SQLite3Provider_winsqlite3());
+    static DatabaseViewer()=>SqliteRuntime.Ensure();
     public bool CanHandle(string value)=>true;
     public void Init(){}
     public void Prepare(string value,ContextObject current){path=value;context=current;current.Title=Path.GetFileName(value)+" · Database";}

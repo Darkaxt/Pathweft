@@ -73,7 +73,7 @@ try{
     foreach($pin in $fallback.sources){CheckDependency ('Office/LibreOffice/'+$pin.name) $pin.sha256}
     $licenses=ReadJson 'vendor/Office/license-manifest.json'
     foreach($pin in $licenses.files){CheckDependency ('Office/'+$pin.path) $pin.sha256}
-    foreach($name in @('FolderJumpList.cs','Preview/OfficeWorker.cs','Preview/OfficeDocument.cs','PreviewModes.cs','native/office/wordcraft/Cargo.toml','native/office/gridcraft/Cargo.toml','native/office/deckcraft/Cargo.toml','scripts/Verify-CraftCoreLock.py')){
+    foreach($name in @('FolderJumpList.cs','SpaceScan.cs','PaneSpace.cs','SizeCache.cs','SqliteRuntime.cs','vendor/Diskweft/source-manifest.json','vendor/Diskweft/NOTICES.txt','AuxiliaryWindows.cs','UpdateChecks.cs','Preview/OfficeWorker.cs','Preview/OfficeDocument.cs','PreviewModes.cs','native/office/wordcraft/Cargo.toml','native/office/gridcraft/Cargo.toml','native/office/deckcraft/Cargo.toml','scripts/Verify-CraftCoreLock.py')){
         if(!$source.GetEntry('Pathweft/'+$name)){throw ('Integrated implementation/build source missing: '+$name)}
     }
     $signature=Get-AuthenticodeSignature -LiteralPath (Join-Path $DeliveryRoot "Pathweft-$version-setup.exe")

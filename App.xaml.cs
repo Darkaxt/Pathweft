@@ -560,7 +560,7 @@ public partial class App : Application
                 sizing.GetAwaiter().GetResult();
             }
             SizeCache.Save();
-            Check(File.ReadLines(SizeCache.FilePath).All(line=>line.Split('|',4).Length==4),"size cache: concurrent sizing/shutdown save retains valid records");
+            Check(SizeCache.Get(Path.Combine(root,"concurrent-cache","39","99"),DateTime.UtcNow)==-1&&File.Exists(SizeCache.FilePath),"size cache: concurrent writes/checkpoints retain a valid database and reject stale timestamps");
 
             // selected text: white on the default accent at 8:1 or better (1.0.38's 6.97:1 still read as grey), and
             // readable on other accents and strengths
