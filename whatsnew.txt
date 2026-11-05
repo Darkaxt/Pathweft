@@ -1,6 +1,11 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.24 | 2026-11-05 | Focused comparisons and following previews
+- Transfer review shows only files with different sizes or modification dates, and only their differing properties. Newer destination files appear first in orange with a text warning. Show matching files reveals the rest; choices apply to every conflict.
+- PiP and floating previews follow file selection. Pin a preview to keep its item, then unpin to follow the current selection immediately. Compact header icons retain their click targets.
+- A new yellow folder and bronze compass icon gives Pathweft its own identity, with transparent Windows size variants and preserved shortcuts and taskbar pins.
+
 ## 1.1.23 | 2026-11-05 | Clearer transfers and reliable analysis startup
 - Transfers use a compact comparison table for existing files, with content visible as the window grows. Single-transfer speed is shown once, and actual file errors are displayed separately from metadata notes.
 - Cancelling a transfer dismisses it after its worker stops, unless an error needs review. Cancelled Copy preserves the clipboard for another Paste.
