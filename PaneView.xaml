@@ -56,7 +56,7 @@
     </Style>
     <DataTemplate x:Key="SpaceNameCell">
       <DockPanel Margin="{Binding TreeIndent}">
-        <Button DockPanel.Dock="Left" Width="18" Height="20" Padding="0" Margin="0,0,3,0" Style="{StaticResource Ghost}" Click="SpaceExpand_Click"
+        <Button DockPanel.Dock="Left" Width="18" Height="20" Padding="0" Focusable="False" Margin="0,0,3,0" Style="{StaticResource CompactCommand}" Click="SpaceExpand_Click"
                 Visibility="{Binding ExpandVisible}" ToolTip="Expand or collapse folder" AutomationProperties.Name="Expand or collapse folder">
           <TextBlock Text="{Binding ExpandGlyph}" FontFamily="Segoe Fluent Icons" FontSize="9"/>
         </Button>

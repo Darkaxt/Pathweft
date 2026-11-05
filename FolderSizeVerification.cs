@@ -118,8 +118,10 @@ public partial class MainWindow
         check(overflow!=null,"The native observer exposes its overflow recovery event");
         SizeCache.Set(package,Directory.GetLastWriteTimeUtc(package),17);
         overflow.Invoke(watcher,new object[]{new ErrorEventArgs(new InternalBufferOverflowException("Owned diagnostic notification loss"))});
-        await Left.Dispatcher.InvokeAsync(()=>{},DispatcherPriority.ApplicationIdle);
-        await Sizes(Left,()=>Left.Items.Single(e=>e.Name=="DeckCraft").Size==0);
+        // The displayed zero intentionally survives refresh. It cannot signal
+        // completion of the replacement measurement; observe the actual
+        // invalidated database record being republished as well.
+        await Sizes(Left,()=>Left.Items.Single(e=>e.Name=="DeckCraft").Size==0&&SizeCache.Get(package,Directory.GetLastWriteTimeUtc(package))==0);
         check(SizeCache.Get(package,Directory.GetLastWriteTimeUtc(package))==0,"Notification overflow discards unknown stale descendants and rebuilds actual totals");
         Left.ListForVerification.SelectedItem=Left.Items.Single(e=>e.Name=="DeckCraft");
         bool selectionLost=false;

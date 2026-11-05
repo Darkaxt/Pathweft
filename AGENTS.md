@@ -1,6 +1,6 @@
 # Pathweft development
 
-Latest authorization2026-11-05/spec0.57: continue S11 native Pinned/Frequent
+Latest authorization2026-11-05/spec0.58: continue S11 native Pinned/Frequent
 correction -> S14 auxiliary-window/update-feedback implementation -> S15
 current-pane disk analysis. Current source checkpoint: S11/S14 COMPLETE;
 S15 ACTIVE. Native91140 verifies auxiliary/update workflows,102436 successful
@@ -8,6 +8,19 @@ transfer dismissal/adverse outcomes and103700 preview-host lifecycle. See the
 2026-11-05 S14 reconciliation. Actual126032 verifies Frequent/readback/removal/privacy,
 reconstruction/cold/warm launches and installed-list preservation after a failing
 unchanged-publisher reproduction133840. See the2026-11-05 S11 verification.
+1.1.21 source acceptance:171880 verifies watched branch coalescing, an actual
+invalidation during a held scan/replacement, stable selection/status and compact
+light/dark100/150% toggle states.163812 verifies actual first-row keyboard focus
+on a never-switched private desktop; empty job/input desktop receipts match.
+156464 passes the broad tree/restore/copy/cancellation workflow;170340 passes
+ordinary sizing/address/overflow. Final package/publication/independent/installed
+acceptance remains in S15; preserve running1.1.19 and normal updater ownership.
+Newest S15 steering, received during1.1.20 publication: first-row focus on
+analysis entry, unclipped expanders, targeted/coalesced background analysis
+refresh with stable completed rows, and correct visible state for all bottom
+toggles.1.1.20/e8f9038 is published; source/final package154064 and independent
+retrieved consumer164632 pass. Next correction owns installed acceptance; no intermediate
+installation request, second ACTIVE stage or S16 implementation.
 Normal1.1.19/2339fd0 is published/retrieved/installed-verified. S15 stays ACTIVE
 for the reported stale analysis-button state, noisy known-size measuring labels
 and background refresh cancelling address editing. Preserve text/caret/focus;

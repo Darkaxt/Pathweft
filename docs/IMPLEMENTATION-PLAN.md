@@ -1,11 +1,28 @@
 # Implementation and reconciliation
 
-Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.57, 2026-11-05,
+Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.58, 2026-11-05,
 including the user-authorized continued comparison requirement TRANSFER-07.
 
 Current authorized round2026-11-05: continue implementing the native-category
 correction, popup/update feedback and current-pane disk analysis. Sequence:
 S11 COMPLETE -> S14 COMPLETE -> S15 ACTIVE. No second ACTIVE stage.
+
+Latest steering during1.1.20 publication keeps S15 ACTIVE for entry row focus,
+unclipped compact expanders, targeted/coalesced analysis refresh with stable
+completed states, and consistent bottom-toolbar toggle state/icons. These are
+internal acceptance blockers; verify real watched growth/shrink/rename/delete,
+unrelated-branch preservation and actual input/rendered states.1.1.20 source,
+final package154064 and normal publication at e8f9038 pass; independently retrieved
+consumer164632 passes too. The next integrated correction owns final installed readback.
+Do not activate S16 or ask for an intermediate installed update.
+
+1.1.21 source/integration acceptance passes:171880 actual held-pass invalidation,
+branch replacement/stable status/selection and compact toggle states; native
+163812 first-row keyboard focus/private-desktop lifecycle;156464 broader tree/
+restore/real-index/copy/cancellation;170340 ordinary address/size/overflow. No
+additional architecture/consolidation requirement was found. S15 stays ACTIVE
+for final committed package, normal release, independent delivery and installed
+update/identity readback. This is one integrated correction, not a new stage.
 
 Normal1.1.19 at2339fd0 is published and independently retrieved; installed
 readback verifies10674 members, main154988/helper149844 readiness,22 routing

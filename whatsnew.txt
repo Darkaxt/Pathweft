@@ -1,6 +1,11 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.21 | 2026-11-05 | Stable analysis and clear toggle states
+- Hidden files, space analysis, preview and two-pane commands visibly show their current state. The hidden-files eye is crossed when off; the pane icon depicts the current layout.
+- Space analysis focuses the first row on entry, with unclipped compact tree arrows.
+- Background changes refresh affected branches without restarting the entire tree or flashing completed rows through Pending and Measuring. Existing selection stays in place.
+
 ## 1.1.20 | 2026-11-05 | Quiet folder refreshes
 - Background folder updates preserve the path you are typing, its selection and editing focus.
 - Known folder totals refresh quietly without flashing measuring messages or partial-total markers.

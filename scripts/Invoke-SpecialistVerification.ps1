@@ -3,7 +3,7 @@
 param(
     [Parameter(Mandatory)][string]$Executable,
     [string]$ScratchRoot='D:\Temp\pathweft-s13-s9-s11',
-    [ValidateSet('full','office','office-fallback','office-formats','policies','formats','runtime','sizes','space','indexed-sizes','live-indexed-sizes','existing','pdf','modes','icons','menus','menus-ui','menus-properties','menus-shell','jump-lists','windows','transfers')][string]$Scenario='full',
+    [ValidateSet('full','office','office-fallback','office-formats','policies','formats','runtime','sizes','space','space-refresh','space-ui','indexed-sizes','live-indexed-sizes','existing','pdf','modes','icons','menus','menus-ui','menus-properties','menus-shell','jump-lists','windows','transfers')][string]$Scenario='full',
     [string]$MenuDesktop,
     [string]$FixtureSource,
     [string]$MediaInputs,
@@ -36,13 +36,13 @@ if($WithoutMediaInfo){
 }
 $start=[Diagnostics.ProcessStartInfo]::new([IO.Path]::GetFullPath($Executable))
 $start.ArgumentList.Add('--verify-s8-appearance='+$run)
-if($Scenario -in @('menus','menus-properties','menus-shell','indexed-sizes')){
+if($Scenario -in @('menus','menus-properties','menus-shell','indexed-sizes','space-ui')){
     if(!$MenuDesktop -or !(Test-Path -LiteralPath $MenuDesktop)){throw 'Menu checks require the private native desktop launcher.'}
     $start.FileName=[IO.Path]::GetFullPath($MenuDesktop)
     $start.ArgumentList.Clear()
     $start.ArgumentList.Add([IO.Path]::GetFullPath($Executable))
     $start.ArgumentList.Add($run)
-    if($Scenario -in @('menus-shell','indexed-sizes')){$start.ArgumentList.Add('--shell-only')}
+    if($Scenario -in @('menus-shell','indexed-sizes','space-ui')){$start.ArgumentList.Add('--shell-only')}
 }
 $start.UseShellExecute=$false
 $start.CreateNoWindow=$true
@@ -69,7 +69,7 @@ $receiptPath=Join-Path $run 'results.json'
 if(!(Test-Path -LiteralPath $receiptPath)){throw "Original verification process $($process.Id) exited $($process.ExitCode) without a receipt: $run"}
 $receipt=Get-Content -LiteralPath $receiptPath -Raw | ConvertFrom-Json
 $expectedPid=$process.Id
-if($Scenario -in @('menus','menus-properties','menus-shell','indexed-sizes')){
+if($Scenario -in @('menus','menus-properties','menus-shell','indexed-sizes','space-ui')){
     $desktop=Get-Content (Join-Path $run 'desktop-receipt.json') -Raw|ConvertFrom-Json
     if(!$desktop.jobEmpty -or $desktop.exitCode -ne $process.ExitCode){throw 'Private native desktop tree is not verified empty.'}
     $expectedPid=$desktop.childPid

@@ -50,6 +50,8 @@ public partial class PaneView
         internal string[] Selected;
         internal double Vertical,Horizontal;
         internal bool RefreshRequested,Changed,Stopping;
+        internal bool SelectFirst=true,QuietRefresh,FullRefresh;
+        internal HashSet<string> Dirty=new(StringComparer.OrdinalIgnoreCase);
     }
     SpaceView space;
     internal bool SpaceAnalyzing=>space!=null;
@@ -89,7 +91,7 @@ public partial class PaneView
         List.View=grid;ScrollViewer.SetVerticalScrollBarVisibility(List,ScrollBarVisibility.Auto);ScrollViewer.SetHorizontalScrollBarVisibility(List,ScrollBarVisibility.Auto);
         items=current.Visible;view=new ListCollectionView((IList)current.Visible);List.ItemsSource=view;
         NameEdge.Visibility=Visibility.Collapsed;ViewButton.ToolTip="Space analysis · toggle Analyze space to restore the previous view";
-        List.PreviewKeyDown+=SpaceKey;UpdateSpaceFooter();StatsChanged?.Invoke();
+        List.PreviewKeyDown+=SpaceKey;List.Focus();UpdateSpaceFooter();StatsChanged?.Invoke();
         // Presentation throttle only; terminal state is drained explicitly on
         // actual worker completion. It never decides cancellation/completion.
         current.Present=new DispatcherTimer(DispatcherPriority.Background){Interval=TimeSpan.FromMilliseconds(150)};
@@ -132,6 +134,10 @@ public partial class PaneView
         {
             if(!current.Nodes.TryGetValue(update.Path,out var row))
                 current.Nodes[update.Path]=row=new SpaceEntry{Path=update.Path,Name=Path.GetFileName(update.Path),IsDir=true,ParentPath=update.Parent,Size=-1};
+            // A replacement scan owns a new snapshot. Keep the last completed
+            // value/count/status until that branch produces its replacement;
+            // initial unknown rows and terminal errors remain truthful.
+            if(current.QuietRefresh&&row.DisplaySize>=0&&(row.State is not (SpaceState.Pending or SpaceState.Scanning))&&(update.State is SpaceState.Pending or SpaceState.Scanning))continue;
             row.State=update.State;row.Failure=update.Error;row.Files=update.Files;row.Folders=update.Folders;
             if(update.State is SpaceState.Complete or SpaceState.Indexed||update.State!=SpaceState.Pending&&(row.DisplaySize<0||update.Bytes>=row.DisplaySize))row.Size=update.Bytes;
             row.SizeSource=update.State==SpaceState.Indexed?"Everything index · excluded files may be omitted":"Filesystem measurement";
@@ -165,28 +171,34 @@ public partial class PaneView
                 int old=current.Visible.IndexOf(ordered[i]);if(old>=0)current.Visible.Move(old,i);else current.Visible.Insert(i,ordered[i]);
             }
             while(current.Visible.Count>ordered.Count)current.Visible.RemoveAt(current.Visible.Count-1);
+            if(current.SelectFirst&&current.Visible.Count>0)
+            {
+                current.SelectFirst=false;
+                selected.Clear();selected.Add(current.Visible[0].Path);
+            }
             SetSelection(entry=>selected.Contains(entry.Path));
         }
         finally{bulkSelect=previous;}
         List.UpdateLayout();
+        if(List.IsKeyboardFocusWithin&&Keyboard.FocusedElement==List)FocusSelectedRow();
         if(anchor!=null&&List.ItemContainerGenerator.ContainerFromItem(anchor) is FrameworkElement now)scroll?.ScrollToVerticalOffset(offset+now.TranslatePoint(new Point(),List).Y-anchorY);
         else scroll?.ScrollToVerticalOffset(offset);
         UpdateSpaceFooter();StatsChanged?.Invoke();StartIcons();
     }
-    async Task ReadSpaceChildren(SpaceView current,string path)
+    async Task<bool> ReadSpaceChildren(SpaceView current,string path,bool preferIndex=true,bool measureMissing=true)
     {
         var token=current.Cancellation.Token;
         List<SpaceMember> members;
         try{members=await Task.Run(()=>SpaceScan.Children(path,token),token);}
         catch(Exception error)when(error is System.ComponentModel.Win32Exception or IOException or UnauthorizedAccessException)
-        {if(space==current&&current.Nodes.TryGetValue(path,out var failed)){failed.State=SpaceState.Denied;failed.Failure=error.Message;failed.Updated();}return;}
-        token.ThrowIfCancellationRequested();if(space!=current||current.Stopping)return;DrainSpace(current);
+        {if(space==current&&current.Nodes.TryGetValue(path,out var failed)){failed.State=SpaceState.Denied;failed.Failure=error.Message;failed.Updated();RebuildSpace(current);}return false;}
+        token.ThrowIfCancellationRequested();if(space!=current||current.Stopping)return false;DrainSpace(current);
         var present=members.Select(member=>member.Path).ToHashSet(StringComparer.OrdinalIgnoreCase);
         foreach(var absent in current.Nodes.Values.Where(row=>row.ParentPath==path&&!present.Contains(row.Path)).ToArray())
             foreach(var key in current.Nodes.Keys.Where(key=>SizeCache.Within(key,absent.Path)).ToArray())current.Nodes.Remove(key);
         var missing=members.Where(member=>member.Directory&&!member.Reparse&&!current.Nodes.ContainsKey(member.Path)).ToArray();
         Dictionary<string,long> sizes=new(StringComparer.OrdinalIgnoreCase);
-        if(missing.Length>0)try{sizes=await FileExplorer.Search.EverythingSearchClient.Shared.FolderSizesAsync(missing.Select(member=>member.Path),SearchInstance,token);}
+        if(preferIndex&&missing.Length>0)try{sizes=await FileExplorer.Search.EverythingSearchClient.Shared.FolderSizesAsync(missing.Select(member=>member.Path),SearchInstance,token);}
         catch(Exception error)when(error is InvalidOperationException or System.ComponentModel.Win32Exception or DllNotFoundException or EntryPointNotFoundException){}
         foreach(var member in members)
         {
@@ -194,17 +206,17 @@ public partial class PaneView
             {existing.Modified=member.Modified.ToLocalTime();if(!member.Directory)existing.Size=member.Bytes;continue;}
             bool indexed=sizes.TryGetValue(Path.TrimEndingDirectorySeparator(member.Path),out long bytes);
             current.Nodes[member.Path]=new SpaceEntry{Path=member.Path,Name=member.Name,IsDir=member.Directory,Modified=member.Modified.ToLocalTime(),ParentPath=path,
-                Size=member.Directory?indexed?bytes:-1:member.Bytes,State=member.Reparse?SpaceState.Reparse:member.Directory?indexed?SpaceState.Indexed:SpaceState.Pending:SpaceState.Complete};
+                Size=member.Reparse?0:member.Directory?indexed?bytes:-1:member.Bytes,State=member.Reparse?SpaceState.Reparse:member.Directory?indexed?SpaceState.Indexed:SpaceState.Pending:SpaceState.Complete};
         }
         // An indexed parent does not establish coverage of every child. A newly
         // expanded unindexed branch still receives a real metadata measurement.
-        foreach(var member in missing.Where(member=>!sizes.ContainsKey(Path.TrimEndingDirectorySeparator(member.Path))))
+        foreach(var member in missing.Where(member=>measureMissing&&!sizes.ContainsKey(Path.TrimEndingDirectorySeparator(member.Path))))
         {
             await SpaceScan.RunAsync(member.Path,false,SearchInstance,update=>QueueSpace(current,update),token);
             DrainSpace(current);
         }
         if(current.Nodes.TryGetValue(path,out var parent))parent.ChildrenRead=true;
-        RebuildSpace(current);
+        RebuildSpace(current);return true;
     }
     void SpaceExpand_Click(object sender,RoutedEventArgs args)
     {args.Handled=true;if((sender as FrameworkElement)?.DataContext is SpaceEntry row)ToggleSpaceRow(row);}
@@ -251,22 +263,80 @@ public partial class PaneView
         var previous=spaceTransition;spaceTransition=Run();
         async Task Run(){await previous;await EndSpaceAsync();action();}
     }
-    void RefreshSpace()
+    void RefreshSpace(bool force=false)
     {
-        if(space is not {} current||current.Stopping||current.RefreshRequested)return;
+        if(space is not {} current||current.Stopping)return;
 #if DEBUG
         SpaceScan.IndexObserved?.Invoke(current.Root,"Refresh: "+Environment.StackTrace);
 #endif
-        current.Changed=true;current.RefreshRequested=true;current.Cancellation.Cancel();
-        var previous=current.Work;current.Work=Restart();
-        async Task Restart()
+        current.Changed=true;
+        foreach(var path in dirtySizes)
         {
-            try{await previous;}catch(OperationCanceledException){}
-            if(space!=current||current.Stopping)return;
-            current.Cancellation.Dispose();current.Cancellation=new();current.RefreshRequested=false;lock(current.Mailbox){current.Pending.Clear();current.Seen.Clear();}
-            // Preserve last values/expansion while replacing a changed snapshot.
-            await RunSpaceAsync(current,preferIndex:false);
+            if(path==null||path.Equals(current.Root,StringComparison.OrdinalIgnoreCase)||!SizeCache.Within(path,current.Root))current.FullRefresh=true;
+            else
+            {
+                string relative=Path.GetRelativePath(current.Root,path);int separator=relative.IndexOf(Path.DirectorySeparatorChar);
+                current.Dirty.Add(Path.Combine(current.Root,separator<0?relative:relative[..separator]));
+            }
         }
+        if(force||dirtySizes.Count==0)current.FullRefresh=true;
+        dirtySizes.Clear();
+        if(current.RefreshRequested)return;
+        current.RefreshRequested=true;
+        var previous=current.Work;current.Work=RefreshAfter();
+        async Task RefreshAfter()
+        {
+            try
+            {
+                // Finish the original finite pass. New notifications coalesce
+                // into this owner instead of cancelling/restarting the root.
+                await previous;
+                while(space==current&&!current.Stopping&&(current.FullRefresh||current.Dirty.Count>0))
+                {
+                    bool full=current.FullRefresh;current.FullRefresh=false;
+                    var dirty=current.Dirty.ToArray();current.Dirty.Clear();
+                    current.QuietRefresh=!full;
+                    if(full)await RunSpaceAsync(current,preferIndex:false);
+                    else await RefreshSpaceBranches(current,dirty);
+                }
+            }
+            catch(OperationCanceledException)when(current.Cancellation.IsCancellationRequested){}
+            catch(Exception error){if(space==current&&!current.Stopping)Error?.Invoke("Space analysis: "+error.Message);}
+            finally{current.QuietRefresh=false;current.RefreshRequested=false;}
+        }
+    }
+    async Task RefreshSpaceBranches(SpaceView current,string[] dirty)
+    {
+        var token=current.Cancellation.Token;
+        // Only direct membership needs rereading for rename/delete/root files.
+        // A changed branch gets a fresh filesystem measurement, never a stale
+        // optional index result. Unrelated sibling snapshots remain untouched.
+        if(!await ReadSpaceChildren(current,current.Root,preferIndex:false,measureMissing:false))return;
+        var branches=current.Nodes.Values.Where(row=>row.ParentPath==current.Root&&row.IsDir&&row.State!=SpaceState.Reparse&&
+            (row.State==SpaceState.Pending||dirty.Any(path=>SizeCache.Within(path,row.Path)))).ToArray();
+        foreach(var branch in branches)
+        {
+            var seen=new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            await SpaceScan.RunAsync(branch.Path,false,SearchInstance,update=>{seen.Add(update.Path);QueueSpace(current,update);},token);
+            DrainSpace(current);
+            if(branch.State==SpaceState.Complete)
+                foreach(var key in current.Nodes.Values.Where(row=>row.IsDir&&SizeCache.Within(row.Path,branch.Path)&&!seen.Contains(row.Path)).Select(row=>row.Path).ToArray())
+                    foreach(var absent in current.Nodes.Keys.Where(path=>SizeCache.Within(path,key)).ToArray())current.Nodes.Remove(absent);
+            foreach(var row in current.Nodes.Values.Where(row=>row.IsDir&&SizeCache.Within(row.Path,branch.Path)))row.ChildrenRead=false;
+            foreach(var row in current.Nodes.Values.Where(row=>row.Expanded&&!row.ChildrenRead&&SizeCache.Within(row.Path,branch.Path)).ToArray())
+                await ReadSpaceChildren(current,row.Path,preferIndex:false,measureMissing:false);
+        }
+        token.ThrowIfCancellationRequested();if(space!=current||current.Stopping)return;
+        var children=current.Nodes.Values.Where(row=>row.ParentPath==current.Root).ToArray();
+        var directories=children.Where(row=>row.IsDir).ToArray();var files=children.Where(row=>!row.IsDir&&row.State!=SpaceState.Reparse).ToArray();
+        var root=current.Nodes[current.Root];
+        root.Size=children.Sum(row=>Math.Max(0,row.DisplaySize));
+        root.Files=files.LongLength+directories.Sum(row=>row.Files);
+        root.Folders=directories.LongLength+directories.Sum(row=>row.Folders);
+        root.State=directories.Any(row=>row.State is not (SpaceState.Complete or SpaceState.Indexed or SpaceState.Reparse))?SpaceState.Incomplete:
+            directories.Any(row=>row.State==SpaceState.Indexed)?SpaceState.Indexed:SpaceState.Complete;
+        root.Failure=root.State==SpaceState.Incomplete?"Changed or incomplete while measuring":"";
+        RebuildSpace(current);
     }
     internal async Task DrainSpaceAndSizesAsync(){await EndSpaceAsync();await StopSizingAsync();await spaceTransition;}
 }

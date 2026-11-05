@@ -109,6 +109,22 @@ internal static class ExplorerIcons
         group.Children.Add(new GeometryDrawing(ink,null,geometry));group.Freeze();var image=new DrawingImage(group);image.Freeze();return image;
     }
 
+    static Brush CommandInk=>SystemParameters.HighContrast?SystemColors.WindowTextBrush:new SolidColorBrush(Appearance.Light?Color.FromRgb(70,70,70):Color.FromRgb(224,223,223));
+    internal static DrawingImage Crossed(DrawingImage source)
+    {
+        var group=new DrawingGroup();group.Children.Add(source.Drawing);
+        group.Children.Add(new GeometryDrawing(null,new Pen(CommandInk,1.5){StartLineCap=PenLineCap.Round,EndLineCap=PenLineCap.Round},new LineGeometry(new Point(2,14),new Point(14,2))));
+        group.Freeze();var image=new DrawingImage(group);image.Freeze();return image;
+    }
+    internal static DrawingImage PaneLayout(bool two)
+    {
+        var group=new DrawingGroup();group.Children.Add(new GeometryDrawing(Brushes.Transparent,null,new RectangleGeometry(new Rect(0,0,16,16))));
+        var pen=new Pen(CommandInk,1);
+        group.Children.Add(new GeometryDrawing(null,pen,new RectangleGeometry(new Rect(1,2,14,12),1.5,1.5)));
+        if(two)group.Children.Add(new GeometryDrawing(null,pen,new LineGeometry(new Point(8,2),new Point(8,14))));
+        group.Freeze();var image=new DrawingImage(group);image.Freeze();return image;
+    }
+
     internal static System.Windows.Controls.Image Image(string key,double size=14)
     {
         var image=new System.Windows.Controls.Image{Width=size,Height=size,Stretch=Stretch.Uniform,SnapsToDevicePixels=true};

@@ -50,6 +50,28 @@ sealed partial class PackageProbe
         var invoke=(System.Windows.Automation.Provider.IInvokeProvider)new System.Windows.Automation.Peers.ButtonAutomationPeer(analyze).GetPattern(System.Windows.Automation.Peers.PatternInterface.Invoke);
         invoke.Invoke();await owner.Dispatcher.InvokeAsync(()=>{},DispatcherPriority.ApplicationIdle);await (Task)Get(pane,"SpaceCompletion");
         Check((bool)Get(pane,"SpaceAnalyzing")&&pane.FolderTotal==579&&((GridView)list.View).Columns.Select(column=>column.Header?.ToString()).SequenceEqual(new[]{"Name","Space used","Of this folder","Status"}),"Delivered current-pane toggle exposes actual tree/size/usage/status with the correct recursive total");
+        Check(ReferenceEquals(list.SelectedItem,pane.Items.First()),"Delivered analysis selects its first available row on entry");
+        var selected=list.SelectedItem;
+        bool analysisNoise=false;
+        void AnalysisChanged(){analysisNoise|=pane.Items.Any(entry=>Get(entry,"SpaceStatus").ToString() is "Pending" or "Measuring…");}
+        pane.StatsChanged+=AnalysisChanged;
+        try
+        {
+            var replacement=SizeReady(()=>pane.FolderTotal==591&&!pane.SizesPending);
+            await Task.Run(()=>{using var stream=File.OpenWrite(Path.Combine(nested,"payload.bin"));stream.SetLength(591);});await replacement;await (Task)Get(pane,"SpaceCompletion");
+            Check(!analysisNoise&&ReferenceEquals(list.SelectedItem,selected),"Delivered watched analysis replaces a completed branch without flashing states or losing selection");
+            replacement=SizeReady(()=>pane.FolderTotal==579&&!pane.SizesPending);
+            await Task.Run(()=>{using var stream=File.OpenWrite(Path.Combine(nested,"payload.bin"));stream.SetLength(579);});await replacement;await (Task)Get(pane,"SpaceCompletion");
+        }
+        finally{pane.StatsChanged-=AnalysisChanged;}
+        foreach(string name in new[]{"HiddenToggle","PanesCommand","PreviewCommand","AnalyzeSpaceCommand"})
+        {
+            var button=(Button)owner.FindName(name);button.ApplyTemplate();
+            bool on=button.Tag as string=="on";
+            var border=(Border)button.Template.FindName("Bd",button);
+            Check(!on||border.BorderBrush.ToString()==((System.Windows.Media.Brush)Application.Current.Resources["Accent"]).ToString(),"Delivered active toggle has its persistent accent outline: "+name);
+            Check(!string.IsNullOrEmpty(System.Windows.Automation.AutomationProperties.GetItemStatus(button)),"Delivered toggle exposes current accessible state: "+name);
+        }
         await (Task)Call(typeof(PaneView),pane,"EndSpaceAsync");
         Check(!(bool)Get(pane,"SpaceAnalyzing")&&((GridView)list.View).Columns.SequenceEqual(columns)&&pane.Dir==folder,"Delivered toggle restores the original pane and exact normal column identities");
         await (Task)Call(typeof(PaneView),pane,"StopSizingAsync");

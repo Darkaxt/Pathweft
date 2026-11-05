@@ -1,6 +1,6 @@
 # Pathweft specification
 
-Version 0.57 - 2026-11-05. Owner: Darkaxt.
+Version 0.58 - 2026-11-05. Owner: Darkaxt.
 
 This is the authoritative specification. The derived plan must preserve every
 requirement and acceptance criterion. Material scope changes require explicit
@@ -37,6 +37,20 @@ size refreshes must remain quiet (no flashing measuring labels or partial-total
 suffixes); unknown initial totals still show honest progress. Background listing
 or sizing refresh must preserve an in-progress address edit, text, caret/selection
 and focus. Explicit navigation, submit and cancel retain their normal behavior.
+
+While1.1.20 publication was already in flight, the user added these S15
+acceptance requirements for the following integrated correction: entering
+analysis selects/focuses the first available top row once, without stealing
+focus on later updates; expansion arrows render unclipped at existing compact
+proportions; ordinary background writes refresh affected analysis branches
+without repeatedly cancelling/restarting the whole root or resetting completed
+unrelated rows to Pending/Measuring. Preserve truthful initial progress, explicit
+full refresh, actual invalidation and exact grow/shrink/rename/delete totals.
+Audit all bottom-bar toggles: hidden items have an appropriate crossed/open eye,
+pane count depicts the current layout, and analysis/preview/hidden/two-pane
+states have clear persistent active styling, action tooltips and accessible
+state. One final correction release owns these additions and installed readback;
+do not request an intermediate1.1.20 installation merely to advance this work.
 
 The user's2026-11-05 Craft maintenance handoff requests consideration of newer
 Office cores and additional installed Craft products. The assessment is recorded

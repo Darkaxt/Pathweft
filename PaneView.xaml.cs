@@ -1299,7 +1299,7 @@ public partial class PaneView : UserControl
     /// `force` re-reads even if the folder's timestamp says nothing changed (Ctrl+R).
     public void Refresh(bool force = false)
     {
-        if(SpaceAnalyzing){RefreshSpace();return;}
+        if(SpaceAnalyzing){RefreshSpace(force);return;}
         if (force) lock (listCache) listCache.Remove(Dir); // rebuilt from scratch: folder sizes are measured again
         if (searchQuery != null) Search(searchQuery);
         // Without force the rows on screen keep their own selection and scroll; rebuilt, the list is told
