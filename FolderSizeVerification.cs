@@ -13,7 +13,11 @@ public partial class MainWindow
         string package=Directory.CreateDirectory(Path.Combine(parent,"DeckCraft")).FullName;
         string sibling=Directory.CreateDirectory(Path.Combine(parent,"unchanged")).FullName;
         File.WriteAllBytes(Path.Combine(sibling,"keep.bin"),new byte[37]);
+        // Do not reactivate the pane after listing: that used to hide the stale
+        // toolbar state seen on a normal asynchronous folder navigation.
+        SetActive(Left);
         await S1Verification.Navigate(Left,parent);
+        check(Left.CanAnalyzeSpace&&AnalyzeSpaceCommand.IsEnabled,"Analyze space becomes enabled when the active asynchronous folder listing is ready");
         await Sizes(Left,()=>Left.Items.All(e=>e.Size>=0));
         var row=Left.Items.Single(e=>e.Name=="DeckCraft");
         Left.ListForVerification.SelectedItem=row;
@@ -49,6 +53,44 @@ public partial class MainWindow
         }
         finally{row.PropertyChanged-=observeRow;Left.StatsChanged-=ObserveRefresh;}
         check(Left.FolderTotal==214_000_037&&Right.FolderTotal==214_000_000,"A rewrite with unchanged ancestor timestamps updates both open views and totals");
+        Left.EditPath();
+        var address=(TextBox)Left.FindName("FilterBox");
+        string draft=Path.Combine(parent,"not yet submitted é 子");
+        address.Text=draft;address.Select(9,4);
+        var focused=System.Windows.Input.FocusManager.GetFocusedElement(this);
+        bool noisy=false,editLost=false;
+        void ObserveEditing()
+        {
+            noisy|=Left.Footer.Text.Contains("measuring")||StatFolder.Text.EndsWith('+')||StatFolderSub.Text.Contains("measuring");
+            editLost|=address.Text!=draft||address.Visibility!=System.Windows.Visibility.Visible||address.SelectionStart!=9||address.SelectionLength!=4||System.Windows.Input.FocusManager.GetFocusedElement(this)!=focused;
+        }
+        Left.ListForVerification.SelectedItems.Clear();
+        Left.StatsChanged+=ObserveEditing;
+        try
+        {
+            for(int rewrite=0;rewrite<3;rewrite++)
+            {
+                var pending=Sizes(Left,()=>row.Size==-1);
+                await Task.Run(()=>{using var stream=File.OpenWrite(file);stream.WriteByte((byte)rewrite);});
+                await pending;await Sizes(Left,()=>row.Size==214_000_000);
+            }
+            var replaced=Sizes(Left,()=>Left.Items.Any(e=>e.Name=="row replacement.txt"));
+            await Task.Run(()=>File.WriteAllText(Path.Combine(parent,"row replacement.txt"),""));await replaced;
+            check(!noisy,"Repeated same-length nested writes silently refresh known totals without measuring labels or plus suffixes");
+            check(!editLost,"Actual watcher refresh preserves draft address text, selection, visibility and logical focus");
+        }
+        finally{Left.StatsChanged-=ObserveEditing;}
+        address.Text=sibling;
+        var submitted=Left.SubmitAddressAsync();
+        Left.Refresh();
+        await submitted;
+        check(Left.Dir==sibling,"Enter submission survives a concurrent same-folder metadata refresh");
+        await S1Verification.Navigate(Left,parent);
+        await Sizes(Left,()=>Left.Items.All(e=>e.Size>=0));
+        row=Left.Items.Single(e=>e.Name=="DeckCraft");
+        Left.EditPath();address.Text=draft;
+        typeof(PaneView).GetMethod("PathBox_PreviewKeyDown",flags).Invoke(Left,new object[]{address,new System.Windows.Input.KeyEventArgs(System.Windows.Input.Keyboard.PrimaryDevice,System.Windows.PresentationSource.FromVisual(address),Environment.TickCount,System.Windows.Input.Key.Escape){RoutedEvent=System.Windows.Input.Keyboard.PreviewKeyDownEvent}});
+        check(address.Visibility==System.Windows.Visibility.Collapsed&&Left.Dir==parent,"Escape cancels the draft without navigating");
         string renamed=Path.Combine(release,"renamed.bin");
         await Task.Run(()=>File.Move(file,renamed));
         var shrunk=Sizes(Left,()=>row.Size==19);

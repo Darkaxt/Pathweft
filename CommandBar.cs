@@ -7,13 +7,7 @@ public partial class MainWindow
 {
     void UpdateCommandStates()
     {
-        if(AnalyzeSpaceCommand!=null)
-        {
-            AnalyzeSpaceCommand.IsEnabled=active?.CanAnalyzeSpace==true;
-            AnalyzeSpaceCommand.Tag=active?.SpaceAnalyzing==true?"on":null;
-            AnalyzeSpaceCommand.ToolTip=active?.SpaceAnalyzing==true?"Restore the previous view":"Analyze space in this folder";
-            System.Windows.Automation.AutomationProperties.SetItemStatus(AnalyzeSpaceCommand,active?.SpaceAnalyzing==true?"On":"Off");
-        }
+        UpdateSpaceCommandState();
         HiddenToggle.Tag=Settings.ShowHidden?"on":null;
         PanesCommand.Tag=Settings.SinglePane?null:"on";
         PreviewCommand.Tag=Settings.Preview?"on":null;
@@ -23,6 +17,16 @@ public partial class MainWindow
         PanesCommand.ToolTip=Settings.SinglePane?"Show two panes (Ctrl+P)":"Show one pane (Ctrl+P)";
         ((Image)PanesCommand.Content).Source=ExplorerIcons.Glyph(Settings.SinglePane?"\uE8A0":"\uE89F");
         UpdateCommandSpacing();
+    }
+    void UpdateSpaceCommandState()
+    {
+        if(AnalyzeSpaceCommand!=null)
+        {
+            AnalyzeSpaceCommand.IsEnabled=active?.CanAnalyzeSpace==true;
+            AnalyzeSpaceCommand.Tag=active?.SpaceAnalyzing==true?"on":null;
+            AnalyzeSpaceCommand.ToolTip=active?.SpaceAnalyzing==true?"Restore the previous view":"Analyze space in this folder";
+            System.Windows.Automation.AutomationProperties.SetItemStatus(AnalyzeSpaceCommand,active?.SpaceAnalyzing==true?"On":"Off");
+        }
     }
     void CommandBar_SizeChanged(object sender,SizeChangedEventArgs args)=>UpdateCommandSpacing();
     async void AnalyzeSpace_Click(object sender,RoutedEventArgs args)

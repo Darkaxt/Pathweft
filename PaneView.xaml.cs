@@ -527,6 +527,9 @@ public partial class PaneView : UserControl
     int navVersion; // a newer Navigate wins; a slow share must not overwrite the folder you moved on to
 
     public void Navigate(string dir, string select = null, bool record = true)
+        => Navigate(dir,select,record,refresh:false);
+
+    void Navigate(string dir,string select,bool record,bool refresh)
     {
         if(SpaceAnalyzing){AfterSpace(()=>Navigate(dir,select,record));return;}
         if (dir.Equals(ThisPC, StringComparison.OrdinalIgnoreCase)) { NavigateThisPC(select ?? Dir, record); return; }
@@ -547,7 +550,7 @@ public partial class PaneView : UserControl
             return;
         }
 
-        int v = GoTo(di.FullName, record);
+        int v = GoTo(di.FullName, record,preserveAddress:refresh&&di.FullName.Equals(Dir,StringComparison.OrdinalIgnoreCase)&&!InSearch);
         // Observe before reading or sizing: an installation can finish during either operation.
         if(watcher?.Path!=di.FullName)Watch();
 
@@ -748,7 +751,7 @@ public partial class PaneView : UserControl
     /// Makes `path` the current tab's folder (history, crumbs, tabs) and leaves any search.
     /// Returns the navigation number that later results must still match.
     string filteredFolder;
-    int GoTo(string path, bool record)
+    int GoTo(string path, bool record,bool preserveAddress=false)
     {
 #if DEBUG
         VerificationQueryEvents?.Add("NAVIGATE " + path + "\n" + Environment.StackTrace);
@@ -765,11 +768,17 @@ public partial class PaneView : UserControl
         // each folder keeps the order it was last sorted in; the rest are by name. Set before its rows are shown.
         var (key, desc) = Settings.FolderSorts.TryGetValue(path, out var sort) ? sort : ("Name", false);
         if (key != sortKey || desc != sortDesc) ShowSort(key, desc);
-        if (searchQuery != null) { searchQuery = null; FilterBox.Text = ""; } // the query would hide most of the new folder
-        else if (!path.Equals(filteredFolder, StringComparison.OrdinalIgnoreCase)) FilterBox.Text = "";
-        filteredFolder = path;
-        BuildCrumbs();
-        EndEditPath();
+        // A reread owns the listing, not the user's address editor. Only actual
+        // navigation may replace that text or end its focus/edit lifetime.
+        if(!preserveAddress)
+        {
+            ++suggestVersion; // explicit navigation supersedes pending address work
+            if (searchQuery != null) { searchQuery = null; FilterBox.Text = ""; } // the query would hide most of the new folder
+            else if (!path.Equals(filteredFolder, StringComparison.OrdinalIgnoreCase)) FilterBox.Text = "";
+            filteredFolder = path;
+            BuildCrumbs();
+            EndEditPath();
+        }
         BuildTabs();
         NavigationChanged?.Invoke();
         return ++navVersion;
@@ -1295,7 +1304,7 @@ public partial class PaneView : UserControl
         if (searchQuery != null) Search(searchQuery);
         // Without force the rows on screen keep their own selection and scroll; rebuilt, the list is told
         // which row to put the cursor back on.
-        else Navigate(Dir, force ? (List.SelectedItem as Entry)?.Name : null, record: false);
+        else Navigate(Dir, force ? (List.SelectedItem as Entry)?.Name : null, record: false,refresh:true);
     }
 
     internal void RefreshVisibility()
@@ -1511,9 +1520,9 @@ public partial class PaneView : UserControl
 
         string Pending()
         {
-            int left = Items.Count(e => e.Size == -1);
+            int left = Items.Count(e => e.DisplaySize == -1);
             if (left == 0) return "";
-            int cached = Items.Count(e => e.IsDir && e.Size >= 0);
+            int cached = Items.Count(e => e.IsDir && e.DisplaySize >= 0);
             return cached > 0 ? $"  ·  measuring {left} folders ({cached} cached)" : $"  ·  measuring {left} folders";
         }
     }

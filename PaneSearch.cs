@@ -140,7 +140,7 @@ public partial class PaneView
             InspectRequested?.Invoke(new Entry{Path=text,Name=text});
             return;
         }
-        int generation=navVersion,revision=suggestVersion;
+        int revision=suggestVersion;
         string origin=Dir;
         Suggest.IsOpen=false;
         var resolved=await Task.Run(()=>
@@ -157,7 +157,9 @@ public partial class PaneView
             }
             catch(Exception error)when(error is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException or System.Security.SecurityException){return(Path:(string)null,Folder:false);}
         });
-        if(generation!=navVersion||revision!=suggestVersion||text!=FilterBox.Text.Trim())return;
+        // A same-folder metadata reread may supersede an old listing, but it
+        // does not supersede an address the user has just submitted.
+        if(origin!=Dir||revision!=suggestVersion||text!=FilterBox.Text.Trim())return;
         if(resolved.Path!=null)
         {
             if(resolved.Folder)Navigate(resolved.Path);

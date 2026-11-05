@@ -76,6 +76,7 @@ public partial class MainWindow : Window
                 Left.SetSizingSuspended(analyzing);Right.SetSizingSuspended(analyzing);UpdateCommandStates();
             };
             p.StatsChanged += () => { if (p == active) { UpdateStats(); PreviewFollow(); } FilesShown(); };
+            p.NavigationChanged += () => { if(p==active)UpdateSpaceCommandState(); };
             p.Error += msg => Status.Text = msg;
             p.FilesDropped += (files, dest, move) => Submit(files, dest, move);
             p.OpenArchived += e => OpenFromArchive(p, e);
@@ -963,6 +964,7 @@ public partial class MainWindow : Window
 
     void UpdateStats()
     {
+        UpdateSpaceCommandState();
         if (active?.Dir is not { Length: > 0 } dir)
         {
             DriveCard.Visibility=FolderCard.Visibility=SelectionCard.Visibility=Visibility.Collapsed;
@@ -1044,9 +1046,10 @@ public partial class MainWindow : Window
         var all = active.Items.ToList();
         FolderCard.Visibility=all.Count>0?Visibility.Visible:Visibility.Collapsed;
         int folders = all.Count(e => e.IsDir);
-        StatFolder.Text = active.SizesPending ? active.FolderTotal>0||all.All(e=>e.DisplaySize>=0)?Fmt(active.FolderTotal)+"+":"measuring…" : Fmt(active.FolderTotal);
+        bool unknown=all.Any(e=>e.DisplaySize==-1);
+        StatFolder.Text = unknown ? active.FolderTotal>0?Fmt(active.FolderTotal)+"+":"measuring…" : Fmt(active.FolderTotal);
         StatFolderSub.Text = $"{folders} folder{(folders == 1 ? "" : "s")} · {all.Count - folders} file{(all.Count - folders == 1 ? "" : "s")}"
-                             + (active.SizesPending ? " · measuring…" : "");
+                             + (unknown ? " · measuring…" : "");
         var kinds = all.Where(e => e.DisplaySize > 0).GroupBy(e => e.KindColor).Select(g => (Color: g.Key, Bytes: g.Sum(e => e.DisplaySize)))
                        .OrderByDescending(k => k.Bytes).ToList();
         long total = kinds.Sum(k => k.Bytes);

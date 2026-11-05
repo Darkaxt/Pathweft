@@ -1,6 +1,11 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.20 | 2026-11-05 | Quiet folder refreshes
+- Background folder updates preserve the path you are typing, its selection and editing focus.
+- Known folder totals refresh quietly without flashing measuring messages or partial-total markers.
+- Analyze space enables automatically when the active folder listing is ready.
+
 ## 1.1.19 | 2026-11-05 | Space analysis and consistent windows
 - Settings, Help, What's new and other owned windows share the same themed layout and spacing.
 - Check for updates immediately shows its progress and a clear result, with Retry after a failed check.

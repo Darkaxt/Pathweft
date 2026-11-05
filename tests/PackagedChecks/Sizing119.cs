@@ -3,6 +3,7 @@ using System.IO;
 using Expression = System.Linq.Expressions.Expression;
 using System.Windows.Controls;
 using System.Windows;
+using System.Windows.Threading;
 using FileExplorer;
 
 sealed partial class PackageProbe
@@ -20,7 +21,7 @@ sealed partial class PackageProbe
         {
             Check((string)Get(update,"CheckState")=="checking"&&((ProgressBar)update.FindName("Progress")).IsIndeterminate&&((TextBlock)update.FindName("Heading")).Text.Contains("Checking"),"Delivered update checker immediately contains its visible progress and installed-version state");
             Call(update.GetType(),update,"ShowCheckResult",false,"The installed version is current.");
-            Check((string)Get(update,"CheckState")=="current"&&((TextBlock)update.FindName("Heading")).Text.Contains("1.1.19"),"Delivered update checker presents an explicit up-to-date confirmation");
+            Check((string)Get(update,"CheckState")=="current"&&((TextBlock)update.FindName("Heading")).Text.Contains(Product.GetName().Version.ToString(3)),"Delivered update checker presents an explicit up-to-date confirmation");
             Call(update.GetType(),update,"ShowCheckResult",true,"An actual check failed.");
             Check((string)Get(update,"CheckState")=="failed"&&((Button)update.FindName("UpdateButton")).Content.ToString()=="Retry","Delivered failed update state retains its explicit Retry action");
         }
@@ -39,16 +40,57 @@ sealed partial class PackageProbe
         Check((long)Get(terminal,"Bytes")==579&&Get(terminal,"State").ToString()=="Complete","Delivered Diskweft-derived metadata traversal reaches the exact real recursive total");
         var pane=(PaneView)owner.FindName("Left");
         var listed=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        void Observe(){if(pane.Dir==folder&&(bool)typeof(PaneView).GetField("Listed",Flags).GetValue(pane))listed.TrySetResult();}
+        void Observe(){if(pane.Dir==folder&&(bool)Get(pane,"CanAnalyzeSpace"))listed.TrySetResult();}
         pane.StatsChanged+=Observe;
         try{pane.Navigate(folder);Observe();await listed.Task;}finally{pane.StatsChanged-=Observe;}
         await (Task)Get(pane,"SizingCompletion");
+        var analyze=(Button)owner.FindName("AnalyzeSpaceCommand");
+        Check(analyze.IsEnabled,"Delivered toolbar becomes enabled after asynchronous folder readiness without reactivating its pane");
         var list=(ListView)pane.FindName("List");var columns=((GridView)list.View).Columns.ToArray();
-        await (Task)Call(typeof(PaneView),pane,"ToggleSpaceAsync");await (Task)Get(pane,"SpaceCompletion");
+        var invoke=(System.Windows.Automation.Provider.IInvokeProvider)new System.Windows.Automation.Peers.ButtonAutomationPeer(analyze).GetPattern(System.Windows.Automation.Peers.PatternInterface.Invoke);
+        invoke.Invoke();await owner.Dispatcher.InvokeAsync(()=>{},DispatcherPriority.ApplicationIdle);await (Task)Get(pane,"SpaceCompletion");
         Check((bool)Get(pane,"SpaceAnalyzing")&&pane.FolderTotal==579&&((GridView)list.View).Columns.Select(column=>column.Header?.ToString()).SequenceEqual(new[]{"Name","Space used","Of this folder","Status"}),"Delivered current-pane toggle exposes actual tree/size/usage/status with the correct recursive total");
         await (Task)Call(typeof(PaneView),pane,"EndSpaceAsync");
         Check(!(bool)Get(pane,"SpaceAnalyzing")&&((GridView)list.View).Columns.SequenceEqual(columns)&&pane.Dir==folder,"Delivered toggle restores the original pane and exact normal column identities");
         await (Task)Call(typeof(PaneView),pane,"StopSizingAsync");
+        pane.EditPath();
+        var address=(TextBox)pane.FindName("FilterBox");
+        string draft=Path.Combine(folder,"draft address é 子");address.Text=draft;address.Select(7,3);
+        var focus=System.Windows.Input.FocusManager.GetFocusedElement(owner);
+        list.SelectedItems.Clear();
+        bool noise=false,editLost=false;
+        void Editing()
+        {
+            noise|=((TextBlock)pane.FindName("Footer")).Text.Contains("measuring")||((TextBlock)owner.FindName("StatFolder")).Text.EndsWith('+')||((TextBlock)owner.FindName("StatFolderSub")).Text.Contains("measuring");
+            editLost|=address.Text!=draft||address.Visibility!=Visibility.Visible||address.SelectionStart!=7||address.SelectionLength!=3||System.Windows.Input.FocusManager.GetFocusedElement(owner)!=focus;
+        }
+        async Task SizeReady(Func<bool> predicate)
+        {
+            var complete=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            void Changed(){if(predicate())complete.TrySetResult();}
+            pane.StatsChanged+=Changed;
+            try{Changed();await complete.Task;await owner.Dispatcher.InvokeAsync(()=>{},DispatcherPriority.ApplicationIdle);}
+            finally{pane.StatsChanged-=Changed;}
+        }
+        pane.StatsChanged+=Editing;
+        try
+        {
+            var grown=SizeReady(()=>pane.FolderTotal==580&&!pane.SizesPending);
+            await Task.Run(()=>{using var stream=File.OpenWrite(Path.Combine(nested,"payload.bin"));stream.SetLength(580);});await grown;
+            for(int i=0;i<3;i++)
+            {
+                var pending=SizeReady(()=>pane.SizesPending);
+                await Task.Run(()=>{using var stream=File.OpenWrite(Path.Combine(nested,"payload.bin"));stream.WriteByte((byte)i);});
+                await pending;await SizeReady(()=>!pane.SizesPending);
+            }
+            var replacement=SizeReady(()=>pane.Items.Any(e=>e.Name=="new row.txt"));
+            await Task.Run(()=>File.WriteAllText(Path.Combine(folder,"new row.txt"),""));await replacement;
+            Check(!noise&&!editLost,"Delivered real watcher updates retain known totals quietly and preserve draft text, selection, visibility and logical focus through row replacement");
+        }
+        finally{pane.StatsChanged-=Editing;}
+        address.Text=nested;
+        var submit=(Task)Call(typeof(PaneView),pane,"SubmitAddressAsync");pane.Refresh();await submit;
+        Check(pane.Dir==nested,"Delivered Enter submission survives a concurrent listing refresh");
         DateTime stamp=Directory.GetLastWriteTimeUtc(nested);var cache=typeof(SizeCache);
         int limit=(int)cache.GetField("HotLimit",Flags).GetRawConstantValue();
         for(int i=0;i<limit+1;i++)SizeCache.Set(Path.Combine(folder,"cache-record",i.ToString()),stamp,i);

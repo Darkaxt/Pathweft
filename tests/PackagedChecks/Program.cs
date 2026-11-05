@@ -43,6 +43,25 @@ sealed partial class PackageProbe
     object session;
     [STAThread] static void Main(string[] args)
     {
+        if(args.Length==3&&args[0]=="--engine-query")
+        {
+            string target=Path.GetFullPath(args[1]),file=Path.GetFullPath(args[2]);
+            if(!target.StartsWith(@"D:\Temp\pathweft-s8-delivery\verification-",StringComparison.OrdinalIgnoreCase)||!File.Exists(file))throw new ArgumentException("Owned read-only diagnostics and known file required.");
+            object Health(){var hwnd=FindWindowW("EVERYTHING_TASKBAR_NOTIFICATION",null);return new{window=hwnd.ToInt64(),hung=hwnd!=IntPtr.Zero&&IsHungAppWindow(hwnd)};}
+            var main=Health();var clientType=Type("Search.EverythingSearchClient");var client=clientType.GetProperty("Shared",Flags).GetValue(null);
+            var sdkDispatcher=((TaskCompletionSource<Dispatcher>)clientType.GetField("ready",Flags).GetValue(client)).Task.GetAwaiter().GetResult();
+            var worker=sdkDispatcher.Invoke(Health);object outcome;
+            try
+            {
+                string expression="path:\""+Path.GetDirectoryName(file)+"\" \""+Path.GetFileName(file)+"\"";
+                var query=(Task)Call(clientType,client,"QueryAsync",expression,"",0u,200u,"Name",false,CancellationToken.None);query.GetAwaiter().GetResult();
+                var page=Get(query,"Result");outcome=new{success=true,total=Get(page,"Total")};
+            }
+            catch(Exception error){outcome=new{success=false,failure=error.ToString()};}
+            var after=sdkDispatcher.Invoke(Health);
+            ((Task)Call(clientType,null,"StopIfStartedAsync")).GetAwaiter().GetResult();
+            var state=new{main,worker,after,outcome};File.WriteAllText(Path.Combine(target,"engine-query.json"),JsonSerializer.Serialize(state));Console.WriteLine(JsonSerializer.Serialize(state));return;
+        }
         if(args.Length==2&&args[0]=="--native-info")
         {
             string target=Path.GetFullPath(args[1]);

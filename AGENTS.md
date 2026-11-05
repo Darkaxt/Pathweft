@@ -1,6 +1,6 @@
 # Pathweft development
 
-Latest authorization2026-11-05/spec0.56: continue S11 native Pinned/Frequent
+Latest authorization2026-11-05/spec0.57: continue S11 native Pinned/Frequent
 correction -> S14 auxiliary-window/update-feedback implementation -> S15
 current-pane disk analysis. Current source checkpoint: S11/S14 COMPLETE;
 S15 ACTIVE. Native91140 verifies auxiliary/update workflows,102436 successful
@@ -8,6 +8,13 @@ transfer dismissal/adverse outcomes and103700 preview-host lifecycle. See the
 2026-11-05 S14 reconciliation. Actual126032 verifies Frequent/readback/removal/privacy,
 reconstruction/cold/warm launches and installed-list preservation after a failing
 unchanged-publisher reproduction133840. See the2026-11-05 S11 verification.
+Normal1.1.19/2339fd0 is published/retrieved/installed-verified. S15 stays ACTIVE
+for the reported stale analysis-button state, noisy known-size measuring labels
+and background refresh cancelling address editing. Preserve text/caret/focus;
+qualify actual async listing and repeated writes before the correction release.
+Correction source50836 and the complete1.1.20 candidate consumer pass actual
+toolbar invocation, quiet refresh, row replacement and address/Enter behavior.
+Final committed-source publication/independent/installed verification remains.
 Clean-machine SDK capability cases pass absent/disabled/enabled Everything.
 The resulting RAR app-local CRT loading correction and complete candidate
 consumer162096 pass; final rebuilt/independent/installed delivery remains S15.

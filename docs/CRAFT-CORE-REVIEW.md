@@ -58,10 +58,13 @@ assets. Pin the required build toolchain for these cores without silently
 changing the existing RAR toolchain. Corporate brand assets have separate terms;
 do not assume a source license authorizes importing every logo or icon.
 
-The local handoff reports PhotoCraft 0.20.2 as integrity/signature verified only,
-with native candidate admission unavailable. Do not describe it as runtime
-qualified or change the Coordinator gate. This does not create an end-user gate
-requirement for a source-built Pathweft library.
+The subsequent2026-11-05 Coordinator0.20.8 handoff confirms all four selected
+applications are now native-qualified: PhotoCraft0.20.2 (two-layer save/reopen,
+PSD round trip and inspected PNG export), WordCraft0.15.2, GridCraft0.16.1 and
+DeckCraft0.15.1 (document/formula/slide save/reopen and inspected rendering).
+PhotoCraft's candidate-admission/lifecycle blocker is resolved. This qualifies
+the standalone tools; it does not qualify Pathweft's borrowed DLLs or change its
+current pins. No end-user gate or Coordinator dependency is introduced.
 
 ## Proposed execution boundary
 

@@ -38,7 +38,8 @@ public partial class MainWindow
         var previousWidths=previousColumns.Select(column=>column.Width).ToArray();
         string previousSelection=Left.Selected.Single().Path;
         var oldSettings=Settings.ColumnWidths.ToDictionary(pair=>pair.Key,pair=>pair.Value);
-        int progress=0;void Progress(){if(Left.SpaceAnalyzing&&Left.SizesPending&&Left.FolderTotal>0)progress++;}
+        var progressive=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        int progress=0;void Progress(){if(Left.SpaceAnalyzing&&Left.SizesPending&&Left.FolderTotal>0){progress++;progressive.TrySetResult();}}
         Left.StatsChanged+=Progress;
         var watch=Stopwatch.StartNew();long before=GC.GetTotalMemory(false);
         AnalyzeSpaceCommand.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
@@ -46,7 +47,15 @@ public partial class MainWindow
         // F5 is the actual metadata-refresh route, independent of this machine's
         // optional indexed coverage; the separate live-index scenario qualifies
         // the fast entry path and its explicit coverage label.
-        Left.Refresh(force:true);await Left.SpaceCompletion;
+        // Hold a later real enumeration until the UI has presented already
+        // scanned bytes. A fast cached scan may otherwise finish before its
+        // presentation throttle ticks; elapsed time is not an acceptance signal.
+        SpaceScan.BeforeEnumeration=(path,token)=>
+        {
+            if(path==Path.Combine(folder,"branch-040"))progressive.Task.WaitAsync(token).GetAwaiter().GetResult();
+        };
+        try{Left.Refresh(force:true);await Left.SpaceCompletion;}
+        finally{SpaceScan.BeforeEnumeration=null;}
         watch.Stop();Left.StatsChanged-=Progress;
         check(Left.SpaceAnalyzing&&Left.Dir==folder&&Left.FolderTotal==expected,"Actual Analyze space command morphs the current pane and reaches exact recursive logical totals");
         check(Left.SpaceSummary.Folders==160&&Left.SpaceSummary.Files==5121,"Root summary does not double-count expanded ancestors or visible rows");

@@ -1,11 +1,21 @@
 # Implementation and reconciliation
 
-Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.56, 2026-11-05,
+Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.57, 2026-11-05,
 including the user-authorized continued comparison requirement TRANSFER-07.
 
 Current authorized round2026-11-05: continue implementing the native-category
 correction, popup/update feedback and current-pane disk analysis. Sequence:
 S11 COMPLETE -> S14 COMPLETE -> S15 ACTIVE. No second ACTIVE stage.
+
+Normal1.1.19 at2339fd0 is published and independently retrieved; installed
+readback verifies10674 members, main154988/helper149844 readiness,22 routing
+values and shortcut identity. S15 remains ACTIVE: user-reported stale disabled
+analysis command, noisy known-size refresh status and interrupted address edits
+are corrected and source50836 verifies actual watcher/edit behavior. The complete
+1.1.20 candidate consumer passes actual toolbar invocation, quiet known totals,
+row replacement, address editing/Enter, real-index search and existing previews.
+Final committed-source packaging, normal publication, independent retrieval and
+installed readback remain acceptance blockers. No S16 implementation is activated.
 S11/S14 source/integration criteria close before advancement; S15 owns the one
 combined normal release, independent source/package and installed verification
 for this round. This supersedes their earlier plan-only/per-stage-delivery

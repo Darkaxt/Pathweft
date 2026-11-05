@@ -1,6 +1,6 @@
 # Pathweft specification
 
-Version 0.56 - 2026-11-05. Owner: Darkaxt.
+Version 0.57 - 2026-11-05. Owner: Darkaxt.
 
 This is the authoritative specification. The derived plan must preserve every
 requirement and acceptance criterion. Material scope changes require explicit
@@ -30,6 +30,13 @@ their existing Everything instance. This is a scoped machine-setting exception:
 preserve its other settings, service, index scope and version, restart normally
 in the background and verify actual indexed sizing. Product fallback remains
 required when another user's index is disabled or a path is uncovered.
+
+The user's1.1.19 feedback extends S15's refresh acceptance: the analysis command
+must track actual active-folder readiness after asynchronous navigation. Known
+size refreshes must remain quiet (no flashing measuring labels or partial-total
+suffixes); unknown initial totals still show honest progress. Background listing
+or sizing refresh must preserve an in-progress address edit, text, caret/selection
+and focus. Explicit navigation, submit and cancel retain their normal behavior.
 
 The user's2026-11-05 Craft maintenance handoff requests consideration of newer
 Office cores and additional installed Craft products. The assessment is recorded
