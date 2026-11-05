@@ -111,7 +111,7 @@ sealed partial class PackageProbe
         var probe=new PackageProbe();
         app.Dispatcher.BeginInvoke(async ()=>
         {
-            try{await probe.RunAsync(app);}
+            try{if(Environment.GetEnvironmentVariable("PATHWEFT_ENTRY_DIAGNOSTIC")=="1")await probe.DiagnoseSpaceEntry(app);else await probe.RunAsync(app);}
             catch(Exception error){File.WriteAllText(Path.Combine(root,"fatal-probe-error.txt"),error.ToString());Console.Error.WriteLine(error);Environment.ExitCode=1;app.Shutdown(1);}
         });
         Dispatcher.Run();
@@ -263,6 +263,7 @@ sealed partial class PackageProbe
             new System.Windows.Interop.WindowInteropHelper(owner).EnsureHandle(); // Owner requires an HWND; never show the host window.
             VerifyWindows119();
             await VerifySizing119();
+            await VerifySpaceEntry122();
             string downloads=(string)Call(typeof(MainWindow),null,"DownloadsFolder");
             Check(((Panel)owner.FindName("Favorites")).Children.OfType<Button>().Any(button=>button.ToolTip as string==downloads),"Delivered Favorites contains the actual Windows Downloads location");
             int exports=0;

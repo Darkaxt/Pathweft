@@ -6,6 +6,14 @@ This is the authoritative specification. The derived plan must preserve every
 requirement and acceptance criterion. Material scope changes require explicit
 user direction recorded here; ordinary implementation choices need no new gate.
 
+2026-11-05 current S15 regression: the installed1.1.21 analysis button can leave
+an empty tree after overlapping delayed entry/exit/re-entry. SPACE-01..03 and
+LIFE-01 require the entire admission/startup operation to remain owned until
+completion/cancellation, immediate mode presentation and preservation of the
+current tree when old operations finish. Qualify repeated real button events,
+navigation during held admission, exact restore and corrected final delivery.
+This clarifies existing lifecycle acceptance; no later stage is activated.
+
 Current authorization2026-11-05: "continue working then" authorizes implementing
 the recorded native-category correction, S14 window/update feedback and the
 selected current-pane Diskweft integration. Execute S11 -> S14 -> S15 with one

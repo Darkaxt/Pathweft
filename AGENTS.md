@@ -1,5 +1,17 @@
 # Pathweft development
 
+Current2026-11-05 S15 correction: installed1.1.21 can show an empty analysis tree
+after delayed entry/exit/re-entry. Actual delivered reproduction keeps43 current
+nodes while an obsolete entry replaces visible rows with zero. Startup/admission
+now belongs to Work; actual mode is presented before awaiting previous sizing.
+Source consumer18256 passes admission cancellation/re-entry and navigation;
+source15116 watched refresh and43080 broad tree/restore/index/copy/cancellation
+pass;25848 passes ordinary sizing/address/mutation/overflow. Final1.1.22
+package/source/publication/independent/installed acceptance remains. S15 ACTIVE;
+no S16 or other later-stage work.
+The shared Everything engine was intermittently unresponsive and subsequently
+answered the original native/source queries. Preserve it; no engine changes.
+
 Latest authorization2026-11-05/spec0.58: continue S11 native Pinned/Frequent
 correction -> S14 auxiliary-window/update-feedback implementation -> S15
 current-pane disk analysis. Current source checkpoint: S11/S14 COMPLETE;

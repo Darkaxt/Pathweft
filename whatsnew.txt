@@ -1,6 +1,10 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.22 | 2026-11-05 | Reliable analysis entry
+- Analyze space switches the pane into analysis mode immediately while previous sizing work drains.
+- Exiting or navigating during startup waits for that exact operation. An older entry can no longer resume over a newer tree and leave an empty list with valid totals.
+
 ## 1.1.21 | 2026-11-05 | Stable analysis and clear toggle states
 - Hidden files, space analysis, preview and two-pane commands visibly show their current state. The hidden-files eye is crossed when off; the pane icon depicts the current layout.
 - Space analysis focuses the first row on entry, with unclipped compact tree arrows.

@@ -73,14 +73,15 @@ public partial class PaneView
     {
         if(space!=null){await EndSpaceAsync();return;}
         if(!CanAnalyzeSpace)return;
-        await StopSizingAsync();
+        var sizingStopped=StopSizingAsync();
         var scroll=FindScroller(List);
         var current=new SpaceView{Root=Dir,SavedItems=items,SavedView=view,Mode=Mode,
             Columns=((GridView)details).Columns.ToArray(),Widths=((GridView)details).Columns.Select(c=>c.Width).ToArray(),
             Selected=Selected.Select(e=>e.Path).ToArray(),Vertical=scroll?.VerticalOffset??0,Horizontal=scroll?.HorizontalOffset??0};
-        ++navVersion;prefetching?.Cancel();space=current;SpaceModeChanged?.Invoke();if(SpaceAdmission!=null)await SpaceAdmission();
+        ++navVersion;prefetching?.Cancel();space=current;
         StopColumns();icons?.Cancel();thumbs?.Cancel();
         current.Nodes[current.Root]=new SpaceEntry{Path=current.Root,Name=Path.GetFileName(current.Root),IsDir=true,Depth=-1,Expanded=true,State=SpaceState.Pending};
+        SpaceModeChanged?.Invoke();
         List.ItemsSource=null;List.View=null;List.ClearValue(ItemsControl.ItemTemplateProperty);List.ClearValue(ItemsControl.ItemsPanelProperty);List.ClearValue(ItemsControl.ItemContainerStyleProperty);
         var grid=new GridView{AllowsColumnReorder=false};
         spaceNameColumn=new GridViewColumn{Header="Name",CellTemplate=(DataTemplate)FindResource("SpaceNameCell"),Width=Math.Max(170,List.ActualWidth-360)};
@@ -96,7 +97,21 @@ public partial class PaneView
         // actual worker completion. It never decides cancellation/completion.
         current.Present=new DispatcherTimer(DispatcherPriority.Background){Interval=TimeSpan.FromMilliseconds(150)};
         current.Present.Tick+=(_,_)=>{lock(current.Mailbox){if(current.Pending.Count==0)return;}DrainSpace(current);};current.Present.Start();
-        current.Work=RunSpaceAsync(current,preferIndex:true);
+        // Startup is part of this view's owned operation. Exiting/navigation must
+        // drain admission too; an older entry may never resume over a newer view.
+        current.Work=EnterSpaceAsync();
+        async Task EnterSpaceAsync()
+        {
+            try
+            {
+                await sizingStopped;
+                if(SpaceAdmission!=null)await SpaceAdmission();
+                current.Cancellation.Token.ThrowIfCancellationRequested();
+                await RunSpaceAsync(current,preferIndex:true);
+            }
+            catch(OperationCanceledException)when(current.Cancellation.IsCancellationRequested){}
+            catch(Exception error){if(space==current&&!current.Stopping)Error?.Invoke("Space analysis: "+error.Message);}
+        }
     }
     async Task RunSpaceAsync(SpaceView current,bool preferIndex)
     {

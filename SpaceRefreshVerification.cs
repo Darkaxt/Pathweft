@@ -29,6 +29,7 @@ public partial class MainWindow
         try{AnalyzeSpaceCommand.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await Left.SpaceCompletion;}
         finally{Left.StatsChanged-=Entered;}
         await Dispatcher.InvokeAsync(UpdateLayout,DispatcherPriority.ApplicationIdle);
+        File.WriteAllText(Path.Combine(root,"entry-state.json"),JsonSerializer.Serialize(new{status=Status.Text,analyzing=Left.SpaceAnalyzing,columns=(Left.ListForVerification.View as GridView)?.Columns.Select(c=>c.Header?.ToString()).ToArray(),rows=Left.Items.Count(),entries=Left.Items.OfType<SpaceEntry>().Select(row=>new{row.Path,row.ParentPath,state=row.State.ToString()}).ToArray()},new JsonSerializerOptions{WriteIndented=true}));
         if(native)check(Left.ListForVerification.IsKeyboardFocusWithin&&Keyboard.FocusedElement is ListViewItem,"The first analysis row receives actual keyboard focus on entry");
         var expander=PreviewChildren<Button>(Left.ListForVerification).First(button=>AutomationProperties.GetName(button)=="Expand or collapse folder");
         var glyph=PreviewChildren<TextBlock>(expander).Single();

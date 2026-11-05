@@ -7,6 +7,25 @@ Current authorized round2026-11-05: continue implementing the native-category
 correction, popup/update feedback and current-pane disk analysis. Sequence:
 S11 COMPLETE -> S14 COMPLETE -> S15 ACTIVE. No second ACTIVE stage.
 
+1.1.21 is published/independently verified and now observed installed. S15
+remains ACTIVE for the reported entry regression: delayed admission was outside
+the view's Work task, allowing an exited entry to resume over a newer tree.
+The actual delivered-assembly reproduction retains valid current nodes/totals
+while replacing its visible rows with an empty older collection. This internal
+SPACE-01/03/LIFE acceptance blocker requires owned startup/admission, immediate
+mode presentation, repeated-toggle/navigation/cancellation verification and final
+corrected delivery; it is not deferred to S16. Separate live Everything health
+reports process24032 unresponsive; do not restart or alter the shared engine.
+
+Correction source acceptance now passes actual consumer18256 (admission,
+repeated buttons, exact restore, re-entry and pending-entry navigation),15116
+(watched refresh/selection/status/layout),43080 (broad tree/accounting/restore/
+copy/cancellation and real index) and25848 (ordinary sizing/address/mutation/
+overflow). The original native query completed on the same unchanged engine.
+No additional architecture/consolidation requirement is justified by this
+bounded lifecycle correction. Final1.1.22 package/source, normal publication,
+independent retrieval and installed readback remain S15 acceptance blockers.
+
 Latest steering during1.1.20 publication keeps S15 ACTIVE for entry row focus,
 unclipped compact expanders, targeted/coalesced analysis refresh with stable
 completed states, and consistent bottom-toolbar toggle state/icons. These are
