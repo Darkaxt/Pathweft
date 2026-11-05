@@ -13,6 +13,10 @@ support, requires UTF-8 entry identity, uses upstream preservation preflight and
 keeps publication and independent decoding verification in Pathweft.
 Changes are Pathweft's; the upstream project does not endorse this integration.
 
+The app-local Microsoft VCRUNTIME140.dll is the same pinned runtime distributed
+with F3D. Its bytes and provenance are recorded in runtime-manifest.json and
+vendor/F3D/runtime-manifest.json; accompanying terms are in F3D/licenses.
+
 Rebuild: scripts/Build-RarsDependency.ps1 with registered native scratch.
 Cargo.lock pins the transitive graph. S8 must include matching source, bridge,
 lock, rebuild instructions and all applicable dependency notices in its release.

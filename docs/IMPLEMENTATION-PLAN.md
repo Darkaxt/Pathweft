@@ -1,6 +1,6 @@
 # Implementation and reconciliation
 
-Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.55, 2026-11-05,
+Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.56, 2026-11-05,
 including the user-authorized continued comparison requirement TRANSFER-07.
 
 Current authorized round2026-11-05: continue implementing the native-category
@@ -43,6 +43,17 @@ metadata workflow22428 and isolated million-record migration/memory comparisons
 pass. Current136168 passes the full analysis workflow, including repeated mutation,
 real IPC coverage, bounded hot-cache persistence and virtual-pane ownership.
 Final actual Release package/release/installed checks remain before S15 closure.
+The user's2026-11-05 Craft maintenance handoff is assessed in
+[Craft core review](CRAFT-CORE-REVIEW.md). Proposed S16 is NOT STARTED:
+refresh existing source-built Office cores and qualify additional Photo/Vector/
+Fig/PDF rendering libraries. This consideration request does not activate a
+second implementation stage or change the current combined release scope.
+Clean-machine Sandbox qualification passes absent/disabled/enabled Everything
+capability paths. The full delivered workflow found a RAR loading blocker:
+VCRUNTIME140 was not app-local to that module. The guest lacks the system runtime;
+preloading the exact bundled runtime makes the unchanged RAR DLL load. S15 stays
+ACTIVE while the deterministic app-local packaging/loader correction is verified
+and the final combined artifacts are rebuilt. No host restart is required.
 
 Current execution checkpoint (2026-11-04): user authorization covers S13, S9 and
 S11 as one implementation/release outcome. S13 is COMPLETE against all assigned
@@ -676,7 +687,8 @@ plan neither authorizes itself nor adds approval checkpoints.
 | S11 - Native pinned/frequent folder Jump Lists | COMPLETE | JUMP-01..02; affected CORE-01/02 and LIFE/DELIVERY | S9 COMPLETE | Corrected native126032 source/integration passes; S15 owns combined final delivery/native update preservation. |
 | S14 - Window design consistency and update feedback | COMPLETE | WINDOW-01..03, UPDATE-02, TRANSFER-14; affected CORE-03/LIFE/DELIVERY | S11 source/integration COMPLETE | Actual auxiliary/HTTP/update91140, real completion/error/multi-job transfer102436 and floating-preview lifecycle103700 pass. Combined delivery remains S15. |
 | S15 - Current-pane disk analysis | ACTIVE | SPACE-01..05, CORE-19; affected CORE/LIFE/DELIVERY | S14 source/integration COMPLETE | Borrow selected pinned Diskweft scanner, reversible current-pane tree/Space used/descending order, stable measured size refresh and preserved file actions/state; real scan/UX/lifecycle qualification and combined normal release/independent/installed delivery. |
-| S12 - Tresorit capability investigation | NOT STARTED | TRES-01..04 | S14 COMPLETE; next in priority | Supported API/client assessment, bounded REA as needed, evidence-backed capability matrix/decision and implementation proposal. Investigation only; no cloud mutation or integration implementation. |
+| S16 - Craft core refresh and additional renderers (proposed) | NOT STARTED | Scope assessment in CRAFT-CORE-REVIEW.md; implementation requirements to establish before activation | S15 delivered; Pathweft-related work precedes unrelated shell integration | Evaluate existing Office core refresh and additional Photo/Vector/Fig/PDF libraries using source-built DLLs/owned workers; no installed-product or MCP dependency. No implementation started. |
+| S12 - Tresorit capability investigation | NOT STARTED | TRES-01..04 | S15 delivered; proposed S16 considered first | Supported API/client assessment, bounded REA as needed, evidence-backed capability matrix/decision and implementation proposal. Investigation only; no cloud mutation or integration implementation. |
 | S6 - Native StartAllBack search | BLOCKED | SAB-01..06; affected SEARCH/CORE/LIFE/DELIVERY criteria | Parked until Pathweft-first work S13/S9/S11/S12 is closed and execution is resumed; retain unresolved native feasibility boundaries | Investigation only; no complete SAB criterion. Qualify native groups/provider/cancellation/handoff/lifecycle/direct routing and independently verified adapter release in S6; no automatic Sandbox restart. |
 | S7 - Everything filesystem search and Outlook indexing scope | NOT STARTED | EVERYWHERE-01..05; affected SEARCH/CORE/LIFE/SHELL criteria | S6 COMPLETE; consumer/semantics/scope inventory before migration | Final dependent Windows-search work: real Everything file results with selected roots excluded from indexing, WSearch/Outlook retained, explicit exceptions, mail/reboot/recovery and verified migration/package delivery in S7. |
 

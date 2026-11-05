@@ -17,7 +17,8 @@ internal static class RarNative
     sealed record Binding(IntPtr Module, CallNative Call, FreeNative Free);
     static readonly Lazy<Binding> binding = new(() =>
     {
-        IntPtr module = NativeLibrary.Load(Path.Combine(AppContext.BaseDirectory, "Rars", "pathweft_rars.dll"));
+        IntPtr module = NativeLibrary.Load(Path.Combine(AppContext.BaseDirectory, "Rars", "pathweft_rars.dll"), typeof(App).Assembly,
+            DllImportSearchPath.UseDllDirectoryForDependencies | DllImportSearchPath.System32);
         try
         {
             var value = new Binding(module, Marshal.GetDelegateForFunctionPointer<CallNative>(NativeLibrary.GetExport(module, "pw_rar_call")), Marshal.GetDelegateForFunctionPointer<FreeNative>(NativeLibrary.GetExport(module, "pw_rar_free")));

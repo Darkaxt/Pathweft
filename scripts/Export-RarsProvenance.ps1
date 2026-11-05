@@ -17,6 +17,10 @@ try {
     if ($dependencies | Where-Object { !$_.license }) { throw 'Dependency terms missing.' }
     $runtime = Join-Path $CacheRoot 'rars/0.12.3-pathweft.1'
     $receipt = [ordered]@{ backend='rars'; version='0.12.3-pathweft.1'; source='https://github.com/bitplane/rars'; sourceCommit='e2415a2eb12e6b62deaa0cca919864eabe4671b1'; abi=1; architecture='x86_64-pc-windows-msvc'; rustc=(& rustc --version); dll='pathweft_rars.dll'; dllSha256=(Get-FileHash (Join-Path $runtime 'pathweft_rars.dll') -Algorithm SHA256).Hash; bridgeSourceSha256=(Get-FileHash (Join-Path $projectRoot 'native/pathweft-rars/src/lib.rs') -Algorithm SHA256).Hash; lockSha256=(Get-FileHash (Join-Path $projectRoot 'native/pathweft-rars/Cargo.lock') -Algorithm SHA256).Hash; cargoManifestSha256=(Get-FileHash $manifest -Algorithm SHA256).Hash; license='Apache-2.0 donor; GPL-3.0-or-later Pathweft bridge'; dependencies=$dependencies }
+    $crt=Get-Content -LiteralPath (Join-Path $projectRoot 'vendor/F3D/runtime-manifest.json') -Raw|ConvertFrom-Json
+    $dependency=@($crt.files|Where-Object path -eq 'bin\vcruntime140.dll')
+    if($dependency.Count -ne 1){throw 'Pinned app-local RAR C runtime is missing.'}
+    $receipt.runtimeDependency=[ordered]@{dll='vcruntime140.dll';sha256=$dependency[0].sha256;sourceManifest='vendor/F3D/runtime-manifest.json';sourcePath='bin/vcruntime140.dll';notices='F3D/licenses'}
     $json = ($receipt | ConvertTo-Json -Depth 6).Replace("`r`n", "`n") + "`n"
     [IO.File]::WriteAllText((Join-Path $projectRoot 'vendor/rars/runtime-manifest.json'), $json)
     [IO.File]::WriteAllText((Join-Path $runtime 'manifest.json'), $json)

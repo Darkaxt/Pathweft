@@ -64,6 +64,8 @@ foreach($pin in $pins){
     $manifest=Get-Content -LiteralPath (Join-Path $root $pin.manifest) -Raw | ConvertFrom-Json
     if((Get-FileHash -LiteralPath (Join-Path $publish $pin.path) -Algorithm SHA256).Hash -ne $manifest.($pin.field)){throw "Native dependency changed: $($pin.path)"}
 }
+$rarRuntime=Get-Content -LiteralPath (Join-Path $root 'vendor/rars/runtime-manifest.json') -Raw|ConvertFrom-Json
+if((Get-FileHash -LiteralPath (Join-Path $publish ('Rars/'+$rarRuntime.runtimeDependency.dll))).Hash -ne $rarRuntime.runtimeDependency.sha256){throw 'RAR app-local C runtime differs from its pinned dependency.'}
 $specialists=Get-Content -LiteralPath (Join-Path $root 'vendor/Specialists/source-manifest.json') -Raw|ConvertFrom-Json
 $graph=Get-Content -LiteralPath (Join-Path $root 'vendor/Specialists/runtime-manifest.json') -Raw|ConvertFrom-Json
 foreach($package in $graph.packages){

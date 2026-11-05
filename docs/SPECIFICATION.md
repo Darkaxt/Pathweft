@@ -1,6 +1,6 @@
 # Pathweft specification
 
-Version 0.55 - 2026-11-05. Owner: Darkaxt.
+Version 0.56 - 2026-11-05. Owner: Darkaxt.
 
 This is the authoritative specification. The derived plan must preserve every
 requirement and acceptance criterion. Material scope changes require explicit
@@ -30,6 +30,14 @@ their existing Everything instance. This is a scoped machine-setting exception:
 preserve its other settings, service, index scope and version, restart normally
 in the background and verify actual indexed sizing. Product fallback remains
 required when another user's index is disabled or a path is uncovered.
+
+The user's2026-11-05 Craft maintenance handoff requests consideration of newer
+Office cores and additional installed Craft products. The assessment is recorded
+in [CRAFT-CORE-REVIEW.md](CRAFT-CORE-REVIEW.md), with proposed S16 NOT STARTED.
+It preserves source-built minimal DLLs/owned workers, not external application or
+MCP dependencies. This assessment does not expand the current S15 release or
+authorize activating a second implementation stage, replacing PDF rendering
+without comparison, or changing installed Craft/Coordinator selections.
 
 On2026-11-04 the user authorized implementation of S13, S9 and S11 together.
 Execute them in that order with at most one ACTIVE stage. Current execution

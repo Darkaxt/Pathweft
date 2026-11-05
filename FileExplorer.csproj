@@ -34,6 +34,7 @@
     <None Include="$(F3DRuntimeRoot)\bin\*.dll" Link="F3D\bin\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <None Include="$(SevenZipRuntimeRoot)\7z.dll" Link="SevenZip\7z.dll" CopyToOutputDirectory="PreserveNewest" />
     <None Include="$(RarsRuntimeRoot)\pathweft_rars.dll" Link="Rars\pathweft_rars.dll" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="$(F3DRuntimeRoot)\bin\vcruntime140.dll" Link="Rars\vcruntime140.dll" CopyToOutputDirectory="PreserveNewest" />
     <None Include="$(MpvRuntimeRoot)\*.dll" Link="MPV\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <None Include="$(MpvRuntimeRoot)\MPV-BUILDINFO.json" Link="MPV\MPV-BUILDINFO.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="$(OfficeRuntimeRoot)\cores\**\*.dll" Link="Office\cores\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />

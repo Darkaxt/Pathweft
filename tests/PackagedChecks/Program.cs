@@ -534,7 +534,7 @@ sealed partial class PackageProbe
             {
                 string name=input.GetProperty("name").GetString(),path=Path.GetFullPath(input.GetProperty("path").GetString());
                 Call(type,previewSession,"Show",new Entry{Name=Path.GetFileName(path),Path=path});await (Task)Get(previewSession,"Completion");
-                Check((string)Get(previewSession,"State")=="ready"&&(string)Get(previewSession,"ModuleId")=="media","Delivered media module loads the real fixture: "+name);
+                Check((string)Get(previewSession,"State")=="ready"&&(string)Get(previewSession,"ModuleId")=="media","Delivered media module loads the real fixture: "+name+"; state="+Get(previewSession,"State")+"; "+(target.Content as TextBlock)?.Text);
                 object builtin=type.GetField("viewer",Flags).GetValue(previewSession);
                 var viewer=builtin.GetType().GetField("media",Flags).GetValue(builtin);var player=Get(viewer,"Player");
                 Check((string)Call(player.GetType(),player,"Property","pause")=="yes"&&(string)Call(player.GetType(),player,"Property","current-vo")=="gpu-next","Delivered media uses its bundled paused GPU output: "+name);
