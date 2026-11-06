@@ -1,16 +1,26 @@
 # Pathweft specification
 
-Version 0.68 - 2026-11-06. Owner: Darkaxt.
+Version 0.69 - 2026-11-06. Owner: Darkaxt.
+
+Plan addition2026-11-06: S21 - Browsing productivity and smart destinations is
+NOT STARTED after S20 and before S6. BROWSE-01..12 register the discussed
+Linux-inspired capabilities and browser-style address suggestions, including
+recent/pinned folders, open tabs, saved searches and filesystem completions.
+The user's latest instruction supersedes the earlier research-only treatment
+of those suggestions by adding them to the future plan; it does not authorize
+implementation, connection, metadata/source mutation or live configuration.
+No implementation stage is ACTIVE. Remaining order:
+S16 -> S18 -> S12 -> S19 -> S20 -> S21 -> S6 -> S7.
 
 Plan addition2026-11-06: S20 - Integrated PowerToys file tools is NOT STARTED
-after S19 and before S6. TOOLS-01..09 register the seven discussed capabilities:
+after S19 and before S21. TOOLS-01..09 register the seven discussed capabilities:
 PowerRename, File Locksmith, Image Resizer, Text Extractor/OCR, Registry Preview,
 local deterministic Advanced Paste and New+. New+ is included at lower priority.
 Borrow focused source implementations and integrate them into Pathweft's own
 UI/selection/operation lifecycle; do not require a separate PowerToys installation.
 This authorizes documentation only, not implementation, installation, registry
-changes or process control. No stage is ACTIVE. The Linux comparison remains
-research and does not automatically add its findings to the implementation scope.
+changes or process control. No stage is ACTIVE. The subsequent S21 request
+explicitly registers the Linux-inspired findings as future scope.
 
 Plan addition2026-11-06: S19 - Selected-folder content indexing is NOT STARTED,
 immediately after S12 and before S20. CONTENT-01..06 record folder opt-in,
@@ -23,7 +33,7 @@ schedules, settings changes or implementation are activated.
 
 Plan addition2026-11-06: S18 - Contextual performance monitoring is NOT STARTED,
 ordered after S16 and before S12. Remaining execution order is
-S16 -> S18 -> S12 -> S19 -> S20 -> S6 -> S7. This request authorizes specification/plan changes
+S16 -> S18 -> S12 -> S19 -> S20 -> S21 -> S6 -> S7. This request authorizes specification/plan changes
 only; it does not activate monitoring, tracing, privileged helpers or installation.
 MONITOR-01..05 below capture the agreed bottom-card and Resource Monitor-inspired
 detail behavior. No implementation stage is ACTIVE.
@@ -1407,7 +1417,7 @@ authorized by registration of this stage.
 
 ### Integrated PowerToys file tools (S20)
 
-Planned after S19 and before S6; NOT STARTED. Scope is the seven capabilities
+Planned after S19 and before S21; NOT STARTED. Scope is the seven capabilities
 accepted in the brainstorming discussion, with New+ last in implementation
 priority. This registration does not activate implementation or any live action.
 Use the [PowerToys source](https://github.com/microsoft/PowerToys/tree/main/src/modules)
@@ -1436,6 +1446,43 @@ and [license](https://github.com/microsoft/PowerToys/blob/main/LICENSE).
 These main-branch links are research pointers, not adopted pins. No implementation
 criterion has passed; module extraction, runtime compatibility and resource costs
 remain unqualified. No tracked deferral or ACTIVE stage is introduced.
+
+### Browsing productivity and smart destinations (S21)
+
+Planned after S20 and before S6; NOT STARTED. The user registered the Linux
+comparison's suggested features and the agreed browser-style address dropdown
+as one future stage. This extends existing browsing rather than replacing its
+working commands or importing a whole donor application. Scope registration
+does not activate implementation or authorize changes to source/user/remote data.
+
+| ID | Requirement and acceptance |
+| --- | --- |
+| BROWSE-01 | Extend the existing address field and suggestion popup with recent folders, pinned folders, already-open tabs, saved searches and filesystem path completions. Match folder names and full paths without requiring an absolute prefix, highlight matches and identify each result type with its icon/action and location. Rank strong matches first and then recency, deduplicate equivalent destinations without losing a distinct switch-to-tab action, and show recent destinations when the focused field is empty. Reuse existing history/pins/tab state; cached suggestions must not trigger recursive disk scans or cloud hydration on every keystroke. Preserve explicit filesystem completion as a supplement when a path is being entered; qualify matching/ranking against representative Unicode/UNC/archive inputs. |
+| BROWSE-02 | Preserve keyboard/mouse behavior for the unified dropdown: Up/Down selects, Tab completes an applicable path, Enter activates the selected destination/tab/query and Escape dismisses suggestions without discarding the draft. A history-row remove control removes only that history entry, never source files, pins or open tabs; integrate clear-history/privacy behavior consistently. Background listing/sizing/search completions and popup interaction must not overwrite typed text, caret, selection or focus; obsolete work cannot replace current suggestions. Qualify actual editing, selection, navigation/tab activation, history removal, restart persistence, keyboard accessibility and light/dark/scaled layouts. |
+| BROWSE-03 | Add named saved searches/smart destinations with persisted query, scope and relevant match options, reachable from the existing sidebar/address suggestions. Opening reruns the query against its qualified engine instead of storing a frozen result list. Support editing/renaming/removing the saved query without deleting files. Preserve Everything filename/path semantics and separately identify S19 content searches, selected-root coverage and unavailable/offline sources; content-query support depends on S19's verified capability. Qualify actual save -> restart -> reopen -> changed results and option/scope round trips. |
+| BROWSE-04 | Add a user-configurable context-action editor backed by a documented configuration file, reusing Pathweft's configuration approach where appropriate. Actions specify name, icon, optional submenu, executable/arguments and applicability by file type and selection count, with explicit selected-path/current-folder placeholders. Qualify correct argument boundaries for spaces/Unicode/metacharacters, multiple selections, working directory, command errors and owned process lifecycle. Actions run only on explicit invocation; configuration is not automatic execution or a second folder-route registry owner. Integrate actions into the existing command/menu eligibility and presentation without a general-purpose plugin framework. |
+| BROWSE-05 | Extend current folder-specific sorting/date grouping into complete per-folder view profiles: view mode, displayed columns/order/widths, grouping, folder-first/hidden visibility and preview preferences. Provide explicit current-folder, descendant and default application semantics, preserving unconfigured folders and user-selected global defaults. Resolve inheritance/reset behavior before implementation; do not let a saved profile silently change unrelated folders or unexpectedly persist temporary disk-analysis mode. Qualify navigation/restart, two-pane/tab independence, defaults/descendants, dynamic empty columns and exact restoration of existing modes. |
+| BROWSE-06 | Extend the immediate-entry metadata comparison into recursive folder comparison with optional content comparison and a reviewed synchronization plan. Show proposed copy/replacement/deletion directions and conflicts before mutation, let users exclude/change operations, and distinguish metadata matches from verified content equality. Reuse existing transfer/conflict/Undo ownership and preserve newer destinations and source data under explicit choices; synchronization is manual and reviewed, not an unrequested background mirroring service. Qualify nested differences, equal-size changed content, conflicts, cancellation/partial failure, existing link traversal policy and actual applied outcomes on controlled fixtures. |
+| BROWSE-07 | Add file/folder tags, ratings and comments with readable editing/display and filtering/search integration where qualified. Select and document metadata storage/identity behavior before implementation, including moves/renames, disconnected/cloud roots, unsupported filesystems and cross-machine portability. Do not claim universal provider synchronization or silently write alternate streams/sidecars into user content. Qualify actual persistence, mutation/restart, search and unavailable/stale cases under the selected explicit storage contract. |
+| BROWSE-08 | Add an optional embedded terminal panel synchronized with the active local folder, including terminal directory changes navigating the browser when supported. Preserve the existing external-terminal shortcut and keep terminal sessions/processes owned across pane/tab switches, hide/close and application exit. Qualify actual terminal hosting, shell directory-change signals, quoting and feedback-loop prevention; display unsupported remote/archive contexts honestly. Do not substitute command injection or inferred prompt text for a qualified directory synchronization contract. |
+| BROWSE-09 | Add direct saved SSH/SFTP and WebDAV connections within normal browsing, complementing existing UNC/mapped drives. Qualify protocol/library coverage, authentication/credential storage, SSH host identity/TLS validation, remote path/metadata semantics, listing/preview/transfers and cancellation/disconnection/recovery before advertising support. Preserve existing transfer/source-conflict handling and provider permission boundaries; do not pretend remote items have local paths or local Undo guarantees. Use controlled endpoints for mutation acceptance, never user servers as disposable fixtures. No FTP/NFS expansion is implied by the comparison examples. |
+| BROWSE-10 | Add an explicitly invoked temporary live filter of entries in the current listing, distinct from recursive Everything search. Keep the unified address/search design; no permanently added second search bar. Make scope/state clear, retain hidden-file policy, and restore the unfiltered listing/selection appropriately when dismissed. Qualify typing/keyboard/cancellation, navigation, active background refresh and interaction with search/archive/analysis modes without silently changing recursive search semantics. |
+| BROWSE-11 | Add contextual symbolic-link, hard-link and directory-junction creation with target inspection and honest type/eligibility, separate from existing .lnk shortcuts. Qualify actual Windows/filesystem/privilege/volume support, relative versus absolute targets, conflicts and broken links. Preserve existing non-following traversal/deletion policies; removing a link must not remove its target. Reuse current operation/Undo ownership where applicable and clearly report unsupported combinations instead of substituting copied contents or .lnk files. |
+| BROWSE-12 | Verify every complete registered workflow through its real UI/state/filesystem/terminal/protocol boundaries, including coexistence with S19/S20, errors/cancellation, restart/privacy, source preservation and app-exit cleanup. Inspect any donor's actual code, dependency/license/runtime fit and retain exact adopted pins/notices; Linux feature parity does not imply importing KDE/GNOME runtime infrastructure. Establish measured resource budgets for suggestions, metadata, remote and terminal work; no unbounded corpus/connection polling or performance claims from feature lists. S21 owns one normal final release, corresponding source/notices, independent retrieval and applicable installed verification after implementation is separately authorized. No per-feature intermediate release. |
+
+Reference behaviors: [Dolphin filtering/saved searches](https://docs.kde.org/stable_kf6/en/dolphin/dolphin/quick-tips.html),
+[Dolphin metadata/terminal panels](https://docs.kde.org/stable_kf6/en/dolphin/dolphin/panels.html),
+[Dolphin folder profiles](https://docs.kde.org/stable_kf6/en/dolphin/dolphin/view-properties.html),
+[Thunar custom actions/link examples](https://docs.xfce.org/xfce/thunar/custom-actions),
+[GNOME remote browsing](https://help.gnome.org/gnome-help/nautilus-connect.html),
+and [Krusader recursive synchronization](https://docs.kde.org/trunk_kf6/en/krusader/krusader/synchronizer.html).
+The user's browser screenshot supplies the address-suggestion behavior reference,
+not permission to import its browser profile/history or recreate its full UI.
+
+No acceptance criterion is implemented or verified for S21. Metadata storage,
+terminal hosting/synchronization, protocol libraries and donor suitability remain
+ordinary design/qualification work, not asserted external blockers. No tracked
+deferral or ACTIVE stage is introduced; S19 and S20 retain their own scope.
 
 ### Lifecycle, shell integration and final delivery
 
