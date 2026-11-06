@@ -3,8 +3,12 @@
 Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.73, 2026-11-06,
 including the user-authorized continued comparison requirement TRANSFER-07.
 
-Current2026-11-06: S16 is the single ACTIVE stage under the user's start-next-
-stage instruction and subsequent text-extraction addition. CRAFT-01..07 and
+Current2026-11-07: S16 is COMPLETE through installed1.1.26 acceptance; no stage
+is ACTIVE and S18 is not activated. All CRAFT-01..07/CORE-24 criteria pass with
+no required blocker or tracked deferral. Final110748, independent42084 and
+installed108640 establish delivery; see the S16 verification record.
+The following implementation sequence records the completed authorized work.
+CRAFT-01..07 and
 CORE-24 are authoritative. Execute complete workflows sequentially: Office core
 refresh/extraction; Photo; Vector; Fig; PDF extraction/comparison; icon sizing;
 combined integration/source reconciliation; one normal final release with
@@ -41,15 +45,18 @@ all seven native builds/format/extraction/resource workflows are recorded in
 docs/verification/2026-11-06-s16-craft.md. Combined candidate consumer106552
 passes all seven core/extraction workflows and the existing application/native
 checks. Actual executable icons at32/40/48/64px pass transparency/contrast and
-visual inspection. Acceptance remaining: clean committed corresponding-source
-packaging and final release/delivery verification. These
-are internal advancement blockers while implementation proceeds, not reasons
-to park the stage. No tracked deferrals. S19 indexing remains NOT STARTED and
+visual inspection. Normal1.1.26/0856498 is published; actual final110748 and
+independently downloaded42084 pass complete source/native/application checks.
+All six remote assets, digests and exact source/tag identity pass readback.
+Installed108640 verifies11,287 members, restarted main106840/helper84768, helper
+readiness,22 owned routes and preserved Windows/shortcut/profile identity.
+Acceptance remaining: none. No blockers or tracked deferrals. S19 indexing remains NOT STARTED and
 consumes the extraction contract later. Native/source/build scratch uses exact
 D:/Temp/pathweft-s16 paths for sustained small-file I/O; cleanup follows actual
-last consumers. No installed Craft/Coordinator or running Pathweft change.
+last consumers. No installed Craft/Coordinator change; Pathweft was adopted
+through the user's normal updater, with read-only installed verification.
 
-Next-release refinement2026-11-06: CORE-24 is NOT STARTED, assigned alongside
+Historical next-release refinement2026-11-06: CORE-24 was NOT STARTED, assigned alongside
 S16 for the next planned release. Enlarge the taskbar icon's visible artwork
 approximately10-15% relative to1.1.25, preserving the folder/compass design,
 transparency, unclipped bounds and Windows identity. Acceptance requires actual
@@ -939,7 +946,7 @@ plan neither authorizes itself nor adds approval checkpoints.
 | S15 - Current-pane disk analysis | COMPLETE | SPACE-01..05, CORE-11/19..21, TRANSFER-15; affected CORE/LIFE/DELIVERY | S14 source/integration COMPLETE | Source/native acceptance plus full final57312/independent51296 and installed58076 close normal1.1.23 delivery. No required blocker or deferral remains. |
 | S17 - Transfer review, preview and icon refinements | COMPLETE | TRANSFER-16, PREVIEW-38, CORE-22; affected LIFE/DELIVERY | S15 delivered | Difference-only review/newer warnings/full-set actions; selection-following/pinned PiP/Windowed; transparent folder/compass icon and preserved Windows identity. Normal1.1.24 independently downloaded and installed-verified. |
 | S23 - Missing-folder tab recovery | COMPLETE | CORE-23; affected CORE/LIFE/DELIVERY | User-reported vanished local version folder; correction precedes future feature stages | Source92776, final Release93428 and independent retrieved87644 pass recovery/restoration and preservation regressions. Normal1.1.25/11e5d292 published with verified sources/assets. Installed94548 verifies matching files, restarted app/helper, readiness, routes and shortcut/profile identity; user confirms behavior. No remaining criteria, blockers or tracked deferrals. |
-| S16 - Craft core refresh and additional renderers | ACTIVE | CRAFT-01..07; CORE-24; affected PREVIEW/LIFE/DELIVERY | S23 delivered; existing worker and LibreOffice baseline | Refresh Office cores; integrate Photo/Vector/Fig; qualify PDF extraction/render comparison; reusable located text extraction; taskbar icon sizing. Existing baseline known; all new implementation/qualification and final delivery remain internal advancement blockers. No tracked deferrals or second ACTIVE stage. |
+| S16 - Craft core refresh and additional renderers | COMPLETE | CRAFT-01..07; CORE-24; affected PREVIEW/LIFE/DELIVERY | S23 delivered; existing worker and LibreOffice baseline | Refreshed Office plus Photo/Vector/Fig/optional PDF and bounded located extraction qualify in actual source/preview/worker workflows. Native/icon/source/advisory qualification, normal1.1.26/0856498, final110748, independent42084 and installed108640 pass. No acceptance criteria remaining, blockers or tracked deferrals. No next stage activated. |
 | S18 - Contextual performance monitoring | NOT STARTED | MONITOR-01..05; affected CORE-03/LIFE/DELIVERY | S16 closed under the selected execution order; source/privilege feasibility and concrete resource budgets resolved before implementation acceptance | Direct Statistics/Performance toggle; CPU/GPU/current-drive/current-folder cards; attributed process/file details; real workload/path/device qualification, bounded visible-only sampling and cleanup; one final independently/installed verified release when implementation is authorized. No criteria verified yet. |
 | S12 - Tresorit capability investigation | NOT STARTED | TRES-01..04 | S15 delivered; S16 and S18 considered first in the selected execution order | Supported API/client assessment, bounded REA as needed, evidence-backed capability matrix/decision and implementation proposal. Investigation only; no cloud mutation or integration implementation. |
 | S19 - Selected-folder content indexing | NOT STARTED | CONTENT-01..06; affected SEARCH/CORE/LIFE/DELIVERY | After S12 in the selected execution order; qualify extractor APIs, query/location semantics, provider metadata and resource budgets | Toolbar folder opt-in/current magnifier badges; qualified Craft/text extraction; persisted searchable strings and location arrays, periodic incremental refresh and cloud-cache independence. Verify actual search/open/freshness/recovery and one final independently/installed verified release when implementation is authorized. No criteria verified yet. |

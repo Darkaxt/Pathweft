@@ -4,7 +4,8 @@ Version 0.73 - 2026-11-06. Owner: Darkaxt.
 
 Implementation authorization2026-11-06: the user directed starting the next
 stage, S16, and added advance core text extraction for subsequent content
-indexing. S16 is the single ACTIVE stage; S23 remains COMPLETE. The existing
+indexing. S16 and S23 are now COMPLETE through installed1.1.26 acceptance;
+no stage is ACTIVE. The existing
 source-built DLL/app-owned worker architecture is retained. CRAFT-01..07 below
 and CORE-24 define this release; S19 still owns the database/indexer/search UI.
 This authorization does not change installed Craft/Coordinator selections or

@@ -1,24 +1,20 @@
 # Pathweft development
 
-Current2026-11-06/spec0.73: user authorized starting S16 and adding core text
-extraction for later indexing. S16 is the single ACTIVE stage for CRAFT-01..07
-and CORE-24. Preserve the source-built DLL/owned-worker architecture, rendering
-APIs, current Office formats/LibreOffice recovery, storage/user state and Windows
-identity. Sequential complete workflows: refreshed Office/extraction, Photo,
-Vector, Fig, PDF extraction/comparison, icon sizing, combined final release.
-Extraction returns bounded strings/native locations/continuation; S19 owns
-indexing, with no OCR inferred. Office, Photo and Vector source workflows pass as
-recorded in docs/verification/2026-11-06-s16-craft.md. Fig workflow97564 also
-passes, including located text and actual Figma import/thumbnail priority.
-PDF workflow98700 and icon sizing also pass. Combined candidate consumer106552
-passes all seven cores, extraction, existing application/native behavior and
-packaged icons at32/40/48/64px; those actual PNGs were visually inspected.
-Source/dependency/license/advisory qualification passes. Clean-source final
-packaging, publication, independent retrieval and installed acceptance remain;
-no deferrals. Candidate evidence is not final delivery.
-Existing later stage order is unchanged. Historical no-ACTIVE statements below
-do not override this current checkpoint. Exact D:/Temp/pathweft-s16 native/build
-scratch uses the sustained small-file I/O exception and must be cleaned after use.
+Current2026-11-07/spec0.73: S16 is COMPLETE for CRAFT-01..07 and CORE-24.
+Normal1.1.26/0856498 is published with all six assets; final110748 and independent
+download42084 pass complete source/native/app qualification. Installed readback
+108640 verifies11,287 members, restarted main106840/helper84768, helper readiness,
+22 owned routes and unchanged Darkaxt.Pathweft shortcut/profile identity.
+Seven source-built libraries provide qualified read-only previews and bounded
+located text extraction; Windows PDF stays default, LibreOffice Office recovery
+and preview ownership are preserved. Source/dependency/license/advisory and
+actual packaged icon checks pass. No required blocker or tracked deferral remains.
+No stage is ACTIVE; S18 is next in the existing order and is not activated.
+S19 still owns indexing; no database/indexer/OCR or installed Craft/MCP/Coordinator
+dependency was introduced. See docs/verification/2026-11-06-s16-craft.md.
+Task native/build/retrieval scratch is cleaned through reviewed exact transactions;
+required adopted libraries/source archives, release assets and evidence remain.
+Historical checkpoints below must not restart completed work.
 
 Plan-only2026-11-06/spec0.72: CORE-24 is queued alongside S16 for the next
 planned release: enlarge taskbar icon visible artwork approximately10-15%

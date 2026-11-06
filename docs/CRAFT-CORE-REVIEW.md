@@ -1,11 +1,11 @@
 # Craft core refresh and additional preview engines
 
 Assessment requested 2026-11-05; implementation authorized 2026-11-06. S16 is
-ACTIVE under specification0.73. The source candidates below are downloaded and
+COMPLETE under specification0.73. The source candidates below are downloaded and
 their official tag-to-commit identities and archive digests are recorded. All
 seven borrowed libraries now pass source and combined candidate qualification
-as recorded in verification/2026-11-06-s16-craft.md. Final release and applicable
-installed acceptance remain. Installed Craft selections remain separate.
+as recorded in verification/2026-11-06-s16-craft.md. Normal1.1.26 and independent/
+installed acceptance also pass. Installed Craft selections remain separate.
 The local maintenance handoff qualifies vendor applications; Pathweft's borrowed
 source-built libraries require their own qualification.
 
@@ -72,7 +72,8 @@ current pins. No end-user gate or Coordinator dependency is introduced.
 
 ## Execution boundary
 
-S16 is the single ACTIVE stage, after completed S23/1.1.25 and before S18.
+S16 is COMPLETE after S23/1.1.25 and before S18, which is not activated.
+The following sequence records its completed implementation boundary.
 First refresh the existing Office cores as one complete preview workflow. Then
 qualify each additional engine's first real read-only preview before expanding
 its format matrix. Establish the authoritative implementation requirements,
