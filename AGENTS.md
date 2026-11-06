@@ -1,7 +1,17 @@
 # Pathweft development
 
+Plan-only addition2026-11-06/spec0.70: S22 Focused file workflow enhancements
+is NOT STARTED immediately after Linux-inspired S21 and before S6. OPUS-01..10
+register named workspaces, paired navigation, expandable/flat browsing, persistent
+collections, operation history and listing export, then lower-priority aliases,
+image marking and batch embedded-metadata/timestamp editing. Prefer focused
+Pathweft implementation; bounded REA only for concrete unresolved questions,
+with qualified artifacts/evidence before adoption. No installed Opus dependency,
+implementation, uninstall or live changes. No stage is ACTIVE. Remaining order:
+S16 -> S18 -> S12 -> S19 -> S20 -> S21 -> S22 -> S6 -> S7.
+
 Plan-only addition2026-11-06/spec0.69: S21 Browsing productivity and smart
-destinations is NOT STARTED after S20 and before S6. BROWSE-01..12 register
+destinations is NOT STARTED after S20 and before S22. BROWSE-01..12 register
 the accepted Linux-inspired features plus unified address suggestions: recent/
 pinned/open-tab/saved-query/path matches, saved searches, configurable actions,
 per-folder profiles, recursive compare/reviewed sync, tags/ratings/comments,
@@ -10,7 +20,7 @@ filtering and native link tools. Preserve existing browser behavior, typed text,
 caret/focus, history/privacy and source/remote data. Qualify actual donor/runtime/
 metadata/protocol boundaries before acceptance. This request changes documents
 only; no stage is ACTIVE or runtime/settings/data changed. Remaining order:
-S16 -> S18 -> S12 -> S19 -> S20 -> S21 -> S6 -> S7.
+S16 -> S18 -> S12 -> S19 -> S20 -> S21 -> S22 -> S6 -> S7.
 
 Plan-only addition2026-11-06/spec0.69: S20 Integrated PowerToys file tools is
 NOT STARTED after S19 and before S21. TOOLS-01..09 cover borrowed PowerRename,
@@ -19,7 +29,7 @@ Paste and lower-priority New+ capabilities inside Pathweft's existing UI and
 operation ownership. Qualify pinned source/dependencies/licenses and complete
 workflows; no installed PowerToys, runner, global hooks or endpoint dependency.
 This request registers future work only; no implementation or live changes.
-Remaining order: S16 -> S18 -> S12 -> S19 -> S20 -> S21 -> S6 -> S7. No stage is ACTIVE.
+Remaining order: S16 -> S18 -> S12 -> S19 -> S20 -> S21 -> S22 -> S6 -> S7. No stage is ACTIVE.
 The subsequent S21 request registers the discussed Linux-inspired capabilities.
 
 Plan-only addition2026-11-06/spec0.68: S19 Selected-folder content indexing is
@@ -31,7 +41,7 @@ provider cache eviction; qualify actual extraction/query/metadata/resource behav
 No indexing, download, schedule or implementation is activated by this request.
 
 Plan-only addition2026-11-06/spec0.68: S18 Contextual performance monitoring is
-NOT STARTED between S16 and S12. Remaining order S16 -> S18 -> S12 -> S19 -> S20 -> S21 -> S6 -> S7.
+NOT STARTED between S16 and S12. Remaining order S16 -> S18 -> S12 -> S19 -> S20 -> S21 -> S22 -> S6 -> S7.
 MONITOR-01..05 record a direct Statistics/Performance switch, CPU/GPU/current-drive/
 recursive-current-folder cards and Resource Monitor-inspired process/file details.
 Qualify actual source/privilege/I/O semantics and bounded visible-only collection

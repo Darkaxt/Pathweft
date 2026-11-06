@@ -1,10 +1,22 @@
 # Implementation and reconciliation
 
-Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.69, 2026-11-06,
+Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.70, 2026-11-06,
 including the user-authorized continued comparison requirement TRANSFER-07.
 
+Plan addition2026-11-06: S22 - Focused file workflow enhancements is NOT STARTED
+immediately after Linux-inspired S21 and before S6. OPUS-01..10 register named
+project workspaces, paired navigation, expandable/flat browsing, persistent
+collections, operation history and listing export, followed by lower-priority
+aliases, image marking and batch embedded-metadata/timestamp editing. Prefer
+focused implementation in existing Pathweft owners; bounded REA only for a
+concrete unresolved behavior/interoperability question, with qualified artifacts
+and retained evidence before adoption. No installed Opus dependency or generic
+framework. No criteria verified, stage activated, blocker asserted unresolvable
+or tracked deferral introduced. Documentation only; remaining order:
+S16 -> S18 -> S12 -> S19 -> S20 -> S21 -> S22 -> S6 -> S7.
+
 Plan addition2026-11-06: S21 - Browsing productivity and smart destinations is
-NOT STARTED after S20 and before S6. BROWSE-01..12 register the accepted Linux
+NOT STARTED after S20 and before S22. BROWSE-01..12 register the accepted Linux
 suggestions and unified address dropdown: recent/pinned/open-tab/saved-query/path
 matches; saved searches; configurable actions; per-folder profiles; recursive
 comparison/reviewed sync; tags/ratings/comments; embedded synchronized terminal;
@@ -13,7 +25,7 @@ Reuse existing working features/owners, preserve address drafts/focus and user/
 remote data, and qualify actual storage/runtime/protocol/resource boundaries.
 No criteria are verified, no unresolvable blocker or tracked deferral is claimed,
 and no stage is ACTIVE. This request updates documents only. Remaining order:
-S16 -> S18 -> S12 -> S19 -> S20 -> S21 -> S6 -> S7.
+S16 -> S18 -> S12 -> S19 -> S20 -> S21 -> S22 -> S6 -> S7.
 
 Plan addition2026-11-06: S20 - Integrated PowerToys file tools is NOT STARTED
 after S19 and before S21. TOOLS-01..09 cover source-borrowed PowerRename, File
@@ -36,7 +48,7 @@ This is documentation only; no indexer, schedule, download or settings change.
 No tracked deferral or ACTIVE stage is introduced.
 
 Plan addition2026-11-06: S18 - Contextual performance monitoring is NOT STARTED,
-between S16 and S12. Remaining execution order: S16 -> S18 -> S12 -> S19 -> S20 -> S21 -> S6 -> S7.
+between S16 and S12. Remaining execution order: S16 -> S18 -> S12 -> S19 -> S20 -> S21 -> S22 -> S6 -> S7.
 MONITOR-01..05 cover the Statistics/Performance toggle, four contextual cards,
 Resource Monitor-inspired process/file details, qualified measurements and bounded
 visible-only collection. This is documentation-only authorization; no stage is
@@ -864,8 +876,9 @@ plan neither authorizes itself nor adds approval checkpoints.
 | S12 - Tresorit capability investigation | NOT STARTED | TRES-01..04 | S15 delivered; S16 and S18 considered first in the selected execution order | Supported API/client assessment, bounded REA as needed, evidence-backed capability matrix/decision and implementation proposal. Investigation only; no cloud mutation or integration implementation. |
 | S19 - Selected-folder content indexing | NOT STARTED | CONTENT-01..06; affected SEARCH/CORE/LIFE/DELIVERY | After S12 in the selected execution order; qualify extractor APIs, query/location semantics, provider metadata and resource budgets | Toolbar folder opt-in/current magnifier badges; qualified Craft/text extraction; persisted searchable strings and location arrays, periodic incremental refresh and cloud-cache independence. Verify actual search/open/freshness/recovery and one final independently/installed verified release when implementation is authorized. No criteria verified yet. |
 | S20 - Integrated PowerToys file tools | NOT STARTED | TOOLS-01..09; affected CORE/LIFE/DELIVERY and existing rename/preview/clipboard actions | After S19, before S21; qualify pinned donor boundaries/dependencies before acceptance | Integrated rename, file-holder discovery, image resizing, preview OCR, structured .reg preview, Paste as file and lower-priority templates; real workflow/data/Undo/lifecycle/resource checks and one final independently/installed verified release when implementation is authorized. No criteria verified yet; no tracked deferrals. |
-| S21 - Browsing productivity and smart destinations | NOT STARTED | BROWSE-01..12; affected SEARCH/CORE/LIFE/DELIVERY and existing browsing/operation owners | After S20 and before S6; S19 content-query capability; qualify metadata storage, terminal/protocol/donor boundaries | Address suggestions/history/pins/tab switching and saved searches; configurable actions/profiles; recursive compare/reviewed sync; tags/ratings/comments; embedded terminal; direct SSH/SFTP/WebDAV; local filtering and link tools. Verify all real workflows, preservation/privacy/resources and one final independently/installed verified release after implementation authorization. None verified; no tracked deferrals. |
-| S6 - Native StartAllBack search | BLOCKED | SAB-01..06; affected SEARCH/CORE/LIFE/DELIVERY criteria | Parked until preceding Pathweft-first work through S21 is closed and execution is resumed; retain unresolved native feasibility boundaries | Investigation only; no complete SAB criterion. Qualify native groups/provider/cancellation/handoff/lifecycle/direct routing and independently verified adapter release in S6; no automatic Sandbox restart. |
+| S21 - Browsing productivity and smart destinations | NOT STARTED | BROWSE-01..12; affected SEARCH/CORE/LIFE/DELIVERY and existing browsing/operation owners | After S20 and before S22; S19 content-query capability; qualify metadata storage, terminal/protocol/donor boundaries | Address suggestions/history/pins/tab switching and saved searches; configurable actions/profiles; recursive compare/reviewed sync; tags/ratings/comments; embedded terminal; direct SSH/SFTP/WebDAV; local filtering and link tools. Verify all real workflows, preservation/privacy/resources and one final independently/installed verified release after implementation authorization. None verified; no tracked deferrals. |
+| S22 - Focused file workflow enhancements | NOT STARTED | OPUS-01..10; affected CORE/LIFE/DELIVERY and existing tabs/panes/operations/previews/settings | After S21 and before S6; qualify supported metadata writes and any concrete REA boundary before acceptance | Named workspaces, paired navigation, ordinary expandable/flat browsing, persistent collections, operation history and listing export; lower-priority aliases/image marking/batch metadata. Verify all actual workflows, preservation, restart/privacy/resources and one final independently/installed verified release after implementation authorization. None verified; no tracked deferrals. |
+| S6 - Native StartAllBack search | BLOCKED | SAB-01..06; affected SEARCH/CORE/LIFE/DELIVERY criteria | Parked until preceding Pathweft-first work through S22 is closed and execution is resumed; retain unresolved native feasibility boundaries | Investigation only; no complete SAB criterion. Qualify native groups/provider/cancellation/handoff/lifecycle/direct routing and independently verified adapter release in S6; no automatic Sandbox restart. |
 | S7 - Everything filesystem search and Outlook indexing scope | NOT STARTED | EVERYWHERE-01..05; affected SEARCH/CORE/LIFE/SHELL criteria | S6 COMPLETE; consumer/semantics/scope inventory before migration | Final dependent Windows-search work: real Everything file results with selected roots excluded from indexing, WSearch/Outlook retained, explicit exceptions, mail/reboot/recovery and verified migration/package delivery in S7. |
 
 ENV-01..04 belong to the current setup deliverable, not an artificial product
@@ -916,6 +929,7 @@ owns its complete release/delivery gate; S12 delivers research documents only.
 | CONTENT-01..06 | S19 | Selected-folder content extraction, compact searchable strings/location arrays, periodic freshness/current badges, original-file navigation and verified final delivery after implementation authorization |
 | TOOLS-01..09 | S20 | Seven source-borrowed PowerToys capabilities in native Pathweft workflows; New+ lower priority but required, actual Windows/file/clipboard/lifecycle/resource qualification and verified final delivery after implementation authorization |
 | BROWSE-01..12 | S21 | Accepted Linux-inspired browsing features and unified recent/pinned/tab/saved-query/path suggestions; actual UI/state/filesystem/terminal/protocol preservation and resource qualification, then verified final delivery after implementation authorization |
+| OPUS-01..10 | S22 | Focused Opus-inspired workspaces/navigation/browsing/collections/history/export and lower-priority aliases/image marking/batch metadata; direct implementation or bounded evidence-qualified REA, actual complete workflows and verified final delivery after implementation authorization |
 | PREVIEW-21..36 | S13 | All fourteen remaining specialist categories, exact format coverage, integrated qualification and final release/installed verification in S13 |
 | PREVIEW-19 | S8 | Canonical drive/share identity for static HTML, retained isolation and final1.1.16 delivery |
 | PREVIEW-20 | S8 | Patched Marked and FriBidi, preserved native media contract, source/notice closure and final1.1.17 delivery |

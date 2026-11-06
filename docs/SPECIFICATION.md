@@ -1,16 +1,27 @@
 # Pathweft specification
 
-Version 0.69 - 2026-11-06. Owner: Darkaxt.
+Version 0.70 - 2026-11-06. Owner: Darkaxt.
+
+Plan addition2026-11-06: S22 - Focused file workflow enhancements is NOT STARTED,
+immediately after Linux-inspired S21 and before S6. OPUS-01..10 register named
+project workspaces, paired navigation, expandable/flat browsing, persistent
+collections, operation history, listing export and lower-priority aliases,
+photo marking and batch embedded-metadata editing. Implement focused behavior
+inside Pathweft; use bounded REA only for a concrete unresolved behavior or
+interoperability question. No Directory Opus installation/runtime dependency.
+This request records future scope only; no implementation, uninstall, settings
+change or stage activation. Remaining order:
+S16 -> S18 -> S12 -> S19 -> S20 -> S21 -> S22 -> S6 -> S7.
 
 Plan addition2026-11-06: S21 - Browsing productivity and smart destinations is
-NOT STARTED after S20 and before S6. BROWSE-01..12 register the discussed
+NOT STARTED after S20 and before S22. BROWSE-01..12 register the discussed
 Linux-inspired capabilities and browser-style address suggestions, including
 recent/pinned folders, open tabs, saved searches and filesystem completions.
 The user's latest instruction supersedes the earlier research-only treatment
 of those suggestions by adding them to the future plan; it does not authorize
 implementation, connection, metadata/source mutation or live configuration.
 No implementation stage is ACTIVE. Remaining order:
-S16 -> S18 -> S12 -> S19 -> S20 -> S21 -> S6 -> S7.
+S16 -> S18 -> S12 -> S19 -> S20 -> S21 -> S22 -> S6 -> S7.
 
 Plan addition2026-11-06: S20 - Integrated PowerToys file tools is NOT STARTED
 after S19 and before S21. TOOLS-01..09 register the seven discussed capabilities:
@@ -33,7 +44,7 @@ schedules, settings changes or implementation are activated.
 
 Plan addition2026-11-06: S18 - Contextual performance monitoring is NOT STARTED,
 ordered after S16 and before S12. Remaining execution order is
-S16 -> S18 -> S12 -> S19 -> S20 -> S21 -> S6 -> S7. This request authorizes specification/plan changes
+S16 -> S18 -> S12 -> S19 -> S20 -> S21 -> S22 -> S6 -> S7. This request authorizes specification/plan changes
 only; it does not activate monitoring, tracing, privileged helpers or installation.
 MONITOR-01..05 below capture the agreed bottom-card and Resource Monitor-inspired
 detail behavior. No implementation stage is ACTIVE.
@@ -1449,7 +1460,7 @@ remain unqualified. No tracked deferral or ACTIVE stage is introduced.
 
 ### Browsing productivity and smart destinations (S21)
 
-Planned after S20 and before S6; NOT STARTED. The user registered the Linux
+Planned after S20 and before S22; NOT STARTED. The user registered the Linux
 comparison's suggested features and the agreed browser-style address dropdown
 as one future stage. This extends existing browsing rather than replacing its
 working commands or importing a whole donor application. Scope registration
@@ -1483,6 +1494,50 @@ No acceptance criterion is implemented or verified for S21. Metadata storage,
 terminal hosting/synchronization, protocol libraries and donor suitability remain
 ordinary design/qualification work, not asserted external blockers. No tracked
 deferral or ACTIVE stage is introduced; S19 and S20 retain their own scope.
+
+### Focused file workflow enhancements (S22)
+
+Planned immediately after Linux-inspired S21 and before S6; NOT STARTED. The
+user registered the Directory Opus assessment's useful additions, including its
+lower-priority candidates. Favor direct implementation using existing tabs,
+panes, operations, preview and settings owners. This is not whole-product parity,
+a new scripting/plugin framework or a dependency on an installed Opus client.
+This plan-only request does not activate implementation or uninstall Opus.
+
+| ID | Requirement and acceptance |
+| --- | --- |
+| OPUS-01 | Add named project workspaces containing left/right tab sets and active folders/pane. Provide explicit add-to-current versus replace-current restoration, preserving current session/pinned-tab behavior and relevant S21 view-profile rules. Reuse existing settings/session owners rather than creating a separate window-management framework. Verify save, rename, remove, restart and restore with unavailable destinations and unsaved editor state handled through existing preservation contracts; removing a workspace never deletes its files. |
+| OPUS-02 | Add explicit paired-folder roots and opt-in linked relative navigation between two panes or a designated tab pair. Navigating below one root resolves the counterpart below the other; missing counterparts are visibly explained without automatic folder creation, copy or synchronization. Define rebase/unlink and tab-close/navigation behavior, preserving independent use when unlinked. Qualify actual source/deployment-style navigation and missing/renamed destinations; S21 continues to own recursive comparison and reviewed file synchronization. |
+| OPUS-03 | Extend ordinary browsing with inline expandable folders and reversible flat descendant views, with a Location column where needed. Reuse qualified disk-analysis tree/browsing components while keeping analysis mode distinct. Preserve actual source paths, existing hidden/link traversal policy, selection/focus, view restoration and bounded/cancellable enumeration. Nested selections must not duplicate transfer work; flat/tree copy choices must clearly distinguish preserving relative hierarchy from flattening and use existing conflict/operation ownership. Qualify navigation, refresh, nested actions and actual resulting files, not tree rendering alone. |
+| OPUS-04 | Add named persistent file collections referencing items across directories without moving originals. Extend existing Drop bin concepts while preserving its temporary transfer workflow; collections are distinct from S21's live saved searches. Support adding/removing references, rename/remove of a collection, containing-folder navigation and existing explicit file actions. Clearly distinguish Remove from collection from Delete original. Define moved/missing/offline member behavior and verify restart persistence, multi-root actions and original-file preservation. |
+| OPUS-05 | Add bounded persistent operation history showing actual result, time, source/destination and containing-folder actions, plus a usable list of currently eligible Undo actions. Reuse transfer/file-operation completion and Undo owners, retaining truthful partial/error/cancelled outcomes after cards close. A persisted log must not serialize executable delegates, replay operations automatically or imply safe undo after restart; preserve existing eligibility and qualify stale/conflicting destinations before any undo action. Verify completed/failed/cancelled jobs, restart history, retention/privacy and actual eligible Undo outcomes. |
+| OPUS-06 | Add copying selected table rows/columns and exporting the current visible listing to CSV/TSV, with explicit column/header and current-view scope. Preserve displayed order/filtering and resolve actual nested/virtual paths consistently. Qualify escaping of delimiters, quotes, line breaks and Unicode and round-trip the exported values; preserve clipboard ownership and do not read file contents, hydrate sources or start recursive scans merely to export displayed metadata. A general printing subsystem is outside this requirement. |
+| OPUS-07 | Add lower-priority user-defined path aliases as stable named destinations integrated into S21 address suggestions. Define unambiguous syntax, validation and precedence with real paths, history, pins and saved searches; support rename/remove and restart persistence. Missing/offline targets must not redirect to another destination silently. Qualify expansion, completion, Unicode/UNC targets and preservation of address drafts/focus. Aliases change navigation references only, not source paths. |
+| OPUS-08 | Add lower-priority image picking/marking in the preview with a collection-backed set and navigation through marked images. Keep marks separate from current file selection, S21 ratings and the preview pin/follow state. Qualify marking/unmarking, persistence, missing members, next/previous navigation and sidebar/PiP/Windowed host transitions without unexpected file moves/deletions or retained renderer resources. |
+| OPUS-09 | Add lower-priority batch embedded-metadata editing and timestamp adjustment for explicitly qualified writable formats/properties. Integrate mixed-value presentation and reviewed apply/cancel with existing Properties/operation ownership and S21 metadata contracts. Establish a concrete supported format/property matrix before implementation; preserve unedited metadata, file content and existing filesystem/provider capabilities. Do not assume NTFS alternate streams are portable or write unsupported cloud metadata silently. Qualify actual write/reopen, unrelated-field preservation, unsupported/read-only sources, partial failure and cancellation; document available Undo/recovery honestly. |
+| OPUS-10 | Verify all nine complete integrated workflows with actual UI/state/filesystem/clipboard/preview boundaries, errors/cancellation, restart/privacy and source preservation. Measure added package/idle/peak costs and bound collection/history/enumeration work. Public documentation establishes behavior references, not compatibility or binary reuse. Any unresolved question requiring REA must have a bounded objective, identified qualified artifact, retained evidence and matching runtime verification before adopting behavior/hooks. No Opus DLL reuse or installed-app dependency is qualified by this assessment. S22 owns one normal final release, corresponding source/notices, independent retrieval and applicable installed verification when implementation is separately authorized; no per-feature releases. |
+
+Priority follows the assessment: workspaces, paired navigation, expandable/flat
+browsing, collections, operation history and listing export first; aliases,
+image marking and batch metadata afterward. Lower priority does not remove any
+registered requirement from S22 acceptance. Existing S20/S21 features remain
+with their current owners and are not duplicate implementations in S22.
+
+Behavior references: [tab groups](https://docs.dopus.com/doku.php?id=preferences:preferences_categories:folder_tabs:groups),
+[navigation lock](https://docs.dopus.com/doku.php?id=basic_concepts:the_lister:dual_display:navigation_lock),
+[expandable folders](https://docs.dopus.com/doku.php?id=basic_concepts:expandable_folders),
+[flat view](https://docs.dopus.com/doku.php?id=basic_concepts:flat_view),
+[collections](https://docs.dopus.com/doku.php?id=basic_concepts:virtual_file_system:file_collections),
+[operation history](https://docs.dopus.com/doku.php?id=file_operations:tracking_and_undoing_file_operations),
+[listing export](https://docs.dopus.com/doku.php?id=additional_functionality:print_folder),
+[aliases](https://docs.dopus.com/doku.php?id=basic_concepts:the_lister:navigation:aliases),
+[image marking](https://docs.dopus.com/doku.php?id=additional_functionality:viewing_images:image_marking)
+and [metadata editing](https://docs.dopus.com/doku.php?id=file_operations:editing_metadata).
+These are reference documentation, not adopted source pins or runtime acceptance.
+
+No S22 criterion is implemented or verified. No stage is ACTIVE, no blocker is
+asserted unresolvable and no tracked deferral is introduced. Artifact/API/format
+qualification remains future stage work, not a reason to activate it now.
 
 ### Lifecycle, shell integration and final delivery
 
