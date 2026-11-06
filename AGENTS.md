@@ -1,5 +1,13 @@
 # Pathweft development
 
+Plan-only addition2026-11-06/spec0.66: S18 Contextual performance monitoring is
+NOT STARTED between S16 and S12. Remaining order S16 -> S18 -> S12 -> S6 -> S7.
+MONITOR-01..05 record a direct Statistics/Performance switch, CPU/GPU/current-drive/
+recursive-current-folder cards and Resource Monitor-inspired process/file details.
+Qualify actual source/privilege/I/O semantics and bounded visible-only collection
+before acceptance. This document request does not authorize implementation,
+tracing/helper deployment or live changes; no stage is ACTIVE. S17 stays COMPLETE.
+
 Current2026-11-06 delivery: S17 COMPLETE through installed1.1.24 acceptance.
 Normal v1.1.24/abacf417 is published with all six required assets. Independent
 download/source/native/app verification passes, including the full actual

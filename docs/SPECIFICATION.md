@@ -1,6 +1,13 @@
 # Pathweft specification
 
-Version 0.65 - 2026-11-06. Owner: Darkaxt.
+Version 0.66 - 2026-11-06. Owner: Darkaxt.
+
+Plan addition2026-11-06: S18 - Contextual performance monitoring is NOT STARTED,
+ordered after S16 and before S12. Remaining execution order is
+S16 -> S18 -> S12 -> S6 -> S7. This request authorizes specification/plan changes
+only; it does not activate monitoring, tracing, privileged helpers or installation.
+MONITOR-01..05 below capture the agreed bottom-card and Resource Monitor-inspired
+detail behavior. No implementation stage is ACTIVE.
 
 Execution reconciliation2026-11-06: S17 COMPLETE. TRANSFER-16, PREVIEW-38 and
 CORE-22 are delivered in normal v1.1.24 at abacf4171f753616dd50ac2233b58df364036692.
@@ -1325,6 +1332,24 @@ as part of recording this plan.
 | JUMP-02 | Folder destinations launch Pathweft directly with the correct Unicode/quoted path in cold and running-instance states, independently of the optional default-folder setting. Qualify virtual/offline destinations explicitly and preserve existing open/reveal semantics. Add applicable tasks through existing application actions, not a second manager. Verify actual native Jump List contents and user pin/unpin/open/remove behavior, restart/update/uninstall ownership and final release delivery. StartAllBack is a caller-compatibility check for this native feature, not permission to resume S6 or restart Sandbox. |
 
 Native reference: [Microsoft WPF JumpList](https://learn.microsoft.com/en-us/dotnet/api/system.windows.shell.jumplist).
+
+### Contextual performance monitoring (S18)
+
+Planned after S16 and before S12; NOT STARTED. Reuse the bottom summary area and
+Pathweft's current design. Resource Monitor is a behavioral reference for
+process/file attribution, not a requirement to reproduce its entire interface.
+
+| ID | Requirement and acceptance |
+| --- | --- |
+| MONITOR-01 | Provide a directly accessible Statistics/Performance toggle for the current pane's bottom cards, preserving the ordinary file view and existing statistics. Performance presents four compact cards in order: CPU utilization/history; GPU utilization/name/memory with adapter selection where multiple GPUs exist; current-drive read/write throughput/activity; current-folder read/write throughput including descendants. Retain readable Pathweft proportions, theme, scaling and responsive layout. |
+| MONITOR-02 | Clicking a card directly reveals its relevant details in Pathweft-styled tables without an intermediary single-action overflow menu. Drive/folder details attribute activity to Process, PID, File, Read/s, Write/s and Total/s; folder scope follows the current path and descendants. CPU/GPU details explain the displayed utilization through the qualified data source. Preserve current browsing and support returning to the compact cards. |
+| MONITOR-03 | Establish actual Windows counter/event sources and required privileges before selecting implementation. Distinguish file-level logical I/O, including cached requests, from physical device activity; do not infer throughput from folder-size changes. Define current volume/device mapping and qualify mapped, virtual/cloud and unavailable sources explicitly. Missing access, unsupported measurements or incomplete/lost observations must be visibly distinguished from zero activity. Verify path attribution, process identity/reuse and navigation scope; assess overhead with actual workloads. |
+| MONITOR-04 | Collect detailed monitoring only while its Performance view is visible. Use bounded history/buffers and event/state-based ownership; release collectors and any owned helpers when hidden, navigation replaces scope or the app exits. Reuse existing pane ownership and preserve transfers, preview sessions, settings and other consumers. Document any necessary privilege boundary; this planning request does not authorize starting a trace, changing system configuration or deploying a helper. |
+| MONITOR-05 | Qualify the complete toggle -> live cards -> attributed details -> scope change -> return/cleanup workflow against real known CPU/GPU and file read/write activity. Cover cached I/O semantics, other-process activity, multiple GPU/device selection where available, unsupported/access-denied states, independent panes, cancellation/exit and dark/light/scaled layouts. Measure CPU/memory/collection overhead and establish concrete budgets before implementation acceptance; do not claim resource neutrality from appearance. S18 owns normal release, independent retrieval and applicable installed verification after implementation is separately authorized. |
+
+Before implementation activation, resolve collector feasibility, privilege handling,
+measurement definitions and numerical resource budgets within this existing scope.
+No extra monitoring categories or system-management actions are implied.
 
 ### Tresorit capability investigation (S12)
 

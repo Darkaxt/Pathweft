@@ -1,7 +1,16 @@
 # Implementation and reconciliation
 
-Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.65, 2026-11-06,
+Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.66, 2026-11-06,
 including the user-authorized continued comparison requirement TRANSFER-07.
+
+Plan addition2026-11-06: S18 - Contextual performance monitoring is NOT STARTED,
+between S16 and S12. Remaining execution order: S16 -> S18 -> S12 -> S6 -> S7.
+MONITOR-01..05 cover the Statistics/Performance toggle, four contextual cards,
+Resource Monitor-inspired process/file details, qualified measurements and bounded
+visible-only collection. This is documentation-only authorization; no stage is
+activated and no collector/helper/system configuration is changed. No criteria
+are satisfied yet; source/privilege feasibility and resource budgets must be
+resolved before implementation acceptance. No tracked deferral is introduced.
 
 Current delivery2026-11-06: S17 COMPLETE through the user-owned installed1.1.24
 update and readback35716. Normal v1.1.24 is published
@@ -819,7 +828,8 @@ plan neither authorizes itself nor adds approval checkpoints.
 | S15 - Current-pane disk analysis | COMPLETE | SPACE-01..05, CORE-11/19..21, TRANSFER-15; affected CORE/LIFE/DELIVERY | S14 source/integration COMPLETE | Source/native acceptance plus full final57312/independent51296 and installed58076 close normal1.1.23 delivery. No required blocker or deferral remains. |
 | S17 - Transfer review, preview and icon refinements | COMPLETE | TRANSFER-16, PREVIEW-38, CORE-22; affected LIFE/DELIVERY | S15 delivered | Difference-only review/newer warnings/full-set actions; selection-following/pinned PiP/Windowed; transparent folder/compass icon and preserved Windows identity. Normal1.1.24 independently downloaded and installed-verified. |
 | S16 - Craft core refresh and additional renderers (proposed) | NOT STARTED | Scope assessment in CRAFT-CORE-REVIEW.md; implementation requirements to establish before activation | S15 delivered; Pathweft-related work precedes unrelated shell integration | Evaluate existing Office core refresh and additional Photo/Vector/Fig/PDF libraries using source-built DLLs/owned workers; no installed-product or MCP dependency. No implementation started. |
-| S12 - Tresorit capability investigation | NOT STARTED | TRES-01..04 | S15 delivered; proposed S16 considered first | Supported API/client assessment, bounded REA as needed, evidence-backed capability matrix/decision and implementation proposal. Investigation only; no cloud mutation or integration implementation. |
+| S18 - Contextual performance monitoring | NOT STARTED | MONITOR-01..05; affected CORE-03/LIFE/DELIVERY | S16 closed under the selected execution order; source/privilege feasibility and concrete resource budgets resolved before implementation acceptance | Direct Statistics/Performance toggle; CPU/GPU/current-drive/current-folder cards; attributed process/file details; real workload/path/device qualification, bounded visible-only sampling and cleanup; one final independently/installed verified release when implementation is authorized. No criteria verified yet. |
+| S12 - Tresorit capability investigation | NOT STARTED | TRES-01..04 | S15 delivered; S16 and S18 considered first in the selected execution order | Supported API/client assessment, bounded REA as needed, evidence-backed capability matrix/decision and implementation proposal. Investigation only; no cloud mutation or integration implementation. |
 | S6 - Native StartAllBack search | BLOCKED | SAB-01..06; affected SEARCH/CORE/LIFE/DELIVERY criteria | Parked until Pathweft-first work S13/S9/S11/S12 is closed and execution is resumed; retain unresolved native feasibility boundaries | Investigation only; no complete SAB criterion. Qualify native groups/provider/cancellation/handoff/lifecycle/direct routing and independently verified adapter release in S6; no automatic Sandbox restart. |
 | S7 - Everything filesystem search and Outlook indexing scope | NOT STARTED | EVERYWHERE-01..05; affected SEARCH/CORE/LIFE/SHELL criteria | S6 COMPLETE; consumer/semantics/scope inventory before migration | Final dependent Windows-search work: real Everything file results with selected roots excluded from indexing, WSearch/Outlook retained, explicit exceptions, mail/reboot/recovery and verified migration/package delivery in S7. |
 
@@ -866,6 +876,7 @@ owns its complete release/delivery gate; S12 delivers research documents only.
 | TRANSFER-16 | S17 | Metadata-difference review, newer-destination ordering/warnings, matching-file reveal, full-set choices, distinguishing values and verified next release |
 | PREVIEW-38 | S17 | Selection-following PiP/Windowed, preserved host state/teardown, small accessible glyphs and combined next release |
 | CORE-22 | S17 | Approved yellow folder/darker compass icon, transparent multiresolution assets, embedded WPF/native use and unchanged Windows identity |
+| MONITOR-01..05 | S18 | Contextual performance cards/details, qualified Windows measurement/attribution, bounded visible-only ownership and verified final delivery after implementation authorization |
 | TRES-01..04 | S12 | Evidence-backed Tresorit investigation and implementation proposal; execution remains NOT STARTED |
 | PREVIEW-21..36 | S13 | All fourteen remaining specialist categories, exact format coverage, integrated qualification and final release/installed verification in S13 |
 | PREVIEW-19 | S8 | Canonical drive/share identity for static HTML, retained isolation and final1.1.16 delivery |
