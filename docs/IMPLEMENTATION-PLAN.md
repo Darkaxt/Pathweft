@@ -3,7 +3,7 @@
 Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.71, 2026-11-06,
 including the user-authorized continued comparison requirement TRANSFER-07.
 
-Current2026-11-06: S23 Missing-folder tab recovery is ACTIVE for CORE-23 and
+Current2026-11-06: S23 Missing-folder tab recovery is COMPLETE for CORE-23 and
 affected CORE/LIFE/DELIVERY behavior. Source92776 and actual Release consumer93428
 verify nearest-existing ancestor recovery, selected header/list, keyboard/external
 activation, restored pin/order/settings identity, archive/UNC preservation and
@@ -11,8 +11,10 @@ actual access-denied behavior. All original integrated consumer assertions pass.
 The corrected consumer restores its isolated initial folder; no assertion was
 weakened. Normal v1.1.25/11e5d292 is published with all six required assets;
 independent downloaded-source/native/app verification passes in consumer87644.
-Remaining: applicable installed readback after the requested user-owned update.
-That acceptance criterion blocks closure; no tracked deferral is asserted.
+Installed readback94548 verifies10674 matching members, restarted main78384/
+helper59432, helper readiness,22 owned routes and preserved shortcut/profile
+identity. The user confirms the updated behavior. All acceptance criteria pass;
+none remain, no blocker or tracked deferral remains, and no stage is ACTIVE.
 S16/S18/S12/S19/S20/S21/S22/S6/S7 remain unactivated.
 
 Plan addition2026-11-06: S22 - Focused file workflow enhancements is NOT STARTED
@@ -883,7 +885,7 @@ plan neither authorizes itself nor adds approval checkpoints.
 | S14 - Window design consistency and update feedback | COMPLETE | WINDOW-01..03, UPDATE-02, TRANSFER-14; affected CORE-03/LIFE/DELIVERY | S11 source/integration COMPLETE | Actual auxiliary/HTTP/update91140, real completion/error/multi-job transfer102436 and floating-preview lifecycle103700 pass. Combined delivery remains S15. |
 | S15 - Current-pane disk analysis | COMPLETE | SPACE-01..05, CORE-11/19..21, TRANSFER-15; affected CORE/LIFE/DELIVERY | S14 source/integration COMPLETE | Source/native acceptance plus full final57312/independent51296 and installed58076 close normal1.1.23 delivery. No required blocker or deferral remains. |
 | S17 - Transfer review, preview and icon refinements | COMPLETE | TRANSFER-16, PREVIEW-38, CORE-22; affected LIFE/DELIVERY | S15 delivered | Difference-only review/newer warnings/full-set actions; selection-following/pinned PiP/Windowed; transparent folder/compass icon and preserved Windows identity. Normal1.1.24 independently downloaded and installed-verified. |
-| S23 - Missing-folder tab recovery | ACTIVE | CORE-23; affected CORE/LIFE/DELIVERY | User-reported vanished local version folder; correction precedes future feature stages | Source92776 and actual Release consumer88352 pass recovered tab/header/list, restore/pins/settings, keyboard/external activation, archive/UNC and access-denied preservation. Final corrected-source package, normal publication, independent delivery and applicable installed readback remain. No tracked deferrals. |
+| S23 - Missing-folder tab recovery | COMPLETE | CORE-23; affected CORE/LIFE/DELIVERY | User-reported vanished local version folder; correction precedes future feature stages | Source92776, final Release93428 and independent retrieved87644 pass recovery/restoration and preservation regressions. Normal1.1.25/11e5d292 published with verified sources/assets. Installed94548 verifies matching files, restarted app/helper, readiness, routes and shortcut/profile identity; user confirms behavior. No remaining criteria, blockers or tracked deferrals. |
 | S16 - Craft core refresh and additional renderers (proposed) | NOT STARTED | Scope assessment in CRAFT-CORE-REVIEW.md; implementation requirements to establish before activation | S15 delivered; Pathweft-related work precedes unrelated shell integration | Evaluate existing Office core refresh and additional Photo/Vector/Fig/PDF libraries using source-built DLLs/owned workers; no installed-product or MCP dependency. No implementation started. |
 | S18 - Contextual performance monitoring | NOT STARTED | MONITOR-01..05; affected CORE-03/LIFE/DELIVERY | S16 closed under the selected execution order; source/privilege feasibility and concrete resource budgets resolved before implementation acceptance | Direct Statistics/Performance toggle; CPU/GPU/current-drive/current-folder cards; attributed process/file details; real workload/path/device qualification, bounded visible-only sampling and cleanup; one final independently/installed verified release when implementation is authorized. No criteria verified yet. |
 | S12 - Tresorit capability investigation | NOT STARTED | TRES-01..04 | S15 delivered; S16 and S18 considered first in the selected execution order | Supported API/client assessment, bounded REA as needed, evidence-backed capability matrix/decision and implementation proposal. Investigation only; no cloud mutation or integration implementation. |

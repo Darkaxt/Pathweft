@@ -2,7 +2,7 @@
 
 Version 0.71 - 2026-11-06. Owner: Darkaxt.
 
-Bug correction2026-11-06: S23 - Missing-folder tab recovery is ACTIVE under the
+Bug correction2026-11-06: S23 - Missing-folder tab recovery is COMPLETE under the
 user's requested fix. CORE-23 requires selectable tabs when an old local folder
 has disappeared: resolve confirmed missing descendants to the nearest existing
 directory, however many parent levels are needed, and persist the repaired tab.
@@ -11,7 +11,9 @@ normal filesystem/archive navigation, and normal unavailable/access-denied state
 Do not reinterpret a disconnected drive/network provider as a deleted folder or
 block the UI on network recovery. Verify actual tab clicks, keyboard/external
 activation, restored state and ancestor listing, then deliver one normal verified
-release under DELIVERY-01..03. No later feature stage is activated.
+release under DELIVERY-01..03. Verified through published/independently retrieved
+and installed1.1.25 acceptance; see the S23 verification record. No later feature
+stage is activated.
 
 Plan addition2026-11-06: S22 - Focused file workflow enhancements is NOT STARTED,
 immediately after Linux-inspired S21 and before S6. OPUS-01..10 register named

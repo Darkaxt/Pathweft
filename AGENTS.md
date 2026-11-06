@@ -1,15 +1,14 @@
 # Pathweft development
 
-Current2026-11-06/spec0.71: S23 Missing-folder tab recovery is the single ACTIVE
-stage for CORE-23. Fix confirmed missing local tab paths by climbing to the
-nearest existing ancestor; preserve tab order/pins/restoration and offline or
-inaccessible destinations. Correct activation/header/list state, qualify actual
-tab workflows, then publish and independently verify the normal final release.
-Normal1.1.25/11e5d292 is now published; independent retrieved consumer87644 and
-source/native/asset checks pass. S23 remains ACTIVE only for installed acceptance
-after the requested user-owned update; live1.1.24 has not been closed or replaced
-by the agent. See docs/verification/2026-11-06-s23-tabs.md.
-Later plan-only checkpoints below do not override this active correction.
+Current2026-11-06/spec0.71: S23 Missing-folder tab recovery is COMPLETE for
+CORE-23 and affected CORE/LIFE/DELIVERY behavior. Normal1.1.25/11e5d292 is
+published; source/native/assets and independent retrieved consumer87644 pass.
+User confirms the update and behavior. Installed readback94548 verifies10674
+members, restarted main78384/helper59432, helper readiness,22 owned routes and
+preserved Darkaxt.Pathweft shortcut/profile identity. All acceptance criteria
+pass; no unresolved blocker or tracked deferral. No stage is ACTIVE and no later
+stage is activated. See docs/verification/2026-11-06-s23-tabs.md.
+Later historical checkpoints below do not override this completed correction.
 
 Plan-only addition2026-11-06/spec0.70: S22 Focused file workflow enhancements
 is NOT STARTED immediately after Linux-inspired S21 and before S6. OPUS-01..10
