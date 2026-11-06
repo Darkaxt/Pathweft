@@ -1,5 +1,11 @@
 # Pathweft development
 
+Plan-only2026-11-06/spec0.72: CORE-24 is queued alongside S16 for the next
+planned release: enlarge taskbar icon visible artwork approximately10-15%
+relative to1.1.25, preserving design/transparency/bounds/Windows identity and
+qualifying actual packaged taskbar display scales. No stage is activated and
+no installed asset is changed by this request.
+
 Current2026-11-06/spec0.71: S23 Missing-folder tab recovery is COMPLETE for
 CORE-23 and affected CORE/LIFE/DELIVERY behavior. Normal1.1.25/11e5d292 is
 published; source/native/assets and independent retrieved consumer87644 pass.

@@ -1,6 +1,14 @@
 # Pathweft specification
 
-Version 0.71 - 2026-11-06. Owner: Darkaxt.
+Version 0.72 - 2026-11-06. Owner: Darkaxt.
+
+Next-release refinement2026-11-06: CORE-24 records the requested taskbar icon
+adjustment for the next planned release, alongside S16. Increase the visible
+folder/compass artwork by approximately10-15% relative to1.1.25, preserving its
+design, transparency and Windows application/shortcut/Jump List identity. Fit
+within the icon canvas without clipping; compare actual taskbar rendering and
+small-size legibility at representative display scales. This records future
+work only, without activating S16 or changing the installed icon.
 
 Bug correction2026-11-06: S23 - Missing-folder tab recovery is COMPLETE under the
 user's requested fix. CORE-23 requires selectable tabs when an old local folder
@@ -1063,6 +1071,7 @@ criteria apply within the implementing stage and again at the packaged boundary.
 | CORE-10 | S8 dynamic detail columns described in current scope; verify data-driven visibility, asynchronous metadata/results, width/sort preservation and contextual navigation. |
 | CORE-11 | S8 measured free-space percentages, shared capacity warning colors and provider-based cloud drive identity, as specified in current scope. Verify actual mounts and unavailable capacity. |
 | CORE-22 | S17 approved yellow-folder/dark-compass application icon. Transparent multiresolution assets must remain legible at small sizes, retain polished larger detail, appear in embedded WPF/native/package surfaces, and preserve the existing Windows application/shortcut/Jump List identity. |
+| CORE-24 | Next-release taskbar icon sizing: enlarge visible folder/compass artwork approximately10-15% relative to1.1.25 while preserving design, transparency, canvas bounds and Windows identity. Verify actual packaged taskbar appearance and small-size legibility at representative display scales. |
 
 On 2026-10-31, the user also requested EverythingToolbar's four inline search
 toggles: Match case, Match whole word, Match path and Regex. They belong at the
