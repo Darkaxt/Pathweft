@@ -12,6 +12,7 @@ sealed partial class PackageProbe
     async Task VerifyMissingTabs125()
     {
         var pane=(PaneView)owner.FindName("Left");
+        string originalDestination=pane.Dir;
         string parent=Directory.CreateDirectory(Path.Combine(root,"tab-parent é 子")).FullName;
         string old=Directory.CreateDirectory(Path.Combine(parent,"old","portable")).FullName;
         string other=Directory.CreateDirectory(Path.Combine(root,"tab-other")).FullName;
@@ -52,9 +53,9 @@ sealed partial class PackageProbe
         {
             denied.SetAccessControl(restricted);
             await Activate(()=>pane.Navigate(denied.FullName),denied.FullName,expectError:true);
-            Check(pane.Dir==denied.FullName&&pane.Items.Count==0,"Delivered access-denied tab stays selected at its original destination with an empty error listing");
+            Check(pane.Dir==denied.FullName&&!pane.Items.Any(),"Delivered access-denied tab stays selected at its original destination with an empty error listing");
         }
         finally{denied.SetAccessControl(original);}
-        await Activate(()=>pane.Restore(new(){root},0),root);
+        await Activate(()=>pane.Restore(new(){originalDestination},0),originalDestination);
     }
 }

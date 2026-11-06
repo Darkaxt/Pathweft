@@ -93,6 +93,8 @@ sealed partial class PackageProbe
         if(args.Length!=2)throw new ArgumentException("An owned fixture root and known indexed file are required.");
         root=Path.GetFullPath(args[0]);known=Path.GetFullPath(args[1]);
         if(!root.StartsWith(@"D:\Temp\pathweft-s8-delivery\verification-",StringComparison.OrdinalIgnoreCase)||!File.Exists(known))throw new ArgumentException("Unexpected verification scope.");
+        string initial=Directory.CreateDirectory(Path.Combine(Environment.GetEnvironmentVariable("PATHWEFT_PROFILE"),"initial-empty")).FullName;
+        File.WriteAllLines(Path.Combine(Environment.GetEnvironmentVariable("PATHWEFT_PROFILE"),"settings.txt"),new[]{"tabs.Left="+initial,"tabs.Right="+initial});
         var dispatcher=Dispatcher.CurrentDispatcher;
         var posted=new List<DispatcherOperation>();
         void Posted(object sender,DispatcherHookEventArgs e){if(e.Operation.Priority==DispatcherPriority.Send)posted.Add(e.Operation);}
