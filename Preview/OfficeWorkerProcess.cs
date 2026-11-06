@@ -22,6 +22,9 @@ internal sealed class OfficeWorkerProcess:IAsyncDisposable
     readonly CancellationTokenRegistration cancellation;
     bool disposed;
     internal int ProcessId=>process.Id;
+#if DEBUG
+    internal Action<OfficeWorker.Request> RequestSentForVerification {get;set;}
+#endif
 
     internal OfficeWorkerProcess(string directory,CancellationToken lifetime,bool libreOffice=false)
     {
@@ -71,6 +74,9 @@ internal sealed class OfficeWorkerProcess:IAsyncDisposable
             token.ThrowIfCancellationRequested();lifetime.ThrowIfCancellationRequested();
             if(disposed)throw new ObjectDisposedException(nameof(OfficeWorkerProcess));
             await OfficeWorker.Write(process.StandardInput.BaseStream,request);
+#if DEBUG
+            RequestSentForVerification?.Invoke(request);
+#endif
             string header=await OfficeWorker.ReadHeader(process.StandardOutput.BaseStream);
             if(header==null)
             {
@@ -90,6 +96,11 @@ internal sealed class OfficeWorkerProcess:IAsyncDisposable
                 if(pdfPayload)
                 {if(reply.Bytes is <1 or >64*1024*1024)throw new IOException("Invalid fallback display list response.");}
                 else if(reply.Width is <1 or >4096||reply.Height is <1 or >4096||reply.Bytes!=(long)reply.Width*reply.Height*4)throw new IOException("Invalid Office raster response.");
+                pixels=new byte[reply.Bytes];await process.StandardOutput.BaseStream.ReadExactlyAsync(pixels);
+            }
+            else if(request.Action=="extract")
+            {
+                if(reply.Bytes<1||reply.Bytes>request.Limit||reply.Bytes>48*1024)throw new IOException("Invalid Office text response.");
                 pixels=new byte[reply.Bytes];await process.StandardOutput.BaseStream.ReadExactlyAsync(pixels);
             }
             // Navigation cancellation discards this complete response; it cannot

@@ -5,17 +5,23 @@ import re
 import shutil
 import zipfile
 import importlib.util
+import argparse
 from pathlib import Path
 
 ROOT=Path(__file__).resolve().parents[1]
 spec=importlib.util.spec_from_file_location('craft_dependencies',ROOT/'scripts/Prepare-CraftOfficeDependencies.py')
 helper=importlib.util.module_from_spec(spec)
 spec.loader.exec_module(helper)
-manifest_path=ROOT/'vendor/Office/runtime-manifest.json'
+parser=argparse.ArgumentParser()
+parser.add_argument('--scratch-root',type=Path,default=Path('D:/Temp/pathweft-s13-s9-s11/craft-cores'))
+parser.add_argument('--manifest',type=Path,default=ROOT/'vendor/Office/runtime-manifest.json')
+parser.add_argument('--engine',action='append')
+args=parser.parse_args()
+manifest_path=args.manifest
 manifest=json.loads(manifest_path.read_text())
-scratch=Path('D:/Temp/pathweft-s13-s9-s11/craft-cores')
+scratch=args.scratch_root
 for app in manifest['apps']:
-    if app['id']=='gridcraft':continue # Native print painter does not use egui's font assets.
+    if app['id'] not in (args.engine or ('wordcraft','deckcraft')):continue
     donor=scratch/'sources'/app['id']
     workflow=(donor/'.github/workflows/release.yml').read_text()
     revision=re.search(r'craft-fonts-ref:\s*([0-9a-f]{40})',workflow).group(1)

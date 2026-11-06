@@ -28,7 +28,7 @@ $distribution=Get-Content -LiteralPath (Join-Path $repo 'vendor/Office/core-sour
 foreach($archive in $distribution.archives){CopyChecked (Join-Path $CacheRoot $archive.cache) ('dependencies/'+$archive.name) $archive.sha256}
 $fallback=Get-Content -LiteralPath (Join-Path $repo 'vendor/Office/libreoffice-runtime-manifest.json') -Raw|ConvertFrom-Json
 foreach($archive in $fallback.sources){CopyChecked (Join-Path $CacheRoot ('office/libreoffice/sources/'+$archive.name)) ('LibreOffice/'+$archive.name) $archive.sha256}
-foreach($name in @('README.md','runtime-manifest.json','libreoffice-runtime-manifest.json','libreoffice-dependencies.json','core-source-distribution.json','license-manifest.json','wordcraft-core-dependencies.json','gridcraft-core-dependencies.json','deckcraft-core-dependencies.json')){
+foreach($name in @('README.md','runtime-manifest.json','libreoffice-runtime-manifest.json','libreoffice-dependencies.json','core-source-distribution.json','license-manifest.json')+@($office.apps|ForEach-Object {$_.id+'-core-dependencies.json';$_.id+'-source-dependencies.json'})){
     $source=Join-Path $repo ('vendor/Office/'+$name)
     CopyChecked $source $name (Get-FileHash -LiteralPath $source).Hash
 }

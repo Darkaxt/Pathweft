@@ -66,6 +66,17 @@ try{
     foreach($engine in $office.apps){
         CheckDependency ('Office/sources/'+$engine.sourceArchive) $engine.sourceSha256
         if($engine.fonts){CheckDependency ('Office/fonts/'+$engine.fonts.archive) $engine.fonts.archiveSha256}
+        foreach($kind in @('core','source')){
+            $name=$engine.id+'-'+$kind+'-dependencies.json'
+            $entry=$source.GetEntry('Pathweft/vendor/Office/'+$name)
+            if(!$entry){throw ('Selected core graph missing: '+$name)}
+            $input=$entry.Open()
+            try{$hash=[Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($input))}finally{$input.Dispose()}
+            CheckDependency ('Office/'+$name) $hash
+        }
+        foreach($name in @('Cargo.toml','src/engine.rs','src/lib.rs')){
+            if(!$source.GetEntry('Pathweft/native/office/'+$engine.id+'/'+$name)){throw ('Selected native bridge source missing: '+$engine.id+'/'+$name)}
+        }
     }
     $distribution=ReadJson 'vendor/Office/core-source-distribution.json'
     foreach($pin in $distribution.archives){CheckDependency ('Office/dependencies/'+$pin.name) $pin.sha256}
@@ -73,7 +84,7 @@ try{
     foreach($pin in $fallback.sources){CheckDependency ('Office/LibreOffice/'+$pin.name) $pin.sha256}
     $licenses=ReadJson 'vendor/Office/license-manifest.json'
     foreach($pin in $licenses.files){CheckDependency ('Office/'+$pin.path) $pin.sha256}
-    foreach($name in @('FolderJumpList.cs','SpaceScan.cs','PaneSpace.cs','SizeCache.cs','SqliteRuntime.cs','vendor/Diskweft/source-manifest.json','vendor/Diskweft/NOTICES.txt','AuxiliaryWindows.cs','UpdateChecks.cs','Preview/OfficeWorker.cs','Preview/OfficeDocument.cs','PreviewModes.cs','native/office/wordcraft/Cargo.toml','native/office/gridcraft/Cargo.toml','native/office/deckcraft/Cargo.toml','scripts/Verify-CraftCoreLock.py')){
+    foreach($name in @('FolderJumpList.cs','SpaceScan.cs','PaneSpace.cs','SizeCache.cs','SqliteRuntime.cs','vendor/Diskweft/source-manifest.json','vendor/Diskweft/NOTICES.txt','AuxiliaryWindows.cs','UpdateChecks.cs','Preview/OfficeWorker.cs','Preview/OfficeDocument.cs','PreviewModes.cs','native/office/common/extraction.rs','native/office/common/pathweft_office.h','scripts/Verify-CraftCoreLock.py','scripts/Apply-CraftCompatibility.py')){
         if(!$source.GetEntry('Pathweft/'+$name)){throw ('Integrated implementation/build source missing: '+$name)}
     }
     $signature=Get-AuthenticodeSignature -LiteralPath (Join-Path $DeliveryRoot "Pathweft-$version-setup.exe")

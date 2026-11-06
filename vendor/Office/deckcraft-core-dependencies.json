@@ -4,7 +4,7 @@
   "target": "x86_64-pc-windows-msvc",
   "edges": "normal,build",
   "scope": "Feature/target-selected build graph. Build-time packages are included; this is not a claim that all code is linked.",
-  "sourceLockSha256": "f5c6d4b88a941d42e3cd6d1043e467333aed3093f1bebdca9a18430e71eef3f2",
+  "sourceLockSha256": "b5f43853146d263470343b736a0a9095ef401f2d1e1340d6cb7cf3678a38e131",
   "packages": [
     {
       "name": "adler2",
@@ -127,47 +127,47 @@
     },
     {
       "name": "deckcraft-anim",
-      "version": "0.15.0",
+      "version": "0.15.1",
       "license": "MIT OR Apache-2.0"
     },
     {
       "name": "deckcraft-color",
-      "version": "0.15.0",
+      "version": "0.15.1",
       "license": "MIT OR Apache-2.0"
     },
     {
       "name": "deckcraft-fonts",
-      "version": "0.15.0",
+      "version": "0.15.1",
       "license": "MIT OR Apache-2.0"
     },
     {
       "name": "deckcraft-geom",
-      "version": "0.15.0",
+      "version": "0.15.1",
       "license": "MIT OR Apache-2.0"
     },
     {
       "name": "deckcraft-metafile",
-      "version": "0.15.0",
+      "version": "0.15.1",
       "license": "MIT OR Apache-2.0"
     },
     {
       "name": "deckcraft-model",
-      "version": "0.15.0",
+      "version": "0.15.1",
       "license": "MIT OR Apache-2.0"
     },
     {
       "name": "deckcraft-pptx",
-      "version": "0.15.0",
+      "version": "0.15.1",
       "license": "MIT OR Apache-2.0"
     },
     {
       "name": "deckcraft-render",
-      "version": "0.15.0",
+      "version": "0.15.1",
       "license": "MIT OR Apache-2.0"
     },
     {
       "name": "deckcraft-text",
-      "version": "0.15.0",
+      "version": "0.15.1",
       "license": "MIT OR Apache-2.0"
     },
     {

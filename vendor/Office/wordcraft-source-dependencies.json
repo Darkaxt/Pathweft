@@ -1,7 +1,7 @@
 {
-  "sourceCommit": "08afab50b6a1ed19f9af55bb9f74d18f5e17bfa0",
-  "lockSha256": "bf56cfd65c514a4035ba6f7737339658a05d53c6ac9ea96dffbafedbe01c4f0f",
-  "scope": "Complete pinned upstream lock; includes optional and non-Windows packages, not a claim that every member is linked into the CLI",
+  "sourceCommit": "edfea68101220c9bdc4b2b0ccf4acd9612bedb6e",
+  "lockSha256": "2b28ebc3c969e812d570f0549726bc9e296ac70026a23afce3de59280acc93ef",
+  "scope": "Complete pinned upstream lock, including optional/non-Windows crates; actual core graph is recorded separately.",
   "packages": [
     {
       "name": "accesskit",
@@ -6786,7 +6786,7 @@
     },
     {
       "name": "wordcraft",
-      "version": "0.15.1",
+      "version": "0.15.2",
       "dependencies": [
         "arboard",
         "chrono",
@@ -6821,7 +6821,7 @@
     },
     {
       "name": "wordcraft-cli",
-      "version": "0.15.1",
+      "version": "0.15.2",
       "dependencies": [
         "serde_json",
         "sys-locale",
@@ -6834,11 +6834,11 @@
     },
     {
       "name": "wordcraft-control-key",
-      "version": "0.15.1"
+      "version": "0.15.2"
     },
     {
       "name": "wordcraft-doc",
-      "version": "0.15.1",
+      "version": "0.15.2",
       "dependencies": [
         "base64 0.23.1",
         "log",
@@ -6852,7 +6852,7 @@
     },
     {
       "name": "wordcraft-docbin",
-      "version": "0.15.1",
+      "version": "0.15.2",
       "dependencies": [
         "cfb",
         "chrono",
@@ -6869,7 +6869,7 @@
     },
     {
       "name": "wordcraft-docx",
-      "version": "0.15.1",
+      "version": "0.15.2",
       "dependencies": [
         "aes",
         "base64 0.23.1",
@@ -6893,7 +6893,7 @@
     },
     {
       "name": "wordcraft-engine",
-      "version": "0.15.1",
+      "version": "0.15.2",
       "dependencies": [
         "cfb",
         "chrono",
@@ -6926,7 +6926,7 @@
     },
     {
       "name": "wordcraft-fonts",
-      "version": "0.15.1",
+      "version": "0.15.2",
       "dependencies": [
         "brotli-decompressor",
         "harfrust 0.13.3",
@@ -6940,26 +6940,34 @@
     },
     {
       "name": "wordcraft-formats",
-      "version": "0.15.1",
+      "version": "0.15.2",
       "dependencies": [
+        "aes",
+        "base64 0.23.1",
         "cfb",
         "chardetng",
         "chrono",
         "encoding_rs",
+        "getrandom 0.3.4",
+        "hmac",
         "image",
         "js-sys",
         "log",
+        "miniz_oxide 0.9.1",
         "proptest",
         "quick-xml 0.41.0",
+        "sha1 0.11.0",
+        "sha2 0.11.1",
         "wordcraft-doc",
         "wordcraft-geom",
         "wordcraft-metafile",
+        "zeroize",
         "zip 3.0.0"
       ]
     },
     {
       "name": "wordcraft-geom",
-      "version": "0.15.1",
+      "version": "0.15.2",
       "dependencies": [
         "image",
         "serde"
@@ -6967,7 +6975,7 @@
     },
     {
       "name": "wordcraft-layout",
-      "version": "0.15.1",
+      "version": "0.15.2",
       "dependencies": [
         "craft-proof",
         "image",
@@ -6987,7 +6995,7 @@
     },
     {
       "name": "wordcraft-mcp",
-      "version": "0.15.1",
+      "version": "0.15.2",
       "dependencies": [
         "log",
         "serde_json",
@@ -6999,7 +7007,7 @@
     },
     {
       "name": "wordcraft-metafile",
-      "version": "0.15.1",
+      "version": "0.15.2",
       "dependencies": [
         "kurbo",
         "thiserror 2.0.21"
@@ -7007,7 +7015,7 @@
     },
     {
       "name": "wordcraft-pdf",
-      "version": "0.15.1",
+      "version": "0.15.2",
       "dependencies": [
         "chrono",
         "craft-pdf",
@@ -7028,7 +7036,7 @@
     },
     {
       "name": "wordcraft-render",
-      "version": "0.15.1",
+      "version": "0.15.2",
       "dependencies": [
         "image",
         "log",
@@ -7042,8 +7050,9 @@
     },
     {
       "name": "wordcraft-ui-egui",
-      "version": "0.15.1",
+      "version": "0.15.2",
       "dependencies": [
+        "accesskit_consumer",
         "cfb",
         "chrono",
         "craft-i18n",
@@ -7074,7 +7083,7 @@
     },
     {
       "name": "wordcraft-web",
-      "version": "0.15.1",
+      "version": "0.15.2",
       "dependencies": [
         "eframe",
         "egui",
@@ -7093,7 +7102,7 @@
     },
     {
       "name": "wordcraft-zotero",
-      "version": "0.15.1",
+      "version": "0.15.2",
       "dependencies": [
         "log",
         "proptest",
@@ -7256,7 +7265,7 @@
     },
     {
       "name": "xtask",
-      "version": "0.15.1",
+      "version": "0.15.2",
       "dependencies": [
         "serde_json"
       ]
@@ -7625,7 +7634,7 @@
       "xtask"
     ],
     "package": {
-      "version": "0.15.1",
+      "version": "0.15.2",
       "edition": "2024",
       "license": "MIT OR Apache-2.0",
       "rust-version": "1.95",

@@ -148,7 +148,9 @@ sealed partial class PackageProbe
     static Type Type(string name)=>Product.GetType("FileExplorer."+name,true);
     static object Call(Type type,object target,string method,params object[] args)
     {
-        var member=type.GetMethod(method,Flags)??throw new MissingMethodException(type.FullName,method);
+        // Select the callable arity; OfficeDocument also has a private three-
+        // argument implementation behind its two-argument Open entry point.
+        var member=type.GetMethods(Flags).Single(m=>m.Name==method&&m.GetParameters().Length>=args.Length&&m.GetParameters().Skip(args.Length).All(p=>p.IsOptional));
         try{return member.Invoke(target,args.Concat(Enumerable.Repeat(System.Type.Missing,member.GetParameters().Length-args.Length)).ToArray());}
         catch(TargetInvocationException error){System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(error.InnerException).Throw();throw;}
     }
@@ -188,6 +190,8 @@ sealed partial class PackageProbe
         int result=1;
         try
         {
+            if(Environment.GetEnvironmentVariable("PATHWEFT_OFFICE_CORE_ONLY")=="1")
+            {Settings.Load();await VerifyOfficeCore16();result=0;return;}
             Check(app.Windows.Count==0,"The owned WPF startup operation was cancelled before dispatch and creates no application window");
             CheckExplicitFolderRegistration();
             Settings.Load();
@@ -294,6 +298,7 @@ sealed partial class PackageProbe
                 VerifyIcon(System.Windows.Interop.Imaging.CreateBitmapSourceFromHIcon(largeIcon,Int32Rect.Empty,System.Windows.Media.Imaging.BitmapSizeOptions.FromEmptyOptions()),"The native executable/shortcut icon uses the same transparent yellow-folder identity");
             }
             finally{if(largeIcon!=IntPtr.Zero)DestroyIcon(largeIcon);if(smallIcon!=IntPtr.Zero)DestroyIcon(smallIcon);}
+            VerifyCraftIcon16();
             string rejectedHtml=Path.Combine(root,"rejected.html");File.WriteAllBytes(rejectedHtml,new byte[]{0,1,2,3});
             Check(!(bool)Call(Type("EditorWindow"),null,"TryOpen",rejectedHtml)&&!(bool)Type("EditorWindow").GetProperty("HasOpenWindow",Flags).GetValue(null),"Delivered editor declines binary HTML without creating a window");
             var left=(PaneView)owner.FindName("Left");

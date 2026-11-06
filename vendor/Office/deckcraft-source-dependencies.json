@@ -1,7 +1,7 @@
 {
-  "sourceCommit": "3e178d8f5a59c787a6a53a7ed0f052b3e4a1489f",
-  "lockSha256": "fdce2c1fbd6c63e90ee9c3dcbab31f6153f4f6cfd100d974d4823bb3cbbf5248",
-  "scope": "Complete pinned upstream lock; includes optional and non-Windows packages, not a claim that every member is linked into the CLI",
+  "sourceCommit": "9bac60ff53029039c82083ee574c22d74c1541f1",
+  "lockSha256": "c1d1903d4b2b23ca92bc9149e43afb0cb001648c69887e4a279f410f9f24138f",
+  "scope": "Complete pinned upstream lock, including optional/non-Windows crates; actual core graph is recorded separately.",
   "packages": [
     {
       "name": "accesskit",
@@ -985,7 +985,7 @@
     },
     {
       "name": "deckcraft",
-      "version": "0.15.0",
+      "version": "0.15.1",
       "dependencies": [
         "arboard",
         "chrono",
@@ -1007,7 +1007,7 @@
     },
     {
       "name": "deckcraft-anim",
-      "version": "0.15.0",
+      "version": "0.15.1",
       "dependencies": [
         "deckcraft-geom",
         "deckcraft-model",
@@ -1016,7 +1016,7 @@
     },
     {
       "name": "deckcraft-av1",
-      "version": "0.15.0",
+      "version": "0.15.1",
       "dependencies": [
         "deckcraft-bitstream",
         "rayon",
@@ -1025,14 +1025,14 @@
     },
     {
       "name": "deckcraft-bitstream",
-      "version": "0.15.0",
+      "version": "0.15.1",
       "dependencies": [
         "craft-media"
       ]
     },
     {
       "name": "deckcraft-cli",
-      "version": "0.15.0",
+      "version": "0.15.1",
       "dependencies": [
         "deckcraft-engine",
         "deckcraft-mcp",
@@ -1042,14 +1042,14 @@
     },
     {
       "name": "deckcraft-color",
-      "version": "0.15.0",
+      "version": "0.15.1",
       "dependencies": [
         "serde"
       ]
     },
     {
       "name": "deckcraft-engine",
-      "version": "0.15.0",
+      "version": "0.15.1",
       "dependencies": [
         "chrono",
         "deckcraft-anim",
@@ -1075,7 +1075,7 @@
     },
     {
       "name": "deckcraft-fonts",
-      "version": "0.15.0",
+      "version": "0.15.1",
       "dependencies": [
         "epaint_default_fonts",
         "harfrust 0.13.3",
@@ -1087,7 +1087,7 @@
     },
     {
       "name": "deckcraft-format",
-      "version": "0.15.0",
+      "version": "0.15.1",
       "dependencies": [
         "deckcraft-model",
         "serde",
@@ -1098,7 +1098,7 @@
     },
     {
       "name": "deckcraft-geom",
-      "version": "0.15.0",
+      "version": "0.15.1",
       "dependencies": [
         "kurbo",
         "serde"
@@ -1106,7 +1106,7 @@
     },
     {
       "name": "deckcraft-h264",
-      "version": "0.15.0",
+      "version": "0.15.1",
       "dependencies": [
         "deckcraft-bitstream",
         "rayon",
@@ -1115,7 +1115,7 @@
     },
     {
       "name": "deckcraft-hevc",
-      "version": "0.15.0",
+      "version": "0.15.1",
       "dependencies": [
         "deckcraft-bitstream",
         "rayon",
@@ -1124,21 +1124,21 @@
     },
     {
       "name": "deckcraft-isobmff",
-      "version": "0.15.0",
+      "version": "0.15.1",
       "dependencies": [
         "craft-media"
       ]
     },
     {
       "name": "deckcraft-matroska",
-      "version": "0.15.0",
+      "version": "0.15.1",
       "dependencies": [
         "craft-media"
       ]
     },
     {
       "name": "deckcraft-mcp",
-      "version": "0.15.0",
+      "version": "0.15.1",
       "dependencies": [
         "deckcraft-engine",
         "deckcraft-render",
@@ -1148,7 +1148,7 @@
     },
     {
       "name": "deckcraft-media",
-      "version": "0.15.0",
+      "version": "0.15.1",
       "dependencies": [
         "deckcraft-av1",
         "deckcraft-h264",
@@ -1166,7 +1166,7 @@
     },
     {
       "name": "deckcraft-metafile",
-      "version": "0.15.0",
+      "version": "0.15.1",
       "dependencies": [
         "image",
         "kurbo",
@@ -1175,7 +1175,7 @@
     },
     {
       "name": "deckcraft-model",
-      "version": "0.15.0",
+      "version": "0.15.1",
       "dependencies": [
         "deckcraft-color",
         "deckcraft-geom",
@@ -1187,15 +1187,15 @@
     },
     {
       "name": "deckcraft-ogg",
-      "version": "0.15.0"
+      "version": "0.15.1"
     },
     {
       "name": "deckcraft-opus",
-      "version": "0.15.0"
+      "version": "0.15.1"
     },
     {
       "name": "deckcraft-pdf",
-      "version": "0.15.0",
+      "version": "0.15.1",
       "dependencies": [
         "craft-pdf",
         "deckcraft-fonts",
@@ -1213,7 +1213,7 @@
     },
     {
       "name": "deckcraft-pptx",
-      "version": "0.15.0",
+      "version": "0.15.1",
       "dependencies": [
         "deckcraft-color",
         "deckcraft-engine",
@@ -1229,7 +1229,7 @@
     },
     {
       "name": "deckcraft-render",
-      "version": "0.15.0",
+      "version": "0.15.1",
       "dependencies": [
         "deckcraft-anim",
         "deckcraft-color",
@@ -1248,7 +1248,7 @@
     },
     {
       "name": "deckcraft-text",
-      "version": "0.15.0",
+      "version": "0.15.1",
       "dependencies": [
         "chrono",
         "deckcraft-color",
@@ -1262,7 +1262,7 @@
     },
     {
       "name": "deckcraft-ui-egui",
-      "version": "0.15.0",
+      "version": "0.15.1",
       "dependencies": [
         "craft-ui",
         "craft-update",
@@ -1287,7 +1287,7 @@
     },
     {
       "name": "deckcraft-vp9",
-      "version": "0.15.0",
+      "version": "0.15.1",
       "dependencies": [
         "deckcraft-bitstream",
         "rayon",
@@ -1296,7 +1296,7 @@
     },
     {
       "name": "deckcraft-web",
-      "version": "0.15.0",
+      "version": "0.15.1",
       "dependencies": [
         "deckcraft-engine",
         "deckcraft-ui-egui",
@@ -6178,7 +6178,7 @@
     },
     {
       "name": "xtask",
-      "version": "0.15.0",
+      "version": "0.15.1",
       "dependencies": [
         "serde_json"
       ]
@@ -6521,7 +6521,7 @@
       "apps/deckcraft-cli"
     ],
     "package": {
-      "version": "0.15.0",
+      "version": "0.15.1",
       "edition": "2024",
       "license": "MIT OR Apache-2.0",
       "rust-version": "1.95",

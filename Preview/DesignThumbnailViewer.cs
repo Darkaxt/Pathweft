@@ -15,7 +15,22 @@ namespace FileExplorer.Preview;
 internal sealed class DesignThumbnailViewer:IViewer
 {
     const long ImageLimit=32L*1024*1024;
-    public bool CanHandle(string path)=>true;
+    public bool CanHandle(string path)
+    {
+        if(!Path.GetExtension(path).Equals(".fig",StringComparison.OrdinalIgnoreCase))return true;
+        // Keep existing embedded Figma previews first, but let the native
+        // importer handle bare canvases and archives without a thumbnail.
+        try
+        {
+            using var input=new FileStream(path,FileMode.Open,FileAccess.Read,FileShare.ReadWrite|FileShare.Delete);
+            using var archive=new ZipArchive(input,ZipArchiveMode.Read,false);
+            if(archive.Entries.Count>100_000)return false;
+            return archive.Entries.Any(e=>e.FullName.Equals("thumbnail.png",StringComparison.OrdinalIgnoreCase)&&e.Length<=ImageLimit);
+        }
+        catch(IOException){return false;}
+        catch(InvalidDataException){return false;}
+        catch(UnauthorizedAccessException){return false;}
+    }
     public void Init(){}
     public void Prepare(string path,ContextObject context)=>context.Title=Path.GetFileName(path)+" · Design preview";
     public async Task View(string path,ContextObject context)

@@ -1,91 +1,14 @@
 {
   "status": "qualified",
-  "qualification": "2026-11-04 Win11 x64/.NET10 source integration: actual declared formats, pages/sheets/slides, side/Space/widget/archive, worker-crash fallback, cancellation/policy, preservation and lifetime; final combined delivered-package verification belongs to S11",
+  "scope": "S16 source/integration-qualified native cores; final delivered-package acceptance is recorded separately",
   "apps": [
     {
       "id": "wordcraft",
-      "version": "0.15.1",
-      "sourceCommit": "08afab50b6a1ed19f9af55bb9f74d18f5e17bfa0",
-      "archiveSha256": "bac0813a7652526d0a17ff4fd1fcb88d4671277786ee6f27806baa329929f903",
-      "cliSha256": "09b04133739ff7dacff50382ecba431d52df877fbcfd98005c69506b0e7c7232",
-      "cliBytes": 91239792,
-      "archive": "wordcraft-0.15.1-windows-x64-portable.zip",
-      "archiveUrl": "https://github.com/storytold/wordcraft/releases/download/v0.15.1/wordcraft-0.15.1-windows-x64-portable.zip",
-      "sourceArchive": "wordcraft-08afab50b6a1ed19f9af55bb9f74d18f5e17bfa0.zip",
-      "sourceUrl": "https://codeload.github.com/storytold/wordcraft/zip/08afab50b6a1ed19f9af55bb9f74d18f5e17bfa0",
-      "sourceSha256": "b58b999cde28beb1e0fded01880b0439af907d930d9ae17905ca49c7a244a86b",
-      "notices": [
-        {
-          "path": "vendor/Office/licenses/wordcraft/ATTRIBUTION.md",
-          "sha256": "004d06b985cdee4a22419656656e30dd3d5bca65cbc12ffc7e6708d83e86d5c3"
-        },
-        {
-          "path": "vendor/Office/licenses/wordcraft/LICENSE-APACHE",
-          "sha256": "eb3d7b5485466acbd81f2b496f595ab637d2792e268206b27d99e793bdb67549"
-        },
-        {
-          "path": "vendor/Office/licenses/wordcraft/LICENSE-MIT",
-          "sha256": "a15941cbcb0e32a2ef09d2da5d0b90bea3a3ebbdf5fb075c3f7dfde7af95b3ab"
-        },
-        {
-          "path": "vendor/Office/licenses/wordcraft/NOTICE",
-          "sha256": "9dd15df4ed3cb6069f3ad4efb1b402961f19462ca6e7cc445da468733a7c1333"
-        },
-        {
-          "path": "vendor/Office/licenses/wordcraft/OFL-biz-ud-mincho.txt",
-          "sha256": "9c244a5edd2525aa4aa43dd714d7de00f3b3591a522d82d724db3644b5a95568"
-        },
-        {
-          "path": "vendor/Office/licenses/wordcraft/OFL-biz-ud-pgothic.txt",
-          "sha256": "062c81ae55b5ddd56c08331c8fe86598c1ef7f4453560c74706427a008b68534"
-        },
-        {
-          "path": "vendor/Office/licenses/wordcraft/OFL-lxgw-wenkai-lite.txt",
-          "sha256": "7752fbb4e6c855f73a57a30caac80f583115658c656e11383d741571ddfa8882"
-        },
-        {
-          "path": "vendor/Office/licenses/wordcraft/OFL-nanum-gothic.txt",
-          "sha256": "6bca0c1a8c713fa5e703c5427a273ea736181c558312962569c28b4cb390fee3"
-        },
-        {
-          "path": "vendor/Office/licenses/wordcraft/OFL-noto-sans-arabic.txt",
-          "sha256": "3b7e321615e412e5fbb9eab5bf1c0a4cb84c732d3d5a9e9e3822972d5fb70b97"
-        },
-        {
-          "path": "vendor/Office/licenses/wordcraft/OFL-noto-sans-cjk-sc.txt",
-          "sha256": "88f117575237307bdd86a17ef15e21790fc9a662fe4dfb103ca1ca077f0d9982"
-        },
-        {
-          "path": "vendor/Office/licenses/wordcraft/OFL-noto-sans-devanagari.txt",
-          "sha256": "41221cfdd268fa8e338829cccec0526e0200a0ce9e0bc3c627254c12a99d3a98"
-        },
-        {
-          "path": "vendor/Office/licenses/wordcraft/OFL-noto-sans-georgian.txt",
-          "sha256": "2c9d69cc13d29394783a99d12a823fd6bc4b2069e6ce795a5515ae187e858da7"
-        },
-        {
-          "path": "vendor/Office/licenses/wordcraft/OFL-noto-sans-hebrew.txt",
-          "sha256": "1acb8a4cf8e3d441eb573174faab52139071fee5cfa5e3e3f148becf90a54631"
-        },
-        {
-          "path": "vendor/Office/licenses/wordcraft/OFL-noto-sans-symbols-2.txt",
-          "sha256": "dee1e0758c6ce86a7aee4aa812387de573fbe1b9a78bfc8332515fac2762aba5"
-        },
-        {
-          "path": "vendor/Office/licenses/wordcraft/OFL-noto-sans-symbols.txt",
-          "sha256": "dee1e0758c6ce86a7aee4aa812387de573fbe1b9a78bfc8332515fac2762aba5"
-        },
-        {
-          "path": "vendor/Office/licenses/wordcraft/OFL-noto-sans-thai.txt",
-          "sha256": "0e4067898723c9acddf967edda99a5ed2088cd857a8e9949084f609358efe38a"
-        },
-        {
-          "path": "vendor/Office/licenses/wordcraft/OFL-shippori-mincho.txt",
-          "sha256": "0aef534f5885c2f30b360ed5fb09ea4661a40ec62845c35f8354e26d7977d87d"
-        }
-      ],
-      "license": "MIT OR Apache-2.0",
-      "nativeRuntime": "Office/cores/wordcraft/pathweft_wordcraft.dll",
+      "version": "0.15.2",
+      "sourceCommit": "edfea68101220c9bdc4b2b0ccf4acd9612bedb6e",
+      "sourceArchive": "wordcraft-edfea68101220c9bdc4b2b0ccf4acd9612bedb6e.zip",
+      "sourceUrl": "https://codeload.github.com/storytold/wordcraft/zip/edfea68101220c9bdc4b2b0ccf4acd9612bedb6e",
+      "sourceSha256": "5bf985365d5cd6e06a564cd1f79fc7fd672820f000c83bc018e1d43df5e191ab",
       "fonts": {
         "sourceCommit": "b076417b5880bd4154bd22f00695b1d28c6bea83",
         "archive": "craft-fonts-b076417b5880bd4154bd22f00695b1d28c6bea83.zip",
@@ -158,13 +81,33 @@
           }
         ]
       },
-      "nativeSha256": "7655c880347b6c3e250e9f0364ffe372641a09d565fe971dc52945b08c3bdbd8",
-      "nativeBytes": 65842176,
+      "notices": [
+        {
+          "path": "vendor/Office/licenses/wordcraft/ATTRIBUTION.md",
+          "sha256": "3fc09b7189d078901db77a477bc2dc2007d9a139d59057c67cd5d46e8491d435"
+        },
+        {
+          "path": "vendor/Office/licenses/wordcraft/LICENSE-APACHE",
+          "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594"
+        },
+        {
+          "path": "vendor/Office/licenses/wordcraft/LICENSE-MIT",
+          "sha256": "fc257de83c44ae49e4aad1cf777b886794be3ac9c8d00c010ef55935d5bbeba5"
+        },
+        {
+          "path": "vendor/Office/licenses/wordcraft/NOTICE",
+          "sha256": "8ff59a56c883fd708ed041c7a0ce4e16bb040e03027d94677d324ce711ebba2d"
+        }
+      ],
+      "license": "MIT OR Apache-2.0",
+      "nativeRuntime": "Office/cores/wordcraft/pathweft_wordcraft.dll",
+      "nativeSha256": "ca00585e0e0816b5986427f7fa31e58d36ad84e41f28ccea182202b655285449",
+      "nativeBytes": 67782656,
       "nativeFiles": [
         {
           "path": "wordcraft/pathweft_wordcraft.dll",
-          "bytes": 65842176,
-          "sha256": "7655c880347b6c3e250e9f0364ffe372641a09d565fe971dc52945b08c3bdbd8"
+          "bytes": 67782656,
+          "sha256": "ca00585e0e0816b5986427f7fa31e58d36ad84e41f28ccea182202b655285449"
         },
         {
           "path": "wordcraft/VCRUNTIME140.dll",
@@ -189,95 +132,38 @@
     },
     {
       "id": "gridcraft",
-      "version": "0.16.0",
-      "sourceCommit": "85e51e009c24fad47575f04d3c08f12342615d82",
-      "archiveSha256": "feff78d0e618a2e88dd1e0ea032af90e130eeee5a5c4afbeda546e6a0b44de30",
-      "cliSha256": "3056e4d22ab2816c344666a9a65886e8728a8606a65335a8bbb64842981cf50c",
-      "cliBytes": 19943792,
-      "archive": "gridcraft-0.16.0-windows-x64-portable.zip",
-      "archiveUrl": "https://github.com/storytold/gridcraft/releases/download/v0.16.0/gridcraft-0.16.0-windows-x64-portable.zip",
-      "sourceArchive": "gridcraft-85e51e009c24fad47575f04d3c08f12342615d82.zip",
-      "sourceUrl": "https://codeload.github.com/storytold/gridcraft/zip/85e51e009c24fad47575f04d3c08f12342615d82",
-      "sourceSha256": "bd8598ccee4af9fd3174bbf967cfc491d088f12a49df16e3cbbfe2c57933eae6",
+      "version": "0.16.1",
+      "sourceCommit": "e581bc95b2a17d2a744a115478a20a1c2ad1ef72",
+      "sourceArchive": "gridcraft-e581bc95b2a17d2a744a115478a20a1c2ad1ef72.zip",
+      "sourceUrl": "https://codeload.github.com/storytold/gridcraft/zip/e581bc95b2a17d2a744a115478a20a1c2ad1ef72",
+      "sourceSha256": "89d8e912420b914f48dafd7d06f2a82505f67176b97694dbd0e38315c1a28a66",
       "notices": [
         {
           "path": "vendor/Office/licenses/gridcraft/ATTRIBUTION.md",
-          "sha256": "b5633c2d5e8525b6e693f7eb263e46e22598c8c331fa173c53fada97cf4da9e0"
+          "sha256": "1c78f894b54a4f778757d3c3323678c613d08825c9c46b26ca1d4d74565965f7"
         },
         {
           "path": "vendor/Office/licenses/gridcraft/LICENSE-APACHE",
-          "sha256": "eb3d7b5485466acbd81f2b496f595ab637d2792e268206b27d99e793bdb67549"
+          "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594"
         },
         {
           "path": "vendor/Office/licenses/gridcraft/LICENSE-MIT",
-          "sha256": "7b6e0288d68469fee98354364cdc0e945a1a4d4cd9c02ed11df9406c1715587e"
+          "sha256": "a87109bbb1ad43ca3920a5d7ff3806863b7e8470a73f4ded97a1447ac93333f5"
         },
         {
           "path": "vendor/Office/licenses/gridcraft/NOTICE",
-          "sha256": "9f3bd6452c52acb368d121302b9bd83d7661c96344c727882b33f9c2f188b816"
-        },
-        {
-          "path": "vendor/Office/licenses/gridcraft/OFL-biz-ud-mincho.txt",
-          "sha256": "9c244a5edd2525aa4aa43dd714d7de00f3b3591a522d82d724db3644b5a95568"
-        },
-        {
-          "path": "vendor/Office/licenses/gridcraft/OFL-biz-ud-pgothic.txt",
-          "sha256": "062c81ae55b5ddd56c08331c8fe86598c1ef7f4453560c74706427a008b68534"
-        },
-        {
-          "path": "vendor/Office/licenses/gridcraft/OFL-lxgw-wenkai-lite.txt",
-          "sha256": "7752fbb4e6c855f73a57a30caac80f583115658c656e11383d741571ddfa8882"
-        },
-        {
-          "path": "vendor/Office/licenses/gridcraft/OFL-nanum-gothic.txt",
-          "sha256": "6bca0c1a8c713fa5e703c5427a273ea736181c558312962569c28b4cb390fee3"
-        },
-        {
-          "path": "vendor/Office/licenses/gridcraft/OFL-noto-sans-arabic.txt",
-          "sha256": "3b7e321615e412e5fbb9eab5bf1c0a4cb84c732d3d5a9e9e3822972d5fb70b97"
-        },
-        {
-          "path": "vendor/Office/licenses/gridcraft/OFL-noto-sans-cjk-sc.txt",
-          "sha256": "88f117575237307bdd86a17ef15e21790fc9a662fe4dfb103ca1ca077f0d9982"
-        },
-        {
-          "path": "vendor/Office/licenses/gridcraft/OFL-noto-sans-devanagari.txt",
-          "sha256": "41221cfdd268fa8e338829cccec0526e0200a0ce9e0bc3c627254c12a99d3a98"
-        },
-        {
-          "path": "vendor/Office/licenses/gridcraft/OFL-noto-sans-georgian.txt",
-          "sha256": "2c9d69cc13d29394783a99d12a823fd6bc4b2069e6ce795a5515ae187e858da7"
-        },
-        {
-          "path": "vendor/Office/licenses/gridcraft/OFL-noto-sans-hebrew.txt",
-          "sha256": "1acb8a4cf8e3d441eb573174faab52139071fee5cfa5e3e3f148becf90a54631"
-        },
-        {
-          "path": "vendor/Office/licenses/gridcraft/OFL-noto-sans-symbols-2.txt",
-          "sha256": "dee1e0758c6ce86a7aee4aa812387de573fbe1b9a78bfc8332515fac2762aba5"
-        },
-        {
-          "path": "vendor/Office/licenses/gridcraft/OFL-noto-sans-symbols.txt",
-          "sha256": "dee1e0758c6ce86a7aee4aa812387de573fbe1b9a78bfc8332515fac2762aba5"
-        },
-        {
-          "path": "vendor/Office/licenses/gridcraft/OFL-noto-sans-thai.txt",
-          "sha256": "0e4067898723c9acddf967edda99a5ed2088cd857a8e9949084f609358efe38a"
-        },
-        {
-          "path": "vendor/Office/licenses/gridcraft/OFL-shippori-mincho.txt",
-          "sha256": "0aef534f5885c2f30b360ed5fb09ea4661a40ec62845c35f8354e26d7977d87d"
+          "sha256": "5cf0a6672ca59846acdb610aca5ee0797c6eeffe3979cfa95eebc9860856c486"
         }
       ],
       "license": "MIT OR Apache-2.0",
       "nativeRuntime": "Office/cores/gridcraft/pathweft_gridcraft.dll",
-      "nativeSha256": "42345101ce2e43a4c6c90cb2e3bcfe001da482876509657e1f516f5d7a32ed7e",
-      "nativeBytes": 8116736,
+      "nativeSha256": "dfd7c5fb2e5e4e8fea65e3b5e77a7abae2dc4c49fa944ca057c932f6ec3d17da",
+      "nativeBytes": 8201728,
       "nativeFiles": [
         {
           "path": "gridcraft/pathweft_gridcraft.dll",
-          "bytes": 8116736,
-          "sha256": "42345101ce2e43a4c6c90cb2e3bcfe001da482876509657e1f516f5d7a32ed7e"
+          "bytes": 8201728,
+          "sha256": "dfd7c5fb2e5e4e8fea65e3b5e77a7abae2dc4c49fa944ca057c932f6ec3d17da"
         },
         {
           "path": "gridcraft/VCRUNTIME140.dll",
@@ -302,148 +188,11 @@
     },
     {
       "id": "deckcraft",
-      "version": "0.15.0",
-      "sourceCommit": "3e178d8f5a59c787a6a53a7ed0f052b3e4a1489f",
-      "archiveSha256": "23d0f19360ef4a65654863291c023952cf57739eb646429c3b545bf1ab4d1d92",
-      "cliSha256": "10a5b5548edbf808b2496cb6115f2ea49e2465059084ea41dafaece3a459f895",
-      "cliBytes": 93639536,
-      "archive": "deckcraft-0.15.0-windows-x64-portable.zip",
-      "archiveUrl": "https://github.com/storytold/deckcraft/releases/download/v0.15.0/deckcraft-0.15.0-windows-x64-portable.zip",
-      "sourceArchive": "deckcraft-3e178d8f5a59c787a6a53a7ed0f052b3e4a1489f.zip",
-      "sourceUrl": "https://codeload.github.com/storytold/deckcraft/zip/3e178d8f5a59c787a6a53a7ed0f052b3e4a1489f",
-      "sourceSha256": "bcc11e5bbc6e82fa5b74aa37cbbce25123f288789745bb764605e6b255d5a42a",
-      "notices": [
-        {
-          "path": "vendor/Office/licenses/deckcraft/LICENSE-APACHE",
-          "sha256": "eb3d7b5485466acbd81f2b496f595ab637d2792e268206b27d99e793bdb67549"
-        },
-        {
-          "path": "vendor/Office/licenses/deckcraft/LICENSE-MIT",
-          "sha256": "4ab882572e5d7c0b3e1dcf6712798f0d3830da90cb74d531f5e21156d1176e81"
-        },
-        {
-          "path": "vendor/Office/licenses/deckcraft/NOTICE",
-          "sha256": "9d88c817cde2bdce84e3b2d01f8a1a9d0f9fe0bcb9c0d7a25a8c3d34684c3c76"
-        },
-        {
-          "path": "vendor/Office/licenses/deckcraft/OFL-biz-ud-mincho.txt",
-          "sha256": "9c244a5edd2525aa4aa43dd714d7de00f3b3591a522d82d724db3644b5a95568"
-        },
-        {
-          "path": "vendor/Office/licenses/deckcraft/OFL-biz-ud-pgothic.txt",
-          "sha256": "062c81ae55b5ddd56c08331c8fe86598c1ef7f4453560c74706427a008b68534"
-        },
-        {
-          "path": "vendor/Office/licenses/deckcraft/OFL-caladea.txt",
-          "sha256": "550662cfab859a4df4c739b8d2c589fa781bdb295fa0d1cc4cb07d600e366380"
-        },
-        {
-          "path": "vendor/Office/licenses/deckcraft/OFL-carlito.txt",
-          "sha256": "0fb802dc9a710a8d1878a0fdc7fc562f9da2e7576d629e3a1ed735addefb7e6c"
-        },
-        {
-          "path": "vendor/Office/licenses/deckcraft/OFL-inter.txt",
-          "sha256": "b3195af0fb14368d1b3b10fb9d3fe503b7163ea083859d2ee553bc74da07c320"
-        },
-        {
-          "path": "vendor/Office/licenses/deckcraft/OFL-lato.txt",
-          "sha256": "14b8609fd8281cb961730de7d3b2964dcc6e0e395e759b1422e52e39a0fdc6b2"
-        },
-        {
-          "path": "vendor/Office/licenses/deckcraft/OFL-liberation-mono.txt",
-          "sha256": "1cfc9eab5a504c8d3496a2dd8f3efc7c5367e0910a038d9e678659473953c76a"
-        },
-        {
-          "path": "vendor/Office/licenses/deckcraft/OFL-liberation-sans.txt",
-          "sha256": "1cfc9eab5a504c8d3496a2dd8f3efc7c5367e0910a038d9e678659473953c76a"
-        },
-        {
-          "path": "vendor/Office/licenses/deckcraft/OFL-liberation-serif.txt",
-          "sha256": "1cfc9eab5a504c8d3496a2dd8f3efc7c5367e0910a038d9e678659473953c76a"
-        },
-        {
-          "path": "vendor/Office/licenses/deckcraft/OFL-lxgw-wenkai-lite.txt",
-          "sha256": "7752fbb4e6c855f73a57a30caac80f583115658c656e11383d741571ddfa8882"
-        },
-        {
-          "path": "vendor/Office/licenses/deckcraft/OFL-merriweather.txt",
-          "sha256": "792157d2eb74bfdce18e545570948f4e3018106e1e339ddcb565d47e313d2521"
-        },
-        {
-          "path": "vendor/Office/licenses/deckcraft/OFL-montserrat.txt",
-          "sha256": "41cbef8d8a37b9e58a3c613a8958014bfc58801569c40211dfb251f600c6d718"
-        },
-        {
-          "path": "vendor/Office/licenses/deckcraft/OFL-nanum-gothic.txt",
-          "sha256": "6bca0c1a8c713fa5e703c5427a273ea736181c558312962569c28b4cb390fee3"
-        },
-        {
-          "path": "vendor/Office/licenses/deckcraft/OFL-noto-sans-arabic.txt",
-          "sha256": "3b7e321615e412e5fbb9eab5bf1c0a4cb84c732d3d5a9e9e3822972d5fb70b97"
-        },
-        {
-          "path": "vendor/Office/licenses/deckcraft/OFL-noto-sans-cjk-sc.txt",
-          "sha256": "88f117575237307bdd86a17ef15e21790fc9a662fe4dfb103ca1ca077f0d9982"
-        },
-        {
-          "path": "vendor/Office/licenses/deckcraft/OFL-noto-sans-devanagari.txt",
-          "sha256": "41221cfdd268fa8e338829cccec0526e0200a0ce9e0bc3c627254c12a99d3a98"
-        },
-        {
-          "path": "vendor/Office/licenses/deckcraft/OFL-noto-sans-georgian.txt",
-          "sha256": "2c9d69cc13d29394783a99d12a823fd6bc4b2069e6ce795a5515ae187e858da7"
-        },
-        {
-          "path": "vendor/Office/licenses/deckcraft/OFL-noto-sans-hebrew.txt",
-          "sha256": "1acb8a4cf8e3d441eb573174faab52139071fee5cfa5e3e3f148becf90a54631"
-        },
-        {
-          "path": "vendor/Office/licenses/deckcraft/OFL-noto-sans-symbols-2.txt",
-          "sha256": "dee1e0758c6ce86a7aee4aa812387de573fbe1b9a78bfc8332515fac2762aba5"
-        },
-        {
-          "path": "vendor/Office/licenses/deckcraft/OFL-noto-sans-symbols.txt",
-          "sha256": "dee1e0758c6ce86a7aee4aa812387de573fbe1b9a78bfc8332515fac2762aba5"
-        },
-        {
-          "path": "vendor/Office/licenses/deckcraft/OFL-noto-sans-thai.txt",
-          "sha256": "0e4067898723c9acddf967edda99a5ed2088cd857a8e9949084f609358efe38a"
-        },
-        {
-          "path": "vendor/Office/licenses/deckcraft/OFL-nunito-sans.txt",
-          "sha256": "f22dcf7224df30722ce6c3257c33a9ea965d8a523cac976e9c5ac02eb59920a1"
-        },
-        {
-          "path": "vendor/Office/licenses/deckcraft/OFL-open-sans.txt",
-          "sha256": "f64b1e99565d9511bf78e1f9c525c1f33cb7a8375e5f67a406866d37b99d8781"
-        },
-        {
-          "path": "vendor/Office/licenses/deckcraft/OFL-playfair-display.txt",
-          "sha256": "ffdcfcc83d9335ec5c0bcf7ba2b2cbfbaade71571949fd8e529f914d7045dd4c"
-        },
-        {
-          "path": "vendor/Office/licenses/deckcraft/OFL-poppins.txt",
-          "sha256": "8975bebde6506cc6d42e8f81b0c7c5a7a31e8d24128681a96c216340669ea9c6"
-        },
-        {
-          "path": "vendor/Office/licenses/deckcraft/OFL-roboto.txt",
-          "sha256": "7d96701533d059cfd4191a85ecfd159e262527abd737eae6d9fb533844c70410"
-        },
-        {
-          "path": "vendor/Office/licenses/deckcraft/OFL-shippori-mincho.txt",
-          "sha256": "0aef534f5885c2f30b360ed5fb09ea4661a40ec62845c35f8354e26d7977d87d"
-        },
-        {
-          "path": "vendor/Office/licenses/deckcraft/OFL-source-sans-3.txt",
-          "sha256": "89ad2c4f66dd29127527493e729c31e731f111cf10faf5774c3db9275ed0c22c"
-        },
-        {
-          "path": "vendor/Office/licenses/deckcraft/OFL-source-serif-4.txt",
-          "sha256": "1c1dd2a2d4dfcccf9c008c58f054b6563eb235cf21f445fc01559c68d4c62337"
-        }
-      ],
-      "license": "MIT OR Apache-2.0",
-      "nativeRuntime": "Office/cores/deckcraft/pathweft_deckcraft.dll",
+      "version": "0.15.1",
+      "sourceCommit": "9bac60ff53029039c82083ee574c22d74c1541f1",
+      "sourceArchive": "deckcraft-9bac60ff53029039c82083ee574c22d74c1541f1.zip",
+      "sourceUrl": "https://codeload.github.com/storytold/deckcraft/zip/9bac60ff53029039c82083ee574c22d74c1541f1",
+      "sourceSha256": "3da4e673d1addcff9207f79a285471767deec109f46764532d3c7d98566c7f80",
       "fonts": {
         "sourceCommit": "37827adc41fd165f9a9234ac40f94dbad353aa69",
         "archive": "craft-fonts-37827adc41fd165f9a9234ac40f94dbad353aa69.zip",
@@ -580,13 +329,33 @@
           }
         ]
       },
-      "nativeSha256": "3bc79ac167c49b453395bb3890400e1cf0646ced60ee1b3f3f503aed485e5f0d",
-      "nativeBytes": 70704128,
+      "notices": [
+        {
+          "path": "vendor/Office/licenses/deckcraft/ATTRIBUTION.md",
+          "sha256": "3e0b490182f29522d002af0b4f0f46ab44ab8863bfe5e4e50c65a84d2d18c076"
+        },
+        {
+          "path": "vendor/Office/licenses/deckcraft/LICENSE-APACHE",
+          "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594"
+        },
+        {
+          "path": "vendor/Office/licenses/deckcraft/LICENSE-MIT",
+          "sha256": "90e96fef569474cd526350e716e4b05dd32f179ca96d39d61e6b928485e35406"
+        },
+        {
+          "path": "vendor/Office/licenses/deckcraft/NOTICE",
+          "sha256": "2ce764ed5d83f2453a7dba485092c0c41b465fe795b31c2c59bc5279332bc4f3"
+        }
+      ],
+      "license": "MIT OR Apache-2.0",
+      "nativeRuntime": "Office/cores/deckcraft/pathweft_deckcraft.dll",
+      "nativeSha256": "249d058fe9690c6e34032191ac659ea130d8743074395f78e15c5e5c1a6a3f55",
+      "nativeBytes": 70873600,
       "nativeFiles": [
         {
           "path": "deckcraft/pathweft_deckcraft.dll",
-          "bytes": 70704128,
-          "sha256": "3bc79ac167c49b453395bb3890400e1cf0646ced60ee1b3f3f503aed485e5f0d"
+          "bytes": 70873600,
+          "sha256": "249d058fe9690c6e34032191ac659ea130d8743074395f78e15c5e5c1a6a3f55"
         },
         {
           "path": "deckcraft/VCRUNTIME140.dll",
@@ -604,6 +373,644 @@
         "api-ms-win-crt-string-l1-1-0.dll",
         "bcryptprimitives.dll",
         "kernel32.dll",
+        "ntdll.dll"
+      ],
+      "abi": 1,
+      "buildToolchain": "Rust 1.95.0 x86_64-pc-windows-msvc; one compiler job",
+      "baselineCli": "Historical comparison only; no CLI executable ships or runs"
+    },
+    {
+      "id": "photocraft",
+      "version": "0.20.2",
+      "sourceCommit": "7c12f647150f8e7b2e07718f7993b1fcaa57fefe",
+      "sourceArchive": "photocraft-7c12f647150f8e7b2e07718f7993b1fcaa57fefe.zip",
+      "sourceUrl": "https://codeload.github.com/storytold/photocraft/zip/7c12f647150f8e7b2e07718f7993b1fcaa57fefe",
+      "sourceSha256": "c25c9d0998792e29ff55ff00a740445142751233f1988c93cebeee22a27b3581",
+      "fonts": {
+        "sourceCommit": "b076417b5880bd4154bd22f00695b1d28c6bea83",
+        "archive": "craft-fonts-b076417b5880bd4154bd22f00695b1d28c6bea83.zip",
+        "archiveUrl": "https://codeload.github.com/storytold/craft-fonts/zip/b076417b5880bd4154bd22f00695b1d28c6bea83",
+        "archiveSha256": "f5b09678d7212ccdc47884d3ce50e66dcab0fa07c7603a32ac0b4a826a5d6415",
+        "notices": [
+          {
+            "path": "vendor/Office/licenses/photocraft/craft-fonts/ATTRIBUTION.md",
+            "sha256": "aa2aa7eec68c32ac2da6ff7162ca9100ab3680e4c7b98365fc7c74ddd4167d07"
+          },
+          {
+            "path": "vendor/Office/licenses/photocraft/craft-fonts/LICENSE-APACHE",
+            "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594"
+          },
+          {
+            "path": "vendor/Office/licenses/photocraft/craft-fonts/LICENSE-MIT",
+            "sha256": "e360d6f5941863521687517eee951fac3328ee9f379fcb11bb5031fe6614fc8f"
+          },
+          {
+            "path": "vendor/Office/licenses/photocraft/craft-fonts/fonts/biz-ud-mincho/OFL.txt",
+            "sha256": "ef0ed524b3bd012f37015e986809eed6f67905456ebfc1ebd7fcc2765282ee01"
+          },
+          {
+            "path": "vendor/Office/licenses/photocraft/craft-fonts/fonts/biz-ud-pgothic/OFL.txt",
+            "sha256": "e753d7155d53c747d037a445e584c8ecfca6dd79846db610417e282a736b28bc"
+          },
+          {
+            "path": "vendor/Office/licenses/photocraft/craft-fonts/fonts/lxgw-wenkai-lite/OFL.txt",
+            "sha256": "0333a85fe077b6849f8e417acc44e8bd879442ceb681e271acf93e2d57fd4e2e"
+          },
+          {
+            "path": "vendor/Office/licenses/photocraft/craft-fonts/fonts/nanum-gothic/OFL.txt",
+            "sha256": "eeacf16032901d0ed0456876ec77b8f0fda6b3fecec7d972f8543eb602e6c30f"
+          },
+          {
+            "path": "vendor/Office/licenses/photocraft/craft-fonts/fonts/noto-sans-arabic/OFL.txt",
+            "sha256": "07fc70bfeb985cc1a87a8587d0a0c80bab11c86c9dc3fd95b6f0cb332f983e96"
+          },
+          {
+            "path": "vendor/Office/licenses/photocraft/craft-fonts/fonts/noto-sans-cjk-sc/OFL.txt",
+            "sha256": "6a73f9541c2de74158c0e7cf6b0a58ef774f5a780bf191f2d7ec9cc53efe2bf2"
+          },
+          {
+            "path": "vendor/Office/licenses/photocraft/craft-fonts/fonts/noto-sans-devanagari/OFL.txt",
+            "sha256": "a216f6f8d85c7228093e0ee5e258d9d377e6671f68acb4db1930b29583d0f331"
+          },
+          {
+            "path": "vendor/Office/licenses/photocraft/craft-fonts/fonts/noto-sans-georgian/OFL.txt",
+            "sha256": "8c02263c5d73d40544f9ed91e30c4e947407057a3cc430d7b786189aeceff6df"
+          },
+          {
+            "path": "vendor/Office/licenses/photocraft/craft-fonts/fonts/noto-sans-hebrew/OFL.txt",
+            "sha256": "9b9fe028b5ba74d231659a1bbaf0ed09b11e759d1ca6a070999e16d151616b47"
+          },
+          {
+            "path": "vendor/Office/licenses/photocraft/craft-fonts/fonts/noto-sans-symbols-2/OFL.txt",
+            "sha256": "b118dd41337806a5d4797052c77caf3bd096aed783e5eb21b4d11154351e1ac0"
+          },
+          {
+            "path": "vendor/Office/licenses/photocraft/craft-fonts/fonts/noto-sans-symbols/OFL.txt",
+            "sha256": "b118dd41337806a5d4797052c77caf3bd096aed783e5eb21b4d11154351e1ac0"
+          },
+          {
+            "path": "vendor/Office/licenses/photocraft/craft-fonts/fonts/noto-sans-thai/OFL.txt",
+            "sha256": "2e98fd23a52d253db8612cd5942c8f2ff4111b21d2367050fdca91d8ccc374a0"
+          },
+          {
+            "path": "vendor/Office/licenses/photocraft/craft-fonts/fonts/shippori-mincho/OFL.txt",
+            "sha256": "41fba056279be5f45ff9a99e44b7b53897b42732f5806d8e666e0ab49ac6bd38"
+          }
+        ]
+      },
+      "notices": [
+        {
+          "path": "vendor/Office/licenses/photocraft/ATTRIBUTION.md",
+          "sha256": "b557faf703f26e202c92e840a1024d1518ac5ea424c9747ac1e711209c47441c"
+        },
+        {
+          "path": "vendor/Office/licenses/photocraft/LICENSE-APACHE",
+          "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594"
+        },
+        {
+          "path": "vendor/Office/licenses/photocraft/LICENSE-MIT",
+          "sha256": "1a8f66d8a86b146f5336fa0d4b1186576c8aa98e60823080c85c7811cfd810af"
+        },
+        {
+          "path": "vendor/Office/licenses/photocraft/NOTICE",
+          "sha256": "511087b49923695d4d0d91416b3cda337157677814c85e40e4e05639fcaa1cdd"
+        }
+      ],
+      "license": "MIT OR Apache-2.0",
+      "nativeRuntime": "Office/cores/photocraft/pathweft_photocraft.dll",
+      "nativeSha256": "68c086cbd32c997b4a7d7c58ad63fdf816be1fed1a366381de8e1b15a5844a03",
+      "nativeBytes": 68491264,
+      "nativeFiles": [
+        {
+          "path": "photocraft/pathweft_photocraft.dll",
+          "bytes": 68491264,
+          "sha256": "68c086cbd32c997b4a7d7c58ad63fdf816be1fed1a366381de8e1b15a5844a03"
+        },
+        {
+          "path": "photocraft/VCRUNTIME140.dll",
+          "bytes": 124544,
+          "sha256": "d5e4d9a3e835fa679450145d6a7d94e36573a509317111904d9b3712c30d9066"
+        }
+      ],
+      "nativeImports": [
+        "KERNEL32.dll",
+        "VCRUNTIME140.dll",
+        "api-ms-win-core-synch-l1-2-0.dll",
+        "api-ms-win-crt-heap-l1-1-0.dll",
+        "api-ms-win-crt-math-l1-1-0.dll",
+        "api-ms-win-crt-runtime-l1-1-0.dll",
+        "api-ms-win-crt-string-l1-1-0.dll",
+        "bcryptprimitives.dll",
+        "kernel32.dll",
+        "ntdll.dll"
+      ],
+      "abi": 1,
+      "buildToolchain": "Rust 1.95.0 x86_64-pc-windows-msvc; one compiler job",
+      "baselineCli": "Historical comparison only; no CLI executable ships or runs"
+    },
+    {
+      "id": "vectorcraft",
+      "version": "0.21.1",
+      "sourceCommit": "f6aa4309b4e11a6844e156120560b4beabf17fe9",
+      "sourceArchive": "vectorcraft-f6aa4309b4e11a6844e156120560b4beabf17fe9.zip",
+      "sourceUrl": "https://codeload.github.com/storytold/vectorcraft/zip/f6aa4309b4e11a6844e156120560b4beabf17fe9",
+      "sourceSha256": "8014f09e85602c7bd62f0a9490e3a687631cc3ecd3b591790029394a70faf424",
+      "fonts": {
+        "sourceCommit": "b076417b5880bd4154bd22f00695b1d28c6bea83",
+        "archive": "craft-fonts-b076417b5880bd4154bd22f00695b1d28c6bea83.zip",
+        "archiveUrl": "https://codeload.github.com/storytold/craft-fonts/zip/b076417b5880bd4154bd22f00695b1d28c6bea83",
+        "archiveSha256": "f5b09678d7212ccdc47884d3ce50e66dcab0fa07c7603a32ac0b4a826a5d6415",
+        "notices": [
+          {
+            "path": "vendor/Office/licenses/vectorcraft/craft-fonts/ATTRIBUTION.md",
+            "sha256": "aa2aa7eec68c32ac2da6ff7162ca9100ab3680e4c7b98365fc7c74ddd4167d07"
+          },
+          {
+            "path": "vendor/Office/licenses/vectorcraft/craft-fonts/LICENSE-APACHE",
+            "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594"
+          },
+          {
+            "path": "vendor/Office/licenses/vectorcraft/craft-fonts/LICENSE-MIT",
+            "sha256": "e360d6f5941863521687517eee951fac3328ee9f379fcb11bb5031fe6614fc8f"
+          },
+          {
+            "path": "vendor/Office/licenses/vectorcraft/craft-fonts/fonts/biz-ud-mincho/OFL.txt",
+            "sha256": "ef0ed524b3bd012f37015e986809eed6f67905456ebfc1ebd7fcc2765282ee01"
+          },
+          {
+            "path": "vendor/Office/licenses/vectorcraft/craft-fonts/fonts/biz-ud-pgothic/OFL.txt",
+            "sha256": "e753d7155d53c747d037a445e584c8ecfca6dd79846db610417e282a736b28bc"
+          },
+          {
+            "path": "vendor/Office/licenses/vectorcraft/craft-fonts/fonts/lxgw-wenkai-lite/OFL.txt",
+            "sha256": "0333a85fe077b6849f8e417acc44e8bd879442ceb681e271acf93e2d57fd4e2e"
+          },
+          {
+            "path": "vendor/Office/licenses/vectorcraft/craft-fonts/fonts/nanum-gothic/OFL.txt",
+            "sha256": "eeacf16032901d0ed0456876ec77b8f0fda6b3fecec7d972f8543eb602e6c30f"
+          },
+          {
+            "path": "vendor/Office/licenses/vectorcraft/craft-fonts/fonts/noto-sans-arabic/OFL.txt",
+            "sha256": "07fc70bfeb985cc1a87a8587d0a0c80bab11c86c9dc3fd95b6f0cb332f983e96"
+          },
+          {
+            "path": "vendor/Office/licenses/vectorcraft/craft-fonts/fonts/noto-sans-cjk-sc/OFL.txt",
+            "sha256": "6a73f9541c2de74158c0e7cf6b0a58ef774f5a780bf191f2d7ec9cc53efe2bf2"
+          },
+          {
+            "path": "vendor/Office/licenses/vectorcraft/craft-fonts/fonts/noto-sans-devanagari/OFL.txt",
+            "sha256": "a216f6f8d85c7228093e0ee5e258d9d377e6671f68acb4db1930b29583d0f331"
+          },
+          {
+            "path": "vendor/Office/licenses/vectorcraft/craft-fonts/fonts/noto-sans-georgian/OFL.txt",
+            "sha256": "8c02263c5d73d40544f9ed91e30c4e947407057a3cc430d7b786189aeceff6df"
+          },
+          {
+            "path": "vendor/Office/licenses/vectorcraft/craft-fonts/fonts/noto-sans-hebrew/OFL.txt",
+            "sha256": "9b9fe028b5ba74d231659a1bbaf0ed09b11e759d1ca6a070999e16d151616b47"
+          },
+          {
+            "path": "vendor/Office/licenses/vectorcraft/craft-fonts/fonts/noto-sans-symbols-2/OFL.txt",
+            "sha256": "b118dd41337806a5d4797052c77caf3bd096aed783e5eb21b4d11154351e1ac0"
+          },
+          {
+            "path": "vendor/Office/licenses/vectorcraft/craft-fonts/fonts/noto-sans-symbols/OFL.txt",
+            "sha256": "b118dd41337806a5d4797052c77caf3bd096aed783e5eb21b4d11154351e1ac0"
+          },
+          {
+            "path": "vendor/Office/licenses/vectorcraft/craft-fonts/fonts/noto-sans-thai/OFL.txt",
+            "sha256": "2e98fd23a52d253db8612cd5942c8f2ff4111b21d2367050fdca91d8ccc374a0"
+          },
+          {
+            "path": "vendor/Office/licenses/vectorcraft/craft-fonts/fonts/shippori-mincho/OFL.txt",
+            "sha256": "41fba056279be5f45ff9a99e44b7b53897b42732f5806d8e666e0ab49ac6bd38"
+          }
+        ]
+      },
+      "notices": [
+        {
+          "path": "vendor/Office/licenses/vectorcraft/ASSETS.md",
+          "sha256": "e863bb8f00851bb2a267cc98963e0cc6219608f4999e24db911435f2bc67cc00"
+        },
+        {
+          "path": "vendor/Office/licenses/vectorcraft/LICENSE-APACHE",
+          "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594"
+        },
+        {
+          "path": "vendor/Office/licenses/vectorcraft/LICENSE-MIT",
+          "sha256": "8b6025dc4b707e0fb08b9c2054096f1be3ae61529399aa2c348dec676562dc71"
+        },
+        {
+          "path": "vendor/Office/licenses/vectorcraft/NOTICE",
+          "sha256": "bd923fe0b697afe49943454e199078bf7b5d1af847ea2aabaffa396c17bd4943"
+        },
+        {
+          "path": "vendor/Office/licenses/vectorcraft/assets/app-icon/LICENSE.txt",
+          "sha256": "7323e2ad58efcf69f0871f419531f707ae6bee61d00c7d84de6f8300d7ad19f7"
+        },
+        {
+          "path": "vendor/Office/licenses/vectorcraft/assets/fonts/OFL-Inter.txt",
+          "sha256": "262481e844521b326f5ecd053e59b98c8b2da78c8ee1bdbb6e8174305e54935a"
+        },
+        {
+          "path": "vendor/Office/licenses/vectorcraft/assets/fonts/OFL-JetBrainsMono.txt",
+          "sha256": "a76abf002c49097d146e86740a3105a5d00450b1592e820a1109a8c5680cd697"
+        },
+        {
+          "path": "vendor/Office/licenses/vectorcraft/assets/fonts/OFL-SourceSans3.txt",
+          "sha256": "56af9b9c6715597e458284a474dc118a50a4150e9d547c70f7b4a33c3e6a9328"
+        },
+        {
+          "path": "vendor/Office/licenses/vectorcraft/assets/fonts/OFL-SourceSerif4.txt",
+          "sha256": "c21d7293d87b6d7ab1d0229a2f55b77f33a7613a6a4e66f6693d68d7d8d09464"
+        }
+      ],
+      "license": "MIT OR Apache-2.0",
+      "nativeRuntime": "Office/cores/vectorcraft/pathweft_vectorcraft.dll",
+      "nativeSha256": "bdc8cc07046745e11a2b7959592d46217f825241df92dbb2f4245f1e0f0a4b02",
+      "nativeBytes": 78570496,
+      "nativeFiles": [
+        {
+          "path": "vectorcraft/pathweft_vectorcraft.dll",
+          "bytes": 78570496,
+          "sha256": "bdc8cc07046745e11a2b7959592d46217f825241df92dbb2f4245f1e0f0a4b02"
+        },
+        {
+          "path": "vectorcraft/VCRUNTIME140.dll",
+          "bytes": 124544,
+          "sha256": "d5e4d9a3e835fa679450145d6a7d94e36573a509317111904d9b3712c30d9066"
+        }
+      ],
+      "nativeImports": [
+        "KERNEL32.dll",
+        "VCRUNTIME140.dll",
+        "advapi32.dll",
+        "api-ms-win-core-synch-l1-2-0.dll",
+        "api-ms-win-crt-heap-l1-1-0.dll",
+        "api-ms-win-crt-math-l1-1-0.dll",
+        "api-ms-win-crt-runtime-l1-1-0.dll",
+        "api-ms-win-crt-string-l1-1-0.dll",
+        "bcryptprimitives.dll",
+        "kernel32.dll",
+        "ntdll.dll"
+      ],
+      "abi": 1,
+      "buildToolchain": "Rust 1.95.0 x86_64-pc-windows-msvc; one compiler job",
+      "baselineCli": "Historical comparison only; no CLI executable ships or runs"
+    },
+    {
+      "id": "figcraft",
+      "version": "0.15.1",
+      "sourceCommit": "9ab2c65ae23b66c10d6e4b1d282df9b28c692bf9",
+      "sourceArchive": "figcraft-9ab2c65ae23b66c10d6e4b1d282df9b28c692bf9.zip",
+      "sourceUrl": "https://codeload.github.com/storytold/figcraft/zip/9ab2c65ae23b66c10d6e4b1d282df9b28c692bf9",
+      "sourceSha256": "308cfa3ce074e24152e44856bc6d0bc6a147d973980c8c3bd5275030138914d9",
+      "fonts": {
+        "sourceCommit": "37827adc41fd165f9a9234ac40f94dbad353aa69",
+        "archive": "craft-fonts-37827adc41fd165f9a9234ac40f94dbad353aa69.zip",
+        "archiveUrl": "https://codeload.github.com/storytold/craft-fonts/zip/37827adc41fd165f9a9234ac40f94dbad353aa69",
+        "archiveSha256": "6fb4b49f8ad2916c66f27ddfad2ddc2c567daefc56f36802045f836147ffb88e",
+        "notices": [
+          {
+            "path": "vendor/Office/licenses/figcraft/craft-fonts/ATTRIBUTION.md",
+            "sha256": "5ffc2bfba3b480451cb98c5dd50887999b81168022f8fb005c46c1cb2ea7c37a"
+          },
+          {
+            "path": "vendor/Office/licenses/figcraft/craft-fonts/LICENSE-APACHE",
+            "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594"
+          },
+          {
+            "path": "vendor/Office/licenses/figcraft/craft-fonts/LICENSE-MIT",
+            "sha256": "e360d6f5941863521687517eee951fac3328ee9f379fcb11bb5031fe6614fc8f"
+          },
+          {
+            "path": "vendor/Office/licenses/figcraft/craft-fonts/fonts/biz-ud-mincho/OFL.txt",
+            "sha256": "ef0ed524b3bd012f37015e986809eed6f67905456ebfc1ebd7fcc2765282ee01"
+          },
+          {
+            "path": "vendor/Office/licenses/figcraft/craft-fonts/fonts/biz-ud-pgothic/OFL.txt",
+            "sha256": "e753d7155d53c747d037a445e584c8ecfca6dd79846db610417e282a736b28bc"
+          },
+          {
+            "path": "vendor/Office/licenses/figcraft/craft-fonts/fonts/caladea/OFL.txt",
+            "sha256": "ccdab61d371d8c8683a128a92cd7d498dbdb1d37689f7cb21f1bf6b16658d213"
+          },
+          {
+            "path": "vendor/Office/licenses/figcraft/craft-fonts/fonts/carlito/OFL.txt",
+            "sha256": "58402f82a7c332a700294988fe7554fbb0a63a8d27ccc1ee3bbc640311990a00"
+          },
+          {
+            "path": "vendor/Office/licenses/figcraft/craft-fonts/fonts/inter/OFL.txt",
+            "sha256": "262481e844521b326f5ecd053e59b98c8b2da78c8ee1bdbb6e8174305e54935a"
+          },
+          {
+            "path": "vendor/Office/licenses/figcraft/craft-fonts/fonts/lato/OFL.txt",
+            "sha256": "74ba064d03f1f1c4a952da936c3eb71866c34404916734de3cae73b34357e59e"
+          },
+          {
+            "path": "vendor/Office/licenses/figcraft/craft-fonts/fonts/liberation-mono/OFL.txt",
+            "sha256": "93fed46019c38bbe566b479d22148e2e8a1e85ada614accb0211c37b2c61c19b"
+          },
+          {
+            "path": "vendor/Office/licenses/figcraft/craft-fonts/fonts/liberation-sans/OFL.txt",
+            "sha256": "93fed46019c38bbe566b479d22148e2e8a1e85ada614accb0211c37b2c61c19b"
+          },
+          {
+            "path": "vendor/Office/licenses/figcraft/craft-fonts/fonts/liberation-serif/OFL.txt",
+            "sha256": "93fed46019c38bbe566b479d22148e2e8a1e85ada614accb0211c37b2c61c19b"
+          },
+          {
+            "path": "vendor/Office/licenses/figcraft/craft-fonts/fonts/lxgw-wenkai-lite/OFL.txt",
+            "sha256": "0333a85fe077b6849f8e417acc44e8bd879442ceb681e271acf93e2d57fd4e2e"
+          },
+          {
+            "path": "vendor/Office/licenses/figcraft/craft-fonts/fonts/merriweather/OFL.txt",
+            "sha256": "a7ba785ad99b6eae0444ab89910e512d4af9865937fddbcb5c72c4f59f55d6ad"
+          },
+          {
+            "path": "vendor/Office/licenses/figcraft/craft-fonts/fonts/montserrat/OFL.txt",
+            "sha256": "8b7141c03fa4f8d44e6345d5d4931709290f0f67875e452e95ac1fd3a027802e"
+          },
+          {
+            "path": "vendor/Office/licenses/figcraft/craft-fonts/fonts/nanum-gothic/OFL.txt",
+            "sha256": "eeacf16032901d0ed0456876ec77b8f0fda6b3fecec7d972f8543eb602e6c30f"
+          },
+          {
+            "path": "vendor/Office/licenses/figcraft/craft-fonts/fonts/noto-sans-arabic/OFL.txt",
+            "sha256": "07fc70bfeb985cc1a87a8587d0a0c80bab11c86c9dc3fd95b6f0cb332f983e96"
+          },
+          {
+            "path": "vendor/Office/licenses/figcraft/craft-fonts/fonts/noto-sans-cjk-sc/OFL.txt",
+            "sha256": "6a73f9541c2de74158c0e7cf6b0a58ef774f5a780bf191f2d7ec9cc53efe2bf2"
+          },
+          {
+            "path": "vendor/Office/licenses/figcraft/craft-fonts/fonts/noto-sans-devanagari/OFL.txt",
+            "sha256": "a216f6f8d85c7228093e0ee5e258d9d377e6671f68acb4db1930b29583d0f331"
+          },
+          {
+            "path": "vendor/Office/licenses/figcraft/craft-fonts/fonts/noto-sans-georgian/OFL.txt",
+            "sha256": "8c02263c5d73d40544f9ed91e30c4e947407057a3cc430d7b786189aeceff6df"
+          },
+          {
+            "path": "vendor/Office/licenses/figcraft/craft-fonts/fonts/noto-sans-hebrew/OFL.txt",
+            "sha256": "9b9fe028b5ba74d231659a1bbaf0ed09b11e759d1ca6a070999e16d151616b47"
+          },
+          {
+            "path": "vendor/Office/licenses/figcraft/craft-fonts/fonts/noto-sans-symbols-2/OFL.txt",
+            "sha256": "b118dd41337806a5d4797052c77caf3bd096aed783e5eb21b4d11154351e1ac0"
+          },
+          {
+            "path": "vendor/Office/licenses/figcraft/craft-fonts/fonts/noto-sans-symbols/OFL.txt",
+            "sha256": "b118dd41337806a5d4797052c77caf3bd096aed783e5eb21b4d11154351e1ac0"
+          },
+          {
+            "path": "vendor/Office/licenses/figcraft/craft-fonts/fonts/noto-sans-thai/OFL.txt",
+            "sha256": "2e98fd23a52d253db8612cd5942c8f2ff4111b21d2367050fdca91d8ccc374a0"
+          },
+          {
+            "path": "vendor/Office/licenses/figcraft/craft-fonts/fonts/nunito-sans/OFL.txt",
+            "sha256": "efbb0c9e864cef973982d9a17567e6be5c3d1759695574586f3f18c7ecca064b"
+          },
+          {
+            "path": "vendor/Office/licenses/figcraft/craft-fonts/fonts/open-sans/OFL.txt",
+            "sha256": "fbbbcfef55318de350562559b671360de6d597112ecc5c73881b05092db89602"
+          },
+          {
+            "path": "vendor/Office/licenses/figcraft/craft-fonts/fonts/playfair-display/OFL.txt",
+            "sha256": "566be814f8e96e93dfa16101331557eb6b5467e9e03f627c0910fe93ca12300e"
+          },
+          {
+            "path": "vendor/Office/licenses/figcraft/craft-fonts/fonts/poppins/OFL.txt",
+            "sha256": "6be04893d770899a015649c7aa3b582f871b272f8747a92b78b17c3e5c8b2573"
+          },
+          {
+            "path": "vendor/Office/licenses/figcraft/craft-fonts/fonts/roboto/OFL.txt",
+            "sha256": "061402327a96aadb0bfb694a960ed289ecd38d383e396243831ab81feb109c41"
+          },
+          {
+            "path": "vendor/Office/licenses/figcraft/craft-fonts/fonts/shippori-mincho/OFL.txt",
+            "sha256": "41fba056279be5f45ff9a99e44b7b53897b42732f5806d8e666e0ab49ac6bd38"
+          },
+          {
+            "path": "vendor/Office/licenses/figcraft/craft-fonts/fonts/source-sans-3/OFL.txt",
+            "sha256": "89ad2c4f66dd29127527493e729c31e731f111cf10faf5774c3db9275ed0c22c"
+          },
+          {
+            "path": "vendor/Office/licenses/figcraft/craft-fonts/fonts/source-serif-4/OFL.txt",
+            "sha256": "75784a295293a8992f5a8d99210566e0064a012e6dab6731305e3787f15896c7"
+          }
+        ]
+      },
+      "notices": [
+        {
+          "path": "vendor/Office/licenses/figcraft/ATTRIBUTION.md",
+          "sha256": "3eb47f685d9e45faaf2b0b366a8d5752c3e89e6ab24732e4c90617fa8bae3f66"
+        },
+        {
+          "path": "vendor/Office/licenses/figcraft/LICENSE-APACHE",
+          "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594"
+        },
+        {
+          "path": "vendor/Office/licenses/figcraft/LICENSE-MIT",
+          "sha256": "360c12b61568ef50808e731c98ae84110ea6f674dc34ac1ecb05d7abb9a6079a"
+        },
+        {
+          "path": "vendor/Office/licenses/figcraft/NOTICE",
+          "sha256": "0595c3310afc53ce46252fe4c5a1ac4f048ef771978603b3fe2464a753a20003"
+        },
+        {
+          "path": "vendor/Office/licenses/figcraft/assets/app-icon/LICENSE.txt",
+          "sha256": "9a58cbf7d438bb0fadc981423002adccd267aab21d0ab1c1e5c43d998b7702d2"
+        }
+      ],
+      "license": "MIT OR Apache-2.0",
+      "compatibilityPatches": [
+        {
+          "path": "crates/pathops/src/budget.rs",
+          "originalSha256": "e7104635bd3c9c4cd898029973f13d58e8a862e579f8aae88d929094663efb4d",
+          "sha256": "c94fd874683923d2701bd06cd3e5dfd6e0a04ed320f50373b6b127ce8bdb5f18",
+          "reason": "Stable Rust equivalent of unsigned isolate_lowest_one; unchanged sweep budgets"
+        }
+      ],
+      "nativeRuntime": "Office/cores/figcraft/pathweft_figcraft.dll",
+      "nativeSha256": "27230081f7a0fc972e6765d10c8341a891e58198c867b9bacf0dcc9a3426d18d",
+      "nativeBytes": 59769344,
+      "nativeFiles": [
+        {
+          "path": "figcraft/pathweft_figcraft.dll",
+          "bytes": 59769344,
+          "sha256": "27230081f7a0fc972e6765d10c8341a891e58198c867b9bacf0dcc9a3426d18d"
+        },
+        {
+          "path": "figcraft/VCRUNTIME140.dll",
+          "bytes": 124544,
+          "sha256": "d5e4d9a3e835fa679450145d6a7d94e36573a509317111904d9b3712c30d9066"
+        }
+      ],
+      "nativeImports": [
+        "KERNEL32.dll",
+        "VCRUNTIME140.dll",
+        "api-ms-win-core-synch-l1-2-0.dll",
+        "api-ms-win-crt-heap-l1-1-0.dll",
+        "api-ms-win-crt-math-l1-1-0.dll",
+        "api-ms-win-crt-runtime-l1-1-0.dll",
+        "bcryptprimitives.dll",
+        "kernel32.dll",
+        "ntdll.dll"
+      ],
+      "abi": 1,
+      "buildToolchain": "Rust 1.95.0 x86_64-pc-windows-msvc; one compiler job",
+      "baselineCli": "Historical comparison only; no CLI executable ships or runs"
+    },
+    {
+      "id": "pdfcraft",
+      "version": "0.18.2",
+      "sourceCommit": "7faa4f35cefb0dea04137ec475bdc770945c22cd",
+      "sourceArchive": "pdfcraft-7faa4f35cefb0dea04137ec475bdc770945c22cd.zip",
+      "sourceUrl": "https://codeload.github.com/storytold/pdfcraft/zip/7faa4f35cefb0dea04137ec475bdc770945c22cd",
+      "sourceSha256": "95776ed84bdb9e824863e5abb8dc21cf2e224569eb5044eb8d6fe2e16e0124a6",
+      "fonts": {
+        "sourceCommit": "b076417b5880bd4154bd22f00695b1d28c6bea83",
+        "archive": "craft-fonts-b076417b5880bd4154bd22f00695b1d28c6bea83.zip",
+        "archiveUrl": "https://codeload.github.com/storytold/craft-fonts/zip/b076417b5880bd4154bd22f00695b1d28c6bea83",
+        "archiveSha256": "f5b09678d7212ccdc47884d3ce50e66dcab0fa07c7603a32ac0b4a826a5d6415",
+        "notices": [
+          {
+            "path": "vendor/Office/licenses/pdfcraft/craft-fonts/ATTRIBUTION.md",
+            "sha256": "aa2aa7eec68c32ac2da6ff7162ca9100ab3680e4c7b98365fc7c74ddd4167d07"
+          },
+          {
+            "path": "vendor/Office/licenses/pdfcraft/craft-fonts/LICENSE-APACHE",
+            "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594"
+          },
+          {
+            "path": "vendor/Office/licenses/pdfcraft/craft-fonts/LICENSE-MIT",
+            "sha256": "e360d6f5941863521687517eee951fac3328ee9f379fcb11bb5031fe6614fc8f"
+          },
+          {
+            "path": "vendor/Office/licenses/pdfcraft/craft-fonts/fonts/biz-ud-mincho/OFL.txt",
+            "sha256": "ef0ed524b3bd012f37015e986809eed6f67905456ebfc1ebd7fcc2765282ee01"
+          },
+          {
+            "path": "vendor/Office/licenses/pdfcraft/craft-fonts/fonts/biz-ud-pgothic/OFL.txt",
+            "sha256": "e753d7155d53c747d037a445e584c8ecfca6dd79846db610417e282a736b28bc"
+          },
+          {
+            "path": "vendor/Office/licenses/pdfcraft/craft-fonts/fonts/lxgw-wenkai-lite/OFL.txt",
+            "sha256": "0333a85fe077b6849f8e417acc44e8bd879442ceb681e271acf93e2d57fd4e2e"
+          },
+          {
+            "path": "vendor/Office/licenses/pdfcraft/craft-fonts/fonts/nanum-gothic/OFL.txt",
+            "sha256": "eeacf16032901d0ed0456876ec77b8f0fda6b3fecec7d972f8543eb602e6c30f"
+          },
+          {
+            "path": "vendor/Office/licenses/pdfcraft/craft-fonts/fonts/noto-sans-arabic/OFL.txt",
+            "sha256": "07fc70bfeb985cc1a87a8587d0a0c80bab11c86c9dc3fd95b6f0cb332f983e96"
+          },
+          {
+            "path": "vendor/Office/licenses/pdfcraft/craft-fonts/fonts/noto-sans-cjk-sc/OFL.txt",
+            "sha256": "6a73f9541c2de74158c0e7cf6b0a58ef774f5a780bf191f2d7ec9cc53efe2bf2"
+          },
+          {
+            "path": "vendor/Office/licenses/pdfcraft/craft-fonts/fonts/noto-sans-devanagari/OFL.txt",
+            "sha256": "a216f6f8d85c7228093e0ee5e258d9d377e6671f68acb4db1930b29583d0f331"
+          },
+          {
+            "path": "vendor/Office/licenses/pdfcraft/craft-fonts/fonts/noto-sans-georgian/OFL.txt",
+            "sha256": "8c02263c5d73d40544f9ed91e30c4e947407057a3cc430d7b786189aeceff6df"
+          },
+          {
+            "path": "vendor/Office/licenses/pdfcraft/craft-fonts/fonts/noto-sans-hebrew/OFL.txt",
+            "sha256": "9b9fe028b5ba74d231659a1bbaf0ed09b11e759d1ca6a070999e16d151616b47"
+          },
+          {
+            "path": "vendor/Office/licenses/pdfcraft/craft-fonts/fonts/noto-sans-symbols-2/OFL.txt",
+            "sha256": "b118dd41337806a5d4797052c77caf3bd096aed783e5eb21b4d11154351e1ac0"
+          },
+          {
+            "path": "vendor/Office/licenses/pdfcraft/craft-fonts/fonts/noto-sans-symbols/OFL.txt",
+            "sha256": "b118dd41337806a5d4797052c77caf3bd096aed783e5eb21b4d11154351e1ac0"
+          },
+          {
+            "path": "vendor/Office/licenses/pdfcraft/craft-fonts/fonts/noto-sans-thai/OFL.txt",
+            "sha256": "2e98fd23a52d253db8612cd5942c8f2ff4111b21d2367050fdca91d8ccc374a0"
+          },
+          {
+            "path": "vendor/Office/licenses/pdfcraft/craft-fonts/fonts/shippori-mincho/OFL.txt",
+            "sha256": "41fba056279be5f45ff9a99e44b7b53897b42732f5806d8e666e0ab49ac6bd38"
+          }
+        ]
+      },
+      "notices": [
+        {
+          "path": "vendor/Office/licenses/pdfcraft/ATTRIBUTION.md",
+          "sha256": "16970f8ba9379955af975a67e9daf25136ff5a60829d096603a51b7c1f9d0c67"
+        },
+        {
+          "path": "vendor/Office/licenses/pdfcraft/ATTRIBUTION.toml",
+          "sha256": "62acbfa9ee8eb1efc5c78b1d6f634f7a60b5deec0eec8f4bcc74434e0f84330e"
+        },
+        {
+          "path": "vendor/Office/licenses/pdfcraft/LICENSE-APACHE",
+          "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594"
+        },
+        {
+          "path": "vendor/Office/licenses/pdfcraft/LICENSE-MIT",
+          "sha256": "cd7032ea33b71427f188e34ffb4aee9d6868a57fd196037c5c8b2be03a2a0352"
+        },
+        {
+          "path": "vendor/Office/licenses/pdfcraft/LICENSES.toml",
+          "sha256": "15094a2be81c9817e7f1d5f1aae0525275be6c5590a7cb6b8ff9addbad0503a6"
+        },
+        {
+          "path": "vendor/Office/licenses/pdfcraft/NOTICE",
+          "sha256": "9f854f730719af962cd840529324d089e05e68a30bd245c50e33f96e009b4314"
+        },
+        {
+          "path": "vendor/Office/licenses/pdfcraft/assets/app-icon/LICENSE-document.txt",
+          "sha256": "64a3137e3d5cc41e5b78d2ad8dd9ddddd6588283f9f7b3128aa6a8a50852fb9a"
+        },
+        {
+          "path": "vendor/Office/licenses/pdfcraft/assets/app-icon/LICENSE.txt",
+          "sha256": "b768acafe6cbad8247eedf86b5b5381feefcd4ee0f8c7808b86811bc687cf37b"
+        },
+        {
+          "path": "vendor/Office/licenses/pdfcraft/assets/fonts/OFL-DancingScript.txt",
+          "sha256": "6f090277c00af96651ce6dbcc38ff1591047a3bffef486e80b6a32e8276a8201"
+        },
+        {
+          "path": "vendor/Office/licenses/pdfcraft/assets/fonts/OFL-Inter.txt",
+          "sha256": "262481e844521b326f5ecd053e59b98c8b2da78c8ee1bdbb6e8174305e54935a"
+        },
+        {
+          "path": "vendor/Office/licenses/pdfcraft/assets/fonts/OFL-JetBrainsMono.txt",
+          "sha256": "a76abf002c49097d146e86740a3105a5d00450b1592e820a1109a8c5680cd697"
+        }
+      ],
+      "license": "MIT OR Apache-2.0",
+      "nativeRuntime": "Office/cores/pdfcraft/pathweft_pdfcraft.dll",
+      "nativeSha256": "b3c15b40dc32c68984e00b36703e64babfe34991f23b4ae69d32ca848e7bb46d",
+      "nativeBytes": 51849216,
+      "nativeFiles": [
+        {
+          "path": "pdfcraft/pathweft_pdfcraft.dll",
+          "bytes": 51849216,
+          "sha256": "b3c15b40dc32c68984e00b36703e64babfe34991f23b4ae69d32ca848e7bb46d"
+        },
+        {
+          "path": "pdfcraft/VCRUNTIME140.dll",
+          "bytes": 124544,
+          "sha256": "d5e4d9a3e835fa679450145d6a7d94e36573a509317111904d9b3712c30d9066"
+        }
+      ],
+      "nativeImports": [
+        "KERNEL32.dll",
+        "VCRUNTIME140.dll",
+        "api-ms-win-core-synch-l1-2-0.dll",
+        "api-ms-win-crt-heap-l1-1-0.dll",
+        "api-ms-win-crt-math-l1-1-0.dll",
+        "api-ms-win-crt-runtime-l1-1-0.dll",
+        "bcryptprimitives.dll",
         "ntdll.dll"
       ],
       "abi": 1,

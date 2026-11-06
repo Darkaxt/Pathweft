@@ -39,6 +39,9 @@ public partial class MainWindow
                 var office=await Show(path);
                 check(office.FallbackForVerification&&office.WorkersForVerification.Count==1&&office.WorkersForVerification[0].Engine=="libreoffice","Unsupported primary format goes directly to the bundled fallback: "+name);
                 check(PreviewChildren<Image>(body).Any(image=>image.Source!=null)&&PreviewChildren<TextBlock>(body).Any(text=>text.Text.StartsWith("Page 1 of ")),"Fallback exposes actual rendered content and authoritative page count: "+name);
+                var imported=(OfficeDocument)typeof(OfficeViewer).GetField("document",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic).GetValue(office);
+                var text=await imported.ExtractText(null,CancellationToken.None);
+                check(text.Status=="unsupported"&&text.Records.Length==0&&text.Next==null&&text.Coverage.Contains("LibreOffice"),"Fallback explicitly reports unsupported Craft extraction without pretending to have indexed its rendered pixels: "+name);
                 await S1Verification.Snapshot(window,root,name.Replace('.','-'));
                 await Released(path,hash,office);
             }

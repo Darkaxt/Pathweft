@@ -4,6 +4,7 @@
 use std::cell::RefCell;
 use std::ffi::{c_char, c_void, CString};
 use std::panic::{catch_unwind, AssertUnwindSafe};
+mod extraction;
 
 #[repr(C)]
 pub struct Frame {
@@ -26,6 +27,7 @@ struct Document {
     info: CString,
     raster: Raster,
     frame: Frame,
+    text: CString,
 }
 
 thread_local! {
@@ -59,7 +61,7 @@ pub unsafe extern "C" fn pw_office_open(
         let ext=std::str::from_utf8(unsafe { std::slice::from_raw_parts(extension,extension_length) }).map_err(|e| e.to_string())?;
         let engine=engine::Engine::open(input,ext)?;
         let info=CString::new(engine.info().to_string()).map_err(|e|e.to_string())?;
-        Ok(Document {engine,info,raster:Raster {width:0,height:0,format:0,pixels:Vec::new()},frame:Frame {width:0,height:0,format:0,length:0,pixels:std::ptr::null()}})
+        Ok(Document {engine,info,text:CString::default(),raster:Raster {width:0,height:0,format:0,pixels:Vec::new()},frame:Frame {width:0,height:0,format:0,length:0,pixels:std::ptr::null()}})
     }));
     match result {
         Ok(Ok(document))=>Box::into_raw(Box::new(document)).cast(),
@@ -72,6 +74,24 @@ pub unsafe extern "C" fn pw_office_open(
 pub unsafe extern "C" fn pw_office_info(document: *mut c_void) -> *const c_char {
     if document.is_null() { return std::ptr::null(); }
     unsafe { &*document.cast::<Document>() }.info.as_ptr()
+}
+
+/// Additive v1 extension. JSON is owned until the next extraction or close;
+/// rendering neither invalidates it nor changes the immutable text cursor.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn pw_office_extract(document:*mut c_void,unit:u64,offset:usize,limit:usize)->*const c_char {
+    if document.is_null() {fail("Invalid extraction document".into());return std::ptr::null();}
+    let doc=unsafe {&mut *document.cast::<Document>()};
+    let result=catch_unwind(AssertUnwindSafe(||->Result<CString,String>{
+        let bytes=serde_json::to_vec(&doc.engine.extract(unit,offset,limit)?).map_err(|e|e.to_string())?;
+        if bytes.len()>limit || bytes.len()>extraction::MAX_REPLY {return Err("Extraction reply exceeds its limit".into());}
+        CString::new(bytes).map_err(|e|e.to_string())
+    }));
+    match result {
+        Ok(Ok(text))=>{doc.text=text;doc.text.as_ptr()},
+        Ok(Err(error))=>{fail(error);std::ptr::null()},
+        Err(_)=>{fail("Craft text extraction panicked".into());std::ptr::null()},
+    }
 }
 
 /// Returns 0 on success. RGBA pixels are premultiplied and remain owned by the

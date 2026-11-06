@@ -1,5 +1,5 @@
 [CmdletBinding()]
-param([Parameter(Mandatory)][string]$ProductDirectory,[Parameter(Mandatory)][string]$RunRoot,[switch]$EngineStateOnly)
+param([Parameter(Mandatory)][string]$ProductDirectory,[Parameter(Mandatory)][string]$RunRoot,[switch]$EngineStateOnly,[switch]$OfficeCoreOnly)
 $ErrorActionPreference='Stop'
 $project=Split-Path -Parent $PSScriptRoot
 $run=[IO.Path]::GetFullPath($RunRoot)
@@ -16,6 +16,7 @@ do{$probeProfile=Join-Path $run ('p'+$profileIndex);$profileIndex++}while(Test-P
 $env:PATHWEFT_PROFILE=$probeProfile
 [void][IO.Directory]::CreateDirectory($env:PATHWEFT_PROFILE)
 $env:TEMP=$env:TMP=Join-Path $run 'temp'
+if($OfficeCoreOnly){$env:PATHWEFT_OFFICE_CORE_ONLY='1'}
 & (Join-Path $PSScriptRoot 'Build-Development.ps1') -ScratchRoot (Join-Path $run 'probe-build') -Configuration Release -ProjectFile (Join-Path $project 'tests/PackagedChecks/PackagedChecks.csproj') -BuildProperty @("PathweftAssembly=$product\Pathweft.dll")
 if($LASTEXITCODE -ne 0){throw 'Independent delivered-assembly consumer did not compile.'}
 $probeOutput=Join-Path $run 'probe-build/artifacts/bin/PackagedChecks/release'

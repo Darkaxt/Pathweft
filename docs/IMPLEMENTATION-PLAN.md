@@ -1,7 +1,53 @@
 # Implementation and reconciliation
 
-Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.72, 2026-11-06,
+Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.73, 2026-11-06,
 including the user-authorized continued comparison requirement TRANSFER-07.
+
+Current2026-11-06: S16 is the single ACTIVE stage under the user's start-next-
+stage instruction and subsequent text-extraction addition. CRAFT-01..07 and
+CORE-24 are authoritative. Execute complete workflows sequentially: Office core
+refresh/extraction; Photo; Vector; Fig; PDF extraction/comparison; icon sizing;
+combined integration/source reconciliation; one normal final release with
+independent and applicable installed verification. These are work units within
+S16, not concurrent ACTIVE stages or separate publication checkpoints.
+
+Acceptance satisfied at source: refreshed Office cores retain actual declared
+formats/navigation, sidebar/Space/widget/archive ownership, source/MOTW and
+single-attempt LibreOffice crash recovery. Located Office extraction passes
+bounded Unicode continuations, native coordinates, empty/protected/malformed
+input, actual sent-response cancellation and subsequent rendering/worker exit.
+Old/new representative pagination/geometry matches; six rasters are identical,
+one Excel page differs at31 pixels with unchanged inspected content/layout.
+Native/source hashes, locks and selected Office graphs are recorded.
+Photo source workflow96640 also passes actual native/PSD/PSB layer composition,
+located Unicode/type-layer extraction, image-only/malformed states, sent-response
+cancellation, all three preview hosts, archive/disable behavior and source/MOTW/
+worker exit. Independent merged-image references retain inspected content/layout;
+recorded raster differences are not concealed by a new tolerance gate.
+Vector source workflow11704 passes actual native/SVG/SVGZ/PDF-AI artboards,
+located imported Unicode text/continuations, cancellation, all three hosts,
+archive/disable and source/MOTW/native exit. Inspected layout and exact sampled
+solid-fill reference colors pass; legacy AI/EPS limits are explicit. Spent trials
+and fixture executables were cleaned after evidence retention.
+Fig source workflow97564 also passes native/Figma frame rendering, located text,
+all hosts/archive/thumbnail priority, cancellation/source/MOTW and actual exit;
+the exact stable-Rust donor compatibility edit is recorded reproducibly.
+PDF source workflow98700 passes actual optional rendering and located extraction,
+Unicode/order, empty/image-only/protected/malformed inputs, all hosts/archive,
+cancellation and native exit. Windows remains the default. CORE-24 source icon
+footprint/contrast and actual packaged native/WPF identity checks pass.
+Selected source/dependency/license/advisory and Windows import review now passes;
+all seven native builds/format/extraction/resource workflows are recorded in
+docs/verification/2026-11-06-s16-craft.md. Combined candidate consumer106552
+passes all seven core/extraction workflows and the existing application/native
+checks. Actual executable icons at32/40/48/64px pass transparency/contrast and
+visual inspection. Acceptance remaining: clean committed corresponding-source
+packaging and final release/delivery verification. These
+are internal advancement blockers while implementation proceeds, not reasons
+to park the stage. No tracked deferrals. S19 indexing remains NOT STARTED and
+consumes the extraction contract later. Native/source/build scratch uses exact
+D:/Temp/pathweft-s16 paths for sustained small-file I/O; cleanup follows actual
+last consumers. No installed Craft/Coordinator or running Pathweft change.
 
 Next-release refinement2026-11-06: CORE-24 is NOT STARTED, assigned alongside
 S16 for the next planned release. Enlarge the taskbar icon's visible artwork
@@ -893,7 +939,7 @@ plan neither authorizes itself nor adds approval checkpoints.
 | S15 - Current-pane disk analysis | COMPLETE | SPACE-01..05, CORE-11/19..21, TRANSFER-15; affected CORE/LIFE/DELIVERY | S14 source/integration COMPLETE | Source/native acceptance plus full final57312/independent51296 and installed58076 close normal1.1.23 delivery. No required blocker or deferral remains. |
 | S17 - Transfer review, preview and icon refinements | COMPLETE | TRANSFER-16, PREVIEW-38, CORE-22; affected LIFE/DELIVERY | S15 delivered | Difference-only review/newer warnings/full-set actions; selection-following/pinned PiP/Windowed; transparent folder/compass icon and preserved Windows identity. Normal1.1.24 independently downloaded and installed-verified. |
 | S23 - Missing-folder tab recovery | COMPLETE | CORE-23; affected CORE/LIFE/DELIVERY | User-reported vanished local version folder; correction precedes future feature stages | Source92776, final Release93428 and independent retrieved87644 pass recovery/restoration and preservation regressions. Normal1.1.25/11e5d292 published with verified sources/assets. Installed94548 verifies matching files, restarted app/helper, readiness, routes and shortcut/profile identity; user confirms behavior. No remaining criteria, blockers or tracked deferrals. |
-| S16 - Craft core refresh and additional renderers (proposed) | NOT STARTED | Scope assessment in CRAFT-CORE-REVIEW.md; implementation requirements to establish before activation; next-release companion CORE-24 | S15 delivered; Pathweft-related work precedes unrelated shell integration | Evaluate existing Office core refresh and additional Photo/Vector/Fig/PDF libraries using source-built DLLs/owned workers; no installed-product or MCP dependency. Include the requested10-15% visible taskbar icon enlargement with packaged visual verification in the next release. No implementation started. |
+| S16 - Craft core refresh and additional renderers | ACTIVE | CRAFT-01..07; CORE-24; affected PREVIEW/LIFE/DELIVERY | S23 delivered; existing worker and LibreOffice baseline | Refresh Office cores; integrate Photo/Vector/Fig; qualify PDF extraction/render comparison; reusable located text extraction; taskbar icon sizing. Existing baseline known; all new implementation/qualification and final delivery remain internal advancement blockers. No tracked deferrals or second ACTIVE stage. |
 | S18 - Contextual performance monitoring | NOT STARTED | MONITOR-01..05; affected CORE-03/LIFE/DELIVERY | S16 closed under the selected execution order; source/privilege feasibility and concrete resource budgets resolved before implementation acceptance | Direct Statistics/Performance toggle; CPU/GPU/current-drive/current-folder cards; attributed process/file details; real workload/path/device qualification, bounded visible-only sampling and cleanup; one final independently/installed verified release when implementation is authorized. No criteria verified yet. |
 | S12 - Tresorit capability investigation | NOT STARTED | TRES-01..04 | S15 delivered; S16 and S18 considered first in the selected execution order | Supported API/client assessment, bounded REA as needed, evidence-backed capability matrix/decision and implementation proposal. Investigation only; no cloud mutation or integration implementation. |
 | S19 - Selected-folder content indexing | NOT STARTED | CONTENT-01..06; affected SEARCH/CORE/LIFE/DELIVERY | After S12 in the selected execution order; qualify extractor APIs, query/location semantics, provider metadata and resource budgets | Toolbar folder opt-in/current magnifier badges; qualified Craft/text extraction; persisted searchable strings and location arrays, periodic incremental refresh and cloud-cache independence. Verify actual search/open/freshness/recovery and one final independently/installed verified release when implementation is authorized. No criteria verified yet. |
@@ -948,6 +994,7 @@ owns its complete release/delivery gate; S12 delivers research documents only.
 | PREVIEW-38 | S17 | Selection-following PiP/Windowed, preserved host state/teardown, small accessible glyphs and combined next release |
 | CORE-22 | S17 | Approved yellow folder/darker compass icon, transparent multiresolution assets, embedded WPF/native use and unchanged Windows identity |
 | CORE-24 | S16 next-release companion | Approximately10-15% larger visible taskbar artwork; preserved design, bounds and identity; actual packaged/display-scale visual verification |
+| CRAFT-01..07 | S16 | Refreshed Office and additional source-built libraries, reusable located text extraction, preserved worker/preview lifetimes, actual format/fidelity/resource qualification and one final independently/installed verified release |
 | MONITOR-01..05 | S18 | Contextual performance cards/details, qualified Windows measurement/attribution, bounded visible-only ownership and verified final delivery after implementation authorization |
 | TRES-01..04 | S12 | Evidence-backed Tresorit investigation and implementation proposal; execution remains NOT STARTED |
 | CONTENT-01..06 | S19 | Selected-folder content extraction, compact searchable strings/location arrays, periodic freshness/current badges, original-file navigation and verified final delivery after implementation authorization |

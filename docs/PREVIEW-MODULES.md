@@ -1,6 +1,6 @@
 # Internal preview inventory
 
-Source inventory through S13. Runtime acceptance is tracked separately in the stage plan.
+Source inventory through S16. Runtime acceptance is tracked separately in the stage plan.
 Modules are compiled in, selected lazily and controlled by one persisted disabled
 module set in Pathweft Settings → Files → Preview modules. Space, the side pane
 and taskbar Preview/Space share the same selection and lifecycle implementation.
@@ -11,6 +11,10 @@ and taskbar Preview/Space share the same selection and lifecycle implementation.
 | Markdown | .md, .markdown, .mdx, .mmd, .mkd, .mdwn, .mdown, .mdc, .qmd, .rmd, .rmarkdown, .apib, .mdtxt, .mdtext; CommonMark headings, paragraphs, lists, emphasis, code, quotes and rules | First 1 MiB, visible truncation; Markdig 1.5.0 and native WPF FlowDocument; embedded HTML is inert, links are labels, images show alt labels; no remote resource loading or embedded script/diagram execution | QuickLook MarkdownViewer extension/selection/lifecycle adapted; its browser/template pipeline replaced by native WPF |
 | Images | .jpg, .jpeg, .png, .gif, .bmp, .webp, .ico, .tif, .tiff, .heic through available WIC decoders; first frame | 64 MiB / 200 megapixels; decoded longest dimension at most 2,000 pixels; optional HEIC/WebP availability depends on installed codecs | Selected QuickLook image lifecycle/format contract; existing File Labs WPF BitmapImage path, now backed by a closed source read |
 | PDF | .pdf with Previous/Next icons, direct page-number entry and a truthful page indicator; document scripts do not run | 64 MiB; Windows.Data.Pdf with in-memory source, one page render requested at 1,400 DIP per request (physical pixels depend on Windows rendering scale); password/encryption/renderer failures report unavailable | Existing File Labs Windows PDF renderer adapted to module ownership and bounded page navigation |
+| Layered images | Native .pcraft and PSD/PSB composition, including qualified editable layers/type | 64 MiB input, 256 MiB photo decoded allowance/64 megapixels; source-built PhotoCraft CPU compositor and sRGB conversion | Pinned PhotoCraft0.20.2 libraries in the owned document worker |
+| Vector artwork | Native .vectorcraft/.drawcraft, SVG/SVGZ and PDF-compatible AI with artboard selection; legacy PostScript AI/EPS unsupported | 64 MiB input, output longest side4096px; external linked-file readers/plug-in loading absent | Pinned VectorCraft0.21.1 libraries in the owned document worker |
+| Interface designs | Native .figcraft page/frame selection and best-effort binary .fig import; existing embedded thumbnails retain priority | 64 MiB input, output longest side4096px; donor native import budgets apply | Pinned FigCraft0.15.1 libraries in the owned document worker |
+| PDF (Craft) | Optional .pdf renderer with page navigation; Windows PDF remains the default | 64 MiB input/output bounds,4096px longest side; no scripts, OCR or linked-file loading | Pinned PdfCraft0.18.2 CPU render/text libraries in the owned document worker |
 | Archive and folder listing | Native archive formats listed in [ARCHIVES.md](ARCHIVES.md); expandable folder/file tree with icons, concise names and sizes for containers/virtual directories; existing Stash/Backup Labs explicit actions | All archive metadata, WPF rows created on expansion with virtualization; filesystem folder text remains limited to 1,000 names; no archive extraction or execution | Selected QuickLook selection/lifecycle; File Labs sidebar tree presentation; S4 native archive integration |
 | Video and audio | .mp4, .m4v, .mov, .wmv, .avi, .mkv, .webm, .mpg, .mpeg, .3gp, .ts; .mp3, .wav, .wma, .m4a, .aac, .flac, .ogg, .opus | Bundled libmpv/FFmpeg/libplacebo, native D3D11 gpu-next child window with hardware decoding; Dolby Vision metadata maps to BT.709/sRGB SDR. Space autoplays; side pane pauses until Play; icon playback/mute controls, seek and duration. Native events drive state and cleanup. No installed codec/player dependency | Selected native-window/client API approach from Darkaxt/vlc and Darkaxt/NuvioDesktopDV; exact runtime/source pin under vendor/MPV; retained optional Reel metadata |
 | Fonts | .ttf, .otf specimen at several sizes; no installation | 16 MiB; WPF font rendering; scrollable sample | Selected QuickLook font selection/lifecycle; File Labs native specimen |
@@ -88,6 +92,14 @@ final delivered acceptance remain separately tracked in the stage plan; this
 inventory does not assert a published S13 release. Missing runtimes and protected/
 unsupported inputs give explicit errors. Existing user actions such as Open backup/Reel remain
 separate clickable actions, with no automatic dispatch.
+
+The seven Craft cores also expose additive, bounded located-text batches through
+that worker. Native paragraphs/table paths, cells, slides/objects, text layers,
+design nodes and PDF glyph/line geometry are retained with continuation and
+coverage/status. Import notes remain explicit; successful rendering is not text
+completeness. No index, retained second full-text document or OCR starts here.
+See native/office/README.md and vendor/Office for qualified formats, exact pins,
+original notices and dependency/build graphs.
 
 Preview headers offer sidebar, Windowed and in-app PiP hosts. Host changes retain
 the same viewer, item and page/media/model state; detached modes pin that item

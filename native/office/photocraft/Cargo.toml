@@ -1,0 +1,23 @@
+[package]
+name = "pathweft-photocraft"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+rust-version = "1.95"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+photocraft-doc = { workspace = true }
+photocraft-format = { workspace = true }
+photocraft-io = { workspace = true }
+photocraft-compose = { workspace = true }
+photocraft-cms = { workspace = true }
+photocraft-text = { workspace = true }
+photocraft-raster = { workspace = true }
+serde_json = { workspace = true }
+
+[[example]]
+name = "pathweft-fixtures"
+path = "src/fixtures.rs"

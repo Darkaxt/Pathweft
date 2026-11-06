@@ -59,6 +59,7 @@ internal static class HiddenTrialPresentation
          Settings.Profile?.StartsWith(@"D:\Temp\pathweft-s5-native\", StringComparison.OrdinalIgnoreCase) == true ||
          Settings.Profile?.StartsWith(@"D:\Temp\pathweft-s8-delivery\", StringComparison.OrdinalIgnoreCase) == true ||
          Settings.Profile?.StartsWith(@"D:\Temp\pathweft-s13-s9-s11\", StringComparison.OrdinalIgnoreCase) == true ||
+         Settings.Profile?.StartsWith(@"D:\Temp\pathweft-s16\", StringComparison.OrdinalIgnoreCase) == true ||
          Settings.Profile?.StartsWith(@"D:\Temp\pathweft-rars-native\", StringComparison.OrdinalIgnoreCase) == true || SandboxIndexTrial);
     internal static bool PrivateSpaceTrial=>Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO")=="space-ui"&&
         Environment.GetEnvironmentVariable("PATHWEFT_PRIVATE_MENU_DESKTOP")=="WinSta0"&&IsPrivateDesktop(GetCurrentThreadId());

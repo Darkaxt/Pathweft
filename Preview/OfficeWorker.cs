@@ -15,7 +15,10 @@ internal static class OfficeWorker
 {
     internal sealed record Part(string Name,int Pages);
     internal sealed record Information(string Engine,string Kind,Part[] Parts,string[] Notes);
-    internal sealed record Request(string Action,string Source=null,string Engine=null,int Part=0,int Page=0,int Width=1400,string Profile=null);
+    internal sealed record Request(string Action,string Source=null,string Engine=null,int Part=0,int Page=0,int Width=1400,string Profile=null,ulong Unit=0,ulong Offset=0,int Limit=16384);
+    internal sealed record TextCursor(ulong Unit,ulong Offset);
+    internal sealed record TextRecord(JsonElement Location,ulong Offset,string Text);
+    internal sealed record TextBatch(string Status,string Coverage,TextRecord[] Records,TextCursor Next);
     internal sealed record Reply(bool Ok,string Error=null,Information Info=null,int Width=0,int Height=0,int Bytes=0,int Part=0,int Page=0,string Code=null);
     internal static readonly JsonSerializerOptions Json=new(){PropertyNameCaseInsensitive=true};
     const int HeaderLimit=64<<10;
@@ -36,7 +39,7 @@ internal static class OfficeWorker
                 if(request.Action=="open")
                 {
                     if(document!=null||fallback!=null)throw new IOException("The Office worker already owns a document.");
-                    if(request.Engine is not ("wordcraft" or "gridcraft" or "deckcraft" or "libreoffice"))throw new IOException("Unknown Office engine.");
+                    if(request.Engine is not ("wordcraft" or "gridcraft" or "deckcraft" or "photocraft" or "vectorcraft" or "figcraft" or "pdfcraft" or "libreoffice"))throw new IOException("Unknown document engine.");
                     sourcePin=new FileStream(request.Source,FileMode.Open,FileAccess.Read,FileShare.Read);
                     if(sourcePin.Length is <1 or >64L*1024*1024)throw new OfficePolicyException("Office input exceeds the preview limit.");
                     if(request.Engine=="libreoffice")
@@ -53,6 +56,13 @@ internal static class OfficeWorker
                     var raster=fallback!=null?await fallback.Render(request.Part,request.Page,request.Width):await document.Render(request.Part,request.Page,request.Width);
                     await Write(output,new Reply(true,Info:fallback?.Info??document.Info,Width:raster.Width,Height:raster.Height,Bytes:raster.Pixels.Length,Part:request.Part,Page:fallback?.LastPage??request.Page));
                     await output.WriteAsync(raster.Pixels);await output.FlushAsync();
+                }
+                else if(request.Action=="extract"&&(document!=null||fallback!=null))
+                {
+                    if(request.Limit is <1024 or >48*1024)throw new OfficePolicyException("Invalid extraction reply limit.");
+                    byte[] text=document!=null?document.Extract(request.Unit,request.Offset,request.Limit):JsonSerializer.SerializeToUtf8Bytes(new TextBatch("unsupported","LibreOffice recovery rendering does not provide the Craft text API.",Array.Empty<TextRecord>(),null),Json);
+                    await Write(output,new Reply(true,Bytes:text.Length));
+                    await output.WriteAsync(text);await output.FlushAsync();
                 }
                 else throw new IOException("Invalid Office worker state or command.");
             }
@@ -147,6 +157,7 @@ internal static class OfficeWorker
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]delegate IntPtr Open(IntPtr bytes,nuint length,IntPtr extension,nuint extensionLength);
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]delegate IntPtr Text(IntPtr document);
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]delegate IntPtr ErrorText();
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]delegate IntPtr ExtractText(IntPtr document,ulong unit,nuint offset,nuint limit);
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]delegate int RenderPage(IntPtr document,uint part,uint page,uint width);
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]delegate IntPtr FramePointer(IntPtr document);
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]delegate void Close(IntPtr document);
@@ -157,6 +168,7 @@ internal static class OfficeWorker
         FramePointer frame;
         Close close;
         ErrorText error;
+        ExtractText extract;
         PdfDocument pdf;
         MemoryStream pdfBytes;
         IRandomAccessStream pdfStream;
@@ -180,6 +192,7 @@ internal static class OfficeWorker
                 if(library==IntPtr.Zero)throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error());
                 if(Export<Abi>("pw_office_abi")()!=1)throw new IOException("Incompatible Office native bridge.");
                 render=Export<RenderPage>("pw_office_render");frame=Export<FramePointer>("pw_office_frame");close=Export<Close>("pw_office_close");error=Export<ErrorText>("pw_office_error");
+                extract=Export<ExtractText>("pw_office_extract");
                 var input=GCHandle.Alloc(bytes,GCHandleType.Pinned);
                 var ext=GCHandle.Alloc(Encoding.UTF8.GetBytes(extension),GCHandleType.Pinned);
                 try{document=Export<Open>("pw_office_open")(input.AddrOfPinnedObject(),(nuint)bytes.Length,ext.AddrOfPinnedObject(),(nuint)Encoding.UTF8.GetByteCount(extension));}
@@ -194,6 +207,17 @@ internal static class OfficeWorker
             catch{Dispose();throw;}
         }
         IOException Failure()=>new(Marshal.PtrToStringUTF8(error())??"Native Office rendering failed.");
+        internal byte[] Extract(ulong unit,ulong offset,int limit)
+        {
+            if(offset>nuint.MaxValue)throw new OfficePolicyException("Extraction cursor exceeds the native address range.");
+            var address=extract(document,unit,(nuint)offset,(nuint)limit);
+            if(address==IntPtr.Zero)throw Failure();
+            // The hash-pinned bridge guarantees this C string is bounded. Still
+            // reject a mismatched implementation before putting it on the pipe.
+            byte[] bytes=Encoding.UTF8.GetBytes(Marshal.PtrToStringUTF8(address)??throw new IOException("No extraction reply."));
+            if(bytes.Length>limit)throw new OfficePolicyException("Extraction reply exceeds its requested limit.");
+            return bytes;
+        }
         internal async Task<Raster> Render(int part,int page,int width)
         {
             if(part<0||part>=Info.Parts.Length||page<0||page>=Info.Parts[part].Pages||width is <64 or >4096)throw new IOException("Invalid Office page request.");

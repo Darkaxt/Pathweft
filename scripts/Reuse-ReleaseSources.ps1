@@ -2,7 +2,7 @@
    staging members are preserved and must match; the packaging manifest checks
    still qualify every selected current dependency before final publication. #>
 [CmdletBinding()]
-param([Parameter(Mandatory)][string]$DeliveryRoot,[Parameter(Mandatory)][string]$Destination)
+param([Parameter(Mandatory)][string]$DeliveryRoot,[Parameter(Mandatory)][string]$Destination,[switch]$RefreshOffice)
 $ErrorActionPreference='Stop'
 $target=[IO.Path]::GetFullPath($Destination)
 if($target -notmatch '^D:\\Temp\\[^\\]+\\corresponding-sources$'){throw 'Use exact native/build source staging scratch.'}
@@ -22,6 +22,9 @@ $count=0
 $zip=[IO.Compression.ZipFile]::OpenRead($archive.FullName)
 try{
     foreach($entry in $zip.Entries){
+        # A new reviewed core set is staged by Stage-OfficeSources from its own
+        # exact manifests. Do not import obsolete donor sources into that set.
+        if($RefreshOffice -and $entry.FullName.TrimStart('./').StartsWith('Office/',[StringComparison]::Ordinal)){continue}
         $path=[IO.Path]::GetFullPath((Join-Path $target $entry.FullName))
         if($path -eq $target){continue}
         if(!$path.StartsWith($target+'\',[StringComparison]::OrdinalIgnoreCase)){throw 'Source archive entry escapes staging.'}

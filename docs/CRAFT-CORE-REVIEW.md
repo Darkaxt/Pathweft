@@ -1,13 +1,17 @@
 # Craft core refresh and additional preview engines
 
-Assessment requested 2026-11-05. This is a proposed next implementation stage,
-not a change to the current S15 release scope or to installed Craft selections.
+Assessment requested 2026-11-05; implementation authorized 2026-11-06. S16 is
+ACTIVE under specification0.73. The source candidates below are downloaded and
+their official tag-to-commit identities and archive digests are recorded. All
+seven borrowed libraries now pass source and combined candidate qualification
+as recorded in verification/2026-11-06-s16-craft.md. Final release and applicable
+installed acceptance remain. Installed Craft selections remain separate.
 The local maintenance handoff qualifies vendor applications; Pathweft's borrowed
 source-built libraries require their own qualification.
 
 ## Existing cores
 
-| Core | Pathweft pin | Candidate | Exact candidate source |
+| Core | Previous Pathweft pin | Qualified S16 pin | Exact selected source |
 | --- | --- | --- | --- |
 | WordCraft | 0.15.1 | 0.15.2 | edfea68101220c9bdc4b2b0ccf4acd9612bedb6e |
 | GridCraft | 0.16.0 | 0.16.1 | e581bc95b2a17d2a744a115478a20a1c2ad1ef72 |
@@ -66,16 +70,22 @@ PhotoCraft's candidate-admission/lifecycle blocker is resolved. This qualifies
 the standalone tools; it does not qualify Pathweft's borrowed DLLs or change its
 current pins. No end-user gate or Coordinator dependency is introduced.
 
-## Proposed execution boundary
+## Execution boundary
 
-S16 remains NOT STARTED, after S15 delivery and before unrelated shell work.
+S16 is the single ACTIVE stage, after completed S23/1.1.25 and before S18.
 First refresh the existing Office cores as one complete preview workflow. Then
 qualify each additional engine's first real read-only preview before expanding
 its format matrix. Establish the authoritative implementation requirements,
 fixed source/dependency inventory, comparison fixtures and resource budgets
-before activating that stage. Keep PDF replacement evidence-driven and preserve
+as that stage proceeds. Keep PDF replacement evidence-driven and preserve
 an explicit working renderer/fallback until a replacement passes. Publish one
 verified final release for the subsequently authorized implementation scope.
 
-No Craft core, installed selection, MCP or Coordinator configuration changed
-during this assessment.
+The2026-11-06 request also adds reusable, bounded located-text extraction to the
+source cores and owned worker. Return strings with native paragraph/table,
+sheet/cell, slide/object or PDF-page locations and continuation tokens; preserve
+the rendering ABI. Explicitly report the imported-model coverage and unsupported
+or image-only input. S19 owns the index/database and metadata refresh; OCR is not
+included in S16. Source/API implementation is not extraction acceptance evidence.
+
+No installed selection, MCP or Coordinator configuration changes in S16.

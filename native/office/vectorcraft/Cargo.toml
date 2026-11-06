@@ -1,0 +1,23 @@
+[package]
+name = "pathweft-vectorcraft"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+rust-version = "1.95"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+vectorcraft-doc = { workspace = true }
+vectorcraft-format = { workspace = true }
+vectorcraft-render = { workspace = true }
+vectorcraft-svg = { workspace = true }
+vectorcraft-pdf = { workspace = true }
+vectorcraft-color = { workspace = true }
+vectorcraft-text = { workspace = true, features = ["bundled-fonts"] }
+serde_json = { workspace = true }
+
+[[example]]
+name = "pathweft-fixtures"
+path = "src/fixtures.rs"

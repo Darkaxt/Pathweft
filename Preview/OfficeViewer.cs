@@ -7,7 +7,7 @@ using System.Windows.Media.Imaging;
 
 namespace FileExplorer.Preview;
 
-internal sealed class OfficeViewer(MainWindow owner,Entry entry):IViewer
+internal sealed class OfficeViewer(MainWindow owner,Entry entry,string nativeCore=null):IViewer
 {
     readonly OfficeDocument document=new();
     readonly List<Task> work=new();
@@ -37,7 +37,8 @@ internal sealed class OfficeViewer(MainWindow owner,Entry entry):IViewer
     }
     async Task Open(string path)
     {
-        await document.Open(path,context.Token);context.Token.ThrowIfCancellationRequested();
+        if(nativeCore==null)await document.Open(path,context.Token);else await document.OpenCore(path,nativeCore,context.Token);
+        context.Token.ThrowIfCancellationRequested();
         var panel=new DockPanel();
         warning=new TextBlock{Margin=new Thickness(12,2,12,8),FontSize=11,HorizontalAlignment=HorizontalAlignment.Right,TextTrimming=TextTrimming.CharacterEllipsis,Visibility=Visibility.Collapsed};
         warning.SetResourceReference(TextBlock.ForegroundProperty,"PreviewWarning");AutomationProperties.SetName(warning,"Preview warning");
@@ -46,7 +47,7 @@ internal sealed class OfficeViewer(MainWindow owner,Entry entry):IViewer
         importNotes=new ScrollViewer{Content=notes,MaxHeight=100,VerticalScrollBarVisibility=ScrollBarVisibility.Auto,Visibility=Visibility.Collapsed};
         AutomationProperties.SetName(importNotes,"Document import notes");
         DockPanel.SetDock(importNotes,Dock.Bottom);panel.Children.Add(importNotes);
-        var controls=new WrapPanel{Margin=new Thickness(8)};
+        var controls=new WrapPanel{Margin=new Thickness(8),Visibility=document.Info.Kind is "image" or "artboards" or "frames"?Visibility.Collapsed:Visibility.Visible};
         previous=PreviewControls.Icon(owner,"Previous page","\uE76B");next=PreviewControls.Icon(owner,"Next page","\uE76C");
         label=new TextBlock{Margin=new Thickness(10,5,10,5),VerticalAlignment=VerticalAlignment.Center};
         number=new TextBox{Width=48,MinHeight=30,Margin=new Thickness(4),VerticalContentAlignment=VerticalAlignment.Center,ToolTip="Enter a page number and press Enter"};
@@ -62,7 +63,7 @@ internal sealed class OfficeViewer(MainWindow owner,Entry entry):IViewer
         controls.Children.Add(previous);controls.Children.Add(label);controls.Children.Add(next);controls.Children.Add(number);
         DockPanel.SetDock(controls,Dock.Bottom);panel.Children.Add(controls);
         sheets=new ComboBox{Margin=new Thickness(12,8,12,0),Style=(Style)owner.FindResource("PreviewClipCombo"),MaxDropDownHeight=300};
-        AutomationProperties.SetName(sheets,"Workbook sheet");DockPanel.SetDock(sheets,Dock.Top);panel.Children.Add(sheets);
+        AutomationProperties.SetName(sheets,document.Info.Kind switch {"artboards"=>"Artboard","frames"=>"Design frame",_=>"Workbook sheet"});DockPanel.SetDock(sheets,Dock.Top);panel.Children.Add(sheets);
         sheets.SelectionChanged+=(_,_)=>{if(!disposed&&!updating&&sheets.SelectedIndex>=0)Go(sheets.SelectedIndex,0);};
         image=new Image{Stretch=Stretch.Uniform,StretchDirection=StretchDirection.DownOnly,Margin=new Thickness(12)};
         panel.Children.Add(new ScrollViewer{Content=image,VerticalScrollBarVisibility=ScrollBarVisibility.Auto});
@@ -103,7 +104,7 @@ internal sealed class OfficeViewer(MainWindow owner,Entry entry):IViewer
         catch(OperationCanceledException)when(token.IsCancellationRequested){}
         catch(Exception error)when(error is IOException or UnauthorizedAccessException or System.ComponentModel.Win32Exception or InvalidOperationException)
         {
-            if(!disposed&&current==revision&&context.IsCurrent){image.Source=null;label.Text="Office preview unavailable";ShowWarning(error.Message);}
+            if(!disposed&&current==revision&&context.IsCurrent){image.Source=null;label.Text="Document preview unavailable";ShowWarning(error.Message);}
             if(current==1)throw;
         }
     }

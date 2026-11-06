@@ -13,7 +13,7 @@ internal static class PreviewControls
     internal static ImageSource RendererIcon(string renderer)
     {
         string id=renderer?.ToLowerInvariant();
-        if(id is not ("wordcraft" or "gridcraft" or "deckcraft" or "libreoffice"))return null;
+        if(id is not ("wordcraft" or "gridcraft" or "deckcraft" or "photocraft" or "vectorcraft" or "figcraft" or "pdfcraft" or "libreoffice"))return null;
         if(!rendererIcons.TryGetValue(id,out var icon))
         {
             icon=BitmapFrame.Create(new Uri("pack://application:,,,/vendor/Office/icons/"+id+".ico"),BitmapCreateOptions.None,BitmapCacheOption.OnLoad);

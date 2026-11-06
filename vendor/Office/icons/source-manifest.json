@@ -1,31 +1,59 @@
 [
   {
-    "id": "wordcraft",
-    "source": "https://codeload.github.com/storytold/wordcraft/zip/08afab50b6a1ed19f9af55bb9f74d18f5e17bfa0",
-    "member": "assets/app-icon/wordcraft.ico",
-    "sha256": "53a23dcf66260f44d87d4d143d633395f3e967f391eda47e6e9cc3a52f820225",
-    "license": "MIT OR Apache-2.0; see the pinned ATTRIBUTION.md app-icon entries"
-  },
-  {
-    "id": "gridcraft",
-    "source": "https://codeload.github.com/storytold/gridcraft/zip/85e51e009c24fad47575f04d3c08f12342615d82",
-    "member": "assets/app-icon/gridcraft.ico",
-    "sha256": "f5693fcf3f71695d5ab332d24377c80e0315f952c24ae1eb3b4203bad9ea7f07",
-    "license": "MIT OR Apache-2.0; see the pinned ATTRIBUTION.md app-icon entries"
-  },
-  {
-    "id": "deckcraft",
-    "source": "https://codeload.github.com/storytold/deckcraft/zip/3e178d8f5a59c787a6a53a7ed0f052b3e4a1489f",
-    "member": "assets/app-icon/deckcraft.ico",
-    "sha256": "ceb73e008aa2cdf4d05d6375da32c5536a2bc2637bee59cdf441e2f9f792a9cd",
-    "license": "MIT OR Apache-2.0; see the pinned ATTRIBUTION.md app-icon entries"
-  },
-  {
     "id": "libreoffice",
     "source": "https://download.documentfoundation.org/libreoffice/stable/26.2.7/win/x86_64/LibreOffice_26.2.7_Win_x86-64.msi",
     "member": "program/soffice.exe RT_GROUP_ICON 1",
     "runtimeSha256": "6c55b6200376b5b6cf75971f3985606c6c0886460d7c83caa39a1ccf531142f1",
     "sha256": "9e83d313fe5a46c276b4aff00a47f54e576b1c0065a16d3c5aff8cbc5169a25a",
     "license": "Unmodified LibreOffice identification icon; see bundled LibreOffice LICENSE.html and NOTICE"
+  },
+  {
+    "id": "photocraft",
+    "source": "https://codeload.github.com/storytold/photocraft/zip/7c12f647150f8e7b2e07718f7993b1fcaa57fefe",
+    "member": "assets/app-icon/photocraft.ico",
+    "sha256": "7f43b2116edbd7a32ed3f3507d11d55b5f23f70caec72a0b56d90ce86e7f6f94",
+    "license": "MIT OR Apache-2.0; see the pinned ATTRIBUTION.md app-icon entries"
+  },
+  {
+    "id": "vectorcraft",
+    "source": "https://codeload.github.com/storytold/vectorcraft/zip/f6aa4309b4e11a6844e156120560b4beabf17fe9",
+    "member": "assets/app-icon/vectorcraft.ico",
+    "sha256": "118b8e6dc16292743f1ee1a88ae9cc026a585c96b93ef920598e36c838f0ad9f",
+    "license": "MIT OR Apache-2.0; see the pinned ATTRIBUTION.md app-icon entries"
+  },
+  {
+    "id": "figcraft",
+    "source": "https://codeload.github.com/storytold/figcraft/zip/9ab2c65ae23b66c10d6e4b1d282df9b28c692bf9",
+    "member": "assets/app-icon/figcraft.ico",
+    "sha256": "a0d9897d459ac685a81d06839d9547982c9c38b482725b4661c1121008ae0ee3",
+    "license": "MIT OR Apache-2.0; see the pinned ATTRIBUTION.md app-icon entries"
+  },
+  {
+    "id": "pdfcraft",
+    "source": "https://codeload.github.com/storytold/pdfcraft/zip/7faa4f35cefb0dea04137ec475bdc770945c22cd",
+    "member": "assets/app-icon/pdfcraft.ico",
+    "sha256": "709271d66e07710a3f785ea21b0c85c5228eaf8bebe5058bc0f71f9ef20749eb",
+    "license": "MIT OR Apache-2.0; see the pinned ATTRIBUTION.md app-icon entries"
+  },
+  {
+    "id": "wordcraft",
+    "source": "https://codeload.github.com/storytold/wordcraft/zip/edfea68101220c9bdc4b2b0ccf4acd9612bedb6e",
+    "member": "assets/app-icon/wordcraft.ico",
+    "sha256": "53a23dcf66260f44d87d4d143d633395f3e967f391eda47e6e9cc3a52f820225",
+    "license": "MIT OR Apache-2.0; see the pinned ATTRIBUTION.md app-icon entries"
+  },
+  {
+    "id": "gridcraft",
+    "source": "https://codeload.github.com/storytold/gridcraft/zip/e581bc95b2a17d2a744a115478a20a1c2ad1ef72",
+    "member": "assets/app-icon/gridcraft.ico",
+    "sha256": "f5693fcf3f71695d5ab332d24377c80e0315f952c24ae1eb3b4203bad9ea7f07",
+    "license": "MIT OR Apache-2.0; see the pinned ATTRIBUTION.md app-icon entries"
+  },
+  {
+    "id": "deckcraft",
+    "source": "https://codeload.github.com/storytold/deckcraft/zip/9bac60ff53029039c82083ee574c22d74c1541f1",
+    "member": "assets/app-icon/deckcraft.ico",
+    "sha256": "ceb73e008aa2cdf4d05d6375da32c5536a2bc2637bee59cdf441e2f9f792a9cd",
+    "license": "MIT OR Apache-2.0; see the pinned ATTRIBUTION.md app-icon entries"
   }
 ]

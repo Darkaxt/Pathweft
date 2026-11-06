@@ -1,6 +1,12 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.26 | 2026-11-07 | More native document previews
+- Updated the embedded Word, spreadsheet and presentation cores, preserving page, sheet and slide navigation and LibreOffice recovery.
+- Added native PhotoCraft/PSD/PSB, VectorCraft/SVG/PDF-compatible AI and FigCraft document previews with artboard or frame navigation. Existing embedded Figma thumbnails keep priority when available.
+- Added an optional Craft PDF renderer; Windows PDF remains the default. The seven document cores now expose bounded text extraction with native source locations for future content indexing. Scanned pages remain image-only without OCR.
+- Enlarged the folder-and-compass icon's visible footprint while preserving Windows shortcuts and taskbar identity.
+
 ## 1.1.25 | 2026-11-06 | Recover missing folder tabs
 - Tabs whose local folders disappeared open the nearest existing parent, climbing as many levels as needed, and remember the repaired path. Restored tabs retain their position, active state and pin.
 - Unavailable drives, network destinations and access-denied folders keep their destination and report availability errors. Existing archive tabs retain normal navigation.

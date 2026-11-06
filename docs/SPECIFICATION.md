@@ -1,6 +1,15 @@
 # Pathweft specification
 
-Version 0.72 - 2026-11-06. Owner: Darkaxt.
+Version 0.73 - 2026-11-06. Owner: Darkaxt.
+
+Implementation authorization2026-11-06: the user directed starting the next
+stage, S16, and added advance core text extraction for subsequent content
+indexing. S16 is the single ACTIVE stage; S23 remains COMPLETE. The existing
+source-built DLL/app-owned worker architecture is retained. CRAFT-01..07 below
+and CORE-24 define this release; S19 still owns the database/indexer/search UI.
+This authorization does not change installed Craft/Coordinator selections or
+introduce an MCP/installed application dependency. No OCR implementation is
+implied by text extraction; image-only content must be identified honestly.
 
 Next-release refinement2026-11-06: CORE-24 records the requested taskbar icon
 adjustment for the next planned release, alongside S16. Increase the visible
@@ -1072,6 +1081,13 @@ criteria apply within the implementing stage and again at the packaged boundary.
 | CORE-11 | S8 measured free-space percentages, shared capacity warning colors and provider-based cloud drive identity, as specified in current scope. Verify actual mounts and unavailable capacity. |
 | CORE-22 | S17 approved yellow-folder/dark-compass application icon. Transparent multiresolution assets must remain legible at small sizes, retain polished larger detail, appear in embedded WPF/native/package surfaces, and preserve the existing Windows application/shortcut/Jump List identity. |
 | CORE-24 | Next-release taskbar icon sizing: enlarge visible folder/compass artwork approximately10-15% relative to1.1.25 while preserving design, transparency, canvas bounds and Windows identity. Verify actual packaged taskbar appearance and small-size legibility at representative display scales. |
+| CRAFT-01 | Refresh the three delivered Office libraries to the reviewed WordCraft0.15.2, GridCraft0.16.1 and DeckCraft0.15.1 source pins. Preserve current declared-format support, actual pagination/sheet/slide navigation, import notes, original/MOTW preservation, single-attempt LibreOffice crash/error recovery and owned cancellation/exit. Compare old/new real rendering and qualify the complete workflow before adoption. |
+| CRAFT-02 | Add source-built PhotoCraft0.20.2 read-only rendering for native .pcraft and PSD/PSB, retaining composition/layers where its importer supports them. Qualify actual inputs, not only extension registration; retain existing image preview behavior. No editor/CLI/service dependency. |
+| CRAFT-03 | Add source-built VectorCraft0.21.1 read-only document/artboard rendering for its native format and qualified SVG/PDF-compatible AI inputs. Qualify real importers and report unsupported legacy AI/EPS explicitly rather than inferring support. Preserve existing working image/PDF paths. |
+| CRAFT-04 | Add source-built FigCraft0.15.1 read-only native document/frame rendering. Qualify actual .figcraft input and assess .fig independently; preserve the current embedded-thumbnail route when native Figma parsing is unavailable. |
+| CRAFT-05 | Qualify PdfCraft0.18.2's selected parser/text/render libraries against the existing Windows PDF viewer. Retain the existing rendering path unless an actual fidelity/resource comparison supports replacement; provide independently qualified native PDF text extraction through the owned core boundary. Scanned pages are image-only without OCR. |
+| CRAFT-06 | Expose reusable read-only text extraction through the selected source-built cores and app-owned workers without breaking existing rendering calls. Return bounded batches of strings with stable native source locations (paragraph/table path, sheet/cell, slide/text object, PDF page and applicable native text layers/objects), continuation/completion and explicit unsupported/image-only/import-warning states. Do not equate successful rendering with text completeness. Qualify Unicode/order/locations, empty/protected/malformed input, cancellation, bounded replies and actual native exit; no index database, scheduler, full-text retention or OCR in this stage. |
+| CRAFT-07 | Pin selected donor/font/dependency sources and actual build graphs/notices, inspect used-path advisories and Windows/runtime compatibility, and package only required libraries/runtime assets. Preserve source/preview leases, current storage settings and Windows identity; qualify sidebar/PiP/Windowed/archive and repeated selection/resource reclamation. Deliver one final normal release with complete corresponding sources, independent downloaded-package and applicable installed acceptance. |
 
 On 2026-10-31, the user also requested EverythingToolbar's four inline search
 toggles: Match case, Match whole word, Match path and Regex. They belong at the

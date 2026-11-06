@@ -4,7 +4,7 @@
   "target": "x86_64-pc-windows-msvc",
   "edges": "normal,build",
   "scope": "Feature/target-selected build graph. Build-time packages are included; this is not a claim that all code is linked.",
-  "sourceLockSha256": "cc31fb8cf084107e281b155837394f1e4649a36745f9f58db6e3e9891fe872b5",
+  "sourceLockSha256": "50c9e173a2624a32b36b09d1b60126a1180eff3962679dee5b66041757b6182f",
   "packages": [
     {
       "name": "adler2",
@@ -169,57 +169,57 @@
     },
     {
       "name": "gridcraft-calc",
-      "version": "0.16.0",
+      "version": "0.16.1",
       "license": "MIT OR Apache-2.0"
     },
     {
       "name": "gridcraft-chart",
-      "version": "0.16.0",
+      "version": "0.16.1",
       "license": "MIT OR Apache-2.0"
     },
     {
       "name": "gridcraft-core",
-      "version": "0.16.0",
+      "version": "0.16.1",
       "license": "MIT OR Apache-2.0"
     },
     {
       "name": "gridcraft-engine",
-      "version": "0.16.0",
+      "version": "0.16.1",
       "license": "MIT OR Apache-2.0"
     },
     {
       "name": "gridcraft-formula",
-      "version": "0.16.0",
+      "version": "0.16.1",
       "license": "MIT OR Apache-2.0"
     },
     {
       "name": "gridcraft-functions",
-      "version": "0.16.0",
+      "version": "0.16.1",
       "license": "MIT OR Apache-2.0"
     },
     {
       "name": "gridcraft-math",
-      "version": "0.16.0",
+      "version": "0.16.1",
       "license": "MIT OR Apache-2.0"
     },
     {
       "name": "gridcraft-model",
-      "version": "0.16.0",
+      "version": "0.16.1",
       "license": "MIT OR Apache-2.0"
     },
     {
       "name": "gridcraft-numfmt",
-      "version": "0.16.0",
+      "version": "0.16.1",
       "license": "MIT OR Apache-2.0"
     },
     {
       "name": "gridcraft-pdf",
-      "version": "0.16.0",
+      "version": "0.16.1",
       "license": "MIT OR Apache-2.0"
     },
     {
       "name": "gridcraft-xlsx",
-      "version": "0.16.0",
+      "version": "0.16.1",
       "license": "MIT OR Apache-2.0"
     },
     {

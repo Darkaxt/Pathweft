@@ -1,0 +1,20 @@
+[package]
+name = "pathweft-figcraft"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+rust-version = "1.95"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+figcraft-doc = { workspace = true }
+figcraft-format = { workspace = true }
+figcraft-render = { workspace = true }
+figcraft-text = { workspace = true }
+serde_json = { workspace = true }
+
+[[example]]
+name = "pathweft-fixtures"
+path = "src/fixtures.rs"

@@ -1,0 +1,15 @@
+[package]
+name = "pathweft-pdfcraft"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+rust-version = "1.95"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+pdfcraft-render = { workspace = true }
+pdfcraft-cos = { workspace = true }
+pdfcraft-model = { workspace = true }
+serde_json = { workspace = true }

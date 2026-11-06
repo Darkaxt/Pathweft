@@ -3,7 +3,7 @@
 param(
     [Parameter(Mandatory)][string]$Executable,
     [string]$ScratchRoot='D:\Temp\pathweft-s13-s9-s11',
-    [ValidateSet('full','office','office-fallback','office-formats','policies','formats','runtime','sizes','space','space-entry','space-refresh','space-ui','indexed-sizes','live-indexed-sizes','existing','pdf','modes','preview-selection','missing-tabs','icons','menus','menus-ui','menus-properties','menus-shell','jump-lists','windows','transfers','transfer-differences','transfers-clipboard')][string]$Scenario='full',
+    [ValidateSet('full','office','office-extraction','office-reference','office-fallback','office-formats','photo-core','vector-core','fig-core','pdf-core','policies','formats','runtime','sizes','space','space-entry','space-refresh','space-ui','indexed-sizes','live-indexed-sizes','existing','pdf','modes','preview-selection','missing-tabs','icons','menus','menus-ui','menus-properties','menus-shell','jump-lists','windows','transfers','transfer-differences','transfers-clipboard')][string]$Scenario='full',
     [string]$MenuDesktop,
     [string]$FixtureSource,
     [string]$MediaInputs,
@@ -13,7 +13,7 @@ $ErrorActionPreference='Stop'
 # Source-built renderer libraries run in Pathweft's own supervised worker. They
 # are not registered Craft CLI/MCP application workloads or gate dependencies.
 $scratch=[IO.Path]::GetFullPath($ScratchRoot)
-if($scratch -ne 'D:\Temp\pathweft-s13-s9-s11'){throw 'Exact registered task root required.'}
+if($scratch -notin @('D:\Temp\pathweft-s13-s9-s11','D:\Temp\pathweft-s16')){throw 'Exact registered task root required.'}
 $run=Join-Path $scratch ('specialists-'+[guid]::NewGuid().ToString('N'))
 $cleanup='C:/Users/darka/.agents/skills/transactional-cleanup/scripts/invoke_transactional_cleanup.py'
 $registration=& python $cleanup begin --workspace (Split-Path -Parent $PSScriptRoot) --scan-root $run
@@ -75,7 +75,7 @@ if($Scenario -in @('menus','menus-properties','menus-shell','indexed-sizes','spa
     $expectedPid=$desktop.childPid
 }
 if($receipt.pid -ne $expectedPid -or $receipt.result -ne $process.ExitCode){throw 'Original process and verification receipt differ.'}
-if($Scenario -in @('existing','icons','office','office-fallback','office-formats','modes','menus','menus-ui','menus-properties','menus-shell','jump-lists','windows','transfers')){
+if($Scenario -in @('existing','icons','office','office-extraction','office-reference','office-fallback','office-formats','photo-core','vector-core','fig-core','pdf-core','modes','menus','menus-ui','menus-properties','menus-shell','jump-lists','windows','transfers')){
     @{pid=$receipt.pid;result=$receipt.result;checks=$receipt.checks.Count;failures=@($receipt.checks|Where-Object {$_.passed -eq $false -or $_.failure});receipt=$receiptPath}|ConvertTo-Json -Depth 10
 }else{$receipt | ConvertTo-Json -Depth 10}
 Write-Output ('Fixture: '+$run)

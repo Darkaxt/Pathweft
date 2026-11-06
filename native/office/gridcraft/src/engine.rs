@@ -28,6 +28,14 @@ impl Engine {
         json!({"engine":"GridCraft","kind":"spreadsheet","parts":parts,"notes":self.notes})
     }
 
+    pub fn extract(&self,unit:u64,offset:usize,limit:usize)->Result<Value,String> {
+        let units=self.workbook.sheets.iter().enumerate().flat_map(|(sheet_index,sheet)|{
+            sheet.cells.iter().filter(|(_,cell)|cell.has_content()).map(move |(address,cell)|
+                (json!({"sheet":sheet_index,"sheetName":sheet.name,"row":address.row,"column":address.col,"cell":address.a1(),"kind":"cachedValue"}),move ||cell.value.display()))
+        });
+        crate::extraction::page(units,unit,offset,limit,"Imported stored cell values in sheet/row/column order; no formula recalculation, Python, drawing text or OCR")
+    }
+
     pub fn render(&mut self,part:u32,page:u32,_width:u32)->Result<Raster,String> {
         let layout=self.layouts.get(part as usize).ok_or("Invalid worksheet")?;
         if page as usize>=layout.pages.len() {return Err("Invalid worksheet page".into());}

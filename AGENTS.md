@@ -1,5 +1,25 @@
 # Pathweft development
 
+Current2026-11-06/spec0.73: user authorized starting S16 and adding core text
+extraction for later indexing. S16 is the single ACTIVE stage for CRAFT-01..07
+and CORE-24. Preserve the source-built DLL/owned-worker architecture, rendering
+APIs, current Office formats/LibreOffice recovery, storage/user state and Windows
+identity. Sequential complete workflows: refreshed Office/extraction, Photo,
+Vector, Fig, PDF extraction/comparison, icon sizing, combined final release.
+Extraction returns bounded strings/native locations/continuation; S19 owns
+indexing, with no OCR inferred. Office, Photo and Vector source workflows pass as
+recorded in docs/verification/2026-11-06-s16-craft.md. Fig workflow97564 also
+passes, including located text and actual Figma import/thumbnail priority.
+PDF workflow98700 and icon sizing also pass. Combined candidate consumer106552
+passes all seven cores, extraction, existing application/native behavior and
+packaged icons at32/40/48/64px; those actual PNGs were visually inspected.
+Source/dependency/license/advisory qualification passes. Clean-source final
+packaging, publication, independent retrieval and installed acceptance remain;
+no deferrals. Candidate evidence is not final delivery.
+Existing later stage order is unchanged. Historical no-ACTIVE statements below
+do not override this current checkpoint. Exact D:/Temp/pathweft-s16 native/build
+scratch uses the sustained small-file I/O exception and must be cleaned after use.
+
 Plan-only2026-11-06/spec0.72: CORE-24 is queued alongside S16 for the next
 planned release: enlarge taskbar icon visible artwork approximately10-15%
 relative to1.1.25, preserving design/transparency/bounds/Windows identity and

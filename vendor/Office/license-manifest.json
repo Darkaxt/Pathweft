@@ -1,6 +1,11 @@
 {
   "files": [
     {
+      "path": "licenses/deckcraft/ATTRIBUTION.md",
+      "sha256": "3e0b490182f29522d002af0b4f0f46ab44ab8863bfe5e4e50c65a84d2d18c076",
+      "bytes": 11564
+    },
+    {
       "path": "licenses/deckcraft/craft-fonts/ATTRIBUTION.md",
       "sha256": "5ffc2bfba3b480451cb98c5dd50887999b81168022f8fb005c46c1cb2ea7c37a",
       "bytes": 21996
@@ -162,18 +167,18 @@
     },
     {
       "path": "licenses/deckcraft/LICENSE-APACHE",
-      "sha256": "eb3d7b5485466acbd81f2b496f595ab637d2792e268206b27d99e793bdb67549",
-      "bytes": 10351
+      "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594",
+      "bytes": 10174
     },
     {
       "path": "licenses/deckcraft/LICENSE-MIT",
-      "sha256": "4ab882572e5d7c0b3e1dcf6712798f0d3830da90cb74d531f5e21156d1176e81",
-      "bytes": 1122
+      "sha256": "90e96fef569474cd526350e716e4b05dd32f179ca96d39d61e6b928485e35406",
+      "bytes": 1101
     },
     {
       "path": "licenses/deckcraft/NOTICE",
-      "sha256": "9d88c817cde2bdce84e3b2d01f8a1a9d0f9fe0bcb9c0d7a25a8c3d34684c3c76",
-      "bytes": 6655
+      "sha256": "2ce764ed5d83f2453a7dba485092c0c41b465fe795b31c2c59bc5279332bc4f3",
+      "bytes": 6550
     },
     {
       "path": "licenses/deckcraft/OFL-biz-ud-mincho.txt",
@@ -321,24 +326,219 @@
       "bytes": 4585
     },
     {
+      "path": "licenses/figcraft/app-icon-LICENSE.txt",
+      "sha256": "9a58cbf7d438bb0fadc981423002adccd267aab21d0ab1c1e5c43d998b7702d2",
+      "bytes": 539
+    },
+    {
+      "path": "licenses/figcraft/assets/app-icon/LICENSE.txt",
+      "sha256": "9a58cbf7d438bb0fadc981423002adccd267aab21d0ab1c1e5c43d998b7702d2",
+      "bytes": 539
+    },
+    {
+      "path": "licenses/figcraft/ATTRIBUTION.md",
+      "sha256": "3eb47f685d9e45faaf2b0b366a8d5752c3e89e6ab24732e4c90617fa8bae3f66",
+      "bytes": 4397
+    },
+    {
+      "path": "licenses/figcraft/craft-fonts/ATTRIBUTION.md",
+      "sha256": "5ffc2bfba3b480451cb98c5dd50887999b81168022f8fb005c46c1cb2ea7c37a",
+      "bytes": 21996
+    },
+    {
+      "path": "licenses/figcraft/craft-fonts/fonts/biz-ud-mincho/OFL.txt",
+      "sha256": "ef0ed524b3bd012f37015e986809eed6f67905456ebfc1ebd7fcc2765282ee01",
+      "bytes": 4408
+    },
+    {
+      "path": "licenses/figcraft/craft-fonts/fonts/biz-ud-pgothic/OFL.txt",
+      "sha256": "e753d7155d53c747d037a445e584c8ecfca6dd79846db610417e282a736b28bc",
+      "bytes": 4408
+    },
+    {
+      "path": "licenses/figcraft/craft-fonts/fonts/caladea/OFL.txt",
+      "sha256": "ccdab61d371d8c8683a128a92cd7d498dbdb1d37689f7cb21f1bf6b16658d213",
+      "bytes": 4393
+    },
+    {
+      "path": "licenses/figcraft/craft-fonts/fonts/carlito/OFL.txt",
+      "sha256": "58402f82a7c332a700294988fe7554fbb0a63a8d27ccc1ee3bbc640311990a00",
+      "bytes": 4424
+    },
+    {
+      "path": "licenses/figcraft/craft-fonts/fonts/inter/OFL.txt",
+      "sha256": "262481e844521b326f5ecd053e59b98c8b2da78c8ee1bdbb6e8174305e54935a",
+      "bytes": 4380
+    },
+    {
+      "path": "licenses/figcraft/craft-fonts/fonts/lato/OFL.txt",
+      "sha256": "74ba064d03f1f1c4a952da936c3eb71866c34404916734de3cae73b34357e59e",
+      "bytes": 4407
+    },
+    {
+      "path": "licenses/figcraft/craft-fonts/fonts/liberation-mono/OFL.txt",
+      "sha256": "93fed46019c38bbe566b479d22148e2e8a1e85ada614accb0211c37b2c61c19b",
+      "bytes": 4414
+    },
+    {
+      "path": "licenses/figcraft/craft-fonts/fonts/liberation-sans/OFL.txt",
+      "sha256": "93fed46019c38bbe566b479d22148e2e8a1e85ada614accb0211c37b2c61c19b",
+      "bytes": 4414
+    },
+    {
+      "path": "licenses/figcraft/craft-fonts/fonts/liberation-serif/OFL.txt",
+      "sha256": "93fed46019c38bbe566b479d22148e2e8a1e85ada614accb0211c37b2c61c19b",
+      "bytes": 4414
+    },
+    {
+      "path": "licenses/figcraft/craft-fonts/fonts/lxgw-wenkai-lite/OFL.txt",
+      "sha256": "0333a85fe077b6849f8e417acc44e8bd879442ceb681e271acf93e2d57fd4e2e",
+      "bytes": 5176
+    },
+    {
+      "path": "licenses/figcraft/craft-fonts/fonts/merriweather/OFL.txt",
+      "sha256": "a7ba785ad99b6eae0444ab89910e512d4af9865937fddbcb5c72c4f59f55d6ad",
+      "bytes": 4437
+    },
+    {
+      "path": "licenses/figcraft/craft-fonts/fonts/montserrat/OFL.txt",
+      "sha256": "8b7141c03fa4f8d44e6345d5d4931709290f0f67875e452e95ac1fd3a027802e",
+      "bytes": 4400
+    },
+    {
+      "path": "licenses/figcraft/craft-fonts/fonts/nanum-gothic/OFL.txt",
+      "sha256": "eeacf16032901d0ed0456876ec77b8f0fda6b3fecec7d972f8543eb602e6c30f",
+      "bytes": 4534
+    },
+    {
+      "path": "licenses/figcraft/craft-fonts/fonts/noto-sans-arabic/OFL.txt",
+      "sha256": "07fc70bfeb985cc1a87a8587d0a0c80bab11c86c9dc3fd95b6f0cb332f983e96",
+      "bytes": 4382
+    },
+    {
+      "path": "licenses/figcraft/craft-fonts/fonts/noto-sans-cjk-sc/OFL.txt",
+      "sha256": "6a73f9541c2de74158c0e7cf6b0a58ef774f5a780bf191f2d7ec9cc53efe2bf2",
+      "bytes": 4301
+    },
+    {
+      "path": "licenses/figcraft/craft-fonts/fonts/noto-sans-devanagari/OFL.txt",
+      "sha256": "a216f6f8d85c7228093e0ee5e258d9d377e6671f68acb4db1930b29583d0f331",
+      "bytes": 4386
+    },
+    {
+      "path": "licenses/figcraft/craft-fonts/fonts/noto-sans-georgian/OFL.txt",
+      "sha256": "8c02263c5d73d40544f9ed91e30c4e947407057a3cc430d7b786189aeceff6df",
+      "bytes": 4384
+    },
+    {
+      "path": "licenses/figcraft/craft-fonts/fonts/noto-sans-hebrew/OFL.txt",
+      "sha256": "9b9fe028b5ba74d231659a1bbaf0ed09b11e759d1ca6a070999e16d151616b47",
+      "bytes": 4382
+    },
+    {
+      "path": "licenses/figcraft/craft-fonts/fonts/noto-sans-symbols/OFL.txt",
+      "sha256": "b118dd41337806a5d4797052c77caf3bd096aed783e5eb21b4d11154351e1ac0",
+      "bytes": 4383
+    },
+    {
+      "path": "licenses/figcraft/craft-fonts/fonts/noto-sans-symbols-2/OFL.txt",
+      "sha256": "b118dd41337806a5d4797052c77caf3bd096aed783e5eb21b4d11154351e1ac0",
+      "bytes": 4383
+    },
+    {
+      "path": "licenses/figcraft/craft-fonts/fonts/noto-sans-thai/OFL.txt",
+      "sha256": "2e98fd23a52d253db8612cd5942c8f2ff4111b21d2367050fdca91d8ccc374a0",
+      "bytes": 4380
+    },
+    {
+      "path": "licenses/figcraft/craft-fonts/fonts/nunito-sans/OFL.txt",
+      "sha256": "efbb0c9e864cef973982d9a17567e6be5c3d1759695574586f3f18c7ecca064b",
+      "bytes": 4393
+    },
+    {
+      "path": "licenses/figcraft/craft-fonts/fonts/open-sans/OFL.txt",
+      "sha256": "fbbbcfef55318de350562559b671360de6d597112ecc5c73881b05092db89602",
+      "bytes": 4389
+    },
+    {
+      "path": "licenses/figcraft/craft-fonts/fonts/playfair-display/OFL.txt",
+      "sha256": "566be814f8e96e93dfa16101331557eb6b5467e9e03f627c0910fe93ca12300e",
+      "bytes": 4449
+    },
+    {
+      "path": "licenses/figcraft/craft-fonts/fonts/poppins/OFL.txt",
+      "sha256": "6be04893d770899a015649c7aa3b582f871b272f8747a92b78b17c3e5c8b2573",
+      "bytes": 4385
+    },
+    {
+      "path": "licenses/figcraft/craft-fonts/fonts/roboto/OFL.txt",
+      "sha256": "061402327a96aadb0bfb694a960ed289ecd38d383e396243831ab81feb109c41",
+      "bytes": 4394
+    },
+    {
+      "path": "licenses/figcraft/craft-fonts/fonts/shippori-mincho/OFL.txt",
+      "sha256": "41fba056279be5f45ff9a99e44b7b53897b42732f5806d8e666e0ab49ac6bd38",
+      "bytes": 4399
+    },
+    {
+      "path": "licenses/figcraft/craft-fonts/fonts/source-sans-3/OFL.txt",
+      "sha256": "89ad2c4f66dd29127527493e729c31e731f111cf10faf5774c3db9275ed0c22c",
+      "bytes": 4579
+    },
+    {
+      "path": "licenses/figcraft/craft-fonts/fonts/source-serif-4/OFL.txt",
+      "sha256": "75784a295293a8992f5a8d99210566e0064a012e6dab6731305e3787f15896c7",
+      "bytes": 4492
+    },
+    {
+      "path": "licenses/figcraft/craft-fonts/LICENSE-APACHE",
+      "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594",
+      "bytes": 10174
+    },
+    {
+      "path": "licenses/figcraft/craft-fonts/LICENSE-MIT",
+      "sha256": "e360d6f5941863521687517eee951fac3328ee9f379fcb11bb5031fe6614fc8f",
+      "bytes": 1103
+    },
+    {
+      "path": "licenses/figcraft/LICENSE-APACHE",
+      "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594",
+      "bytes": 10174
+    },
+    {
+      "path": "licenses/figcraft/LICENSE-MIT",
+      "sha256": "360c12b61568ef50808e731c98ae84110ea6f674dc34ac1ecb05d7abb9a6079a",
+      "bytes": 1100
+    },
+    {
+      "path": "licenses/figcraft/NOTICE",
+      "sha256": "0595c3310afc53ce46252fe4c5a1ac4f048ef771978603b3fe2464a753a20003",
+      "bytes": 3938
+    },
+    {
+      "path": "licenses/gridcraft/app-icon-LICENSE.txt",
+      "sha256": "9596de48b5e42fbf727c924bb3863f0e28fcd9e38c47cca284e1174bd06481ce",
+      "bytes": 577
+    },
+    {
       "path": "licenses/gridcraft/ATTRIBUTION.md",
-      "sha256": "b5633c2d5e8525b6e693f7eb263e46e22598c8c331fa173c53fada97cf4da9e0",
-      "bytes": 12090
+      "sha256": "1c78f894b54a4f778757d3c3323678c613d08825c9c46b26ca1d4d74565965f7",
+      "bytes": 12040
     },
     {
       "path": "licenses/gridcraft/LICENSE-APACHE",
-      "sha256": "eb3d7b5485466acbd81f2b496f595ab637d2792e268206b27d99e793bdb67549",
-      "bytes": 10351
+      "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594",
+      "bytes": 10174
     },
     {
       "path": "licenses/gridcraft/LICENSE-MIT",
-      "sha256": "7b6e0288d68469fee98354364cdc0e945a1a4d4cd9c02ed11df9406c1715587e",
-      "bytes": 1122
+      "sha256": "a87109bbb1ad43ca3920a5d7ff3806863b7e8470a73f4ded97a1447ac93333f5",
+      "bytes": 1101
     },
     {
       "path": "licenses/gridcraft/NOTICE",
-      "sha256": "9f3bd6452c52acb368d121302b9bd83d7661c96344c727882b33f9c2f188b816",
-      "bytes": 18200
+      "sha256": "5cf0a6672ca59846acdb610aca5ee0797c6eeffe3979cfa95eebc9860856c486",
+      "bytes": 17893
     },
     {
       "path": "licenses/gridcraft/OFL-biz-ud-mincho.txt",
@@ -406,6 +606,251 @@
       "bytes": 4492
     },
     {
+      "path": "licenses/pdfcraft/app-icon-LICENSE.txt",
+      "sha256": "b768acafe6cbad8247eedf86b5b5381feefcd4ee0f8c7808b86811bc687cf37b",
+      "bytes": 555
+    },
+    {
+      "path": "licenses/pdfcraft/assets/app-icon/LICENSE-document.txt",
+      "sha256": "64a3137e3d5cc41e5b78d2ad8dd9ddddd6588283f9f7b3128aa6a8a50852fb9a",
+      "bytes": 1580
+    },
+    {
+      "path": "licenses/pdfcraft/assets/app-icon/LICENSE.txt",
+      "sha256": "b768acafe6cbad8247eedf86b5b5381feefcd4ee0f8c7808b86811bc687cf37b",
+      "bytes": 555
+    },
+    {
+      "path": "licenses/pdfcraft/assets/fonts/OFL-DancingScript.txt",
+      "sha256": "6f090277c00af96651ce6dbcc38ff1591047a3bffef486e80b6a32e8276a8201",
+      "bytes": 4443
+    },
+    {
+      "path": "licenses/pdfcraft/assets/fonts/OFL-Inter.txt",
+      "sha256": "262481e844521b326f5ecd053e59b98c8b2da78c8ee1bdbb6e8174305e54935a",
+      "bytes": 4380
+    },
+    {
+      "path": "licenses/pdfcraft/assets/fonts/OFL-JetBrainsMono.txt",
+      "sha256": "a76abf002c49097d146e86740a3105a5d00450b1592e820a1109a8c5680cd697",
+      "bytes": 4399
+    },
+    {
+      "path": "licenses/pdfcraft/ATTRIBUTION.md",
+      "sha256": "16970f8ba9379955af975a67e9daf25136ff5a60829d096603a51b7c1f9d0c67",
+      "bytes": 85795
+    },
+    {
+      "path": "licenses/pdfcraft/ATTRIBUTION.toml",
+      "sha256": "62acbfa9ee8eb1efc5c78b1d6f634f7a60b5deec0eec8f4bcc74434e0f84330e",
+      "bytes": 148148
+    },
+    {
+      "path": "licenses/pdfcraft/craft-fonts/ATTRIBUTION.md",
+      "sha256": "aa2aa7eec68c32ac2da6ff7162ca9100ab3680e4c7b98365fc7c74ddd4167d07",
+      "bytes": 5150
+    },
+    {
+      "path": "licenses/pdfcraft/craft-fonts/fonts/biz-ud-mincho/OFL.txt",
+      "sha256": "ef0ed524b3bd012f37015e986809eed6f67905456ebfc1ebd7fcc2765282ee01",
+      "bytes": 4408
+    },
+    {
+      "path": "licenses/pdfcraft/craft-fonts/fonts/biz-ud-pgothic/OFL.txt",
+      "sha256": "e753d7155d53c747d037a445e584c8ecfca6dd79846db610417e282a736b28bc",
+      "bytes": 4408
+    },
+    {
+      "path": "licenses/pdfcraft/craft-fonts/fonts/lxgw-wenkai-lite/OFL.txt",
+      "sha256": "0333a85fe077b6849f8e417acc44e8bd879442ceb681e271acf93e2d57fd4e2e",
+      "bytes": 5176
+    },
+    {
+      "path": "licenses/pdfcraft/craft-fonts/fonts/nanum-gothic/OFL.txt",
+      "sha256": "eeacf16032901d0ed0456876ec77b8f0fda6b3fecec7d972f8543eb602e6c30f",
+      "bytes": 4534
+    },
+    {
+      "path": "licenses/pdfcraft/craft-fonts/fonts/noto-sans-arabic/OFL.txt",
+      "sha256": "07fc70bfeb985cc1a87a8587d0a0c80bab11c86c9dc3fd95b6f0cb332f983e96",
+      "bytes": 4382
+    },
+    {
+      "path": "licenses/pdfcraft/craft-fonts/fonts/noto-sans-cjk-sc/OFL.txt",
+      "sha256": "6a73f9541c2de74158c0e7cf6b0a58ef774f5a780bf191f2d7ec9cc53efe2bf2",
+      "bytes": 4301
+    },
+    {
+      "path": "licenses/pdfcraft/craft-fonts/fonts/noto-sans-devanagari/OFL.txt",
+      "sha256": "a216f6f8d85c7228093e0ee5e258d9d377e6671f68acb4db1930b29583d0f331",
+      "bytes": 4386
+    },
+    {
+      "path": "licenses/pdfcraft/craft-fonts/fonts/noto-sans-georgian/OFL.txt",
+      "sha256": "8c02263c5d73d40544f9ed91e30c4e947407057a3cc430d7b786189aeceff6df",
+      "bytes": 4384
+    },
+    {
+      "path": "licenses/pdfcraft/craft-fonts/fonts/noto-sans-hebrew/OFL.txt",
+      "sha256": "9b9fe028b5ba74d231659a1bbaf0ed09b11e759d1ca6a070999e16d151616b47",
+      "bytes": 4382
+    },
+    {
+      "path": "licenses/pdfcraft/craft-fonts/fonts/noto-sans-symbols/OFL.txt",
+      "sha256": "b118dd41337806a5d4797052c77caf3bd096aed783e5eb21b4d11154351e1ac0",
+      "bytes": 4383
+    },
+    {
+      "path": "licenses/pdfcraft/craft-fonts/fonts/noto-sans-symbols-2/OFL.txt",
+      "sha256": "b118dd41337806a5d4797052c77caf3bd096aed783e5eb21b4d11154351e1ac0",
+      "bytes": 4383
+    },
+    {
+      "path": "licenses/pdfcraft/craft-fonts/fonts/noto-sans-thai/OFL.txt",
+      "sha256": "2e98fd23a52d253db8612cd5942c8f2ff4111b21d2367050fdca91d8ccc374a0",
+      "bytes": 4380
+    },
+    {
+      "path": "licenses/pdfcraft/craft-fonts/fonts/shippori-mincho/OFL.txt",
+      "sha256": "41fba056279be5f45ff9a99e44b7b53897b42732f5806d8e666e0ab49ac6bd38",
+      "bytes": 4399
+    },
+    {
+      "path": "licenses/pdfcraft/craft-fonts/LICENSE-APACHE",
+      "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594",
+      "bytes": 10174
+    },
+    {
+      "path": "licenses/pdfcraft/craft-fonts/LICENSE-MIT",
+      "sha256": "e360d6f5941863521687517eee951fac3328ee9f379fcb11bb5031fe6614fc8f",
+      "bytes": 1103
+    },
+    {
+      "path": "licenses/pdfcraft/LICENSE-APACHE",
+      "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594",
+      "bytes": 10174
+    },
+    {
+      "path": "licenses/pdfcraft/LICENSE-MIT",
+      "sha256": "cd7032ea33b71427f188e34ffb4aee9d6868a57fd196037c5c8b2be03a2a0352",
+      "bytes": 1100
+    },
+    {
+      "path": "licenses/pdfcraft/LICENSES.toml",
+      "sha256": "15094a2be81c9817e7f1d5f1aae0525275be6c5590a7cb6b8ff9addbad0503a6",
+      "bytes": 5989
+    },
+    {
+      "path": "licenses/pdfcraft/NOTICE",
+      "sha256": "9f854f730719af962cd840529324d089e05e68a30bd245c50e33f96e009b4314",
+      "bytes": 5651
+    },
+    {
+      "path": "licenses/photocraft/app-icon-LICENSE.txt",
+      "sha256": "a5cf25f3f3c2fe2c6d294db04f1bfea7259ac21e8edde5c7fabaa4c379e94795",
+      "bytes": 586
+    },
+    {
+      "path": "licenses/photocraft/ATTRIBUTION.md",
+      "sha256": "b557faf703f26e202c92e840a1024d1518ac5ea424c9747ac1e711209c47441c",
+      "bytes": 32108
+    },
+    {
+      "path": "licenses/photocraft/craft-fonts/ATTRIBUTION.md",
+      "sha256": "aa2aa7eec68c32ac2da6ff7162ca9100ab3680e4c7b98365fc7c74ddd4167d07",
+      "bytes": 5150
+    },
+    {
+      "path": "licenses/photocraft/craft-fonts/fonts/biz-ud-mincho/OFL.txt",
+      "sha256": "ef0ed524b3bd012f37015e986809eed6f67905456ebfc1ebd7fcc2765282ee01",
+      "bytes": 4408
+    },
+    {
+      "path": "licenses/photocraft/craft-fonts/fonts/biz-ud-pgothic/OFL.txt",
+      "sha256": "e753d7155d53c747d037a445e584c8ecfca6dd79846db610417e282a736b28bc",
+      "bytes": 4408
+    },
+    {
+      "path": "licenses/photocraft/craft-fonts/fonts/lxgw-wenkai-lite/OFL.txt",
+      "sha256": "0333a85fe077b6849f8e417acc44e8bd879442ceb681e271acf93e2d57fd4e2e",
+      "bytes": 5176
+    },
+    {
+      "path": "licenses/photocraft/craft-fonts/fonts/nanum-gothic/OFL.txt",
+      "sha256": "eeacf16032901d0ed0456876ec77b8f0fda6b3fecec7d972f8543eb602e6c30f",
+      "bytes": 4534
+    },
+    {
+      "path": "licenses/photocraft/craft-fonts/fonts/noto-sans-arabic/OFL.txt",
+      "sha256": "07fc70bfeb985cc1a87a8587d0a0c80bab11c86c9dc3fd95b6f0cb332f983e96",
+      "bytes": 4382
+    },
+    {
+      "path": "licenses/photocraft/craft-fonts/fonts/noto-sans-cjk-sc/OFL.txt",
+      "sha256": "6a73f9541c2de74158c0e7cf6b0a58ef774f5a780bf191f2d7ec9cc53efe2bf2",
+      "bytes": 4301
+    },
+    {
+      "path": "licenses/photocraft/craft-fonts/fonts/noto-sans-devanagari/OFL.txt",
+      "sha256": "a216f6f8d85c7228093e0ee5e258d9d377e6671f68acb4db1930b29583d0f331",
+      "bytes": 4386
+    },
+    {
+      "path": "licenses/photocraft/craft-fonts/fonts/noto-sans-georgian/OFL.txt",
+      "sha256": "8c02263c5d73d40544f9ed91e30c4e947407057a3cc430d7b786189aeceff6df",
+      "bytes": 4384
+    },
+    {
+      "path": "licenses/photocraft/craft-fonts/fonts/noto-sans-hebrew/OFL.txt",
+      "sha256": "9b9fe028b5ba74d231659a1bbaf0ed09b11e759d1ca6a070999e16d151616b47",
+      "bytes": 4382
+    },
+    {
+      "path": "licenses/photocraft/craft-fonts/fonts/noto-sans-symbols/OFL.txt",
+      "sha256": "b118dd41337806a5d4797052c77caf3bd096aed783e5eb21b4d11154351e1ac0",
+      "bytes": 4383
+    },
+    {
+      "path": "licenses/photocraft/craft-fonts/fonts/noto-sans-symbols-2/OFL.txt",
+      "sha256": "b118dd41337806a5d4797052c77caf3bd096aed783e5eb21b4d11154351e1ac0",
+      "bytes": 4383
+    },
+    {
+      "path": "licenses/photocraft/craft-fonts/fonts/noto-sans-thai/OFL.txt",
+      "sha256": "2e98fd23a52d253db8612cd5942c8f2ff4111b21d2367050fdca91d8ccc374a0",
+      "bytes": 4380
+    },
+    {
+      "path": "licenses/photocraft/craft-fonts/fonts/shippori-mincho/OFL.txt",
+      "sha256": "41fba056279be5f45ff9a99e44b7b53897b42732f5806d8e666e0ab49ac6bd38",
+      "bytes": 4399
+    },
+    {
+      "path": "licenses/photocraft/craft-fonts/LICENSE-APACHE",
+      "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594",
+      "bytes": 10174
+    },
+    {
+      "path": "licenses/photocraft/craft-fonts/LICENSE-MIT",
+      "sha256": "e360d6f5941863521687517eee951fac3328ee9f379fcb11bb5031fe6614fc8f",
+      "bytes": 1103
+    },
+    {
+      "path": "licenses/photocraft/LICENSE-APACHE",
+      "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594",
+      "bytes": 10174
+    },
+    {
+      "path": "licenses/photocraft/LICENSE-MIT",
+      "sha256": "1a8f66d8a86b146f5336fa0d4b1186576c8aa98e60823080c85c7811cfd810af",
+      "bytes": 1102
+    },
+    {
+      "path": "licenses/photocraft/NOTICE",
+      "sha256": "511087b49923695d4d0d91416b3cda337157677814c85e40e4e05639fcaa1cdd",
+      "bytes": 4717
+    },
+    {
       "path": "licenses/rust/adler2-2.0.1/LICENSE-0BSD",
       "sha256": "861399f8c21c042b110517e76dc6b63a2b334276c8cf17412fc3c8908ca8dc17",
       "bytes": 665
@@ -419,6 +864,16 @@
       "path": "licenses/rust/adler2-2.0.1/LICENSE-MIT",
       "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3",
       "bytes": 1023
+    },
+    {
+      "path": "licenses/rust/aes-0.8.4/LICENSE-APACHE",
+      "sha256": "a9040321c3712d8fd0b09cf52b17445de04a23a10165049ae187cd39e5c86be5",
+      "bytes": 10849
+    },
+    {
+      "path": "licenses/rust/aes-0.8.4/LICENSE-MIT",
+      "sha256": "f7e8ab639afef15573680c97f796166835cbeb3865175882fea41c60d106b733",
+      "bytes": 1057
     },
     {
       "path": "licenses/rust/aes-0.9.3/LICENSE-APACHE",
@@ -446,6 +901,16 @@
       "bytes": 1483
     },
     {
+      "path": "licenses/rust/archery-1.2.3/LICENSE.md",
+      "sha256": "e326b5fef9084c437878cc2184ba6dfa15503f46e5359dd67246f51761ea709f",
+      "bytes": 1068
+    },
+    {
+      "path": "licenses/rust/arrayref-0.3.9/LICENSE",
+      "sha256": "1bc7e6f475b3ec99b7e2643411950ae2368c250dd4c5c325f80f9811362a94a1",
+      "bytes": 1336
+    },
+    {
       "path": "licenses/rust/arrayvec-0.7.8/LICENSE-APACHE",
       "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
       "bytes": 10847
@@ -464,6 +929,16 @@
       "path": "licenses/rust/autocfg-1.5.1/LICENSE-MIT",
       "sha256": "27995d58ad5c1145c1a8cd86244ce844886958a35eb2b78c6b772748669999ac",
       "bytes": 1054
+    },
+    {
+      "path": "licenses/rust/base64-0.22.1/LICENSE-APACHE",
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "bytes": 10847
+    },
+    {
+      "path": "licenses/rust/base64-0.22.1/LICENSE-MIT",
+      "sha256": "0dd882e53de11566d50f8e8e2d5a651bcf3fabee4987d70f306233cf39094ba7",
+      "bytes": 1076
     },
     {
       "path": "licenses/rust/base64-0.23.1/LICENSE-APACHE",
@@ -496,6 +971,26 @@
       "bytes": 1071
     },
     {
+      "path": "licenses/rust/bit_field-0.10.3/LICENSE-APACHE",
+      "sha256": "b40930bbcf80744c86c46a12bc9da056641d722716c378f5659b9e555ef833e1",
+      "bytes": 11357
+    },
+    {
+      "path": "licenses/rust/bit_field-0.10.3/LICENSE-MIT",
+      "sha256": "2346961b4509d62a2f1c9327f84c64958593d84d9c3d87dd8fee45e3de1a9a58",
+      "bytes": 1084
+    },
+    {
+      "path": "licenses/rust/bitflags-1.3.2/LICENSE-APACHE",
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "bytes": 10847
+    },
+    {
+      "path": "licenses/rust/bitflags-1.3.2/LICENSE-MIT",
+      "sha256": "6485b8ed310d3f0340bf1ad1f47645069ce4069dcc6bb46c7d5c6faf41de1fdb",
+      "bytes": 1071
+    },
+    {
       "path": "licenses/rust/bitflags-2.13.2/LICENSE-APACHE",
       "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
       "bytes": 10847
@@ -506,6 +1001,31 @@
       "bytes": 1071
     },
     {
+      "path": "licenses/rust/blake3-1.8.7/LICENSE_A2",
+      "sha256": "00fcc7a934ddbc9ece2a7cc063ac788e284b703b1d705ccbba72d462aa97921e",
+      "bytes": 11361
+    },
+    {
+      "path": "licenses/rust/blake3-1.8.7/LICENSE_A2LLVM",
+      "sha256": "a5695f57ea0c221e0e8b7d784ff774c35e88c3d3270353646a925880bb3492cc",
+      "bytes": 12267
+    },
+    {
+      "path": "licenses/rust/blake3-1.8.7/LICENSE_CC0",
+      "sha256": "a2010f343487d3f7618affe54f789f5487602331c0a8d03f49e9a7c547cf0499",
+      "bytes": 7048
+    },
+    {
+      "path": "licenses/rust/block-buffer-0.10.4/LICENSE-APACHE",
+      "sha256": "a9040321c3712d8fd0b09cf52b17445de04a23a10165049ae187cd39e5c86be5",
+      "bytes": 10849
+    },
+    {
+      "path": "licenses/rust/block-buffer-0.10.4/LICENSE-MIT",
+      "sha256": "d5c22aa3118d240e877ad41c5d9fa232f9c77d757d4aac0c2f943afc0a95e0ef",
+      "bytes": 1082
+    },
+    {
       "path": "licenses/rust/block-buffer-0.12.1/LICENSE-APACHE",
       "sha256": "a9040321c3712d8fd0b09cf52b17445de04a23a10165049ae187cd39e5c86be5",
       "bytes": 10849
@@ -514,6 +1034,26 @@
       "path": "licenses/rust/block-buffer-0.12.1/LICENSE-MIT",
       "sha256": "98181e7249d0c01737645ec982499ce99a0f07eb8f7d625b8840d799d10dbc01",
       "bytes": 1082
+    },
+    {
+      "path": "licenses/rust/block-padding-0.4.2/LICENSE-APACHE",
+      "sha256": "a9040321c3712d8fd0b09cf52b17445de04a23a10165049ae187cd39e5c86be5",
+      "bytes": 10849
+    },
+    {
+      "path": "licenses/rust/block-padding-0.4.2/LICENSE-MIT",
+      "sha256": "98181e7249d0c01737645ec982499ce99a0f07eb8f7d625b8840d799d10dbc01",
+      "bytes": 1082
+    },
+    {
+      "path": "licenses/rust/brotli-8.0.4/LICENSE.BSD-3-Clause",
+      "sha256": "c0c56f26d9c051cac4d200c34c84e7ae9aaa853e01a982a1df08b09931e518ae",
+      "bytes": 1483
+    },
+    {
+      "path": "licenses/rust/brotli-8.0.4/LICENSE.MIT",
+      "sha256": "3d180008e36922a4e8daec11c34c7af264fed5962d07924aea928c38e8663c94",
+      "bytes": 1084
     },
     {
       "path": "licenses/rust/brotli-decompressor-5.0.3/LICENSE",
@@ -571,6 +1111,26 @@
       "bytes": 1055
     },
     {
+      "path": "licenses/rust/cbc-0.2.1/LICENSE-APACHE",
+      "sha256": "a9040321c3712d8fd0b09cf52b17445de04a23a10165049ae187cd39e5c86be5",
+      "bytes": 10849
+    },
+    {
+      "path": "licenses/rust/cbc-0.2.1/LICENSE-MIT",
+      "sha256": "63af4bea227c94d021e99427f6ca3a4b8efddadcca93ab6130f708cf6138cf68",
+      "bytes": 1103
+    },
+    {
+      "path": "licenses/rust/cc-1.5.1/LICENSE-APACHE",
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "bytes": 10847
+    },
+    {
+      "path": "licenses/rust/cc-1.5.1/LICENSE-MIT",
+      "sha256": "378f5840b258e2779c39418f3f2d7b2ba96f1c7917dd6be0713f88305dbda397",
+      "bytes": 1057
+    },
+    {
       "path": "licenses/rust/cfb-0.15.0/LICENSE",
       "sha256": "ebaac853b53fec0ed475796f533ce676912a4df9ad9d8a621fa76d5060591e10",
       "bytes": 1074
@@ -584,6 +1144,16 @@
       "path": "licenses/rust/cfg-if-1.0.5/LICENSE-MIT",
       "sha256": "378f5840b258e2779c39418f3f2d7b2ba96f1c7917dd6be0713f88305dbda397",
       "bytes": 1057
+    },
+    {
+      "path": "licenses/rust/chacha20-0.10.2/LICENSE-APACHE",
+      "sha256": "a9040321c3712d8fd0b09cf52b17445de04a23a10165049ae187cd39e5c86be5",
+      "bytes": 10849
+    },
+    {
+      "path": "licenses/rust/chacha20-0.10.2/LICENSE-MIT",
+      "sha256": "b8c6939380a400f53e11923d50fcc4dd2fa1ba8339fd9d04cda38a0251b6c9b0",
+      "bytes": 1082
     },
     {
       "path": "licenses/rust/chardetng-1.0.0/COPYRIGHT",
@@ -604,6 +1174,16 @@
       "path": "licenses/rust/chrono-0.4.45/LICENSE.txt",
       "sha256": "946c9835d8034d24404f8cfec5f4654cee5dad17e944afc3d06d742cf2882831",
       "bytes": 12307
+    },
+    {
+      "path": "licenses/rust/cipher-0.4.4/LICENSE-APACHE",
+      "sha256": "a9040321c3712d8fd0b09cf52b17445de04a23a10165049ae187cd39e5c86be5",
+      "bytes": 10849
+    },
+    {
+      "path": "licenses/rust/cipher-0.4.4/LICENSE-MIT",
+      "sha256": "5c7bd92d1f096f12203dc1b601e3cb17484fa1b023e30b6b8edcc80e416237ec",
+      "bytes": 1070
     },
     {
       "path": "licenses/rust/cipher-0.5.2/LICENSE-APACHE",
@@ -651,6 +1231,21 @@
       "bytes": 1082
     },
     {
+      "path": "licenses/rust/constant_time_eq-0.4.2/LICENSE-APACHE",
+      "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a",
+      "bytes": 9723
+    },
+    {
+      "path": "licenses/rust/constant_time_eq-0.4.2/LICENSE-CC0",
+      "sha256": "a2010f343487d3f7618affe54f789f5487602331c0a8d03f49e9a7c547cf0499",
+      "bytes": 7048
+    },
+    {
+      "path": "licenses/rust/constant_time_eq-0.4.2/LICENSE-MIT0",
+      "sha256": "9a3aeb3f63659c4c6302d315e1d98784d1e8559858a47ff9562e091bb922d28d",
+      "bytes": 858
+    },
+    {
       "path": "licenses/rust/core_detect-1.0.0/LICENSE-APACHE",
       "sha256": "769f80b5bcb42ed0af4e4d2fd74e1ac9bf843cb80c5a29219d1ef3544428a6bb",
       "bytes": 10846
@@ -661,6 +1256,11 @@
       "bytes": 1076
     },
     {
+      "path": "licenses/rust/core_maths-0.1.1/LICENSE",
+      "sha256": "9ebf8c4cc0b735ca13a766451f7b8097db3185975ceb2ba94b5abf439156a91f",
+      "bytes": 1070
+    },
+    {
       "path": "licenses/rust/cpubits-0.1.1/LICENSE-APACHE",
       "sha256": "a9040321c3712d8fd0b09cf52b17445de04a23a10165049ae187cd39e5c86be5",
       "bytes": 10849
@@ -668,6 +1268,16 @@
     {
       "path": "licenses/rust/cpubits-0.1.1/LICENSE-MIT",
       "sha256": "003736bc98408b53511b9cc8ff5d1af3bf0a8f17d53841cc39d8ab1b96a195b0",
+      "bytes": 1082
+    },
+    {
+      "path": "licenses/rust/cpufeatures-0.2.17/LICENSE-APACHE",
+      "sha256": "a9040321c3712d8fd0b09cf52b17445de04a23a10165049ae187cd39e5c86be5",
+      "bytes": 10849
+    },
+    {
+      "path": "licenses/rust/cpufeatures-0.2.17/LICENSE-MIT",
+      "sha256": "ae9baa7beea910273c2f384c2a6b721fb7bd02bda3436074a1072e4ee689f985",
       "bytes": 1082
     },
     {
@@ -687,6 +1297,16 @@
     },
     {
       "path": "licenses/rust/crc32fast-1.5.2/LICENSE-MIT",
+      "sha256": "61d383b05b87d78f94d2937e2580cce47226d17823c0430fbcad09596537efcf",
+      "bytes": 1097
+    },
+    {
+      "path": "licenses/rust/crc32fast-1.5.3/LICENSE-APACHE",
+      "sha256": "c6596eb7be8581c18be736c846fb9173b69eccf6ef94c5135893ec56bd92ba08",
+      "bytes": 11358
+    },
+    {
+      "path": "licenses/rust/crc32fast-1.5.3/LICENSE-MIT",
       "sha256": "61d383b05b87d78f94d2937e2580cce47226d17823c0430fbcad09596537efcf",
       "bytes": 1097
     },
@@ -736,6 +1356,16 @@
       "bytes": 1099
     },
     {
+      "path": "licenses/rust/crypto-common-0.1.7/LICENSE-APACHE",
+      "sha256": "a9040321c3712d8fd0b09cf52b17445de04a23a10165049ae187cd39e5c86be5",
+      "bytes": 10849
+    },
+    {
+      "path": "licenses/rust/crypto-common-0.1.7/LICENSE-MIT",
+      "sha256": "3521672491a3479422d5fe1aca6645dd2984090f85da6e5205abfb18fb7a6897",
+      "bytes": 1065
+    },
+    {
       "path": "licenses/rust/crypto-common-0.2.2/LICENSE-APACHE",
       "sha256": "a9040321c3712d8fd0b09cf52b17445de04a23a10165049ae187cd39e5c86be5",
       "bytes": 10849
@@ -756,6 +1386,26 @@
       "bytes": 1082
     },
     {
+      "path": "licenses/rust/data-url-0.3.2/LICENSE-APACHE",
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "bytes": 10847
+    },
+    {
+      "path": "licenses/rust/data-url-0.3.2/LICENSE-MIT",
+      "sha256": "b38f11f6096706e6de553dabe2a7ed142d59b6fa8c97e290c67496154745cdd5",
+      "bytes": 1072
+    },
+    {
+      "path": "licenses/rust/digest-0.10.7/LICENSE-APACHE",
+      "sha256": "a9040321c3712d8fd0b09cf52b17445de04a23a10165049ae187cd39e5c86be5",
+      "bytes": 10849
+    },
+    {
+      "path": "licenses/rust/digest-0.10.7/LICENSE-MIT",
+      "sha256": "9e0dfd2dd4173a530e238cb6adb37aa78c34c6bc7444e0e10c1ab5d8881f63ba",
+      "bytes": 1057
+    },
+    {
       "path": "licenses/rust/digest-0.11.3/LICENSE-APACHE",
       "sha256": "a9040321c3712d8fd0b09cf52b17445de04a23a10165049ae187cd39e5c86be5",
       "bytes": 10849
@@ -764,6 +1414,36 @@
       "path": "licenses/rust/digest-0.11.3/LICENSE-MIT",
       "sha256": "af59cea35d7f5e2777a713b8d155d65efa2c339eb43f3c14e868c6ac8506edad",
       "bytes": 1103
+    },
+    {
+      "path": "licenses/rust/displaydoc-0.2.7/LICENSE-APACHE",
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "bytes": 10847
+    },
+    {
+      "path": "licenses/rust/displaydoc-0.2.7/LICENSE-MIT",
+      "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3",
+      "bytes": 1023
+    },
+    {
+      "path": "licenses/rust/ecb-0.2.1/LICENSE-APACHE",
+      "sha256": "a9040321c3712d8fd0b09cf52b17445de04a23a10165049ae187cd39e5c86be5",
+      "bytes": 10849
+    },
+    {
+      "path": "licenses/rust/ecb-0.2.1/LICENSE-MIT",
+      "sha256": "f2e4fad8a368f5bb6610e9843f142a0098c80c3718d1ce75c7133ee0acddd786",
+      "bytes": 1065
+    },
+    {
+      "path": "licenses/rust/either-1.18.0/LICENSE-APACHE",
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "bytes": 10847
+    },
+    {
+      "path": "licenses/rust/either-1.18.0/LICENSE-MIT",
+      "sha256": "7576269ea71f767b99297934c0b2367532690f8c4badc695edf8e04ab6a1e545",
+      "bytes": 1043
     },
     {
       "path": "licenses/rust/either-1.19.0/LICENSE-APACHE",
@@ -806,6 +1486,16 @@
       "bytes": 1049
     },
     {
+      "path": "licenses/rust/equivalent-1.0.3/LICENSE-APACHE",
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "bytes": 10847
+    },
+    {
+      "path": "licenses/rust/equivalent-1.0.3/LICENSE-MIT",
+      "sha256": "7365cc8878a1d7ce155a58c4ca09c3d7a6be413efa5334a80ea842912b669349",
+      "bytes": 1049
+    },
+    {
       "path": "licenses/rust/euclid-0.22.14/COPYRIGHT",
       "sha256": "ec82b96487e9e778ee610c7ab245162464782cfa1f555c2299333f8dbe5c036a",
       "bytes": 321
@@ -821,9 +1511,24 @@
       "bytes": 1067
     },
     {
+      "path": "licenses/rust/exr-1.74.2/LICENSE.md",
+      "sha256": "97e4d3aa7a9e8ac31979c16ca8bb2b628a9cb72c3362185ad2bf4ad77f43551f",
+      "bytes": 3566
+    },
+    {
       "path": "licenses/rust/fancy-regex-0.14.0/LICENSE",
       "sha256": "3bc70e239e91272782006c638fc0452a714d384224f11f0923036b7be07cf9b5",
       "bytes": 1081
+    },
+    {
+      "path": "licenses/rust/fastrand-2.5.0/LICENSE-APACHE",
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "bytes": 10847
+    },
+    {
+      "path": "licenses/rust/fastrand-2.5.0/LICENSE-MIT",
+      "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3",
+      "bytes": 1023
     },
     {
       "path": "licenses/rust/fax-0.2.7/LICENSE",
@@ -851,6 +1556,16 @@
       "bytes": 1055
     },
     {
+      "path": "licenses/rust/find-msvc-tools-0.1.14/LICENSE-APACHE",
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "bytes": 10847
+    },
+    {
+      "path": "licenses/rust/find-msvc-tools-0.1.14/LICENSE-MIT",
+      "sha256": "378f5840b258e2779c39418f3f2d7b2ba96f1c7917dd6be0713f88305dbda397",
+      "bytes": 1057
+    },
+    {
       "path": "licenses/rust/flate2-1.1.10/LICENSE-APACHE",
       "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
       "bytes": 10847
@@ -859,6 +1574,11 @@
       "path": "licenses/rust/flate2-1.1.10/LICENSE-MIT",
       "sha256": "025436edff4cfcdde17a5811fdea78892d8482efd1abdec5a17872d07a4f2112",
       "bytes": 1062
+    },
+    {
+      "path": "licenses/rust/float-cmp-0.9.0/LICENSE",
+      "sha256": "40be1e77825d7e49485a2e43d89bed29dfff29f8f529e71d3c683656021f0d08",
+      "bytes": 1075
     },
     {
       "path": "licenses/rust/fnv-1.0.7/LICENSE-APACHE",
@@ -876,6 +1596,26 @@
       "bytes": 856
     },
     {
+      "path": "licenses/rust/font-types-0.11.3/LICENSE-APACHE",
+      "sha256": "a14f7d685a79c0f4fb64aee305527a6d5fa55f2401f4e6d688d7b1301868e6c0",
+      "bytes": 9695
+    },
+    {
+      "path": "licenses/rust/font-types-0.11.3/LICENSE-MIT",
+      "sha256": "8a62fa27ffdccc3df19dce90f8bb3d572e27aecffc1a383d0c2601834dcec434",
+      "bytes": 1058
+    },
+    {
+      "path": "licenses/rust/font-types-0.12.5/LICENSE-APACHE",
+      "sha256": "eba684204073ed715c4abb48129acdfd2bff8ae48339e6a7da3b341d3027b7f0",
+      "bytes": 9701
+    },
+    {
+      "path": "licenses/rust/font-types-0.12.5/LICENSE-MIT",
+      "sha256": "7b4c9a3946dfcea7967582760e963e27799e225dcf20565c8ef55324bb017427",
+      "bytes": 1065
+    },
+    {
       "path": "licenses/rust/font-types-0.12.6/LICENSE-APACHE",
       "sha256": "eba684204073ed715c4abb48129acdfd2bff8ae48339e6a7da3b341d3027b7f0",
       "bytes": 9701
@@ -886,6 +1626,41 @@
       "bytes": 1065
     },
     {
+      "path": "licenses/rust/font-types-0.12.7/LICENSE-APACHE",
+      "sha256": "eba684204073ed715c4abb48129acdfd2bff8ae48339e6a7da3b341d3027b7f0",
+      "bytes": 9701
+    },
+    {
+      "path": "licenses/rust/font-types-0.12.7/LICENSE-MIT",
+      "sha256": "7b4c9a3946dfcea7967582760e963e27799e225dcf20565c8ef55324bb017427",
+      "bytes": 1065
+    },
+    {
+      "path": "licenses/rust/fontdb-0.23.0/LICENSE",
+      "sha256": "59a1fdac3bd550043599bd159fd70f09a1108c2b09e3751d39b11e1ff8e51f00",
+      "bytes": 1083
+    },
+    {
+      "path": "licenses/rust/fontdb-0.23.0/tests/fonts/LICENSE.txt",
+      "sha256": "b84fdd2c3da5db56385cdbb639795e90aa3e035c53bc3591135f18df3331451f",
+      "bytes": 404
+    },
+    {
+      "path": "licenses/rust/fontique-0.11.1/LICENSE-APACHE",
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "bytes": 10847
+    },
+    {
+      "path": "licenses/rust/fontique-0.11.1/LICENSE-MIT",
+      "sha256": "2a6a0b5c3b55df37595092d3b3036cfe91e9b432f5c04da5f50db02e857780c8",
+      "bytes": 1058
+    },
+    {
+      "path": "licenses/rust/generic-array-0.14.7/LICENSE",
+      "sha256": "c09aae9d3c77b531f56351a9947bc7446511d6b025b3255312d3e3442a9a7583",
+      "bytes": 1107
+    },
+    {
       "path": "licenses/rust/getrandom-0.3.4/LICENSE-APACHE",
       "sha256": "aaff376532ea30a0cd5330b9502ad4a4c8bf769c539c87ffe78819d188a18ebf",
       "bytes": 10849
@@ -894,6 +1669,26 @@
       "path": "licenses/rust/getrandom-0.3.4/LICENSE-MIT",
       "sha256": "29e9fe5074bd27e0e5d5d110394fbbcd841baee2651a3c4b4560a632702cede4",
       "bytes": 1130
+    },
+    {
+      "path": "licenses/rust/getrandom-0.4.3/LICENSE-APACHE",
+      "sha256": "aaff376532ea30a0cd5330b9502ad4a4c8bf769c539c87ffe78819d188a18ebf",
+      "bytes": 10849
+    },
+    {
+      "path": "licenses/rust/getrandom-0.4.3/LICENSE-MIT",
+      "sha256": "523a42c25d245dde9c015f882cec7f4555aad883382a6cf19b4b7d9b2cd5419b",
+      "bytes": 1130
+    },
+    {
+      "path": "licenses/rust/gif-0.13.3/LICENSE-APACHE",
+      "sha256": "769f80b5bcb42ed0af4e4d2fd74e1ac9bf843cb80c5a29219d1ef3544428a6bb",
+      "bytes": 10846
+    },
+    {
+      "path": "licenses/rust/gif-0.13.3/LICENSE-MIT",
+      "sha256": "77257f3d2181236b1aee78920238062ae64efe13c5d858b2db126e79c9e1b14f",
+      "bytes": 1071
     },
     {
       "path": "licenses/rust/gif-0.14.2/LICENSE-APACHE",
@@ -936,6 +1731,11 @@
       "bytes": 1036
     },
     {
+      "path": "licenses/rust/harfrust-0.12.0/LICENSE",
+      "sha256": "3a7c3f0b887abb7c638faf022d29257418458614c6724b120ceeffb279f9c7d2",
+      "bytes": 1117
+    },
+    {
       "path": "licenses/rust/harfrust-0.13.3/LICENSE",
       "sha256": "3a7c3f0b887abb7c638faf022d29257418458614c6724b120ceeffb279f9c7d2",
       "bytes": 1117
@@ -949,6 +1749,31 @@
       "path": "licenses/rust/hashbrown-0.17.1/LICENSE-MIT",
       "sha256": "ff8f68cb076caf8cefe7a6430d4ac086ce6af2ca8ce2c4e5a2004d4552ef52a2",
       "bytes": 1060
+    },
+    {
+      "path": "licenses/rust/hayro-ccitt-0.3.0/LICENSE-APACHE",
+      "sha256": "0cec06e0e55fbc3dc5cee4fca9b607f66cb8f4e4dbcf3b3c013594dd156732e9",
+      "bytes": 10173
+    },
+    {
+      "path": "licenses/rust/hayro-ccitt-0.3.0/LICENSE-MIT",
+      "sha256": "51b50e6120c344dcc146bbd6375ca1c78e079d97c8bea76e67a53d6ff0efebac",
+      "bytes": 1063
+    },
+    {
+      "path": "licenses/rust/hayro-jpeg2000-0.3.5/assets/LICENSE.txt",
+      "sha256": "469d87b5fa48f8aaf69e25f4fcac3a309c97dbb7d561b917638abdb640e004d9",
+      "bytes": 6552
+    },
+    {
+      "path": "licenses/rust/hayro-jpeg2000-0.3.5/LICENSE-APACHE",
+      "sha256": "0cec06e0e55fbc3dc5cee4fca9b607f66cb8f4e4dbcf3b3c013594dd156732e9",
+      "bytes": 10173
+    },
+    {
+      "path": "licenses/rust/hayro-jpeg2000-0.3.5/LICENSE-MIT",
+      "sha256": "51b50e6120c344dcc146bbd6375ca1c78e079d97c8bea76e67a53d6ff0efebac",
+      "bytes": 1063
     },
     {
       "path": "licenses/rust/hmac-0.13.0/LICENSE-APACHE",
@@ -971,6 +1796,61 @@
       "bytes": 1082
     },
     {
+      "path": "licenses/rust/icu_collections-2.3.0/LICENSE",
+      "sha256": "f367c1b8e1aa262435251e442901da4607b4650e0e63a026f5044473ecfb90f2",
+      "bytes": 2195
+    },
+    {
+      "path": "licenses/rust/icu_locale_core-2.3.0/LICENSE",
+      "sha256": "f367c1b8e1aa262435251e442901da4607b4650e0e63a026f5044473ecfb90f2",
+      "bytes": 2195
+    },
+    {
+      "path": "licenses/rust/icu_locale_fallback-2.3.0/LICENSE",
+      "sha256": "f367c1b8e1aa262435251e442901da4607b4650e0e63a026f5044473ecfb90f2",
+      "bytes": 2195
+    },
+    {
+      "path": "licenses/rust/icu_locale_fallback_data-2.3.0/LICENSE",
+      "sha256": "f367c1b8e1aa262435251e442901da4607b4650e0e63a026f5044473ecfb90f2",
+      "bytes": 2195
+    },
+    {
+      "path": "licenses/rust/icu_normalizer-2.3.0/LICENSE",
+      "sha256": "f367c1b8e1aa262435251e442901da4607b4650e0e63a026f5044473ecfb90f2",
+      "bytes": 2195
+    },
+    {
+      "path": "licenses/rust/icu_normalizer_data-2.3.0/LICENSE",
+      "sha256": "f367c1b8e1aa262435251e442901da4607b4650e0e63a026f5044473ecfb90f2",
+      "bytes": 2195
+    },
+    {
+      "path": "licenses/rust/icu_properties-2.3.0/LICENSE",
+      "sha256": "f367c1b8e1aa262435251e442901da4607b4650e0e63a026f5044473ecfb90f2",
+      "bytes": 2195
+    },
+    {
+      "path": "licenses/rust/icu_properties_data-2.3.0/LICENSE",
+      "sha256": "f367c1b8e1aa262435251e442901da4607b4650e0e63a026f5044473ecfb90f2",
+      "bytes": 2195
+    },
+    {
+      "path": "licenses/rust/icu_provider-2.3.1/LICENSE",
+      "sha256": "f367c1b8e1aa262435251e442901da4607b4650e0e63a026f5044473ecfb90f2",
+      "bytes": 2195
+    },
+    {
+      "path": "licenses/rust/icu_segmenter-2.3.0/LICENSE",
+      "sha256": "f367c1b8e1aa262435251e442901da4607b4650e0e63a026f5044473ecfb90f2",
+      "bytes": 2195
+    },
+    {
+      "path": "licenses/rust/icu_segmenter_data-2.3.0/LICENSE",
+      "sha256": "f367c1b8e1aa262435251e442901da4607b4650e0e63a026f5044473ecfb90f2",
+      "bytes": 2195
+    },
+    {
       "path": "licenses/rust/image-0.25.10/LICENSE-APACHE",
       "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594",
       "bytes": 10174
@@ -991,6 +1871,21 @@
       "bytes": 1036
     },
     {
+      "path": "licenses/rust/imagesize-0.13.0/LICENSE",
+      "sha256": "436637bd4909fde7e14c899e9ff2cdd440b5968df12d431f1651f11db19bc2ef",
+      "bytes": 1085
+    },
+    {
+      "path": "licenses/rust/imagesize-0.14.0/LICENSE",
+      "sha256": "436637bd4909fde7e14c899e9ff2cdd440b5968df12d431f1651f11db19bc2ef",
+      "bytes": 1085
+    },
+    {
+      "path": "licenses/rust/imagesize-0.15.0/LICENSE",
+      "sha256": "fa0d694967d5c279e70a5c7b7e4b9929e4c1c8c1b8506998e66fc2f1547b200a",
+      "bytes": 1064
+    },
+    {
       "path": "licenses/rust/indexmap-2.14.2/LICENSE-APACHE",
       "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
       "bytes": 10847
@@ -999,6 +1894,16 @@
       "path": "licenses/rust/indexmap-2.14.2/LICENSE-MIT",
       "sha256": "ecc269ef87fd38a1d98e30bfac9ba964a9dbd9315c3770fed98d4d7cb5882055",
       "bytes": 1049
+    },
+    {
+      "path": "licenses/rust/inout-0.1.4/LICENSE-APACHE",
+      "sha256": "a9040321c3712d8fd0b09cf52b17445de04a23a10165049ae187cd39e5c86be5",
+      "bytes": 10849
+    },
+    {
+      "path": "licenses/rust/inout-0.1.4/LICENSE-MIT",
+      "sha256": "304b898acad7f02e03d6d8832d682a3b43ee729ab5d3a069af5a36979083b6b4",
+      "bytes": 1110
     },
     {
       "path": "licenses/rust/inout-0.2.2/LICENSE-APACHE",
@@ -1021,6 +1926,156 @@
       "bytes": 1023
     },
     {
+      "path": "licenses/rust/jpeg-encoder-0.6.1/LICENSE-APACHE",
+      "sha256": "85a884980abd6032fc6b5439ba918ab16db9ac9051b5cf18db9c27c587df07c0",
+      "bytes": 10701
+    },
+    {
+      "path": "licenses/rust/jpeg-encoder-0.6.1/LICENSE-MIT",
+      "sha256": "4d022727ea392ebba2fe5e9a5f78c610a0eae506b491f3db29c78b6d430d6503",
+      "bytes": 1088
+    },
+    {
+      "path": "licenses/rust/jxl-bitstream-1.1.0/LICENSE-APACHE",
+      "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a",
+      "bytes": 9723
+    },
+    {
+      "path": "licenses/rust/jxl-bitstream-1.1.0/LICENSE-MIT",
+      "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3",
+      "bytes": 1023
+    },
+    {
+      "path": "licenses/rust/jxl-coding-1.0.1/LICENSE-APACHE",
+      "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a",
+      "bytes": 9723
+    },
+    {
+      "path": "licenses/rust/jxl-coding-1.0.1/LICENSE-MIT",
+      "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3",
+      "bytes": 1023
+    },
+    {
+      "path": "licenses/rust/jxl-color-0.11.0/LICENSE-APACHE",
+      "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a",
+      "bytes": 9723
+    },
+    {
+      "path": "licenses/rust/jxl-color-0.11.0/LICENSE-MIT",
+      "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3",
+      "bytes": 1023
+    },
+    {
+      "path": "licenses/rust/jxl-frame-0.13.3/LICENSE-APACHE",
+      "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a",
+      "bytes": 9723
+    },
+    {
+      "path": "licenses/rust/jxl-frame-0.13.3/LICENSE-MIT",
+      "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3",
+      "bytes": 1023
+    },
+    {
+      "path": "licenses/rust/jxl-grid-0.6.2/LICENSE-APACHE",
+      "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a",
+      "bytes": 9723
+    },
+    {
+      "path": "licenses/rust/jxl-grid-0.6.2/LICENSE-MIT",
+      "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3",
+      "bytes": 1023
+    },
+    {
+      "path": "licenses/rust/jxl-image-0.13.0/LICENSE-APACHE",
+      "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a",
+      "bytes": 9723
+    },
+    {
+      "path": "licenses/rust/jxl-image-0.13.0/LICENSE-MIT",
+      "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3",
+      "bytes": 1023
+    },
+    {
+      "path": "licenses/rust/jxl-jbr-0.2.1/LICENSE-APACHE",
+      "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a",
+      "bytes": 9723
+    },
+    {
+      "path": "licenses/rust/jxl-jbr-0.2.1/LICENSE-MIT",
+      "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3",
+      "bytes": 1023
+    },
+    {
+      "path": "licenses/rust/jxl-modular-0.11.3/LICENSE-APACHE",
+      "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a",
+      "bytes": 9723
+    },
+    {
+      "path": "licenses/rust/jxl-modular-0.11.3/LICENSE-MIT",
+      "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3",
+      "bytes": 1023
+    },
+    {
+      "path": "licenses/rust/jxl-oxide-0.12.6/LICENSE-APACHE",
+      "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a",
+      "bytes": 9723
+    },
+    {
+      "path": "licenses/rust/jxl-oxide-0.12.6/LICENSE-MIT",
+      "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3",
+      "bytes": 1023
+    },
+    {
+      "path": "licenses/rust/jxl-oxide-common-1.0.0/LICENSE-APACHE",
+      "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a",
+      "bytes": 9723
+    },
+    {
+      "path": "licenses/rust/jxl-oxide-common-1.0.0/LICENSE-MIT",
+      "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3",
+      "bytes": 1023
+    },
+    {
+      "path": "licenses/rust/jxl-render-0.12.4/LICENSE-APACHE",
+      "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a",
+      "bytes": 9723
+    },
+    {
+      "path": "licenses/rust/jxl-render-0.12.4/LICENSE-MIT",
+      "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3",
+      "bytes": 1023
+    },
+    {
+      "path": "licenses/rust/jxl-threadpool-1.0.0/LICENSE-APACHE",
+      "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a",
+      "bytes": 9723
+    },
+    {
+      "path": "licenses/rust/jxl-threadpool-1.0.0/LICENSE-MIT",
+      "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3",
+      "bytes": 1023
+    },
+    {
+      "path": "licenses/rust/jxl-vardct-0.11.1/LICENSE-APACHE",
+      "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a",
+      "bytes": 9723
+    },
+    {
+      "path": "licenses/rust/jxl-vardct-0.11.1/LICENSE-MIT",
+      "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3",
+      "bytes": 1023
+    },
+    {
+      "path": "licenses/rust/kurbo-0.11.3/LICENSE-APACHE",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "bytes": 11358
+    },
+    {
+      "path": "licenses/rust/kurbo-0.11.3/LICENSE-MIT",
+      "sha256": "23c23145f6eac25c28cdcc03d38506a5712a9a8cffb5bd5301457f6173ea696e",
+      "bytes": 1055
+    },
+    {
       "path": "licenses/rust/kurbo-0.13.1/LICENSE-APACHE",
       "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
       "bytes": 11358
@@ -1029,6 +2084,26 @@
       "path": "licenses/rust/kurbo-0.13.1/LICENSE-MIT",
       "sha256": "23c23145f6eac25c28cdcc03d38506a5712a9a8cffb5bd5301457f6173ea696e",
       "bytes": 1055
+    },
+    {
+      "path": "licenses/rust/lebe-0.5.3/LICENSE-BSD-3-Clause",
+      "sha256": "f1b2855ae21da69e0a02499e13f57f3be92db7abbbffe9a89f33e04e9e21ec81",
+      "bytes": 1529
+    },
+    {
+      "path": "licenses/rust/libc-0.2.191/LICENSE-APACHE",
+      "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a",
+      "bytes": 9723
+    },
+    {
+      "path": "licenses/rust/libc-0.2.191/LICENSE-MIT",
+      "sha256": "123a331b5dbf04c30097fa43b8f858bc85df671fe776de498d01f3d6b7c1f69e",
+      "bytes": 1066
+    },
+    {
+      "path": "licenses/rust/libm-0.2.16/LICENSE.txt",
+      "sha256": "3823dda7cf046602f4b4e77ec8e227863dc4736037cc85bb33d9f19febe16bb7",
+      "bytes": 14088
     },
     {
       "path": "licenses/rust/linebender_resource_handle-0.1.1/LICENSE-APACHE",
@@ -1041,6 +2116,31 @@
       "bytes": 1036
     },
     {
+      "path": "licenses/rust/linesweeper-0.4.0/LICENSE-APACHE",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "bytes": 11358
+    },
+    {
+      "path": "licenses/rust/linesweeper-0.4.0/LICENSE-MIT",
+      "sha256": "23c23145f6eac25c28cdcc03d38506a5712a9a8cffb5bd5301457f6173ea696e",
+      "bytes": 1055
+    },
+    {
+      "path": "licenses/rust/linesweeper-0.5.0/LICENSE-APACHE",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "bytes": 11358
+    },
+    {
+      "path": "licenses/rust/linesweeper-0.5.0/LICENSE-MIT",
+      "sha256": "23c23145f6eac25c28cdcc03d38506a5712a9a8cffb5bd5301457f6173ea696e",
+      "bytes": 1055
+    },
+    {
+      "path": "licenses/rust/litemap-0.8.3/LICENSE",
+      "sha256": "f367c1b8e1aa262435251e442901da4607b4650e0e63a026f5044473ecfb90f2",
+      "bytes": 2195
+    },
+    {
       "path": "licenses/rust/log-0.4.34/LICENSE-APACHE",
       "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
       "bytes": 10847
@@ -1051,6 +2151,31 @@
       "bytes": 1071
     },
     {
+      "path": "licenses/rust/lz4_flex-0.11.6/LICENSE",
+      "sha256": "0982c33390159842ecce8e9d6ce2e5e39961fe0e0ffbb2eec39c9ba46db6db10",
+      "bytes": 1079
+    },
+    {
+      "path": "licenses/rust/md-5-0.10.6/LICENSE-APACHE",
+      "sha256": "a9040321c3712d8fd0b09cf52b17445de04a23a10165049ae187cd39e5c86be5",
+      "bytes": 10849
+    },
+    {
+      "path": "licenses/rust/md-5-0.10.6/LICENSE-MIT",
+      "sha256": "b4eb00df6e2a4d22518fcaa6a2b4646f249b3a3c9814509b22bd2091f1392ff1",
+      "bytes": 1138
+    },
+    {
+      "path": "licenses/rust/md-5-0.11.0/LICENSE-APACHE",
+      "sha256": "a9040321c3712d8fd0b09cf52b17445de04a23a10165049ae187cd39e5c86be5",
+      "bytes": 10849
+    },
+    {
+      "path": "licenses/rust/md-5-0.11.0/LICENSE-MIT",
+      "sha256": "831e0f43ad0bf014c1c4fec5767aae470434c1d66d6e671be2d823e729063e25",
+      "bytes": 1196
+    },
+    {
       "path": "licenses/rust/memchr-2.8.3/COPYING",
       "sha256": "01c266bced4a434da0051174d6bee16a4c82cf634e2679b6155d40d75012390f",
       "bytes": 126
@@ -1059,6 +2184,26 @@
       "path": "licenses/rust/memchr-2.8.3/LICENSE-MIT",
       "sha256": "0f96a83840e146e43c0ec96a22ec1f392e0680e6c1226e6f3ba87e0740af850f",
       "bytes": 1081
+    },
+    {
+      "path": "licenses/rust/memmap2-0.9.11/LICENSE-APACHE",
+      "sha256": "04ea4849dba9dcae07113850c6f1b1a69052c625210639914eee352023f750ad",
+      "bytes": 10835
+    },
+    {
+      "path": "licenses/rust/memmap2-0.9.11/LICENSE-MIT",
+      "sha256": "0d25d03b5ab49576178ad0cae7a2648d12c17ad0452fe49c07e55e4b59aa5257",
+      "bytes": 1091
+    },
+    {
+      "path": "licenses/rust/memmap2-0.9.12/LICENSE-APACHE",
+      "sha256": "04ea4849dba9dcae07113850c6f1b1a69052c625210639914eee352023f750ad",
+      "bytes": 10835
+    },
+    {
+      "path": "licenses/rust/memmap2-0.9.12/LICENSE-MIT",
+      "sha256": "0d25d03b5ab49576178ad0cae7a2648d12c17ad0452fe49c07e55e4b59aa5257",
+      "bytes": 1091
     },
     {
       "path": "licenses/rust/miniz_oxide-0.8.9/LICENSE",
@@ -1126,6 +2271,41 @@
       "bytes": 1053
     },
     {
+      "path": "licenses/rust/nom-8.0.0/LICENSE",
+      "sha256": "4dbda04344456f09a7a588140455413a9ac59b6b26a1ef7cdf9c800c012d87f0",
+      "bytes": 1065
+    },
+    {
+      "path": "licenses/rust/ntapi-0.4.3/LICENSE-APACHE",
+      "sha256": "cf90d659de5c1e6418267ab8043b756e65508ee5d8d50b29eb2d2fe444c2c3eb",
+      "bytes": 11360
+    },
+    {
+      "path": "licenses/rust/ntapi-0.4.3/LICENSE-MIT",
+      "sha256": "11a7964ccc0dd115d16720ab1d826c5d03e52838748ffaba3d21bae8bcacd82a",
+      "bytes": 1023
+    },
+    {
+      "path": "licenses/rust/num-complex-0.4.6/LICENSE-APACHE",
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "bytes": 10847
+    },
+    {
+      "path": "licenses/rust/num-complex-0.4.6/LICENSE-MIT",
+      "sha256": "6485b8ed310d3f0340bf1ad1f47645069ce4069dcc6bb46c7d5c6faf41de1fdb",
+      "bytes": 1071
+    },
+    {
+      "path": "licenses/rust/num-integer-0.1.47/LICENSE-APACHE",
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "bytes": 10847
+    },
+    {
+      "path": "licenses/rust/num-integer-0.1.47/LICENSE-MIT",
+      "sha256": "6485b8ed310d3f0340bf1ad1f47645069ce4069dcc6bb46c7d5c6faf41de1fdb",
+      "bytes": 1071
+    },
+    {
       "path": "licenses/rust/num-traits-0.2.19/LICENSE-APACHE",
       "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
       "bytes": 10847
@@ -1151,6 +2331,66 @@
       "bytes": 1057
     },
     {
+      "path": "licenses/rust/parlance-0.1.0/LICENSE-APACHE",
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "bytes": 10847
+    },
+    {
+      "path": "licenses/rust/parlance-0.1.0/LICENSE-MIT",
+      "sha256": "285111f788d3856f28c164b3760aa151cad55310fa16e19103f36f3052b033f0",
+      "bytes": 1058
+    },
+    {
+      "path": "licenses/rust/parlance-0.1.1/LICENSE-APACHE",
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "bytes": 10847
+    },
+    {
+      "path": "licenses/rust/parlance-0.1.1/LICENSE-MIT",
+      "sha256": "285111f788d3856f28c164b3760aa151cad55310fa16e19103f36f3052b033f0",
+      "bytes": 1058
+    },
+    {
+      "path": "licenses/rust/parley-0.11.1/LICENSE-APACHE",
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "bytes": 10847
+    },
+    {
+      "path": "licenses/rust/parley-0.11.1/LICENSE-MIT",
+      "sha256": "285111f788d3856f28c164b3760aa151cad55310fa16e19103f36f3052b033f0",
+      "bytes": 1058
+    },
+    {
+      "path": "licenses/rust/parley_data-0.11.1/LICENSE-APACHE",
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "bytes": 10847
+    },
+    {
+      "path": "licenses/rust/parley_data-0.11.1/LICENSE-MIT",
+      "sha256": "285111f788d3856f28c164b3760aa151cad55310fa16e19103f36f3052b033f0",
+      "bytes": 1058
+    },
+    {
+      "path": "licenses/rust/paste-1.0.15/LICENSE-APACHE",
+      "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a",
+      "bytes": 9723
+    },
+    {
+      "path": "licenses/rust/paste-1.0.15/LICENSE-MIT",
+      "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3",
+      "bytes": 1023
+    },
+    {
+      "path": "licenses/rust/pdf-writer-0.15.0/LICENSE-APACHE",
+      "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a",
+      "bytes": 9723
+    },
+    {
+      "path": "licenses/rust/pdf-writer-0.15.0/LICENSE-MIT",
+      "sha256": "508a77d2e7b51d98adeed32648ad124b7b30241a8e70b2e72c99f92d8e5874d1",
+      "bytes": 1036
+    },
+    {
       "path": "licenses/rust/peniko-0.6.1/LICENSE-APACHE",
       "sha256": "f9946796a8a5bd5981565142fa42e3b0cc36aef6f80e86beaf5905b3c0fef1b5",
       "bytes": 11361
@@ -1166,7 +2406,17 @@
       "bytes": 1099
     },
     {
+      "path": "licenses/rust/phf-0.13.1/LICENSE",
+      "sha256": "0ab4d106b6faac07fb6a051815fd1b4d862d730895e2d7d7358c2f13565e7a38",
+      "bytes": 1099
+    },
+    {
       "path": "licenses/rust/phf_generator-0.11.3/LICENSE",
+      "sha256": "0ab4d106b6faac07fb6a051815fd1b4d862d730895e2d7d7358c2f13565e7a38",
+      "bytes": 1099
+    },
+    {
+      "path": "licenses/rust/phf_generator-0.13.1/LICENSE",
       "sha256": "0ab4d106b6faac07fb6a051815fd1b4d862d730895e2d7d7358c2f13565e7a38",
       "bytes": 1099
     },
@@ -1176,9 +2426,54 @@
       "bytes": 1099
     },
     {
+      "path": "licenses/rust/phf_macros-0.13.1/LICENSE",
+      "sha256": "0ab4d106b6faac07fb6a051815fd1b4d862d730895e2d7d7358c2f13565e7a38",
+      "bytes": 1099
+    },
+    {
       "path": "licenses/rust/phf_shared-0.11.3/LICENSE",
       "sha256": "0ab4d106b6faac07fb6a051815fd1b4d862d730895e2d7d7358c2f13565e7a38",
       "bytes": 1099
+    },
+    {
+      "path": "licenses/rust/phf_shared-0.13.1/LICENSE",
+      "sha256": "0ab4d106b6faac07fb6a051815fd1b4d862d730895e2d7d7358c2f13565e7a38",
+      "bytes": 1099
+    },
+    {
+      "path": "licenses/rust/pic-scale-0.7.12/LICENSE-APACHE.md",
+      "sha256": "90bf2d659c43045111b65c733ab2a6d4cbcb422a098368c8c58a9ba3db4ed0c5",
+      "bytes": 11348
+    },
+    {
+      "path": "licenses/rust/pic-scale-0.7.12/LICENSE.md",
+      "sha256": "2aa92cada6431e75615e3fe6cb1a9082c98f777d48ae1c087c0da0e37f7b8bff",
+      "bytes": 1506
+    },
+    {
+      "path": "licenses/rust/pico-args-0.5.0/LICENSE",
+      "sha256": "f71452d91682fdae0ca948b18cfed53a953d1237740dd80371c76a5c1c7bbe91",
+      "bytes": 1061
+    },
+    {
+      "path": "licenses/rust/pin-project-lite-0.2.17/LICENSE-APACHE",
+      "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594",
+      "bytes": 10174
+    },
+    {
+      "path": "licenses/rust/pin-project-lite-0.2.17/LICENSE-MIT",
+      "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3",
+      "bytes": 1023
+    },
+    {
+      "path": "licenses/rust/png-0.17.16/LICENSE-APACHE",
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "bytes": 10847
+    },
+    {
+      "path": "licenses/rust/png-0.17.16/LICENSE-MIT",
+      "sha256": "eaf40297c75da471f7cda1f3458e8d91b4b2ec866e609527a13acfa93b638652",
+      "bytes": 1048
     },
     {
       "path": "licenses/rust/png-0.18.1/LICENSE-APACHE",
@@ -1201,6 +2496,21 @@
       "bytes": 1055
     },
     {
+      "path": "licenses/rust/potential_utf-0.1.6/LICENSE",
+      "sha256": "f367c1b8e1aa262435251e442901da4607b4650e0e63a026f5044473ecfb90f2",
+      "bytes": 2195
+    },
+    {
+      "path": "licenses/rust/primal-check-0.3.4/LICENSE-APACHE",
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "bytes": 10847
+    },
+    {
+      "path": "licenses/rust/primal-check-0.3.4/LICENSE-MIT",
+      "sha256": "6d3a9431e65e69c73a8923e6517b889d17549b23db406b9ec027710d16af701f",
+      "bytes": 1054
+    },
+    {
       "path": "licenses/rust/proc-macro2-1.0.107/LICENSE-APACHE",
       "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a",
       "bytes": 9723
@@ -1211,6 +2521,11 @@
       "bytes": 1023
     },
     {
+      "path": "licenses/rust/pulp-0.22.3/LICENSE",
+      "sha256": "d64f878c89bd5f1e5ada7e4aad57690b122727cf5229b7b87ea1980c188da1d9",
+      "bytes": 1062
+    },
+    {
       "path": "licenses/rust/pxfm-0.1.30/LICENSE-APACHE.md",
       "sha256": "90bf2d659c43045111b65c733ab2a6d4cbcb422a098368c8c58a9ba3db4ed0c5",
       "bytes": 11348
@@ -1219,6 +2534,16 @@
       "path": "licenses/rust/pxfm-0.1.30/LICENSE.md",
       "sha256": "2aa92cada6431e75615e3fe6cb1a9082c98f777d48ae1c087c0da0e37f7b8bff",
       "bytes": 1506
+    },
+    {
+      "path": "licenses/rust/qoi-0.4.1/LICENSE-APACHE",
+      "sha256": "8173d5c29b4f956d532781d2b86e4e30f83e6b7878dce18c919451d6ba707c90",
+      "bytes": 10850
+    },
+    {
+      "path": "licenses/rust/qoi-0.4.1/LICENSE-MIT",
+      "sha256": "45adbcb6d50e4b2875f22f2b997bbf6689c6825fbf7e8285a29ed35896dbfa21",
+      "bytes": 1056
     },
     {
       "path": "licenses/rust/quick-error-2.0.1/LICENSE-APACHE",
@@ -1246,6 +2571,21 @@
       "bytes": 1023
     },
     {
+      "path": "licenses/rust/rand-0.10.3/COPYRIGHT",
+      "sha256": "90eb64f0279b0d9432accfa6023ff803bc4965212383697eee27a0f426d5f8d5",
+      "bytes": 569
+    },
+    {
+      "path": "licenses/rust/rand-0.10.3/LICENSE-APACHE",
+      "sha256": "35242e7a83f69875e6edeff02291e688c97caafe2f8902e4e19b49d3e78b4cab",
+      "bytes": 9724
+    },
+    {
+      "path": "licenses/rust/rand-0.10.3/LICENSE-MIT",
+      "sha256": "209fbbe0ad52d9235e37badf9cadfe4dbdc87203179c0899e738b39ade42177b",
+      "bytes": 1117
+    },
+    {
       "path": "licenses/rust/rand-0.8.8/COPYRIGHT",
       "sha256": "90eb64f0279b0d9432accfa6023ff803bc4965212383697eee27a0f426d5f8d5",
       "bytes": 569
@@ -1261,6 +2601,21 @@
       "bytes": 1117
     },
     {
+      "path": "licenses/rust/rand_core-0.10.1/COPYRIGHT",
+      "sha256": "92b81db30f7ab6d693e0af5661a40d273ca1947e891123ed823924192c10cbc7",
+      "bytes": 478
+    },
+    {
+      "path": "licenses/rust/rand_core-0.10.1/LICENSE-APACHE",
+      "sha256": "6df43f6f4b5d4587f3d8d71e45532c688fd168afa5fe89d571cb32fa09c4ef51",
+      "bytes": 10282
+    },
+    {
+      "path": "licenses/rust/rand_core-0.10.1/LICENSE-MIT",
+      "sha256": "8b6e9feec03e7c9a5facb26855cecd31662bf989b636bcfe79521bdf8ac863f0",
+      "bytes": 1076
+    },
+    {
       "path": "licenses/rust/rand_core-0.6.4/COPYRIGHT",
       "sha256": "90eb64f0279b0d9432accfa6023ff803bc4965212383697eee27a0f426d5f8d5",
       "bytes": 569
@@ -1274,6 +2629,51 @@
       "path": "licenses/rust/rand_core-0.6.4/LICENSE-MIT",
       "sha256": "209fbbe0ad52d9235e37badf9cadfe4dbdc87203179c0899e738b39ade42177b",
       "bytes": 1117
+    },
+    {
+      "path": "licenses/rust/rand_core-0.9.5/COPYRIGHT",
+      "sha256": "90eb64f0279b0d9432accfa6023ff803bc4965212383697eee27a0f426d5f8d5",
+      "bytes": 569
+    },
+    {
+      "path": "licenses/rust/rand_core-0.9.5/LICENSE-APACHE",
+      "sha256": "6df43f6f4b5d4587f3d8d71e45532c688fd168afa5fe89d571cb32fa09c4ef51",
+      "bytes": 10282
+    },
+    {
+      "path": "licenses/rust/rand_core-0.9.5/LICENSE-MIT",
+      "sha256": "209fbbe0ad52d9235e37badf9cadfe4dbdc87203179c0899e738b39ade42177b",
+      "bytes": 1117
+    },
+    {
+      "path": "licenses/rust/rand_xoshiro-0.7.0/COPYRIGHT",
+      "sha256": "90eb64f0279b0d9432accfa6023ff803bc4965212383697eee27a0f426d5f8d5",
+      "bytes": 569
+    },
+    {
+      "path": "licenses/rust/rand_xoshiro-0.7.0/LICENSE-APACHE",
+      "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a",
+      "bytes": 9723
+    },
+    {
+      "path": "licenses/rust/rand_xoshiro-0.7.0/LICENSE-MIT",
+      "sha256": "31edd94ac845052712d8044ae23c09a451227b522e8215ab4ea4f1ce4741b160",
+      "bytes": 1074
+    },
+    {
+      "path": "licenses/rust/rangemap-1.8.0/LICENSE-APACHE",
+      "sha256": "1c7745cc26c7294bc9dbc883bcd50700b99a8c0f4859bfce84ec555098ce1ab5",
+      "bytes": 10837
+    },
+    {
+      "path": "licenses/rust/rangemap-1.8.0/LICENSE-MIT",
+      "sha256": "29a4c3823ee29ee5a97c145574a1bac20629fd5e6708be1df0d25bab563e093c",
+      "bytes": 1055
+    },
+    {
+      "path": "licenses/rust/raw-cpuid-11.6.0/LICENSE.md",
+      "sha256": "cdd45f4d0c552c3a51725728215919e0dedb1e1af250f130e7c2d60eef6721fe",
+      "bytes": 1080
     },
     {
       "path": "licenses/rust/rayon-1.12.0/LICENSE-APACHE",
@@ -1294,6 +2694,16 @@
       "path": "licenses/rust/rayon-core-1.13.0/LICENSE-MIT",
       "sha256": "0621878e61f0d0fda054bcbe02df75192c28bde1ecc8289cbd86aeba2dd72720",
       "bytes": 1071
+    },
+    {
+      "path": "licenses/rust/read-fonts-0.39.2/LICENSE-APACHE",
+      "sha256": "a14f7d685a79c0f4fb64aee305527a6d5fa55f2401f4e6d688d7b1301868e6c0",
+      "bytes": 9695
+    },
+    {
+      "path": "licenses/rust/read-fonts-0.39.2/LICENSE-MIT",
+      "sha256": "8a62fa27ffdccc3df19dce90f8bb3d572e27aecffc1a383d0c2601834dcec434",
+      "bytes": 1058
     },
     {
       "path": "licenses/rust/read-fonts-0.41.0/LICENSE-APACHE",
@@ -1324,6 +2734,11 @@
       "path": "licenses/rust/read-fonts-0.44.0/LICENSE-MIT",
       "sha256": "7b4c9a3946dfcea7967582760e963e27799e225dcf20565c8ef55324bb017427",
       "bytes": 1065
+    },
+    {
+      "path": "licenses/rust/reborrow-0.5.5/LICENSE",
+      "sha256": "bf5a93d1014429b43e01c57d45bea928748fbf37d059306145a1a0a91aec2014",
+      "bytes": 1062
     },
     {
       "path": "licenses/rust/regex-1.13.1/LICENSE-APACHE",
@@ -1371,6 +2786,71 @@
       "bytes": 2847
     },
     {
+      "path": "licenses/rust/resvg-0.45.1/LICENSE-APACHE",
+      "sha256": "a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9",
+      "bytes": 10173
+    },
+    {
+      "path": "licenses/rust/resvg-0.45.1/LICENSE-MIT",
+      "sha256": "f5d934dc281b44e0003ee461ac740b18b6629a454decd872c774d34e4ee0b21d",
+      "bytes": 1057
+    },
+    {
+      "path": "licenses/rust/rgb-0.8.53/LICENSE",
+      "sha256": "457b464bc0fba8a3d67d2458569104f5611869f0c1563a1a12d9c51a0bca9261",
+      "bytes": 1063
+    },
+    {
+      "path": "licenses/rust/roxmltree-0.20.0/LICENSE-APACHE",
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "bytes": 10847
+    },
+    {
+      "path": "licenses/rust/roxmltree-0.20.0/LICENSE-MIT",
+      "sha256": "fffe218c1e349e1d482a05677f2ce850502f88298174d77f6ac7c04821db7899",
+      "bytes": 1083
+    },
+    {
+      "path": "licenses/rust/roxmltree-0.21.1/LICENSE-APACHE",
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "bytes": 10847
+    },
+    {
+      "path": "licenses/rust/roxmltree-0.21.1/LICENSE-MIT",
+      "sha256": "fffe218c1e349e1d482a05677f2ce850502f88298174d77f6ac7c04821db7899",
+      "bytes": 1083
+    },
+    {
+      "path": "licenses/rust/roxmltree-0.21.2/LICENSE-APACHE",
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "bytes": 10847
+    },
+    {
+      "path": "licenses/rust/roxmltree-0.21.2/LICENSE-MIT",
+      "sha256": "fffe218c1e349e1d482a05677f2ce850502f88298174d77f6ac7c04821db7899",
+      "bytes": 1083
+    },
+    {
+      "path": "licenses/rust/rustc-hash-2.1.3/LICENSE-APACHE",
+      "sha256": "95bd3988beee069fa2848f648dab43cc6e0b2add2ad6bcb17360caf749802bcc",
+      "bytes": 9722
+    },
+    {
+      "path": "licenses/rust/rustc-hash-2.1.3/LICENSE-MIT",
+      "sha256": "30fefc3a7d6a0041541858293bcbea2dde4caa4c0a5802f996a7f7e8c0085652",
+      "bytes": 1022
+    },
+    {
+      "path": "licenses/rust/rustfft-6.4.1/LICENSE-APACHE",
+      "sha256": "2e54cd84a645bea25943c75dd8ae67cb291e66a47a11578333c9b4b3b6b86c85",
+      "bytes": 11560
+    },
+    {
+      "path": "licenses/rust/rustfft-6.4.1/LICENSE-MIT",
+      "sha256": "8f5442dfa8e9169045697e386bc91d19f393c939635741fa2a665ec36ca6f0ad",
+      "bytes": 1085
+    },
+    {
       "path": "licenses/rust/rustversion-1.0.23/LICENSE-APACHE",
       "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a",
       "bytes": 9723
@@ -1379,6 +2859,46 @@
       "path": "licenses/rust/rustversion-1.0.23/LICENSE-MIT",
       "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3",
       "bytes": 1023
+    },
+    {
+      "path": "licenses/rust/rustybuzz-0.20.1/LICENSE",
+      "sha256": "3a7c3f0b887abb7c638faf022d29257418458614c6724b120ceeffb279f9c7d2",
+      "bytes": 1117
+    },
+    {
+      "path": "licenses/rust/rustybuzz-0.20.1/scripts/ms-use/COPYING",
+      "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383",
+      "bytes": 1141
+    },
+    {
+      "path": "licenses/rust/ruzstd-0.9.1/LICENSE",
+      "sha256": "d715eb0d9cfe1cc0cc22577e387436aa568b31ca272a7c837004dc0cdde925b5",
+      "bytes": 1075
+    },
+    {
+      "path": "licenses/rust/ryu-1.0.23/LICENSE-APACHE",
+      "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a",
+      "bytes": 9723
+    },
+    {
+      "path": "licenses/rust/ryu-1.0.23/LICENSE-BOOST",
+      "sha256": "c9bff75738922193e67fa726fa225535870d2aa1059f91452c411736284ad566",
+      "bytes": 1338
+    },
+    {
+      "path": "licenses/rust/safe_arch-0.7.4/LICENSE-APACHE.md",
+      "sha256": "e3ba223bb1423f0aad8c3dfce0fe3148db48926d41e6fbc3afbbf5ff9e1c89cb",
+      "bytes": 10398
+    },
+    {
+      "path": "licenses/rust/safe_arch-0.7.4/LICENSE-MIT.md",
+      "sha256": "e57011537d230b14e790f6666dc00816f7b371ebbd7da8a12491e51086fec278",
+      "bytes": 1110
+    },
+    {
+      "path": "licenses/rust/safe_arch-0.7.4/LICENSE-ZLIB.md",
+      "sha256": "c43b9a9b1387ed53d2c49263838261129a010e280e3a174a792242c3e2c98db9",
+      "bytes": 851
     },
     {
       "path": "licenses/rust/scopeguard-1.2.0/LICENSE-APACHE",
@@ -1451,6 +2971,16 @@
       "bytes": 1196
     },
     {
+      "path": "licenses/rust/sha2-0.10.9/LICENSE-APACHE",
+      "sha256": "a9040321c3712d8fd0b09cf52b17445de04a23a10165049ae187cd39e5c86be5",
+      "bytes": 10849
+    },
+    {
+      "path": "licenses/rust/sha2-0.10.9/LICENSE-MIT",
+      "sha256": "b4eb00df6e2a4d22518fcaa6a2b4646f249b3a3c9814509b22bd2091f1392ff1",
+      "bytes": 1138
+    },
+    {
       "path": "licenses/rust/sha2-0.11.1/LICENSE-APACHE",
       "sha256": "a9040321c3712d8fd0b09cf52b17445de04a23a10165049ae187cd39e5c86be5",
       "bytes": 10849
@@ -1459,6 +2989,16 @@
       "path": "licenses/rust/sha2-0.11.1/LICENSE-MIT",
       "sha256": "831e0f43ad0bf014c1c4fec5767aae470434c1d66d6e671be2d823e729063e25",
       "bytes": 1196
+    },
+    {
+      "path": "licenses/rust/shlex-2.0.1/LICENSE-APACHE",
+      "sha256": "553fffcd9b1cb158bc3e9edc35da85ca5c3b3d7d2e61c883ebcfa8a65814b583",
+      "bytes": 566
+    },
+    {
+      "path": "licenses/rust/shlex-2.0.1/LICENSE-MIT",
+      "sha256": "4455bf75a91154108304cb283e0fea9948c14f13e20d60887cf2552449dea3b1",
+      "bytes": 1092
     },
     {
       "path": "licenses/rust/simd-adler32-0.3.10/LICENSE.md",
@@ -1476,6 +3016,16 @@
       "bytes": 1035
     },
     {
+      "path": "licenses/rust/simplecss-0.2.2/LICENSE-APACHE",
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "bytes": 10847
+    },
+    {
+      "path": "licenses/rust/simplecss-0.2.2/LICENSE-MIT",
+      "sha256": "0b5f24524360e15bcf9fb79bca875f5aa62f01f94f2988e23238c7ec0e6e8784",
+      "bytes": 1082
+    },
+    {
       "path": "licenses/rust/siphasher-1.0.4/COPYING",
       "sha256": "c962ee4d1d05ddc138b202b2540219ebc57893fcf97b364852094a9a94ce1365",
       "bytes": 281
@@ -1489,6 +3039,16 @@
       "path": "licenses/rust/siphasher-1.0.4/LICENSE-MIT",
       "sha256": "f9c4c77baa3828004ee54b8a4f2db2e88ed44a6237a493965bf551fac0fcb62d",
       "bytes": 1023
+    },
+    {
+      "path": "licenses/rust/skrifa-0.42.1/LICENSE-APACHE",
+      "sha256": "a14f7d685a79c0f4fb64aee305527a6d5fa55f2401f4e6d688d7b1301868e6c0",
+      "bytes": 9695
+    },
+    {
+      "path": "licenses/rust/skrifa-0.42.1/LICENSE-MIT",
+      "sha256": "8a62fa27ffdccc3df19dce90f8bb3d572e27aecffc1a383d0c2601834dcec434",
+      "bytes": 1058
     },
     {
       "path": "licenses/rust/skrifa-0.44.0/LICENSE-APACHE",
@@ -1511,6 +3071,11 @@
       "bytes": 1065
     },
     {
+      "path": "licenses/rust/slotmap-1.1.1/LICENSE",
+      "sha256": "6cec81441b2ab2b5090954c1fb5d0bcca81b86487b5849061fa8952d20ef67d4",
+      "bytes": 884
+    },
+    {
       "path": "licenses/rust/smallvec-1.16.2/LICENSE-APACHE",
       "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
       "bytes": 10847
@@ -1519,6 +3084,31 @@
       "path": "licenses/rust/smallvec-1.16.2/LICENSE-MIT",
       "sha256": "0b28172679e0009b655da42797c03fd163a3379d5cfa67ba1f1655e974a2a1a9",
       "bytes": 1072
+    },
+    {
+      "path": "licenses/rust/smallvec-1.16.4/LICENSE-APACHE",
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "bytes": 10847
+    },
+    {
+      "path": "licenses/rust/smallvec-1.16.4/LICENSE-MIT",
+      "sha256": "0b28172679e0009b655da42797c03fd163a3379d5cfa67ba1f1655e974a2a1a9",
+      "bytes": 1072
+    },
+    {
+      "path": "licenses/rust/spin-0.9.9/LICENSE",
+      "sha256": "6ac8711fb340c62ce0a4ecd463342d3fa0e8e70de697c863a2e1c0c53006003c",
+      "bytes": 1084
+    },
+    {
+      "path": "licenses/rust/stable_deref_trait-1.2.1/LICENSE-APACHE",
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "bytes": 10847
+    },
+    {
+      "path": "licenses/rust/stable_deref_trait-1.2.1/LICENSE-MIT",
+      "sha256": "5e05b024f653a5ce199e77cbbbd42fb5553562ec714b819421ed0c3e552a75d7",
+      "bytes": 1056
     },
     {
       "path": "licenses/rust/storytold-craft-libs-01315d9c92b5b0e69082d35ca56099461a1efd45/crates/platform/LICENSE-APACHE",
@@ -1701,6 +3291,726 @@
       "bytes": 6552
     },
     {
+      "path": "licenses/rust/storytold-craft-libs-9be9a63782298ab59cd9b7a42ee9cba4f42a5ccb/crates/platform/LICENSE-APACHE",
+      "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594",
+      "bytes": 10174
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-9be9a63782298ab59cd9b7a42ee9cba4f42a5ccb/crates/platform/LICENSE-MIT",
+      "sha256": "2f42c0cafc8ad394d91373fe1f342aee5453850b151a51405c68cae9ada86d26",
+      "bytes": 1102
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-9be9a63782298ab59cd9b7a42ee9cba4f42a5ccb/crates/platform/NOTICE",
+      "sha256": "b4628bbe7b9d307ba985d59d73b715df38d5d2319159034c996f38045075343a",
+      "bytes": 1164
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-9be9a63782298ab59cd9b7a42ee9cba4f42a5ccb/LICENSE-APACHE",
+      "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594",
+      "bytes": 10174
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-9be9a63782298ab59cd9b7a42ee9cba4f42a5ccb/LICENSE-MIT",
+      "sha256": "2f42c0cafc8ad394d91373fe1f342aee5453850b151a51405c68cae9ada86d26",
+      "bytes": 1102
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-9be9a63782298ab59cd9b7a42ee9cba4f42a5ccb/licenses/pdf-backend/hayro/LICENSE-APACHE",
+      "sha256": "0cec06e0e55fbc3dc5cee4fca9b607f66cb8f4e4dbcf3b3c013594dd156732e9",
+      "bytes": 10173
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-9be9a63782298ab59cd9b7a42ee9cba4f42a5ccb/licenses/pdf-backend/hayro/LICENSE-MIT",
+      "sha256": "51b50e6120c344dcc146bbd6375ca1c78e079d97c8bea76e67a53d6ff0efebac",
+      "bytes": 1063
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-9be9a63782298ab59cd9b7a42ee9cba4f42a5ccb/licenses/pdf-backend/hayro-cmap/LICENSE-APACHE",
+      "sha256": "0cec06e0e55fbc3dc5cee4fca9b607f66cb8f4e4dbcf3b3c013594dd156732e9",
+      "bytes": 10173
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-9be9a63782298ab59cd9b7a42ee9cba4f42a5ccb/licenses/pdf-backend/hayro-cmap/LICENSE-MIT",
+      "sha256": "51b50e6120c344dcc146bbd6375ca1c78e079d97c8bea76e67a53d6ff0efebac",
+      "bytes": 1063
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-9be9a63782298ab59cd9b7a42ee9cba4f42a5ccb/licenses/pdf-backend/hayro-cmap/LICENSE.txt",
+      "sha256": "742665db9c8e1bc72603c6d319ca3e90b83bd6d95202f0cd4ef11068a07a9c29",
+      "bytes": 1453
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-9be9a63782298ab59cd9b7a42ee9cba4f42a5ccb/licenses/pdf-backend/hayro-interpret/assets/LICENSE_FOXIT",
+      "sha256": "b578cdd2345840ada550bd12519533812320d5f1d21cf4c1c7e1b1b0a31c98b7",
+      "bytes": 1553
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-9be9a63782298ab59cd9b7a42ee9cba4f42a5ccb/licenses/pdf-backend/hayro-interpret/LICENSE-APACHE",
+      "sha256": "0cec06e0e55fbc3dc5cee4fca9b607f66cb8f4e4dbcf3b3c013594dd156732e9",
+      "bytes": 10173
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-9be9a63782298ab59cd9b7a42ee9cba4f42a5ccb/licenses/pdf-backend/hayro-interpret/LICENSE-MIT",
+      "sha256": "51b50e6120c344dcc146bbd6375ca1c78e079d97c8bea76e67a53d6ff0efebac",
+      "bytes": 1063
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-9be9a63782298ab59cd9b7a42ee9cba4f42a5ccb/licenses/pdf-backend/hayro-jbig2/LICENSE-APACHE",
+      "sha256": "0cec06e0e55fbc3dc5cee4fca9b607f66cb8f4e4dbcf3b3c013594dd156732e9",
+      "bytes": 10173
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-9be9a63782298ab59cd9b7a42ee9cba4f42a5ccb/licenses/pdf-backend/hayro-jbig2/LICENSE-MIT",
+      "sha256": "51b50e6120c344dcc146bbd6375ca1c78e079d97c8bea76e67a53d6ff0efebac",
+      "bytes": 1063
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-9be9a63782298ab59cd9b7a42ee9cba4f42a5ccb/licenses/pdf-backend/hayro-syntax/LICENSE-APACHE",
+      "sha256": "0cec06e0e55fbc3dc5cee4fca9b607f66cb8f4e4dbcf3b3c013594dd156732e9",
+      "bytes": 10173
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-9be9a63782298ab59cd9b7a42ee9cba4f42a5ccb/licenses/pdf-backend/hayro-syntax/LICENSE-MIT",
+      "sha256": "51b50e6120c344dcc146bbd6375ca1c78e079d97c8bea76e67a53d6ff0efebac",
+      "bytes": 1063
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-9be9a63782298ab59cd9b7a42ee9cba4f42a5ccb/licenses/pdf-writer/LICENSE-ICC.txt",
+      "sha256": "469d87b5fa48f8aaf69e25f4fcac3a309c97dbb7d561b917638abdb640e004d9",
+      "bytes": 6552
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-9be9a63782298ab59cd9b7a42ee9cba4f42a5ccb/licenses/pdf-writer/LICENSE_APACHE",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "bytes": 11358
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-9be9a63782298ab59cd9b7a42ee9cba4f42a5ccb/licenses/pdf-writer/LICENSE_MIT",
+      "sha256": "9d1eb142840c7acfd5511b4dd298cece3f0053f5809228906445cd8a3365592f",
+      "bytes": 1071
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-9be9a63782298ab59cd9b7a42ee9cba4f42a5ccb/NOTICE",
+      "sha256": "834f66f04bcadcbc9ce88177fb586ec73478336ae95427065f9dedc9544b4cf1",
+      "bytes": 17675
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-9be9a63782298ab59cd9b7a42ee9cba4f42a5ccb/vendor/hayro/LICENSE-APACHE",
+      "sha256": "0cec06e0e55fbc3dc5cee4fca9b607f66cb8f4e4dbcf3b3c013594dd156732e9",
+      "bytes": 10173
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-9be9a63782298ab59cd9b7a42ee9cba4f42a5ccb/vendor/hayro/LICENSE-MIT",
+      "sha256": "51b50e6120c344dcc146bbd6375ca1c78e079d97c8bea76e67a53d6ff0efebac",
+      "bytes": 1063
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-9be9a63782298ab59cd9b7a42ee9cba4f42a5ccb/vendor/hayro-cmap/assets/LICENSE.txt",
+      "sha256": "742665db9c8e1bc72603c6d319ca3e90b83bd6d95202f0cd4ef11068a07a9c29",
+      "bytes": 1453
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-9be9a63782298ab59cd9b7a42ee9cba4f42a5ccb/vendor/hayro-cmap/LICENSE-APACHE",
+      "sha256": "0cec06e0e55fbc3dc5cee4fca9b607f66cb8f4e4dbcf3b3c013594dd156732e9",
+      "bytes": 10173
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-9be9a63782298ab59cd9b7a42ee9cba4f42a5ccb/vendor/hayro-cmap/LICENSE-MIT",
+      "sha256": "51b50e6120c344dcc146bbd6375ca1c78e079d97c8bea76e67a53d6ff0efebac",
+      "bytes": 1063
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-9be9a63782298ab59cd9b7a42ee9cba4f42a5ccb/vendor/hayro-interpret/assets/LICENSE_FOXIT",
+      "sha256": "b578cdd2345840ada550bd12519533812320d5f1d21cf4c1c7e1b1b0a31c98b7",
+      "bytes": 1553
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-9be9a63782298ab59cd9b7a42ee9cba4f42a5ccb/vendor/hayro-interpret/LICENSE-APACHE",
+      "sha256": "0cec06e0e55fbc3dc5cee4fca9b607f66cb8f4e4dbcf3b3c013594dd156732e9",
+      "bytes": 10173
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-9be9a63782298ab59cd9b7a42ee9cba4f42a5ccb/vendor/hayro-interpret/LICENSE-MIT",
+      "sha256": "51b50e6120c344dcc146bbd6375ca1c78e079d97c8bea76e67a53d6ff0efebac",
+      "bytes": 1063
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-9be9a63782298ab59cd9b7a42ee9cba4f42a5ccb/vendor/hayro-jbig2/LICENSE-APACHE",
+      "sha256": "0cec06e0e55fbc3dc5cee4fca9b607f66cb8f4e4dbcf3b3c013594dd156732e9",
+      "bytes": 10173
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-9be9a63782298ab59cd9b7a42ee9cba4f42a5ccb/vendor/hayro-jbig2/LICENSE-MIT",
+      "sha256": "51b50e6120c344dcc146bbd6375ca1c78e079d97c8bea76e67a53d6ff0efebac",
+      "bytes": 1063
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-9be9a63782298ab59cd9b7a42ee9cba4f42a5ccb/vendor/hayro-postscript/LICENSE-APACHE",
+      "sha256": "0cec06e0e55fbc3dc5cee4fca9b607f66cb8f4e4dbcf3b3c013594dd156732e9",
+      "bytes": 10173
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-9be9a63782298ab59cd9b7a42ee9cba4f42a5ccb/vendor/hayro-postscript/LICENSE-MIT",
+      "sha256": "51b50e6120c344dcc146bbd6375ca1c78e079d97c8bea76e67a53d6ff0efebac",
+      "bytes": 1063
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-9be9a63782298ab59cd9b7a42ee9cba4f42a5ccb/vendor/hayro-syntax/LICENSE-APACHE",
+      "sha256": "0cec06e0e55fbc3dc5cee4fca9b607f66cb8f4e4dbcf3b3c013594dd156732e9",
+      "bytes": 10173
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-9be9a63782298ab59cd9b7a42ee9cba4f42a5ccb/vendor/hayro-syntax/LICENSE-MIT",
+      "sha256": "51b50e6120c344dcc146bbd6375ca1c78e079d97c8bea76e67a53d6ff0efebac",
+      "bytes": 1063
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-9be9a63782298ab59cd9b7a42ee9cba4f42a5ccb/vendor/krilla/icc/LICENSE",
+      "sha256": "469d87b5fa48f8aaf69e25f4fcac3a309c97dbb7d561b917638abdb640e004d9",
+      "bytes": 6552
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-b8f7d93b00dfb8f172938f3d2d796ae62dcfe123/crates/platform/LICENSE-APACHE",
+      "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594",
+      "bytes": 10174
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-b8f7d93b00dfb8f172938f3d2d796ae62dcfe123/crates/platform/LICENSE-MIT",
+      "sha256": "2f42c0cafc8ad394d91373fe1f342aee5453850b151a51405c68cae9ada86d26",
+      "bytes": 1102
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-b8f7d93b00dfb8f172938f3d2d796ae62dcfe123/crates/platform/NOTICE",
+      "sha256": "b4628bbe7b9d307ba985d59d73b715df38d5d2319159034c996f38045075343a",
+      "bytes": 1164
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-b8f7d93b00dfb8f172938f3d2d796ae62dcfe123/LICENSE-APACHE",
+      "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594",
+      "bytes": 10174
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-b8f7d93b00dfb8f172938f3d2d796ae62dcfe123/LICENSE-MIT",
+      "sha256": "2f42c0cafc8ad394d91373fe1f342aee5453850b151a51405c68cae9ada86d26",
+      "bytes": 1102
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-b8f7d93b00dfb8f172938f3d2d796ae62dcfe123/licenses/pdf-backend/hayro/LICENSE-APACHE",
+      "sha256": "0cec06e0e55fbc3dc5cee4fca9b607f66cb8f4e4dbcf3b3c013594dd156732e9",
+      "bytes": 10173
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-b8f7d93b00dfb8f172938f3d2d796ae62dcfe123/licenses/pdf-backend/hayro/LICENSE-MIT",
+      "sha256": "51b50e6120c344dcc146bbd6375ca1c78e079d97c8bea76e67a53d6ff0efebac",
+      "bytes": 1063
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-b8f7d93b00dfb8f172938f3d2d796ae62dcfe123/licenses/pdf-backend/hayro-cmap/LICENSE-APACHE",
+      "sha256": "0cec06e0e55fbc3dc5cee4fca9b607f66cb8f4e4dbcf3b3c013594dd156732e9",
+      "bytes": 10173
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-b8f7d93b00dfb8f172938f3d2d796ae62dcfe123/licenses/pdf-backend/hayro-cmap/LICENSE-MIT",
+      "sha256": "51b50e6120c344dcc146bbd6375ca1c78e079d97c8bea76e67a53d6ff0efebac",
+      "bytes": 1063
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-b8f7d93b00dfb8f172938f3d2d796ae62dcfe123/licenses/pdf-backend/hayro-cmap/LICENSE.txt",
+      "sha256": "742665db9c8e1bc72603c6d319ca3e90b83bd6d95202f0cd4ef11068a07a9c29",
+      "bytes": 1453
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-b8f7d93b00dfb8f172938f3d2d796ae62dcfe123/licenses/pdf-backend/hayro-interpret/assets/LICENSE_FOXIT",
+      "sha256": "b578cdd2345840ada550bd12519533812320d5f1d21cf4c1c7e1b1b0a31c98b7",
+      "bytes": 1553
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-b8f7d93b00dfb8f172938f3d2d796ae62dcfe123/licenses/pdf-backend/hayro-interpret/LICENSE-APACHE",
+      "sha256": "0cec06e0e55fbc3dc5cee4fca9b607f66cb8f4e4dbcf3b3c013594dd156732e9",
+      "bytes": 10173
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-b8f7d93b00dfb8f172938f3d2d796ae62dcfe123/licenses/pdf-backend/hayro-interpret/LICENSE-MIT",
+      "sha256": "51b50e6120c344dcc146bbd6375ca1c78e079d97c8bea76e67a53d6ff0efebac",
+      "bytes": 1063
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-b8f7d93b00dfb8f172938f3d2d796ae62dcfe123/licenses/pdf-backend/hayro-jbig2/LICENSE-APACHE",
+      "sha256": "0cec06e0e55fbc3dc5cee4fca9b607f66cb8f4e4dbcf3b3c013594dd156732e9",
+      "bytes": 10173
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-b8f7d93b00dfb8f172938f3d2d796ae62dcfe123/licenses/pdf-backend/hayro-jbig2/LICENSE-MIT",
+      "sha256": "51b50e6120c344dcc146bbd6375ca1c78e079d97c8bea76e67a53d6ff0efebac",
+      "bytes": 1063
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-b8f7d93b00dfb8f172938f3d2d796ae62dcfe123/licenses/pdf-backend/hayro-syntax/LICENSE-APACHE",
+      "sha256": "0cec06e0e55fbc3dc5cee4fca9b607f66cb8f4e4dbcf3b3c013594dd156732e9",
+      "bytes": 10173
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-b8f7d93b00dfb8f172938f3d2d796ae62dcfe123/licenses/pdf-backend/hayro-syntax/LICENSE-MIT",
+      "sha256": "51b50e6120c344dcc146bbd6375ca1c78e079d97c8bea76e67a53d6ff0efebac",
+      "bytes": 1063
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-b8f7d93b00dfb8f172938f3d2d796ae62dcfe123/licenses/pdf-writer/LICENSE-ICC.txt",
+      "sha256": "469d87b5fa48f8aaf69e25f4fcac3a309c97dbb7d561b917638abdb640e004d9",
+      "bytes": 6552
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-b8f7d93b00dfb8f172938f3d2d796ae62dcfe123/licenses/pdf-writer/LICENSE_APACHE",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "bytes": 11358
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-b8f7d93b00dfb8f172938f3d2d796ae62dcfe123/licenses/pdf-writer/LICENSE_MIT",
+      "sha256": "9d1eb142840c7acfd5511b4dd298cece3f0053f5809228906445cd8a3365592f",
+      "bytes": 1071
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-b8f7d93b00dfb8f172938f3d2d796ae62dcfe123/NOTICE",
+      "sha256": "b0a52617abba6f559c79cc18f4deafc6c8463b4ed92bfd235db4f2b56044e73e",
+      "bytes": 15163
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-b8f7d93b00dfb8f172938f3d2d796ae62dcfe123/vendor/hayro/LICENSE-APACHE",
+      "sha256": "0cec06e0e55fbc3dc5cee4fca9b607f66cb8f4e4dbcf3b3c013594dd156732e9",
+      "bytes": 10173
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-b8f7d93b00dfb8f172938f3d2d796ae62dcfe123/vendor/hayro/LICENSE-MIT",
+      "sha256": "51b50e6120c344dcc146bbd6375ca1c78e079d97c8bea76e67a53d6ff0efebac",
+      "bytes": 1063
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-b8f7d93b00dfb8f172938f3d2d796ae62dcfe123/vendor/hayro-cmap/assets/LICENSE.txt",
+      "sha256": "742665db9c8e1bc72603c6d319ca3e90b83bd6d95202f0cd4ef11068a07a9c29",
+      "bytes": 1453
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-b8f7d93b00dfb8f172938f3d2d796ae62dcfe123/vendor/hayro-cmap/LICENSE-APACHE",
+      "sha256": "0cec06e0e55fbc3dc5cee4fca9b607f66cb8f4e4dbcf3b3c013594dd156732e9",
+      "bytes": 10173
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-b8f7d93b00dfb8f172938f3d2d796ae62dcfe123/vendor/hayro-cmap/LICENSE-MIT",
+      "sha256": "51b50e6120c344dcc146bbd6375ca1c78e079d97c8bea76e67a53d6ff0efebac",
+      "bytes": 1063
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-b8f7d93b00dfb8f172938f3d2d796ae62dcfe123/vendor/hayro-interpret/assets/LICENSE_FOXIT",
+      "sha256": "b578cdd2345840ada550bd12519533812320d5f1d21cf4c1c7e1b1b0a31c98b7",
+      "bytes": 1553
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-b8f7d93b00dfb8f172938f3d2d796ae62dcfe123/vendor/hayro-interpret/LICENSE-APACHE",
+      "sha256": "0cec06e0e55fbc3dc5cee4fca9b607f66cb8f4e4dbcf3b3c013594dd156732e9",
+      "bytes": 10173
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-b8f7d93b00dfb8f172938f3d2d796ae62dcfe123/vendor/hayro-interpret/LICENSE-MIT",
+      "sha256": "51b50e6120c344dcc146bbd6375ca1c78e079d97c8bea76e67a53d6ff0efebac",
+      "bytes": 1063
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-b8f7d93b00dfb8f172938f3d2d796ae62dcfe123/vendor/hayro-jbig2/LICENSE-APACHE",
+      "sha256": "0cec06e0e55fbc3dc5cee4fca9b607f66cb8f4e4dbcf3b3c013594dd156732e9",
+      "bytes": 10173
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-b8f7d93b00dfb8f172938f3d2d796ae62dcfe123/vendor/hayro-jbig2/LICENSE-MIT",
+      "sha256": "51b50e6120c344dcc146bbd6375ca1c78e079d97c8bea76e67a53d6ff0efebac",
+      "bytes": 1063
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-b8f7d93b00dfb8f172938f3d2d796ae62dcfe123/vendor/hayro-postscript/LICENSE-APACHE",
+      "sha256": "0cec06e0e55fbc3dc5cee4fca9b607f66cb8f4e4dbcf3b3c013594dd156732e9",
+      "bytes": 10173
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-b8f7d93b00dfb8f172938f3d2d796ae62dcfe123/vendor/hayro-postscript/LICENSE-MIT",
+      "sha256": "51b50e6120c344dcc146bbd6375ca1c78e079d97c8bea76e67a53d6ff0efebac",
+      "bytes": 1063
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-b8f7d93b00dfb8f172938f3d2d796ae62dcfe123/vendor/hayro-syntax/LICENSE-APACHE",
+      "sha256": "0cec06e0e55fbc3dc5cee4fca9b607f66cb8f4e4dbcf3b3c013594dd156732e9",
+      "bytes": 10173
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-b8f7d93b00dfb8f172938f3d2d796ae62dcfe123/vendor/hayro-syntax/LICENSE-MIT",
+      "sha256": "51b50e6120c344dcc146bbd6375ca1c78e079d97c8bea76e67a53d6ff0efebac",
+      "bytes": 1063
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-b8f7d93b00dfb8f172938f3d2d796ae62dcfe123/vendor/krilla/icc/LICENSE",
+      "sha256": "469d87b5fa48f8aaf69e25f4fcac3a309c97dbb7d561b917638abdb640e004d9",
+      "bytes": 6552
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-c5a1cbfb5f9049f9270955caffb5bee5997aebf7/crates/platform/LICENSE-APACHE",
+      "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594",
+      "bytes": 10174
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-c5a1cbfb5f9049f9270955caffb5bee5997aebf7/crates/platform/LICENSE-MIT",
+      "sha256": "2f42c0cafc8ad394d91373fe1f342aee5453850b151a51405c68cae9ada86d26",
+      "bytes": 1102
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-c5a1cbfb5f9049f9270955caffb5bee5997aebf7/crates/platform/NOTICE",
+      "sha256": "b4628bbe7b9d307ba985d59d73b715df38d5d2319159034c996f38045075343a",
+      "bytes": 1164
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-c5a1cbfb5f9049f9270955caffb5bee5997aebf7/LICENSE-APACHE",
+      "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594",
+      "bytes": 10174
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-c5a1cbfb5f9049f9270955caffb5bee5997aebf7/LICENSE-MIT",
+      "sha256": "2f42c0cafc8ad394d91373fe1f342aee5453850b151a51405c68cae9ada86d26",
+      "bytes": 1102
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-c5a1cbfb5f9049f9270955caffb5bee5997aebf7/licenses/pdf-backend/hayro/LICENSE-APACHE",
+      "sha256": "0cec06e0e55fbc3dc5cee4fca9b607f66cb8f4e4dbcf3b3c013594dd156732e9",
+      "bytes": 10173
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-c5a1cbfb5f9049f9270955caffb5bee5997aebf7/licenses/pdf-backend/hayro/LICENSE-MIT",
+      "sha256": "51b50e6120c344dcc146bbd6375ca1c78e079d97c8bea76e67a53d6ff0efebac",
+      "bytes": 1063
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-c5a1cbfb5f9049f9270955caffb5bee5997aebf7/licenses/pdf-backend/hayro-cmap/LICENSE-APACHE",
+      "sha256": "0cec06e0e55fbc3dc5cee4fca9b607f66cb8f4e4dbcf3b3c013594dd156732e9",
+      "bytes": 10173
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-c5a1cbfb5f9049f9270955caffb5bee5997aebf7/licenses/pdf-backend/hayro-cmap/LICENSE-MIT",
+      "sha256": "51b50e6120c344dcc146bbd6375ca1c78e079d97c8bea76e67a53d6ff0efebac",
+      "bytes": 1063
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-c5a1cbfb5f9049f9270955caffb5bee5997aebf7/licenses/pdf-backend/hayro-cmap/LICENSE.txt",
+      "sha256": "742665db9c8e1bc72603c6d319ca3e90b83bd6d95202f0cd4ef11068a07a9c29",
+      "bytes": 1453
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-c5a1cbfb5f9049f9270955caffb5bee5997aebf7/licenses/pdf-backend/hayro-interpret/assets/LICENSE_FOXIT",
+      "sha256": "b578cdd2345840ada550bd12519533812320d5f1d21cf4c1c7e1b1b0a31c98b7",
+      "bytes": 1553
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-c5a1cbfb5f9049f9270955caffb5bee5997aebf7/licenses/pdf-backend/hayro-interpret/LICENSE-APACHE",
+      "sha256": "0cec06e0e55fbc3dc5cee4fca9b607f66cb8f4e4dbcf3b3c013594dd156732e9",
+      "bytes": 10173
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-c5a1cbfb5f9049f9270955caffb5bee5997aebf7/licenses/pdf-backend/hayro-interpret/LICENSE-MIT",
+      "sha256": "51b50e6120c344dcc146bbd6375ca1c78e079d97c8bea76e67a53d6ff0efebac",
+      "bytes": 1063
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-c5a1cbfb5f9049f9270955caffb5bee5997aebf7/licenses/pdf-backend/hayro-jbig2/LICENSE-APACHE",
+      "sha256": "0cec06e0e55fbc3dc5cee4fca9b607f66cb8f4e4dbcf3b3c013594dd156732e9",
+      "bytes": 10173
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-c5a1cbfb5f9049f9270955caffb5bee5997aebf7/licenses/pdf-backend/hayro-jbig2/LICENSE-MIT",
+      "sha256": "51b50e6120c344dcc146bbd6375ca1c78e079d97c8bea76e67a53d6ff0efebac",
+      "bytes": 1063
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-c5a1cbfb5f9049f9270955caffb5bee5997aebf7/licenses/pdf-backend/hayro-syntax/LICENSE-APACHE",
+      "sha256": "0cec06e0e55fbc3dc5cee4fca9b607f66cb8f4e4dbcf3b3c013594dd156732e9",
+      "bytes": 10173
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-c5a1cbfb5f9049f9270955caffb5bee5997aebf7/licenses/pdf-backend/hayro-syntax/LICENSE-MIT",
+      "sha256": "51b50e6120c344dcc146bbd6375ca1c78e079d97c8bea76e67a53d6ff0efebac",
+      "bytes": 1063
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-c5a1cbfb5f9049f9270955caffb5bee5997aebf7/licenses/pdf-writer/LICENSE-ICC.txt",
+      "sha256": "469d87b5fa48f8aaf69e25f4fcac3a309c97dbb7d561b917638abdb640e004d9",
+      "bytes": 6552
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-c5a1cbfb5f9049f9270955caffb5bee5997aebf7/licenses/pdf-writer/LICENSE_APACHE",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "bytes": 11358
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-c5a1cbfb5f9049f9270955caffb5bee5997aebf7/licenses/pdf-writer/LICENSE_MIT",
+      "sha256": "9d1eb142840c7acfd5511b4dd298cece3f0053f5809228906445cd8a3365592f",
+      "bytes": 1071
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-c5a1cbfb5f9049f9270955caffb5bee5997aebf7/NOTICE",
+      "sha256": "b0a52617abba6f559c79cc18f4deafc6c8463b4ed92bfd235db4f2b56044e73e",
+      "bytes": 15163
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-c5a1cbfb5f9049f9270955caffb5bee5997aebf7/vendor/hayro/LICENSE-APACHE",
+      "sha256": "0cec06e0e55fbc3dc5cee4fca9b607f66cb8f4e4dbcf3b3c013594dd156732e9",
+      "bytes": 10173
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-c5a1cbfb5f9049f9270955caffb5bee5997aebf7/vendor/hayro/LICENSE-MIT",
+      "sha256": "51b50e6120c344dcc146bbd6375ca1c78e079d97c8bea76e67a53d6ff0efebac",
+      "bytes": 1063
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-c5a1cbfb5f9049f9270955caffb5bee5997aebf7/vendor/hayro-cmap/assets/LICENSE.txt",
+      "sha256": "742665db9c8e1bc72603c6d319ca3e90b83bd6d95202f0cd4ef11068a07a9c29",
+      "bytes": 1453
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-c5a1cbfb5f9049f9270955caffb5bee5997aebf7/vendor/hayro-cmap/LICENSE-APACHE",
+      "sha256": "0cec06e0e55fbc3dc5cee4fca9b607f66cb8f4e4dbcf3b3c013594dd156732e9",
+      "bytes": 10173
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-c5a1cbfb5f9049f9270955caffb5bee5997aebf7/vendor/hayro-cmap/LICENSE-MIT",
+      "sha256": "51b50e6120c344dcc146bbd6375ca1c78e079d97c8bea76e67a53d6ff0efebac",
+      "bytes": 1063
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-c5a1cbfb5f9049f9270955caffb5bee5997aebf7/vendor/hayro-interpret/assets/LICENSE_FOXIT",
+      "sha256": "b578cdd2345840ada550bd12519533812320d5f1d21cf4c1c7e1b1b0a31c98b7",
+      "bytes": 1553
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-c5a1cbfb5f9049f9270955caffb5bee5997aebf7/vendor/hayro-interpret/LICENSE-APACHE",
+      "sha256": "0cec06e0e55fbc3dc5cee4fca9b607f66cb8f4e4dbcf3b3c013594dd156732e9",
+      "bytes": 10173
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-c5a1cbfb5f9049f9270955caffb5bee5997aebf7/vendor/hayro-interpret/LICENSE-MIT",
+      "sha256": "51b50e6120c344dcc146bbd6375ca1c78e079d97c8bea76e67a53d6ff0efebac",
+      "bytes": 1063
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-c5a1cbfb5f9049f9270955caffb5bee5997aebf7/vendor/hayro-jbig2/LICENSE-APACHE",
+      "sha256": "0cec06e0e55fbc3dc5cee4fca9b607f66cb8f4e4dbcf3b3c013594dd156732e9",
+      "bytes": 10173
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-c5a1cbfb5f9049f9270955caffb5bee5997aebf7/vendor/hayro-jbig2/LICENSE-MIT",
+      "sha256": "51b50e6120c344dcc146bbd6375ca1c78e079d97c8bea76e67a53d6ff0efebac",
+      "bytes": 1063
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-c5a1cbfb5f9049f9270955caffb5bee5997aebf7/vendor/hayro-postscript/LICENSE-APACHE",
+      "sha256": "0cec06e0e55fbc3dc5cee4fca9b607f66cb8f4e4dbcf3b3c013594dd156732e9",
+      "bytes": 10173
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-c5a1cbfb5f9049f9270955caffb5bee5997aebf7/vendor/hayro-postscript/LICENSE-MIT",
+      "sha256": "51b50e6120c344dcc146bbd6375ca1c78e079d97c8bea76e67a53d6ff0efebac",
+      "bytes": 1063
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-c5a1cbfb5f9049f9270955caffb5bee5997aebf7/vendor/hayro-syntax/LICENSE-APACHE",
+      "sha256": "0cec06e0e55fbc3dc5cee4fca9b607f66cb8f4e4dbcf3b3c013594dd156732e9",
+      "bytes": 10173
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-c5a1cbfb5f9049f9270955caffb5bee5997aebf7/vendor/hayro-syntax/LICENSE-MIT",
+      "sha256": "51b50e6120c344dcc146bbd6375ca1c78e079d97c8bea76e67a53d6ff0efebac",
+      "bytes": 1063
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-c5a1cbfb5f9049f9270955caffb5bee5997aebf7/vendor/krilla/icc/LICENSE",
+      "sha256": "469d87b5fa48f8aaf69e25f4fcac3a309c97dbb7d561b917638abdb640e004d9",
+      "bytes": 6552
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-e11f9d9aebea5f6b8e74643c1ea1ed172ba5f545/crates/platform/LICENSE-APACHE",
+      "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594",
+      "bytes": 10174
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-e11f9d9aebea5f6b8e74643c1ea1ed172ba5f545/crates/platform/LICENSE-MIT",
+      "sha256": "2f42c0cafc8ad394d91373fe1f342aee5453850b151a51405c68cae9ada86d26",
+      "bytes": 1102
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-e11f9d9aebea5f6b8e74643c1ea1ed172ba5f545/crates/platform/NOTICE",
+      "sha256": "b4628bbe7b9d307ba985d59d73b715df38d5d2319159034c996f38045075343a",
+      "bytes": 1164
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-e11f9d9aebea5f6b8e74643c1ea1ed172ba5f545/LICENSE-APACHE",
+      "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594",
+      "bytes": 10174
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-e11f9d9aebea5f6b8e74643c1ea1ed172ba5f545/LICENSE-MIT",
+      "sha256": "2f42c0cafc8ad394d91373fe1f342aee5453850b151a51405c68cae9ada86d26",
+      "bytes": 1102
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-e11f9d9aebea5f6b8e74643c1ea1ed172ba5f545/licenses/pdf-backend/hayro/LICENSE-APACHE",
+      "sha256": "0cec06e0e55fbc3dc5cee4fca9b607f66cb8f4e4dbcf3b3c013594dd156732e9",
+      "bytes": 10173
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-e11f9d9aebea5f6b8e74643c1ea1ed172ba5f545/licenses/pdf-backend/hayro/LICENSE-MIT",
+      "sha256": "51b50e6120c344dcc146bbd6375ca1c78e079d97c8bea76e67a53d6ff0efebac",
+      "bytes": 1063
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-e11f9d9aebea5f6b8e74643c1ea1ed172ba5f545/licenses/pdf-backend/hayro-cmap/LICENSE-APACHE",
+      "sha256": "0cec06e0e55fbc3dc5cee4fca9b607f66cb8f4e4dbcf3b3c013594dd156732e9",
+      "bytes": 10173
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-e11f9d9aebea5f6b8e74643c1ea1ed172ba5f545/licenses/pdf-backend/hayro-cmap/LICENSE-MIT",
+      "sha256": "51b50e6120c344dcc146bbd6375ca1c78e079d97c8bea76e67a53d6ff0efebac",
+      "bytes": 1063
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-e11f9d9aebea5f6b8e74643c1ea1ed172ba5f545/licenses/pdf-backend/hayro-cmap/LICENSE.txt",
+      "sha256": "742665db9c8e1bc72603c6d319ca3e90b83bd6d95202f0cd4ef11068a07a9c29",
+      "bytes": 1453
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-e11f9d9aebea5f6b8e74643c1ea1ed172ba5f545/licenses/pdf-backend/hayro-interpret/assets/LICENSE_FOXIT",
+      "sha256": "b578cdd2345840ada550bd12519533812320d5f1d21cf4c1c7e1b1b0a31c98b7",
+      "bytes": 1553
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-e11f9d9aebea5f6b8e74643c1ea1ed172ba5f545/licenses/pdf-backend/hayro-interpret/LICENSE-APACHE",
+      "sha256": "0cec06e0e55fbc3dc5cee4fca9b607f66cb8f4e4dbcf3b3c013594dd156732e9",
+      "bytes": 10173
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-e11f9d9aebea5f6b8e74643c1ea1ed172ba5f545/licenses/pdf-backend/hayro-interpret/LICENSE-MIT",
+      "sha256": "51b50e6120c344dcc146bbd6375ca1c78e079d97c8bea76e67a53d6ff0efebac",
+      "bytes": 1063
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-e11f9d9aebea5f6b8e74643c1ea1ed172ba5f545/licenses/pdf-backend/hayro-jbig2/LICENSE-APACHE",
+      "sha256": "0cec06e0e55fbc3dc5cee4fca9b607f66cb8f4e4dbcf3b3c013594dd156732e9",
+      "bytes": 10173
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-e11f9d9aebea5f6b8e74643c1ea1ed172ba5f545/licenses/pdf-backend/hayro-jbig2/LICENSE-MIT",
+      "sha256": "51b50e6120c344dcc146bbd6375ca1c78e079d97c8bea76e67a53d6ff0efebac",
+      "bytes": 1063
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-e11f9d9aebea5f6b8e74643c1ea1ed172ba5f545/licenses/pdf-backend/hayro-syntax/LICENSE-APACHE",
+      "sha256": "0cec06e0e55fbc3dc5cee4fca9b607f66cb8f4e4dbcf3b3c013594dd156732e9",
+      "bytes": 10173
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-e11f9d9aebea5f6b8e74643c1ea1ed172ba5f545/licenses/pdf-backend/hayro-syntax/LICENSE-MIT",
+      "sha256": "51b50e6120c344dcc146bbd6375ca1c78e079d97c8bea76e67a53d6ff0efebac",
+      "bytes": 1063
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-e11f9d9aebea5f6b8e74643c1ea1ed172ba5f545/licenses/pdf-writer/LICENSE-ICC.txt",
+      "sha256": "469d87b5fa48f8aaf69e25f4fcac3a309c97dbb7d561b917638abdb640e004d9",
+      "bytes": 6552
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-e11f9d9aebea5f6b8e74643c1ea1ed172ba5f545/licenses/pdf-writer/LICENSE_APACHE",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "bytes": 11358
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-e11f9d9aebea5f6b8e74643c1ea1ed172ba5f545/licenses/pdf-writer/LICENSE_MIT",
+      "sha256": "9d1eb142840c7acfd5511b4dd298cece3f0053f5809228906445cd8a3365592f",
+      "bytes": 1071
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-e11f9d9aebea5f6b8e74643c1ea1ed172ba5f545/NOTICE",
+      "sha256": "35c64da07565fe858d6988d5561695f5cb1364583119b4d9f7ca876b916e9338",
+      "bytes": 14169
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-e11f9d9aebea5f6b8e74643c1ea1ed172ba5f545/vendor/hayro/LICENSE-APACHE",
+      "sha256": "0cec06e0e55fbc3dc5cee4fca9b607f66cb8f4e4dbcf3b3c013594dd156732e9",
+      "bytes": 10173
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-e11f9d9aebea5f6b8e74643c1ea1ed172ba5f545/vendor/hayro/LICENSE-MIT",
+      "sha256": "51b50e6120c344dcc146bbd6375ca1c78e079d97c8bea76e67a53d6ff0efebac",
+      "bytes": 1063
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-e11f9d9aebea5f6b8e74643c1ea1ed172ba5f545/vendor/hayro-cmap/assets/LICENSE.txt",
+      "sha256": "742665db9c8e1bc72603c6d319ca3e90b83bd6d95202f0cd4ef11068a07a9c29",
+      "bytes": 1453
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-e11f9d9aebea5f6b8e74643c1ea1ed172ba5f545/vendor/hayro-cmap/LICENSE-APACHE",
+      "sha256": "0cec06e0e55fbc3dc5cee4fca9b607f66cb8f4e4dbcf3b3c013594dd156732e9",
+      "bytes": 10173
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-e11f9d9aebea5f6b8e74643c1ea1ed172ba5f545/vendor/hayro-cmap/LICENSE-MIT",
+      "sha256": "51b50e6120c344dcc146bbd6375ca1c78e079d97c8bea76e67a53d6ff0efebac",
+      "bytes": 1063
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-e11f9d9aebea5f6b8e74643c1ea1ed172ba5f545/vendor/hayro-interpret/assets/LICENSE_FOXIT",
+      "sha256": "b578cdd2345840ada550bd12519533812320d5f1d21cf4c1c7e1b1b0a31c98b7",
+      "bytes": 1553
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-e11f9d9aebea5f6b8e74643c1ea1ed172ba5f545/vendor/hayro-interpret/LICENSE-APACHE",
+      "sha256": "0cec06e0e55fbc3dc5cee4fca9b607f66cb8f4e4dbcf3b3c013594dd156732e9",
+      "bytes": 10173
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-e11f9d9aebea5f6b8e74643c1ea1ed172ba5f545/vendor/hayro-interpret/LICENSE-MIT",
+      "sha256": "51b50e6120c344dcc146bbd6375ca1c78e079d97c8bea76e67a53d6ff0efebac",
+      "bytes": 1063
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-e11f9d9aebea5f6b8e74643c1ea1ed172ba5f545/vendor/hayro-jbig2/LICENSE-APACHE",
+      "sha256": "0cec06e0e55fbc3dc5cee4fca9b607f66cb8f4e4dbcf3b3c013594dd156732e9",
+      "bytes": 10173
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-e11f9d9aebea5f6b8e74643c1ea1ed172ba5f545/vendor/hayro-jbig2/LICENSE-MIT",
+      "sha256": "51b50e6120c344dcc146bbd6375ca1c78e079d97c8bea76e67a53d6ff0efebac",
+      "bytes": 1063
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-e11f9d9aebea5f6b8e74643c1ea1ed172ba5f545/vendor/hayro-postscript/LICENSE-APACHE",
+      "sha256": "0cec06e0e55fbc3dc5cee4fca9b607f66cb8f4e4dbcf3b3c013594dd156732e9",
+      "bytes": 10173
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-e11f9d9aebea5f6b8e74643c1ea1ed172ba5f545/vendor/hayro-postscript/LICENSE-MIT",
+      "sha256": "51b50e6120c344dcc146bbd6375ca1c78e079d97c8bea76e67a53d6ff0efebac",
+      "bytes": 1063
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-e11f9d9aebea5f6b8e74643c1ea1ed172ba5f545/vendor/hayro-syntax/LICENSE-APACHE",
+      "sha256": "0cec06e0e55fbc3dc5cee4fca9b607f66cb8f4e4dbcf3b3c013594dd156732e9",
+      "bytes": 10173
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-e11f9d9aebea5f6b8e74643c1ea1ed172ba5f545/vendor/hayro-syntax/LICENSE-MIT",
+      "sha256": "51b50e6120c344dcc146bbd6375ca1c78e079d97c8bea76e67a53d6ff0efebac",
+      "bytes": 1063
+    },
+    {
+      "path": "licenses/rust/storytold-craft-libs-e11f9d9aebea5f6b8e74643c1ea1ed172ba5f545/vendor/krilla/icc/LICENSE",
+      "sha256": "469d87b5fa48f8aaf69e25f4fcac3a309c97dbb7d561b917638abdb640e004d9",
+      "bytes": 6552
+    },
+    {
       "path": "licenses/rust/storytold-egui-6d518fc799681571963842f95b55a6b68431b15a/LICENSE-APACHE",
       "sha256": "8173d5c29b4f956d532781d2b86e4e30f83e6b7878dce18c919451d6ba707c90",
       "bytes": 10850
@@ -1709,6 +4019,66 @@
       "path": "licenses/rust/storytold-egui-6d518fc799681571963842f95b55a6b68431b15a/LICENSE-MIT",
       "sha256": "95ca92f5f8ea5231f1580b3a2a799e8260af3114b900e1def5355a7f44bcf60c",
       "bytes": 1092
+    },
+    {
+      "path": "licenses/rust/strength_reduce-0.2.4/LICENSE-APACHE",
+      "sha256": "2e54cd84a645bea25943c75dd8ae67cb291e66a47a11578333c9b4b3b6b86c85",
+      "bytes": 11560
+    },
+    {
+      "path": "licenses/rust/strength_reduce-0.2.4/LICENSE-MIT",
+      "sha256": "8f5442dfa8e9169045697e386bc91d19f393c939635741fa2a665ec36ca6f0ad",
+      "bytes": 1085
+    },
+    {
+      "path": "licenses/rust/strict-num-0.1.1/LICENSE",
+      "sha256": "3085885678bb161f6c472bbd331f66a2550b555eb76128f7f8247779128199c0",
+      "bytes": 1060
+    },
+    {
+      "path": "licenses/rust/stringprep-0.1.5/LICENSE-APACHE",
+      "sha256": "c6596eb7be8581c18be736c846fb9173b69eccf6ef94c5135893ec56bd92ba08",
+      "bytes": 11358
+    },
+    {
+      "path": "licenses/rust/stringprep-0.1.5/LICENSE-MIT",
+      "sha256": "a07450fd4496cb8b58466e6d529f1f502444eee4a235659337e9194d694739d6",
+      "bytes": 1074
+    },
+    {
+      "path": "licenses/rust/subsetter-0.2.6/LICENSE-APACHE",
+      "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a",
+      "bytes": 9723
+    },
+    {
+      "path": "licenses/rust/subsetter-0.2.6/LICENSE-MIT",
+      "sha256": "508a77d2e7b51d98adeed32648ad124b7b30241a8e70b2e72c99f92d8e5874d1",
+      "bytes": 1036
+    },
+    {
+      "path": "licenses/rust/subsetter-0.2.6/NOTICE",
+      "sha256": "756e3179c6911701fb3fd41e5a364a7fe38360670955444aab40a0070a512c27",
+      "bytes": 26657
+    },
+    {
+      "path": "licenses/rust/svgtypes-0.15.3/LICENSE-APACHE",
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "bytes": 10847
+    },
+    {
+      "path": "licenses/rust/svgtypes-0.15.3/LICENSE-MIT",
+      "sha256": "f3c9fe731c701ed77fd5fbaac573872af04dc5869385eb9bd5e3c73c42713814",
+      "bytes": 1061
+    },
+    {
+      "path": "licenses/rust/svgtypes-0.16.1/LICENSE-APACHE",
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "bytes": 10847
+    },
+    {
+      "path": "licenses/rust/svgtypes-0.16.1/LICENSE-MIT",
+      "sha256": "f3c9fe731c701ed77fd5fbaac573872af04dc5869385eb9bd5e3c73c42713814",
+      "bytes": 1061
     },
     {
       "path": "licenses/rust/syn-2.0.119/LICENSE-APACHE",
@@ -1729,6 +4099,26 @@
       "path": "licenses/rust/syn-3.0.6/LICENSE-MIT",
       "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3",
       "bytes": 1023
+    },
+    {
+      "path": "licenses/rust/syn-3.0.9/LICENSE-APACHE",
+      "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a",
+      "bytes": 9723
+    },
+    {
+      "path": "licenses/rust/syn-3.0.9/LICENSE-MIT",
+      "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3",
+      "bytes": 1023
+    },
+    {
+      "path": "licenses/rust/synstructure-0.14.0/LICENSE",
+      "sha256": "219920e865eee70b7dcfc948a86b099e7f4fe2de01bcca2ca9a20c0a033f2b59",
+      "bytes": 1052
+    },
+    {
+      "path": "licenses/rust/sysinfo-0.40.1/LICENSE",
+      "sha256": "1f14f9ce70a5fdedab449bb32cd7d3f20e6e9d18c2a2b74221fc203db8684d43",
+      "bytes": 1083
     },
     {
       "path": "licenses/rust/thiserror-1.0.69/LICENSE-APACHE",
@@ -1791,6 +4181,36 @@
       "bytes": 513
     },
     {
+      "path": "licenses/rust/tiny-skia-0.11.4/LICENSE",
+      "sha256": "6d41e05f1d54fe726997cb0334ec539f1dff50600b1d5d90462ec2b392770ced",
+      "bytes": 1564
+    },
+    {
+      "path": "licenses/rust/tiny-skia-0.12.0/LICENSE",
+      "sha256": "6d41e05f1d54fe726997cb0334ec539f1dff50600b1d5d90462ec2b392770ced",
+      "bytes": 1564
+    },
+    {
+      "path": "licenses/rust/tiny-skia-path-0.11.4/LICENSE",
+      "sha256": "6d41e05f1d54fe726997cb0334ec539f1dff50600b1d5d90462ec2b392770ced",
+      "bytes": 1564
+    },
+    {
+      "path": "licenses/rust/tiny-skia-path-0.12.0/LICENSE",
+      "sha256": "6d41e05f1d54fe726997cb0334ec539f1dff50600b1d5d90462ec2b392770ced",
+      "bytes": 1564
+    },
+    {
+      "path": "licenses/rust/tinystr-0.8.4/LICENSE",
+      "sha256": "f367c1b8e1aa262435251e442901da4607b4650e0e63a026f5044473ecfb90f2",
+      "bytes": 2195
+    },
+    {
+      "path": "licenses/rust/tinystr-0.8.5/LICENSE",
+      "sha256": "f367c1b8e1aa262435251e442901da4607b4650e0e63a026f5044473ecfb90f2",
+      "bytes": 2195
+    },
+    {
       "path": "licenses/rust/tinyvec-1.13.3/LICENSE-APACHE.md",
       "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
       "bytes": 11358
@@ -1836,6 +4256,46 @@
       "bytes": 1062
     },
     {
+      "path": "licenses/rust/tracing-0.1.44/LICENSE",
+      "sha256": "898b1ae9821e98daf8964c8d6c7f61641f5f5aa78ad500020771c0939ee0dea1",
+      "bytes": 1062
+    },
+    {
+      "path": "licenses/rust/tracing-core-0.1.36/LICENSE",
+      "sha256": "898b1ae9821e98daf8964c8d6c7f61641f5f5aa78ad500020771c0939ee0dea1",
+      "bytes": 1062
+    },
+    {
+      "path": "licenses/rust/tracing-core-0.1.36/src/spin/LICENSE",
+      "sha256": "58545fed1565e42d687aecec6897d35c6d37ccb71479a137c0deb2203e125c79",
+      "bytes": 1085
+    },
+    {
+      "path": "licenses/rust/transpose-0.2.3/LICENSE-APACHE",
+      "sha256": "8797ef61538ec5ee9222ebef7ca4e0f3ec5761b145ca9943d358c450efb644dd",
+      "bytes": 11045
+    },
+    {
+      "path": "licenses/rust/transpose-0.2.3/LICENSE-MIT",
+      "sha256": "5080149357fd0be590bdc10cf92165412bb4d61ce496284d56f2d12874ae3121",
+      "bytes": 1093
+    },
+    {
+      "path": "licenses/rust/ttf-parser-0.25.1/LICENSE-APACHE",
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "bytes": 10847
+    },
+    {
+      "path": "licenses/rust/ttf-parser-0.25.1/LICENSE-MIT",
+      "sha256": "f3c9fe731c701ed77fd5fbaac573872af04dc5869385eb9bd5e3c73c42713814",
+      "bytes": 1061
+    },
+    {
+      "path": "licenses/rust/twox-hash-2.1.4/LICENSE.txt",
+      "sha256": "f59bcb1c02654665f78a5f290bae76b6358137675f6459f51e6d474a4623d8ea",
+      "bytes": 1080
+    },
+    {
       "path": "licenses/rust/typenum-1.20.1/LICENSE",
       "sha256": "db11fec9946737df39ca3898d9cd8c10ec6f6c3a884a6802b0ad0b81b4e8f23a",
       "bytes": 17
@@ -1866,6 +4326,31 @@
       "bytes": 1071
     },
     {
+      "path": "licenses/rust/unicode-bidi-mirroring-0.4.0/LICENSE-APACHE",
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "bytes": 10847
+    },
+    {
+      "path": "licenses/rust/unicode-bidi-mirroring-0.4.0/LICENSE-MIT",
+      "sha256": "59a1fdac3bd550043599bd159fd70f09a1108c2b09e3751d39b11e1ff8e51f00",
+      "bytes": 1083
+    },
+    {
+      "path": "licenses/rust/unicode-ccc-0.4.0/LICENSE-APACHE",
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "bytes": 10847
+    },
+    {
+      "path": "licenses/rust/unicode-ccc-0.4.0/LICENSE-MIT",
+      "sha256": "59a1fdac3bd550043599bd159fd70f09a1108c2b09e3751d39b11e1ff8e51f00",
+      "bytes": 1083
+    },
+    {
+      "path": "licenses/rust/unicode-general-category-1.1.0/LICENSE",
+      "sha256": "b40930bbcf80744c86c46a12bc9da056641d722716c378f5659b9e555ef833e1",
+      "bytes": 11357
+    },
+    {
       "path": "licenses/rust/unicode-ident-1.0.26/LICENSE-APACHE",
       "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a",
       "bytes": 9723
@@ -1881,9 +4366,39 @@
       "bytes": 1995
     },
     {
+      "path": "licenses/rust/unicode-ident-1.0.27/LICENSE-APACHE",
+      "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a",
+      "bytes": 9723
+    },
+    {
+      "path": "licenses/rust/unicode-ident-1.0.27/LICENSE-MIT",
+      "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3",
+      "bytes": 1023
+    },
+    {
+      "path": "licenses/rust/unicode-ident-1.0.27/LICENSE-UNICODE",
+      "sha256": "f7db81051789b729fea528a63ec4c938fdcb93d9d61d97dc8cc2e9df6d47f2a1",
+      "bytes": 1995
+    },
+    {
       "path": "licenses/rust/unicode-linebreak-0.1.5/LICENSE",
       "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
       "bytes": 11357
+    },
+    {
+      "path": "licenses/rust/unicode-normalization-0.1.25/COPYRIGHT",
+      "sha256": "23860c2a7b5d96b21569afedf033469bab9fe14a1b24a35068b8641c578ce24d",
+      "bytes": 321
+    },
+    {
+      "path": "licenses/rust/unicode-normalization-0.1.25/LICENSE-APACHE",
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "bytes": 10847
+    },
+    {
+      "path": "licenses/rust/unicode-normalization-0.1.25/LICENSE-MIT",
+      "sha256": "7b63ecd5f1902af1b63729947373683c32745c16a10e8e6292e2e2dcd7e90ae0",
+      "bytes": 1071
     },
     {
       "path": "licenses/rust/unicode-normalization-0.1.26/COPYRIGHT",
@@ -1904,6 +4419,21 @@
       "path": "licenses/rust/unicode-normalization-0.1.26/LICENSE-UNICODE",
       "sha256": "f7db81051789b729fea528a63ec4c938fdcb93d9d61d97dc8cc2e9df6d47f2a1",
       "bytes": 1995
+    },
+    {
+      "path": "licenses/rust/unicode-properties-0.1.4/COPYRIGHT",
+      "sha256": "23860c2a7b5d96b21569afedf033469bab9fe14a1b24a35068b8641c578ce24d",
+      "bytes": 321
+    },
+    {
+      "path": "licenses/rust/unicode-properties-0.1.4/LICENSE-APACHE",
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "bytes": 10847
+    },
+    {
+      "path": "licenses/rust/unicode-properties-0.1.4/LICENSE-MIT",
+      "sha256": "7b63ecd5f1902af1b63729947373683c32745c16a10e8e6292e2e2dcd7e90ae0",
+      "bytes": 1071
     },
     {
       "path": "licenses/rust/unicode-script-0.5.8/LICENSE-APACHE",
@@ -1929,6 +4459,51 @@
       "path": "licenses/rust/unicode-segmentation-1.13.3/LICENSE-MIT",
       "sha256": "7b63ecd5f1902af1b63729947373683c32745c16a10e8e6292e2e2dcd7e90ae0",
       "bytes": 1071
+    },
+    {
+      "path": "licenses/rust/unicode-vo-0.1.0/LICENSE-APACHE",
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "bytes": 10847
+    },
+    {
+      "path": "licenses/rust/unicode-vo-0.1.0/LICENSE-MIT",
+      "sha256": "0b5f24524360e15bcf9fb79bca875f5aa62f01f94f2988e23238c7ec0e6e8784",
+      "bytes": 1082
+    },
+    {
+      "path": "licenses/rust/usvg-0.45.1/LICENSE-APACHE",
+      "sha256": "a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9",
+      "bytes": 10173
+    },
+    {
+      "path": "licenses/rust/usvg-0.45.1/LICENSE-MIT",
+      "sha256": "f5d934dc281b44e0003ee461ac740b18b6629a454decd872c774d34e4ee0b21d",
+      "bytes": 1057
+    },
+    {
+      "path": "licenses/rust/usvg-0.48.1/LICENSE-APACHE",
+      "sha256": "a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9",
+      "bytes": 10173
+    },
+    {
+      "path": "licenses/rust/usvg-0.48.1/LICENSE-MIT",
+      "sha256": "f5d934dc281b44e0003ee461ac740b18b6629a454decd872c774d34e4ee0b21d",
+      "bytes": 1057
+    },
+    {
+      "path": "licenses/rust/utf8_iter-1.0.4/COPYRIGHT",
+      "sha256": "c30152c94a6d75e021adbc52b3a52470366a46edb917e17deae3259251af244c",
+      "bytes": 1742
+    },
+    {
+      "path": "licenses/rust/utf8_iter-1.0.4/LICENSE-APACHE",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "bytes": 11358
+    },
+    {
+      "path": "licenses/rust/utf8_iter-1.0.4/LICENSE-MIT",
+      "sha256": "3fa4ca83dcc9237839b1bdeb2e6d16bdfb5ec0c5ce42b24694d8bbf0dcbef72c",
+      "bytes": 1053
     },
     {
       "path": "licenses/rust/uuid-1.27.0/LICENSE-APACHE",
@@ -1961,6 +4536,16 @@
       "bytes": 1057
     },
     {
+      "path": "licenses/rust/version_check-0.9.5/LICENSE-APACHE",
+      "sha256": "a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2",
+      "bytes": 10847
+    },
+    {
+      "path": "licenses/rust/version_check-0.9.5/LICENSE-MIT",
+      "sha256": "b7e650f3fce5c53249d1cdc608b54df156a97edd636cf9d23498d0cfe7aec63e",
+      "bytes": 1085
+    },
+    {
       "path": "licenses/rust/web-time-1.1.0/LICENSE-APACHE",
       "sha256": "54a744942eb3fa63a74d8d359989ed6962c04f3f10ff20cfa08ff8aa7efbe4e6",
       "bytes": 11338
@@ -1981,6 +4566,91 @@
       "bytes": 1080
     },
     {
+      "path": "licenses/rust/weezl-0.2.1/LICENSE-APACHE",
+      "sha256": "769f80b5bcb42ed0af4e4d2fd74e1ac9bf843cb80c5a29219d1ef3544428a6bb",
+      "bytes": 10846
+    },
+    {
+      "path": "licenses/rust/weezl-0.2.1/LICENSE-MIT",
+      "sha256": "573f5227db835cd30bbdd3aed3f82615f80119a4d5c82b4daf642dbfe2b6afde",
+      "bytes": 1080
+    },
+    {
+      "path": "licenses/rust/wide-0.7.33/LICENSE-ZLIB.md",
+      "sha256": "c43b9a9b1387ed53d2c49263838261129a010e280e3a174a792242c3e2c98db9",
+      "bytes": 851
+    },
+    {
+      "path": "licenses/rust/winapi-0.3.9/LICENSE-APACHE",
+      "sha256": "b40930bbcf80744c86c46a12bc9da056641d722716c378f5659b9e555ef833e1",
+      "bytes": 11357
+    },
+    {
+      "path": "licenses/rust/winapi-0.3.9/LICENSE-MIT",
+      "sha256": "ce7bc3499fee93d5022ef430d5e4201e79a6d9154f3974e42f41349f0569e09b",
+      "bytes": 1073
+    },
+    {
+      "path": "licenses/rust/windows-0.62.2/license-apache-2.0",
+      "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b",
+      "bytes": 11351
+    },
+    {
+      "path": "licenses/rust/windows-0.62.2/license-mit",
+      "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383",
+      "bytes": 1141
+    },
+    {
+      "path": "licenses/rust/windows-collections-0.3.2/license-apache-2.0",
+      "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b",
+      "bytes": 11351
+    },
+    {
+      "path": "licenses/rust/windows-collections-0.3.2/license-mit",
+      "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383",
+      "bytes": 1141
+    },
+    {
+      "path": "licenses/rust/windows-core-0.62.2/license-apache-2.0",
+      "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b",
+      "bytes": 11351
+    },
+    {
+      "path": "licenses/rust/windows-core-0.62.2/license-mit",
+      "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383",
+      "bytes": 1141
+    },
+    {
+      "path": "licenses/rust/windows-future-0.3.2/license-apache-2.0",
+      "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b",
+      "bytes": 11351
+    },
+    {
+      "path": "licenses/rust/windows-future-0.3.2/license-mit",
+      "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383",
+      "bytes": 1141
+    },
+    {
+      "path": "licenses/rust/windows-implement-0.60.2/license-apache-2.0",
+      "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b",
+      "bytes": 11351
+    },
+    {
+      "path": "licenses/rust/windows-implement-0.60.2/license-mit",
+      "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383",
+      "bytes": 1141
+    },
+    {
+      "path": "licenses/rust/windows-interface-0.59.3/license-apache-2.0",
+      "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b",
+      "bytes": 11351
+    },
+    {
+      "path": "licenses/rust/windows-interface-0.59.3/license-mit",
+      "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383",
+      "bytes": 1141
+    },
+    {
       "path": "licenses/rust/windows-link-0.2.1/license-apache-2.0",
       "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b",
       "bytes": 11351
@@ -1991,9 +4661,129 @@
       "bytes": 1141
     },
     {
+      "path": "licenses/rust/windows-numerics-0.3.1/license-apache-2.0",
+      "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b",
+      "bytes": 11351
+    },
+    {
+      "path": "licenses/rust/windows-numerics-0.3.1/license-mit",
+      "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383",
+      "bytes": 1141
+    },
+    {
+      "path": "licenses/rust/windows-registry-0.6.1/license-apache-2.0",
+      "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b",
+      "bytes": 11351
+    },
+    {
+      "path": "licenses/rust/windows-registry-0.6.1/license-mit",
+      "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383",
+      "bytes": 1141
+    },
+    {
+      "path": "licenses/rust/windows-result-0.4.1/license-apache-2.0",
+      "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b",
+      "bytes": 11351
+    },
+    {
+      "path": "licenses/rust/windows-result-0.4.1/license-mit",
+      "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383",
+      "bytes": 1141
+    },
+    {
+      "path": "licenses/rust/windows-strings-0.5.1/license-apache-2.0",
+      "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b",
+      "bytes": 11351
+    },
+    {
+      "path": "licenses/rust/windows-strings-0.5.1/license-mit",
+      "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383",
+      "bytes": 1141
+    },
+    {
+      "path": "licenses/rust/windows-threading-0.2.1/license-apache-2.0",
+      "sha256": "c16f8dcf1a368b83be78d826ea23de4079fe1b4469a0ab9ee20563f37ff3d44b",
+      "bytes": 11351
+    },
+    {
+      "path": "licenses/rust/windows-threading-0.2.1/license-mit",
+      "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383",
+      "bytes": 1141
+    },
+    {
       "path": "licenses/rust/winnow-1.0.4/LICENSE-MIT",
       "sha256": "cb5aedb296c5246d1f22e9099f925a65146f9f0d6b4eebba97fd27a6cdbbab2d",
       "bytes": 1023
+    },
+    {
+      "path": "licenses/rust/winsafe-0.0.29/LICENSE.md",
+      "sha256": "3ee62f0338e87ec3b8c1730c9d2d1ccbb169b8b869924511681833599cfb8a3d",
+      "bytes": 1099
+    },
+    {
+      "path": "licenses/rust/write-fonts-0.48.1/LICENSE-APACHE",
+      "sha256": "a14f7d685a79c0f4fb64aee305527a6d5fa55f2401f4e6d688d7b1301868e6c0",
+      "bytes": 9695
+    },
+    {
+      "path": "licenses/rust/write-fonts-0.48.1/LICENSE-MIT",
+      "sha256": "8a62fa27ffdccc3df19dce90f8bb3d572e27aecffc1a383d0c2601834dcec434",
+      "bytes": 1058
+    },
+    {
+      "path": "licenses/rust/writeable-0.6.4/LICENSE",
+      "sha256": "f367c1b8e1aa262435251e442901da4607b4650e0e63a026f5044473ecfb90f2",
+      "bytes": 2195
+    },
+    {
+      "path": "licenses/rust/xmlwriter-0.1.0/LICENSE",
+      "sha256": "2cdce1ff4ca8f455ef169691ea493407e23c32ecdea5fd9b3a6fc82be5b49b5a",
+      "bytes": 1082
+    },
+    {
+      "path": "licenses/rust/xmp-writer-0.3.3/LICENSE-APACHE",
+      "sha256": "62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a",
+      "bytes": 9723
+    },
+    {
+      "path": "licenses/rust/xmp-writer-0.3.3/LICENSE-MIT",
+      "sha256": "508a77d2e7b51d98adeed32648ad124b7b30241a8e70b2e72c99f92d8e5874d1",
+      "bytes": 1036
+    },
+    {
+      "path": "licenses/rust/yoke-0.8.3/LICENSE",
+      "sha256": "f367c1b8e1aa262435251e442901da4607b4650e0e63a026f5044473ecfb90f2",
+      "bytes": 2195
+    },
+    {
+      "path": "licenses/rust/yoke-0.8.4/LICENSE",
+      "sha256": "f367c1b8e1aa262435251e442901da4607b4650e0e63a026f5044473ecfb90f2",
+      "bytes": 2195
+    },
+    {
+      "path": "licenses/rust/yoke-derive-0.8.3/LICENSE",
+      "sha256": "f367c1b8e1aa262435251e442901da4607b4650e0e63a026f5044473ecfb90f2",
+      "bytes": 2195
+    },
+    {
+      "path": "licenses/rust/yoke-derive-0.8.4/LICENSE",
+      "sha256": "f367c1b8e1aa262435251e442901da4607b4650e0e63a026f5044473ecfb90f2",
+      "bytes": 2195
+    },
+    {
+      "path": "licenses/rust/zerocopy-0.8.59/LICENSE-APACHE",
+      "sha256": "9d185ac6703c4b0453974c0d85e9eee43e6941009296bb1f5eb0b54e2329e9f3",
+      "bytes": 11350
+    },
+    {
+      "path": "licenses/rust/zerocopy-0.8.59/LICENSE-BSD",
+      "sha256": "83c1763356e822adde0a2cae748d938a73fdc263849ccff6b27776dff213bd32",
+      "bytes": 1275
+    },
+    {
+      "path": "licenses/rust/zerocopy-0.8.59/LICENSE-MIT",
+      "sha256": "1a2f5c12ddc934d58956aa5dbdd3255fe55fd957633ab7d0d39e4f0daa73f7df",
+      "bytes": 1060
     },
     {
       "path": "licenses/rust/zerocopy-0.8.61/LICENSE-APACHE",
@@ -2007,6 +4797,36 @@
     },
     {
       "path": "licenses/rust/zerocopy-0.8.61/LICENSE-MIT",
+      "sha256": "1a2f5c12ddc934d58956aa5dbdd3255fe55fd957633ab7d0d39e4f0daa73f7df",
+      "bytes": 1060
+    },
+    {
+      "path": "licenses/rust/zerocopy-0.8.63/LICENSE-APACHE",
+      "sha256": "9d185ac6703c4b0453974c0d85e9eee43e6941009296bb1f5eb0b54e2329e9f3",
+      "bytes": 11350
+    },
+    {
+      "path": "licenses/rust/zerocopy-0.8.63/LICENSE-BSD",
+      "sha256": "83c1763356e822adde0a2cae748d938a73fdc263849ccff6b27776dff213bd32",
+      "bytes": 1275
+    },
+    {
+      "path": "licenses/rust/zerocopy-0.8.63/LICENSE-MIT",
+      "sha256": "1a2f5c12ddc934d58956aa5dbdd3255fe55fd957633ab7d0d39e4f0daa73f7df",
+      "bytes": 1060
+    },
+    {
+      "path": "licenses/rust/zerocopy-derive-0.8.59/LICENSE-APACHE",
+      "sha256": "9d185ac6703c4b0453974c0d85e9eee43e6941009296bb1f5eb0b54e2329e9f3",
+      "bytes": 11350
+    },
+    {
+      "path": "licenses/rust/zerocopy-derive-0.8.59/LICENSE-BSD",
+      "sha256": "83c1763356e822adde0a2cae748d938a73fdc263849ccff6b27776dff213bd32",
+      "bytes": 1275
+    },
+    {
+      "path": "licenses/rust/zerocopy-derive-0.8.59/LICENSE-MIT",
       "sha256": "1a2f5c12ddc934d58956aa5dbdd3255fe55fd957633ab7d0d39e4f0daa73f7df",
       "bytes": 1060
     },
@@ -2026,6 +4846,31 @@
       "bytes": 1060
     },
     {
+      "path": "licenses/rust/zerocopy-derive-0.8.63/LICENSE-APACHE",
+      "sha256": "9d185ac6703c4b0453974c0d85e9eee43e6941009296bb1f5eb0b54e2329e9f3",
+      "bytes": 11350
+    },
+    {
+      "path": "licenses/rust/zerocopy-derive-0.8.63/LICENSE-BSD",
+      "sha256": "83c1763356e822adde0a2cae748d938a73fdc263849ccff6b27776dff213bd32",
+      "bytes": 1275
+    },
+    {
+      "path": "licenses/rust/zerocopy-derive-0.8.63/LICENSE-MIT",
+      "sha256": "1a2f5c12ddc934d58956aa5dbdd3255fe55fd957633ab7d0d39e4f0daa73f7df",
+      "bytes": 1060
+    },
+    {
+      "path": "licenses/rust/zerofrom-0.1.8/LICENSE",
+      "sha256": "f367c1b8e1aa262435251e442901da4607b4650e0e63a026f5044473ecfb90f2",
+      "bytes": 2195
+    },
+    {
+      "path": "licenses/rust/zerofrom-derive-0.1.8/LICENSE",
+      "sha256": "f367c1b8e1aa262435251e442901da4607b4650e0e63a026f5044473ecfb90f2",
+      "bytes": 2195
+    },
+    {
       "path": "licenses/rust/zeroize-1.9.1/LICENSE-APACHE",
       "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
       "bytes": 11358
@@ -2034,6 +4879,36 @@
       "path": "licenses/rust/zeroize-1.9.1/LICENSE-MIT",
       "sha256": "8c7516d4b27b1e495be5e38b612298b63de48d05f49cdac94f70f3cd70f8864b",
       "bytes": 1082
+    },
+    {
+      "path": "licenses/rust/zerotrie-0.2.5/LICENSE",
+      "sha256": "f367c1b8e1aa262435251e442901da4607b4650e0e63a026f5044473ecfb90f2",
+      "bytes": 2195
+    },
+    {
+      "path": "licenses/rust/zerovec-0.11.8/LICENSE",
+      "sha256": "f367c1b8e1aa262435251e442901da4607b4650e0e63a026f5044473ecfb90f2",
+      "bytes": 2195
+    },
+    {
+      "path": "licenses/rust/zerovec-0.11.9/LICENSE",
+      "sha256": "f367c1b8e1aa262435251e442901da4607b4650e0e63a026f5044473ecfb90f2",
+      "bytes": 2195
+    },
+    {
+      "path": "licenses/rust/zerovec-derive-0.11.6/LICENSE",
+      "sha256": "f367c1b8e1aa262435251e442901da4607b4650e0e63a026f5044473ecfb90f2",
+      "bytes": 2195
+    },
+    {
+      "path": "licenses/rust/zerovec-derive-0.11.7/LICENSE",
+      "sha256": "f367c1b8e1aa262435251e442901da4607b4650e0e63a026f5044473ecfb90f2",
+      "bytes": 2195
+    },
+    {
+      "path": "licenses/rust/zip-2.6.1/LICENSE",
+      "sha256": "04dc52136d82400b11df5f474949863a70a5d05d2278dec45b99c479494450a6",
+      "bytes": 1217
     },
     {
       "path": "licenses/rust/zip-3.0.0/LICENSE",
@@ -2052,6 +4927,11 @@
     },
     {
       "path": "licenses/rust/zopfli-0.8.3/COPYING",
+      "sha256": "018b1cb87efdf7a04c2fcc13d57ed63f62149113fb207b27ea13430d64f13513",
+      "bytes": 11341
+    },
+    {
+      "path": "licenses/rust/zopfli-0.8.4/COPYING",
       "sha256": "018b1cb87efdf7a04c2fcc13d57ed63f62149113fb207b27ea13430d64f13513",
       "bytes": 11341
     },
@@ -2086,9 +4966,154 @@
       "bytes": 859
     },
     {
+      "path": "licenses/rust/zune-jpegxl-0.5.2/LICENSE-APACHE",
+      "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+      "bytes": 11357
+    },
+    {
+      "path": "licenses/rust/zune-jpegxl-0.5.2/LICENSE-MIT",
+      "sha256": "d30047bca3b516639339a3c279bb84c3483124fb5a9dafe3c75056a85090e745",
+      "bytes": 1073
+    },
+    {
+      "path": "licenses/rust/zune-jpegxl-0.5.2/LICENSE-ZLIB",
+      "sha256": "d201d14804d3bcd3b944147173175e4abfbd838b7c8069b6bd3452496bf13e6c",
+      "bytes": 859
+    },
+    {
+      "path": "licenses/vectorcraft/app-icon-LICENSE.txt",
+      "sha256": "7323e2ad58efcf69f0871f419531f707ae6bee61d00c7d84de6f8300d7ad19f7",
+      "bytes": 606
+    },
+    {
+      "path": "licenses/vectorcraft/assets/app-icon/LICENSE.txt",
+      "sha256": "7323e2ad58efcf69f0871f419531f707ae6bee61d00c7d84de6f8300d7ad19f7",
+      "bytes": 606
+    },
+    {
+      "path": "licenses/vectorcraft/assets/fonts/OFL-Inter.txt",
+      "sha256": "262481e844521b326f5ecd053e59b98c8b2da78c8ee1bdbb6e8174305e54935a",
+      "bytes": 4380
+    },
+    {
+      "path": "licenses/vectorcraft/assets/fonts/OFL-JetBrainsMono.txt",
+      "sha256": "a76abf002c49097d146e86740a3105a5d00450b1592e820a1109a8c5680cd697",
+      "bytes": 4399
+    },
+    {
+      "path": "licenses/vectorcraft/assets/fonts/OFL-SourceSans3.txt",
+      "sha256": "56af9b9c6715597e458284a474dc118a50a4150e9d547c70f7b4a33c3e6a9328",
+      "bytes": 4486
+    },
+    {
+      "path": "licenses/vectorcraft/assets/fonts/OFL-SourceSerif4.txt",
+      "sha256": "c21d7293d87b6d7ab1d0229a2f55b77f33a7613a6a4e66f6693d68d7d8d09464",
+      "bytes": 4491
+    },
+    {
+      "path": "licenses/vectorcraft/ASSETS.md",
+      "sha256": "e863bb8f00851bb2a267cc98963e0cc6219608f4999e24db911435f2bc67cc00",
+      "bytes": 64733
+    },
+    {
+      "path": "licenses/vectorcraft/craft-fonts/ATTRIBUTION.md",
+      "sha256": "aa2aa7eec68c32ac2da6ff7162ca9100ab3680e4c7b98365fc7c74ddd4167d07",
+      "bytes": 5150
+    },
+    {
+      "path": "licenses/vectorcraft/craft-fonts/fonts/biz-ud-mincho/OFL.txt",
+      "sha256": "ef0ed524b3bd012f37015e986809eed6f67905456ebfc1ebd7fcc2765282ee01",
+      "bytes": 4408
+    },
+    {
+      "path": "licenses/vectorcraft/craft-fonts/fonts/biz-ud-pgothic/OFL.txt",
+      "sha256": "e753d7155d53c747d037a445e584c8ecfca6dd79846db610417e282a736b28bc",
+      "bytes": 4408
+    },
+    {
+      "path": "licenses/vectorcraft/craft-fonts/fonts/lxgw-wenkai-lite/OFL.txt",
+      "sha256": "0333a85fe077b6849f8e417acc44e8bd879442ceb681e271acf93e2d57fd4e2e",
+      "bytes": 5176
+    },
+    {
+      "path": "licenses/vectorcraft/craft-fonts/fonts/nanum-gothic/OFL.txt",
+      "sha256": "eeacf16032901d0ed0456876ec77b8f0fda6b3fecec7d972f8543eb602e6c30f",
+      "bytes": 4534
+    },
+    {
+      "path": "licenses/vectorcraft/craft-fonts/fonts/noto-sans-arabic/OFL.txt",
+      "sha256": "07fc70bfeb985cc1a87a8587d0a0c80bab11c86c9dc3fd95b6f0cb332f983e96",
+      "bytes": 4382
+    },
+    {
+      "path": "licenses/vectorcraft/craft-fonts/fonts/noto-sans-cjk-sc/OFL.txt",
+      "sha256": "6a73f9541c2de74158c0e7cf6b0a58ef774f5a780bf191f2d7ec9cc53efe2bf2",
+      "bytes": 4301
+    },
+    {
+      "path": "licenses/vectorcraft/craft-fonts/fonts/noto-sans-devanagari/OFL.txt",
+      "sha256": "a216f6f8d85c7228093e0ee5e258d9d377e6671f68acb4db1930b29583d0f331",
+      "bytes": 4386
+    },
+    {
+      "path": "licenses/vectorcraft/craft-fonts/fonts/noto-sans-georgian/OFL.txt",
+      "sha256": "8c02263c5d73d40544f9ed91e30c4e947407057a3cc430d7b786189aeceff6df",
+      "bytes": 4384
+    },
+    {
+      "path": "licenses/vectorcraft/craft-fonts/fonts/noto-sans-hebrew/OFL.txt",
+      "sha256": "9b9fe028b5ba74d231659a1bbaf0ed09b11e759d1ca6a070999e16d151616b47",
+      "bytes": 4382
+    },
+    {
+      "path": "licenses/vectorcraft/craft-fonts/fonts/noto-sans-symbols/OFL.txt",
+      "sha256": "b118dd41337806a5d4797052c77caf3bd096aed783e5eb21b4d11154351e1ac0",
+      "bytes": 4383
+    },
+    {
+      "path": "licenses/vectorcraft/craft-fonts/fonts/noto-sans-symbols-2/OFL.txt",
+      "sha256": "b118dd41337806a5d4797052c77caf3bd096aed783e5eb21b4d11154351e1ac0",
+      "bytes": 4383
+    },
+    {
+      "path": "licenses/vectorcraft/craft-fonts/fonts/noto-sans-thai/OFL.txt",
+      "sha256": "2e98fd23a52d253db8612cd5942c8f2ff4111b21d2367050fdca91d8ccc374a0",
+      "bytes": 4380
+    },
+    {
+      "path": "licenses/vectorcraft/craft-fonts/fonts/shippori-mincho/OFL.txt",
+      "sha256": "41fba056279be5f45ff9a99e44b7b53897b42732f5806d8e666e0ab49ac6bd38",
+      "bytes": 4399
+    },
+    {
+      "path": "licenses/vectorcraft/craft-fonts/LICENSE-APACHE",
+      "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594",
+      "bytes": 10174
+    },
+    {
+      "path": "licenses/vectorcraft/craft-fonts/LICENSE-MIT",
+      "sha256": "e360d6f5941863521687517eee951fac3328ee9f379fcb11bb5031fe6614fc8f",
+      "bytes": 1103
+    },
+    {
+      "path": "licenses/vectorcraft/LICENSE-APACHE",
+      "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594",
+      "bytes": 10174
+    },
+    {
+      "path": "licenses/vectorcraft/LICENSE-MIT",
+      "sha256": "8b6025dc4b707e0fb08b9c2054096f1be3ae61529399aa2c348dec676562dc71",
+      "bytes": 1103
+    },
+    {
+      "path": "licenses/vectorcraft/NOTICE",
+      "sha256": "bd923fe0b697afe49943454e199078bf7b5d1af847ea2aabaffa396c17bd4943",
+      "bytes": 8174
+    },
+    {
       "path": "licenses/wordcraft/ATTRIBUTION.md",
-      "sha256": "004d06b985cdee4a22419656656e30dd3d5bca65cbc12ffc7e6708d83e86d5c3",
-      "bytes": 16313
+      "sha256": "3fc09b7189d078901db77a477bc2dc2007d9a139d59057c67cd5d46e8491d435",
+      "bytes": 16249
     },
     {
       "path": "licenses/wordcraft/craft-fonts/ATTRIBUTION.md",
@@ -2172,18 +5197,18 @@
     },
     {
       "path": "licenses/wordcraft/LICENSE-APACHE",
-      "sha256": "eb3d7b5485466acbd81f2b496f595ab637d2792e268206b27d99e793bdb67549",
-      "bytes": 10351
+      "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594",
+      "bytes": 10174
     },
     {
       "path": "licenses/wordcraft/LICENSE-MIT",
-      "sha256": "a15941cbcb0e32a2ef09d2da5d0b90bea3a3ebbdf5fb075c3f7dfde7af95b3ab",
-      "bytes": 1122
+      "sha256": "fc257de83c44ae49e4aad1cf777b886794be3ac9c8d00c010ef55935d5bbeba5",
+      "bytes": 1101
     },
     {
       "path": "licenses/wordcraft/NOTICE",
-      "sha256": "9dd15df4ed3cb6069f3ad4efb1b402961f19462ca6e7cc445da468733a7c1333",
-      "bytes": 13081
+      "sha256": "8ff59a56c883fd708ed041c7a0ce4e16bb040e03027d94677d324ce711ebba2d",
+      "bytes": 12891
     },
     {
       "path": "licenses/wordcraft/OFL-biz-ud-mincho.txt",

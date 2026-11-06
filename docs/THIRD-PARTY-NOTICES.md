@@ -27,7 +27,7 @@ Those notices remain distributed with the application.
 | .NET Desktop runtime | 10.0.14 | Microsoft .NET MIT license/third-party notices; self-contained system runtime |
 | Specialist managed parsers | Exact source/package/native assets in vendor/Specialists/source-manifest.json and vendor/Specialists/runtime-manifest.json | CsvHelper (Apache-2.0 choice), ELFSharp/LiteDB/MimeKit/BouncyCastle/Prefetch/ApkReader/managed MediaInfo/RtfPipe (MIT), OpenMcdf (MPL-2.0), Serilog/SQLitePCLRaw (Apache-2.0), Microsoft.Data.Sqlite (MIT). Original full license texts under vendor/Specialists/licenses; full source and original package archives accompany the dependency-source release |
 | Native MediaInfo | Official signed26.10 DLL; vendor/Specialists/mediainfo-runtime.json | MediaInfoLib BSD-2-Clause, ZenLib/zlib permissive notices under licenses/MediaInfo. Official all-inclusive source and original Windows DLL package accompany the dependency-source release. No installer or Shell extension is used |
-| Embedded Office cores | WordCraft0.15.1 / GridCraft0.16.0 / DeckCraft0.15.0; exact source/native/font pins and ABI under vendor/Office | Source-built DLLs/minimal Pathweft bridges in an owned worker; MIT/Apache-2.0, original font/OFL and Rust dependency notices under Office/licenses. Complete donor/font archives, selected core graphs and156 dependency archives accompany corresponding sources. No Craft CLI/GUI/MCP ships; candidate status blocks final packaging until acceptance passes |
+| Embedded document cores | WordCraft0.15.2 / GridCraft0.16.1 / DeckCraft0.15.1 / PhotoCraft0.20.2 / VectorCraft0.21.1 / FigCraft0.15.1 / PdfCraft0.18.2; exact source/native/font pins and ABI under vendor/Office | Source-built DLLs/minimal Pathweft bridges in an owned worker; MIT/Apache-2.0, original font/OFL and Rust dependency notices under Office/licenses. Complete donor/font archives, selected core graphs and371 dependency archives accompany corresponding sources. Fig's exact-hash-bound stable-Rust compatibility edit and reproduction script accompany application source. No Craft CLI/GUI/MCP ships; qualification status blocks final packaging until acceptance passes |
 | LibreOffice fallback | Official26.2.7 Windows x64 / source26.2.7.3; selected9124-member runtime, MSI/source hashes under vendor/Office | Original MPL-2.0/LGPLv3+ and third-party terms in Office/LibreOffice/LICENSE.html, license.txt and NOTICE; complete official core/dictionaries source packs contain external build/patch/download recipes. Dependency manifest preserves full source table/actual PE imports without claiming all platform/build inputs are linked. Private Python/UNO and original Microsoft app-local redistributable terms are supplied; no system installation/registration |
 
 OpenMcdf is unmodified; its complete MPL-covered source is supplied. Recipients
@@ -38,6 +38,13 @@ The exact original NuGet artifact and MIT source/license are retained. ApkReader
 source archive omits a license file, but its shipped NuGet metadata explicitly
 declares MIT and authors Soar360 QL-Win; both the declaration and standard terms
 are preserved. No additional license is inferred for omitted donor services.
+
+The Craft donors' MIT/Apache terms do not replace their dependencies' terms.
+Selected `imbl`/`imbl-sized-chunks` retain MPL-2.0+ notices and complete source;
+bundled fonts retain their OFL/Ubuntu-font terms, and the selected JPEG encoder
+retains its IJG notice. The exact selected graphs and1055 original notice files
+are supplied under Office/. Corresponding sources include all selected registry/
+Git archives and complete donor/font inputs, including unmodified MPL-covered files.
 
 The matching normal release provides Pathweft-VERSION-source.zip and
 Pathweft-VERSION-dependency-sources.zip alongside the binaries and checksums.

@@ -5,15 +5,20 @@ import os
 from pathlib import Path
 import subprocess
 import tomllib
+import argparse
 
 ROOT=Path(__file__).resolve().parents[1]
-scratch=Path('D:/Temp/pathweft-s13-s9-s11/craft-cores')
+parser=argparse.ArgumentParser()
+parser.add_argument('--scratch-root',type=Path,default=Path('D:/Temp/pathweft-s13-s9-s11/craft-cores'))
+parser.add_argument('--engine',action='append',choices=['wordcraft','gridcraft','deckcraft','photocraft','vectorcraft','figcraft','pdfcraft'])
+args=parser.parse_args()
+scratch=args.scratch_root
 cache=Path('D:/BuildCache/Pathweft')
 compiler=cache/'rustup-craft/toolchains/1.95.0-x86_64-pc-windows-msvc/bin'
 environment=os.environ.copy()
 environment.update(CARGO_HOME=str(cache/'cargo'),RUSTUP_HOME=str(cache/'rustup-craft'),
     RUSTC=str(compiler/'rustc.exe'),TEMP=str(scratch/'temp'),TMP=str(scratch/'temp'))
-for engine in ('wordcraft','gridcraft','deckcraft'):
+for engine in args.engine or ('wordcraft','gridcraft','deckcraft'):
     donor=scratch/'sources'/engine
     command=[str(compiler/'cargo.exe'),'tree','--offline','--locked','--target','x86_64-pc-windows-msvc',
              '--edges','normal,build','--prefix','none','--format','{p}|{l}',

@@ -1,20 +1,29 @@
 [CmdletBinding()]
 param(
-    [Parameter(Mandatory)][ValidateSet('wordcraft','deckcraft','gridcraft')][string]$Engine,
+    [Parameter(Mandatory)][ValidateSet('wordcraft','deckcraft','gridcraft','photocraft','vectorcraft','figcraft','pdfcraft')][string]$Engine,
     [string]$ScratchRoot='D:\Temp\pathweft-s13-s9-s11\craft-cores',
-    [string]$CacheRoot='D:\BuildCache\Pathweft'
+    [string]$CacheRoot='D:\BuildCache\Pathweft',
+    [string]$Manifest,
+    [string]$ArchivesRoot='D:\BuildCache\Pathweft\office\sources',
+    [ValidateSet('Build','Test','Fixtures')][string]$Operation='Build',
+    [string]$FixtureRoot
 )
 $ErrorActionPreference='Stop'
 $root=Split-Path -Parent $PSScriptRoot
 $scratch=[IO.Path]::GetFullPath($ScratchRoot)
-if($scratch -ne 'D:\Temp\pathweft-s13-s9-s11\craft-cores'){throw 'Use the registered native compiler root.'}
+if($scratch -notin @('D:\Temp\pathweft-s13-s9-s11\craft-cores','D:\Temp\pathweft-s16\craft-cores')){throw 'Use the registered native compiler root.'}
+if(!$Manifest){$Manifest=Join-Path $root 'vendor/Office/runtime-manifest.json'}
+$Manifest=[IO.Path]::GetFullPath($Manifest)
 $donor=Join-Path $scratch "sources/$Engine"
 $bridge=Join-Path $donor 'apps/pathweft-office-bridge'
 if(!(Test-Path -LiteralPath (Join-Path $donor 'Cargo.lock'))){throw 'Prepare the hash-verified pinned donor source first.'}
+$compatibilityJson=& python -B (Join-Path $PSScriptRoot 'Apply-CraftCompatibility.py') --engine $Engine --source $donor
+if($LASTEXITCODE){throw 'Pinned core compatibility preparation failed.'}
+$compatibility=@($compatibilityJson|ConvertFrom-Json)
 [void][IO.Directory]::CreateDirectory((Join-Path $bridge 'src'))
 Copy-Item -LiteralPath (Join-Path $root "native/office/$Engine/Cargo.toml") -Destination $bridge
 foreach($source in Get-ChildItem -LiteralPath (Join-Path $root "native/office/$Engine/src") -File){Copy-Item -LiteralPath $source.FullName -Destination (Join-Path $bridge 'src')}
-Copy-Item -LiteralPath (Join-Path $root 'native/office/common/ffi.rs') -Destination (Join-Path $bridge 'src/ffi.rs')
+foreach($source in Get-ChildItem -LiteralPath (Join-Path $root 'native/office/common') -Filter '*.rs' -File){Copy-Item -LiteralPath $source.FullName -Destination (Join-Path $bridge 'src')}
 $inputFiles=@((Join-Path $bridge 'Cargo.toml'))+@(Get-ChildItem -LiteralPath (Join-Path $bridge 'src') -File|Sort-Object Name|ForEach-Object FullName)
 $inputHashes=@($inputFiles|ForEach-Object{(Get-FileHash -LiteralPath $_ -Algorithm SHA256).Hash}) -join ':'
 $stamp=Join-Path $bridge 'pathweft-build-inputs.txt'
@@ -34,8 +43,9 @@ try{
     # dependencies instead of recompiling and retaining three copies.
     $env:CARGO_TARGET_DIR=Join-Path $scratch 'target/native'
     $env:TEMP=Join-Path $scratch 'temp';$env:TMP=$env:TEMP
+    [void][IO.Directory]::CreateDirectory($env:TEMP)
     $env:CARGO_BUILD_JOBS='1'
-    if($Engine -in @('wordcraft','deckcraft')){
+    if($Engine -in @('wordcraft','deckcraft','photocraft','vectorcraft','figcraft','pdfcraft')){
         $env:CRAFT_FONTS_DIR=Join-Path $scratch "fonts/$Engine"
         $env:CRAFT_FONTS_REQUIRED='1'
         if(!(Test-Path -LiteralPath (Join-Path $env:CRAFT_FONTS_DIR 'fonts/manifest.txt'))){throw 'Prepare the exact release-pinned Craft font source first.'}
@@ -53,13 +63,22 @@ try{
     try{
         # The pinned upstream workspace, lock and patches govern its dependencies.
         # Only the Pathweft bridge is selected; no donor UI, CLI or MCP is built.
-        & (Join-Path $compiler 'cargo.exe') build --release --jobs 1 --package "pathweft-$Engine" --manifest-path (Join-Path $bridge 'Cargo.toml')
+        if($Operation -eq 'Fixtures'){
+            if(!$FixtureRoot){throw 'Exact fixture output is required.'}
+            & (Join-Path $compiler 'cargo.exe') run --release --jobs 1 --package "pathweft-$Engine" --manifest-path (Join-Path $bridge 'Cargo.toml') --example pathweft-fixtures -- $FixtureRoot
+        }else{
+            & (Join-Path $compiler 'cargo.exe') $Operation.ToLowerInvariant() --release --jobs 1 --package "pathweft-$Engine" --manifest-path (Join-Path $bridge 'Cargo.toml')
+        }
         if($LASTEXITCODE -ne 0){throw "The $Engine core bridge build failed."}
-        & python -B (Join-Path $PSScriptRoot 'Verify-CraftCoreLock.py') --engine $Engine
+        & python -B (Join-Path $PSScriptRoot 'Verify-CraftCoreLock.py') --engine $Engine --scratch-root $scratch --manifest $Manifest --archives-root $ArchivesRoot
         if($LASTEXITCODE -ne 0){throw 'The native bridge changed pinned upstream dependencies.'}
         [IO.File]::WriteAllText($stamp,$inputHashes)
         $dll=Join-Path $env:CARGO_TARGET_DIR ('release/pathweft_'+$Engine+'.dll')
-        @{engine=$Engine;dll=$dll;bytes=(Get-Item -LiteralPath $dll).Length;sha256=(Get-FileHash -LiteralPath $dll -Algorithm SHA256).Hash.ToLowerInvariant()}|ConvertTo-Json
+        $receipt=@{engine=$Engine;operation=$Operation;dll=$dll;bytes=(Get-Item -LiteralPath $dll).Length;sha256=(Get-FileHash -LiteralPath $dll -Algorithm SHA256).Hash.ToLowerInvariant();inputHashes=$inputHashes;source=(@((Get-Content -LiteralPath $Manifest -Raw|ConvertFrom-Json).apps)|Where-Object id -eq $Engine).sourceCommit}
+        $receipt.compatibilityPatches=$compatibility
+        $receipts=Join-Path $scratch 'receipts';[void][IO.Directory]::CreateDirectory($receipts)
+        $receipt|ConvertTo-Json|Set-Content -LiteralPath (Join-Path $receipts "$Engine-$Operation.json") -Encoding utf8
+        $receipt|ConvertTo-Json
     }finally{Pop-Location}
 }finally{
     foreach($name in $names){[Environment]::SetEnvironmentVariable($name,$previous[$name],'Process')}

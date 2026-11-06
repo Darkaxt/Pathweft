@@ -4,7 +4,7 @@
   "target": "x86_64-pc-windows-msvc",
   "edges": "normal,build",
   "scope": "Feature/target-selected build graph. Build-time packages are included; this is not a claim that all code is linked.",
-  "sourceLockSha256": "a0e71c3738c332bb6b7899e07d5bd3ed93d4cc747efb216340d2fbf33a14ddce",
+  "sourceLockSha256": "d8defc9f8d58d32073d74f3dabc8ffc21343794dcb18f1b2477b55905665186e",
   "packages": [
     {
       "name": "adler2",
@@ -866,47 +866,47 @@
     },
     {
       "name": "wordcraft-doc",
-      "version": "0.15.1",
+      "version": "0.15.2",
       "license": "MIT OR Apache-2.0"
     },
     {
       "name": "wordcraft-docbin",
-      "version": "0.15.1",
+      "version": "0.15.2",
       "license": "MIT OR Apache-2.0"
     },
     {
       "name": "wordcraft-docx",
-      "version": "0.15.1",
+      "version": "0.15.2",
       "license": "MIT OR Apache-2.0"
     },
     {
       "name": "wordcraft-fonts",
-      "version": "0.15.1",
+      "version": "0.15.2",
       "license": "MIT OR Apache-2.0"
     },
     {
       "name": "wordcraft-formats",
-      "version": "0.15.1",
+      "version": "0.15.2",
       "license": "MIT OR Apache-2.0"
     },
     {
       "name": "wordcraft-geom",
-      "version": "0.15.1",
+      "version": "0.15.2",
       "license": "MIT OR Apache-2.0"
     },
     {
       "name": "wordcraft-layout",
-      "version": "0.15.1",
+      "version": "0.15.2",
       "license": "MIT OR Apache-2.0"
     },
     {
       "name": "wordcraft-metafile",
-      "version": "0.15.1",
+      "version": "0.15.2",
       "license": "MIT OR Apache-2.0"
     },
     {
       "name": "wordcraft-render",
-      "version": "0.15.1",
+      "version": "0.15.2",
       "license": "MIT OR Apache-2.0"
     },
     {

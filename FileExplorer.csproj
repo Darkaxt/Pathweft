@@ -9,7 +9,7 @@
     <AssemblyName>Pathweft</AssemblyName>
     <Product>Pathweft</Product>
     <Company>Darkaxt</Company>
-    <Version>1.1.25</Version>
+    <Version>1.1.26</Version>
     <!-- WPF windows without their own Icon use this one, so every window gets it -->
     <ApplicationIcon>app.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
@@ -24,6 +24,8 @@
     <StartupObject>FileExplorer.Program</StartupObject>
     <ImplicitUsings>enable</ImplicitUsings>
     <ExcludeSevenZipAssemblies>true</ExcludeSevenZipAssemblies>
+    <OfficeCoreRuntimeRoot Condition="'$(OfficeCoreRuntimeRoot)' == ''">$(OfficeRuntimeRoot)\core-sets\s16-20261106</OfficeCoreRuntimeRoot>
+    <OfficeRuntimeManifest Condition="'$(OfficeRuntimeManifest)' == ''">$(MSBuildProjectDirectory)\vendor\Office\runtime-manifest.json</OfficeRuntimeManifest>
   </PropertyGroup>
   <ItemGroup>
     <None Include="$(ShellRouterRoot)\x64\PathweftShell.dll" Link="PathweftShell-$(Version)-x64.dll" CopyToOutputDirectory="PreserveNewest" />
@@ -37,12 +39,13 @@
     <None Include="$(F3DRuntimeRoot)\bin\vcruntime140.dll" Link="Rars\vcruntime140.dll" CopyToOutputDirectory="PreserveNewest" />
     <None Include="$(MpvRuntimeRoot)\*.dll" Link="MPV\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <None Include="$(MpvRuntimeRoot)\MPV-BUILDINFO.json" Link="MPV\MPV-BUILDINFO.json" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="$(OfficeRuntimeRoot)\cores\**\*.dll" Link="Office\cores\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="$(OfficeCoreRuntimeRoot)\**\*.dll" Link="Office\cores\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <None Include="$(OfficeRuntimeRoot)\libreoffice\runtime\**\*" Link="Office\LibreOffice\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <None Update="native\office\libreoffice\worker.py" Link="Office\libreoffice-worker.py" CopyToOutputDirectory="PreserveNewest" />
     <None Remove="vendor\Office\licenses\**\*" />
     <None Include="vendor\Office\licenses\**\*" Link="Office\licenses\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
-    <None Update="vendor\Office\runtime-manifest.json" Link="Office\runtime-manifest.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Remove="vendor\Office\runtime-manifest.json" />
+    <None Include="$(OfficeRuntimeManifest)" Link="Office\runtime-manifest.json" CopyToOutputDirectory="PreserveNewest" />
     <None Update="vendor\Office\libreoffice-runtime-manifest.json" Link="Office\libreoffice-runtime-manifest.json" CopyToOutputDirectory="PreserveNewest" />
     <None Update="vendor\Office\license-manifest.json" Link="Office\license-manifest.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="$(MpvRuntimeRoot)\licenses\**\*" Link="MPV\licenses\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />

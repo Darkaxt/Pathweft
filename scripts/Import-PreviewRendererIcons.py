@@ -5,12 +5,18 @@ from pathlib import Path
 import struct
 import zipfile
 import pefile
+import argparse
 
 ROOT=Path(__file__).resolve().parents[1]
 vendor=ROOT/'vendor/Office/icons';vendor.mkdir(exist_ok=True)
 manifest=json.loads((ROOT/'vendor/Office/runtime-manifest.json').read_text())
-records=[]
+parser=argparse.ArgumentParser()
+parser.add_argument('--engine',action='append')
+args=parser.parse_args()
+record_path=vendor/'source-manifest.json'
+records=json.loads(record_path.read_text()) if args.engine and record_path.exists() else []
 for app in manifest['apps']:
+    if args.engine and app['id'] not in args.engine:continue
     archive=Path('D:/BuildCache/Pathweft/office/sources')/app['sourceArchive']
     if hashlib.sha256(archive.read_bytes()).hexdigest()!=app['sourceSha256']:raise ValueError('Craft source pin differs')
     member='assets/app-icon/'+app['id']+'.ico'
@@ -18,8 +24,17 @@ for app in manifest['apps']:
         matches=[name for name in source.namelist() if name.split('/',1)[-1]==member]
         if len(matches)!=1:raise ValueError('Expected one app icon')
         content=source.read(matches[0])
+        license_member=next((name for name in source.namelist() if name.split('/',1)[-1]=='assets/app-icon/LICENSE.txt'),None)
+        if license_member:
+            (ROOT/'vendor/Office/licenses'/app['id']/'app-icon-LICENSE.txt').write_bytes(source.read(license_member))
     (vendor/(app['id']+'.ico')).write_bytes(content)
+    records=[record for record in records if record['id']!=app['id']]
     records.append(dict(id=app['id'],source=app['sourceUrl'],member=member,sha256=hashlib.sha256(content).hexdigest(),license='MIT OR Apache-2.0; see the pinned ATTRIBUTION.md app-icon entries'))
+
+if args.engine:
+    record_path.write_text(json.dumps(records,indent=2)+'\n',encoding='utf-8',newline='\n')
+    print(json.dumps(records))
+    raise SystemExit(0)
 
 runtime=Path('D:/BuildCache/Pathweft/office/libreoffice/runtime/program/soffice.exe')
 fallback=json.loads((ROOT/'vendor/Office/libreoffice-runtime-manifest.json').read_text())
@@ -43,5 +58,5 @@ with pefile.PE(str(runtime)) as pe:
     content=bytes(directory)+b''.join(chunks)
 (vendor/'libreoffice.ico').write_bytes(content)
 records.append(dict(id='libreoffice',source=fallback['msiUrl'],member='program/soffice.exe RT_GROUP_ICON '+str(group.id),runtimeSha256=expected,sha256=hashlib.sha256(content).hexdigest(),license='Unmodified LibreOffice identification icon; see bundled LibreOffice LICENSE.html and NOTICE'))
-(vendor/'source-manifest.json').write_text(json.dumps(records,indent=2)+'\n',encoding='utf-8')
+(vendor/'source-manifest.json').write_text(json.dumps(records,indent=2)+'\n',encoding='utf-8',newline='\n')
 print(json.dumps(records))

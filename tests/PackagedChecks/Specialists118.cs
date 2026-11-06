@@ -89,6 +89,7 @@ sealed partial class PackageProbe
         {
             await Show(Copy(name),"office");Check(string.Equals((string)Get(preview,"RendererId"),"libreoffice",StringComparison.OrdinalIgnoreCase)&&Descendants<Image>(target).Any(image=>image.Source is BitmapSource),"Delivered fallback renders actual legacy presentation/Visio content: "+name);await Clear();
         }
+        await VerifyCraftCores16(target,preview);
         var widgetType=Type("SearchWidgetWindow");var widget=Activator.CreateInstance(widgetType,Flags,null,new object[]{owner},null);
         try
         {

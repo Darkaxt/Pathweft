@@ -22,7 +22,8 @@ def save(folder,name,data):
     target.parent.mkdir(parents=True,exist_ok=True)
     target.write_bytes(data)
 
-for engine in ('wordcraft','gridcraft','deckcraft'):
+manifest=json.loads((ROOT/'vendor/Office/runtime-manifest.json').read_text())
+for engine in (app['id'] for app in manifest['apps'] if app.get('nativeFiles')):
     graph=json.loads((ROOT/f'vendor/Office/{engine}-core-dependencies.json').read_text())
     for package in graph['packages']:
         source=package.get('source','')

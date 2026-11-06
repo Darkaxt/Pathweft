@@ -12,9 +12,9 @@ internal sealed class OfficeDocument : IAsyncDisposable
     CancellationTokenSource lifetime;
     OfficeWorkerProcess worker;
     string source,engine,primaryError;
-    bool fallbackAttempted,disposed;
+    bool fallbackAttempted,disposed,coreOnly;
     internal OfficeWorker.Information Info {get;private set;}
-    internal string[] Sheets=>Info?.Kind=="spreadsheet"?Info.Parts.Select(p=>p.Name).ToArray():Array.Empty<string>();
+    internal string[] Sheets=>Info?.Kind is "spreadsheet" or "artboards" or "frames"?Info.Parts.Select(p=>p.Name).ToArray():Array.Empty<string>();
     internal string Warnings=>string.Join("\n",Info?.Notes??Array.Empty<string>());
     internal string PrimaryFailure=>primaryError;
     internal string RendererDetails=>string.Join("\n",new[]{primaryError==null?null:"Fallback after "+primaryError}.Concat(Info?.Notes??Array.Empty<string>()).Where(s=>!string.IsNullOrWhiteSpace(s)));
@@ -23,6 +23,7 @@ internal sealed class OfficeDocument : IAsyncDisposable
     internal string SourceForVerification=>source;
     internal int WorkerForVerification=>worker?.ProcessId??0;
     internal bool FallbackForVerification=>fallbackAttempted;
+    internal Action<OfficeWorker.Request> RequestSentForVerification {set=>worker.RequestSentForVerification=value;}
 #endif
 
     static string Primary(string extension)=>extension.ToLowerInvariant() switch
@@ -32,7 +33,13 @@ internal sealed class OfficeDocument : IAsyncDisposable
         ".pptx"=>"deckcraft",_=>null
     };
 
-    internal async Task Open(string path,CancellationToken token)
+    internal Task Open(string path,CancellationToken token)=>Open(path,null,token);
+    internal Task OpenCore(string path,string core,CancellationToken token)
+    {
+        if(core is not ("photocraft" or "vectorcraft" or "figcraft" or "pdfcraft"))throw new ArgumentException("Unknown document core.",nameof(core));
+        return Open(path,core,token);
+    }
+    async Task Open(string path,string core,CancellationToken token)
     {
         folder=Path.Combine(DataFolder.Cache,"office-preview",identity);
         // LibreOffice's extension registry appends long component names to its
@@ -60,10 +67,10 @@ internal sealed class OfficeDocument : IAsyncDisposable
                 }
             }
         }
-        token.ThrowIfCancellationRequested();engine=Primary(Path.GetExtension(path));
+        token.ThrowIfCancellationRequested();coreOnly=core!=null;engine=core??Primary(Path.GetExtension(path));
         if(engine==null){fallbackAttempted=true;engine="libreoffice";await Start();return;}
         try{await Start();}
-        catch(Exception error)when(RendererFailure(error)&&!token.IsCancellationRequested){await Fallback(error,token);}
+        catch(Exception error)when(!coreOnly&&RendererFailure(error)&&!token.IsCancellationRequested){await Fallback(error,token);}
     }
 
     async Task Start()
@@ -93,6 +100,25 @@ internal sealed class OfficeDocument : IAsyncDisposable
     }
 
     internal sealed record PageResult(int Part,int Page,OfficeWorker.Raster Raster);
+    // Returns only the requested text batch. The caller decides whether to
+    // continue, index or discard it; previews retain no full extracted copy.
+    internal async Task<OfficeWorker.TextBatch> ExtractText(OfficeWorker.TextCursor cursor,CancellationToken token,int limit=16384)
+    {
+        if(limit is <1024 or >48*1024)throw new ArgumentOutOfRangeException(nameof(limit));
+        await serial.WaitAsync(token);
+        try
+        {
+            token.ThrowIfCancellationRequested();lifetime.Token.ThrowIfCancellationRequested();
+            if(disposed)throw new ObjectDisposedException(nameof(OfficeDocument));
+            var result=await worker.Request(new("extract",Unit:cursor?.Unit??0,Offset:cursor?.Offset??0,Limit:limit),token);
+            var batch=System.Text.Json.JsonSerializer.Deserialize<OfficeWorker.TextBatch>(result.Pixels,OfficeWorker.Json)??throw new IOException("Invalid text extraction reply.");
+            if(batch.Records==null||batch.Coverage==null||batch.Status is not ("text" or "empty" or "image-only" or "unsupported"))throw new IOException("Invalid text extraction metadata.");
+            if(batch.Records.Any(r=>r.Text==null||r.Location.ValueKind!=System.Text.Json.JsonValueKind.Object))throw new IOException("Invalid text extraction location.");
+            if(batch.Next!=null&&cursor!=null&&(batch.Next.Unit<cursor.Unit||(batch.Next.Unit==cursor.Unit&&batch.Next.Offset<=cursor.Offset)))throw new IOException("Text extraction did not advance.");
+            return batch;
+        }
+        finally{serial.Release();}
+    }
     internal async Task<PageResult> RenderPage(int part,int page,CancellationToken token)
     {
         await serial.WaitAsync(token);
@@ -103,7 +129,7 @@ internal sealed class OfficeDocument : IAsyncDisposable
             if(part<0||part>=Info.Parts.Length||page<0||(Info.Parts[part].Pages>0&&page>=Info.Parts[part].Pages))throw new ArgumentOutOfRangeException(nameof(page));
             string selectedName=Info.Parts[part].Name;
             try{return await Render(part,page,token);}
-            catch(Exception error)when(RendererFailure(error)&&!token.IsCancellationRequested&&!lifetime.IsCancellationRequested)
+            catch(Exception error)when(!coreOnly&&RendererFailure(error)&&!token.IsCancellationRequested&&!lifetime.IsCancellationRequested)
             {
                 await Fallback(error,token);
                 int match=Array.FindIndex(Info.Parts,p=>p.Name.Equals(selectedName,StringComparison.OrdinalIgnoreCase));

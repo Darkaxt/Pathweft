@@ -12,13 +12,15 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 parser=argparse.ArgumentParser()
 parser.add_argument('--scratch-root',type=Path,required=True)
+parser.add_argument('--manifest',type=Path,default=ROOT/'vendor/Office/runtime-manifest.json')
+parser.add_argument('--archives-root',type=Path,default=Path('D:/BuildCache/Pathweft/office/sources'))
 args=parser.parse_args()
 scratch=args.scratch_root.resolve()
-if not str(scratch).lower().startswith('d:\\temp\\pathweft-s13-s9-s11\\craft-cores'):
+if scratch not in (Path('D:/Temp/pathweft-s13-s9-s11/craft-cores').resolve(),Path('D:/Temp/pathweft-s16/craft-cores').resolve()):
     raise ValueError('Use the registered exact Craft compiler scratch root')
-manifest=json.loads((ROOT/'vendor/Office/runtime-manifest.json').read_text())
+manifest=json.loads(args.manifest.read_text())
 for app in manifest['apps']:
-    archive_path=Path('D:/BuildCache/Pathweft/office/sources')/app['sourceArchive']
+    archive_path=args.archives_root/app['sourceArchive']
     if hashlib.file_digest(archive_path.open('rb'),'sha256').hexdigest()!=app['sourceSha256']:
         raise ValueError('Donor archive hash mismatch: '+app['id'])
     destination=scratch/'sources'/app['id']
