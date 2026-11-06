@@ -3,6 +3,24 @@
 Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.65, 2026-11-06,
 including the user-authorized continued comparison requirement TRANSFER-07.
 
+Current delivery2026-11-06: S17 COMPLETE through the user-owned installed1.1.24
+update and readback35716. Normal v1.1.24 is published
+at abacf4171f753616dd50ac2233b58df364036692 with all six required assets.
+Independent retrieval verifies asset hashes, corresponding sources, native
+x86/x64 routing and actual app-host selftest. Full actual consumer57492 passes
+the original assertions against the downloaded application; only its initial
+folders were isolated and additional search diagnostics collected. All package
+members remain hash-matched. The approved local Everything lvm=0/GUI recovery
+restored SDK readiness and queries; its service and saved data are preserved.
+Installed readback verifies10674 members, restarted main45604/helper68276,
+readiness,22 owned routes and unchanged Darkaxt.Pathweft shortcut/profile identity.
+All assigned acceptance criteria pass, with no unresolved blocker or tracked
+deferral. No stage is ACTIVE; no later stage is activated. The existing design
+assessment below remains applicable; no new consolidation is required.
+See [S17 verification](verification/2026-11-06-s17-refinements.md).
+
+The following authorization and source checkpoints are historical.
+
 Current next-update request: S17 ACTIVE for TRANSFER-16, differences-first
 conflict review with newer-destination warnings, precise conditional values,
 explicit matching-file reveal and preserved full-set resolution. S15/1.1.23 is
@@ -317,7 +335,7 @@ This residual is cleanup work, not evidence of passed Office integration.
 | S11 | COMPLETE | Corrected native126032 source/integration: actual Frequent readback/removal/privacy/reconstruction, cold/warm links and installed-list preservation; user reports pin/restart persistence | None in assigned source/integration scope | S15 final packaged/independent/installed delivery, including native menu update preservation |
 | S14 | COMPLETE | Native91140 verifies shared layouts/themes/text/96-144DPI, navigation, actual updater HTTP/retry/cancellation/download/handoff.102436 verifies real successful transfer dismissal, Undo and adverse/multi-job retention.103700 verifies preview host/session/lease/lifecycle preservation. Scope reconciliation and closure assessment pass | None within assigned source/integration acceptance | S15 combined final release/independent/installed delivery |
 | S15 | COMPLETE | SPACE/CORE source workflows44956/19244/51812/48584, transfer53320 and private native clipboard26532 pass. Full final57312/independent51296 verify actual1.1.23 package, sources and native/app boundaries. Installed58076 verifies10674 members, restarted main/helper/readiness,22 routes and shortcut/pin identity | None in assigned scope | None; combined normal1.1.23 delivery verified, no later stage activated |
-| S17 | ACTIVE | PREVIEW-38 source61048/57588 verifies selection-following, pin/unpin and renderer/host lifecycle; TRANSFER-16 source60620 and CORE-22 ICO sizes pass | Actual combined package, normal release, independent and installed verification remain | None deferred; this stage owns its complete next-update outcome |
+| S17 | COMPLETE | TRANSFER-16/PREVIEW-38/CORE-22 source, combined package, normal1.1.24 release, independently retrieved full consumer57492 and installed readback35716 pass | None | None |
 
 The earlier planning snapshot and historical per-stage delivery wording below
 are superseded only for this combined request's sequencing by spec0.40. No
@@ -799,7 +817,7 @@ plan neither authorizes itself nor adds approval checkpoints.
 | S11 - Native pinned/frequent folder Jump Lists | COMPLETE | JUMP-01..02; affected CORE-01/02 and LIFE/DELIVERY | S9 COMPLETE | Corrected native126032 source/integration passes; S15 owns combined final delivery/native update preservation. |
 | S14 - Window design consistency and update feedback | COMPLETE | WINDOW-01..03, UPDATE-02, TRANSFER-14; affected CORE-03/LIFE/DELIVERY | S11 source/integration COMPLETE | Actual auxiliary/HTTP/update91140, real completion/error/multi-job transfer102436 and floating-preview lifecycle103700 pass. Combined delivery remains S15. |
 | S15 - Current-pane disk analysis | COMPLETE | SPACE-01..05, CORE-11/19..21, TRANSFER-15; affected CORE/LIFE/DELIVERY | S14 source/integration COMPLETE | Source/native acceptance plus full final57312/independent51296 and installed58076 close normal1.1.23 delivery. No required blocker or deferral remains. |
-| S17 - Transfer review, preview and icon refinements | ACTIVE | TRANSFER-16, PREVIEW-38, CORE-22; affected LIFE/DELIVERY | S15 delivered | Difference-only review/newer warnings/full-set actions; selection-following/pinned PiP/Windowed; approved transparent folder/compass icon with preserved Windows identity. Complete feature qualifications then one combined verified normal release. |
+| S17 - Transfer review, preview and icon refinements | COMPLETE | TRANSFER-16, PREVIEW-38, CORE-22; affected LIFE/DELIVERY | S15 delivered | Difference-only review/newer warnings/full-set actions; selection-following/pinned PiP/Windowed; transparent folder/compass icon and preserved Windows identity. Normal1.1.24 independently downloaded and installed-verified. |
 | S16 - Craft core refresh and additional renderers (proposed) | NOT STARTED | Scope assessment in CRAFT-CORE-REVIEW.md; implementation requirements to establish before activation | S15 delivered; Pathweft-related work precedes unrelated shell integration | Evaluate existing Office core refresh and additional Photo/Vector/Fig/PDF libraries using source-built DLLs/owned workers; no installed-product or MCP dependency. No implementation started. |
 | S12 - Tresorit capability investigation | NOT STARTED | TRES-01..04 | S15 delivered; proposed S16 considered first | Supported API/client assessment, bounded REA as needed, evidence-backed capability matrix/decision and implementation proposal. Investigation only; no cloud mutation or integration implementation. |
 | S6 - Native StartAllBack search | BLOCKED | SAB-01..06; affected SEARCH/CORE/LIFE/DELIVERY criteria | Parked until Pathweft-first work S13/S9/S11/S12 is closed and execution is resumed; retain unresolved native feasibility boundaries | Investigation only; no complete SAB criterion. Qualify native groups/provider/cancellation/handoff/lifecycle/direct routing and independently verified adapter release in S6; no automatic Sandbox restart. |

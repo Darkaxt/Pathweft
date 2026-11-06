@@ -2,6 +2,14 @@
 
 Version 0.65 - 2026-11-06. Owner: Darkaxt.
 
+Execution reconciliation2026-11-06: S17 COMPLETE. TRANSFER-16, PREVIEW-38 and
+CORE-22 are delivered in normal v1.1.24 at abacf4171f753616dd50ac2233b58df364036692.
+Actual source/package, independent retrieval/full consumer57492 and installed
+readback35716 verify all assigned criteria, including preserved Windows identity.
+No unresolved S17 blocker or tracked deferral remains; no stage is ACTIVE.
+Later unrequested stages remain unchanged. See the S17 verification record.
+The authorization descriptions below document the scope at implementation start.
+
 Approved branding direction2026-11-05, CORE-22, assigned to ACTIVE S17:
 replace the application icon with the user-approved yellow folder and compass.
 Use a clear darker compass silhouette at small title/taskbar sizes; retain

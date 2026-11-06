@@ -1,5 +1,19 @@
 # Pathweft development
 
+Current2026-11-06 delivery: S17 COMPLETE through installed1.1.24 acceptance.
+Normal v1.1.24/abacf417 is published with all six required assets. Independent
+download/source/native/app verification passes, including the full actual
+consumer57492 with original assertions and isolated initial folders. The local
+Everything GUI hang was recovered under explicit user approval: only lvm1->0
+and the exact hung GUI restart; service8216/settings/index preserved. Actual SDK
+readiness/query and full consumer pass after recovery. This is a local approved
+workaround, not a new product dependency or proof of the exact freeze cause.
+User-owned updater readback35716 verifies10674 installed members, restarted
+main45604/helper68276, helper readiness,22 owned routes and unchanged
+Darkaxt.Pathweft shortcut/profile identity. No required blocker/deferral remains;
+no stage is ACTIVE and no later stage is activated. See the S17 verification
+record. Historical checkpoints below must not restart completed work.
+
 Next-update request2026-11-05/spec0.65: S17 ACTIVE for TRANSFER-16/PREVIEW-38/CORE-22. Default
 conflict table shows only size/date differences and only differing properties;
 existing destination files newer than incoming go first in orange with a textual
