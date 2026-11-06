@@ -1,9 +1,19 @@
 # Pathweft specification
 
-Version 0.67 - 2026-11-06. Owner: Darkaxt.
+Version 0.68 - 2026-11-06. Owner: Darkaxt.
+
+Plan addition2026-11-06: S20 - Integrated PowerToys file tools is NOT STARTED
+after S19 and before S6. TOOLS-01..09 register the seven discussed capabilities:
+PowerRename, File Locksmith, Image Resizer, Text Extractor/OCR, Registry Preview,
+local deterministic Advanced Paste and New+. New+ is included at lower priority.
+Borrow focused source implementations and integrate them into Pathweft's own
+UI/selection/operation lifecycle; do not require a separate PowerToys installation.
+This authorizes documentation only, not implementation, installation, registry
+changes or process control. No stage is ACTIVE. The Linux comparison remains
+research and does not automatically add its findings to the implementation scope.
 
 Plan addition2026-11-06: S19 - Selected-folder content indexing is NOT STARTED,
-immediately after S12 and before S6. CONTENT-01..06 record folder opt-in,
+immediately after S12 and before S20. CONTENT-01..06 record folder opt-in,
 qualified Craft/plain-text extraction, searchable strings with source-location
 arrays, periodic incremental refresh and current-index icon badges. Retaining
 whole extracted documents or offline excerpts is superseded by the user's lean
@@ -13,7 +23,7 @@ schedules, settings changes or implementation are activated.
 
 Plan addition2026-11-06: S18 - Contextual performance monitoring is NOT STARTED,
 ordered after S16 and before S12. Remaining execution order is
-S16 -> S18 -> S12 -> S19 -> S6 -> S7. This request authorizes specification/plan changes
+S16 -> S18 -> S12 -> S19 -> S20 -> S6 -> S7. This request authorizes specification/plan changes
 only; it does not activate monitoring, tracing, privileged helpers or installation.
 MONITOR-01..05 below capture the agreed bottom-card and Resource Monitor-inspired
 detail behavior. No implementation stage is ACTIVE.
@@ -1376,7 +1386,7 @@ deletion restriction is a provider capability boundary, not an NTFS ACL fix.
 
 ### Selected-folder content indexing (S19)
 
-Planned immediately after S12 and before S6; NOT STARTED. Everything remains the
+Planned immediately after S12 and before S20; NOT STARTED. Everything remains the
 filename/path engine. Content indexing is opt-in for selected folders and is a
 separate capability. This planning request does not authorize extracting user
 documents, hydrating cloud files, starting indexers or installing components.
@@ -1394,6 +1404,38 @@ No implementation criterion is satisfied yet. Extractor APIs, search granularity
 provider metadata reliability and resource budgets remain to qualify in this scope.
 There are no tracked deferrals. No system-wide index or search-service change is
 authorized by registration of this stage.
+
+### Integrated PowerToys file tools (S20)
+
+Planned after S19 and before S6; NOT STARTED. Scope is the seven capabilities
+accepted in the brainstorming discussion, with New+ last in implementation
+priority. This registration does not activate implementation or any live action.
+Use the [PowerToys source](https://github.com/microsoft/PowerToys/tree/main/src/modules)
+as a donor, not a separately installed product or a promise of drop-in libraries.
+
+| ID | Requirement and acceptance |
+| --- | --- |
+| TOOLS-01 | Upgrade the existing batch-rename workflow using selected PowerRename source for regex/literal replacement, case conversion, configurable numbering and date substitutions. Keep current pattern workflows compatible, preview old/new names and invalid/colliding results before applying, and integrate actual rename execution, failure handling and Undo with Pathweft's existing owner. Qualify cancellation, name cycles/case-only changes and representative Unicode/path cases without silently substituting the donor's independent undo/settings ownership. |
+| TOOLS-02 | Integrate File Locksmith's process/file-use discovery into selected-file/folder context actions and relevant failed transfer/delete details. Show accessible process identity and affected paths, explicit access/privilege limitations, refresh/cancellation and actionable diagnostics. Qualification must identify a real controlled file holder and its release. Process termination, forced handle closure and automatic elevation are not included in the accepted discovery scope. |
+| TOOLS-03 | Integrate Image Resizer as a selected-image batch action with size presets/custom dimensions, proportional fit/fill/stretch choices, quality and explicit output destination/naming. Preserve originals by default; replacement must be an explicit choice using existing conflict/operation handling. Qualify actual dimensions/output decoding, orientation, metadata options, errors/cancellation and source preservation on advertised formats. |
+| TOOLS-04 | Integrate Text Extractor/OCR into image previews, including selection of a preview region and explicit text-copy action. Qualify supported input conversion, region coordinates/scaling and actual language availability; clearly report missing Windows OCR capabilities/language packs instead of installing them silently or claiming bundled language coverage. OCR output is recognized text, not guaranteed exact transcription. Keep broader automatic OCR indexing outside S19's already defined extractor coverage unless separately requested. |
+| TOOLS-05 | Integrate Registry Preview parsing/presentation for selected .reg files as a structured key/value tree in the existing preview hosts, with source-text access and useful invalid-content errors. Preserve file contents and preview isolation; registry import/write and changing the default .reg association are outside this preview scope. Qualify actual supported syntax, large/malformed input, selection replacement and PiP/Windowed lifecycle. |
+| TOOLS-06 | Integrate the deterministic Advanced Paste subset as explicit Paste as file actions for clipboard text, HTML and images, producing .txt/.html/.png files in the current writable folder. Qualify actual native clipboard formats, destination naming/conflicts, repeat invocation, clipboard preservation and Undo; preserve existing file Copy/Cut/Paste behavior. AI providers, model installation, media transcoding, global clipboard hooks/history and automatic clipboard transformation are outside this scope. |
+| TOOLS-07 | Add lower-priority New+ file/folder templates to existing New File/New Folder workflows, including a configurable template directory, folder structures and supported filename variables. Qualify template discovery, actual creation/rename selection, conflicts, failure/cancellation and Undo without launching template content or changing Explorer's New menu. Reuse Pathweft storage policy and do not require PowerToys settings or template locations. Lower priority is execution order, not a deferral or omission from S20 acceptance. |
+| TOOLS-08 | Pin exact donor source/dependency revisions and retain required notices/distribution materials. Inspect each module's actual build/runtime coupling before extraction: existing PowerRename static-library separation does not establish a standalone supported ABI. Use focused bundled native DLLs or managed assemblies as appropriate and existing owned workers where needed; keep one Pathweft settings, selection, command and operation owner. No standalone PowerToys installation, runner, shell-extension registration, telemetry infrastructure, global hooks or endpoint/MCP dependency. Do not introduce a generalized plugin framework. Preserve current theme/proportions, contextual eligibility, accessible names and source/clipboard data. |
+| TOOLS-09 | Verify all seven complete integrated workflows against actual borrowed implementations, including applicable file/clipboard/Windows boundaries, errors, cancellation, Undo, preview replacement/host transitions and app-exit cleanup. Record exact supported scope and measure added package size, invocation latency and idle/peak resources before making footprint/performance claims. No capability is accepted solely from an upstream feature list or isolated library test. S20 owns normal final release, corresponding sources/notices, independent retrieval and applicable installed verification once implementation is separately authorized. No per-tool intermediate release. |
+
+Initial source review: [PowerRename](https://github.com/microsoft/PowerToys/tree/main/src/modules/powerrename),
+[File Locksmith](https://github.com/microsoft/PowerToys/tree/main/src/modules/FileLocksmith),
+[Image Resizer](https://github.com/microsoft/PowerToys/tree/main/src/modules/imageresizer),
+[OCR](https://github.com/microsoft/PowerToys/tree/main/src/modules/PowerOCR),
+[Registry Preview](https://github.com/microsoft/PowerToys/tree/main/src/modules/registrypreview),
+[Advanced Paste](https://github.com/microsoft/PowerToys/tree/main/src/modules/AdvancedPaste),
+[New+](https://github.com/microsoft/PowerToys/tree/main/src/modules/NewPlus),
+and [license](https://github.com/microsoft/PowerToys/blob/main/LICENSE).
+These main-branch links are research pointers, not adopted pins. No implementation
+criterion has passed; module extraction, runtime compatibility and resource costs
+remain unqualified. No tracked deferral or ACTIVE stage is introduced.
 
 ### Lifecycle, shell integration and final delivery
 

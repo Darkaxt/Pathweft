@@ -1,15 +1,25 @@
 # Pathweft development
 
-Plan-only addition2026-11-06/spec0.67: S19 Selected-folder content indexing is
-NOT STARTED immediately after S12, before S6. CONTENT-01..06 capture toolbar
+Plan-only addition2026-11-06/spec0.68: S20 Integrated PowerToys file tools is
+NOT STARTED after S19 and before S6. TOOLS-01..09 cover borrowed PowerRename,
+File Locksmith, Image Resizer, OCR, Registry Preview, deterministic Advanced
+Paste and lower-priority New+ capabilities inside Pathweft's existing UI and
+operation ownership. Qualify pinned source/dependencies/licenses and complete
+workflows; no installed PowerToys, runner, global hooks or endpoint dependency.
+This request registers future work only; no implementation or live changes.
+Remaining order: S16 -> S18 -> S12 -> S19 -> S20 -> S6 -> S7. No stage is ACTIVE.
+The Linux file-manager comparison remains research, not additional plan scope.
+
+Plan-only addition2026-11-06/spec0.68: S19 Selected-folder content indexing is
+NOT STARTED immediately after S12, before S20. CONTENT-01..06 capture toolbar
 folder opt-in, current magnifier badges, qualified Craft/text extraction and
 searchable strings/source-location arrays without whole-text/offline-excerpt
 retention. Periodic metadata refresh must preserve source/cloud files and allow
 provider cache eviction; qualify actual extraction/query/metadata/resource behavior.
 No indexing, download, schedule or implementation is activated by this request.
 
-Plan-only addition2026-11-06/spec0.67: S18 Contextual performance monitoring is
-NOT STARTED between S16 and S12. Remaining order S16 -> S18 -> S12 -> S19 -> S6 -> S7.
+Plan-only addition2026-11-06/spec0.68: S18 Contextual performance monitoring is
+NOT STARTED between S16 and S12. Remaining order S16 -> S18 -> S12 -> S19 -> S20 -> S6 -> S7.
 MONITOR-01..05 record a direct Statistics/Performance switch, CPU/GPU/current-drive/
 recursive-current-folder cards and Resource Monitor-inspired process/file details.
 Qualify actual source/privilege/I/O semantics and bounded visible-only collection

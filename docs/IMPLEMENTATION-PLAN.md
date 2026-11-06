@@ -1,7 +1,17 @@
 # Implementation and reconciliation
 
-Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.67, 2026-11-06,
+Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.68, 2026-11-06,
 including the user-authorized continued comparison requirement TRANSFER-07.
+
+Plan addition2026-11-06: S20 - Integrated PowerToys file tools is NOT STARTED
+after S19 and before S6. TOOLS-01..09 cover source-borrowed PowerRename, File
+Locksmith, Image Resizer, OCR, Registry Preview, deterministic Advanced Paste
+and lower-priority New+. Keep them in Pathweft's own commands/previews/operation
+lifecycle, without installed PowerToys, runner, hooks or endpoint dependencies.
+No acceptance criteria are satisfied; extraction, compatibility, dependency terms
+and resource costs remain to qualify. No blocker is claimed unresolvable and no
+tracked deferral is introduced. This request registers the stage only; no stage
+is ACTIVE and the Linux file-manager comparison remains research.
 
 Plan addition2026-11-06: S19 - Selected-folder content indexing is NOT STARTED,
 immediately after S12. CONTENT-01..06 cover a folder toolbar toggle, current-index
@@ -14,7 +24,7 @@ This is documentation only; no indexer, schedule, download or settings change.
 No tracked deferral or ACTIVE stage is introduced.
 
 Plan addition2026-11-06: S18 - Contextual performance monitoring is NOT STARTED,
-between S16 and S12. Remaining execution order: S16 -> S18 -> S12 -> S19 -> S6 -> S7.
+between S16 and S12. Remaining execution order: S16 -> S18 -> S12 -> S19 -> S20 -> S6 -> S7.
 MONITOR-01..05 cover the Statistics/Performance toggle, four contextual cards,
 Resource Monitor-inspired process/file details, qualified measurements and bounded
 visible-only collection. This is documentation-only authorization; no stage is
@@ -841,7 +851,8 @@ plan neither authorizes itself nor adds approval checkpoints.
 | S18 - Contextual performance monitoring | NOT STARTED | MONITOR-01..05; affected CORE-03/LIFE/DELIVERY | S16 closed under the selected execution order; source/privilege feasibility and concrete resource budgets resolved before implementation acceptance | Direct Statistics/Performance toggle; CPU/GPU/current-drive/current-folder cards; attributed process/file details; real workload/path/device qualification, bounded visible-only sampling and cleanup; one final independently/installed verified release when implementation is authorized. No criteria verified yet. |
 | S12 - Tresorit capability investigation | NOT STARTED | TRES-01..04 | S15 delivered; S16 and S18 considered first in the selected execution order | Supported API/client assessment, bounded REA as needed, evidence-backed capability matrix/decision and implementation proposal. Investigation only; no cloud mutation or integration implementation. |
 | S19 - Selected-folder content indexing | NOT STARTED | CONTENT-01..06; affected SEARCH/CORE/LIFE/DELIVERY | After S12 in the selected execution order; qualify extractor APIs, query/location semantics, provider metadata and resource budgets | Toolbar folder opt-in/current magnifier badges; qualified Craft/text extraction; persisted searchable strings and location arrays, periodic incremental refresh and cloud-cache independence. Verify actual search/open/freshness/recovery and one final independently/installed verified release when implementation is authorized. No criteria verified yet. |
-| S6 - Native StartAllBack search | BLOCKED | SAB-01..06; affected SEARCH/CORE/LIFE/DELIVERY criteria | Parked until preceding Pathweft-first work through S19 is closed and execution is resumed; retain unresolved native feasibility boundaries | Investigation only; no complete SAB criterion. Qualify native groups/provider/cancellation/handoff/lifecycle/direct routing and independently verified adapter release in S6; no automatic Sandbox restart. |
+| S20 - Integrated PowerToys file tools | NOT STARTED | TOOLS-01..09; affected CORE/LIFE/DELIVERY and existing rename/preview/clipboard actions | After S19, before unrelated S6/S7 work; qualify pinned donor boundaries/dependencies before acceptance | Integrated rename, file-holder discovery, image resizing, preview OCR, structured .reg preview, Paste as file and lower-priority templates; real workflow/data/Undo/lifecycle/resource checks and one final independently/installed verified release when implementation is authorized. No criteria verified yet; no tracked deferrals. |
+| S6 - Native StartAllBack search | BLOCKED | SAB-01..06; affected SEARCH/CORE/LIFE/DELIVERY criteria | Parked until preceding Pathweft-first work through S20 is closed and execution is resumed; retain unresolved native feasibility boundaries | Investigation only; no complete SAB criterion. Qualify native groups/provider/cancellation/handoff/lifecycle/direct routing and independently verified adapter release in S6; no automatic Sandbox restart. |
 | S7 - Everything filesystem search and Outlook indexing scope | NOT STARTED | EVERYWHERE-01..05; affected SEARCH/CORE/LIFE/SHELL criteria | S6 COMPLETE; consumer/semantics/scope inventory before migration | Final dependent Windows-search work: real Everything file results with selected roots excluded from indexing, WSearch/Outlook retained, explicit exceptions, mail/reboot/recovery and verified migration/package delivery in S7. |
 
 ENV-01..04 belong to the current setup deliverable, not an artificial product
@@ -890,6 +901,7 @@ owns its complete release/delivery gate; S12 delivers research documents only.
 | MONITOR-01..05 | S18 | Contextual performance cards/details, qualified Windows measurement/attribution, bounded visible-only ownership and verified final delivery after implementation authorization |
 | TRES-01..04 | S12 | Evidence-backed Tresorit investigation and implementation proposal; execution remains NOT STARTED |
 | CONTENT-01..06 | S19 | Selected-folder content extraction, compact searchable strings/location arrays, periodic freshness/current badges, original-file navigation and verified final delivery after implementation authorization |
+| TOOLS-01..09 | S20 | Seven source-borrowed PowerToys capabilities in native Pathweft workflows; New+ lower priority but required, actual Windows/file/clipboard/lifecycle/resource qualification and verified final delivery after implementation authorization |
 | PREVIEW-21..36 | S13 | All fourteen remaining specialist categories, exact format coverage, integrated qualification and final release/installed verification in S13 |
 | PREVIEW-19 | S8 | Canonical drive/share identity for static HTML, retained isolation and final1.1.16 delivery |
 | PREVIEW-20 | S8 | Patched Marked and FriBidi, preserved native media contract, source/notice closure and final1.1.17 delivery |
