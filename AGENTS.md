@@ -5,6 +5,10 @@ stage for CORE-23. Fix confirmed missing local tab paths by climbing to the
 nearest existing ancestor; preserve tab order/pins/restoration and offline or
 inaccessible destinations. Correct activation/header/list state, qualify actual
 tab workflows, then publish and independently verify the normal final release.
+Normal1.1.25/11e5d292 is now published; independent retrieved consumer87644 and
+source/native/asset checks pass. S23 remains ACTIVE only for installed acceptance
+after the requested user-owned update; live1.1.24 has not been closed or replaced
+by the agent. See docs/verification/2026-11-06-s23-tabs.md.
 Later plan-only checkpoints below do not override this active correction.
 
 Plan-only addition2026-11-06/spec0.70: S22 Focused file workflow enhancements

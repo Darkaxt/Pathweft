@@ -4,14 +4,15 @@ Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.71, 2026-11-06,
 including the user-authorized continued comparison requirement TRANSFER-07.
 
 Current2026-11-06: S23 Missing-folder tab recovery is ACTIVE for CORE-23 and
-affected CORE/LIFE/DELIVERY behavior. Source92776 and actual Release consumer88352
+affected CORE/LIFE/DELIVERY behavior. Source92776 and actual Release consumer93428
 verify nearest-existing ancestor recovery, selected header/list, keyboard/external
 activation, restored pin/order/settings identity, archive/UNC preservation and
 actual access-denied behavior. All original integrated consumer assertions pass.
 The corrected consumer restores its isolated initial folder; no assertion was
-weakened. Remaining: final corrected-source package identity, normal publication,
-independent delivery and applicable installed readback. These delivery criteria
-block closure; no external impediment or tracked deferral is asserted.
+weakened. Normal v1.1.25/11e5d292 is published with all six required assets;
+independent downloaded-source/native/app verification passes in consumer87644.
+Remaining: applicable installed readback after the requested user-owned update.
+That acceptance criterion blocks closure; no tracked deferral is asserted.
 S16/S18/S12/S19/S20/S21/S22/S6/S7 remain unactivated.
 
 Plan addition2026-11-06: S22 - Focused file workflow enhancements is NOT STARTED
