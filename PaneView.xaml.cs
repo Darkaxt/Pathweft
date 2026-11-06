@@ -530,6 +530,33 @@ public partial class PaneView : UserControl
     public void Navigate(string dir, string select = null, bool record = true)
         => Navigate(dir,select,record,refresh:false);
 
+    // Only a confirmed missing local descendant can be repaired. Exists hides
+    // access errors as false; a failed drive/provider must keep its destination.
+    internal static string RecoverMissingFolder(string path)
+    {
+        if(string.IsNullOrWhiteSpace(path)||path==ThisPC)return path;
+        try
+        {
+            if(IsRemote(path)||ArchiveOf(path)!=null)return path;
+            var original=new DirectoryInfo(path);
+            _=File.GetAttributes(original.Root.FullName);
+            for(var current=original;current!=null;current=current.Parent)
+            {
+                try
+                {
+                    return (File.GetAttributes(current.FullName)&FileAttributes.Directory)!=0
+                        ? current.FullName : path;
+                }
+                catch(Exception ex) when(ex is FileNotFoundException or DirectoryNotFoundException)
+                {
+                    // The next iteration tests the parent, not a guessed root.
+                }
+            }
+        }
+        catch(Exception ex) when(ex is IOException or UnauthorizedAccessException or ArgumentException or System.Security.SecurityException) { }
+        return path;
+    }
+
     void Navigate(string dir,string select,bool record,bool refresh)
     {
         if(SpaceAnalyzing){AfterSpace(()=>Navigate(dir,select,record));return;}
@@ -540,10 +567,9 @@ public partial class PaneView : UserControl
         DirectoryInfo di;
         try
         {
-            di = new DirectoryInfo(dir);
-            // A network folder is checked by the read below instead: a server that is off answers only
-            // after the SMB timeout, 21 s (measured), and this is the UI thread.
-            if (!IsRemote(di.FullName) && !di.Exists) throw new DirectoryNotFoundException($"{dir} does not exist");
+            di = new DirectoryInfo(RecoverMissingFolder(dir));
+            // Availability/access failures are reported by the background read.
+            // Commit tab/header identity first, even for an unavailable drive.
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or System.Security.SecurityException)
         {
@@ -1738,11 +1764,13 @@ public partial class PaneView : UserControl
     public int ActiveTab => tab;
     public List<int> PinnedTabs => Enumerable.Range(0, tabs.Count).Where(i => pins[i]).ToList();
 
-    /// False when none of the saved folders exists any more.
+    /// False when no saved destination is present. Missing local descendants
+    /// recover in place; offline tabs, their positions and pins are retained.
     public bool Restore(List<string> paths, int active, List<int> pinned = null)
     {
         var usable = paths.Select((p, i) => (p, pin: pinned?.Contains(i) == true))
-                          .Where(x => x.p == ThisPC || IsRemote(x.p) || Directory.Exists(x.p) || ArchiveOf(x.p) != null).ToList(); // a NAS that is off: 21 s per tab
+                          .Where(x => !string.IsNullOrWhiteSpace(x.p))
+                          .Select(x => (p: RecoverMissingFolder(x.p), x.pin)).ToList();
         if (usable.Count == 0) return false;
         tabs.Clear(); pins.Clear();
         tabs.AddRange(usable.Select(x => x.p)); pins.AddRange(usable.Select(x => x.pin));

@@ -1,7 +1,16 @@
 # Implementation and reconciliation
 
-Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.70, 2026-11-06,
+Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.71, 2026-11-06,
 including the user-authorized continued comparison requirement TRANSFER-07.
+
+Current2026-11-06: S23 Missing-folder tab recovery is ACTIVE for CORE-23 and
+affected CORE/LIFE/DELIVERY behavior. Root cause: SwitchTab changes its index,
+but Navigate returns before GoTo/BuildTabs for a missing local directory; Restore
+also filters such tabs out. Remaining: complete confirmed-missing ancestor recovery,
+preserved offline/access-denied behavior and restored tab identity, real tab/UI
+regressions, final normal release and independent delivery verification. These
+implementable gaps are acceptance blockers, not external impediments or deferrals.
+S16/S18/S12/S19/S20/S21/S22/S6/S7 remain unactivated.
 
 Plan addition2026-11-06: S22 - Focused file workflow enhancements is NOT STARTED
 immediately after Linux-inspired S21 and before S6. OPUS-01..10 register named
@@ -872,6 +881,7 @@ plan neither authorizes itself nor adds approval checkpoints.
 | S15 - Current-pane disk analysis | COMPLETE | SPACE-01..05, CORE-11/19..21, TRANSFER-15; affected CORE/LIFE/DELIVERY | S14 source/integration COMPLETE | Source/native acceptance plus full final57312/independent51296 and installed58076 close normal1.1.23 delivery. No required blocker or deferral remains. |
 | S17 - Transfer review, preview and icon refinements | COMPLETE | TRANSFER-16, PREVIEW-38, CORE-22; affected LIFE/DELIVERY | S15 delivered | Difference-only review/newer warnings/full-set actions; selection-following/pinned PiP/Windowed; transparent folder/compass icon and preserved Windows identity. Normal1.1.24 independently downloaded and installed-verified. |
 | S16 - Craft core refresh and additional renderers (proposed) | NOT STARTED | Scope assessment in CRAFT-CORE-REVIEW.md; implementation requirements to establish before activation | S15 delivered; Pathweft-related work precedes unrelated shell integration | Evaluate existing Office core refresh and additional Photo/Vector/Fig/PDF libraries using source-built DLLs/owned workers; no installed-product or MCP dependency. No implementation started. |
+| S23 - Missing-folder tab recovery | ACTIVE | CORE-23; affected CORE/LIFE/DELIVERY | User-reported vanished local version folder; correction precedes future feature stages | No acceptance verified yet. Remaining: nearest-existing ancestor recovery, preserved tab/pin/restoration and offline/access-denied behavior, real tab activation/list checks, normal final release and independent delivery. No tracked deferrals. |
 | S18 - Contextual performance monitoring | NOT STARTED | MONITOR-01..05; affected CORE-03/LIFE/DELIVERY | S16 closed under the selected execution order; source/privilege feasibility and concrete resource budgets resolved before implementation acceptance | Direct Statistics/Performance toggle; CPU/GPU/current-drive/current-folder cards; attributed process/file details; real workload/path/device qualification, bounded visible-only sampling and cleanup; one final independently/installed verified release when implementation is authorized. No criteria verified yet. |
 | S12 - Tresorit capability investigation | NOT STARTED | TRES-01..04 | S15 delivered; S16 and S18 considered first in the selected execution order | Supported API/client assessment, bounded REA as needed, evidence-backed capability matrix/decision and implementation proposal. Investigation only; no cloud mutation or integration implementation. |
 | S19 - Selected-folder content indexing | NOT STARTED | CONTENT-01..06; affected SEARCH/CORE/LIFE/DELIVERY | After S12 in the selected execution order; qualify extractor APIs, query/location semantics, provider metadata and resource budgets | Toolbar folder opt-in/current magnifier badges; qualified Craft/text extraction; persisted searchable strings and location arrays, periodic incremental refresh and cloud-cache independence. Verify actual search/open/freshness/recovery and one final independently/installed verified release when implementation is authorized. No criteria verified yet. |
@@ -917,6 +927,7 @@ owns its complete release/delivery gate; S12 delivers research documents only.
 
 | Requirements | Owner | Later boundary |
 | --- | --- | --- |
+| CORE-23 | S23 | Complete missing-folder tab activation/restoration recovery, preservation regressions and normal final independently verified release |
 | ENV-01..04 | Setup | Committed/remote document and head readback at setup delivery |
 | WINDOW-01..03, UPDATE-02, TRANSFER-14 | S14 | Shared auxiliary windows, immediate manual check/results and successful-transfer dismissal; combined S15 independently retrieved/installed release |
 | SPACE-01..05, CORE-19 | S15 | Current-pane disk analysis, stable displayed sizes during refresh and one shared S11/S14/S15 final independent/installed release |

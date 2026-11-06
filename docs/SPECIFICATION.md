@@ -1,6 +1,17 @@
 # Pathweft specification
 
-Version 0.70 - 2026-11-06. Owner: Darkaxt.
+Version 0.71 - 2026-11-06. Owner: Darkaxt.
+
+Bug correction2026-11-06: S23 - Missing-folder tab recovery is ACTIVE under the
+user's requested fix. CORE-23 requires selectable tabs when an old local folder
+has disappeared: resolve confirmed missing descendants to the nearest existing
+directory, however many parent levels are needed, and persist the repaired tab.
+Preserve tab order/pins/active identity during switching and startup restoration,
+normal filesystem/archive navigation, and normal unavailable/access-denied states.
+Do not reinterpret a disconnected drive/network provider as a deleted folder or
+block the UI on network recovery. Verify actual tab clicks, keyboard/external
+activation, restored state and ancestor listing, then deliver one normal verified
+release under DELIVERY-01..03. No later feature stage is activated.
 
 Plan addition2026-11-06: S22 - Focused file workflow enhancements is NOT STARTED,
 immediately after Linux-inspired S21 and before S6. OPUS-01..10 register named
@@ -1543,6 +1554,7 @@ qualification remains future stage work, not a reason to activate it now.
 
 | ID | Requirement and acceptance |
 | --- | --- |
+| CORE-23 | Missing local folder tabs recover to the nearest confirmed existing ancestor on activation and restoration, retaining order/pins/selection identity and persisting the repaired path. Correct the tab/header/list state together; no old folder rows under a new tab identity. Preserve normal paths, existing archive tabs and access-denied/offline destinations without mistaking failed availability probes for deletion. Verify actual click, keyboard/external activation, multiple vanished levels, restored tabs and normal navigation, plus normal final release and independently retrieved package behavior. |
 | LIFE-01 | Own initialization, readiness, cancellation and cleanup through actual state/events. Do not copy fixed sleeps/retries or arbitrary timeout-driven synchronization from donors. Isolate unavoidable external timeouts at their boundary. Verify owned helper exit before scratch cleanup. |
 | SHELL-01 | Folder/default-handler and Win+E integration is opt-in, reversible and verified. Investigate Directory Opus's native Explorer replacement behavior and replace the inherited timed hide/poll/close Explorer-window takeover for covered entry points with launch-boundary routing. Qualify normal folder/default and explore verbs, shortcuts, Win+E, and SHOpenFolderAndSelectItems-style folder-plus-selection requests, including applicable caller architectures and cold/warm application states. The user's explicit scope correction assigns StartAllBack-specific links and Shell/known-folder/library routing to postponed S6/SAB-06; they do not gate S8 core delivery. Keep unsupported virtual locations, explicit explorer.exe launches and common Open/Save dialog behavior explicit; do not claim universal interception. Preserve actual prior registrations/owners, respect another default manager, and verify disable/uninstall/restoration, no loops or duplicate/transient Explorer windows for covered routes. Native code stays limited to routing; do not host the managed file manager inside caller processes or substitute global process-creation interception. Folder-browser scope does not imply desktop-shell or common-dialog replacement. |
 | DELIVERY-01 | One installation, settings owner and update channel. Pin/package Everything and native preview dependencies; preserve external instances/data and prevent upstream updates replacing Pathweft. Under the user's 2026-10-31 instruction stopping Sandbox work, use the completed isolated-directory per-user host install/update/uninstall and preservation trials, then verify the final published and actual host-installed package. Do not reopen a guest environment as a delivery gate. |

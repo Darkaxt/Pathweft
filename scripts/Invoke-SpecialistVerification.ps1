@@ -3,7 +3,7 @@
 param(
     [Parameter(Mandatory)][string]$Executable,
     [string]$ScratchRoot='D:\Temp\pathweft-s13-s9-s11',
-    [ValidateSet('full','office','office-fallback','office-formats','policies','formats','runtime','sizes','space','space-entry','space-refresh','space-ui','indexed-sizes','live-indexed-sizes','existing','pdf','modes','preview-selection','icons','menus','menus-ui','menus-properties','menus-shell','jump-lists','windows','transfers','transfer-differences','transfers-clipboard')][string]$Scenario='full',
+    [ValidateSet('full','office','office-fallback','office-formats','policies','formats','runtime','sizes','space','space-entry','space-refresh','space-ui','indexed-sizes','live-indexed-sizes','existing','pdf','modes','preview-selection','missing-tabs','icons','menus','menus-ui','menus-properties','menus-shell','jump-lists','windows','transfers','transfer-differences','transfers-clipboard')][string]$Scenario='full',
     [string]$MenuDesktop,
     [string]$FixtureSource,
     [string]$MediaInputs,
