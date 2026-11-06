@@ -47,15 +47,24 @@ sealed partial class PackageProbe
         Check(pane.ArchiveRoot?.Archive==zip,"Delivered existing archive tabs retain their virtual folder identity");
         var denied=Directory.CreateDirectory(Path.Combine(parent,"denied"));
         var original=denied.GetAccessControl();
+        string[] Rules(DirectorySecurity security)=>security.GetAccessRules(true,true,typeof(SecurityIdentifier)).Cast<FileSystemAccessRule>()
+            .Select(rule=>$"{rule.IdentityReference.Value}|{rule.FileSystemRights}|{rule.AccessControlType}|{rule.IsInherited}|{rule.InheritanceFlags}|{rule.PropagationFlags}").OrderBy(value=>value,StringComparer.Ordinal).ToArray();
         var restricted=denied.GetAccessControl();
-        restricted.AddAccessRule(new FileSystemAccessRule(WindowsIdentity.GetCurrent().User,FileSystemRights.ReadAttributes|FileSystemRights.ListDirectory,AccessControlType.Deny));
+        var deniedRule=new FileSystemAccessRule(WindowsIdentity.GetCurrent().User,FileSystemRights.ReadAttributes|FileSystemRights.ListDirectory,AccessControlType.Deny);
+        restricted.AddAccessRule(deniedRule);
         try
         {
             denied.SetAccessControl(restricted);
             await Activate(()=>pane.Navigate(denied.FullName),denied.FullName,expectError:true);
             Check(pane.Dir==denied.FullName&&!pane.Items.Any(),"Delivered access-denied tab stays selected at its original destination with an empty error listing");
         }
-        finally{denied.SetAccessControl(original);}
+        finally
+        {
+            restricted.RemoveAccessRuleSpecific(deniedRule);
+            denied.SetAccessControl(restricted);
+            var restored=denied.GetAccessControl();
+            Check((File.GetAttributes(denied.FullName)&FileAttributes.Directory)!=0&&restored.AreAccessRulesProtected==original.AreAccessRulesProtected&&Rules(restored).SequenceEqual(Rules(original)),"Denied fixture restores and verifies its exact original directory permissions");
+        }
         await Activate(()=>pane.Restore(new(){originalDestination},0),originalDestination);
     }
 }
