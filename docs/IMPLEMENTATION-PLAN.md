@@ -1,7 +1,62 @@
 # Implementation and reconciliation
 
-Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.76, 2026-11-07,
+Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.78, 2026-11-07,
 including the user-authorized continued comparison requirement TRANSFER-07.
+
+Current qualification2026-11-07: S18 is ACTIVE. The current native and
+cross-integrity request8639b6fca3344a1bbb211db3c56587b8/ticket20 passed actual
+attribution/focus/scope/cleanup and active/idle budgets. Worker171800 exited0
+naturally after medium client171624 disposed it. The shutdown self-join and
+scope acknowledgement race are corrected and requalified. CORE-26 now follows
+the user's outer-pane edge and faint-opacity ribbon refinement; CORE-27 keeps
+the current address color over a black loading track without replacing input.
+Final UI app173512 verifies the faint ribbon's outer-pane edge alignment and
+pending-read input/loading workflow; the user accepts its rendered appearance.
+Candidate package app170864 passes complete native/self-test/application and
+delivered counter/toggle/annual-resource workflows.
+Remaining acceptance: final committed package/source/app
+qualification, commit, normal release, independent retrieval and applicable
+installed verification. No tracked deferral; S25 stays NOT STARTED.
+Earlier qualification checkpoints below are historical, not current blockers.
+
+Earlier qualification2026-11-07: S18 was ACTIVE, resumed when the user returned.
+Native request900eaac1ed8541d087aa3a85e1646757/ticket13 completed successfully:
+real CPU/GPU/file attribution, focus/scope transitions and owned cleanup pass.
+Remaining detailed qualification covers medium-client/elevated-worker IPC and
+measured trace cost. The user also requested removing the duplicate address-bar
+capacity strip; preserve archive context, sidebar/lower capacity and real loading.
+Independent source/artwork/resource checks are already complete.
+MONITOR-01..05/CORE-25 are the current scope; S24 remains COMPLETE and S25 stays
+NOT STARTED. CORE-26/27 add the user-directed strip removal, centered read-only
+corner ribbon and address-background loading with draft/caret preservation.
+The owned worker shutdown self-join and the in-flight scope acknowledgement race
+are current-stage corrections; actual lifecycle requalification remains required.
+Complete one real workflow: shared Windows aggregate collection ->
+toolbar toggle/cards -> current path/device/GPU details -> focused folder trace
+and truthful privilege handling -> tray/reopen history and scope cleanup.
+Then finish all sources/states/resources/UI qualification, twelve actual
+ImageGen banners and packaged annual selection; reconcile and deliver one
+normal independently downloaded/applicably installed verified release.
+Huashu uses existing StatCard/command/auxiliary references; the design contract
+and numerical collection budgets are in the specification. Internal acceptance
+blockers: native attributed-I/O/focus/lifecycle qualification, its measured cost
+and final package/delivery qualification.
+Source checks verify the toolbar/cards/tables, actual aggregate sources, tray
+history, hour bound, pane ownership and light/dark100/150% layouts. Twelve
+ImageGen banners render centered and select by release month across years.
+Debug/Release compilation and Release self-test pass; the independent package
+consumer compiles but awaits a delivered package. The isolated
+sampler meets the initial CPU/memory budgets, and non-admin I/O reports actual
+access denial. Native focus/ETW qualification is externally pending: Coordinator
+request6d675d773db2494aaf8ba495572ef098 was not launched because fullscreen quiet
+mode rejected it. Resume that exact test after user readiness/approval; no
+automatic retry or bypass. No tracked deferral. Native/small-file task scratch is
+D:/Temp/pathweft-s18 (D: required for native/build sustained I/O), registered for
+transactional cleanup after each consumer exits; final assets/evidence stay in
+the repository. The current app/native build is the preserved input for that
+pending test. S18 is the only ACTIVE stage.
+Do not change installed settings or start S25. See
+verification/2026-11-07-s18-performance.md for evidence and remaining criteria.
 
 Planning refinement2026-11-07: S18 is NOT STARTED. MONITOR-01/04/05 now require
 the Task Manager Performance icon with active state, a shared bounded rolling
@@ -984,7 +1039,7 @@ plan neither authorizes itself nor adds approval checkpoints.
 | S23 - Missing-folder tab recovery | COMPLETE | CORE-23; affected CORE/LIFE/DELIVERY | User-reported vanished local version folder; correction precedes future feature stages | Source92776, final Release93428 and independent retrieved87644 pass recovery/restoration and preservation regressions. Normal1.1.25/11e5d292 published with verified sources/assets. Installed94548 verifies matching files, restarted app/helper, readiness, routes and shortcut/profile identity; user confirms behavior. No remaining criteria, blockers or tracked deferrals. |
 | S16 - Craft core refresh and additional renderers | COMPLETE | CRAFT-01..07; CORE-24; affected PREVIEW/LIFE/DELIVERY | S23 delivered; existing worker and LibreOffice baseline | Refreshed Office plus Photo/Vector/Fig/optional PDF and bounded located extraction qualify in actual source/preview/worker workflows. Native/icon/source/advisory qualification, normal1.1.26/0856498, final110748, independent42084 and installed108640 pass. No acceptance criteria remaining, blockers or tracked deferrals. No next stage activated. |
 | S24 - Transfer progress presentation | COMPLETE | TRANSFER-17; affected TRANSFER-14..16/CORE/LIFE/DELIVERY | S16 delivered; user requests compact progress/counter/action corrections | Source45728/113412 and final99016/independent85284 verify actual layouts, rasterized icon/text alignment, labels, transfer lifecycle and delivered behavior. Normal1.1.27/6b294cf published; installed99016 verifies matching members, restarted main/helper, readiness, routes and preserved identity. No remaining criteria, blockers or tracked deferrals. |
-| S18 - Contextual performance monitoring | NOT STARTED | MONITOR-01..05; CORE-25 next-release companion; affected CORE-03/LIFE/DELIVERY | S16/S24 closed under the selected execution order; source/privilege feasibility and concrete resource budgets resolved before implementation acceptance | Task Manager Performance icon toggle; CPU/GPU/current-drive/current-folder cards; shared rolling-hour tray CPU/GPU/drive-unit I/O history; folder tracing only while its widget is focused; demand-driven attribution; real workload/path/device, retention/gap/resource/lifecycle qualification. Twelve ImageGen monthly banners with inspected assets and packaged annual selection. One final independently/installed verified release after implementation authorization. No criteria verified yet. |
+| S18 - Contextual performance monitoring | ACTIVE | MONITOR-01..05; CORE-25..27; affected CORE-03/LIFE/DELIVERY | S16/S24 COMPLETE; direct implementation authorization2026-11-07 | Source qualifies toggle/cards/details, shared rolling-hour tray history, actual sources/path states, resources, annual ImageGen selection, address-loading/input and user-accepted faint outer-pane ribbon. Final native ticket20 passes attribution/focus/scope/cleanup; medium/high client-worker passes active/idle budgets and natural exit0 after correcting shutdown/scope races. Remaining: final packaged/integrated acceptance, commit, normal release, independent retrieval and applicable installed verification. No tracked deferral; no later stage activated. |
 | S25 - Summary-card motion | NOT STARTED | MOTION-01..03; affected MONITOR/CORE-03/LIFE/DELIVERY | S18 COMPLETE; after S18 and before S12 | Upward card entry with smooth file-pane squeeze; rotation between Statistics/Performance; reversal/interruption and focus/scroll preservation; reduced-motion support and actual frame/layout/resource qualification. One final independently/installed verified release after implementation authorization. No criteria verified yet. |
 | S12 - Tresorit capability investigation | NOT STARTED | TRES-01..04 | S15 delivered; S16/S18/S25 considered first in the selected execution order | Supported API/client assessment, bounded REA as needed, evidence-backed capability matrix/decision and implementation proposal. Investigation only; no cloud mutation or integration implementation. |
 | S19 - Selected-folder content indexing | NOT STARTED | CONTENT-01..06; affected SEARCH/CORE/LIFE/DELIVERY | After S12 in the selected execution order; qualify extractor APIs, query/location semantics, provider metadata and resource budgets | Toolbar folder opt-in/current magnifier badges; qualified Craft/text extraction; persisted searchable strings and location arrays, periodic incremental refresh and cloud-cache independence. Verify actual search/open/freshness/recovery and one final independently/installed verified release when implementation is authorized. No criteria verified yet. |
@@ -1040,6 +1095,7 @@ owns its complete release/delivery gate; S12 delivers research documents only.
 | CORE-22 | S17 | Approved yellow folder/darker compass icon, transparent multiresolution assets, embedded WPF/native use and unchanged Windows identity |
 | CORE-24 | S16 next-release companion | Approximately10-15% larger visible taskbar artwork; preserved design, bounds and identity; actual packaged/display-scale visual verification |
 | CORE-25 | S18 next-release companion | Twelve distinct ImageGen monthly changelog banners; consistent Pathweft style/960:170 presentation; selected-release month and year rollover coverage; inspected assets and actual packaged rendering |
+| CORE-26..27 | S18 user refinements | Remove duplicate capacity strip; centered edge-to-edge read-only archive ribbon; real foreground loading within address field with quiet background refresh, preserved drafts/caret/focus, reduced-motion and delivered/theme/scale qualification |
 | CRAFT-01..07 | S16 | Refreshed Office and additional source-built libraries, reusable located text extraction, preserved worker/preview lifetimes, actual format/fidelity/resource qualification and one final independently/installed verified release |
 | MONITOR-01..05 | S18 | Performance icon, contextual cards/details, bounded shared rolling-hour tray CPU/GPU/drive-unit I/O history, focus-only folder tracing, qualified attribution/resources/gaps/lifecycle and verified final delivery after implementation authorization |
 | MOTION-01..03 | S25 | Upward summary-card entry and file-pane squeeze; Statistics/Performance rotation; reversible non-blocking state/focus preservation, reduced-motion settings and actual visual/performance/delivery verification |

@@ -59,6 +59,9 @@ try{
     $mpv=ReadJson 'vendor/MPV/runtime-manifest.json'
     foreach($pin in $mpv.sources){CheckDependency ('MPV/'+$pin.name) $pin.sha256}
     $specialists=ReadJson 'vendor/Specialists/source-manifest.json'
+    $performance=ReadJson 'vendor/Performance/source-manifest.json'
+    foreach($pin in $performance.archives){CheckDependency ('Performance/'+$pin.name) $pin.sha256}
+    foreach($pin in $performance.packages){CheckDependency ('Performance/'+$pin.packageArchive) $pin.packageSha256}
     foreach($pin in $specialists){CheckDependency ('Specialists/'+$pin.sourceArchive) $pin.sourceSha256;CheckDependency ('Specialists/'+$pin.packageArchive) $pin.packageSha256}
     $mediaInfo=ReadJson 'vendor/Specialists/mediainfo-runtime.json'
     foreach($pin in $mediaInfo.archives){CheckDependency ('Specialists/'+$pin.name) $pin.sha256}

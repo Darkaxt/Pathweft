@@ -3,7 +3,7 @@
 param(
     [Parameter(Mandatory)][string]$Executable,
     [string]$ScratchRoot='D:\Temp\pathweft-s13-s9-s11',
-    [ValidateSet('full','office','office-extraction','office-reference','office-fallback','office-formats','photo-core','vector-core','fig-core','pdf-core','policies','formats','runtime','sizes','space','space-entry','space-refresh','space-ui','indexed-sizes','live-indexed-sizes','existing','pdf','modes','preview-selection','missing-tabs','icons','menus','menus-ui','menus-properties','menus-shell','jump-lists','windows','transfers','transfer-progress','transfer-differences','transfers-clipboard')][string]$Scenario='full',
+    [ValidateSet('full','performance','performance-ui','performance-native','office','office-extraction','office-reference','office-fallback','office-formats','photo-core','vector-core','fig-core','pdf-core','policies','formats','runtime','sizes','space','space-entry','space-refresh','space-ui','indexed-sizes','live-indexed-sizes','existing','pdf','modes','preview-selection','missing-tabs','icons','menus','menus-ui','menus-properties','menus-shell','jump-lists','windows','transfers','transfer-progress','transfer-differences','transfers-clipboard')][string]$Scenario='full',
     [string]$MenuDesktop,
     [string]$FixtureSource,
     [string]$MediaInputs,
@@ -13,7 +13,7 @@ $ErrorActionPreference='Stop'
 # Source-built renderer libraries run in Pathweft's own supervised worker. They
 # are not registered Craft CLI/MCP application workloads or gate dependencies.
 $scratch=[IO.Path]::GetFullPath($ScratchRoot)
-if($scratch -notin @('D:\Temp\pathweft-s13-s9-s11','D:\Temp\pathweft-s16','D:\Temp\pathweft-transfer-progress')){throw 'Exact registered task root required.'}
+if($scratch -notin @('D:\Temp\pathweft-s13-s9-s11','D:\Temp\pathweft-s16','D:\Temp\pathweft-transfer-progress','D:\Temp\pathweft-s18')){throw 'Exact registered task root required.'}
 $run=Join-Path $scratch ('specialists-'+[guid]::NewGuid().ToString('N'))
 $cleanup='C:/Users/darka/.agents/skills/transactional-cleanup/scripts/invoke_transactional_cleanup.py'
 $registration=& python $cleanup begin --workspace (Split-Path -Parent $PSScriptRoot) --scan-root $run
@@ -36,13 +36,13 @@ if($WithoutMediaInfo){
 }
 $start=[Diagnostics.ProcessStartInfo]::new([IO.Path]::GetFullPath($Executable))
 $start.ArgumentList.Add('--verify-s8-appearance='+$run)
-if($Scenario -in @('menus','menus-properties','menus-shell','indexed-sizes','space-ui','transfers-clipboard')){
+if($Scenario -in @('menus','menus-properties','menus-shell','indexed-sizes','space-ui','performance-native','transfers-clipboard')){
     if(!$MenuDesktop -or !(Test-Path -LiteralPath $MenuDesktop)){throw 'Menu checks require the private native desktop launcher.'}
     $start.FileName=[IO.Path]::GetFullPath($MenuDesktop)
     $start.ArgumentList.Clear()
     $start.ArgumentList.Add([IO.Path]::GetFullPath($Executable))
     $start.ArgumentList.Add($run)
-    if($Scenario -in @('menus-shell','indexed-sizes','space-ui')){$start.ArgumentList.Add('--shell-only')}
+    if($Scenario -in @('menus-shell','indexed-sizes','space-ui','performance-native')){$start.ArgumentList.Add('--shell-only')}
 }
 $start.UseShellExecute=$false
 $start.CreateNoWindow=$true
@@ -53,6 +53,7 @@ $start.Environment['PATHWEFT_VERIFY_SPECIALISTS13']='1'
 $start.Environment['PATHWEFT_SPECIALIST_SCENARIO']=$Scenario
 if($FixtureSource){$start.Environment['PATHWEFT_SPECIALIST_FIXTURE_SOURCE']=[IO.Path]::GetFullPath($FixtureSource)}
 if($MediaInputs){$start.Environment['PATHWEFT_SPECIALIST_MEDIA_INPUTS']=[IO.Path]::GetFullPath($MediaInputs)}
+if($Scenario -eq 'performance-native'){$start.Environment['PATHWEFT_PERFORMANCE_LOAD']=Join-Path (Split-Path -Parent $MenuDesktop) 'PerformanceLoad.exe'}
 if($Scenario -eq 'existing'){
     if(!$MediaInputs){throw 'Actual SDR/audio/DV fixture inventory required.'}
     $start.Environment['PATHWEFT_MEDIA113_INPUTS']=[IO.Path]::GetFullPath($MediaInputs)
@@ -69,7 +70,7 @@ $receiptPath=Join-Path $run 'results.json'
 if(!(Test-Path -LiteralPath $receiptPath)){throw "Original verification process $($process.Id) exited $($process.ExitCode) without a receipt: $run"}
 $receipt=Get-Content -LiteralPath $receiptPath -Raw | ConvertFrom-Json
 $expectedPid=$process.Id
-if($Scenario -in @('menus','menus-properties','menus-shell','indexed-sizes','space-ui','transfers-clipboard')){
+if($Scenario -in @('menus','menus-properties','menus-shell','indexed-sizes','space-ui','performance-native','transfers-clipboard')){
     $desktop=Get-Content (Join-Path $run 'desktop-receipt.json') -Raw|ConvertFrom-Json
     if(!$desktop.jobEmpty -or $desktop.exitCode -ne $process.ExitCode){throw 'Private native desktop tree is not verified empty.'}
     $expectedPid=$desktop.childPid

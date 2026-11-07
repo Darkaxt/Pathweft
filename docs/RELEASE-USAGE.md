@@ -1,4 +1,25 @@
-# Pathweft 1.1.19
+# Pathweft 1.1.28
+
+The Performance command beside Analyze space swaps the lower summary region for
+CPU, GPU, current physical-drive and focused-folder I/O cards. Click a card for
+process or file details; Back to cards restores the compact presentation. One
+shared in-memory rolling hour of aggregate observations continues while the
+browser is in the tray. Restarting begins a new observed history; missing sources
+and collection gaps are not represented as measured zero activity.
+
+Detailed I/O requires explicit Enable and normal Windows administrator consent.
+The bundled app-owned worker traces logical file requests, including cached I/O,
+only for the focused folder widget or visible drive details. It is not an
+installed service and stops its trace when that scope ends. Physical drive
+counters can include other volumes on the same unit. Network, virtual/cloud and
+unresolved/spanned device mappings report unavailable physical measurements.
+Lost or incomplete file observations are labelled rather than claimed as exact.
+
+Capacity remains in the sidebar and lower statistics card, without a duplicate
+strip beneath the address field. Actual foreground folder/search work uses the
+field's background as an indeterminate loading band when no useful total exists;
+routine background sizing does not trigger it. Read-only archives show a corner
+ribbon without changing their actual editing restrictions.
 
 Specialist previews now include bundled Office rendering with page/sheet/slide
 navigation and LibreOffice fallback. No Craft application, MCP server or
@@ -100,14 +121,14 @@ preview keeps the interaction open. Downloads in Favorites follows the actual
 Windows known-folder location, including redirection to another drive.
 
 This PC's Free space values include the percentage available. Usage bars in the
-drive list and sidebar use your accent below80% used, amber at80% and red at90%.
+drive list and sidebar use blue below80% used, amber at80% and red at90%.
 Unavailable drives and empty card-reader slots stay hidden until media is ready.
 Cloud mounts identified through provider registration show Cloud and their
 provider; their raw reported filesystem is available in the tooltip.
 Google Drive account quotas come from the desktop client's read-only local
 metadata, bound through its account-to-mount registration. They use GiB/TiB to
 match the client's binary byte counts without labelling them as decimal GB/TB.
-This PC, sidebar, folder header and capacity card use those cloud figures.
+This PC, sidebar and capacity card use those cloud figures.
 Mount-reported capacity can be cache constrained and appears separately in the
 tooltip. Missing/unknown/unlimited quota records show an unavailable message;
 the ready cloud drive remains accessible. Figures refresh when Google updates

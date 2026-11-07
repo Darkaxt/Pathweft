@@ -72,11 +72,10 @@ public partial class MainWindow
             {
                 var row=new DriveRow("D:\\","Test","NTFS",1000,free,false,"Test",DriveType.Fixed);
                 var expected=DrivePresentation.Fill(1000,free);
-                Left.RefreshDriveUsage(new[]{row});
                 var button=DriveButton(row);
                 var fill=((Grid)button.Content).Children.OfType<Grid>().Single(grid=>grid.Height==2).Children.OfType<Border>().Last();
                 shownDrives=new(){row};UpdateStats();
-                check(ReferenceEquals(Left.UsedBar.Background,expected)&&ReferenceEquals(fill.Background,expected)&&ReferenceEquals(DriveFill.Background,expected),"Address, sidebar and summary disk bars share capacity colors independently of accent: "+theme+"/"+free);
+                check(ReferenceEquals(fill.Background,expected)&&ReferenceEquals(DriveFill.Background,expected),"Sidebar and summary disk bars share capacity colors without a duplicate address strip: "+theme+"/"+free);
             }
             Settings.TextScale=1;ApplyAppearance();
             await S1Verification.Snapshot(this,root,"space-starting-"+theme);

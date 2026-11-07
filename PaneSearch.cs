@@ -12,6 +12,7 @@ public partial class PaneView
     internal void RefreshAppearance()
     {
         foreach(var entry in Items)entry.RefreshAppearance();
+        UpdateAddressLoading();
     }
     const uint SearchPageSize = 200;
     CancellationTokenSource indexedCancellation;
@@ -45,13 +46,13 @@ public partial class PaneView
             grid.ColumnHeaderContainerStyle=header;
             List.ItemContainerStyle=(Style)FindResource("WidgetResultRow");List.AllowDrop=false;
             ((FrameworkElement)TabBand.Parent).Visibility=Visibility.Collapsed;
-            FolderStrip.Visibility=Visibility.Collapsed;((FrameworkElement)Footer.Parent).Visibility=Visibility.Collapsed;
+            ReadOnlyWatermark.Visibility=Visibility.Collapsed;((FrameworkElement)Footer.Parent).Visibility=Visibility.Collapsed;
             foreach(var button in PathBar.Children.OfType<Button>())button.Visibility=Visibility.Collapsed;
             PathBar.Margin=new(0,0,0,12);
             AddressField.ClearValue(Border.CornerRadiusProperty);AddressField.ClearValue(Border.PaddingProperty);
             AddressField.SetResourceReference(StyleProperty,"AuxiliaryField");AddressField.MinHeight=34;
             AddressField.ToolTip="Search files and folders with Everything";
-            var field=(DockPanel)AddressField.Child;
+            var field=AddressContents;
             var icon=new TextBlock{Text="\uE721",FontFamily=new("Segoe Fluent Icons"),VerticalAlignment=VerticalAlignment.Center,Margin=new(0,0,8,0),IsHitTestVisible=false};
             DockPanel.SetDock(icon,Dock.Left);field.Children.Insert(0,icon);
             Card.BorderThickness=new(0);Card.Background=System.Windows.Media.Brushes.Transparent;Glow.Visibility=Visibility.Collapsed;
@@ -123,6 +124,7 @@ public partial class PaneView
 
     internal void StopWidgetWork()
     {
+        loadingListing=loadingSearch=-1;addressIsResolving=false;UpdateAddressLoading();
         indexedCanLoadMore=false;
         ++navVersion;
         indexedCancellation?.Cancel();
@@ -143,6 +145,9 @@ public partial class PaneView
         int revision=suggestVersion;
         string origin=Dir;
         Suggest.IsOpen=false;
+        long resolving=++resolvingAddress;addressIsResolving=true;UpdateAddressLoading();
+        try
+        {
         var resolved=await Task.Run(()=>
         {
             string raw=Environment.ExpandEnvironmentVariables(text.Trim('"'));
@@ -168,6 +173,8 @@ public partial class PaneView
         }
         else{Search(text);await SearchCompletion;}
         if(IsKeyboardFocusWithin)FocusList();
+        }
+        finally{if(resolving==resolvingAddress){addressIsResolving=false;UpdateAddressLoading();}}
     }
 
     public void Search(string query)
@@ -189,6 +196,7 @@ public partial class PaneView
             return;
         }
         ++navVersion;
+        loadingListing=loadingSearch=-1;UpdateAddressLoading();
         searching = false;
         indexedCancellation?.Cancel();
         indexedCancellation?.Dispose();
@@ -230,6 +238,7 @@ public partial class PaneView
 
     async Task LoadIndexedPage(CancellationToken token, int generation)
     {
+        SearchLoading(generation);
         searching = true;
         MoreResults.IsEnabled = false;
         SearchCoverage.Text = searchNotice;
@@ -281,6 +290,7 @@ public partial class PaneView
         }
         finally
         {
+            SearchLoaded(generation);
 #if DEBUG
             VerificationQueryEvents?.Add($"PAGE END generation={generation} current={navVersion} cancelled={token.IsCancellationRequested} count={indexedResults?.Count}");
 #endif
@@ -303,6 +313,7 @@ public partial class PaneView
 
     void LeaveSearch()
     {
+        loadingSearch=-1;UpdateAddressLoading();
         indexedCancellation?.Cancel();
         indexedSearch = false;
         searching = false;

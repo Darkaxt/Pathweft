@@ -9,7 +9,7 @@
     <AssemblyName>Pathweft</AssemblyName>
     <Product>Pathweft</Product>
     <Company>Darkaxt</Company>
-    <Version>1.1.27</Version>
+    <Version>1.1.28</Version>
     <!-- WPF windows without their own Icon use this one, so every window gets it -->
     <ApplicationIcon>app.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
@@ -59,6 +59,7 @@
     <None Include="vendor\EverythingSDK\Everything64.dll" CopyToOutputDirectory="PreserveNewest" Link="Everything64.dll" />
     <None Include="vendor\**\*.txt" Exclude="vendor\Office\licenses\**\*" CopyToOutputDirectory="PreserveNewest" />
     <None Update="vendor\Marked\LICENSE.md" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="vendor\Performance\source-manifest.json" CopyToOutputDirectory="PreserveNewest" />
     <None Update="COPYING-GPL-3.0.txt" CopyToOutputDirectory="PreserveNewest" />
     <None Update="LICENSE" CopyToOutputDirectory="PreserveNewest" />
     <Using Remove="System.Windows.Forms" />
@@ -66,6 +67,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="System.IO.Hashing" Version="10.0.14" />
+    <PackageReference Include="Microsoft.Diagnostics.Tracing.TraceEvent" Version="4.0.0" />
     <PackageReference Include="Markdig" Version="1.5.0" />
     <PackageReference Include="CsvHelper" Version="33.1.0" />
     <PackageReference Include="Microsoft.Data.Sqlite.Core" Version="10.0.10" />
@@ -105,6 +107,6 @@
     <!-- What's new: every release's notes, read from inside the exe (WhatsNewWindow.cs) -->
     <EmbeddedResource Include="whatsnew.txt" LogicalName="whatsnew.txt" />
     <!-- From 1.0.46, the banner of the month a release came out (the studio's collage, 1920 x 340) -->
-    <EmbeddedResource Include="banners\*.jpg" LogicalName="whatsnew-%(Filename).jpg" />
+    <EmbeddedResource Include="banners\month-*.png" LogicalName="whatsnew-%(Filename).png" />
   </ItemGroup>
 </Project>

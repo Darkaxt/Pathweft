@@ -25,11 +25,17 @@ static class Program
     [STAThread]
     static void Main(string[] args)
     {
+        if(args.Length==4&&args[0]=="--performance-io-worker")
+        {Environment.ExitCode=PerformanceIoWorker.Run(args[1],int.Parse(args[2]),long.Parse(args[3])).GetAwaiter().GetResult();return;}
         if(args.Length==1&&args[0]=="--office-preview-worker")
         {Environment.ExitCode=Preview.OfficeWorker.Run().GetAwaiter().GetResult();return;}
         if(args.FirstOrDefault(a=>a.StartsWith("--relocate-profile=")) is { } relocation)
         { Environment.ExitCode=StorageLocation.Run(relocation["--relocate-profile=".Length..]);return; }
 #if DEBUG
+        if(args.Length==2&&args[0]=="--verify-performance-bridge")
+        {Environment.ExitCode=PerformanceBridgeVerification.Run(args[1]).GetAwaiter().GetResult();return;}
+        if(args.Length==2&&args[0]=="--verify-performance-budget")
+        {Environment.ExitCode=PerformanceBudgetVerification.Run(args[1]).GetAwaiter().GetResult();return;}
         if(args.Contains("--verify-jump-cleanup"))
         {
             if(Settings.Profile?.StartsWith(@"D:\Temp\pathweft-s13-s9-s11\specialists-",StringComparison.OrdinalIgnoreCase)!=true)throw new ArgumentException("Owned Jump List cleanup profile required");
@@ -316,6 +322,7 @@ public partial class App : Application
 
     protected override void OnExit(ExitEventArgs e)
     {
+        PerformanceMonitor.Stop();
 #if DEBUG
         HiddenTrialPresentation.StopObserver();
 #endif
@@ -722,6 +729,13 @@ public partial class App : Application
             Check(notes.Count >= 44 && notes[0].Version == Updater.Current.ToString() && notes.All(n => n.Lines.Count > 0)
                   && notes.Zip(notes.Skip(1)).All(p => Version.Parse(p.First.Version) > Version.Parse(p.Second.Version)), "what's new: every release, newest first, this one included");
             Check(notes.All(n => { using var pic = WhatsNewWindow.Picture(n); return pic != null; }), "what's new: every release has the picture of its month built in");
+            var monthly=new List<string>();
+            foreach(int month in Enumerable.Range(1,12))
+            {
+                using var pic=WhatsNewWindow.Picture(new("test",new DateTime(2027,month,1),"test",new()));
+                monthly.Add(pic==null?"missing":Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(pic)));
+            }
+            Check(monthly.Count==12&&!monthly.Contains("missing")&&monthly.Distinct().Count()==12,"what's new: twelve distinct embedded monthly banners cover year rollover");
             var recent = new List<string> { @"C:\A", @"C:\B" };
             Settings.Bump(recent, @"c:\b", 2); Settings.Bump(recent, @"C:\C", 2);
             Check(recent.SequenceEqual(new[] { @"C:\C", @"c:\b" }), "recent folders: newest first, once, capped");

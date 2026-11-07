@@ -33,6 +33,7 @@ internal static class ExplorerIcons
 
     internal static void Apply()
     {
+        Application.Current.Resources["CommandIcon.Performance"]=Performance();
         string variant=SystemParameters.HighContrast
             ? (SystemColors.WindowColor.R+SystemColors.WindowColor.G+SystemColors.WindowColor.B<384?"contrast-black":"contrast-white")
             : Appearance.Light?"contrast-standard/theme-light":"contrast-standard/theme-dark";
@@ -110,6 +111,14 @@ internal static class ExplorerIcons
     }
 
     static Brush CommandInk=>SystemParameters.HighContrast?SystemColors.WindowTextBrush:new SolidColorBrush(Appearance.Light?Color.FromRgb(70,70,70):Color.FromRgb(224,223,223));
+    internal static DrawingImage Performance()
+    {
+        var group=new DrawingGroup();group.Children.Add(new GeometryDrawing(Brushes.Transparent,null,new RectangleGeometry(new Rect(0,0,16,16))));
+        var pen=new Pen(CommandInk,1.15){LineJoin=PenLineJoin.Round,StartLineCap=PenLineCap.Round,EndLineCap=PenLineCap.Round};
+        group.Children.Add(new GeometryDrawing(null,pen,new RectangleGeometry(new Rect(1.5,1.5,13,13),2.5,2.5)));
+        group.Children.Add(new GeometryDrawing(null,pen,Geometry.Parse("M2,9 L5,9 6.5,5 9,12 10.5,7 14,7")));
+        group.Freeze();var image=new DrawingImage(group);image.Freeze();return image;
+    }
     internal static DrawingImage Crossed(DrawingImage source)
     {
         var group=new DrawingGroup();group.Children.Add(source.Drawing);

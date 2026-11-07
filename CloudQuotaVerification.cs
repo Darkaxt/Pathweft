@@ -65,7 +65,7 @@ public partial class MainWindow
         foreach(var d in cloud)
         {
             await S1Verification.Navigate(Left,d.Name);await Settle();
-            check(((TextBlock)Left.FindName("DriveInfoText")).Text==DrivePresentation.Capacity(d.Total,d.Free,true)&&StatFree.Text==DrivePresentation.Size(d.Free,true)&&StatUsed.Text.Contains(DrivePresentation.Size(d.Used,true)),"Actual cloud folder header and capacity card use the account quota: "+d.Name);
+            check(Left.ReadOnlyWatermark.Visibility==Visibility.Collapsed&&StatFree.Text==DrivePresentation.Size(d.Free,true)&&StatUsed.Text.Contains(DrivePresentation.Size(d.Used,true)),"Cloud quota remains in the capacity card without a duplicate address strip: "+d.Name);
         }
         await S1Verification.Navigate(Left,PaneView.ThisPC);await Left.driveListingWork;
         var unknown=WithGoogleQuota(new("X:\\","Streamed account","FAT32",2000000000000,851300000000,false,"Streamed account",DriveType.Fixed),null);

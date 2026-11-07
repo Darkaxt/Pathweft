@@ -420,9 +420,6 @@ public partial class PaneView : UserControl
             ScrollAtEdge(null);
             WheelWhileDragging(null);
         };
-        // Not a row, so DropTarget gives the folder shown: the strip always means "here".
-        FolderStrip.DragOver += Drop_Over;
-        FolderStrip.Drop += (s, e) => { FolderStrip.Background = Brushes.Transparent; Drop_Drop(s, e); };
         SizeCache.Invalidated += SizeInvalidated;
 
         // Drags start from the strip, not from a tab button: the strip is rebuilt whenever the tabs
@@ -577,7 +574,9 @@ public partial class PaneView : UserControl
             return;
         }
 
+        bool foregroundLoading=loadingListing>=0;
         int v = GoTo(di.FullName, record,preserveAddress:refresh&&di.FullName.Equals(Dir,StringComparison.OrdinalIgnoreCase)&&!InSearch);
+        ListingLoading(v,!refresh||foregroundLoading);
         // Observe before reading or sizing: an installation can finish during either operation.
         if(watcher?.Path!=di.FullName)Watch();
 
@@ -590,13 +589,14 @@ public partial class PaneView : UserControl
         bool onScreen = cached != null && cached.Items == items;
         if (cached != null && !onScreen) { ShowItems(cached.Items, select, animate: false); StartPasses(); }
 
-        // Reading the folder and asking the drive for free space both block — on a network share for
+        // Reading the folder can block — on a network share for
         // the best part of a second — so they happen off the UI thread and the list is handed over
         // when it's ready. The window never freezes on a folder change.
         Task.Run(() =>
         {
-            var (used, driveText,driveTip) = DriveUsage(di.FullName);
-
+#if DEBUG
+            BeforeListingForVerification?.Invoke(di.FullName);
+#endif
             // Always read: a folder's timestamp moves when a child is added, removed or renamed, but not
             // when a file inside is rewritten — a growing download or log kept its old size forever.
             long stamp = Stamp(di.FullName);
@@ -605,6 +605,7 @@ public partial class PaneView : UserControl
             Dispatcher.BeginInvoke(() =>
             {
                 if (v != navVersion) return; // the user has already moved on
+                ListingLoaded(v);
                 if (error != null)
                 {
                     Error?.Invoke(error);
@@ -633,13 +634,6 @@ public partial class PaneView : UserControl
                 }
                 if (pendingSelect != null) ApplyPendingSelect();
                 if (watcher?.Path != di.FullName) Watch();
-                if (driveText != null)
-                {
-                    UsedBar.SetBinding(WidthProperty, new Binding("ActualWidth") { Source = UsedBar.Parent, Converter = new Scale(used) });
-                    UsedBar.Background=DrivePresentation.Fill(used*100);
-                    DriveInfoText.Text = driveText;
-                    DriveInfoText.ToolTip=driveTip;
-                }
                 Listed = true;
                 UpdateFooter();
                 StatsChanged?.Invoke();
@@ -647,37 +641,6 @@ public partial class PaneView : UserControl
                 // at startup: after the window's first frame
             }, WindowShown ? DispatcherPriority.Normal : DispatcherPriority.Background);
         });
-    }
-
-    internal static (double Used, string Text,string Tip) DriveUsage(string path)
-    {
-        try
-        {
-            string root=System.IO.Path.GetPathRoot(path);
-            var mounts=CloudVolumes.GoogleMounts();
-            if(mounts.TryGetValue(root,out var account))
-            {
-                var quota=CloudVolumes.GoogleQuota(account);
-                return (quota==null?0:DrivePresentation.UsedPercent(quota.Total,quota.Free)/100,DrivePresentation.Capacity(quota?.Total??0,quota?.Free??0,true),DrivePresentation.CloudSource);
-            }
-            var drive = new DriveInfo(root);
-            if (drive.IsReady)
-                return (1 - (double)drive.AvailableFreeSpace / drive.TotalSize,
-                        $"{MainWindow.Fmt(drive.AvailableFreeSpace)} free of {MainWindow.Fmt(drive.TotalSize)}",null);
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException) { }
-        return (-1, null,null);
-    }
-    internal void RefreshDriveUsage(IEnumerable<MainWindow.DriveRow> rows)
-    {
-        if(Dir==null||IsVirtual(Dir)||InSearch||Dir==ThisPC)return;
-        string root=System.IO.Path.GetPathRoot(Dir);
-        var drive=rows.FirstOrDefault(d=>d.Name.Equals(root,StringComparison.OrdinalIgnoreCase));
-        if(drive==null)return;
-        UsedBar.SetBinding(WidthProperty,new Binding("ActualWidth"){Source=UsedBar.Parent,Converter=new Scale(DrivePresentation.UsedPercent(drive.Total,drive.Free)/100)});
-        UsedBar.Background=DrivePresentation.Fill(drive.Total,drive.Free);
-        DriveInfoText.Text=DrivePresentation.Capacity(drive.Total,drive.Free,drive.CloudQuota);
-        DriveInfoText.ToolTip=drive.CloudQuota?DrivePresentation.CloudSource:null;
     }
 
     void StartPasses()
@@ -786,11 +749,12 @@ public partial class PaneView : UserControl
         VerificationQueryEvents?.Add("NAVIGATE " + path + "\n" + Environment.StackTrace);
 #endif
         LeaveSearch();
+        loadingListing=-1;
         if (!Dir.Equals(path, StringComparison.OrdinalIgnoreCase) || searchQuery != null) StopFolderWatch();
         if (record && tabs[tab] != "" && !tabs[tab].Equals(path, StringComparison.OrdinalIgnoreCase)) { back.Push(tabs[tab]); fwd.Clear(); }
         tabs[tab] = path;
         ArchiveRoot = null; // NavigateArchive sets it again right after
-        DriveInfoText.ToolTip = null;
+        ReadOnlyWatermark.Visibility = Visibility.Collapsed;
         Visited?.Invoke(path);
         if(!string.Equals(lastVisitedFolder,path,StringComparison.OrdinalIgnoreCase))
         {lastVisitedFolder=path;FolderVisited?.Invoke(path);}
@@ -801,6 +765,7 @@ public partial class PaneView : UserControl
         // navigation may replace that text or end its focus/edit lifetime.
         if(!preserveAddress)
         {
+            ++resolvingAddress;addressIsResolving=false;
             ++suggestVersion; // explicit navigation supersedes pending address work
             if (searchQuery != null) { searchQuery = null; FilterBox.Text = ""; } // the query would hide most of the new folder
             else if (!path.Equals(filteredFolder, StringComparison.OrdinalIgnoreCase)) FilterBox.Text = "";
@@ -1034,6 +999,7 @@ public partial class PaneView : UserControl
     void NavigateServer(string server, string select, bool record)
     {
         int v = GoTo(server, record);
+        ListingLoading(v,true);
         watcher?.Dispose(); watcher = null;
         sizing?.Cancel();
         Task.Run(() =>
@@ -1042,10 +1008,9 @@ public partial class PaneView : UserControl
             Dispatcher.BeginInvoke(() =>
             {
                 if (v != navVersion) return;
+                ListingLoaded(v);
                 if (shares == null) { Error?.Invoke($"Can't list the shares on {server}"); return; }
                 ShowItems(shares.Select(s => new Entry { Name = s, Path = $@"{server}\{s}", IsDir = true, Size = -2 }).ToList(), select);
-                DriveInfoText.Text = "";
-                UsedBar.Width = 0;
                 StartIcons();
             });
         });
@@ -1077,6 +1042,7 @@ public partial class PaneView : UserControl
     void NavigateArchive(string dir, (string Archive, string Inner) at, string select, bool record)
     {
         int v = GoTo(dir, record);
+        ListingLoading(v,true);
         ArchiveRoot = at;
         watcher?.Dispose(); watcher = null;
         sizing?.Cancel();
@@ -1087,20 +1053,18 @@ public partial class PaneView : UserControl
         }).ContinueWith(t => Dispatcher.BeginInvoke(() =>
         {
             if (v != navVersion) return;
+            ListingLoaded(v);
             var (items, error) = t.Result;
             if (error != null)
             {
                 ShowItems(new List<Entry>(), null);
-                DriveInfoText.Text = "Archive unavailable · " + error;
-                Listed = true; Error?.Invoke(DriveInfoText.Text); StatsChanged?.Invoke(); return;
+                Listed = true; Error?.Invoke("Archive unavailable · " + error); StatsChanged?.Invoke(); return;
             }
             string changeReason = Archive.ChangeReason(at.Archive);
             ShowItems(items.Where(i => FileVisibility.Visible(i.Name, i.Attributes, ShowHidden)).Select(i => new Entry { Name = i.Name, Path = dir + "\\" + i.Name, IsDir = i.IsDir, Size = i.Size, Modified = i.Modified,
                 ReadOnlyReason = changeReason.Length > 0 ? "Archive contents are read-only: " + changeReason : ReadOnlyIcons.AttributeReason(i.IsDir, i.Attributes), RestrictionChecked = true }).ToList(), select);
             if (pendingSelect != null) ApplyPendingSelect();
-            DriveInfoText.Text = $"Inside {System.IO.Path.GetFileName(at.Archive)} · " + (changeReason.Length == 0 ? "editable" : "read-only");
-            DriveInfoText.ToolTip = changeReason.Length == 0 ? null : changeReason;
-            UsedBar.Width = 0;
+            ReadOnlyWatermark.Visibility = changeReason.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
             StartIcons();
             Listed = true; StatsChanged?.Invoke();
         }));
@@ -1109,15 +1073,15 @@ public partial class PaneView : UserControl
     void NavigateThisPC(string from, bool record)
     {
         int v = GoTo(ThisPC, record);
+        ListingLoading(v,true);
         watcher?.Dispose(); watcher = null;
         sizing?.Cancel();
         driveListingWork=Task.Run(() => MainWindow.ReadDrives()).ContinueWith(t => Dispatcher.InvokeAsync(() =>
         {
             if (v != navVersion) return;
+            ListingLoaded(v);
             var drives = DriveEntries(t.Result);
             ShowItems(drives, drives.FirstOrDefault(e => e.Path.Equals(from, StringComparison.OrdinalIgnoreCase))?.Name);
-            DriveInfoText.Text = "";
-            UsedBar.Width = 0;
             StartIcons();
             Listed = true; StatsChanged?.Invoke();
         }).Task).Unwrap();
@@ -1264,6 +1228,7 @@ public partial class PaneView : UserControl
         searchQuery = query;
         searching = true;
         int v = ++navVersion;
+        SearchLoading(v);
         sizing?.Cancel();
         StopFolderWatch(); // results span the whole subtree; refresh is explicit
         var results = new System.Collections.ObjectModel.ObservableCollection<Entry>();
@@ -1306,6 +1271,7 @@ public partial class PaneView : UserControl
             Flush();
         });
         if (v != navVersion) return;
+        SearchLoaded(v);
         searching = false;
         UpdateFooter();
         StartSizing(); StartVersions(); StartIcons(); StartThumbs();
@@ -1465,6 +1431,7 @@ public partial class PaneView : UserControl
         // Closing is the end of this view's ownership, including reads already
         // queued on the dispatcher. A hidden/tray window has not closed.
         ++navVersion;++suggestVersion;
+        loadingListing=loadingSearch=-1;addressIsResolving=false;UpdateAddressLoading();
         SizeCache.Invalidated-=SizeInvalidated;
         StopFolderWatch();
         indexedSearch=false;
@@ -3287,8 +3254,6 @@ public partial class PaneView : UserControl
     [System.Runtime.InteropServices.DllImport("user32.dll")] static extern IntPtr CallNextHookEx(IntPtr hook, int code, IntPtr message, IntPtr data);
     [System.Runtime.InteropServices.DllImport("kernel32.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode)] static extern IntPtr GetModuleHandle(string name);
 
-    void FolderStrip_Click(object s, MouseButtonEventArgs e) { FocusKeepingRow(); SetSelection(_ => false); }
-
     /// A click on empty space clears the selection, not the place: the keyboard stays on the row it was on (now
     /// unselected, as in Explorer), so Up and Down carry on from there. On the list itself, Down left the list.
     void FocusKeepingRow()
@@ -3297,10 +3262,6 @@ public partial class PaneView : UserControl
         if (List.SelectedItem is { } sel && List.ItemContainerGenerator.ContainerFromItem(sel) is UIElement selRow && selRow.Focus()) return;
         List.Focus();
     }
-    void FolderStrip_DragEnter(object s, DragEventArgs e) =>
-        FolderStrip.Background = (Brush)FindResource("AccentSoft");
-    void FolderStrip_DragLeave(object s, DragEventArgs e) => FolderStrip.Background = Brushes.Transparent;
-
     void NewTab_Click(object s, RoutedEventArgs e) => NewTab();
     // The press gave the button the keyboard, and the list only puts it back on a row when it had it (ShowItems):
     // after a click on Back the arrow keys moved between the buttons instead of the files (1.0.47 report).

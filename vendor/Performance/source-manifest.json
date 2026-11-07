@@ -1,0 +1,445 @@
+{
+  "graph": {
+    "net10.0-windows10.0.19041.0": {
+      "AngleSharp/1.7.2": {
+        "type": "package",
+        "compile": {
+          "lib/net10.0/AngleSharp.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net10.0/AngleSharp.dll": {
+            "related": ".xml"
+          }
+        }
+      },
+      "AngleSharp.Css/1.0.2": {
+        "type": "package",
+        "dependencies": {
+          "AngleSharp": "[1.5.0, 2.0.0)"
+        },
+        "compile": {
+          "lib/net10.0/AngleSharp.Css.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net10.0/AngleSharp.Css.dll": {
+            "related": ".xml"
+          }
+        }
+      },
+      "BouncyCastle.Cryptography/2.6.2": {
+        "type": "package",
+        "compile": {
+          "lib/net6.0/BouncyCastle.Cryptography.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net6.0/BouncyCastle.Cryptography.dll": {
+            "related": ".xml"
+          }
+        }
+      },
+      "CsvHelper/33.1.0": {
+        "type": "package",
+        "compile": {
+          "lib/net9.0/CsvHelper.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net9.0/CsvHelper.dll": {
+            "related": ".xml"
+          }
+        }
+      },
+      "ELFSharp/2.17.3": {
+        "type": "package",
+        "compile": {
+          "lib/netstandard2.0/ELFSharp.dll": {}
+        },
+        "runtime": {
+          "lib/netstandard2.0/ELFSharp.dll": {}
+        }
+      },
+      "HtmlSanitizer/9.2.1039": {
+        "type": "package",
+        "dependencies": {
+          "AngleSharp": "1.7.2",
+          "AngleSharp.Css": "1.0.2"
+        },
+        "compile": {
+          "lib/net8.0/HtmlSanitizer.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net8.0/HtmlSanitizer.dll": {
+            "related": ".xml"
+          }
+        }
+      },
+      "LiteDB/5.0.21": {
+        "type": "package",
+        "compile": {
+          "lib/netstandard2.0/LiteDB.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/netstandard2.0/LiteDB.dll": {
+            "related": ".xml"
+          }
+        }
+      },
+      "Markdig/1.5.0": {
+        "type": "package",
+        "compile": {
+          "lib/net10.0/Markdig.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net10.0/Markdig.dll": {
+            "related": ".xml"
+          }
+        }
+      },
+      "Microsoft.Data.Sqlite.Core/10.0.10": {
+        "type": "package",
+        "dependencies": {
+          "SQLitePCLRaw.core": "2.1.11"
+        },
+        "compile": {
+          "lib/net8.0/Microsoft.Data.Sqlite.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net8.0/Microsoft.Data.Sqlite.dll": {
+            "related": ".xml"
+          }
+        }
+      },
+      "Microsoft.Diagnostics.NETCore.Client/0.2.661903": {
+        "type": "package",
+        "dependencies": {
+          "Microsoft.Extensions.Logging.Abstractions": "8.0.3"
+        },
+        "compile": {
+          "lib/net8.0/Microsoft.Diagnostics.NETCore.Client.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net8.0/Microsoft.Diagnostics.NETCore.Client.dll": {
+            "related": ".xml"
+          }
+        }
+      },
+      "Microsoft.Diagnostics.Tracing.TraceEvent/4.0.0": {
+        "type": "package",
+        "dependencies": {
+          "Microsoft.Diagnostics.NETCore.Client": "0.2.661903",
+          "System.Reflection.TypeExtensions": "4.7.0"
+        },
+        "compile": {
+          "lib/netstandard2.0/Dia2Lib.dll": {},
+          "lib/netstandard2.0/Microsoft.Diagnostics.FastSerialization.dll": {
+            "related": ".xml"
+          },
+          "lib/netstandard2.0/Microsoft.Diagnostics.Tracing.TraceEvent.dll": {
+            "related": ".xml"
+          },
+          "lib/netstandard2.0/TraceReloggerLib.dll": {}
+        },
+        "runtime": {
+          "lib/netstandard2.0/Dia2Lib.dll": {},
+          "lib/netstandard2.0/Microsoft.Diagnostics.FastSerialization.dll": {
+            "related": ".xml"
+          },
+          "lib/netstandard2.0/Microsoft.Diagnostics.Tracing.TraceEvent.dll": {
+            "related": ".xml"
+          },
+          "lib/netstandard2.0/TraceReloggerLib.dll": {}
+        },
+        "build": {
+          "buildTransitive/Microsoft.Diagnostics.Tracing.TraceEvent.props": {}
+        }
+      },
+      "Microsoft.Extensions.DependencyInjection.Abstractions/8.0.2": {
+        "type": "package",
+        "compile": {
+          "lib/net8.0/Microsoft.Extensions.DependencyInjection.Abstractions.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net8.0/Microsoft.Extensions.DependencyInjection.Abstractions.dll": {
+            "related": ".xml"
+          }
+        },
+        "build": {
+          "buildTransitive/net6.0/_._": {}
+        }
+      },
+      "Microsoft.Extensions.Logging.Abstractions/8.0.3": {
+        "type": "package",
+        "dependencies": {
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "8.0.2"
+        },
+        "compile": {
+          "lib/net8.0/Microsoft.Extensions.Logging.Abstractions.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net8.0/Microsoft.Extensions.Logging.Abstractions.dll": {
+            "related": ".xml"
+          }
+        },
+        "build": {
+          "buildTransitive/net6.0/Microsoft.Extensions.Logging.Abstractions.targets": {}
+        }
+      },
+      "Microsoft.Web.WebView2/1.0.4314.35": {
+        "type": "package",
+        "build": {
+          "buildTransitive/Microsoft.Web.WebView2.targets": {}
+        },
+        "runtimeTargets": {
+          "runtimes/win-arm64/native/WebView2Loader.dll": {
+            "assetType": "native",
+            "rid": "win-arm64"
+          },
+          "runtimes/win-x64/native/WebView2Loader.dll": {
+            "assetType": "native",
+            "rid": "win-x64"
+          },
+          "runtimes/win-x86/native/WebView2Loader.dll": {
+            "assetType": "native",
+            "rid": "win-x86"
+          }
+        }
+      },
+      "MimeKit/4.15.1": {
+        "type": "package",
+        "dependencies": {
+          "BouncyCastle.Cryptography": "2.6.2"
+        },
+        "compile": {
+          "lib/net10.0/MimeKit.dll": {
+            "related": ".dll.config;.pdb;.xml"
+          }
+        },
+        "runtime": {
+          "lib/net10.0/MimeKit.dll": {
+            "related": ".dll.config;.pdb;.xml"
+          }
+        }
+      },
+      "OpenMcdf/3.1.4": {
+        "type": "package",
+        "compile": {
+          "lib/net10.0/OpenMcdf.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net10.0/OpenMcdf.dll": {
+            "related": ".xml"
+          }
+        }
+      },
+      "Prefetch/2026.5.2": {
+        "type": "package",
+        "dependencies": {
+          "Serilog": "4.3.1"
+        },
+        "compile": {
+          "lib/netstandard2.0/Prefetch.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/netstandard2.0/Prefetch.dll": {
+            "related": ".xml"
+          }
+        }
+      },
+      "QuickLook.ApkReader/2.1.0": {
+        "type": "package",
+        "compile": {
+          "lib/netstandard2.1/_._": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/netstandard2.1/_._": {
+            "related": ".xml"
+          }
+        }
+      },
+      "QuickLook.MediaInfo/26.5.0": {
+        "type": "package",
+        "compile": {
+          "lib/net10.0/QuickLook.MediaInfo.dll": {}
+        },
+        "runtime": {
+          "lib/net10.0/QuickLook.MediaInfo.dll": {}
+        }
+      },
+      "RtfPipe/2.0.7677.4303": {
+        "type": "package",
+        "compile": {
+          "lib/netstandard2.0/RtfPipe.dll": {}
+        },
+        "runtime": {
+          "lib/netstandard2.0/RtfPipe.dll": {}
+        }
+      },
+      "Serilog/4.3.1": {
+        "type": "package",
+        "compile": {
+          "lib/net10.0/Serilog.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net10.0/Serilog.dll": {
+            "related": ".xml"
+          }
+        },
+        "build": {
+          "buildTransitive/Serilog.targets": {}
+        }
+      },
+      "SQLitePCLRaw.core/2.1.11": {
+        "type": "package",
+        "compile": {
+          "lib/netstandard2.0/SQLitePCLRaw.core.dll": {}
+        },
+        "runtime": {
+          "lib/netstandard2.0/SQLitePCLRaw.core.dll": {}
+        }
+      },
+      "SQLitePCLRaw.provider.winsqlite3/2.1.11": {
+        "type": "package",
+        "dependencies": {
+          "SQLitePCLRaw.core": "2.1.11"
+        },
+        "compile": {
+          "lib/netstandard2.0/SQLitePCLRaw.provider.winsqlite3.dll": {}
+        },
+        "runtime": {
+          "lib/netstandard2.0/SQLitePCLRaw.provider.winsqlite3.dll": {}
+        }
+      },
+      "System.IO.Hashing/10.0.14": {
+        "type": "package",
+        "compile": {
+          "lib/net10.0/System.IO.Hashing.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net10.0/System.IO.Hashing.dll": {
+            "related": ".xml"
+          }
+        },
+        "build": {
+          "buildTransitive/net8.0/_._": {}
+        }
+      },
+      "System.Reflection.TypeExtensions/4.7.0": {
+        "type": "package",
+        "compile": {
+          "ref/netcoreapp2.0/_._": {}
+        },
+        "runtime": {
+          "lib/netcoreapp2.0/_._": {}
+        }
+      }
+    }
+  },
+  "packages": [
+    {
+      "revision": "10e5d271cebcdf5d6cf122c6ab9c863860a7a2f1",
+      "id": "Microsoft.Diagnostics.Tracing.TraceEvent",
+      "license": "MIT",
+      "version": "4.0.0",
+      "packageSha256": "8A32C09930D363B63056CF795A2E029204FCB062ADDCCA39FE125068BCAE47D9",
+      "repository": "microsoft/perfview",
+      "packageArchive": "microsoft.diagnostics.tracing.traceevent.4.0.0.nupkg"
+    },
+    {
+      "revision": "d7b455b46332b31fd9ba3a3f3e020387984c511a",
+      "id": "Microsoft.Diagnostics.NETCore.Client",
+      "license": "MIT",
+      "version": "0.2.661903",
+      "packageSha256": "CCD047E3E2FEF5C08CFA93086850D4872F5A08930F38B6A61AAAEB46BB8EC86D",
+      "repository": "dotnet/diagnostics",
+      "packageArchive": "microsoft.diagnostics.netcore.client.0.2.661903.nupkg"
+    },
+    {
+      "revision": "eba546b0f0d448e0176a2222548fd7a2fbf464c0",
+      "id": "Microsoft.Extensions.Logging.Abstractions",
+      "license": "MIT",
+      "version": "8.0.3",
+      "packageSha256": "E4C498D5A13051B4577A148F1D8C3470167215C507E2392069B75DC61322BB74",
+      "repository": "dotnet/runtime",
+      "packageArchive": "microsoft.extensions.logging.abstractions.8.0.3.nupkg"
+    },
+    {
+      "revision": "81cabf2857a01351e5ab578947c7403a5b128ad1",
+      "id": "Microsoft.Extensions.DependencyInjection.Abstractions",
+      "license": "MIT",
+      "version": "8.0.2",
+      "packageSha256": "51F2DF1100245F10DA54F0BB7E813F277155117777D4FBBAB902214E27372606",
+      "repository": "dotnet/runtime",
+      "packageArchive": "microsoft.extensions.dependencyinjection.abstractions.8.0.2.nupkg"
+    },
+    {
+      "revision": null,
+      "id": "System.Reflection.TypeExtensions",
+      "license": "MIT",
+      "version": "4.7.0",
+      "packageSha256": "184B42197C2D3A79187A3495F937E5F83AB21AAE634D4695C8BF5E32EA4C1C13",
+      "repository": null,
+      "packageArchive": "system.reflection.typeextensions.4.7.0.nupkg"
+    }
+  ],
+  "archives": [
+    {
+      "bytes": 161526437,
+      "sha256": "90FF85716A03858EC5AFFB095013997E2FADD66BA33F0DA681F74D8A362DE0CA",
+      "name": "Microsoft.Diagnostics.Tracing.TraceEvent-10e5d271cebcdf5d6cf122c6ab9c863860a7a2f1-source.zip",
+      "revision": "10e5d271cebcdf5d6cf122c6ab9c863860a7a2f1",
+      "url": "https://codeload.github.com/microsoft/perfview/zip/10e5d271cebcdf5d6cf122c6ab9c863860a7a2f1"
+    },
+    {
+      "bytes": 88796735,
+      "sha256": "D6A8F2544A558C926DA8469E28B6991DF1806F89F7E48EBF8C2BE52A42D753AC",
+      "name": "Microsoft.Diagnostics.NETCore.Client-d7b455b46332b31fd9ba3a3f3e020387984c511a-source.zip",
+      "revision": "d7b455b46332b31fd9ba3a3f3e020387984c511a",
+      "url": "https://codeload.github.com/dotnet/diagnostics/zip/d7b455b46332b31fd9ba3a3f3e020387984c511a"
+    },
+    {
+      "bytes": 124677869,
+      "sha256": "F7E864265864E3B9A96DC0278B8B3457394D4526770E6135DA91829D8DC9238A",
+      "name": "Microsoft.Extensions.Logging.Abstractions-eba546b0f0d448e0176a2222548fd7a2fbf464c0-source.zip",
+      "revision": "eba546b0f0d448e0176a2222548fd7a2fbf464c0",
+      "url": "https://codeload.github.com/dotnet/runtime/zip/eba546b0f0d448e0176a2222548fd7a2fbf464c0"
+    },
+    {
+      "bytes": 124553453,
+      "sha256": "573584469902BA7DF31F05D910611ADBE65B139095E227EB475FFFB94A7A726B",
+      "name": "Microsoft.Extensions.DependencyInjection.Abstractions-81cabf2857a01351e5ab578947c7403a5b128ad1-source.zip",
+      "revision": "81cabf2857a01351e5ab578947c7403a5b128ad1",
+      "url": "https://codeload.github.com/dotnet/runtime/zip/81cabf2857a01351e5ab578947c7403a5b128ad1"
+    }
+  ]
+}

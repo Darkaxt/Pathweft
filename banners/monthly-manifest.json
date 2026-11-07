@@ -1,0 +1,98 @@
+[
+  {
+    "month": 1,
+    "reference": "assets/pathweft-icon.png and January composition",
+    "sha256": "DAA50C84A59F6EC07A0F49F8FF5BC1B95FB84C0933EDE3D3B2D586C5B6CDCE55",
+    "presentation": "centered 960:170 UniformToFill",
+    "file": "month-01.png",
+    "generator": "ImageGen"
+  },
+  {
+    "month": 2,
+    "reference": "assets/pathweft-icon.png and January composition",
+    "sha256": "A6B07697315E8613B71D2E0F5720AB4644F25362837947FC7FE6BDEACF30DA5B",
+    "presentation": "centered 960:170 UniformToFill",
+    "file": "month-02.png",
+    "generator": "ImageGen"
+  },
+  {
+    "month": 3,
+    "reference": "assets/pathweft-icon.png and January composition",
+    "sha256": "8C8B622CB8DEE2FCBDEC3F275C43DE8FC1FA47014A565764D647AA78A1E16CF6",
+    "presentation": "centered 960:170 UniformToFill",
+    "file": "month-03.png",
+    "generator": "ImageGen"
+  },
+  {
+    "month": 4,
+    "reference": "assets/pathweft-icon.png and January composition",
+    "sha256": "C659A0CBEDB9749F8961B48512B97E6DB426B7857D7FBEB816B9B50EB0374C5A",
+    "presentation": "centered 960:170 UniformToFill",
+    "file": "month-04.png",
+    "generator": "ImageGen"
+  },
+  {
+    "month": 5,
+    "reference": "assets/pathweft-icon.png and January composition",
+    "sha256": "C0DF720FB179756B271B2A62344FB477C57914035150F7155F46BA39DBC1AFA6",
+    "presentation": "centered 960:170 UniformToFill",
+    "file": "month-05.png",
+    "generator": "ImageGen"
+  },
+  {
+    "month": 6,
+    "reference": "assets/pathweft-icon.png and January composition",
+    "sha256": "7BB638E882FE817E002A544C007D2F1A7BB77F0ACE47BAC00082714F46767527",
+    "presentation": "centered 960:170 UniformToFill",
+    "file": "month-06.png",
+    "generator": "ImageGen"
+  },
+  {
+    "month": 7,
+    "reference": "assets/pathweft-icon.png and January composition",
+    "sha256": "54873DD9FFD9A78DD62FF1B44A4012904275C1BD3F2CCB56D180C0A33F2B5BF4",
+    "presentation": "centered 960:170 UniformToFill",
+    "file": "month-07.png",
+    "generator": "ImageGen"
+  },
+  {
+    "month": 8,
+    "reference": "assets/pathweft-icon.png and January composition",
+    "sha256": "8AC645729EAB44C8B1A17B521E1C4F58A1FD07D29103B645001ED1BA95B84089",
+    "presentation": "centered 960:170 UniformToFill",
+    "file": "month-08.png",
+    "generator": "ImageGen"
+  },
+  {
+    "month": 9,
+    "reference": "assets/pathweft-icon.png and January composition",
+    "sha256": "836DF79788F40A7B54771B1F2A711B50EA05037DB84B7E8DFE23E4C84DD61597",
+    "presentation": "centered 960:170 UniformToFill",
+    "file": "month-09.png",
+    "generator": "ImageGen"
+  },
+  {
+    "month": 10,
+    "reference": "assets/pathweft-icon.png and January composition",
+    "sha256": "7897E48ACCC15F67C0548531056621D5C56209C903C8EECC9484402893978C61",
+    "presentation": "centered 960:170 UniformToFill",
+    "file": "month-10.png",
+    "generator": "ImageGen"
+  },
+  {
+    "month": 11,
+    "reference": "assets/pathweft-icon.png and January composition",
+    "sha256": "EEC40E002DFEBC036DC11AC10CF447FAAF9284497B94D8E44FBC4B199073F1F9",
+    "presentation": "centered 960:170 UniformToFill",
+    "file": "month-11.png",
+    "generator": "ImageGen"
+  },
+  {
+    "month": 12,
+    "reference": "assets/pathweft-icon.png and January composition",
+    "sha256": "9393B03CBA429DF36799F35ED3D7CBB80FD4A756B4573D3675D7C8F1884907FA",
+    "presentation": "centered 960:170 UniformToFill",
+    "file": "month-12.png",
+    "generator": "ImageGen"
+  }
+]

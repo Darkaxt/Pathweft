@@ -19,6 +19,9 @@ foreach($arch in @('x64','x86')){
     foreach($kind in @('um','ucrt')){$link+='/LIBPATH:'+(Join-Path $sdk "Lib/$sdkVersion/$kind/$arch")}
     $link+=@('kernel32.lib','ole32.lib','oleaut32.lib','shell32.lib','shlwapi.lib','uuid.lib','advapi32.lib','user32.lib')
     if($MenuDesktop -and $arch -eq 'x64'){
+        $load=@((Join-Path $root 'tests/PerformanceLoad.cpp'),('/Fo'+$output+'\'))+$link+@('d3d11.lib',('/OUT:'+(Join-Path $output 'PerformanceLoad.exe')),'/SUBSYSTEM:CONSOLE')
+        & (Join-Path $vc "bin/Hostx64/$arch/cl.exe") @arguments @load
+        if($LASTEXITCODE -ne 0){throw 'Headless performance fixture compilation failed.'}
         $test=@((Join-Path $root 'tests/MenuDesktop.cpp'),('/Fo'+$output+'\'))+$link+@(('/OUT:'+(Join-Path $output 'MenuDesktop.exe')),'/SUBSYSTEM:CONSOLE')
         & (Join-Path $vc "bin/Hostx64/$arch/cl.exe") @arguments @test
         if($LASTEXITCODE -ne 0){throw 'Private menu desktop fixture compilation failed.'}

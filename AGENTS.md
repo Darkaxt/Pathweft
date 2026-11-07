@@ -1,5 +1,27 @@
 # Pathweft development
 
+Current qualification2026-11-07/spec0.78: S18 is the only ACTIVE stage for
+MONITOR-01..05 and CORE-25..27. Native request8639b6fca3344a1bbb211db3c56587b8/
+ticket20 exited0: real CPU/GPU/file attribution, native focus/scope and whole
+worker/session cleanup pass. Actual medium client171624/high worker171800
+also pass IPC, measured active/idle budgets and natural worker exit0. The
+cancellation callback self-join and pending scope-acknowledgement race are fixed
+and requalified; earlier failures remain historical evidence. Dropped ETW
+observations are explicit, not exact traffic totals.
+User refinements remove the duplicated capacity strip, add real foreground
+address-background loading while preserving drafts/caret/focus, and a centered,
+faint read-only ribbon reaching the outer pane edges through unused footer
+space. Final UI app173512 passes actual edge alignment, input/loading workflows
+and dark/light100/150% captures after the opacity refinement. Twelve monthly
+ImageGen assets/source month selection and
+aggregate/history/resource/source workflows pass. Candidate app170864 also passes
+complete native/self-test/application workflows, actual counters/toggle and all
+twelve monthly resources. Final committed-package/source acceptance, commit
+and one normal independently/applicably installed verified
+release remain required. S24 COMPLETE; S25 NOT STARTED. No tracked deferral.
+Exact D:/Temp/pathweft-s18 native/build scratch uses D: for sustained small-file
+I/O; transactional cleanup follows each last consumer. Retain evidence in .local.
+
 Plan-only2026-11-07/spec0.76: S18 now includes the compact Task Manager
 Performance icon and shared rolling-hour CPU/GPU/drive-unit I/O history while
 Pathweft runs in the tray. Background I/O is drive-level only; folder I/O is

@@ -25,6 +25,7 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        InitializePerformance();
         Title = $"Pathweft {Updater.Current}";
         PaneView.ShowHidden = Settings.ShowHidden;
         SidebarColumn.Width = new GridLength(Settings.SidebarWidth);
@@ -674,7 +675,6 @@ public partial class MainWindow : Window
         if(closingPreviews)return;
         var rows = t.Result.Where(d=>d.Available).ToList();
         Left.RefreshThisPC(t.Result);Right.RefreshThisPC(t.Result);
-        Left.RefreshDriveUsage(t.Result);Right.RefreshDriveUsage(t.Result);
         if (rows.SequenceEqual(shownDrives)) return; // nothing moved: leave the buttons alone
         bool plugged = !rows.Select(d => (d.Name, d.VolumeLabel)).SequenceEqual(shownDrives.Select(d => (d.Name, d.VolumeLabel)));
         shownDrives = rows;
@@ -1012,13 +1012,14 @@ public partial class MainWindow : Window
 
     void ArrangeStats()
     {
+        RefreshPerformance();
         bool drive=DriveCard.Visibility==Visibility.Visible,folder=FolderCard.Visibility==Visibility.Visible,selection=SelectionCard.Visibility==Visibility.Visible;
         StatsRow.ColumnDefinitions[0].Width=drive?new GridLength(1.25,GridUnitType.Star):new GridLength(0);
         StatsRow.ColumnDefinitions[1].Width=new GridLength(drive&&(folder||selection)?10:0);
         StatsRow.ColumnDefinitions[2].Width=folder?new GridLength(1,GridUnitType.Star):new GridLength(0);
         StatsRow.ColumnDefinitions[3].Width=new GridLength(folder&&selection?10:0);
         StatsRow.ColumnDefinitions[4].Width=selection?new GridLength(1,GridUnitType.Star):new GridLength(0);
-        StatsRow.Visibility=Settings.Stats!=0&&(drive||folder||selection)?Visibility.Visible:Visibility.Collapsed;
+        StatsRow.Visibility=!PerformanceMode&&Settings.Stats!=0&&(drive||folder||selection)?Visibility.Visible:Visibility.Collapsed;
     }
 
     readonly System.Windows.Media.Effects.DropShadowEffect FullGlow = new() { Color = Color.FromRgb(0xFF, 0x33, 0x47), BlurRadius = 7, ShadowDepth = 0, Opacity = 0.75 };

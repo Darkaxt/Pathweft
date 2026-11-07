@@ -1,6 +1,12 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.28 | 2026-11-07 | Performance at a glance
+- Switch the lower summary area between folder statistics and CPU, GPU, drive I/O and focused-folder activity. One shared rolling hour of aggregate history continues while Pathweft is in the tray.
+- Open cards for process or file activity details. Detailed I/O starts only after explicit administrator permission; folder tracing stops when its widget loses focus. Unsupported sources and incomplete observations are labelled clearly.
+- Removed the duplicate capacity strip beneath the address field. Foreground folder/search loading now uses a quiet background inside that field, preserving typed paths and caret position. Read-only archives show a diagonal corner ribbon.
+- The changelog now has twelve distinct monthly illustrations, selected by each release's month and available across year changes.
+
 ## 1.1.27 | 2026-11-07 | Clearer transfer progress
 - Transfer cards show completed and total file counts above a single progress bar. Processed bytes sit beside the speed at the top, with no redundant per-file track or verification counters.
 - Pause, Resume, Cancel and Dismiss now center their icons and labels consistently. Active-file context, replacement review and genuine errors remain available.

@@ -1,6 +1,78 @@
 # Pathweft specification
 
-Version 0.76 - 2026-11-07. Owner: Darkaxt.
+Version 0.78 - 2026-11-07. Owner: Darkaxt.
+
+User refinement2026-11-07: remove the duplicate drive-capacity strip and
+free-space label below the address bar. Retain capacity in the sidebar and lower
+statistics card. The subsequent explicit refinement replaces archive status
+text with a subtle diagonal READ-ONLY ribbon at the file pane's bottom-right,
+reaching its right and bottom outer pane edges, with text centered in the
+visible stripe. The user selected this ImageGen direction over the detached
+stamp. The user's rendered refinement extends it through the footer's unused
+space to the pane border, with faint fill/lines/text rather than an opaque badge.
+It must not intercept input or obscure footer controls; editable archives need no
+label. Preserve actual error reporting and real loading indicators. S18 includes
+this same-release refinement, with source and delivered
+layout/navigation checks; it does not activate another stage.
+
+Additional user refinement2026-11-07: use the address/search field background
+for actual foreground folder/search loading, not the removed capacity strip.
+The completed/active region keeps the field's current color and the remaining
+track is black in dark mode (theme-appropriate in light mode). Unknown-duration
+enumeration/query work uses an indeterminate band, never a fabricated percentage.
+Routine background size/metadata refresh is quiet. Operation completion,
+cancellation, supersession and errors retire only their own loading state;
+never replace text, caret, selection or focus to update the indication. Preserve
+reduced-motion behavior and qualify actual pending-work/input/navigation flows.
+
+Resumption2026-11-07: the user returned; S18 is ACTIVE again. Native request
+900eaac1ed8541d087aa3a85e1646757/ticket13 is submitted through the supported
+broker. The prior rejection below remains evidence, not a current pause.
+
+Earlier qualification checkpoint2026-11-07: S18 was BLOCKED on the native privileged
+I/O acceptance workflow. Coordinator request6d675d773db2494aaf8ba495572ef098
+launched nothing because fullscreen quiet mode was active. Source layouts,
+aggregate/history/resource checks, non-admin denial/connection cancellation,
+annual artwork selection and Release self-test pass. Native file attribution,
+focus/lifecycle/detailed-cost and final packaged/delivery criteria remain
+unmet. Resume S18 after user readiness and broker approval; no automatic retry,
+no partial release and no later stage activation. This records an external
+execution boundary without changing any acceptance criterion.
+
+Implementation authorization2026-11-07: S18 is ACTIVE for MONITOR-01..05 and
+CORE-25. The user directed starting this stage and explicitly requires Huashu
+for new UI, consistent with existing Pathweft references. The planning-only
+restrictions below are superseded for S18 implementation/testing/delivery;
+S25 remains NOT STARTED. Use one app-owned aggregate sampler with a one-second
+cadence and a bounded3,600-sample/hour ring. No background file tracing or disk
+history logs. Windows PDH/GetSystemTimes and GPU engine/adapter counters supply
+aggregate observations; detailed file I/O uses an explicitly enabled app-owned
+ETW worker with supported Windows elevation, exact process/pipe ownership and
+focus/visibility-scoped tracing. Missing permission is distinct from zero.
+Acceptance budgets: aggregate history storage at most8MiB, incremental steady
+tray private memory at most32MiB, aggregate sampling at most0.5% total-machine
+CPU averaged over a measured representative observation interval. Detailed
+collection uses bounded records/buffers and reports dropped observations. Its
+representative focused-folder qualification budgets are at most1% total-machine
+worker CPU and96MiB worker private memory, measured separately during known
+file activity and an idle interval; these are acceptance workloads, not a claim
+that arbitrary machine-wide tracing workloads have a hard total-CPU cap.
+Cross-integrity qualification exposed a cancellation callback self-join in
+worker shutdown. Correct the event-owned join without a timeout and verify
+actual focused collection -> stop -> full process/session exit before acceptance.
+Confirm actual device/adapter mappings and measured budgets during integrated
+qualification rather than asserting them from design.
+
+Huashu design contract: reuse StatCard's10-DIP corners, palette resources,
+Segoe UI Variable hierarchy,10-DIP card gaps,20-DIP primary values and11-DIP
+supporting labels. Performance uses four compact cards across a wide pane,
+reflowing into two columns when needed, with small native line graphs. Use the
+16-DIP graph-in-a-square command icon and existing32-DIP command hit area,
+active tint and semantic names. Card activation opens direct themed table
+details with a clear return action, scoped source/state and GPU selection;
+retain browsing focus/drafts and reserve layout space rather than covering
+rows. Validate light/dark,100/150%,wide/narrow/two-pane actual rendering.
+No S25 animations are introduced in S18.
 
 Planning refinement2026-11-07: S18 remains NOT STARTED. Use the Task Manager
 Performance graph-in-a-square icon as the compact Statistics/Performance swap
@@ -1136,6 +1208,8 @@ criteria apply within the implementing stage and again at the packaged boundary.
 | CORE-22 | S17 approved yellow-folder/dark-compass application icon. Transparent multiresolution assets must remain legible at small sizes, retain polished larger detail, appear in embedded WPF/native/package surfaces, and preserve the existing Windows application/shortcut/Jump List identity. |
 | CORE-24 | Next-release taskbar icon sizing: enlarge visible folder/compass artwork approximately10-15% relative to1.1.25 while preserving design, transparency, canvas bounds and Windows identity. Verify actual packaged taskbar appearance and small-size legibility at representative display scales. |
 | CORE-25 | Next-release changelog artwork: use ImageGen to create twelve distinct, visually consistent Pathweft banners for January through December. Preserve the 960:170 banner presentation and release-month selection, bundle the complete annual set, avoid year rollover gaps, inspect each asset and verify all twelve month selections in the actual packaged changelog. S18 owns this next-release companion; no standalone artwork-only release is requested. |
+| CORE-26 | Remove the duplicated address-bar drive-capacity strip; retain sidebar/lower-card capacity and real errors/loading. Read-only archives use the user-selected ImageGen diagonal corner ribbon with centered READ-ONLY text, faint fill/lines/text and the user's accepted0.55 overall opacity. Reach the outer pane's right/bottom borders through unused footer space; keep footer/actions readable and clickable. Editable archives stay unlabelled. Verify theme/scale/navigation and real edge alignment. S18 owns this same-release refinement. |
+| CORE-27 | Actual foreground folder/address resolution/search work owns a subtle loading background inside the address field. Preserve its current surface as the active region, black remaining track in dark mode and suitable light/high-contrast appearance; use an indeterminate band when there is no meaningful total. Never fake percentages, reset drafts/caret/focus or flash this state for background sizing/metadata refreshes. Complete/error/cancel/superseding operations retire their own indication and animation. Qualify pending real work, actual completion/input preservation, theme/scaling/reduced-motion and delivered behavior in S18. |
 | CRAFT-01 | Refresh the three delivered Office libraries to the reviewed WordCraft0.15.2, GridCraft0.16.1 and DeckCraft0.15.1 source pins. Preserve current declared-format support, actual pagination/sheet/slide navigation, import notes, original/MOTW preservation, single-attempt LibreOffice crash/error recovery and owned cancellation/exit. Compare old/new real rendering and qualify the complete workflow before adoption. |
 | CRAFT-02 | Add source-built PhotoCraft0.20.2 read-only rendering for native .pcraft and PSD/PSB, retaining composition/layers where its importer supports them. Qualify actual inputs, not only extension registration; retain existing image preview behavior. No editor/CLI/service dependency. |
 | CRAFT-03 | Add source-built VectorCraft0.21.1 read-only document/artboard rendering for its native format and qualified SVG/PDF-compatible AI inputs. Qualify real importers and report unsupported legacy AI/EPS explicitly rather than inferring support. Preserve existing working image/PDF paths. |

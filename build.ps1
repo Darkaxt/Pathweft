@@ -127,6 +127,14 @@ if($LASTEXITCODE -ne 0){throw 'Portable archive creation failed.'}
 # offline native Rust dependency sources, not only selected reference snippets.
 $sources=Join-Path $scratch 'corresponding-sources'
 if(!(Test-Path -LiteralPath (Join-Path $sources 'source-manifest.json'))){throw 'Prepare verified corresponding dependency sources first.'}
+$performance=Get-Content (Join-Path $root 'vendor/Performance/source-manifest.json') -Raw|ConvertFrom-Json
+$performanceSources=Join-Path $sources 'Performance';[void][IO.Directory]::CreateDirectory($performanceSources)
+foreach($pin in @($performance.archives)+@($performance.packages|ForEach-Object {@{name=$_.packageArchive;sha256=$_.packageSha256}})){
+    $performanceInput=Join-Path $CacheRoot ('performance/'+$pin.name)
+    if((Get-FileHash $performanceInput).Hash -ne $pin.sha256){throw ('Performance dependency differs: '+$pin.name)}
+    Copy-Item -LiteralPath $performanceInput -Destination $performanceSources
+}
+Copy-Item (Join-Path $root 'vendor/Performance/*') $performanceSources
 & (Join-Path $root 'scripts/Stage-OfficeSources.ps1') -Destination (Join-Path $sources 'Office') -CacheRoot $CacheRoot
 $mpvSources=Join-Path $CacheRoot 'mpv/e471496c56-pathweft.2/sources'
 $specialistSources=Join-Path $sources 'Specialists';[void][IO.Directory]::CreateDirectory($specialistSources)

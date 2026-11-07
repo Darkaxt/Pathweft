@@ -42,6 +42,7 @@ public partial class MainWindow
     void UpdateCommandSpacing()
     {
         if(CommandBar.ActualWidth<=0)return;
+        CommandButtons.MaxWidth=CommandBar.ActualWidth;
         var visible=CommandButtons.Children.OfType<Button>().Where(button=>button.Visibility==Visibility.Visible).ToArray();
         if(visible.Length==0)return;
         double width=Math.Clamp((CommandBar.ActualWidth-36)/visible.Length,22,30);

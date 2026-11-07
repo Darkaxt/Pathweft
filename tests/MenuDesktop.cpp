@@ -44,7 +44,7 @@ int wmain(int argc, wchar_t** argv)
         require(argc == 3 || shellOnly, "Executable and exact trial root required");
         std::filesystem::path root = std::filesystem::absolute(argv[2]);
         const std::wstring prefix = L"D:\\Temp\\pathweft-s13-s9-s11\\specialists-";
-        require(root.wstring().rfind(prefix, 0) == 0 && root.filename().wstring().size() == 44, "Owned trial root required");
+        require((root.wstring().rfind(prefix, 0) == 0 || root.wstring().rfind(L"D:\\Temp\\pathweft-s18\\specialists-", 0) == 0) && root.filename().wstring().size() == 44, "Owned trial root required");
         auto inputDesktopName = []() {
             HDESK input = OpenInputDesktop(0, FALSE, DESKTOP_READOBJECTS); require(input != nullptr, "Read active desktop");
             wchar_t value[256]{}; DWORD bytes = 0;

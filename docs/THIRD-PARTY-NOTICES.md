@@ -22,6 +22,7 @@ Those notices remain distributed with the application.
 | Marked in the editor | 18.1.2 / 5beecae42b | MIT, vendor/Marked/LICENSE.md; verified npm bundle plus complete pinned Git source in the dependency archive |
 | Markdig | 1.5.0 | BSD-2-Clause, vendor/Markdig |
 | System.IO.Hashing | 10.0.14 | MIT, Microsoft .NET runtime source/license |
+| Performance ETW support | Microsoft.Diagnostics.Tracing.TraceEvent4.0.0; NETCore.Client0.2.661903; Logging.Abstractions8.0.3; DependencyInjection.Abstractions8.0.2 | Microsoft/.NET Foundation MIT notices under vendor/Performance. Exact original packages, pinned full upstream sources and selected graph accompany the dependency-source release. Windows PDH/GetSystemTimes/DXGI/ETW are OS APIs; no separately installed monitoring service is required. Framework-forwarded TypeExtensions4.7.0 resolves through the shipped .NET10 runtime |
 | WebView2 SDK | 1.0.4314.35 | Microsoft SDK terms; installed Evergreen runtime is a separate Windows dependency |
 | Monaco editor | Vendored snapshot, exact shipped hashes in release-manifest.json | Editor/vs and its supplied MIT license/notices |
 | .NET Desktop runtime | 10.0.14 | Microsoft .NET MIT license/third-party notices; self-contained system runtime |

@@ -25,6 +25,9 @@ public partial class MainWindow
 {
     internal async Task VerifySpecialists13(string root, Action<bool,string> check)
     {
+        if(Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO")=="performance"){await VerifyPerformance18(root,check);return;}
+        if(Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO")=="performance-ui"){await VerifyPerformancePresentation18(root,check);return;}
+        if(Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO")=="performance-native"){await VerifyPerformanceNative18(root,check);return;}
         if(Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO")=="missing-tabs"){await VerifyMissingTabs23(root,check);return;}
         if(Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO")=="transfer-differences"){await VerifyTransferDifferences16(root,check);return;}
         if(Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO")=="transfer-progress"){await VerifyTransferProgress24(root,check);return;}

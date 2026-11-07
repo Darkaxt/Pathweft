@@ -77,6 +77,16 @@
       <Setter Property="CornerRadius" Value="10"/>
       <Setter Property="Padding" Value="12,9,14,9"/>
     </Style>
+    <Style x:Key="PerformanceCard" TargetType="Button" BasedOn="{StaticResource Ghost}">
+      <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="Button">
+        <Border x:Name="Card" Style="{StaticResource StatCard}"><ContentPresenter HorizontalAlignment="Stretch" VerticalAlignment="Center"/></Border>
+        <ControlTemplate.Triggers>
+          <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Card" Property="Background" Value="{DynamicResource Palette.14FFFFFF}"/></Trigger>
+          <Trigger Property="Tag" Value="on"><Setter TargetName="Card" Property="BorderBrush" Value="{DynamicResource Accent}"/></Trigger>
+          <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Card" Property="BorderBrush" Value="{DynamicResource Accent}"/></Trigger>
+        </ControlTemplate.Triggers>
+      </ControlTemplate></Setter.Value></Setter>
+    </Style>
     <!-- the transfer window's buttons: big, filled and labelled, so they are found at a glance; Tag="on" is the
          accent one (the default answer) -->
     <Style x:Key="JobAction" TargetType="Button">
@@ -417,7 +427,7 @@
       <!-- Command bar -->
       <DockPanel x:Name="CommandBar" Grid.Row="3" Margin="0,6,0,6" SizeChanged="CommandBar_SizeChanged">
         <!-- the buttons first: a long status message is trimmed, it never pushes the last buttons out -->
-        <StackPanel x:Name="CommandButtons" DockPanel.Dock="Left" Orientation="Horizontal">
+        <WrapPanel x:Name="CommandButtons" DockPanel.Dock="Left" Orientation="Horizontal">
           <!-- Create -->
           <Button x:Name="NewFolderCommand" Style="{StaticResource CompactCommand}" Click="MkDir_Click" ToolTip="New folder (F7 or Ctrl+Shift+N)" AutomationProperties.Name="New folder"><Image Width="16" Height="16" Source="{DynamicResource CommandIcon.NewFolder}"/></Button>
           <Button x:Name="NewFileCommand" Style="{StaticResource CompactCommand}" Click="NewFile_Click" ToolTip="New file (Ctrl+N)" AutomationProperties.Name="New file"><Image Width="16" Height="16" Source="{DynamicResource CommandIcon.NewFile}"/></Button>
@@ -435,13 +445,14 @@
           <!-- Tools -->
           <Button x:Name="TerminalCommand" Style="{StaticResource CompactCommand}" Click="Terminal_Click" ToolTip="Open terminal (Ctrl+`)" AutomationProperties.Name="Open terminal"><Image Width="16" Height="16" Source="{DynamicResource CommandIcon.Terminal}"/></Button>
           <Button x:Name="AnalyzeSpaceCommand" Style="{StaticResource CompactCommand}" Click="AnalyzeSpace_Click" ToolTip="Analyze space in this folder" AutomationProperties.Name="Analyze space"><Image Width="16" Height="16" Source="{DynamicResource CommandIcon.AnalyzeSpace}"/></Button>
+          <Button x:Name="PerformanceCommand" Style="{StaticResource CompactCommand}" Click="Performance_Click" ToolTip="Show performance" AutomationProperties.Name="Show performance"><Image Width="16" Height="16" Source="{DynamicResource CommandIcon.Performance}"/></Button>
           <Border Style="{StaticResource CommandDivider}"/>
           <!-- View -->
           <Button x:Name="HiddenToggle" Style="{StaticResource CompactCommand}" Click="Hidden_Click" ToolTip="Show or hide Windows hidden and dot-prefixed files (Ctrl+H)" AutomationProperties.Name="Show hidden files"><Image Width="16" Height="16" Source="{DynamicResource CommandIcon.Hidden}"/></Button>
           <!-- in screen order: first pane, second pane, preview -->
           <Button x:Name="PanesCommand" Style="{StaticResource CompactCommand}" Click="Panes_Click" ToolTip="One pane or two (Ctrl+P)" AutomationProperties.Name="One or two panes"><Image Width="16" Height="16" Source="{DynamicResource CommandIcon.Panes}"/></Button>
           <Button x:Name="PreviewCommand" Style="{StaticResource CompactCommand}" Click="Preview_Click" ToolTip="Show the selected file beside the panes (Alt+P)" AutomationProperties.Name="Preview pane"><Image Width="16" Height="16" Source="{DynamicResource CommandIcon.Preview}"/></Button>
-        </StackPanel>
+        </WrapPanel>
         <TextBlock x:Name="Status" Foreground="{DynamicResource Muted}" FontSize="11" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="420" HorizontalAlignment="Right" Margin="12,0,0,0"/>
       </DockPanel>
     </Grid>

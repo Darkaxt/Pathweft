@@ -156,10 +156,19 @@ public class WhatsNewWindow : Window
         return t;
     }
 
-    // ---- the banner: the studio's picture for the month the release came out, built in as whatsnew-yyyy-MM.jpg ----
+    // Reuse the annual set by the selected release's month, including older and
+    // future years. Never substitute the computer's current month.
 
     internal static System.IO.Stream Picture(Release r) =>
-        typeof(WhatsNewWindow).Assembly.GetManifestResourceStream($"whatsnew-{r.Date:yyyy-MM}.jpg");
+        typeof(WhatsNewWindow).Assembly.GetManifestResourceStream("whatsnew-month-"+r.Date.Month.ToString("00",System.Globalization.CultureInfo.InvariantCulture)+".png");
+
+#if DEBUG
+    internal void ShowMonthForVerification(int month,int year)
+    {
+        banner.Child=new Viewbox{Stretch=Stretch.Uniform,StretchDirection=StretchDirection.DownOnly,
+            Child=Banner(new Release("test",new DateTime(year,month,1),"Monthly artwork",new()))};
+    }
+#endif
 
     static UIElement Banner(Release r)
     {
@@ -170,6 +179,7 @@ public class WhatsNewWindow : Window
         collage.StreamSource = stream;
         collage.EndInit();
         collage.Freeze();
-        return new Image { Source = collage, Width = 960, Height = 170, Stretch = Stretch.UniformToFill };
+        return new Border { Width=960,Height=170,Background=new ImageBrush(collage)
+            {Stretch=Stretch.UniformToFill,AlignmentX=AlignmentX.Center,AlignmentY=AlignmentY.Center} };
     }
 }
