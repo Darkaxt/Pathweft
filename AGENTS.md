@@ -6,15 +6,17 @@ passes actual CPU/GPU/file attribution, focus, navigation and exact worker/sessi
 retirement on its never-switched private desktop. Earlier ticket24 expired without launch.
 Source116416/analysis130208 and resource172048 pass the main-pane/history/MCP,
 browser-state, layout, query/gap/error and recording-budget workflows. Remaining:
-committed-package/source/application checks, normal1.1.31 release,
-independent retrieval and installed readback.
+applicable installed readback after the user-controlled updater. Normal1.1.31
+from e8dc64f is published with six checksum-verified assets. Final92112 and
+independently downloaded163252 pass complete source/native/application checks.
 No MCP activation/client configuration, drivers, security, DNS or app management.
 The first unpublished package exposed missing reset-coverage classification for
 the two history settings. They are explicitly preserved outside unrelated cards;
 source self-test95992 passes, including preservation of recording/retention choices.
-The failed assets must be replaced by a fresh committed package before release.
-S25 stays NOT STARTED. Preserve current source work, owned
-build/source staging and live installation. Never automatically resubmit an expired request.
+The hidden-layout consumer correction is verified; failed assets were replaced
+before publication. S25 stays NOT STARTED. Retain release/evidence, transactionally
+clean spent staging, and preserve the live installation pending the user's update.
+Never automatically resubmit an expired request.
 Prior closure below is historical.
 
 Current2026-11-07/spec0.80: S27 COMPLETE through normal1.1.30/659691f.

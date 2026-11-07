@@ -47,9 +47,17 @@ exited0. Required evidence is retained under
 .local/evidence/2026-11-07-s18/s28-native-pass. The earlier ticket24 expired
 without launching and is historical, not a test failure or remaining blocker.
 
-Remaining acceptance: committed-source package/source/application
-verification, normal1.1.31 publication, independent retrieval and applicable installed
-readback. No current external execution blocker or tracked deferral remains.
+Normal1.1.31/e8dc64fa6e4c14f2042cb88eebd85e86b9e60fd0 is published. Final92112
+and independently downloaded163252 pass corresponding sources, native32/64-bit
+routing, self-test and complete application workflows, including analysis/history/
+MCP and existing document/media/transfer behavior. Six actual release assets match
+their published SHA-256 digests; the normal release/tag/source were read back.
+The installer remains explicitly unsigned under the existing release policy.
+Evidence: .local/evidence/2026-11-07-s28/final-* and retrieved-*.
+
+Remaining acceptance blocker: applicable installed readback awaits the user's
+built-in updater/reopen, then hash-check installed members and verify restarted
+helper, route and shortcut identity. No tracked deferral; S28 remains ACTIVE.
 
 The first unpublished package from fa518f2 failed its existing settings reset
 coverage assertion for performance.record/performance.days. Those explicit choices
@@ -65,7 +73,8 @@ viewport and checks its Visibility state and allocated size. Presented visibilit
 remains covered by the separate source-rendered UI checks. Consumer176788 passes
 the complete extracted application workflows, including actual history/MCP and
 existing media/Office previews. Rebuild final assets to include this test correction
-in corresponding application sources before final package acceptance/publication.
+in corresponding application sources; that fresh final package and independent
+download subsequently passed, as recorded above.
 
 The superseded early candidate is not release evidence: later query/shutdown/graph
 corrections require a fresh package. Cleanup transactiondea868b6ed3990f6717f8629c32ed6f5
