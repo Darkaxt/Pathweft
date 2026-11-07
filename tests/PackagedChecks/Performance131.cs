@@ -11,23 +11,28 @@ sealed partial class PackageProbe
     async Task VerifyPerformance131()
     {
         var panel=owner.GetType().GetField("performance",Flags).GetValue(owner);var panelType=Type("PerformancePanel");
+        // This independent consumer deliberately never shows its host window.
+        // Give its real content a finite viewport; IsVisible cannot be true
+        // beneath an unshown Window. Presented visibility is qualified separately.
+        var content=(FrameworkElement)owner.Content;
+        void Layout(){content.Measure(new Size(1200,780));content.Arrange(new Rect(0,0,1200,780));content.UpdateLayout();}
         var pane=(FrameworkElement)owner.FindName("Left");
         var tab=Get(pane,"ActiveTab");var directory=Get(pane,"Dir");
         var selected=((IEnumerable)Get(pane,"Selected")).Cast<object>().Select(x=>(string)Get(x,"Path")).ToArray();
-        owner.UpdateLayout();
+        Layout();
         var scroll=Descendants<ScrollViewer>((FrameworkElement)pane.FindName("List")).FirstOrDefault(x=>x.ScrollableHeight>0);
-        scroll?.ScrollToVerticalOffset(Math.Min(10,scroll.ScrollableHeight));owner.UpdateLayout();double offset=scroll?.VerticalOffset??0;
+        scroll?.ScrollToVerticalOffset(Math.Min(10,scroll.ScrollableHeight));Layout();double offset=scroll?.VerticalOffset??0;
         var command=(Button)owner.FindName("PerformanceCommand");command.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-        Call(panelType,panel,"Select",0);owner.UpdateLayout();
+        Call(panelType,panel,"Select",0);Layout();
         var analysis=(FrameworkElement)Get(panel,"Analysis");
-        Check(((FrameworkElement)owner.FindName("PaneArea")).Visibility==Visibility.Collapsed&&analysis.IsVisible&&analysis.ActualHeight>200,
+        Check(((FrameworkElement)owner.FindName("PaneArea")).Visibility==Visibility.Collapsed&&analysis.Visibility==Visibility.Visible&&analysis.ActualHeight>200,
             "Delivered CPU widget opens analysis in the main browser region");
         Check(!((Button)owner.FindName("TerminalCommand")).IsEnabled,"Delivered main analysis disables hidden file commands");
-        Call(panelType,panel,"Select",2);owner.UpdateLayout();
+        Call(panelType,panel,"Select",2);Layout();
         var picker=Descendants<ComboBox>(analysis).Single(x=>x.DisplayMemberPath=="Name");
         Check(picker.Style!=null&&picker.Template!=null&&picker.Visibility==Visibility.Visible,"Delivered GPU adapter selector uses the themed application template");
-        Call(panelType,panel,"Select",-1);owner.UpdateLayout();
-        Check(((FrameworkElement)owner.FindName("PaneArea")).IsVisible&&((Button)owner.FindName("TerminalCommand")).IsEnabled,
+        Call(panelType,panel,"Select",-1);Layout();
+        Check(((FrameworkElement)owner.FindName("PaneArea")).Visibility==Visibility.Visible&&((Button)owner.FindName("TerminalCommand")).IsEnabled,
             "Delivered Back to files restores the live browser and file commands");
         Check(Equals(Get(pane,"ActiveTab"),tab)&&Equals(Get(pane,"Dir"),directory)&&selected.SequenceEqual(((IEnumerable)Get(pane,"Selected")).Cast<object>().Select(x=>(string)Get(x,"Path")))&&Math.Abs((scroll?.VerticalOffset??0)-offset)<1,
             "Delivered analysis preserves the selected tab, path, selection and browser scroll");

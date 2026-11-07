@@ -58,6 +58,15 @@ them. The production coverage map now records that ownership, with a regression
 assertion that both values survive those resets. Source self-test95992 passes.
 Failed package evidence is retained privately; it is not final delivery evidence.
 
+The independent package consumer deliberately never shows its host Window. Its
+new layout assertion incorrectly required IsVisible beneath that unshown host.
+The corrected consumer measures/arranges the actual content at a finite1200x780
+viewport and checks its Visibility state and allocated size. Presented visibility
+remains covered by the separate source-rendered UI checks. Consumer176788 passes
+the complete extracted application workflows, including actual history/MCP and
+existing media/Office previews. Rebuild final assets to include this test correction
+in corresponding application sources before final package acceptance/publication.
+
 The superseded early candidate is not release evidence: later query/shutdown/graph
 corrections require a fresh package. Cleanup transactiondea868b6ed3990f6717f8629c32ed6f5
 applied successfully, removing7,323,831,805 bytes with no errors and confirming
