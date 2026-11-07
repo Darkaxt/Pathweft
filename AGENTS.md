@@ -1,5 +1,12 @@
 # Pathweft development
 
+Plan-only2026-11-07/spec0.75: CORE-25 is NOT STARTED as S18's next-release
+companion: twelve distinct ImageGen monthly changelog banners, consistent
+Pathweft style and960:170 presentation, selected by release month with full
+annual/year rollover coverage. Inspect all assets and actual packaged month
+selections. No generation, runtime change or stage activation occurs now.
+S24 remains COMPLETE; no stage is ACTIVE.
+
 Current2026-11-07/spec0.74: S24 is COMPLETE for TRANSFER-17, the requested transfer
 progress/counter/header/action layout refinement. S16 remains COMPLETE; S18 and
 later features stay NOT STARTED. Retain internal verification and actual

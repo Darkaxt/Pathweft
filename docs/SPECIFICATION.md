@@ -1,6 +1,16 @@
 # Pathweft specification
 
-Version 0.74 - 2026-11-07. Owner: Darkaxt.
+Version 0.75 - 2026-11-07. Owner: Darkaxt.
+
+Next-release refinement2026-11-07: CORE-25 records twelve distinct ImageGen
+changelog banners, January through December, as a companion to the next planned
+release in S18. Use a consistent Pathweft visual style and the existing wide
+960:170 presentation, with month-appropriate artwork instead of reusing October's
+Halloween image for November. Select artwork by the selected release's month,
+not today's date, and provide the complete annual set without year rollover
+resource gaps. Inspect every generated image and actual packaged rendering.
+This is a specification/plan update only: no generation, runtime change, release
+or stage activation is performed now.
 
 Current user-authorized refinement2026-11-07: S24 is COMPLETE for TRANSFER-17,
 before S18; S16 remains COMPLETE. Refine the existing transfer popup without
@@ -1106,6 +1116,7 @@ criteria apply within the implementing stage and again at the packaged boundary.
 | CORE-11 | S8 measured free-space percentages, shared capacity warning colors and provider-based cloud drive identity, as specified in current scope. Verify actual mounts and unavailable capacity. |
 | CORE-22 | S17 approved yellow-folder/dark-compass application icon. Transparent multiresolution assets must remain legible at small sizes, retain polished larger detail, appear in embedded WPF/native/package surfaces, and preserve the existing Windows application/shortcut/Jump List identity. |
 | CORE-24 | Next-release taskbar icon sizing: enlarge visible folder/compass artwork approximately10-15% relative to1.1.25 while preserving design, transparency, canvas bounds and Windows identity. Verify actual packaged taskbar appearance and small-size legibility at representative display scales. |
+| CORE-25 | Next-release changelog artwork: use ImageGen to create twelve distinct, visually consistent Pathweft banners for January through December. Preserve the 960:170 banner presentation and release-month selection, bundle the complete annual set, avoid year rollover gaps, inspect each asset and verify all twelve month selections in the actual packaged changelog. S18 owns this next-release companion; no standalone artwork-only release is requested. |
 | CRAFT-01 | Refresh the three delivered Office libraries to the reviewed WordCraft0.15.2, GridCraft0.16.1 and DeckCraft0.15.1 source pins. Preserve current declared-format support, actual pagination/sheet/slide navigation, import notes, original/MOTW preservation, single-attempt LibreOffice crash/error recovery and owned cancellation/exit. Compare old/new real rendering and qualify the complete workflow before adoption. |
 | CRAFT-02 | Add source-built PhotoCraft0.20.2 read-only rendering for native .pcraft and PSD/PSB, retaining composition/layers where its importer supports them. Qualify actual inputs, not only extension registration; retain existing image preview behavior. No editor/CLI/service dependency. |
 | CRAFT-03 | Add source-built VectorCraft0.21.1 read-only document/artboard rendering for its native format and qualified SVG/PDF-compatible AI inputs. Qualify real importers and report unsupported legacy AI/EPS explicitly rather than inferring support. Preserve existing working image/PDF paths. |
