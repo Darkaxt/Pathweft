@@ -39,7 +39,12 @@ repeats the complete rendered/lifecycle qualification and checks actual raster
 ink centers within one physical pixel for Pause/Cancel at every layout, rather
 than comparing text-box centers. Updated dark normal and light minimum/scaled
 renders are inspected; counters read "480 completed" / "1,635 total" and the
-byte amount is unlabelled. The first unpublished package is superseded and
+byte amount is unlabelled. The production consumer then exposes WPF's unbound
+first-measure state: Rect.Empty has negative-infinite width, unlike the populated
+label used in the shown-window source trial. Absent glyphs now occupy zero width
+and no gap; an explicit initial-measure regression supplements the actual
+compiled-template consumer. Production verification must pass before publication.
+The first unpublished package is superseded and
 cleaned, with its receipt preserved; no old assets were published.
 Final1.1.27 package, independent retrieval and
 applicable installed acceptance remain pending; S24 stays ACTIVE.

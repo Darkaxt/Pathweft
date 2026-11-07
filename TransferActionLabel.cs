@@ -23,7 +23,17 @@ internal sealed class TransferActionLabel : FrameworkElement
     FormattedText Format(string value,bool icon)=>new(value??"",CultureInfo.CurrentUICulture,FlowDirection,
         new Typeface(icon?new FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"):TextElement.GetFontFamily(this),FontStyles.Normal,FontWeights.Normal,FontStretches.Normal),
         TextElement.GetFontSize(this),TextElement.GetForeground(this),VisualTreeHelper.GetDpi(this).PixelsPerDip);
-    internal double TextOffset => Format(Glyph,true).BuildGeometry(new Point()).Bounds.Width+6;
+    internal double TextOffset
+    {
+        get
+        {
+            var bounds=Format(Glyph,true).BuildGeometry(new Point()).Bounds;
+            // WPF can measure a template before inherited data bindings arrive.
+            // An absent outline has no width or icon/label gap (Rect.Empty's
+            // Width is negative infinity, not zero).
+            return bounds.IsEmpty?0:bounds.Width+6;
+        }
+    }
     protected override Size MeasureOverride(Size available)
     {
         var label=Format(Text,false);var icon=Format(Glyph,true);

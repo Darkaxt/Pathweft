@@ -8,6 +8,10 @@ sealed partial class PackageProbe
 {
     async Task VerifyTransferProgress127()
     {
+        var labelType=Type("TransferActionLabel");
+        var empty=(FrameworkElement)Activator.CreateInstance(labelType,true);
+        empty.Measure(new Size(200,100));empty.Arrange(new Rect(new Point(),empty.DesiredSize));empty.UpdateLayout();
+        Check(double.IsFinite(empty.DesiredSize.Width)&&empty.DesiredSize.Width>=0,"Delivered action label supports the real unbound first-measure state");
         var job=new Job{Sources=new(){"fixture"},Destination=@"D:\Destination",TotalFiles=1635,DoneFiles=480,
             TotalBytes=400_000_000,DoneBytes=12_300_000,CopiedFiles=480,VerifiedFiles=480};
         var phase=typeof(Job).GetProperty("Phase",Flags);phase.SetValue(job,Phase.Copying);
