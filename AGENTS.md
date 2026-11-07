@@ -1,6 +1,16 @@
 # Pathweft development
 
-Current2026-11-07/spec0.73: S16 is COMPLETE for CRAFT-01..07 and CORE-24.
+Current2026-11-07/spec0.74: S24 is ACTIVE for TRANSFER-17, the requested transfer
+progress/counter/header/action layout refinement. S16 remains COMPLETE; S18 and
+later features stay NOT STARTED. Retain internal verification and actual
+clipboard/conflict/cancel/completion behavior. Native/build/test scratch uses
+exact D:/Temp/pathweft-transfer-progress and
+D:/Temp/pathweft-transfer-progress-delivery for sustained small-file/native I/O,
+registered for transactional cleanup after last use. Remaining: integrated UI,
+real rendered/lifecycle checks and one normal independently/installed verified
+release. No external blocker or tracked deferral.
+
+Previous closure2026-11-07/spec0.73: S16 is COMPLETE for CRAFT-01..07 and CORE-24.
 Normal1.1.26/0856498 is published with all six assets; final110748 and independent
 download42084 pass complete source/native/app qualification. Installed readback
 108640 verifies11,287 members, restarted main106840/helper84768, helper readiness,

@@ -27,6 +27,7 @@ public partial class MainWindow
     {
         if(Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO")=="missing-tabs"){await VerifyMissingTabs23(root,check);return;}
         if(Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO")=="transfer-differences"){await VerifyTransferDifferences16(root,check);return;}
+        if(Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO")=="transfer-progress"){await VerifyTransferProgress24(root,check);return;}
         if(Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO")=="preview-selection"){await VerifyPreviewSelection38(root,check);return;}
         if(Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO")=="space-entry"){await VerifySpaceStartup23(root,check);return;}
         if(Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO") is "space-refresh" or "space-ui"){await VerifySpaceRefresh21(root,check);return;}

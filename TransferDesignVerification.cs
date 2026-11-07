@@ -7,7 +7,7 @@ using System.Windows.Threading;
 namespace FileExplorer;
 public partial class MainWindow
 {
-    Button TransferCancel(Job job)=>PreviewChildren<Button>(transfersWindow).Single(button=>ReferenceEquals(button.DataContext,job)&&button.Content is TextBlock text&&new System.Windows.Documents.TextRange(text.ContentStart,text.ContentEnd).Text.Contains("Cancel"));
+    Button TransferCancel(Job job)=>PreviewChildren<Button>(transfersWindow).Single(button=>ReferenceEquals(button.DataContext,job)&&button.Name=="TransferCancel");
     internal async Task VerifyTransferDesign15(string root,Action<bool,string> check)
     {
         string source=Directory.CreateDirectory(Path.Combine(root,"table incoming é 子")).FullName;

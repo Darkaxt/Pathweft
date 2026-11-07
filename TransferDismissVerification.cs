@@ -68,7 +68,7 @@ public partial class MainWindow
                 check(jobs.Contains(job)&&job.HasConflicts&&transfersWindow.IsVisible,"Unresolved real conflicts remain displayed");
                 if(cancel)
                 {
-                    var button=PreviewChildren<Button>(transfersWindow).Single(button=>ReferenceEquals(button.DataContext,job)&&button.Content is TextBlock text&&new System.Windows.Documents.TextRange(text.ContentStart,text.ContentEnd).Text.Contains("Cancel"));
+                    var button=TransferCancel(job);
                     button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                 }
                 else job.Resolve(Choice.Skip);
@@ -84,7 +84,7 @@ public partial class MainWindow
         foreach(var job in jobs.ToArray())
         {
             transfersWindow.UpdateLayout();
-            var dismiss=PreviewChildren<Button>(transfersWindow).Single(button=>ReferenceEquals(button.DataContext,job)&&button.Content is TextBlock text&&new System.Windows.Documents.TextRange(text.ContentStart,text.ContentEnd).Text.Contains("Dismiss"));
+            var dismiss=PreviewChildren<Button>(transfersWindow).Single(button=>ReferenceEquals(button.DataContext,job)&&button.Name=="TransferDismiss");
             dismiss.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         }
         check(jobs.Count==0&&!transfersWindow.IsVisible,"The retained outcomes still dismiss through the actual existing command");

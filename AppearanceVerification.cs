@@ -16,7 +16,7 @@ public partial class MainWindow
     [DllImport("dwmapi.dll")] static extern int DwmGetWindowAttribute(IntPtr window,int attribute,out uint value,int size);
     internal async Task VerifyAppearanceCorrection(string root)
     {
-        if(!HiddenTrialPresentation.Enabled||!(Path.GetFullPath(root).StartsWith(@"D:\Temp\pathweft-s8-delivery\",StringComparison.OrdinalIgnoreCase)||Path.GetFullPath(root).StartsWith(@"D:\Temp\pathweft-s13-s9-s11\",StringComparison.OrdinalIgnoreCase)||Path.GetFullPath(root).StartsWith(@"D:\Temp\pathweft-s16\",StringComparison.OrdinalIgnoreCase)||HiddenTrialPresentation.SandboxIndexTrial&&Path.GetFullPath(root)==@"C:\Coordinator\Work\trial"))throw new ArgumentException("Owned hidden fixture required.");
+        if(!HiddenTrialPresentation.Enabled||!(Path.GetFullPath(root).StartsWith(@"D:\Temp\pathweft-s8-delivery\",StringComparison.OrdinalIgnoreCase)||Path.GetFullPath(root).StartsWith(@"D:\Temp\pathweft-s13-s9-s11\",StringComparison.OrdinalIgnoreCase)||Path.GetFullPath(root).StartsWith(@"D:\Temp\pathweft-s16\",StringComparison.OrdinalIgnoreCase)||Path.GetFullPath(root).StartsWith(@"D:\Temp\pathweft-transfer-progress\",StringComparison.OrdinalIgnoreCase)||HiddenTrialPresentation.SandboxIndexTrial&&Path.GetFullPath(root)==@"C:\Coordinator\Work\trial"))throw new ArgumentException("Owned hidden fixture required.");
         Application.Current.ShutdownMode=ShutdownMode.OnExplicitShutdown;
         var checks=new List<object>(); int result=1; SettingsWindow settings=null;SearchWidgetWindow widget=null;
         void Check(bool passed,string criterion)

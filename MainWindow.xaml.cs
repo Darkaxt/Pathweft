@@ -1136,7 +1136,7 @@ public partial class MainWindow : Window
     Window transfersWindow;
     readonly HashSet<Job> askedForward = new(); // a job's conflicts bring the window forward once
     TotalChart totalChart;
-    TextBlock totalSpeed, totalLegend;
+    TextBlock totalSpeed, totalLegend, totalProcessed;
     FrameworkElement transfersTop;
     System.Windows.Data.ListCollectionView jobView;
     readonly Dictionary<Job, int> shownState = new();
@@ -1156,11 +1156,16 @@ public partial class MainWindow : Window
             var list = new ItemsControl { ItemTemplate = (DataTemplate)FindResource("JobCard"), ItemsSource = jobView };
 
             totalSpeed = new TextBlock { FontSize = 18, FontWeight = FontWeights.SemiBold, Margin = new(0, 0, 12, 0) };
-            totalSpeed.ToolTip="Combined copying and verification throughput";
+            totalSpeed.ToolTip="Combined transfer throughput";
             totalLegend = new TextBlock { Foreground = (Brush)FindResource("Muted"), VerticalAlignment = VerticalAlignment.Bottom, Margin = new(0, 0, 0, 5), TextTrimming = TextTrimming.CharacterEllipsis };
-            var top = new DockPanel { Margin = new(0,0,0,8) };
-            DockPanel.SetDock(totalSpeed, Dock.Left);
-            top.Children.Add(totalSpeed); top.Children.Add(totalLegend);
+            totalProcessed = new TextBlock { Name="TransferProcessed", Foreground=(Brush)FindResource("Muted"), VerticalAlignment=VerticalAlignment.Center, Margin=new(12,0,0,0) };
+            var figures = new Grid();
+            figures.ColumnDefinitions.Add(new ColumnDefinition());
+            figures.ColumnDefinitions.Add(new ColumnDefinition { Width=GridLength.Auto });
+            Grid.SetColumn(totalProcessed,1);
+            figures.Children.Add(totalSpeed); figures.Children.Add(totalProcessed);
+            var top = new StackPanel { Margin = new(0,0,0,8) };
+            top.Children.Add(figures); top.Children.Add(totalLegend);
             totalChart = new TotalChart { Height = 110, Margin = new(0,0,0,12) }; // as wide as the window, whatever its size
 
             var root = new DockPanel { Background = Tint(),Margin=(Thickness)FindResource("AuxiliaryMargin") };
@@ -1213,6 +1218,8 @@ public partial class MainWindow : Window
         transfersTop.Visibility = busy ? Visibility.Visible : Visibility.Collapsed;
         totalChart.Visibility = busy && totalChart.HasData ? Visibility.Visible : Visibility.Collapsed;
         totalSpeed.Text = running.Count > 0 ? $"{Fmt((long)total)}/s" : jobs.Any(j => j.HasConflicts) ? "Review replacements" : jobs.Any(j=>j.Phase==Phase.Scanning)?"Scanning files…":jobs.Any(j => j.Active) ? "Queued" : "Done";
+        totalProcessed.Text=$"{Fmt(jobs.Where(j=>j.Active).Sum(j=>j.DoneBytes))} processed";
+        totalLegend.Visibility=running.Count>1?Visibility.Visible:Visibility.Collapsed;
         totalLegend.Inlines.Clear();
         foreach (var j in running.Count>1?running:new List<Job>())
         {

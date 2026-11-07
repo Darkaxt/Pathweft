@@ -1,6 +1,24 @@
 # Pathweft specification
 
-Version 0.73 - 2026-11-06. Owner: Darkaxt.
+Version 0.74 - 2026-11-07. Owner: Darkaxt.
+
+Current user-authorized refinement2026-11-07: S24 is ACTIVE for TRANSFER-17,
+before S18; S16 remains COMPLETE. Refine the existing transfer popup without
+changing transfer, verification, clipboard, conflict or completion semantics.
+Remove the empty secondary per-file track; place completed and total file
+counts above opposite ends of the single overall progress bar. Show aggregate
+processed bytes at the top right beside the combined speed, with a separate
+multi-job legend when needed. Keep active-file/current-file context and genuine
+errors, partial/skipped outcomes and expandable details. Verification remains
+internal: no routine verified/unchecked count in card titles or statistics.
+Center icon and label separately in Pause/Resume, Cancel and Dismiss actions.
+Design contract: retain640-DIP default/460-DIP minimum width,12-DIP card inset,
+6-DIP primary bar,11-DIP muted counters,34-DIP minimum actions and6-DIP
+icon/label gap. Preserve opaque first layout and content-sized height. Qualify
+actual running/paused/conflict/failure/multiple-job layouts in dark/light at
+100/150%, normal/minimum widths, actual completion/cancellation, and final
+normal release with independent download and applicable installed verification.
+No S18 or other feature implementation is activated by this correction.
 
 Implementation authorization2026-11-06: the user directed starting the next
 stage, S16, and added advance core text extraction for subsequent content
@@ -1365,6 +1383,7 @@ Primary sources: [Windows indexing scope](https://support.microsoft.com/en-us/wi
 | TRANSFER-14 | On actual successful transfer completion, automatically dismiss that job through the existing Transfers UI owner and hide the window when no cards remain. Retain active/queued/paused/conflicting and failed/partial/error outcomes; explicit clean cancellation follows TRANSFER-15. Preserve completion notifications, Undo, arrival selection, source/destination refresh and reusable close-to-hide behavior. Use completion events, with no simulated click, delay or polling deadline. Verify real copy/move, multiple jobs and unsuccessful outcomes; successful completion must not hide outstanding work or erase its errors. |
 | TRANSFER-15 | The S15 transfer popup amendment in current scope governs compact content-ready sizing, a real virtualized conflict table, clean explicit-cancel dismissal after worker completion, unchanged native clipboard data and repeat Paste, nonduplicated speed, and visible file-specific errors with secondary informational details. Qualify real job actions, isolated native clipboard, multiple jobs, resizing, keyboard, dark/light and100/150% rendering. |
 | TRANSFER-16 | S17: differences-first metadata review, newer destination files first in orange with noncolor cue, only differing size/date values rendered at distinguishing precision, explicit matching-file reveal/counts/action scope and unchanged full-set transfer decisions. No extra content reads or identity claim from equal metadata. Verify real conflicts/resolution, compact themes/scaling and final independent/installed release. |
+| TRANSFER-17 | S24: one overall progress bar with completed/total file counts at opposite ends; processed bytes beside aggregate speed; separately centered icon/label actions; no empty secondary track or routine verified/unchecked counters. Preserve real transfer verification, active-file context, errors/partial outcomes, conflict decisions, clipboard and completion lifecycle. Actual state/theme/scale/minimum-width and delivered-package checks are required under the current design contract. |
 | WINDOW-03 | Reconcile WINDOW-01/02 and UPDATE-02 against the complete inventory, revalidate affected updater/window lifecycle, then deliver one normal S14 release through the established channel. Independently retrieve the actual package, verify matching source/runtime/notices and packaged workflows, and verify the installed update. No per-window intermediate release or unsolicited system/theme/settings changes. |
 
 ### Current-pane disk analysis (S15)

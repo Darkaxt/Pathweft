@@ -140,11 +140,10 @@ public class Job : INotifyPropertyChanged
     // ---- view ----
     public event PropertyChangedEventHandler PropertyChanged;
     public void Refresh() => PropertyChanged?.Invoke(this, new(null));
-    /// Only the two bars, every frame: the text and the chart change ten times a second (Refresh).
+    /// Only overall progress every frame: text and chart change ten times a second (Refresh).
     public void RefreshBars()
     {
         PropertyChanged?.Invoke(this, new(nameof(Fraction)));
-        PropertyChanged?.Invoke(this, new(nameof(CurrentFraction)));
     }
 
     string Verb => IsMove ? "Moving" : "Copying";
@@ -154,7 +153,7 @@ public class Job : INotifyPropertyChanged
     public string Title => Description != null ? Description + (Phase == Phase.Done ? Partial ? " · " + ResultDetail : " · complete" : Phase == Phase.Cancelled ? " · cancelled, " + ResultDetail : Phase == Phase.Failed ? " · failed, " + ResultDetail : Paused ? " · paused" : "") : Phase switch
     {
         Phase.Done when Partial => $"Finished — {ResultDetail} to {Destination}",
-        Phase.Done => $"{(IsMove ? "Moved" : "Copied")} {DoneFiles} file(s) to {Destination}" + (RenamedFiles == TotalFiles && TotalFiles > 0 ? " · renamed" : $" · {VerifiedFiles} verified" + (VerifiedFiles < CopiedFiles ? ", unchecked copies" : "")),
+        Phase.Done => $"{(IsMove ? "Moved" : "Copied")} {DoneFiles} file(s) to {Destination}" + (RenamedFiles == TotalFiles && TotalFiles > 0 ? " · renamed" : ""),
         Phase.Failed => $"Failed — {ResultDetail} to {Destination}",
         Phase.Cancelled => $"Cancelled — {DoneFiles} of {TotalFiles} file(s) to {Destination}",
         Phase.Scanning => $"Scanning {Sources.Count} item(s)…",
@@ -163,18 +162,23 @@ public class Job : INotifyPropertyChanged
     } + (Paused ? "  (paused)" : "");
     public double Fraction => Math.Clamp(Finished ? TotalFiles > 0 ? (double)DoneFiles / TotalFiles : Successful ? 1 : 0 : TotalBytes > 0 ? (double)DoneBytes / TotalBytes : 0, 0, 1);
     public double CurrentFraction => Concurrent ? 0 : CurrentSize > 0 ? Math.Clamp((double)CurrentDone / CurrentSize, 0, 1) : 0;
+    public string CompletedFilesText => $"{DoneFiles:N0} completed";
+    public string TotalFilesText => $"{TotalFiles:N0} files {(Phase == Phase.Scanning ? "found" : "total")}";
     internal int ParallelWorkers;
     internal bool Concurrent;
     public string Stats
     {
         get
         {
-            var s = $"{DoneFiles}/{TotalFiles} files · {MainWindow.Fmt(DoneBytes)} processed";
-            if (ArchiveOperation) { if (SkippedFiles > 0) s += $" · {SkippedFiles} skipped"; }
-            else s += $" · {VerifiedFiles} verified" + (RenamedFiles > 0 ? $" · {RenamedFiles} renamed" : "") + (SkippedFiles > 0 ? $" · {SkippedFiles} skipped" : "");
-            return s;
+            var parts = new List<string>();
+            if (Finished) parts.Add($"{MainWindow.Fmt(DoneBytes)} processed");
+            if (RenamedFiles > 0) parts.Add($"{RenamedFiles:N0} renamed");
+            if (SkippedFiles > 0) parts.Add($"{SkippedFiles:N0} skipped");
+            if (ExcludedItems > 0) parts.Add($"{ExcludedItems:N0} unsupported");
+            return string.Join(" · ", parts);
         }
     }
+    public bool HasStats => Stats.Length > 0;
     public bool Active => Phase is Phase.Queued or Phase.Scanning or Phase.Copying or Phase.Verifying or Phase.Conflicts;
     public bool Finished => !Active;
     public bool Copying => Phase is Phase.Copying or Phase.Verifying;

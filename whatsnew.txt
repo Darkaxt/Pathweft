@@ -1,6 +1,10 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.27 | 2026-11-07 | Clearer transfer progress
+- Transfer cards show completed and total file counts above a single progress bar. Processed bytes sit beside the speed at the top, with no redundant per-file track or verification counters.
+- Pause, Resume, Cancel and Dismiss now center their icons and labels consistently. Active-file context, replacement review and genuine errors remain available.
+
 ## 1.1.26 | 2026-11-07 | More native document previews
 - Updated the embedded Word, spreadsheet and presentation cores, preserving page, sheet and slide navigation and LibreOffice recovery.
 - Added native PhotoCraft/PSD/PSB, VectorCraft/SVG/PDF-compatible AI and FigCraft document previews with artboard or frame navigation. Existing embedded Figma thumbnails keep priority when available.
