@@ -8,10 +8,14 @@ changing transfer, verification, clipboard, conflict or completion semantics.
 Remove the empty secondary per-file track; place completed and total file
 counts above opposite ends of the single overall progress bar. Show aggregate
 processed bytes at the top right beside the combined speed, with a separate
-multi-job legend when needed. Keep active-file/current-file context and genuine
+multi-job legend when needed. The user's subsequent refinement removes the
+redundant word "processed": render the formatted byte amount alone in both
+the header and retained outcomes. Counters read "480 completed" / "1,635 total"
+("found" during scanning), without a redundant "files" noun. Keep active-file/current-file context and genuine
 errors, partial/skipped outcomes and expandable details. Verification remains
 internal: no routine verified/unchecked count in card titles or statistics.
-Center icon and label separately in Pause/Resume, Cancel and Dismiss actions.
+Center the actual visible icon and label ink in Pause/Resume, Cancel and Dismiss
+actions: matching text-box centers alone is insufficient across these fonts.
 Design contract: retain640-DIP default/460-DIP minimum width,12-DIP card inset,
 6-DIP primary bar,11-DIP muted counters,34-DIP minimum actions and6-DIP
 icon/label gap. Preserve opaque first layout and content-sized height. Qualify

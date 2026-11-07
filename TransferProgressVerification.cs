@@ -4,6 +4,7 @@ using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 
 namespace FileExplorer;
@@ -34,18 +35,28 @@ public partial class MainWindow
                 var total=PreviewChildren<TextBlock>(card).Single(t=>t.Name=="TransferTotal");
                 var bar=PreviewChildren<ProgressBar>(card).Single();
                 Point At(FrameworkElement e)=>e.TranslatePoint(new Point(),card);
-                check(completed.Text==job.CompletedFilesText&&total.Text==job.TotalFilesText&&At(completed).Y<At(bar).Y&&At(total).X>At(completed).X+completed.ActualWidth,
+                check(completed.Text=="480 completed"&&total.Text==1635.ToString("N0")+" total"&&At(completed).Y<At(bar).Y&&At(total).X>At(completed).X+completed.ActualWidth,
                     $"Actual completed/total counters occupy opposite ends above the single bar: {theme}/{scale}/{width}");
-                check(bar.Value==job.Fraction&&totalProcessed.Text==Fmt(job.DoneBytes)+" processed"&&totalLegend.Visibility==Visibility.Collapsed,
+                check(bar.Value==job.Fraction&&totalProcessed.Text==Fmt(job.DoneBytes)&&totalLegend.Visibility==Visibility.Collapsed,
                     "Header shows processed bytes once beside speed, with no redundant one-job legend");
                 check(!PreviewChildren<TextBlock>(card).Any(t=>t.IsVisible&&t.Text.Contains("verified",StringComparison.OrdinalIgnoreCase)),
                     "Running card exposes no verification counter");
                 foreach(var button in PreviewChildren<Button>(card).Where(b=>b.IsVisible))
                 {
-                    var parts=((StackPanel)button.Content).Children.Cast<TextBlock>().ToArray();
-                    double Center(TextBlock t)=>t.TranslatePoint(new Point(0,t.ActualHeight/2),button).Y;
-                    check(parts.Length==2&&Math.Abs(Center(parts[0])-Center(parts[1]))<.1&&AutomationProperties.GetName(button).Length>0&&At(button).X+button.ActualWidth<=card.ActualWidth,
-                        "Actual button glyph and label share a center, fit the card and have accessible names");
+                    var label=(TransferActionLabel)button.Content;
+                    var dpi=VisualTreeHelper.GetDpi(label);
+                    int w=(int)Math.Ceiling(label.ActualWidth*dpi.DpiScaleX),h=(int)Math.Ceiling(label.ActualHeight*dpi.DpiScaleY);
+                    var bitmap=new RenderTargetBitmap(w,h,dpi.PixelsPerInchX,dpi.PixelsPerInchY,PixelFormats.Pbgra32);bitmap.Render(label);
+                    var pixels=new byte[w*h*4];bitmap.CopyPixels(pixels,w*4,0);
+                    double InkCenter(bool icon)
+                    {
+                        var rows=new List<int>();int split=(int)Math.Floor(label.TextOffset*dpi.DpiScaleX);
+                        for(int y=0;y<h;y++)for(int x=icon?0:split;x<(icon?split:w);x++)if(pixels[(y*w+x)*4+3]>32){rows.Add(y);break;}
+                        check(rows.Count>0,"Action raster contains visible icon and label: "+label.Text);
+                        return (rows.Min()+rows.Max())/2.0;
+                    }
+                    check(Math.Abs(InkCenter(true)-InkCenter(false))<=1&&AutomationProperties.GetName(button).Length>0&&At(button).X+button.ActualWidth<=card.ActualWidth,
+                        "Actual rasterized icon/label ink centers align within one pixel and accessible actions fit: "+label.Text);
                 }
                 check(transfersWindow.ActualHeight<420*scale,"One running transfer remains compact with its speed chart");
                 await S1Verification.Snapshot(transfersWindow,root,$"transfer-progress-{theme}-{scale*100:0}-{width}");
@@ -55,11 +66,11 @@ public partial class MainWindow
             check(job.Paused&&AutomationProperties.GetName(pause)=="Resume","Actual Pause changes state and accessible Resume label");
             pause.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));check(!job.Paused,"Actual Resume preserves the transfer");
             jobs.Add(other);UpdateTransfers();await Layout();
-            check(totalProcessed.Text==Fmt(job.DoneBytes+other.DoneBytes)+" processed"&&totalLegend.Visibility==Visibility.Visible,"Multiple active transfers aggregate bytes while retaining their legend");
+            check(totalProcessed.Text==Fmt(job.DoneBytes+other.DoneBytes)&&totalLegend.Visibility==Visibility.Visible,"Multiple active transfers aggregate bytes while retaining their legend");
             jobs.Remove(other);job.Phase=Phase.Failed;job.Errors.Enqueue("blocked.txt: Access denied");job.Refresh();UpdateTransfers();await Layout();
-            check(PreviewChildren<TextBlock>(transfersWindow).Any(t=>t.IsVisible&&t.Text==job.ErrorSummary)&&job.Stats==Fmt(job.DoneBytes)+" processed","Genuine failure retains its error and processed amount without verification counters");
+            check(PreviewChildren<TextBlock>(transfersWindow).Any(t=>t.IsVisible&&t.Text==job.ErrorSummary)&&job.Stats==Fmt(job.DoneBytes),"Genuine failure retains its error and byte amount without redundant labels or verification counters");
             var dismiss=PreviewChildren<Button>(transfersWindow).Single(b=>b.Name=="TransferDismiss");
-            check(dismiss.IsVisible&&((StackPanel)dismiss.Content).Children.Count==2,"Finished action retains the aligned icon/label layout");
+            check(dismiss.IsVisible&&dismiss.Content is TransferActionLabel{Text:"Dismiss"},"Finished action retains the aligned icon/label layout");
             job.Phase=Phase.Done;job.Errors.TryDequeue(out _);job.SkippedFiles=1;job.ExcludedItems=1;job.Refresh();
             check(job.Stats.Contains("1 skipped")&&job.Stats.Contains("1 unsupported")&&!job.Title.Contains("verified")&&job.VerifiedFiles==480,"Outcome details remain truthful and internal verification accounting is unchanged");
         }

@@ -147,11 +147,11 @@
           <DockPanel>
             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
               <Button x:Name="TransferPause" Style="{StaticResource JobAction}" Visibility="{Binding Copying, Converter={StaticResource Vis}}" Click="JobPause_Click" AutomationProperties.Name="{Binding PauseText}">
-                <StackPanel Orientation="Horizontal"><TextBlock FontFamily="Segoe Fluent Icons" Text="{Binding PauseGlyph}" VerticalAlignment="Center" Margin="0,0,6,0"/><TextBlock Text="{Binding PauseText}" VerticalAlignment="Center"/></StackPanel></Button>
+                <local:TransferActionLabel Glyph="{Binding PauseGlyph}" Text="{Binding PauseText}"/></Button>
               <Button x:Name="TransferCancel" Style="{StaticResource JobAction}" Margin="0" Visibility="{Binding Active, Converter={StaticResource Vis}}" Click="JobCancel_Click" AutomationProperties.Name="Cancel transfer">
-                <StackPanel Orientation="Horizontal"><TextBlock FontFamily="Segoe Fluent Icons" Text="&#xE711;" VerticalAlignment="Center" Margin="0,0,6,0"/><TextBlock Text="Cancel" VerticalAlignment="Center"/></StackPanel></Button>
+                <local:TransferActionLabel Glyph="&#xE711;" Text="Cancel"/></Button>
               <Button x:Name="TransferDismiss" Style="{StaticResource JobAction}" Margin="0" Visibility="{Binding Finished, Converter={StaticResource Vis}}" Click="JobDismiss_Click" AutomationProperties.Name="Dismiss transfer">
-                <StackPanel Orientation="Horizontal"><TextBlock FontFamily="Segoe Fluent Icons" Text="&#xE73E;" VerticalAlignment="Center" Margin="0,0,6,0"/><TextBlock Text="Dismiss" VerticalAlignment="Center"/></StackPanel></Button>
+                <local:TransferActionLabel Glyph="&#xE73E;" Text="Dismiss"/></Button>
             </StackPanel>
             <StackPanel VerticalAlignment="Center" Margin="0,0,12,0">
               <TextBlock Text="{Binding Current}" ToolTip="{Binding Current}" Visibility="{Binding Copying, Converter={StaticResource Vis}}" Foreground="{DynamicResource Muted}" FontSize="11" TextTrimming="CharacterEllipsis"/>

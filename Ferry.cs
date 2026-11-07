@@ -163,7 +163,7 @@ public class Job : INotifyPropertyChanged
     public double Fraction => Math.Clamp(Finished ? TotalFiles > 0 ? (double)DoneFiles / TotalFiles : Successful ? 1 : 0 : TotalBytes > 0 ? (double)DoneBytes / TotalBytes : 0, 0, 1);
     public double CurrentFraction => Concurrent ? 0 : CurrentSize > 0 ? Math.Clamp((double)CurrentDone / CurrentSize, 0, 1) : 0;
     public string CompletedFilesText => $"{DoneFiles:N0} completed";
-    public string TotalFilesText => $"{TotalFiles:N0} files {(Phase == Phase.Scanning ? "found" : "total")}";
+    public string TotalFilesText => $"{TotalFiles:N0} {(Phase == Phase.Scanning ? "found" : "total")}";
     internal int ParallelWorkers;
     internal bool Concurrent;
     public string Stats
@@ -171,7 +171,7 @@ public class Job : INotifyPropertyChanged
         get
         {
             var parts = new List<string>();
-            if (Finished) parts.Add($"{MainWindow.Fmt(DoneBytes)} processed");
+            if (Finished) parts.Add(MainWindow.Fmt(DoneBytes));
             if (RenamedFiles > 0) parts.Add($"{RenamedFiles:N0} renamed");
             if (SkippedFiles > 0) parts.Add($"{SkippedFiles:N0} skipped");
             if (ExcludedItems > 0) parts.Add($"{ExcludedItems:N0} unsupported");

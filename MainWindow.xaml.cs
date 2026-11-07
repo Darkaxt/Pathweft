@@ -1218,7 +1218,7 @@ public partial class MainWindow : Window
         transfersTop.Visibility = busy ? Visibility.Visible : Visibility.Collapsed;
         totalChart.Visibility = busy && totalChart.HasData ? Visibility.Visible : Visibility.Collapsed;
         totalSpeed.Text = running.Count > 0 ? $"{Fmt((long)total)}/s" : jobs.Any(j => j.HasConflicts) ? "Review replacements" : jobs.Any(j=>j.Phase==Phase.Scanning)?"Scanning files…":jobs.Any(j => j.Active) ? "Queued" : "Done";
-        totalProcessed.Text=$"{Fmt(jobs.Where(j=>j.Active).Sum(j=>j.DoneBytes))} processed";
+        totalProcessed.Text=Fmt(jobs.Where(j=>j.Active).Sum(j=>j.DoneBytes));
         totalLegend.Visibility=running.Count>1?Visibility.Visible:Visibility.Collapsed;
         totalLegend.Inlines.Clear();
         foreach (var j in running.Count>1?running:new List<Job>())

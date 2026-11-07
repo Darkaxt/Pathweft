@@ -21,13 +21,17 @@ sealed partial class PackageProbe
             var bar=Descendants<ProgressBar>(card).Single();
             var left=Descendants<TextBlock>(card).Single(t=>t.Name=="TransferCompleted");
             var right=Descendants<TextBlock>(card).Single(t=>t.Name=="TransferTotal");
-            Check(bar.Value==job.Fraction&&left.Text.Contains("480")&&right.Text.Contains(job.TotalFiles.ToString("N0"))&&left.TranslatePoint(new Point(),card).Y<bar.TranslatePoint(new Point(),card).Y,
+            Check(bar.Value==job.Fraction&&left.Text=="480 completed"&&right.Text==job.TotalFiles.ToString("N0")+" total"&&left.TranslatePoint(new Point(),card).Y<bar.TranslatePoint(new Point(),card).Y,
                 "Delivered single progress bar shows completed/total counts above it at width "+width);
             foreach(var button in Descendants<Button>(card).Where(b=>b.Visibility==Visibility.Visible&&b.Name.StartsWith("Transfer")))
             {
-                var parts=((StackPanel)button.Content).Children.Cast<TextBlock>().ToArray();
-                double Center(TextBlock text)=>text.TranslatePoint(new Point(0,text.ActualHeight/2),button).Y;
-                Check(parts.Length==2&&Math.Abs(Center(parts[0])-Center(parts[1]))<.1&&AutomationProperties.GetName(button).Length>0,"Delivered action icons/labels have aligned centers and accessible names");
+                var label=(FrameworkElement)button.Content;
+                var dpi=System.Windows.Media.VisualTreeHelper.GetDpi(label);
+                int w=(int)Math.Ceiling(label.ActualWidth*dpi.DpiScaleX),h=(int)Math.Ceiling(label.ActualHeight*dpi.DpiScaleY),split=(int)Math.Floor((double)Get(label,"TextOffset")*dpi.DpiScaleX);
+                var raster=new System.Windows.Media.Imaging.RenderTargetBitmap(w,h,dpi.PixelsPerInchX,dpi.PixelsPerInchY,System.Windows.Media.PixelFormats.Pbgra32);raster.Render(label);
+                var pixels=new byte[w*h*4];raster.CopyPixels(pixels,w*4,0);
+                double Center(bool icon){var rows=new List<int>();for(int y=0;y<h;y++)for(int x=icon?0:split;x<(icon?split:w);x++)if(pixels[(y*w+x)*4+3]>32){rows.Add(y);break;}return(rows.Min()+rows.Max())/2.0;}
+                Check(Math.Abs(Center(true)-Center(false))<=1&&AutomationProperties.GetName(button).Length>0,"Delivered rasterized action icons and labels have aligned visible ink centers and accessible names");
             }
         }
         var pause=Descendants<Button>(card).Single(b=>b.Name=="TransferPause");
@@ -36,6 +40,6 @@ sealed partial class PackageProbe
         pause.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         Check(!job.Paused&&job.Stats==""&&job.VerifiedFiles==480,"Delivered running presentation omits debug statistics and preserves verification accounting");
         phase.SetValue(job,Phase.Done);
-        Check(!job.Title.Contains("verified")&&!job.Stats.Contains("verified")&&job.Stats.Contains("12.3 MB processed"),"Delivered completion omits verification counts and retains processed bytes");
+        Check(!job.Title.Contains("verified")&&!job.Stats.Contains("verified")&&job.Stats=="12.3 MB","Delivered completion omits verification counts and redundant byte labels");
     }
 }
