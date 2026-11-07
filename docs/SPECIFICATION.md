@@ -1,6 +1,27 @@
 # Pathweft specification
 
-Version 0.80 - 2026-11-07. Owner: Darkaxt.
+Version 0.81 - 2026-11-07. Owner: Darkaxt.
+
+### Integrated system analysis (S28)
+
+User-authorized first release: performance/history/read-only MCP before S25.
+Maintenance, DNS, winget/apps, security enforcement and new hardware drivers
+are excluded. Selectively adapt SysOptimizer MIT source at
+6ddd104fe4fc3f990bc2a9b376e5795943541d49, preserving provenance/notices;
+keep Pathweft's qualified counter, device identity and tracing ownership.
+
+| ID | Required behavior and acceptance |
+| --- | --- |
+| MONITOR-09 | Widgets open System analysis in the main browser region: large graphs, range controls, themed selectors and sortable process/file tables. Back to files/Escape restore the same pane objects, tabs, selection and scroll. Hidden file commands cannot act on underlying selections. Keep cards at statistics height and qualify dark/light100/150% narrow/wide layouts using existing Huashu/Pathweft tokens. Supersedes bottom-only expanded details. |
+| MONITOR-10 | Opt-in persistent CPU/physical RAM/per-GPU/per-drive history under DataFolder.Bulk, default off; explicit recording and 1/7/30-day retention. One sampler/writer, transactional persistence, indexed streaming queries, retention pruning and bounded memory. No background folder/file logs or new service/startup entry. Off stops recording/process enumeration but preserves old observations. Missing values/gaps/device identities/storage errors remain explicit. |
+| MONITOR-11 | Shared UI/MCP queries provide summaries/peaks, top observed apps, app observations and events/spikes. Record a bounded heavy-app selection every ten seconds with explicit incomplete coverage and PID/start identity. Do not call sampled appearances exact launch/exit events or infer causation. Aggregate all matching observations; detailed output bounds report truncation. Missing/stale data and inaccessible processes are explicit. |
+| MONITOR-12 | Bundle explicit stdio --performance-mcp with get_current_usage, get_usage_summary, get_top_processes, find_spikes, get_app_history and get_events. Read recorded history without WPF startup/elevation/another sampler/network listeners/client-configuration writes or activation. Finite version negotiation, input validation, structured errors and EOF exit. Qualify real subprocess protocol/read-only queries, restart persistence, retention/gaps/device/identity boundaries. Current usage is the latest recorded observation plus age, not invented live data when recording is off. |
+| MONITOR-13 | Verify complete widget -> analysis -> record/query -> return -> restart -> same MCP facts, actual counters, layouts, tracing lifecycle and resource bounds. Keep existing off-mode budgets; recording adds at most 1% normalized CPU and 32MiB retained private memory in the qualified workload. Deliver one normal release with independent retrieval/package checks and applicable installed readback. |
+
+Design contract: existing StatCard/Muted/Accent/AuxiliaryAction/PreviewClipCombo,
+10-DIP gaps, minimum32-DIP actions, flexible graph above virtualized tables,
+wrapping controls at narrow widths. Analysis replaces the main browser region,
+not bottom cards. MCP is packaged but no client is enabled or reconfigured.
 
 User refinement2026-11-07: S27 COMPLETE through verified1.1.30 for MONITOR-06..08 and supersedes
 S18's focus-only folder-collection behavior. Graphs span the actual observed

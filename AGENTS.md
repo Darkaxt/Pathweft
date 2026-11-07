@@ -1,5 +1,18 @@
 # Pathweft development
 
+Current spec0.81: S28 is the only ACTIVE stage.
+Native request0ecad834edd14848bf3b40068299c752/ticket25 exited0; app170636
+passes actual CPU/GPU/file attribution, focus, navigation and exact worker/session
+retirement on its never-switched private desktop. Earlier ticket24 expired without launch.
+Source116416/analysis130208 and resource172048 pass the main-pane/history/MCP,
+browser-state, layout, query/gap/error and recording-budget workflows. Remaining:
+committed-package/source/application checks, normal1.1.31 release,
+independent retrieval and installed readback.
+No MCP activation/client configuration, drivers, security, DNS or app management.
+S25 stays NOT STARTED. Preserve current source work, owned
+build/source staging and live installation. Never automatically resubmit an expired request.
+Prior closure below is historical.
+
 Current2026-11-07/spec0.80: S27 COMPLETE through normal1.1.30/659691f.
 Source104260/native160216/sampler115172 pass actual compact-layout, RAM,
 automatic folder-scope, visibility/lifecycle and numerical resource criteria.

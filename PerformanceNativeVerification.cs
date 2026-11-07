@@ -28,7 +28,7 @@ public partial class MainWindow
         await S1Verification.Navigate(Left,folder);Activate();
         PerformanceCommand.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await Settle();
         performance.FocusForVerification(PerformancePanel.Folder);await Settle();
-        check(IsActive&&performance.IsKeyboardFocusWithin,"Actual native focus reaches the folder widget");
+        check(IsActive&&(performance.IsKeyboardFocusWithin||performance.Analysis.IsKeyboardFocusWithin),"Actual native focus reaches folder analysis opened from its widget");
         var existing=TraceEventSession.GetActiveSessionNames().Where(x=>x.StartsWith("Pathweft-Io-")).ToArray();
         await performance.EnableForVerification();await performance.SyncForVerification();
         check(performance.IoForVerification is {Running:true},"App-owned worker acknowledges automatic current-folder tracing after permission");

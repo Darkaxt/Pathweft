@@ -1700,6 +1700,12 @@ public partial class MainWindow : Window
 
     protected override void OnPreviewKeyDown(KeyEventArgs e)
     {
+        if(AnalysisVisible)
+        {
+            if(e.Key==Key.Escape){performance.Select(-1);e.Handled=true;}
+            else base.OnPreviewKeyDown(e);
+            return;
+        }
         if (HandleHiddenShortcut(e.Key, e.KeyboardDevice.Modifiers, e.IsRepeat, e.OriginalSource)) { e.Handled = true; return; }
         // Scope selection owns its Enter/arrows/Escape; global file commands
         // must not open a selected file while this control has the keyboard.

@@ -7,6 +7,7 @@ Those notices remain distributed with the application.
 
 | Component | Version/source | Distribution material |
 | --- | --- | --- |
+| SysOptimizer selected performance/history/MCP policies | 6ddd104fe4fc3f990bc2a9b376e5795943541d49 | MIT copyright2026 Protagonist Labs; full terms and selected original sources under vendor/SysOptimizer in the application source archive. Adapted query/observation policy only; no standalone donor runtime, driver or MCP configuration ships. |
 | File Labs | imported a8d5a5c, selected fixes through 9bfbbce | Original MIT LICENSE; Pathweft source/tag and upstream history |
 | EverythingToolbar | a4379f181ea8e9b4d3ff8b0e5178d8d39491830c | MIT, vendor/EverythingSDK/NOTICES.txt |
 | Everything SDK / engine | API2 / 1.4.1.1032 x64 | Native SDK and unchanged engine licenses/notices, Everything/License.txt |

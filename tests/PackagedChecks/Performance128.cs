@@ -42,6 +42,7 @@ sealed partial class PackageProbe
         command.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         Check(command.Tag==null&&AutomationProperties.GetItemStatus(command)=="Off","Delivered command restores the statistics mode");
         VerifyObservedGraphs();
+        await VerifyPerformance131();
 
         var release=Type("WhatsNewWindow").GetNestedType("Release",BindingFlags.NonPublic);
         var hashes=new HashSet<string>();
@@ -65,21 +66,24 @@ sealed partial class PackageProbe
     void VerifyObservedGraphs()
     {
         var type=Type("PerformanceGraph");
-        void Render(int seconds,bool gap,string name)
+        void Render(int seconds,bool gap,string name,bool sparse=false)
         {
             var graph=(FrameworkElement)Activator.CreateInstance(type,true);
             graph.Resources["Accent"]=Brushes.DodgerBlue;
             var start=DateTimeOffset.UtcNow;
             var points=Enumerable.Range(0,seconds+1).Select(i=>(start.AddSeconds(i),(double?)(gap&&i>seconds/3&&i<seconds*2/3?null:40+10*Math.Sin(i)))).ToArray();
+            if(sparse)points=points.Where((point,index)=>index<2||index>seconds-2).ToArray();
             Call(type,graph,"Set",points,100d);
+            if(sparse){Call(type,graph,"SetHistory",points,100d,600d);var live=Activator.CreateInstance(type,true);Call(type,live,"Set",points,100d);Call(type,live,"CopyTo",graph);}
             graph.Measure(new Size(400,50));graph.Arrange(new Rect(0,0,400,50));graph.UpdateLayout();
             var bitmap=new RenderTargetBitmap(400,50,96,96,PixelFormats.Pbgra32);bitmap.Render(graph);
             var pixels=new byte[400*50*4];bitmap.CopyPixels(pixels,400*4,0);
             bool Ink(int x)=>Enumerable.Range(0,48).Any(y=>{int p=(y*400+x)*4;return pixels[p]>100&&pixels[p+2]<90&&pixels[p+3]>60;});
             Check(Enumerable.Range(0,8).Any(Ink)&&Enumerable.Range(392,8).Any(Ink),"Delivered "+name+" history spans the graph width");
-            if(gap)Check(!Enumerable.Range(180,40).Any(Ink),"Delivered unavailable interval remains a visible gap without invented zero samples");
+            if(gap||sparse)Check(!Enumerable.Range(180,40).Any(Ink),"Delivered unavailable interval remains a visible gap without invented zero samples: "+name);
             var png=new PngBitmapEncoder();png.Frames.Add(BitmapFrame.Create(bitmap));using var output=File.Create(Path.Combine(root,"performance-graph-"+name+".png"));png.Save(output);
         }
         Render(60,false,"one-minute");Render(3599,false,"one-hour");Render(60,true,"gapped");
+        Render(11,false,"history-to-live",true);
     }
 }

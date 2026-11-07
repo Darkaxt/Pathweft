@@ -9,7 +9,7 @@ using System.Windows.Media;
 
 namespace FileExplorer;
 
-internal sealed class PerformancePanel : StackPanel,IAsyncDisposable
+internal sealed partial class PerformancePanel : StackPanel,IAsyncDisposable
 {
     readonly PerformanceMonitor monitor;
     internal const int Cpu=0,Ram=1,Gpu=2,Drive=3,Folder=4;
@@ -20,8 +20,8 @@ internal sealed class PerformancePanel : StackPanel,IAsyncDisposable
     readonly Button[] buttons=new Button[5];
     readonly Queue<(DateTimeOffset Time,double? Value)> folderHistory=new();
     IoReport lastReport;
-    readonly Border details=new(){Margin=new(0,8,0,0),Visibility=Visibility.Collapsed};
-    readonly ListView table=new(){Height=175,BorderThickness=new Thickness(0),Background=Brushes.Transparent};
+    readonly Border details=new(){Visibility=Visibility.Collapsed};
+    readonly ListView table=new(){MinHeight=90,BorderThickness=new Thickness(0),Background=Brushes.Transparent};
     readonly TextBlock detailTitle=new(){FontWeight=FontWeights.SemiBold,TextTrimming=TextTrimming.CharacterEllipsis};
     readonly TextBlock detailState=new(){FontSize=11,TextTrimming=TextTrimming.CharacterEllipsis,Margin=new(0,4,0,4)};
     readonly ComboBox gpuPicker=new(){MinWidth=180,MaxWidth=310,DisplayMemberPath=nameof(GpuReading.Name)};
@@ -62,16 +62,7 @@ internal sealed class PerformancePanel : StackPanel,IAsyncDisposable
             button.Click+=(_,_)=>Select(index);cards.Children.Add(button);
         }
         Children.Add(cards);
-        details.SetResourceReference(StyleProperty,"StatCard");
-        var content=new DockPanel();var heading=new DockPanel();
-        var back=new Button{Content="Back to cards",Margin=new Thickness(8,0,0,0)};back.SetResourceReference(StyleProperty,"AuxiliaryAction");back.Click+=(_,_)=>Select(-1);DockPanel.SetDock(back,Dock.Right);heading.Children.Add(back);
-        enable.SetResourceReference(StyleProperty,"AuxiliaryAction");enable.Margin=new Thickness(8,0,0,0);enable.Click+=async(_,_)=>await EnableIo();DockPanel.SetDock(enable,Dock.Right);heading.Children.Add(enable);
-        gpuPicker.Visibility=Visibility.Collapsed;gpuPicker.SelectionChanged+=(_,_)=>{gpu=(gpuPicker.SelectedItem as GpuReading)?.Id;Refresh();};DockPanel.SetDock(gpuPicker,Dock.Right);heading.Children.Add(gpuPicker);
-        heading.Children.Add(detailTitle);DockPanel.SetDock(heading,Dock.Top);content.Children.Add(heading);
-        detailState.SetResourceReference(TextBlock.ForegroundProperty,"Muted");DockPanel.SetDock(detailState,Dock.Top);content.Children.Add(detailState);
-        table.SetResourceReference(Control.ForegroundProperty,"Palette.E8EEF6");AutomationProperties.SetName(table,"Performance activity");
-        VirtualizingPanel.SetIsVirtualizing(table,true);VirtualizingPanel.SetVirtualizationMode(table,VirtualizationMode.Recycling);
-        content.Children.Add(table);details.Child=content;Children.Add(details);
+        BuildAnalysis();
         SizeChanged+=(_,_)=>
         {
             for(int i=0;i<5;i++)
@@ -114,10 +105,14 @@ internal sealed class PerformancePanel : StackPanel,IAsyncDisposable
     {
         bool hadFocus=IsKeyboardFocusWithin;int previous=selected;
         selected=index;details.Visibility=index<0?Visibility.Collapsed:Visibility.Visible;
-        cards.Visibility=index<0?Visibility.Visible:Visibility.Collapsed;
+        sortProperty=null;
+        cards.Visibility=Visibility.Visible;
         SetDetailKind();
         for(int i=0;i<5;i++)buttons[i].Tag=i==index?"on":null;
         ConfigureTable();Refresh();_ = UpdateScope();
+        AnalysisChanged?.Invoke();
+        if(index>=0&&Historical)_ = LoadHistory();
+        if(index<0)historyCancel?.Cancel();
         if(hadFocus){if(index>=0)table.Focus();else if(previous>=0)buttons[previous].Focus();}
     }
     void ConfigureTable()
@@ -170,15 +165,17 @@ internal sealed class PerformancePanel : StackPanel,IAsyncDisposable
         graphs[Drive].Set(history.Select(x=>{var d=WindowsPerformanceCounters.ForDisk(x,diskNumber);return(x.Time,d?.Read+d?.Write);}).ToArray());
         graphs[Folder].Set(folderHistory.ToArray());
         if(selected<0)return;
-        detailTitle.Text=new[]{"CPU activity","Physical RAM · "+subtitles[Ram].Text,"GPU activity",$"Drive activity · {volumeRoot??PathRoot(folder)}",$"Folder activity · {folder}"}[selected];
+        UpdateAnalysisGraph();
+        detailTitle.Text=new[]{"CPU","Physical RAM","GPU",$"Drive · {volumeRoot??PathRoot(folder)}",$"Folder · {folder}"}[selected];
         gpuPicker.Visibility=selected==Gpu?Visibility.Visible:Visibility.Collapsed;
         if(selected==Gpu&&sample!=null)
         {
             if(!gpuPicker.Items.Cast<GpuReading>().Select(g=>g.Id).SequenceEqual(sample.Gpus.Select(g=>g.Id)))gpuPicker.ItemsSource=sample.Gpus;
             if(adapter!=null)gpuPicker.SelectedItem=gpuPicker.Items.Cast<GpuReading>().FirstOrDefault(g=>g.Id==gpu);
         }
-        enable.Visibility=selected>=Drive&&io?.Connected!=true?Visibility.Visible:Visibility.Collapsed;
+        enable.Visibility=!Historical&&selected>=Drive&&io?.Connected!=true?Visibility.Visible:Visibility.Collapsed;
         enable.IsEnabled=!enabling&&traceFolder!=null;
+        if(Historical)return;
         if(selected<Drive)
         {
             detailState.Text=selected==Cpu?"CPU usage across all logical processors · inaccessible processes omitted":selected==Ram?"Process working sets may share pages; their sum is not system RAM usage":"Busiest GPU engine · "+adapter?.Name;
@@ -190,6 +187,7 @@ internal sealed class PerformancePanel : StackPanel,IAsyncDisposable
             if(io?.Latest.Lost>0)detailState.Text+=$" · {io.Latest.Lost:N0} observations lost";
             table.ItemsSource=io?.Latest.Rows.Select(x=>new{ x.Process,x.Pid,x.File,ReadText=Rate(x.Read),WriteText=Rate(x.Write),TotalText=Rate(x.Total)}).ToArray();
         }
+        SortRows();
     }
     static string PathRoot(string path)=>string.IsNullOrWhiteSpace(path)||!Path.IsPathFullyQualified(path)?null:Path.GetPathRoot(path);
     static string Rate(double bytes)=>MainWindow.Fmt((long)Math.Max(0,bytes))+"/s";
@@ -206,7 +204,7 @@ internal sealed class PerformancePanel : StackPanel,IAsyncDisposable
         var span=history[^1].Time-history[0].Time;
         return span.TotalMinutes<1?$"{span.TotalSeconds:0}s observed":span.TotalMinutes<59?$"{span.TotalMinutes:0.#} min observed":"Last hour";
     }
-    void SetDetailKind()=>monitor.DetailKind=Showing?selected switch{Cpu=>1,Gpu=>2,Ram=>3,_=>0}:0;
+    void SetDetailKind()=>monitor.DetailKind=Showing&&!Historical?selected switch{Cpu=>1,Gpu=>2,Ram=>3,_=>0}:0;
     async void MaybeEnableIo()
     {
         if(!AutomaticIo||permissionAttempted||!Showing||traceFolder==null||disposed)return;
@@ -241,13 +239,24 @@ internal sealed class PerformancePanel : StackPanel,IAsyncDisposable
         return retiring;
     }
     static async Task Retire(PerformanceIoClient client,Task previous){await previous.ConfigureAwait(false);await client.DisposeAsync().ConfigureAwait(false);}
-    public async ValueTask DisposeAsync(){disposed=true;monitor.Changed-=Updated;monitor.DetailKind=0;await ReleaseIo().ConfigureAwait(false);await mapping.ConfigureAwait(false);}
+    public async ValueTask DisposeAsync()
+    {
+        disposed=true;historyCancel?.Cancel();
+        try{await historyWork.ConfigureAwait(false);}
+        // These query failures already have a visible unavailable state. They
+        // must not prevent retirement of an independent native I/O worker.
+        catch(Exception error)when(error is OperationCanceledException or ArgumentException or IOException or UnauthorizedAccessException or Microsoft.Data.Sqlite.SqliteException){}
+        monitor.Changed-=Updated;monitor.DetailKind=0;
+        await ReleaseIo().ConfigureAwait(false);await mapping.ConfigureAwait(false);historyCancel?.Dispose();
+    }
 }
 
 internal sealed class PerformanceGraph : FrameworkElement
 {
-    (DateTimeOffset Time,double? Value)[] points=Array.Empty<(DateTimeOffset,double?)>();double ceiling;
+    (DateTimeOffset Time,double? Value)[] points=Array.Empty<(DateTimeOffset,double?)>();double ceiling,gapSeconds=5;
     internal void Set((DateTimeOffset,double?)[] values,double maximum=0){points=values;ceiling=maximum;InvalidateVisual();}
+    internal void CopyTo(PerformanceGraph graph){graph.gapSeconds=gapSeconds;graph.Set(points,ceiling);}
+    internal void SetHistory((DateTimeOffset,double?)[] values,double maximum,double gap){gapSeconds=gap;Set(values,maximum);}
     protected override void OnRender(DrawingContext drawing)
     {
         base.OnRender(drawing);if(ActualWidth<=0||ActualHeight<=0)return;
@@ -267,7 +276,7 @@ internal sealed class PerformanceGraph : FrameworkElement
                 double x=ActualWidth*(sample.Time-start).TotalSeconds/seconds;
                 if(x<0)continue;
                 var next=new Point(x,ActualHeight-1-Math.Clamp(value/max,0,1)*(ActualHeight-2));
-                if(!segment||sample.Time-previous>TimeSpan.FromSeconds(5)){context.BeginFigure(next,false,false);segment=true;pixel=-1;}
+                if(!segment||sample.Time-previous>TimeSpan.FromSeconds(gapSeconds)){context.BeginFigure(next,false,false);segment=true;pixel=-1;}
                 else if((int)x!=pixel)context.LineTo(next,true,false);
                 pixel=(int)x;previous=sample.Time;
             }

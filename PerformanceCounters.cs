@@ -6,14 +6,16 @@ using Microsoft.Win32.SafeHandles;
 
 namespace FileExplorer;
 
-internal sealed record GpuReading(string Id,string Name,double? Usage,long? Memory,long Capacity);
+internal sealed record GpuReading(string Id,string Name,double? Usage,long? Memory,long Capacity)
+{public override string ToString()=>Name;}
 internal sealed record DiskReading(string Id,double? Read,double? Write,double? Busy);
 internal sealed record RamReading(long Used,long Total)
 {internal double Usage=>100d*Used/Total;}
 internal sealed record PerformanceSample(DateTimeOffset Time,double? Cpu,GpuReading[] Gpus,DiskReading[] Disks,string Issue,RamReading Ram=null);
 
-// One process-wide aggregate sampler. No file names, process enumeration, ETW or
-// disk logging on this path. A time gap remains a gap in the displayed history.
+// One process-wide sampler. Aggregate-only by default; detailed enumeration is
+// demand-driven or an explicit recording choice. File ETW remains separately
+// scoped and is never persisted. A time gap remains a displayed history gap.
 internal sealed class PerformanceMonitor : IDisposable
 {
     internal const int Capacity=3600;
@@ -29,6 +31,8 @@ internal sealed class PerformanceMonitor : IDisposable
     internal int DetailKind {get;set;}
     internal ProcessMetric[] Details {get;private set;}=Array.Empty<ProcessMetric>();
     readonly ProcessMetrics processMetrics=new();
+    readonly PerformanceHistory persisted=new();
+    internal string HistoryIssue=>persisted.Issue;
     internal PerformanceMonitor(){sampling=Task.Run(Run);}
     internal PerformanceSample Latest {get{lock(gate)return history.LastOrDefault();}}
     internal PerformanceSample[] History(){lock(gate)return history.ToArray();}
@@ -45,16 +49,22 @@ internal sealed class PerformanceMonitor : IDisposable
     {
         using var source=new WindowsPerformanceCounters();
         using var clock=new PeriodicTimer(Cadence);
+        DateTimeOffset lastApps=default;
         while(!stopped.IsCancellationRequested)
         {
             var sample=source.Read();
-            Details=DetailKind is 1 or 3?processMetrics.Read():DetailKind==2?source.GpuProcesses():Array.Empty<ProcessMetric>();
+            bool recordApps=Settings.PerformanceRecording&&sample.Time-lastApps>=TimeSpan.FromSeconds(10);
+            var apps=DetailKind is 1 or 3||recordApps?processMetrics.Read():null;
+            var gpuApps=DetailKind==2||recordApps?source.GpuProcesses():null;
+            Details=DetailKind is 1 or 3?apps:DetailKind==2?gpuApps:Array.Empty<ProcessMetric>();
+            persisted.Record(sample,recordApps?apps:null,recordApps?gpuApps:null);
+            if(recordApps)lastApps=sample.Time;
             Record(sample);
             try{if(!await clock.WaitForNextTickAsync(stopped.Token))break;}
             catch(OperationCanceledException)when(stopped.IsCancellationRequested){break;}
         }
     }
-    public void Dispose(){stopped.Cancel();sampling.GetAwaiter().GetResult();stopped.Dispose();}
+    public void Dispose(){stopped.Cancel();sampling.GetAwaiter().GetResult();persisted.Dispose();stopped.Dispose();}
 }
 
 internal sealed class WindowsPerformanceCounters : IDisposable

@@ -21,6 +21,7 @@ public partial class MainWindow
         PanesCommand.ToolTip=Settings.SinglePane?"Show two panes (Ctrl+P)":"Show one pane (Ctrl+P)";
         ((Image)PanesCommand.Content).Source=ExplorerIcons.PaneLayout(!Settings.SinglePane);
         UpdateCommandSpacing();
+        ShowAnalysis();
     }
     void UpdateSpaceCommandState()
     {

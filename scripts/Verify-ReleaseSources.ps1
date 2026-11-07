@@ -59,6 +59,19 @@ try{
     $mpv=ReadJson 'vendor/MPV/runtime-manifest.json'
     foreach($pin in $mpv.sources){CheckDependency ('MPV/'+$pin.name) $pin.sha256}
     $specialists=ReadJson 'vendor/Specialists/source-manifest.json'
+    $system=ReadJson 'vendor/SysOptimizer/source-manifest.json'
+    foreach($pin in $system.selected){
+        $entry=$source.GetEntry('Pathweft/'+$pin.selectedSource)
+        if(!$entry){throw ('Selected SysOptimizer donor source absent: '+$pin.path)}
+        $digest=[Security.Cryptography.IncrementalHash]::CreateHash([Security.Cryptography.HashAlgorithmName]::SHA1)
+        $input=$entry.Open()
+        try{
+            $digest.AppendData([Text.Encoding]::UTF8.GetBytes('blob '+$entry.Length+[char]0))
+            $buffer=[byte[]]::new(65536)
+            while(($read=$input.Read($buffer,0,$buffer.Length)) -gt 0){$digest.AppendData($buffer,0,$read)}
+            if([Convert]::ToHexString($digest.GetHashAndReset()) -ne $pin.gitBlob){throw ('Selected donor blob differs: '+$pin.path)}
+        }finally{$input.Dispose();$digest.Dispose()}
+    }
     $performance=ReadJson 'vendor/Performance/source-manifest.json'
     foreach($pin in $performance.archives){CheckDependency ('Performance/'+$pin.name) $pin.sha256}
     foreach($pin in $performance.packages){CheckDependency ('Performance/'+$pin.packageArchive) $pin.packageSha256}

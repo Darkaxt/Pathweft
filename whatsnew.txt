@@ -1,6 +1,11 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.31 | 2026-11-07 | Integrated system analysis
+- Performance cards open a full analysis area with larger graphs, themed selectors and sortable activity tables. Back to files restores the existing browser and selection.
+- Optional history records CPU, physical RAM, individual GPUs and drive activity for 1, 7 or 30 days in your configured data folder. Explore recorded summaries, heavy apps, spikes and collection events.
+- A read-only performance MCP endpoint is included for separately configured clients. It reads recorded observations without starting another collector or enabling any client automatically.
+
 ## 1.1.30 | 2026-11-07 | Compact live performance
 - CPU, physical RAM, GPU, drive I/O and folder I/O now share one compact row, matching the ordinary statistics height.
 - Graphs fill their width with the history actually collected, up to one hour. Unavailable periods remain gaps.

@@ -1,11 +1,13 @@
 [CmdletBinding()]
-param([Parameter(Mandatory)][int]$TrialProcessId,[switch]$TerminateClosedTrial,[switch]$PackageProbe)
+param([Parameter(Mandatory)][int]$TrialProcessId,[switch]$TerminateClosedTrial,[switch]$PackageProbe,[switch]$PerformanceTrial)
 $ErrorActionPreference='Stop'
 $trial=Get-CimInstance Win32_Process -Filter "ProcessId=$TrialProcessId"
 if($PackageProbe){
     if(!$TerminateClosedTrial -or !$trial -or $trial.Name -ne 'dotnet.exe' -or $trial.CommandLine -notmatch 'D:\\Temp\\pathweft-s8-delivery\\verification-[a-f0-9]{32}\\portable\\Pathweft\\PackagedChecks.dll' -or $trial.CommandLine -notmatch 'D:\\Temp\\pathweft-s8-delivery\\verification-[a-f0-9]{32}\\integration-[a-f0-9]{32}'){
         throw 'Only an inspected, closed owned package probe may be retired.'
     }
+}elseif($PerformanceTrial){
+    if(!$trial -or $trial.ExecutablePath -notlike 'D:\Temp\pathweft-s28\build-*\Pathweft.exe' -or $trial.CommandLine -notmatch '--verify-s8-appearance=D:\\Temp\\pathweft-s18\\specialists-[a-f0-9]{32}') {throw 'Exact owned S28 performance diagnostic required.'}
 }elseif(!$trial -or $trial.ExecutablePath -notlike 'D:\Temp\pathweft-s13-s9-s11\*\Pathweft.exe' -or $trial.CommandLine -notmatch '--verify-s8-appearance=D:\\Temp\\pathweft-s13-s9-s11\\specialists-'){
     throw 'Only this task owned hidden specialist diagnostic can receive a graceful close.'
 }

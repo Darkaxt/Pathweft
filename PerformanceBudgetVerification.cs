@@ -9,7 +9,7 @@ internal static class PerformanceBudgetVerification
     internal static async Task<int> Run(string root)
     {
         root=Path.GetFullPath(root);
-        if(!root.StartsWith(@"D:\Temp\pathweft-s18\",StringComparison.OrdinalIgnoreCase)&&!root.StartsWith(@"D:\Temp\pathweft-s27\",StringComparison.OrdinalIgnoreCase))throw new ArgumentException("Owned resource fixture required");
+        if(!root.StartsWith(@"D:\Temp\pathweft-s18\",StringComparison.OrdinalIgnoreCase)&&!root.StartsWith(@"D:\Temp\pathweft-s27\",StringComparison.OrdinalIgnoreCase)&&!root.StartsWith(@"D:\Temp\pathweft-s28\",StringComparison.OrdinalIgnoreCase))throw new ArgumentException("Owned resource fixture required");
         Directory.CreateDirectory(root);
         using var process=Process.GetCurrentProcess();
         GC.Collect();GC.WaitForPendingFinalizers();GC.Collect();process.Refresh();
@@ -28,6 +28,15 @@ internal static class PerformanceBudgetVerification
         var real=monitor.Latest;
         GC.Collect();GC.WaitForPendingFinalizers();GC.Collect();process.Refresh();
         long steadyPrivate=process.PrivateMemorySize64-initialPrivate,heap=GC.GetTotalMemory(true);
+        Settings.PerformanceRecording=true;
+        for(int i=0;i<12;i++)await Next();
+        GC.Collect();GC.WaitForPendingFinalizers();GC.Collect();process.Refresh();
+        long historyMemory=process.PrivateMemorySize64;var historyCpu=process.TotalProcessorTime;var historyClock=Stopwatch.StartNew();
+        for(int i=0;i<30;i++)await Next();
+        process.Refresh();double recordingCpu=(process.TotalProcessorTime-historyCpu).TotalSeconds/historyClock.Elapsed.TotalSeconds/Environment.ProcessorCount*100;
+        GC.Collect();GC.WaitForPendingFinalizers();GC.Collect();process.Refresh();long recordingPrivate=process.PrivateMemorySize64-historyMemory;
+        Settings.PerformanceRecording=false;await Next();
+        bool recordingPass=monitor.HistoryIssue==null&&recordingCpu<=1&&recordingPrivate<=32*1024*1024&&PerformanceHistory.Query(new("get_current_usage")).Rows.Length>0;
         var time=DateTimeOffset.UtcNow.AddHours(2);
         // Independent copies model actual native-read payload allocation, not
         // thousands of references to the same sample's arrays.
@@ -44,9 +53,9 @@ internal static class PerformanceBudgetVerification
         // the child; it must not wait forever for a pipe whose server vanished.
         var pending=new PerformanceIoClient();var connection=pending.Enable(false);
         await pending.DisposeAsync();await connection;
-        bool pass=cpuPercent<=0.5&&steadyPrivate<=32*1024*1024&&retained<=8*1024*1024&&!pending.Connected;
+        bool pass=cpuPercent<=0.5&&steadyPrivate<=32*1024*1024&&retained<=8*1024*1024&&!pending.Connected&&recordingPass;
         File.WriteAllText(Path.Combine(root,"budget.json"),JsonSerializer.Serialize(new{pass,pid=Environment.ProcessId,seconds=watch.Elapsed.TotalSeconds,
-            cpuPercent,steadyPrivate,retained,samples=monitor.History().Length,gpus=real.Gpus,disks=real.Disks,permission,nativeDiagnostics=client.NativeDiagnostics},new JsonSerializerOptions{WriteIndented=true}));
+            cpuPercent,steadyPrivate,retained,recordingCpu,recordingPrivate,recordingPass,samples=monitor.History().Length,gpus=real.Gpus,disks=real.Disks,permission,nativeDiagnostics=client.NativeDiagnostics},new JsonSerializerOptions{WriteIndented=true}));
         return pass?0:1;
     }
 }

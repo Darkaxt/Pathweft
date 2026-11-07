@@ -25,6 +25,8 @@ static class Program
     [STAThread]
     static void Main(string[] args)
     {
+        if(args.Length==1&&args[0]=="--performance-mcp")
+        {Environment.ExitCode=PerformanceMcp.Run().GetAwaiter().GetResult();return;}
         if(args.Length==4&&args[0]=="--performance-io-worker")
         {Environment.ExitCode=PerformanceIoWorker.Run(args[1],int.Parse(args[2]),long.Parse(args[3])).GetAwaiter().GetResult();return;}
         if(args.Length==1&&args[0]=="--office-preview-worker")
