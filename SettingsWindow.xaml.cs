@@ -164,10 +164,12 @@ public partial class SettingsWindow : Window
     };
     internal static readonly string[] FilesKeys = { "hidden", "shortcutfolders", "internaleditor", "preview.modules.disabled", "itemtips", "tipdelay", "deletesound", "nativemenu" };
     internal static readonly string[] TransfersKeys = { "verify", "parallel" };
-    /// What Pathweft keeps that isn't a choice in these cards: Windows integration, and what it remembers by itself.
+    /// Choices outside these cards retain their own controls: Windows integration,
+    /// explicit history recording/retention in System analysis, and remembered state.
     internal static readonly string[] NotReset =
     {
         "wine", "tray", "taskbarsearch", "taskbarsearchbox", "preview", "previewwidth", "lastseen", "recent", "destinations", "sidebar", "sidebarorder", "sidebarcollapsed", "split", "maximized", "window", "quicklist",
+        "performance.record", "performance.days",
     };
 
     void ResetAll_Click(object s, RoutedEventArgs e) =>

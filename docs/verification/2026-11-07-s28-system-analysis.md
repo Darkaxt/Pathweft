@@ -51,6 +51,13 @@ Remaining acceptance: committed-source package/source/application
 verification, normal1.1.31 publication, independent retrieval and applicable installed
 readback. No current external execution blocker or tracked deferral remains.
 
+The first unpublished package from fa518f2 failed its existing settings reset
+coverage assertion for performance.record/performance.days. Those explicit choices
+belong to System analysis, so unrelated Appearance/Files/Transfers resets preserve
+them. The production coverage map now records that ownership, with a regression
+assertion that both values survive those resets. Source self-test95992 passes.
+Failed package evidence is retained privately; it is not final delivery evidence.
+
 The superseded early candidate is not release evidence: later query/shutdown/graph
 corrections require a fresh package. Cleanup transactiondea868b6ed3990f6717f8629c32ed6f5
 applied successfully, removing7,323,831,805 bytes with no errors and confirming

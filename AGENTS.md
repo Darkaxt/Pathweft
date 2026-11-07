@@ -9,6 +9,10 @@ browser-state, layout, query/gap/error and recording-budget workflows. Remaining
 committed-package/source/application checks, normal1.1.31 release,
 independent retrieval and installed readback.
 No MCP activation/client configuration, drivers, security, DNS or app management.
+The first unpublished package exposed missing reset-coverage classification for
+the two history settings. They are explicitly preserved outside unrelated cards;
+source self-test95992 passes, including preservation of recording/retention choices.
+The failed assets must be replaced by a fresh committed package before release.
 S25 stays NOT STARTED. Preserve current source work, owned
 build/source staging and live installation. Never automatically resubmit an expired request.
 Prior closure below is historical.
