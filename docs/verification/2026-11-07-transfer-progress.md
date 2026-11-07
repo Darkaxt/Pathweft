@@ -62,6 +62,10 @@ assets and task scratch/pointers are transactionally cleaned after evidence
 retention; all final cleanup receipts report applied with no errors. Required
 release assets and diagnostic/acceptance evidence remain available.
 
-Applicable installed acceptance remains pending the user's built-in update;
-S24 stays ACTIVE and S18 stays NOT STARTED. This is the only unmet delivery
-criterion; no external blocker or tracked deferral is introduced.
+The user's built-in updater finishes and reopens1.1.27. Read-only installed
+diagnostic99016 verifies11,287 manifest members against the delivered package,
+exact source6b294cf, restarted main90828/helper89284, helper readiness,22 owned
+route values and unchanged Darkaxt.Pathweft shortcut/profile identity. No desktop
+input or live settings mutation was used. S24 is COMPLETE: every assigned
+acceptance criterion passes, with no remaining blocker or tracked deferral.
+No stage is ACTIVE and S18 stays NOT STARTED.

@@ -3,16 +3,18 @@
 Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.74, 2026-11-07,
 including the user-authorized continued comparison requirement TRANSFER-07.
 
-Current2026-11-07: S24 is ACTIVE for the requested transfer progress refinement
+Current2026-11-07: S24 is COMPLETE for the requested transfer progress refinement
 (TRANSFER-17), before S18. Root cause: the concurrent-copy template renders a
 secondary CurrentFraction track that is always zero; Fluent glyph and text runs
 share an unsuitable baseline. Final source acceptance45728/113412 passes actual
 visible-ink alignment, progress/counter/header/action layout, real transfer
 lifecycle/error/conflict behavior and rendered themes/scaling/minimum width.
 Normal1.1.27/6b294cf is published with all six assets. Final99016 and independently
-downloaded85284 pass actual source/native/application qualification. Remaining:
-installed readback after the user's built-in update. No external blocker or
-tracked deferral.
+downloaded85284 pass actual source/native/application qualification. Installed
+readback99016 verifies11,287 matching members, restarted main90828/helper89284,
+readiness,22 owned routes and preserved shortcut/profile identity. All assigned
+acceptance criteria pass; no remaining blocker or tracked deferral. No stage is
+ACTIVE and S18 is not activated.
 Native/build/test scratch: exact D:/Temp/pathweft-transfer-progress and
 D:/Temp/pathweft-transfer-progress-delivery for sustained native/small-file I/O;
 register and clean disposable output after its last consumer. S18 stays NOT STARTED.
@@ -961,7 +963,7 @@ plan neither authorizes itself nor adds approval checkpoints.
 | S17 - Transfer review, preview and icon refinements | COMPLETE | TRANSFER-16, PREVIEW-38, CORE-22; affected LIFE/DELIVERY | S15 delivered | Difference-only review/newer warnings/full-set actions; selection-following/pinned PiP/Windowed; transparent folder/compass icon and preserved Windows identity. Normal1.1.24 independently downloaded and installed-verified. |
 | S23 - Missing-folder tab recovery | COMPLETE | CORE-23; affected CORE/LIFE/DELIVERY | User-reported vanished local version folder; correction precedes future feature stages | Source92776, final Release93428 and independent retrieved87644 pass recovery/restoration and preservation regressions. Normal1.1.25/11e5d292 published with verified sources/assets. Installed94548 verifies matching files, restarted app/helper, readiness, routes and shortcut/profile identity; user confirms behavior. No remaining criteria, blockers or tracked deferrals. |
 | S16 - Craft core refresh and additional renderers | COMPLETE | CRAFT-01..07; CORE-24; affected PREVIEW/LIFE/DELIVERY | S23 delivered; existing worker and LibreOffice baseline | Refreshed Office plus Photo/Vector/Fig/optional PDF and bounded located extraction qualify in actual source/preview/worker workflows. Native/icon/source/advisory qualification, normal1.1.26/0856498, final110748, independent42084 and installed108640 pass. No acceptance criteria remaining, blockers or tracked deferrals. No next stage activated. |
-| S24 - Transfer progress presentation | ACTIVE | TRANSFER-17; affected TRANSFER-14..16/CORE/LIFE/DELIVERY | S16 delivered; user requests compact progress/counter/action corrections | Source45728/113412 and final99016/independent85284 verify actual layouts, rasterized icon/text alignment, labels, transfer lifecycle and delivered behavior. Normal1.1.27/6b294cf published. Remaining: installed readback after the user's update. No external blocker or tracked deferral. |
+| S24 - Transfer progress presentation | COMPLETE | TRANSFER-17; affected TRANSFER-14..16/CORE/LIFE/DELIVERY | S16 delivered; user requests compact progress/counter/action corrections | Source45728/113412 and final99016/independent85284 verify actual layouts, rasterized icon/text alignment, labels, transfer lifecycle and delivered behavior. Normal1.1.27/6b294cf published; installed99016 verifies matching members, restarted main/helper, readiness, routes and preserved identity. No remaining criteria, blockers or tracked deferrals. |
 | S18 - Contextual performance monitoring | NOT STARTED | MONITOR-01..05; affected CORE-03/LIFE/DELIVERY | S16 closed under the selected execution order; source/privilege feasibility and concrete resource budgets resolved before implementation acceptance | Direct Statistics/Performance toggle; CPU/GPU/current-drive/current-folder cards; attributed process/file details; real workload/path/device qualification, bounded visible-only sampling and cleanup; one final independently/installed verified release when implementation is authorized. No criteria verified yet. |
 | S12 - Tresorit capability investigation | NOT STARTED | TRES-01..04 | S15 delivered; S16 and S18 considered first in the selected execution order | Supported API/client assessment, bounded REA as needed, evidence-backed capability matrix/decision and implementation proposal. Investigation only; no cloud mutation or integration implementation. |
 | S19 - Selected-folder content indexing | NOT STARTED | CONTENT-01..06; affected SEARCH/CORE/LIFE/DELIVERY | After S12 in the selected execution order; qualify extractor APIs, query/location semantics, provider metadata and resource budgets | Toolbar folder opt-in/current magnifier badges; qualified Craft/text extraction; persisted searchable strings and location arrays, periodic incremental refresh and cloud-cache independence. Verify actual search/open/freshness/recovery and one final independently/installed verified release when implementation is authorized. No criteria verified yet. |

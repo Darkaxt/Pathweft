@@ -2,7 +2,7 @@
 
 Version 0.74 - 2026-11-07. Owner: Darkaxt.
 
-Current user-authorized refinement2026-11-07: S24 is ACTIVE for TRANSFER-17,
+Current user-authorized refinement2026-11-07: S24 is COMPLETE for TRANSFER-17,
 before S18; S16 remains COMPLETE. Refine the existing transfer popup without
 changing transfer, verification, clipboard, conflict or completion semantics.
 Remove the empty secondary per-file track; place completed and total file
@@ -22,7 +22,9 @@ icon/label gap. Preserve opaque first layout and content-sized height. Qualify
 actual running/paused/conflict/failure/multiple-job layouts in dark/light at
 100/150%, normal/minimum widths, actual completion/cancellation, and final
 normal release with independent download and applicable installed verification.
-No S18 or other feature implementation is activated by this correction.
+Normal1.1.27 is independently downloaded and installed-verified; all assigned
+acceptance criteria pass. No S18 or other feature implementation is activated by
+this correction.
 
 Implementation authorization2026-11-06: the user directed starting the next
 stage, S16, and added advance core text extraction for subsequent content
