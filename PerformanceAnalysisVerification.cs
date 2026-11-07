@@ -72,6 +72,7 @@ public partial class MainWindow
         check(child.ExitCode==0&&(await errors).Length==0&&before.SequenceEqual(SHA256.HashData(File.ReadAllBytes(path))),"MCP exits on EOF without changing history");
         VerifyHistoryBoundaries28(root,check);
         VerifyGraphTransition28(check);
+        await VerifyTimeline29(root,check);
         File.WriteAllText(path,"Invalid SQLite bytes in this isolated test profile");
         performance.Select(PerformancePanel.Cpu);await performance.HistoryForVerification(1);
         check(performance.HistoryTextForVerification.StartsWith("History unavailable:"),"Unreadable history is explicit and does not prevent subsequent app/worker shutdown");

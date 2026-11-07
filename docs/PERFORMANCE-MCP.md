@@ -10,6 +10,16 @@ Gaps and unavailable counters are not zero activity. Folder/file I/O is live
 only and is never added to background history. Recording off preserves old
 observations; retention is applied while recording.
 
+Expanded analysis adapts SysOptimizer's History graph: peak-preserving rounded
+steps, grouped event markers, a time cursor and overview navigation. Hover to see
+recorded apps near a moment; click to pin, click the pin again to release it.
+Drag across the graph or overview to select a range, scroll to zoom, or right-drag
+to pan. Now clears the selection. Left/right keys inspect moments and up/down
+visit event markers. Tables show the selected moment/range; missing snapshots
+are explicit. Chart peaks are separate from the interval averages returned by
+summary queries. Events remain collection/counter/gap facts and sampled spikes;
+this view does not add a process-launch audit, temperatures or new collectors.
+
 No MCP client is activated or configured by Pathweft. After a separate explicit
 activation decision, a client can launch the installed Pathweft.exe with the
 single argument `--performance-mcp` over stdio. Use the same portable location

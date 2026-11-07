@@ -1,6 +1,54 @@
 # Pathweft specification
 
-Version 0.81 - 2026-11-07. Owner: Darkaxt.
+Version 0.82 - 2026-11-08. Owner: Darkaxt.
+
+### Reusable administrator access session (S30)
+
+User refinement2026-11-08: a bottom application-toolbar toggle switches filesystem
+browsing between standard and administrator access without reopening Pathweft.
+One native UAC approval creates an app-owned elevated access session; existing
+features needing elevation reuse that session while it remains alive. The main
+browser stays unelevated. This is an access mode for the current signed-in user,
+not a second Windows profile or a permission/ACL change.
+
+| ID | Required behavior and acceptance |
+| --- | --- |
+| ACCESS-01 | Add a compact monochrome quartered UAC shield matching the user's OK-button reference and the existing toolbar icon proportions. Expose Standard / Administrator browsing through active state, tooltip and accessible name. Initial mode is Standard; switching can be done without reopening or losing pane/tab/selection/scroll state. UAC denial leaves the previous mode and data intact. |
+| ACCESS-02 | Authenticate and bind a narrowly scoped elevated helper to the exact Pathweft owner/session. One approved helper serves protected folder enumeration and existing privileged analysis/I/O requests; standard browsing stops issuing elevated enumeration requests but the approved helper can remain available until explicit End administrator session or full app exit. Stop traces when their ordinary visible scope ends. No scheduled task/service, credential storage, UAC setting changes, ACL changes or blanket privileged shell execution. Existing destructive-action confirmations and actual access failures remain explicit. |
+| ACCESS-03 | Qualify real approved/denied/reused UAC lifecycle, standard/admin browsing of task-owned protected fixtures, privilege/mode indication, cancellation, owner exit/crash, non-owner rejection and unchanged standard drag/drop/profile identity. Bound idle cost and cleanly retire the elevated session. One normal independently/installed verified release after integrated acceptance. |
+
+Design: preserve the Windows shield silhouette and alternating monochrome
+quadrants; use existing command-button foreground/hover/active tokens and tooltip
+behavior. Do not use the blue/yellow UAC bitmap or recolor unrelated commands.
+Windows' split-token model and authenticated IPC inform implementation:
+https://learn.microsoft.com/windows/security/application-security/application-control/user-account-control/how-it-works
+and https://learn.microsoft.com/windows/win32/ipc/named-pipe-security-and-access-rights.
+S30 follows S29; it does not open a concurrent implementation stage.
+
+### Interactive performance investigation (S29)
+
+User reference2026-11-08: keep compact widgets; their expanded main-pane view
+should provide graph-led investigation like the supplied SysOptimizer History
+capture. Preserve Pathweft styling and existing recording/privacy boundaries.
+Reuse and polish the donor's source implementation rather than rebuilding its
+existing graph and interaction logic. Retain the selected original, exact pin and
+license; adapt its data/theme/window bindings to Pathweft.
+
+| ID | Required behavior and acceptance |
+| --- | --- |
+| MONITOR-14 | Expanded CPU/RAM/GPU/drive analysis provides a large time-labelled graph, grouped clickable event/spike markers, an overview with range selection, previous/next range and return-to-now controls. Hover shows the observed time/value; click locks a moment and shows contemporaneous recorded heavy apps. Selecting a range updates the summary/top-app facts for that interval. Keyboard access, explicit selection and empty/gapped/loading/error states are required. Compact cards retain their current layout. |
+| MONITOR-15 | Derive markers from actual recording/counter/gap events and sampled threshold spikes; name their type, time and grouped count. Do not invent app launches, exact process lifetimes, cause, temperature or unrecorded metrics. Moment attribution must use a bounded neighbouring recorded sample and preserve PID/start/device identity; missing snapshots and historical drive/folder attribution remain explicit. Recording stays opt-in; no new collector, service, tracing scope, retention default or MCP activation. Reuse existing bounded history queries and display coverage/truncation. |
+| MONITOR-16 | Verify real graph interactions -> moment/range queries -> linked tables -> reset/navigation/back to unchanged browser, including gaps, unavailable attribution, repeated selection, cancellation and shutdown. Render dark/light100/150%, narrow/wide with readable axes/markers, no clipping and existing theme/control tokens. Deliver one normal release with independent package checks and applicable installed readback. |
+
+Huashu design contract: the graph owns the available main-pane width and about
+half the analysis height; a slim event rail above it and an overview below it
+share one time scale. Existing Accent/Muted/StatCard resources, 10-DIP spacing,
+32-DIP actions and virtualized tables remain. A selected moment has a vertical
+cursor and a persistent textual summary; a selected interval has outlined handles
+and a tinted band. Narrow layouts wrap compact controls; a finite-height scroll
+area keeps the whole 180-DIP-minimum timeline and virtualized table reachable
+when the available height cannot fit both. Keep time labels/hints within width.
+No donor-specific window chrome, theme picker or maintenance navigation is added.
 
 ### Integrated system analysis (S28)
 

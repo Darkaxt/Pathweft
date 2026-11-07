@@ -10,11 +10,11 @@ namespace FileExplorer;
 // storage, counter/device identities and lifecycle; no donor app is required.
 internal sealed record PerformanceFact(DateTimeOffset Time,string Name,int? Pid,double? Average,double? Peak,long Observations,string Details)
 {
-    public string When=>Time==default?"":Time.ToLocalTime().ToString("g");
+    public string When=>Time==default?"":Time.ToLocalTime().ToString("G");
     public string Value=>Average?.ToString("0.##",CultureInfo.CurrentCulture)??"—";
     public string Maximum=>Peak?.ToString("0.##",CultureInfo.CurrentCulture)??"—";
 }
-internal sealed record PerformancePoint(DateTimeOffset Time,double? Value);
+internal sealed record PerformancePoint(DateTimeOffset Time,double? Value,double? Peak=null);
 internal sealed record PerformanceResult(string Status,PerformanceFact[] Rows,PerformancePoint[] Points,long Total,bool Truncated);
 internal sealed record PerformanceQuery(string Tool="get_usage_summary",int LastMinutes=60,string Metric="cpu",string Device=null,string Name=null,double Threshold=80,int Limit=100,DateTimeOffset? From=null,DateTimeOffset? To=null);
 
@@ -130,7 +130,7 @@ internal sealed class PerformanceHistory : IDisposable
         {
             command.CommandText=query.Tool=="get_current_usage"?"SELECT data FROM samples ORDER BY t DESC LIMIT 1":"SELECT data FROM samples WHERE t BETWEEN $from AND $to ORDER BY t";
             var sums=new Dictionary<string,(double Sum,double Weight,double Peak,DateTimeOffset PeakAt,long Count)>();
-            var buckets=new Dictionary<long,(DateTimeOffset Time,double Sum,int Count)>();var breaks=new HashSet<long>();
+            var buckets=new Dictionary<long,(DateTimeOffset Time,double Sum,int Count,double Peak)>();var breaks=new HashSet<long>();
             DateTimeOffset first=default,latest=default,previous=default,spikeStart=default;double spikeMax=0;long spikeCount=0;string spikeDevice=null;
             void EndSpike(){if(spikeCount==0)return;total++;if(rows.Count<query.Limit)rows.Add(new(spikeStart,spikeDevice,null,null,spikeMax,spikeCount,"Threshold exceedances at sampled times; coincident apps are not proof of cause"));spikeCount=0;}
             using var reader=command.ExecuteReader();while(reader.Read())
@@ -159,19 +159,19 @@ internal sealed class PerformanceHistory : IDisposable
                 if(gap){EndSpike();breaks.Add(bucket);}
                 if(plotted.Value is {} v)
                 {
-                    var old=buckets.GetValueOrDefault(bucket);buckets[bucket]=(sample.Time,old.Sum+v,old.Count+1);
+                    var old=buckets.GetValueOrDefault(bucket);buckets[bucket]=(sample.Time,old.Sum+v,old.Count+1,old.Count==0?v:Math.Max(old.Peak,v));
                     if(query.Tool=="find_spikes"){if(v>=query.Threshold){if(spikeCount==0){spikeStart=sample.Time;spikeDevice=plotted.Name;spikeMax=v;}spikeCount++;spikeMax=Math.Max(spikeMax,v);}else EndSpike();}
                 }
-                else {EndSpike();breaks.Add(bucket);buckets.TryAdd(bucket,(sample.Time,0,0));}
+                else {EndSpike();breaks.Add(bucket);buckets.TryAdd(bucket,(sample.Time,0,0,0));}
                 previous=sample.Time;
             }
             EndSpike();foreach(var bucket in buckets.OrderBy(x=>x.Key))
             {
                 if(breaks.Contains(bucket.Key))points.Add(new(bucket.Value.Time.AddMilliseconds(-1),null));
-                points.Add(new(bucket.Value.Time,bucket.Value.Count==0?null:bucket.Value.Sum/bucket.Value.Count));
+                points.Add(new(bucket.Value.Time,bucket.Value.Count==0?null:bucket.Value.Sum/bucket.Value.Count,bucket.Value.Count==0?null:bucket.Value.Peak));
             }
             if(query.Tool!="find_spikes")foreach(var entry in sums){total++;if(rows.Count<query.Limit)rows.Add(new(entry.Value.PeakAt,entry.Key,null,entry.Value.Weight==0?null:entry.Value.Sum/entry.Value.Weight,entry.Value.Count==0?null:entry.Value.Peak,entry.Value.Count,entry.Value.Count==0?"Counter unavailable":"Average over observed intervals; peak time shown"));}
-            note+=first==default?"No samples in range.":$"Observed {first:O} to {latest:O}. Latest age {(DateTimeOffset.UtcNow-latest).TotalSeconds:0}s. Aggregate cadence 5s; graph interval averages, table original-sample peaks.";
+            note+=first==default?"No samples in range.":$"Observed {first:O} to {latest:O}. Latest age {(DateTimeOffset.UtcNow-latest).TotalSeconds:0}s. Aggregate cadence 5s; interval averages and peaks, table original-sample peaks.";
         }
         return new(total==0?"No matching recorded observations. "+note:note,rows.ToArray(),points.ToArray(),total,total>rows.Count);
     }

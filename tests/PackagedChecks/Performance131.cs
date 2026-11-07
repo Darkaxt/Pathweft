@@ -83,5 +83,6 @@ sealed partial class PackageProbe
         process.StandardInput.Close();await process.WaitForExitAsync();
         Check(process.ExitCode==0&&(await error).Length==0&&before.SequenceEqual(SHA256.HashData(File.ReadAllBytes(database))),
             "Delivered MCP exits naturally on EOF and does not modify recorded history");
+        await VerifyPerformance132();
     }
 }

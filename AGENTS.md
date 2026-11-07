@@ -1,5 +1,15 @@
 # Pathweft development
 
+Current spec0.82: S29 is the only ACTIVE stage. User supplied SysOptimizer History
+as the expanded analysis reference. Adapted original History source is pinned and
+retained with MIT provenance. Source checks pass linked moment/range/event facts,
+keyboard/wheel/navigation/reset, themes/scales/scroll reachability, query identity,
+gaps/errors and natural shutdown. Resource8824 passes actual expanded/tray costs.
+Preserve compact cards, opt-in recording, retention and native ownership. Remaining:
+normal1.1.32 package/source/native/app acceptance, publication, independent checks
+and applicable installed readback. No tracked deferral or required refactor. S30
+admin/shield, S25 and maintenance remain NOT STARTED. S28 closure is historical.
+
 Current2026-11-08/spec0.81: S28 COMPLETE through normal1.1.31/e8dc64f.
 Native request0ecad834edd14848bf3b40068299c752/ticket25 exited0; app170636
 passes actual CPU/GPU/file attribution, focus, navigation and exact worker/session

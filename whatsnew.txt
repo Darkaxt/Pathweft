@@ -1,6 +1,11 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.32 | 2026-11-08 | Interactive performance investigation
+- Explore the expanded timeline with grouped events and spikes, pinned moments, zoom, pan and overview range selection. Linked tables show the recorded apps or facts for your selection.
+- Analysis keeps Pathweft's themes, keyboard controls and compact cards. Narrow windows and larger text can scroll to the full graph and its controls.
+- History recording remains optional. Missing observations stay gaps; no extra collector or MCP client is enabled.
+
 ## 1.1.31 | 2026-11-07 | Integrated system analysis
 - Performance cards open a full analysis area with larger graphs, themed selectors and sortable activity tables. Back to files restores the existing browser and selection.
 - Optional history records CPU, physical RAM, individual GPUs and drive activity for 1, 7 or 30 days in your configured data folder. Explore recorded summaries, heavy apps, spikes and collection events.

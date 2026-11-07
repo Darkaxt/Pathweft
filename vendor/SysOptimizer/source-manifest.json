@@ -2,6 +2,13 @@
   "repository": "https://github.com/limburatorul/sysoptimizer",
   "revision": "6ddd104fe4fc3f990bc2a9b376e5795943541d49",
   "license": "MIT",
-  "selected": [{"path":"Sysoptimizer/Services/HistoryStore.cs","gitBlob":"13e30e378948f874fecb636e96d01b66895652ca","selectedSource":"vendor/SysOptimizer/upstream/Sysoptimizer_Services_HistoryStore.cs.source"},{"path":"Sysoptimizer/Services/ProcessMonitor.cs","gitBlob":"dae1dd572b436a1ffe5a13d4c0ba6c0584d52b9b","selectedSource":"vendor/SysOptimizer/upstream/Sysoptimizer_Services_ProcessMonitor.cs.source"},{"path":"Sysoptimizer.Mcp/Tools.cs","gitBlob":"7f89f3538eb14050cfb1928423effbf469c8f3a0","selectedSource":"vendor/SysOptimizer/upstream/Sysoptimizer.Mcp_Tools.cs.source"},{"path":"Sysoptimizer.Mcp/Program.cs","gitBlob":"0039322a6e352a1d059d61b61856e47aaa8ad918","selectedSource":"vendor/SysOptimizer/upstream/Sysoptimizer.Mcp_Program.cs.source"}],
-  "adaptation": "Read-only tool vocabulary, sampled heavy-app policy and history queries in PerformanceHistory.cs and PerformanceMcp.cs. Original Windows counter/tracing ownership retained; SQLite replaces donor CSV indexes. No donor app/runtime/drivers/MCP deployment/configuration are imported."
+  "selected": [
+    {"path":"Sysoptimizer/Services/HistoryStore.cs","gitBlob":"13e30e378948f874fecb636e96d01b66895652ca","selectedSource":"vendor/SysOptimizer/upstream/Sysoptimizer_Services_HistoryStore.cs.source"},
+    {"path":"Sysoptimizer/Services/ProcessMonitor.cs","gitBlob":"dae1dd572b436a1ffe5a13d4c0ba6c0584d52b9b","selectedSource":"vendor/SysOptimizer/upstream/Sysoptimizer_Services_ProcessMonitor.cs.source"},
+    {"path":"Sysoptimizer.Mcp/Tools.cs","gitBlob":"7f89f3538eb14050cfb1928423effbf469c8f3a0","selectedSource":"vendor/SysOptimizer/upstream/Sysoptimizer.Mcp_Tools.cs.source"},
+    {"path":"Sysoptimizer.Mcp/Program.cs","gitBlob":"0039322a6e352a1d059d61b61856e47aaa8ad918","selectedSource":"vendor/SysOptimizer/upstream/Sysoptimizer.Mcp_Program.cs.source"},
+    {"path":"Sysoptimizer/MainWindow.History.cs","gitBlob":"f7d7bb61782bbf5e029f6252c5cd07d6633a3c90","selectedSource":"vendor/SysOptimizer/upstream/Sysoptimizer_MainWindow.History.cs.source"}
+  ],
+  "inspected": [{"path":"Sysoptimizer/MainWindow.Monitor.cs","gitBlob":"610f35133a64fd69a367f2f2661eadbb09a6827c","selectedSource":"vendor/SysOptimizer/upstream/Sysoptimizer_MainWindow.Monitor.cs.source","scope":"Research reference for launch sampling; its signature checks, maintenance scans and recording policy are not imported"}],
+  "adaptation": "Read-only tool vocabulary, sampled heavy-app policy and history queries in PerformanceHistory.cs and PerformanceMcp.cs. Selected History chart code: absolute-time round-duration columns, peak buckets, rounded-step line/area geometry, heat gradient, grouped markers, pin/range/pan/zoom and overview interaction adapted to Pathweft data/theme/layout. Original Windows counter/tracing ownership retained; SQLite replaces donor CSV indexes. No donor app/runtime/drivers/MCP deployment/configuration are imported."
 }

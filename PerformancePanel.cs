@@ -104,6 +104,7 @@ internal sealed partial class PerformancePanel : StackPanel,IAsyncDisposable
     internal void Select(int index)
     {
         bool hadFocus=IsKeyboardFocusWithin;int previous=selected;
+        if(index!=previous){hoverCancel?.Cancel();ClearInvestigation();}
         selected=index;details.Visibility=index<0?Visibility.Collapsed:Visibility.Visible;
         sortProperty=null;
         cards.Visibility=Visibility.Visible;
@@ -241,19 +242,22 @@ internal sealed partial class PerformancePanel : StackPanel,IAsyncDisposable
     static async Task Retire(PerformanceIoClient client,Task previous){await previous.ConfigureAwait(false);await client.DisposeAsync().ConfigureAwait(false);}
     public async ValueTask DisposeAsync()
     {
-        disposed=true;historyCancel?.Cancel();
-        try{await historyWork.ConfigureAwait(false);}
+        disposed=true;historyCancel?.Cancel();hoverCancel?.Cancel();
+        try{await Task.WhenAll(historyWork,hoverWork).ConfigureAwait(false);}
         // These query failures already have a visible unavailable state. They
         // must not prevent retirement of an independent native I/O worker.
         catch(Exception error)when(error is OperationCanceledException or ArgumentException or IOException or UnauthorizedAccessException or Microsoft.Data.Sqlite.SqliteException){}
         monitor.Changed-=Updated;monitor.DetailKind=0;
-        await ReleaseIo().ConfigureAwait(false);await mapping.ConfigureAwait(false);historyCancel?.Dispose();
+        await ReleaseIo().ConfigureAwait(false);await mapping.ConfigureAwait(false);historyCancel?.Dispose();hoverCancel?.Dispose();
     }
 }
 
 internal sealed class PerformanceGraph : FrameworkElement
 {
     (DateTimeOffset Time,double? Value)[] points=Array.Empty<(DateTimeOffset,double?)>();double ceiling,gapSeconds=5;
+    internal (DateTimeOffset Time,double? Value)[] Points=>points;
+    internal double Ceiling=>ceiling;
+    internal double GapSeconds=>gapSeconds;
     internal void Set((DateTimeOffset,double?)[] values,double maximum=0){points=values;ceiling=maximum;InvalidateVisual();}
     internal void CopyTo(PerformanceGraph graph){graph.gapSeconds=gapSeconds;graph.Set(points,ceiling);}
     internal void SetHistory((DateTimeOffset,double?)[] values,double maximum,double gap){gapSeconds=gap;Set(values,maximum);}
