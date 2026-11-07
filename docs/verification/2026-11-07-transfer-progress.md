@@ -43,8 +43,25 @@ byte amount is unlabelled. The production consumer then exposes WPF's unbound
 first-measure state: Rect.Empty has negative-infinite width, unlike the populated
 label used in the shown-window source trial. Absent glyphs now occupy zero width
 and no gap; an explicit initial-measure regression supplements the actual
-compiled-template consumer. Production verification must pass before publication.
-The first unpublished package is superseded and
-cleaned, with its receipt preserved; no old assets were published.
-Final1.1.27 package, independent retrieval and
-applicable installed acceptance remain pending; S24 stays ACTIVE.
+compiled-template consumer. Corrected production qualification107156 passes;
+its explicitly unreleased source candidate is diagnostic evidence, not release
+acceptance. Superseded unpublished packages are cleaned with their original
+receipts preserved; no old assets were published.
+
+Normal1.1.27 is published from6b294cf8263ad04b1f41a4928d0ed3b3dd8d0903.
+Final packaged consumer99016 and independently downloaded consumer85284 pass
+the actual application checks, including unbound first measurement, rasterized
+Pause/Cancel alignment, shorter labels and real Pause behavior. Corresponding
+source/dependency/license checks pass; all six independently retrieved assets
+match the published sizes and SHA-256 digests. The existing unsigned release
+policy is unchanged. Actual dark/light,100/150%,normal/minimum-width source
+renders and full transfer/conflict workflows45728/113412 pass. Evidence applies
+to the delivered implementation; no dependency versions or transfer engine were
+changed. Build, source staging, both verification copies, independently retrieved
+assets and task scratch/pointers are transactionally cleaned after evidence
+retention; all final cleanup receipts report applied with no errors. Required
+release assets and diagnostic/acceptance evidence remain available.
+
+Applicable installed acceptance remains pending the user's built-in update;
+S24 stays ACTIVE and S18 stays NOT STARTED. This is the only unmet delivery
+criterion; no external blocker or tracked deferral is introduced.

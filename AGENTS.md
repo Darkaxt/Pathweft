@@ -6,9 +6,11 @@ later features stay NOT STARTED. Retain internal verification and actual
 clipboard/conflict/cancel/completion behavior. Native/build/test scratch uses
 exact D:/Temp/pathweft-transfer-progress and
 D:/Temp/pathweft-transfer-progress-delivery for sustained small-file/native I/O,
-registered for transactional cleanup after last use. Remaining: integrated UI,
-real rendered/lifecycle checks and one normal independently/installed verified
-release. No external blocker or tracked deferral.
+registered for transactional cleanup after last use. Source45728/113412 and
+final99016/independent85284 pass actual layouts, optical Pause/Cancel alignment,
+shorter labels and lifecycle/delivered behavior. Normal1.1.27/6b294cf is published
+with all six assets. Remaining: installed readback after the user's built-in
+update. No external blocker or tracked deferral.
 
 Previous closure2026-11-07/spec0.73: S16 is COMPLETE for CRAFT-01..07 and CORE-24.
 Normal1.1.26/0856498 is published with all six assets; final110748 and independent
