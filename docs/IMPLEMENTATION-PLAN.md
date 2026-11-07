@@ -3,7 +3,15 @@
 Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.79, 2026-11-07,
 including the user-authorized continued comparison requirement TRANSFER-07.
 
-Current2026-11-07: S18 COMPLETE through normal1.1.28/cc9f0ea. Final and
+Current2026-11-07: S26 COMPLETE through normal1.1.29/d66f0c6. Final163400 and
+independent retrieved174916 pass corresponding-source/native/application checks.
+Installed164052 verifies11,301 members, restarted main111432/helper157636,
+readiness,22 routes and preserved identity/profile. Upstream8ceb281 ancestry and
+CodeQL42392128695 pass; alert1's false-positive disposition is read back and
+scanning remains enabled. All assigned criteria pass; no blocker/deferral. No
+stage is ACTIVE. Evidence retained; generated scratch transactionally cleaned.
+
+Historical checkpoint2026-11-07: S18 COMPLETE through normal1.1.28/cc9f0ea. Final and
 independently downloaded packages pass source/native/application workflows;
 installed readback152724 verifies11,301 members, restarted main173864/helper171780,
 helper readiness,22 routes and preserved Darkaxt.Pathweft/profile identity.
@@ -1064,7 +1072,7 @@ plan neither authorizes itself nor adds approval checkpoints.
 | S16 - Craft core refresh and additional renderers | COMPLETE | CRAFT-01..07; CORE-24; affected PREVIEW/LIFE/DELIVERY | S23 delivered; existing worker and LibreOffice baseline | Refreshed Office plus Photo/Vector/Fig/optional PDF and bounded located extraction qualify in actual source/preview/worker workflows. Native/icon/source/advisory qualification, normal1.1.26/0856498, final110748, independent42084 and installed108640 pass. No acceptance criteria remaining, blockers or tracked deferrals. No next stage activated. |
 | S24 - Transfer progress presentation | COMPLETE | TRANSFER-17; affected TRANSFER-14..16/CORE/LIFE/DELIVERY | S16 delivered; user requests compact progress/counter/action corrections | Source45728/113412 and final99016/independent85284 verify actual layouts, rasterized icon/text alignment, labels, transfer lifecycle and delivered behavior. Normal1.1.27/6b294cf published; installed99016 verifies matching members, restarted main/helper, readiness, routes and preserved identity. No remaining criteria, blockers or tracked deferrals. |
 | S18 - Contextual performance monitoring | COMPLETE | MONITOR-01..05; CORE-25..27; affected CORE-03/LIFE/DELIVERY | S16/S24 COMPLETE | Normal1.1.28/cc9f0ea independently verifies source/native/app workflows. Installed152724 verifies11,301 members, new main/helper, readiness,22 routes and identity. All assigned criteria pass; no blocker or tracked deferral. |
-| S26 - Upstream synchronization and security alert disposition | ACTIVE | User request2026-11-07; affected CORE-05/TRANSFER/LIFE/DELIVERY | S18 COMPLETE; before S25 | Merge thirteen commits through8ceb281 with documented adoption/supersession, preserving fork contracts and excluding promotions. Alert1 false-positive disposition is recorded/read back; rule remains enabled. Remaining integrated transfer/undo/rename/recycle/filter/search/icon qualification and normal independent/applicable installed verified release. No tracked deferral. |
+| S26 - Upstream synchronization and security alert disposition | COMPLETE | User request2026-11-07; affected CORE-05/TRANSFER/LIFE/DELIVERY | S18 COMPLETE; before S25 | Normal1.1.29/d66f0c6 retains upstream8ceb281 ancestry and documented adoption/supersession. Final163400/independent174916 pass source/native/application workflows; installed164052 verifies11,301 members, restarted main/helper, readiness,22 routes and identity. Alert1 justified false-positive disposition is read back; rule retained and CodeQL42392128695 succeeds. No blocker or tracked deferral. |
 | S25 - Summary-card motion | NOT STARTED | MOTION-01..03; affected MONITOR/CORE-03/LIFE/DELIVERY | S18 COMPLETE; after S18 and before S12 | Upward card entry with smooth file-pane squeeze; rotation between Statistics/Performance; reversal/interruption and focus/scroll preservation; reduced-motion support and actual frame/layout/resource qualification. One final independently/installed verified release after implementation authorization. No criteria verified yet. |
 | S12 - Tresorit capability investigation | NOT STARTED | TRES-01..04 | S15 delivered; S16/S18/S25 considered first in the selected execution order | Supported API/client assessment, bounded REA as needed, evidence-backed capability matrix/decision and implementation proposal. Investigation only; no cloud mutation or integration implementation. |
 | S19 - Selected-folder content indexing | NOT STARTED | CONTENT-01..06; affected SEARCH/CORE/LIFE/DELIVERY | After S12 in the selected execution order; qualify extractor APIs, query/location semantics, provider metadata and resource budgets | Toolbar folder opt-in/current magnifier badges; qualified Craft/text extraction; persisted searchable strings and location arrays, periodic incremental refresh and cloud-cache independence. Verify actual search/open/freshness/recovery and one final independently/installed verified release when implementation is authorized. No criteria verified yet. |

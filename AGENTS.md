@@ -1,6 +1,15 @@
 # Pathweft development
 
-Current2026-11-07/spec0.79: S18 COMPLETE through normal1.1.28/cc9f0ea,
+Current2026-11-07/spec0.79: S26 COMPLETE through normal1.1.29/d66f0c6.
+Final163400 and independently retrieved174916 pass source/native/application
+checks. Installed readback164052 verifies11,301 matching members, restarted
+main111432/helper157636, readiness,22 routes and preserved identity/profile.
+Upstream8ceb281 is an ancestor; CodeQL42392128695 passes and alert1's justified
+false-positive dismissal is read back without disabling its rule. All criteria
+pass; no blocker or tracked deferral. Generated scratch is transactionally cleaned
+after evidence retention. No stage is ACTIVE; S25 and later remain NOT STARTED.
+
+Historical checkpoint2026-11-07/spec0.79: S18 COMPLETE through normal1.1.28/cc9f0ea,
 independent package/source/app acceptance and installed readback152724
 (11,301 members, restarted main173864/helper171780, readiness,22 routes and
 preserved shortcut/profile). S26 is the only ACTIVE stage: user-requested

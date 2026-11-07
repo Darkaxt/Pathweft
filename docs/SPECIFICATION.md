@@ -16,7 +16,10 @@ shipped-runtime evidence, correcting an actionable defect or recording a justifi
 false-positive disposition. Final acceptance includes ancestry at upstream/main,
 normal publication, independent delivered sources/runtime checks and applicable
 installed readback. S18 is COMPLETE through independently verified and installed
-1.1.28/cc9f0ea; S26 is the single ACTIVE stage. No tracked deferral.
+1.1.28/cc9f0ea. S26 is COMPLETE through normal1.1.29/d66f0c6, final163400 and
+independent174916 source/native/application acceptance, installed164052 readback,
+upstream ancestry and successful retained CodeQL coverage. No stage is ACTIVE;
+no tracked deferral. See docs/verification/2026-11-07-s26-upstream.md.
 
 User refinement2026-11-07: remove the duplicate drive-capacity strip and
 free-space label below the address bar. Retain capacity in the sidebar and lower
