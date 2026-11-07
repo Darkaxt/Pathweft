@@ -5,9 +5,11 @@ as the expanded analysis reference. Adapted original History source is pinned an
 retained with MIT provenance. Source checks pass linked moment/range/event facts,
 keyboard/wheel/navigation/reset, themes/scales/scroll reachability, query identity,
 gaps/errors and natural shutdown. Resource8824 passes actual expanded/tray costs.
-Preserve compact cards, opt-in recording, retention and native ownership. Remaining:
-normal1.1.32 package/source/native/app acceptance, publication, independent checks
-and applicable installed readback. No tracked deferral or required refactor. S30
+Preserve compact cards, opt-in recording, retention and native ownership. Normal
+1.1.32/2f3b1cd is published with six verified assets; final165444 and independently
+downloaded175768 pass source/native/self-test/application checks. Remaining:
+user-controlled update and installed files/helper/identity readback. Pre-update
+identities are retained in .local/evidence/2026-11-08-s29. No tracked deferral or required refactor. S30
 admin/shield, S25 and maintenance remain NOT STARTED. S28 closure is historical.
 
 Current2026-11-08/spec0.81: S28 COMPLETE through normal1.1.31/e8dc64f.
