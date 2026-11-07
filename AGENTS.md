@@ -1,5 +1,17 @@
 # Pathweft development
 
+Plan-only2026-11-07/spec0.76: S18 now includes the compact Task Manager
+Performance icon and shared rolling-hour CPU/GPU/drive-unit I/O history while
+Pathweft runs in the tray. Background I/O is drive-level only; folder I/O is
+explicitly restricted to its focused widget, with demand-driven detailed
+attribution. Qualify bounds, gaps, idle cost and lifecycle before acceptance.
+S25 Summary-card motion is NOT STARTED after S18/before S12: upward card entry
+and pane squeeze, Statistics/Performance rotation, reversible transitions and
+reduced-motion support. This updates plans only, starts no collector or image
+generation and activates no stage. S24 remains COMPLETE. S18 still owns CORE-25
+monthly ImageGen banners. Remaining: S18 -> S25 -> S12 -> S19 -> S20 -> S21 ->
+S22 -> S6 -> S7. Earlier visible-only aggregate guidance is superseded.
+
 Plan-only2026-11-07/spec0.75: CORE-25 is NOT STARTED as S18's next-release
 companion: twelve distinct ImageGen monthly changelog banners, consistent
 Pathweft style and960:170 presentation, selected by release month with full

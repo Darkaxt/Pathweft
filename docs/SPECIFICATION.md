@@ -1,6 +1,25 @@
 # Pathweft specification
 
-Version 0.75 - 2026-11-07. Owner: Darkaxt.
+Version 0.76 - 2026-11-07. Owner: Darkaxt.
+
+Planning refinement2026-11-07: S18 remains NOT STARTED. Use the Task Manager
+Performance graph-in-a-square icon as the compact Statistics/Performance swap
+control, with clear active state and tooltip/accessibility labels. Supersede
+the earlier visible-only aggregate collection rule: retain a bounded rolling
+hour of CPU, GPU and drive/unit-level I/O samples while Pathweft is running,
+including in the tray. Folder I/O is explicitly focus-only: collect it only
+while its widget is focused, never as part of the background drive history.
+Keep detailed process/file tracing demand-driven. Reuse existing process/helper
+ownership, measure the additional idle costs and distinguish observation gaps
+from zero. No live collector or configuration change is started by this update.
+
+S25 - Summary-card motion is a separate NOT STARTED stage after S18 and before
+S12. Cards should enter upward while the upper file pane smoothly yields space;
+the Statistics/Performance swap should rotate the card region into view. Keep
+ordinary browsing snappy and honor disabled/reduced system animation settings.
+Motion is not an S18 acceptance criterion; S25 owns its full verification and
+subsequent release. No stage is ACTIVE. Remaining order:
+S18 -> S25 -> S12 -> S19 -> S20 -> S21 -> S22 -> S6 -> S7.
 
 Next-release refinement2026-11-07: CORE-25 records twelve distinct ImageGen
 changelog banners, January through December, as a companion to the next planned
@@ -1450,21 +1469,32 @@ Native reference: [Microsoft WPF JumpList](https://learn.microsoft.com/en-us/dot
 
 ### Contextual performance monitoring (S18)
 
-Planned after S16 and before S12; NOT STARTED. Reuse the bottom summary area and
+Planned after S16/S24 and before S25/S12; NOT STARTED. Reuse the bottom summary area and
 Pathweft's current design. Resource Monitor is a behavioral reference for
 process/file attribution, not a requirement to reproduce its entire interface.
 
 | ID | Requirement and acceptance |
 | --- | --- |
-| MONITOR-01 | Provide a directly accessible Statistics/Performance toggle for the current pane's bottom cards, preserving the ordinary file view and existing statistics. Performance presents four compact cards in order: CPU utilization/history; GPU utilization/name/memory with adapter selection where multiple GPUs exist; current-drive read/write throughput/activity; current-folder read/write throughput including descendants. Retain readable Pathweft proportions, theme, scaling and responsive layout. |
+| MONITOR-01 | Provide a directly accessible Statistics/Performance toggle using the Task Manager Performance graph-in-a-square icon at compact Pathweft proportions, with truthful active state, tooltip and accessible name. Preserve the ordinary file view and existing statistics. Performance presents four compact cards in order: CPU utilization/history; GPU utilization/name/memory with adapter selection where multiple GPUs exist; current-drive read/write throughput/activity; current-folder read/write throughput including descendants while its widget is focused. Retain readable theme, scaling and responsive layout. |
 | MONITOR-02 | Clicking a card directly reveals its relevant details in Pathweft-styled tables without an intermediary single-action overflow menu. Drive/folder details attribute activity to Process, PID, File, Read/s, Write/s and Total/s; folder scope follows the current path and descendants. CPU/GPU details explain the displayed utilization through the qualified data source. Preserve current browsing and support returning to the compact cards. |
 | MONITOR-03 | Establish actual Windows counter/event sources and required privileges before selecting implementation. Distinguish file-level logical I/O, including cached requests, from physical device activity; do not infer throughput from folder-size changes. Define current volume/device mapping and qualify mapped, virtual/cloud and unavailable sources explicitly. Missing access, unsupported measurements or incomplete/lost observations must be visibly distinguished from zero activity. Verify path attribution, process identity/reuse and navigation scope; assess overhead with actual workloads. |
-| MONITOR-04 | Collect detailed monitoring only while its Performance view is visible. Use bounded history/buffers and event/state-based ownership; release collectors and any owned helpers when hidden, navigation replaces scope or the app exits. Reuse existing pane ownership and preserve transfers, preview sessions, settings and other consumers. Document any necessary privilege boundary; this planning request does not authorize starting a trace, changing system configuration or deploying a helper. |
-| MONITOR-05 | Qualify the complete toggle -> live cards -> attributed details -> scope change -> return/cleanup workflow against real known CPU/GPU and file read/write activity. Cover cached I/O semantics, other-process activity, multiple GPU/device selection where available, unsupported/access-denied states, independent panes, cancellation/exit and dark/light/scaled layouts. Measure CPU/memory/collection overhead and establish concrete budgets before implementation acceptance; do not claim resource neutrality from appearance. S18 owns normal release, independent retrieval and applicable installed verification after implementation is separately authorized. |
+| MONITOR-04 | Keep lightweight aggregate CPU/GPU and drive/unit I/O sampling active while Pathweft runs, including hidden/tray mode, with one shared bounded in-memory rolling hour and no per-pane duplicate collectors or unbounded disk logs. A newly started session has only observed history; sleep, unavailable sources and collection gaps must not become fabricated zero samples. Background I/O history is drive/unit-level only. Folder I/O, including descendants, is collected only while its widget is focused; focus loss, hiding, scope replacement or exit must release that tracing and mark unsampled periods honestly. Other detailed process/file attribution is demand-driven while its relevant detail view is visible. Reuse existing app/helper ownership; preserve transfers, previews, settings and other consumers. Do not add an independently installed collector service. Establish supported privilege handling and numerical sampling/resource budgets before implementation acceptance. This planning update starts no trace and changes no live configuration. |
+| MONITOR-05 | Qualify the complete tray sampling -> reopen with rolling-hour history -> toggle -> focused folder widget -> attributed details -> focus loss/scope change -> return/cleanup workflow against real known CPU/GPU and file read/write activity. Prove the hour retention bound and shared collector ownership, background drive-only I/O, absence of folder tracing when unfocused, and honest session/sleep/missing-sample gaps. Cover cached I/O semantics, other-process activity, multiple GPU/device selection where available, unsupported/access-denied states, independent panes, cancellation/exit and dark/light/scaled layouts. Measure incremental visible/tray CPU and memory costs and establish concrete budgets before implementation acceptance; do not claim resource neutrality from appearance. S18 owns normal release, independent retrieval and applicable installed verification after implementation is separately authorized. |
 
 Before implementation activation, resolve collector feasibility, privilege handling,
 measurement definitions and numerical resource budgets within this existing scope.
 No extra monitoring categories or system-management actions are implied.
+
+### Summary-card motion (S25)
+
+NOT STARTED after S18 and before S12. This stage owns the requested later motion
+work independently of S18's functional performance widgets.
+
+| ID | Requirement and acceptance |
+| --- | --- |
+| MOTION-01 | Animate summary cards appearing upward as the upper file pane smoothly shrinks to make room, with the reverse transition when cards collapse. Preserve pane scroll, selection, path drafts, keyboard focus, minimum usable dimensions and existing auto-collapse rules. Do not animate routine metric samples or restart layout transitions for every background refresh. |
+| MOTION-02 | Rotate the existing summary-card region between Statistics and Performance, preserving each view's state and the same occupied space. Keep focus-only folder collection tied to actual active widget focus, not a temporarily visible transition surface. Handle rapid reversal, resize, pane switching and interruption using actual animation completion/cancellation; no input-blocking delay, duplicate collectors or overlapping interactive faces. |
+| MOTION-03 | Honor Windows disabled/reduced animation settings with an immediate, fully functional state change. Qualify actual expansion/collapse/rotation and interrupted transitions at representative refresh rates, dark/light themes, display scales and narrow/two-pane layouts. Measure frame pacing and layout/CPU costs, retain before/after visual evidence and verify ordinary browsing remains responsive. S25 owns one normal final release with independent retrieval and applicable installed acceptance after implementation authorization; no motion work is required to close S18. |
 
 ### Tresorit capability investigation (S12)
 
