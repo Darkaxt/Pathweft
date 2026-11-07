@@ -1,7 +1,7 @@
 # Integrated system analysis qualification
 
 Scope: MONITOR-09..13. User selected performance/history/read-only MCP before
-maintenance. The running installation remains 1.1.30; no MCP client is configured
+maintenance. Installed acceptance on2026-11-08 confirms1.1.31; no MCP client is configured
 or activated. DNS, app installation, security enforcement and maintenance actions
 are excluded.
 
@@ -55,9 +55,15 @@ their published SHA-256 digests; the normal release/tag/source were read back.
 The installer remains explicitly unsigned under the existing release policy.
 Evidence: .local/evidence/2026-11-07-s28/final-* and retrieved-*.
 
-Remaining acceptance blocker: applicable installed readback awaits the user's
-built-in updater/reopen, then hash-check installed members and verify restarted
-helper, route and shortcut identity. No tracked deferral; S28 remains ACTIVE.
+Installed readback179008 passes after the user-controlled built-in updater:
+all11,304 installed manifest members match the delivered release; main169944 and
+helper169508 restarted, helper readiness is signaled,22 folder-route values match,
+and Darkaxt.Pathweft shortcut identity and the existing D:/AppData profile are
+preserved. No desktop input was performed. Receipt:
+.local/evidence/2026-11-07-s28/installed1131-desktop.json.
+All MONITOR-09..13 acceptance criteria are satisfied; S28 is COMPLETE, with no
+blocker, tracked deferral or required refactor. No stage is ACTIVE; S25 remains
+NOT STARTED.
 
 The first unpublished package from fa518f2 failed its existing settings reset
 coverage assertion for performance.record/performance.days. Those explicit choices
@@ -79,5 +85,12 @@ download subsequently passed, as recorded above.
 The superseded early candidate is not release evidence: later query/shutdown/graph
 corrections require a fresh package. Cleanup transactiondea868b6ed3990f6717f8629c32ed6f5
 applied successfully, removing7,323,831,805 bytes with no errors and confirming
-the exact candidate root absent. Required build/source staging remains under the exact registered
-D:/Temp/pathweft-s28 and D:/Temp/pathweft-s28-delivery paths for native/small-file I/O.
+the exact candidate root absent. Required build/source staging subsequently used
+the exact registered D:/Temp/pathweft-s28 and D:/Temp/pathweft-s28-delivery paths
+for native/small-file I/O. After retention of required evidence, final cleanup
+transaction35e424b48cc91b8e17491b64c0dccf3f removed4,468,491,405 bytes without errors.
+Installed-check scratch D:/Temp/pathweft-s13-s9-s11/installed1131 was removed by
+transactioned7cd4770b60779ee597a2f9df543d49; only two empty owned directories remained,
+and apply reported no errors. Original registrationfc550f0420899a70ecd1303f8e8edc86
+was closed as discarded after the replacement cleanup. Release assets and required
+evidence remain retained; the live installation and updater-owned profile are preserved.

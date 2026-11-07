@@ -1,12 +1,13 @@
 # Pathweft development
 
-Current spec0.81: S28 is the only ACTIVE stage.
+Current2026-11-08/spec0.81: S28 COMPLETE through normal1.1.31/e8dc64f.
 Native request0ecad834edd14848bf3b40068299c752/ticket25 exited0; app170636
 passes actual CPU/GPU/file attribution, focus, navigation and exact worker/session
 retirement on its never-switched private desktop. Earlier ticket24 expired without launch.
 Source116416/analysis130208 and resource172048 pass the main-pane/history/MCP,
-browser-state, layout, query/gap/error and recording-budget workflows. Remaining:
-applicable installed readback after the user-controlled updater. Normal1.1.31
+browser-state, layout, query/gap/error and recording-budget workflows. Installed
+readback179008 verifies11,304 matching members, restarted main169944/helper169508,
+readiness,22 routes and preserved shortcut/profile identity. Normal1.1.31
 from e8dc64f is published with six checksum-verified assets. Final92112 and
 independently downloaded163252 pass complete source/native/application checks.
 No MCP activation/client configuration, drivers, security, DNS or app management.
@@ -14,8 +15,10 @@ The first unpublished package exposed missing reset-coverage classification for
 the two history settings. They are explicitly preserved outside unrelated cards;
 source self-test95992 passes, including preservation of recording/retention choices.
 The hidden-layout consumer correction is verified; failed assets were replaced
-before publication. S25 stays NOT STARTED. Retain release/evidence, transactionally
-clean spent staging, and preserve the live installation pending the user's update.
+before publication. No blocker, tracked deferral or required refactor remains.
+No stage is ACTIVE; S25 stays NOT STARTED. Release/evidence are retained;
+spent staging and installed-check scratch are transactionally cleaned. Preserve
+the live installation and its profile; no MCP client has been activated.
 Never automatically resubmit an expired request.
 Prior closure below is historical.
 
