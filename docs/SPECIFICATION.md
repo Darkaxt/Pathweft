@@ -1,6 +1,28 @@
 # Pathweft specification
 
-Version 0.79 - 2026-11-07. Owner: Darkaxt.
+Version 0.80 - 2026-11-07. Owner: Darkaxt.
+
+User refinement2026-11-07: S27 is ACTIVE for MONITOR-06..08 and supersedes
+S18's focus-only folder-collection behavior. Graphs span the actual observed
+history across their available width (up to one hour), retain real gaps, and
+label the observed duration rather than implying missing time was recorded.
+Add physical system RAM separately from GPU dedicated memory. Present CPU,
+RAM, GPU, Drive I/O and Folder I/O in one compact row with the same vertical
+footprint as ordinary drive/folder statistics. Use existing StatCard, StatSub,
+StatValue, Accent and Muted tokens, 10-DIP inter-card gaps, ellipsis/tooltips
+for secondary labels at narrow widths and the existing expanded detail region.
+Folder collection automatically follows a loaded supported path while the
+performance view is visible, after the first Windows permission request;
+keyboard focus is not a prerequisite. Cancellation leaves an explicit retry
+action and never repeatedly prompts. Hidden/minimized/tray/statistics states
+stop folder tracing; a permitted idle app-owned worker may remain connected to
+avoid repeated UAC on return, and exits with the browser. Existing global
+aggregate/tray history, current-path boundaries, ownership and resource budgets
+remain. Verify real RAM/counters, short/full-hour/gapped rendered graphs,
+five-card heights at dark/light100/150% and narrow/wide widths, automatic
+file-pane-focus collection, navigation, visibility suspension/resumption and
+worker exit. Complete one normal independently verified release. S26 COMPLETE;
+S25 and unrelated SysOptimizer/MCP research remain unimplemented.
 
 User request2026-11-07: synchronize the thirteen upstream commits through
 File Labs8ceb281f0145aefe3768a2966a4942bf80f89f44 and assess GitHub code-scanning
@@ -1573,6 +1595,9 @@ process/file attribution, not a requirement to reproduce its entire interface.
 | MONITOR-03 | Establish actual Windows counter/event sources and required privileges before selecting implementation. Distinguish file-level logical I/O, including cached requests, from physical device activity; do not infer throughput from folder-size changes. Define current volume/device mapping and qualify mapped, virtual/cloud and unavailable sources explicitly. Missing access, unsupported measurements or incomplete/lost observations must be visibly distinguished from zero activity. Verify path attribution, process identity/reuse and navigation scope; assess overhead with actual workloads. |
 | MONITOR-04 | Keep lightweight aggregate CPU/GPU and drive/unit I/O sampling active while Pathweft runs, including hidden/tray mode, with one shared bounded in-memory rolling hour and no per-pane duplicate collectors or unbounded disk logs. A newly started session has only observed history; sleep, unavailable sources and collection gaps must not become fabricated zero samples. Background I/O history is drive/unit-level only. Folder I/O, including descendants, is collected only while its widget is focused; focus loss, hiding, scope replacement or exit must release that tracing and mark unsampled periods honestly. Other detailed process/file attribution is demand-driven while its relevant detail view is visible. Reuse existing app/helper ownership; preserve transfers, previews, settings and other consumers. Do not add an independently installed collector service. Establish supported privilege handling and numerical sampling/resource budgets before implementation acceptance. This planning update starts no trace and changes no live configuration. |
 | MONITOR-05 | Qualify the complete tray sampling -> reopen with rolling-hour history -> toggle -> focused folder widget -> attributed details -> focus loss/scope change -> return/cleanup workflow against real known CPU/GPU and file read/write activity. Prove the hour retention bound and shared collector ownership, background drive-only I/O, absence of folder tracing when unfocused, and honest session/sleep/missing-sample gaps. Cover cached I/O semantics, other-process activity, multiple GPU/device selection where available, unsupported/access-denied states, independent panes, cancellation/exit and dark/light/scaled layouts. Measure incremental visible/tray CPU and memory costs and establish concrete budgets before implementation acceptance; do not claim resource neutrality from appearance. S18 owns normal release, independent retrieval and applicable installed verification after implementation is separately authorized. |
+| MONITOR-06 | Display actual observed history across the available graph width, retaining up to one hour without fabricating missing pre-start samples or bridging unavailable/sleep gaps. Label actual observed time. Keep all five performance cards in one row at the same height as the ordinary statistics cards at supported widths/scales; real chart strokes occupy their graph region, not only its trailing fraction. |
+| MONITOR-07 | Add physical RAM usage percentage, used/total bytes and rolling history as a separate card between CPU and GPU. Use Windows physical memory availability, not process working-set sums or dedicated VRAM. Expose demand-driven process working-set details, with unavailable values distinct from zero and no extra background process enumeration. |
+| MONITOR-08 | Superseding MONITOR-01/04/05 focus restrictions: automatically collect descendant folder I/O for the currently loaded supported folder while performance is visible, independent of card/window focus, after Windows permission. Request permission once, retain a retry after denial, follow acknowledged navigation scopes and clear old rows/history. Pause folder traces on hide/minimize/tray/statistics; resume the permitted worker on return and terminate it on exit. Preserve bounded logical-I/O attribution, gap/loss reporting and no background folder logging. Qualify actual native writes with the file pane focused and across visibility/navigation transitions. |
 
 Before implementation activation, resolve collector feasibility, privilege handling,
 measurement definitions and numerical resource budgets within this existing scope.

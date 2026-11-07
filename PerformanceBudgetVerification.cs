@@ -9,7 +9,7 @@ internal static class PerformanceBudgetVerification
     internal static async Task<int> Run(string root)
     {
         root=Path.GetFullPath(root);
-        if(!root.StartsWith(@"D:\Temp\pathweft-s18\",StringComparison.OrdinalIgnoreCase))throw new ArgumentException("Owned resource fixture required");
+        if(!root.StartsWith(@"D:\Temp\pathweft-s18\",StringComparison.OrdinalIgnoreCase)&&!root.StartsWith(@"D:\Temp\pathweft-s27\",StringComparison.OrdinalIgnoreCase))throw new ArgumentException("Owned resource fixture required");
         Directory.CreateDirectory(root);
         using var process=Process.GetCurrentProcess();
         GC.Collect();GC.WaitForPendingFinalizers();GC.Collect();process.Refresh();
@@ -32,7 +32,7 @@ internal static class PerformanceBudgetVerification
         // Independent copies model actual native-read payload allocation, not
         // thousands of references to the same sample's arrays.
         for(int i=0;i<3600;i++)monitor.Record(new(time.AddSeconds(i),real.Cpu,
-            real.Gpus.Select(x=>x with{}).ToArray(),real.Disks.Select(x=>x with{}).ToArray(),real.Issue));
+            real.Gpus.Select(x=>x with{}).ToArray(),real.Disks.Select(x=>x with{}).ToArray(),real.Issue,real.Ram is {} ram?ram with{}:null));
         long retained=GC.GetTotalMemory(true)-heap;
         IoReport permission;
         var client=new PerformanceIoClient();

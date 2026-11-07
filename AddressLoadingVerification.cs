@@ -9,6 +9,7 @@ public partial class MainWindow
 {
     internal async Task VerifyPerformancePresentation18(string root,Action<bool,string> check)
     {
+        performance.AutomaticIo=false;
         Settings.Stats=2;ApplyStats();SetSinglePane(true);SetActive(Left);
         await S1Verification.Navigate(Left,root);
         await VerifyAddressLoading18(root,check);

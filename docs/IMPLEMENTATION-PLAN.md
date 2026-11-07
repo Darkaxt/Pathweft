@@ -1,9 +1,21 @@
 # Implementation and reconciliation
 
-Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.79, 2026-11-07,
+Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.80, 2026-11-07,
 including the user-authorized continued comparison requirement TRANSFER-07.
 
-Current2026-11-07: S26 COMPLETE through normal1.1.29/d66f0c6. Final163400 and
+Current2026-11-07: S27 is the only ACTIVE stage for MONITOR-06..08: full-width
+observed-history graphs, physical RAM and five single-row statistics-height
+cards, plus automatic current-folder I/O after permission without focus gating.
+Source104260 and native160216 pass complete counter/RAM/card/focus/navigation/
+visibility/lifecycle workflows. Sampler115172 passes numerical resource budgets;
+actual dark/light100/150% narrow/wide screenshots and card-height parity pass.
+Remaining advancement blockers are delivered graph/source/application checks
+and normal independent delivery. No tracked deferral. Huashu follows
+the established statistics palette/type/spacing and actual compact layout.
+SysOptimizer performance/MCP replacement research is separate; security features,
+DNS and app management are outside the user's requested replacement scope.
+
+Previous closure2026-11-07: S26 COMPLETE through normal1.1.29/d66f0c6. Final163400 and
 independent retrieved174916 pass corresponding-source/native/application checks.
 Installed164052 verifies11,301 members, restarted main111432/helper157636,
 readiness,22 routes and preserved identity/profile. Upstream8ceb281 ancestry and
@@ -1073,6 +1085,7 @@ plan neither authorizes itself nor adds approval checkpoints.
 | S24 - Transfer progress presentation | COMPLETE | TRANSFER-17; affected TRANSFER-14..16/CORE/LIFE/DELIVERY | S16 delivered; user requests compact progress/counter/action corrections | Source45728/113412 and final99016/independent85284 verify actual layouts, rasterized icon/text alignment, labels, transfer lifecycle and delivered behavior. Normal1.1.27/6b294cf published; installed99016 verifies matching members, restarted main/helper, readiness, routes and preserved identity. No remaining criteria, blockers or tracked deferrals. |
 | S18 - Contextual performance monitoring | COMPLETE | MONITOR-01..05; CORE-25..27; affected CORE-03/LIFE/DELIVERY | S16/S24 COMPLETE | Normal1.1.28/cc9f0ea independently verifies source/native/app workflows. Installed152724 verifies11,301 members, new main/helper, readiness,22 routes and identity. All assigned criteria pass; no blocker or tracked deferral. |
 | S26 - Upstream synchronization and security alert disposition | COMPLETE | User request2026-11-07; affected CORE-05/TRANSFER/LIFE/DELIVERY | S18 COMPLETE; before S25 | Normal1.1.29/d66f0c6 retains upstream8ceb281 ancestry and documented adoption/supersession. Final163400/independent174916 pass source/native/application workflows; installed164052 verifies11,301 members, restarted main/helper, readiness,22 routes and identity. Alert1 justified false-positive disposition is read back; rule retained and CodeQL42392128695 succeeds. No blocker or tracked deferral. |
+| S27 - Compact automatic performance widgets | ACTIVE | MONITOR-06..08; affected MONITOR/LIFE/DELIVERY | S26 COMPLETE; before S25 | Implement full-width observed-time graphs, separate physical RAM, five statistics-height single-row cards and automatic current-folder logical I/O without focus gating after permission. Remaining: complete source/UI/native/resource/lifecycle and normal independent release verification. No tracked deferral. |
 | S25 - Summary-card motion | NOT STARTED | MOTION-01..03; affected MONITOR/CORE-03/LIFE/DELIVERY | S18 COMPLETE; after S18 and before S12 | Upward card entry with smooth file-pane squeeze; rotation between Statistics/Performance; reversal/interruption and focus/scroll preservation; reduced-motion support and actual frame/layout/resource qualification. One final independently/installed verified release after implementation authorization. No criteria verified yet. |
 | S12 - Tresorit capability investigation | NOT STARTED | TRES-01..04 | S15 delivered; S16/S18/S25 considered first in the selected execution order | Supported API/client assessment, bounded REA as needed, evidence-backed capability matrix/decision and implementation proposal. Investigation only; no cloud mutation or integration implementation. |
 | S19 - Selected-folder content indexing | NOT STARTED | CONTENT-01..06; affected SEARCH/CORE/LIFE/DELIVERY | After S12 in the selected execution order; qualify extractor APIs, query/location semantics, provider metadata and resource budgets | Toolbar folder opt-in/current magnifier badges; qualified Craft/text extraction; persisted searchable strings and location arrays, periodic incremental refresh and cloud-cache independence. Verify actual search/open/freshness/recovery and one final independently/installed verified release when implementation is authorized. No criteria verified yet. |
@@ -1131,6 +1144,7 @@ owns its complete release/delivery gate; S12 delivers research documents only.
 | CORE-26..27 | S18 user refinements | Remove duplicate capacity strip; centered edge-to-edge read-only archive ribbon; real foreground loading within address field with quiet background refresh, preserved drafts/caret/focus, reduced-motion and delivered/theme/scale qualification |
 | CRAFT-01..07 | S16 | Refreshed Office and additional source-built libraries, reusable located text extraction, preserved worker/preview lifetimes, actual format/fidelity/resource qualification and one final independently/installed verified release |
 | MONITOR-01..05 | S18 | Performance icon, contextual cards/details, bounded shared rolling-hour tray CPU/GPU/drive-unit I/O history, focus-only folder tracing, qualified attribution/resources/gaps/lifecycle and verified final delivery after implementation authorization |
+| MONITOR-06..08 | S27 | Full-width actual observed histories, separate physical RAM, five statistics-height cards and automatic visible current-folder I/O; supersedes S18 focus-only tracing; real source/render/native/lifecycle and normal independent delivery acceptance |
 | MOTION-01..03 | S25 | Upward summary-card entry and file-pane squeeze; Statistics/Performance rotation; reversible non-blocking state/focus preservation, reduced-motion settings and actual visual/performance/delivery verification |
 | TRES-01..04 | S12 | Evidence-backed Tresorit investigation and implementation proposal; execution remains NOT STARTED |
 | CONTENT-01..06 | S19 | Selected-folder content extraction, compact searchable strings/location arrays, periodic freshness/current badges, original-file navigation and verified final delivery after implementation authorization |

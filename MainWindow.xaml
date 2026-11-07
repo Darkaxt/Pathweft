@@ -79,7 +79,7 @@
     </Style>
     <Style x:Key="PerformanceCard" TargetType="Button" BasedOn="{StaticResource Ghost}">
       <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="Button">
-        <Border x:Name="Card" Style="{StaticResource StatCard}"><ContentPresenter HorizontalAlignment="Stretch" VerticalAlignment="Center"/></Border>
+        <Border x:Name="Card" Style="{StaticResource StatCard}" Padding="{TemplateBinding Padding}"><ContentPresenter HorizontalAlignment="Stretch" VerticalAlignment="Center"/></Border>
         <ControlTemplate.Triggers>
           <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Card" Property="Background" Value="{DynamicResource Palette.14FFFFFF}"/></Trigger>
           <Trigger Property="Tag" Value="on"><Setter TargetName="Card" Property="BorderBrush" Value="{DynamicResource Accent}"/></Trigger>

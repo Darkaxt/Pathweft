@@ -8,7 +8,9 @@ namespace FileExplorer;
 
 internal sealed record GpuReading(string Id,string Name,double? Usage,long? Memory,long Capacity);
 internal sealed record DiskReading(string Id,double? Read,double? Write,double? Busy);
-internal sealed record PerformanceSample(DateTimeOffset Time,double? Cpu,GpuReading[] Gpus,DiskReading[] Disks,string Issue);
+internal sealed record RamReading(long Used,long Total)
+{internal double Usage=>100d*Used/Total;}
+internal sealed record PerformanceSample(DateTimeOffset Time,double? Cpu,GpuReading[] Gpus,DiskReading[] Disks,string Issue,RamReading Ram=null);
 
 // One process-wide aggregate sampler. No file names, process enumeration, ETW or
 // disk logging on this path. A time gap remains a gap in the displayed history.
@@ -46,7 +48,7 @@ internal sealed class PerformanceMonitor : IDisposable
         while(!stopped.IsCancellationRequested)
         {
             var sample=source.Read();
-            Details=DetailKind==1?processMetrics.Read():DetailKind==2?source.GpuProcesses():Array.Empty<ProcessMetric>();
+            Details=DetailKind is 1 or 3?processMetrics.Read():DetailKind==2?source.GpuProcesses():Array.Empty<ProcessMetric>();
             Record(sample);
             try{if(!await clock.WaitForNextTickAsync(stopped.Token))break;}
             catch(OperationCanceledException)when(stopped.IsCancellationRequested){break;}
@@ -106,7 +108,10 @@ internal sealed class WindowsPerformanceCounters : IDisposable
         var disks=r.Keys.Concat(w.Keys).Distinct().Where(x=>x!="_Total").Select(id=>new DiskReading(id,
             continuous&&r.TryGetValue(id,out var rv)?rv:null,continuous&&w.TryGetValue(id,out var wv)?wv:null,
             continuous&&quiet.TryGetValue(id,out var qv)?Math.Clamp(100-qv,0,100):null)).ToArray();
-        return new(now,cpu,gpus,disks,status==0?null:$"Windows counters unavailable (0x{status:X8})");
+        var physical=new MemoryStatus{Length=(uint)Marshal.SizeOf<MemoryStatus>()};
+        RamReading ram=GlobalMemoryStatusEx(ref physical)&&physical.Total>0&&physical.Available<=physical.Total?
+            new((long)(physical.Total-physical.Available),(long)physical.Total):null;
+        return new(now,cpu,gpus,disks,status==0?null:$"Windows counters unavailable (0x{status:X8})",ram);
     }
     static string Id(string instance){var match=gpuId.Match(instance);return match.Success?match.Value.ToLowerInvariant():null;}
     internal ProcessMetric[] GpuProcesses()=>lastEngines.Where(x=>x.Key.StartsWith("pid_",StringComparison.Ordinal))
@@ -169,6 +174,12 @@ internal sealed class WindowsPerformanceCounters : IDisposable
     }
     [StructLayout(LayoutKind.Explicit,Size=16)]struct CounterValue{[FieldOffset(0)]public uint Status;[FieldOffset(8)]public double Number;}
     [StructLayout(LayoutKind.Sequential)]struct CounterItem{public IntPtr Name;public CounterValue Value;}
+    [StructLayout(LayoutKind.Sequential)]struct MemoryStatus
+    {
+        public uint Length,Load;
+        public ulong Total,Available,TotalPageFile,AvailablePageFile,TotalVirtual,AvailableVirtual,AvailableExtended;
+    }
+    [DllImport("kernel32.dll",SetLastError=true)]static extern bool GlobalMemoryStatusEx(ref MemoryStatus status);
     [DllImport("pdh.dll",CharSet=CharSet.Unicode,EntryPoint="PdhOpenQueryW")]static extern uint PdhOpenQuery(string source,UIntPtr data,out IntPtr query);
     [DllImport("pdh.dll",CharSet=CharSet.Unicode,EntryPoint="PdhAddEnglishCounterW")]static extern uint PdhAddEnglishCounter(IntPtr query,string path,UIntPtr data,out IntPtr counter);
     [DllImport("pdh.dll")]static extern uint PdhCollectQueryData(IntPtr query);

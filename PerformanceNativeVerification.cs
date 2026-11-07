@@ -12,6 +12,7 @@ public partial class MainWindow
 {
     internal async Task VerifyPerformanceNative18(string root,Action<bool,string> check)
     {
+        performance.AutomaticIo=false;
         check(HiddenTrialPresentation.PrivateSpaceTrial,"Native performance workflow owns a never-switched private desktop");
         async Task Settle()=>await Dispatcher.InvokeAsync(UpdateLayout,DispatcherPriority.ApplicationIdle);
         async Task Next()
@@ -26,11 +27,11 @@ public partial class MainWindow
         string folder=Path.Combine(root,"activity");Directory.CreateDirectory(folder);
         await S1Verification.Navigate(Left,folder);Activate();
         PerformanceCommand.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await Settle();
-        performance.FocusForVerification(3);await Settle();
+        performance.FocusForVerification(PerformancePanel.Folder);await Settle();
         check(IsActive&&performance.IsKeyboardFocusWithin,"Actual native focus reaches the folder widget");
         var existing=TraceEventSession.GetActiveSessionNames().Where(x=>x.StartsWith("Pathweft-Io-")).ToArray();
         await performance.EnableForVerification();await performance.SyncForVerification();
-        check(performance.IoForVerification is {Running:true},"App-owned worker acknowledges actual focused folder tracing");
+        check(performance.IoForVerification is {Running:true},"App-owned worker acknowledges automatic current-folder tracing after permission");
         var eventName="PathweftPerformance-"+Guid.NewGuid().ToString("N");
         using var stop=new EventWaitHandle(false,EventResetMode.ManualReset,eventName);
         var executable=Environment.GetEnvironmentVariable("PATHWEFT_PERFORMANCE_LOAD");
@@ -78,19 +79,29 @@ public partial class MainWindow
         check(observations.Any(x=>x.File.Equals(file,StringComparison.OrdinalIgnoreCase)&&x.Pid==Environment.ProcessId&&x.ProcessStarted>0&&x.Write>0),"Known writes are attributed to the actual file and PID/start identity");
         check(observations.Any(x=>x.File.Equals(file,StringComparison.OrdinalIgnoreCase)&&x.Read>0),"Cached file reads are represented as logical requests");
         performance.Select(-1);await Settle();await performance.SyncForVerification();
-        check(performance.IoForVerification is {Running:true},"Returning to the compact Folder card retains collection only while that card has native focus");
+        check(performance.IoForVerification is {Running:true},"Returning to compact cards retains current-folder collection");
         File.WriteAllBytes(file,payload);await Next();
         await S1Verification.Snapshot(this,root,"performance-folder-card");
         Left.ListForVerification.Focus();await Settle();await performance.SyncForVerification();
-        check(!performance.IsKeyboardFocusWithin&&performance.IoForVerification is {Running:false},"Losing actual widget focus acknowledges trace shutdown");
+        check(!performance.IsKeyboardFocusWithin&&performance.IoForVerification is {Running:true},"Actual file-pane focus preserves automatic folder collection");
         File.WriteAllBytes(file,payload);await Next();
-        check(performance.IoForVerification is {Running:false,Rows.Length:0},"Unfocused folder writes never restart file tracing");
-        performance.FocusForVerification(3);await Settle();await performance.SyncForVerification();
-        check(performance.IoForVerification is {Running:true},"Refocusing resumes the same owned worker with a fresh trace scope");
-        performance.SetFolder(Path.Combine(root,"other"));await performance.SyncForVerification();
+        check(performance.IoForVerification is {Running:true},"Folder collection continues without focusing its card");
+        Hide();await Settle();await performance.SyncForVerification();
+        check(performance.IoForVerification is {Running:false,Rows.Length:0},"Hiding to the tray acknowledges folder trace suspension");
+        Show();await Settle();await performance.SyncForVerification();
+        check(performance.IoForVerification is {Running:true},"Returning from tray resumes the permitted worker without another prompt");
+        performance.FocusForVerification(PerformancePanel.Folder);await Settle();
+        string other=Directory.CreateDirectory(Path.Combine(root,"other")).FullName;
+        await S1Verification.Navigate(Left,other);await performance.SyncForVerification();
         check(performance.IoForVerification?.Rows.Length==0,"Scope replacement clears old attributed rows after acknowledgement");
+        await Next();await performance.SyncForVerification();
+        var moved=new List<IoRow>();string movedFile=Path.Combine(other,"navigation.bin");
+        for(int i=0;i<3;i++){File.WriteAllBytes(movedFile,payload);File.WriteAllBytes(file,payload);await Next();moved.AddRange(performance.IoForVerification?.Rows??Array.Empty<IoRow>());}
+        File.WriteAllText(Path.Combine(root,"navigation-io.json"),JsonSerializer.Serialize(new{scope=performance.Scope,report=performance.IoForVerification,observations=moved},new JsonSerializerOptions{WriteIndented=true}));
+        check(moved.Any(x=>x.File.Equals(movedFile,StringComparison.OrdinalIgnoreCase)&&x.Write>0)&&moved.All(x=>IoCollection.Contains(other,x.File)),"Navigation automatically collects the new loaded folder and excludes the old one");
         await S1Verification.Snapshot(this,root,"performance-folder-details");
         PerformanceCommand.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await Settle();
+        await performance.SyncForVerification();check(performance.IoForVerification is {Running:false,Rows.Length:0},"Statistics mode acknowledges automatic folder tracing suspension");
         await performance.DisposeAsync();
         var remaining=TraceEventSession.GetActiveSessionNames().Where(x=>x.StartsWith("Pathweft-Io-")).ToArray();
         check(remaining.Order().SequenceEqual(existing.Order()),"Closing performance retires its exact native worker/session and preserves unrelated traces");

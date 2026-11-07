@@ -12,6 +12,7 @@ public partial class MainWindow
 {
     internal async Task VerifyPerformance18(string root,Action<bool,string> check)
     {
+        performance.AutomaticIo=false; // Native qualification owns its separate explicit permission boundary.
         async Task Settle()=>await Dispatcher.InvokeAsync(UpdateLayout,DispatcherPriority.ApplicationIdle);
         async Task Next()
         {
@@ -32,6 +33,7 @@ public partial class MainWindow
         await Next();await Next();
         var native=monitor.Latest;
         check(native?.Cpu is >=0 and <=100,"Actual Windows system CPU deltas supply a valid live sample");
+        check(native.Ram is {Total:>0,Used:>=0}&&native.Ram.Used<=native.Ram.Total,"Actual Windows physical RAM is independent of GPU dedicated memory");
         check(native.Disks.Any()&&WindowsPerformanceCounters.ForPath(native,root)!=null,"Physical-drive counters map the current task-owned D: folder to its real device");
         check(native.Gpus.All(g=>g.Name.Length>0&&g.Usage is null or >=0 and <=100),"Actual GPU samples retain adapter identities and bounded busiest-engine usage");
         check(WindowsPerformanceCounters.ForPath(native,@"\\unavailable\share\file")==null&&WindowsPerformanceCounters.ForPath(native,"not a filesystem path")==null,"Unavailable/network paths never inherit a physical host disk measurement");
@@ -39,8 +41,9 @@ public partial class MainWindow
         File.WriteAllText(Path.Combine(root,"native-performance.json"),JsonSerializer.Serialize(native,new JsonSerializerOptions{WriteIndented=true}));
         performance.Select(0);await Next();await Next();
         check(monitor.DetailKind==1&&monitor.Details.Any(x=>x.Pid==Environment.ProcessId),"CPU card opens actual current process detail sampling");
-        performance.Select(1);await Next();check(monitor.DetailKind==2,"GPU card directly switches to GPU engine process details");
-        performance.Select(3);await Settle();check(monitor.DetailKind==0,"Folder card never starts process enumeration or file tracing implicitly");
+        performance.Select(PerformancePanel.Ram);await Next();await Next();check(monitor.DetailKind==3&&monitor.Details.Any(x=>x.Memory>0),"RAM card directly exposes actual process working sets");
+        performance.Select(PerformancePanel.Gpu);await Next();check(monitor.DetailKind==2,"GPU card directly switches to GPU engine process details");
+        performance.Select(PerformancePanel.Folder);await Settle();check(monitor.DetailKind==0,"Folder card does not enumerate process working sets or bypass Windows permission");
         check(IoCollection.Contains(@"D:\test",@"D:\test\one.txt")&&!IoCollection.Contains(@"D:\test",@"D:\test-extra\one.txt")&&IoCollection.Contains(@"D:\",@"D:\test\one.txt"),"Folder attribution respects descendant boundaries and drive roots");
         performance.Select(-1);
         foreach(string theme in new[]{"dark","light"})foreach(double scale in new[]{1d,1.5})foreach(double width in new[]{1400d,820d})
@@ -49,10 +52,15 @@ public partial class MainWindow
             check(performance.ActualHeight>50&&PaneArea.ActualHeight>250,"Performance cards reserve usable file-pane space: "+theme+scale+width);
             check(CommandButtons.Children.OfType<Button>().Where(x=>x.Visibility==Visibility.Visible).All(x=>x.TransformToAncestor(CommandBar).TransformBounds(new Rect(x.RenderSize)).Right<=CommandBar.ActualWidth+1),"Every compact toolbar command remains reachable at "+theme+scale+width);
             await S1Verification.Snapshot(this,root,$"performance-{theme}-{scale*100:0}-{width:0}");
+            double cardHeight=performance.ActualHeight;Click(PerformanceCommand);await Settle();
+            check(Math.Abs(cardHeight-StatsRow.ActualHeight)<=4,"Performance/statistics card heights match: "+theme+scale+width+" ("+cardHeight+"/"+StatsRow.ActualHeight+")");
+            Click(PerformanceCommand);await Settle();
         }
         Width=1400;Settings.NativeMode="dark";Settings.TextScale=1;ApplyAppearance();performance.Select(0);await Next();
         await S1Verification.Snapshot(this,root,"performance-cpu-details");
-        performance.Select(-1);Click(PerformanceCommand);await Settle();
+        performance.Select(-1);await Settle();double performanceHeight=performance.ActualHeight;Click(PerformanceCommand);await Settle();
+        File.WriteAllText(Path.Combine(root,"card-heights.json"),JsonSerializer.Serialize(new{performanceHeight,statisticsHeight=StatsRow.ActualHeight}));
+        check(Math.Abs(performanceHeight-StatsRow.ActualHeight)<=4,"Five single-row performance cards match the ordinary statistics vertical footprint");
         check(!PerformanceMode&&StatsRow.Visibility==Visibility.Visible&&monitor.DetailKind==0,"Returning to statistics stops detailed enumeration and restores the original useful cards");
         var costs=new List<object>();
         async Task Measure(string state)

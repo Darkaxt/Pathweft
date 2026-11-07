@@ -1,6 +1,17 @@
 # Pathweft development
 
-Current2026-11-07/spec0.79: S26 COMPLETE through normal1.1.29/d66f0c6.
+Current2026-11-07/spec0.80: S27 is the only ACTIVE stage for MONITOR-06..08:
+full-width observed-history graphs, separate physical RAM, five single-row
+statistics-height cards and automatic supported loaded-folder I/O after Windows
+permission without card focus. Preserve gaps, ownership, tray drive-only history,
+permission cancellation/retry and native/resource/lifecycle/delivery gates.
+Source104260/native160216 and sampler115172 pass actual workflows/resources;
+final delivered graph/source/application acceptance and normal independent
+release remain. No tracked deferral or required refactor.
+S26 COMPLETE; S25 NOT STARTED. SysOptimizer/AppControl replacement remains
+research scoped to performance/MCP; security/DNS/app management are excluded.
+
+Previous closure2026-11-07/spec0.79: S26 COMPLETE through normal1.1.29/d66f0c6.
 Final163400 and independently retrieved174916 pass source/native/application
 checks. Installed readback164052 verifies11,301 matching members, restarted
 main111432/helper157636, readiness,22 routes and preserved identity/profile.

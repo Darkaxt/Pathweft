@@ -1,6 +1,11 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.30 | 2026-11-07 | Compact live performance
+- CPU, physical RAM, GPU, drive I/O and folder I/O now share one compact row, matching the ordinary statistics height.
+- Graphs fill their width with the history actually collected, up to one hour. Unavailable periods remain gaps.
+- Folder I/O follows the loaded folder automatically after Windows permission, without keeping its card focused. Hiding performance pauses folder tracing; returning resumes the permitted worker.
+
 ## 1.1.29 | 2026-11-07 | Upstream improvements, preserved workflows
 - Integrated the latest File Labs changes while preserving Pathweft's transfer verification, previews, search and appearance.
 - Undo history survives restarts and interrupted transfers. Undo restores only recorded arrivals, leaves later additions and changed items alone, and never overwrites a new file at the original location.

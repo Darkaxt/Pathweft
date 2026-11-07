@@ -12,11 +12,14 @@ namespace FileExplorer;
 internal sealed class PerformancePanel : StackPanel,IAsyncDisposable
 {
     readonly PerformanceMonitor monitor;
-    readonly UniformGrid cards=new(){Columns=4};
-    readonly TextBlock[] values=new TextBlock[4],subtitles=new TextBlock[4];
-    readonly TextBlock[] headings=new TextBlock[4];
-    readonly PerformanceGraph[] graphs=new PerformanceGraph[4];
-    readonly Button[] buttons=new Button[4];
+    internal const int Cpu=0,Ram=1,Gpu=2,Drive=3,Folder=4;
+    readonly UniformGrid cards=new(){Columns=5};
+    readonly TextBlock[] values=new TextBlock[5],subtitles=new TextBlock[5];
+    readonly TextBlock[] headings=new TextBlock[5];
+    readonly PerformanceGraph[] graphs=new PerformanceGraph[5];
+    readonly Button[] buttons=new Button[5];
+    readonly Queue<(DateTimeOffset Time,double? Value)> folderHistory=new();
+    IoReport lastReport;
     readonly Border details=new(){Margin=new(0,8,0,0),Visibility=Visibility.Collapsed};
     readonly ListView table=new(){Height=175,BorderThickness=new Thickness(0),Background=Brushes.Transparent};
     readonly TextBlock detailTitle=new(){FontWeight=FontWeights.SemiBold,TextTrimming=TextTrimming.CharacterEllipsis};
@@ -28,7 +31,8 @@ internal sealed class PerformancePanel : StackPanel,IAsyncDisposable
     uint? diskNumber;Task mapping=Task.CompletedTask;
     int selected=-1;bool scheduled,disposed,enabling;volatile bool presented;string traceScope;bool traceActive;Task retiring=Task.CompletedTask;
     internal bool Showing=>Visibility==Visibility.Visible&&IsVisible&&Window.GetWindow(this)?.WindowState!=WindowState.Minimized;
-    bool FolderFocused=>buttons[3].IsKeyboardFocusWithin||selected==3&&details.IsKeyboardFocusWithin;
+    internal bool AutomaticIo {get;set;}=true;
+    bool permissionAttempted;
     internal void OwnerFocusChanged()=>_ = UpdateScope();
     internal int Selected=>selected;
     internal string Scope=>folder;
@@ -41,18 +45,19 @@ internal sealed class PerformancePanel : StackPanel,IAsyncDisposable
     internal PerformancePanel()
     {
         monitor=PerformanceMonitor.Current;Orientation=Orientation.Vertical;
-        for(int i=0;i<4;i++)
+        for(int i=0;i<5;i++)
         {
             int index=i;
             var body=new StackPanel();
-            var title=headings[i]=new TextBlock{Text=new[]{"CPU","GPU","Drive I/O","Folder I/O"}[i],FontSize=11,TextTrimming=TextTrimming.CharacterEllipsis};title.SetResourceReference(TextBlock.ForegroundProperty,"Muted");
+            var title=headings[i]=new TextBlock{Text=new[]{"CPU","RAM","GPU","Drive I/O","Folder I/O"}[i],FontSize=11,TextTrimming=TextTrimming.CharacterEllipsis,VerticalAlignment=VerticalAlignment.Center};title.SetResourceReference(TextBlock.ForegroundProperty,"Muted");
             values[i]=new TextBlock{Text="—",FontSize=20,FontWeight=FontWeights.SemiBold,TextTrimming=TextTrimming.CharacterEllipsis};
             subtitles[i]=new TextBlock{FontSize=11,Text="Waiting for a sample",TextTrimming=TextTrimming.CharacterEllipsis};subtitles[i].SetResourceReference(TextBlock.ForegroundProperty,"Muted");
-            graphs[i]=new PerformanceGraph{Height=24,Margin=new(0,5,0,0)};
-            var header=new Grid();header.RowDefinitions.Add(new());header.RowDefinitions.Add(new());header.ColumnDefinitions.Add(new());header.ColumnDefinitions.Add(new(){Width=GridLength.Auto});
-            header.Children.Add(title);header.Children.Add(values[i]);Grid.SetRow(values[i],1);
+            graphs[i]=new PerformanceGraph{Height=18,Margin=new(0,5,0,0)};
+            var header=new Grid{MinHeight=27};header.RowDefinitions.Add(new(){Height=GridLength.Auto});header.RowDefinitions.Add(new(){Height=GridLength.Auto});header.ColumnDefinitions.Add(new());header.ColumnDefinitions.Add(new(){Width=GridLength.Auto});
+            values[i].Margin=new Thickness(5,0,0,0);
+            header.Children.Add(title);header.Children.Add(values[i]);Grid.SetColumn(values[i],1);
             body.Children.Add(header);body.Children.Add(subtitles[i]);body.Children.Add(graphs[i]);
-            var button=buttons[i]=new Button{Content=body,Padding=new Thickness(0),Margin=new Thickness(0,0,i==3?0:8,0),Focusable=true,HorizontalContentAlignment=HorizontalAlignment.Stretch,VerticalContentAlignment=VerticalAlignment.Stretch};
+            var button=buttons[i]=new Button{Content=body,Padding=new Thickness(12,9,14,9),Margin=new Thickness(0,0,i==4?0:10,0),Focusable=true,HorizontalContentAlignment=HorizontalAlignment.Stretch,VerticalContentAlignment=VerticalAlignment.Stretch};
             button.SetResourceReference(StyleProperty,"PerformanceCard");AutomationProperties.SetName(button,title.Text+" performance details");
             button.Click+=(_,_)=>Select(index);cards.Children.Add(button);
         }
@@ -69,22 +74,24 @@ internal sealed class PerformancePanel : StackPanel,IAsyncDisposable
         content.Children.Add(table);details.Child=content;Children.Add(details);
         SizeChanged+=(_,_)=>
         {
-            cards.Columns=ActualWidth<850?2:4;bool compact=ActualWidth<650;
-            for(int i=0;i<4;i++)
+            for(int i=0;i<5;i++)
             {
-                buttons[i].Margin=new Thickness(0,0,(i+1)%cards.Columns==0?0:10,cards.Columns==2&&i<2?10:0);
-                Grid.SetRow(values[i],1);Grid.SetColumn(values[i],0);Grid.SetColumnSpan(values[i],2);
-                headings[i].VerticalAlignment=VerticalAlignment.Center;headings[i].Margin=new Thickness(0);
-                graphs[i].Height=compact?12:24;
+                bool compact=ActualWidth<900,tight=ActualWidth<600;
+                var header=(Grid)values[i].Parent;header.MinHeight=compact?42:27;
+                Grid.SetRow(values[i],compact?1:0);Grid.SetColumn(values[i],compact?0:1);Grid.SetColumnSpan(values[i],compact?2:1);
+                values[i].FontSize=tight?11:compact?16:20;values[i].Margin=new Thickness(compact?0:5,0,0,0);
+                subtitles[i].Visibility=compact?Visibility.Collapsed:Visibility.Visible;
+                buttons[i].Padding=tight?new Thickness(6,9,6,9):new Thickness(12,9,14,9);
+                buttons[i].Margin=new Thickness(0,0,i==4?0:tight?4:10,0);
             }
+            Refresh();
         };
-        IsVisibleChanged+=async(_,_)=>{presented=Showing;if(!Showing){monitor.DetailKind=0;await ReleaseIo();}else{monitor.DetailKind=selected is 0 or 1?selected+1:0;Refresh();await UpdateScope();}};
-        IsKeyboardFocusWithinChanged+=async(_,_)=>await UpdateScope();
+        IsVisibleChanged+=async(_,_)=>{presented=Showing;SetDetailKind();Refresh();await UpdateScope();MaybeEnableIo();};
         monitor.Changed+=Updated;
     }
     internal void SetFolder(string path)
     {
-        if(folder==path)return;folder=path;diskNumber=null;traceFolder=null;volumeRoot=null;mapping=MapFolder(path,mapping);Refresh();_ = UpdateScope();
+        if(folder==path)return;folder=path;folderHistory.Clear();lastReport=null;diskNumber=null;traceFolder=null;volumeRoot=null;mapping=MapFolder(path,mapping);Refresh();_ = UpdateScope();
     }
     async Task MapFolder(string path,Task previous)
     {
@@ -94,7 +101,7 @@ internal sealed class PerformancePanel : StackPanel,IAsyncDisposable
         if(!disposed&&!Dispatcher.HasShutdownStarted)_ = Dispatcher.BeginInvoke(()=>
         {
             if(disposed||folder!=path)return;
-            diskNumber=resolved.Disk;traceFolder=resolved.Folder;volumeRoot=resolved.Volume;Refresh();_ = UpdateScope();
+            diskNumber=resolved.Disk;traceFolder=resolved.Folder;volumeRoot=resolved.Volume;Refresh();_ = UpdateScope();MaybeEnableIo();
         });
     }
     void Updated()
@@ -108,8 +115,8 @@ internal sealed class PerformancePanel : StackPanel,IAsyncDisposable
         bool hadFocus=IsKeyboardFocusWithin;int previous=selected;
         selected=index;details.Visibility=index<0?Visibility.Collapsed:Visibility.Visible;
         cards.Visibility=index<0?Visibility.Visible:Visibility.Collapsed;
-        monitor.DetailKind=Showing&&index is 0 or 1?index+1:0;
-        for(int i=0;i<4;i++)buttons[i].Tag=i==index?"on":null;
+        SetDetailKind();
+        for(int i=0;i<5;i++)buttons[i].Tag=i==index?"on":null;
         ConfigureTable();Refresh();_ = UpdateScope();
         if(hadFocus){if(index>=0)table.Focus();else if(previous>=0)buttons[previous].Focus();}
     }
@@ -118,7 +125,7 @@ internal sealed class PerformancePanel : StackPanel,IAsyncDisposable
         var view=new GridView{AllowsColumnReorder=false};
         void Column(string title,string property,double width)=>view.Columns.Add(new GridViewColumn{Header=title,DisplayMemberBinding=new Binding(property),Width=width});
         Column("Process","Process",145);Column("PID","Pid",70);
-        if(selected is 0 or 1){Column(selected==0?"CPU":"GPU","Percent",100);if(selected==0)Column("Working set","MemoryText",120);}
+        if(selected is Cpu or Ram or Gpu){if(selected!=Ram)Column(selected==Cpu?"CPU":"GPU","Percent",100);if(selected!=Gpu)Column("Working set","MemoryText",120);}
         else
         {
             Column("File","File",360);Column("Read/s","ReadText",110);Column("Write/s","WriteText",110);Column("Total/s","TotalText",110);
@@ -132,47 +139,82 @@ internal sealed class PerformancePanel : StackPanel,IAsyncDisposable
         var adapter=sample?.Gpus.FirstOrDefault(g=>g.Id==gpu)??sample?.Gpus.FirstOrDefault();gpu=adapter?.Id;
         var disk=WindowsPerformanceCounters.ForDisk(sample,diskNumber);
         values[0].Text=sample?.Cpu is {} cpu?$"{cpu:0}%":"—";
-        subtitles[0].Text=sample?.Issue??(history.Length<3600?$"{history.Length}s observed · last hour":"System · last hour");
-        values[1].Text=adapter?.Usage is {} busy?$"{busy:0}%":"—";
-        headings[1].Text=adapter==null?"GPU":"GPU · "+adapter.Name;headings[1].ToolTip=adapter?.Name;
-        subtitles[1].Text=adapter==null?"GPU counters unavailable":adapter.Memory is {} bytes?$"{MainWindow.Fmt(bytes)}"+(adapter.Capacity>0?$" of {MainWindow.Fmt(adapter.Capacity)}":"")+" dedicated":"Memory counters unavailable";
-        values[2].Text=disk is {Read:{} read,Write:{} write}?Rate(read+write):"—";
-        subtitles[2].Text=disk==null?"No physical-drive measurement":disk.Busy is {} activity?$"{disk.Id} · {activity:0}% active":$"{disk.Id} · waiting for a sample";
-        buttons[2].ToolTip="Physical device I/O; other partitions on this unit may contribute. File details show logical requests.";
-        values[3].Text=io?.Latest is {Running:true} report&&FolderFocused?(report.Lost>0?"≥ ":"")+Rate(report.Rows.Sum(x=>x.Total)):"—";
-        subtitles[3].Text=traceFolder==null?"File I/O unavailable for this path":FolderFocused?io?.Latest.State??"Enable detailed I/O":"Focus this widget to collect";
-        buttons[3].ToolTip=folder;
+        subtitles[Cpu].Text=sample?.Issue??Observed(history);
+        values[Ram].Text=sample?.Ram is {} ram?$"{ram.Usage:0}%":"—";
+        subtitles[Ram].Text=sample?.Ram is {} memory?$"{MainWindow.Fmt(memory.Used)} of {MainWindow.Fmt(memory.Total)}":"Memory counters unavailable";
+        values[Gpu].Text=adapter?.Usage is {} busy?$"{busy:0}%":"—";
+        headings[Gpu].Text="GPU";
+        subtitles[Gpu].Text=adapter==null?"GPU counters unavailable":adapter.Memory is {} bytes?$"{MainWindow.Fmt(bytes)}"+(adapter.Capacity>0?$" of {MainWindow.Fmt(adapter.Capacity)}":"")+" VRAM":"Memory counters unavailable";
+        values[Drive].Text=disk is {Read:{} read,Write:{} write}?CardRate(read+write):"—";
+        headings[Drive].Text=ActualWidth<900?"Drive":"Drive I/O";
+        subtitles[Drive].Text=disk==null?"No physical-drive measurement":disk.Busy is {} activity?$"{disk.Id} · {activity:0}% active":$"{disk.Id} · waiting for a sample";
+        bool folderCollecting=traceActive&&traceScope==traceFolder&&traceFolder!=null;
+        var report=folderCollecting?io?.Latest:null;
+        values[Folder].Text=report is {Running:true}?(report.Lost>0?"≥ ":"")+CardRate(report.Rows.Sum(x=>x.Total)):"—";
+        headings[Folder].Text=ActualWidth<900?"Folder":"Folder I/O";
+        subtitles[Folder].Text=traceFolder==null?"File I/O unavailable for this path":enabling?"Waiting for permission":io?.Latest.State??"Windows permission required";
+        if(Showing&&report!=null&&!ReferenceEquals(lastReport,report))
+        {
+            lastReport=report;var now=DateTimeOffset.UtcNow;
+            while(folderHistory.Count>0&&(folderHistory.Count>=3600||now-folderHistory.Peek().Time>=TimeSpan.FromHours(1)))folderHistory.Dequeue();
+            folderHistory.Enqueue((now,report.Running?report.Rows.Sum(x=>x.Total):null));
+        }
+        buttons[Cpu].ToolTip="CPU · "+values[Cpu].Text+" · "+subtitles[Cpu].Text;
+        buttons[Ram].ToolTip="Physical system RAM · "+values[Ram].Text+" · "+subtitles[Ram].Text;
+        buttons[Gpu].ToolTip=(adapter?.Name??"GPU unavailable")+" · "+subtitles[Gpu].Text;
+        buttons[Drive].ToolTip=(disk is {Read:{} rd,Write:{} wr}?Rate(rd+wr)+" · ":"")+"Physical device I/O; other partitions on this unit may contribute. File details show logical requests. "+subtitles[Drive].Text;
+        buttons[Folder].ToolTip=folder+" · "+(report is {Running:true}?Rate(report.Rows.Sum(x=>x.Total))+" · ":"")+subtitles[Folder].Text;
         graphs[0].Set(history.Select(x=>(x.Time,x.Cpu)).ToArray(),100);
-        graphs[1].Set(history.Select(x=>(x.Time,x.Gpus.FirstOrDefault(g=>g.Id==gpu)?.Usage)).ToArray(),100);
-        graphs[2].Set(history.Select(x=>{var d=WindowsPerformanceCounters.ForDisk(x,diskNumber);return(x.Time,d?.Read+d?.Write);}).ToArray());
-        graphs[3].Set(Array.Empty<(DateTimeOffset,double?)>());
+        graphs[Ram].Set(history.Select(x=>(x.Time,x.Ram?.Usage)).ToArray(),100);
+        graphs[Gpu].Set(history.Select(x=>(x.Time,x.Gpus.FirstOrDefault(g=>g.Id==gpu)?.Usage)).ToArray(),100);
+        graphs[Drive].Set(history.Select(x=>{var d=WindowsPerformanceCounters.ForDisk(x,diskNumber);return(x.Time,d?.Read+d?.Write);}).ToArray());
+        graphs[Folder].Set(folderHistory.ToArray());
         if(selected<0)return;
-        detailTitle.Text=new[]{"CPU activity","GPU activity",$"Drive activity · {volumeRoot??PathRoot(folder)}",$"Folder activity · {folder}"}[selected];
-        gpuPicker.Visibility=selected==1?Visibility.Visible:Visibility.Collapsed;
-        if(selected==1&&sample!=null)
+        detailTitle.Text=new[]{"CPU activity","Physical RAM · "+subtitles[Ram].Text,"GPU activity",$"Drive activity · {volumeRoot??PathRoot(folder)}",$"Folder activity · {folder}"}[selected];
+        gpuPicker.Visibility=selected==Gpu?Visibility.Visible:Visibility.Collapsed;
+        if(selected==Gpu&&sample!=null)
         {
             if(!gpuPicker.Items.Cast<GpuReading>().Select(g=>g.Id).SequenceEqual(sample.Gpus.Select(g=>g.Id)))gpuPicker.ItemsSource=sample.Gpus;
             if(adapter!=null)gpuPicker.SelectedItem=gpuPicker.Items.Cast<GpuReading>().FirstOrDefault(g=>g.Id==gpu);
         }
-        enable.Visibility=selected>=2&&io?.Connected!=true?Visibility.Visible:Visibility.Collapsed;
+        enable.Visibility=selected>=Drive&&io?.Connected!=true?Visibility.Visible:Visibility.Collapsed;
         enable.IsEnabled=!enabling&&traceFolder!=null;
-        if(selected<2)
+        if(selected<Drive)
         {
-            detailState.Text=selected==0?"CPU usage across all logical processors · inaccessible processes omitted":"Busiest GPU engine · "+adapter?.Name;
-            table.ItemsSource=selected==1?monitor.Details.Where(x=>x.Adapter==gpu).ToArray():monitor.Details;
+            detailState.Text=selected==Cpu?"CPU usage across all logical processors · inaccessible processes omitted":selected==Ram?"Process working sets may share pages; their sum is not system RAM usage":"Busiest GPU engine · "+adapter?.Name;
+            table.ItemsSource=selected==Gpu?monitor.Details.Where(x=>x.Adapter==gpu).ToArray():selected==Ram?monitor.Details.OrderByDescending(x=>x.Memory).ToArray():monitor.Details;
         }
         else
         {
-            detailState.Text=traceFolder==null?"File I/O measurement unavailable for this path":selected==3&&!FolderFocused?"Folder collection paused — focus this widget":io?.Latest.State??"Enable detailed I/O — Windows will ask for administrator permission";
+            detailState.Text=traceFolder==null?"File I/O measurement unavailable for this path":io?.Latest.State??"Enable detailed I/O — Windows will ask for administrator permission";
             if(io?.Latest.Lost>0)detailState.Text+=$" · {io.Latest.Lost:N0} observations lost";
             table.ItemsSource=io?.Latest.Rows.Select(x=>new{ x.Process,x.Pid,x.File,ReadText=Rate(x.Read),WriteText=Rate(x.Write),TotalText=Rate(x.Total)}).ToArray();
         }
     }
     static string PathRoot(string path)=>string.IsNullOrWhiteSpace(path)||!Path.IsPathFullyQualified(path)?null:Path.GetPathRoot(path);
     static string Rate(double bytes)=>MainWindow.Fmt((long)Math.Max(0,bytes))+"/s";
+    string CardRate(double bytes)
+    {
+        if(ActualWidth>=600)return Rate(bytes);
+        var units=new[]{" B/s"," KB/s"," MB/s"," GB/s"," TB/s"};int unit=0;
+        while(bytes>=1000&&unit<units.Length-1){bytes/=1000;unit++;}
+        return bytes.ToString("0")+units[unit];
+    }
+    static string Observed(PerformanceSample[] history)
+    {
+        if(history.Length<2)return "Waiting for history";
+        var span=history[^1].Time-history[0].Time;
+        return span.TotalMinutes<1?$"{span.TotalSeconds:0}s observed":span.TotalMinutes<59?$"{span.TotalMinutes:0.#} min observed":"Last hour";
+    }
+    void SetDetailKind()=>monitor.DetailKind=Showing?selected switch{Cpu=>1,Gpu=>2,Ram=>3,_=>0}:0;
+    async void MaybeEnableIo()
+    {
+        if(!AutomaticIo||permissionAttempted||!Showing||traceFolder==null||disposed)return;
+        permissionAttempted=true;await EnableIo();
+    }
     async Task EnableIo()
     {
-        if(enabling)return;enabling=true;enable.IsEnabled=false;
+        if(enabling||disposed)return;enabling=true;permissionAttempted=true;enable.IsEnabled=false;
         try
         {
             if(io?.Connected!=true){await ReleaseIo();io=new PerformanceIoClient();io.Changed+=Updated;}
@@ -184,8 +226,8 @@ internal sealed class PerformancePanel : StackPanel,IAsyncDisposable
     Task UpdateScope()
     {
         if(disposed||io?.Connected!=true)return scopeChanging;
-        string target=FolderFocused?traceFolder:selected==2?volumeRoot:null;
-        bool collect=Showing&&(selected==2||FolderFocused&&Window.GetWindow(this)?.IsActive==true)&&!string.IsNullOrWhiteSpace(target)&&Path.IsPathFullyQualified(target);
+        string target=selected==Drive?volumeRoot:traceFolder;
+        bool collect=Showing&&!string.IsNullOrWhiteSpace(target)&&Path.IsPathFullyQualified(target);
         if(traceActive==collect&&traceScope==target)return scopeChanging;
         traceActive=collect;traceScope=target;
         return scopeChanging=ChangeScope(io,target,collect);
@@ -213,14 +255,16 @@ internal sealed class PerformanceGraph : FrameworkElement
         var muted=TryFindResource("Palette.12FFFFFF") as Brush??Brushes.Gray;
         drawing.DrawLine(new Pen(muted,1),new Point(0,ActualHeight-1),new Point(ActualWidth,ActualHeight-1));
         if(points.Length<2)return;
-        var end=points[^1].Time;double max=ceiling>0?ceiling:Math.Max(1,points.Max(x=>x.Value??0));
+        var end=points[^1].Time;var start=points[0].Time;
+        double seconds=Math.Max(1,(end-start).TotalSeconds);
+        double max=ceiling>0?ceiling:Math.Max(1,points.Max(x=>x.Value??0));
         var geometry=new StreamGeometry();using(var context=geometry.Open())
         {
             DateTimeOffset previous=default;bool segment=false;int pixel=-1;
             foreach(var sample in points)
             {
                 if(sample.Value is not {} value){segment=false;continue;}
-                double x=ActualWidth*(1-(end-sample.Time).TotalSeconds/3600);
+                double x=ActualWidth*(sample.Time-start).TotalSeconds/seconds;
                 if(x<0)continue;
                 var next=new Point(x,ActualHeight-1-Math.Clamp(value/max,0,1)*(ActualHeight-2));
                 if(!segment||sample.Time-previous>TimeSpan.FromSeconds(5)){context.BeginFigure(next,false,false);segment=true;pixel=-1;}
