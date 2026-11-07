@@ -1,4 +1,11 @@
-# Pathweft 1.1.28
+# Pathweft 1.1.29
+
+Ctrl+Z retains Undo history across restarts in the selected bulk-data folder.
+Successful transfers still close their cards automatically. Interrupted or
+failed transfers offer Undo for accepted arrivals; later additions, modified
+files and occupied original locations are left alone. Replaced destination
+contents cannot be restored by Undo. Native deletes restore the exact Windows
+Recycle Bin item; permanent deletes remain irreversible.
 
 The Performance command beside Analyze space swaps the lower summary region for
 CPU, GPU, current physical-drive and focused-folder I/O cards. Click a card for

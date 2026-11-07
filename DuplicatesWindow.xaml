@@ -26,7 +26,7 @@
         <WrapPanel DockPanel.Dock="Right" HorizontalAlignment="Right">
           <Button Style="{StaticResource AuxiliaryAction}" MaxWidth="220" Margin="0,0,6,0" Click="SelectExtra_Click"
                   ToolTip="In every group, select all the copies but one: the oldest is kept">
-            <TextBlock><Run FontFamily="Segoe Fluent Icons" Text="&#xE762;"/>  Select extra copies</TextBlock>
+            <TextBlock><Run FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" Text="&#xE762;"/>  Select extra copies</TextBlock>
           </Button>
           <Button Style="{StaticResource AuxiliaryAction}" MaxWidth="220" Margin="0,0,6,0" Click="Move_Click" ToolTip="Move the selected copies to a folder you choose">
             <TextBlock><Run FontFamily="Segoe Fluent Icons" Text="&#xE8DE;"/>  Move to…</TextBlock>

@@ -41,7 +41,7 @@
     </Style>
     <!-- Compact sidebar utility icons; Drop bin remains at the bottom. -->
     <Style x:Key="IconButton" TargetType="Button" BasedOn="{StaticResource Ghost}">
-      <Setter Property="FontFamily" Value="Segoe Fluent Icons"/>
+      <Setter Property="FontFamily" Value="Segoe Fluent Icons, Segoe MDL2 Assets"/>
       <Setter Property="FontSize" Value="14"/>
       <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
       <Setter Property="Width" Value="34"/>
@@ -65,7 +65,7 @@
       <Setter Property="FontSize" Value="11"/>
     </Style>
     <Style x:Key="StatIcon" TargetType="TextBlock">
-      <Setter Property="FontFamily" Value="Segoe Fluent Icons"/>
+      <Setter Property="FontFamily" Value="Segoe Fluent Icons, Segoe MDL2 Assets"/>
       <Setter Property="FontSize" Value="18"/>
       <Setter Property="Foreground" Value="{DynamicResource Muted}"/>
       <Setter Property="Margin" Value="0,5,12,0"/>
@@ -160,6 +160,8 @@
                 <local:TransferActionLabel Glyph="{Binding PauseGlyph}" Text="{Binding PauseText}"/></Button>
               <Button x:Name="TransferCancel" Style="{StaticResource JobAction}" Margin="0" Visibility="{Binding Active, Converter={StaticResource Vis}}" Click="JobCancel_Click" AutomationProperties.Name="Cancel transfer">
                 <local:TransferActionLabel Glyph="&#xE711;" Text="Cancel"/></Button>
+              <Button x:Name="TransferUndo" Style="{StaticResource JobAction}" Visibility="{Binding CanUndo, Converter={StaticResource Vis}}" Click="JobUndo_Click" AutomationProperties.Name="Undo transfer">
+                <local:TransferActionLabel Glyph="&#xE7A7;" Text="Undo"/></Button>
               <Button x:Name="TransferDismiss" Style="{StaticResource JobAction}" Margin="0" Visibility="{Binding Finished, Converter={StaticResource Vis}}" Click="JobDismiss_Click" AutomationProperties.Name="Dismiss transfer">
                 <local:TransferActionLabel Glyph="&#xE73E;" Text="Dismiss"/></Button>
             </StackPanel>
@@ -265,7 +267,7 @@
               Background="{DynamicResource Palette.0DFFFFFF}" BorderBrush="{DynamicResource Palette.1AFFFFFF}" BorderThickness="1" AllowDrop="True" DragOver="Bin_DragOver" Drop="Bin_Drop">
         <DockPanel>
           <DockPanel DockPanel.Dock="Top">
-            <Button DockPanel.Dock="Right" Style="{StaticResource Ghost}" FontFamily="Segoe Fluent Icons" FontSize="10" Content="&#xE711;"
+            <Button DockPanel.Dock="Right" Style="{StaticResource Ghost}" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="10" Content="&#xE711;"
                     ToolTip="Hide the Drop bin (what is in it stays)" AutomationProperties.Name="Hide the Drop bin" Click="BinButton_Click"/>
             <Button DockPanel.Dock="Right" Style="{StaticResource Ghost}" FontSize="11" Content="Clear" ToolTip="Empty the Drop bin (the files stay where they are)" Click="BinClear_Click"/>
             <TextBlock Text="Drop bin" FontWeight="SemiBold" VerticalAlignment="Center"/>
@@ -275,9 +277,27 @@
             <Button Style="{StaticResource Tab}" Tag="on" Click="BinCopy_Click" Content="Copy here"/>
             <Button Style="{StaticResource Tab}" Click="BinMove_Click" Content="Move here"/>
           </StackPanel>
-          <ScrollViewer MaxHeight="190" VerticalScrollBarVisibility="Auto">
-            <StackPanel x:Name="BinList"/>
-          </ScrollViewer>
+          <!-- virtualized: only the rows in sight are made (MainWindow.ShowBin) -->
+          <ItemsControl x:Name="BinList" MaxHeight="190" VirtualizingPanel.IsVirtualizing="True" ScrollViewer.CanContentScroll="True">
+            <ItemsControl.Template>
+              <ControlTemplate TargetType="ItemsControl">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" CanContentScroll="True" Focusable="False"><ItemsPresenter/></ScrollViewer>
+              </ControlTemplate>
+            </ItemsControl.Template>
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate><VirtualizingStackPanel/></ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <DockPanel Margin="0,1,0,1" ToolTip="{Binding Path}">
+                  <Button DockPanel.Dock="Right" Style="{StaticResource Ghost}" Content="&#xE711;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="9"
+                          ToolTip="Take it out of the bin" AutomationProperties.Name="{Binding RemoveName}" Click="BinRemove_Click"/>
+                  <Border Width="16" Height="16" Margin="0,0,8,0" Loaded="BinIcon_Loaded"/>
+                  <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                </DockPanel>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
         </DockPanel>
       </Border>
       <ScrollViewer x:Name="SidebarScroll" VerticalScrollBarVisibility="Auto" Padding="8,12"

@@ -1,6 +1,12 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.29 | 2026-11-07 | Upstream improvements, preserved workflows
+- Integrated the latest File Labs changes while preserving Pathweft's transfer verification, previews, search and appearance.
+- Undo history survives restarts and interrupted transfers. Undo restores only recorded arrivals, leaves later additions and changed items alone, and never overwrites a new file at the original location.
+- Batch renames recover original names on failure. Recycled files are restored from their exact Windows Recycle Bin entries, and multi-folder moves show their scope before starting.
+- Large Drop bin selections use virtualized rows. Windows 10 icon fonts have a fallback without replacing Pathweft's compact controls.
+
 ## 1.1.28 | 2026-11-07 | Performance at a glance
 - Switch the lower summary area between folder statistics and CPU, GPU, drive I/O and focused-folder activity. One shared rolling hour of aggregate history continues while Pathweft is in the tray.
 - Open cards for process or file activity details. Detailed I/O starts only after explicit administrator permission; folder tracing stops when its widget loses focus. Unsupported sources and incomplete observations are labelled clearly.
@@ -179,7 +185,7 @@ A long-time tester's newest notes: everything File Labs should keep track of for
 - **Each tab keeps its selection and how far it was scrolled** while you're in another one.
 **The selection rectangle**
 - Holding it past the top or bottom of the list now scrolls smoothly to the end. Before, the list kept jumping back to where you started, and the count went 50, 100, 50, 100.
-- It no longer runs over the column headers, and it doesn't flicker while the list scrolls.
+- It no longer runs over the column headers.
 **Transfers and archives**
 - The Transfers window is **as tall as its cards**: one copy, one card, and it grows as more start. The speed and its chart show only while something runs.
 - **Drag files out of a ZIP or TAR** to the other pane, or to any app, and Ctrl+C copies them too. They are copied, and the archive keeps them.

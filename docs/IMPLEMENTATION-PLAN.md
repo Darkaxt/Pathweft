@@ -18,6 +18,15 @@ verification, commit, normal publication and independent/applicable installed
 delivery. Preserve fork identity and omit upstream promotional changes.
 S25 and later stages remain NOT STARTED.
 
+S26 source checkpoint: application113800/restart163084 pass integrated native
+move/Undo (including later additions, original-location collisions and partial
+failure), exact Windows recycling/restoration, durable startup history, rename
+rollback, unified query contracts and virtualized Drop bin. Native containing-
+volume lookup and existing compact action styling are retained. See the exact
+adoption/security record in docs/verification/2026-11-07-s26-upstream.md.
+S26 remains ACTIVE for clean merge/package/native/runtime acceptance, normal
+1.1.29 publication, independent retrieval and applicable installed verification.
+
 Historical qualification2026-11-07: S18 was ACTIVE. The current native and
 cross-integrity request8639b6fca3344a1bbb211db3c56587b8/ticket20 passed actual
 attribution/focus/scope/cleanup and active/idle budgets. Worker171800 exited0

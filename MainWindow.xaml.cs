@@ -898,7 +898,7 @@ public partial class MainWindow : Window
     public static FrameworkElement ShellIcon(string path, string fallbackGlyph, double size, Thickness margin)
     {
         var box = new Grid { Width = size, Height = size, Margin = margin, VerticalAlignment = VerticalAlignment.Center };
-        var glyph = new TextBlock { Text = fallbackGlyph, FontFamily = new FontFamily("Segoe Fluent Icons"), Foreground = Hex("#F5C451"), FontSize = size * 0.9, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+        var glyph = new TextBlock { Text = fallbackGlyph, FontFamily = new FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"), Foreground = Hex("#F5C451"), FontSize = size * 0.9, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
         box.Children.Add(glyph);
 
         void Show(ImageSource img)
@@ -1111,12 +1111,18 @@ public partial class MainWindow : Window
         Submit(active.Selected.Select(e => e.Path).ToList(), Other.Dir, move);
     }
 
-    internal Job Submit(List<string> sources, string dest, bool move)
+    /// `ask`: a move that gathers items from several folders into one (search results dropped on the search's own
+    /// folder, say) is confirmed first, naming where it all goes. Off where gathering is the point (Drop bin, Undo).
+    /// `names`: the exact name each source gets there (Undo, putting back names changed by Keep both). `journal`: Ferry
+    /// writes down each arrival as it happens, for Undo after a crash (FileOps.ReadJournal); off for Undo's own moves.
+    internal Job Submit(List<string> sources, string dest, bool move, bool ask = true, IReadOnlyDictionary<string, string> names = null, bool journal = true)
     {
         if (closingPreviews || sources.Count == 0 || dest == PaneView.ThisPC) return null;
+        if (move && ask && sources.Select(s => Path.GetDirectoryName(s.TrimEnd('\\'))).Distinct(StringComparer.OrdinalIgnoreCase).Count() is var folders and > 1
+            && PromptDialog.Choose(this, $"Move {sources.Count:N0} items from {folders:N0} folders into one folder?", "All of them go into " + dest, "Move", "Cancel") != 0) return null;
         Settings.Bump(Settings.RecentDestinations, dest, Settings.DestinationsMax); // for Copy to / Move to
         bool archive = PaneView.ArchiveOf(dest) != null || sources.Any(s => PaneView.ArchiveOf(s) is { Inner.Length: > 0 });
-        var job = Ferry.Submit(sources, dest, move, archive ? Archive.Transfer : null, archive ? (move ? "Move archive entries" : "Copy archive entries") : null);
+        var job = Ferry.Submit(sources, dest, move, archive ? Archive.Transfer : null, archive ? (move ? "Move archive entries" : "Copy archive entries") : null, names, !archive && journal ? Path.Combine(JournalDir, $"{Guid.NewGuid():N}.txt") : null);
         return TrackSubmittedJob(job);
     }
 
@@ -1263,7 +1269,9 @@ public partial class MainWindow : Window
     {
         job.Refresh();
         UpdateTransfers(); // into Done
-        RememberJob(job);
+        var undoTask = RememberJob(job);
+        undoWork.Add(undoTask);
+        ObserveUndo(undoTask);
         // what was pasted or dropped is selected where it arrived, the first of it in sight with the keyboard on it,
         // instead of somewhere among the folder's other hundred files (Rico, 1.0.61)
         if (job.Finished)
@@ -1279,6 +1287,14 @@ public partial class MainWindow : Window
         if(job.Successful||job.DismissWhenCancelled&&job.Phase==Phase.Cancelled&&!job.HasTransferErrors)DismissJob(job);
     });
 
+    async void ObserveUndo(Task task)
+    {
+        try { await task; }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or InvalidOperationException)
+        { Status.Text = "Undo history unavailable: " + error.Message; }
+        finally { undoWork.Remove(task); }
+    }
+
     void ConflictTable_SizeChanged(object sender,SizeChangedEventArgs args)
     {
         var list=(ListView)sender;
@@ -1291,7 +1307,7 @@ public partial class MainWindow : Window
     void JobDismiss_Click(object s, RoutedEventArgs e) => DismissJob(JobOf(s));
     void DismissJob(Job job)
     {
-        jobs.Remove(job);askedForward.Remove(job);shownState.Remove(job);
+        jobs.Remove(job);askedForward.Remove(job);shownState.Remove(job);jobUndo.Remove(job);
         if(watchingJobs&&!jobs.Any(item=>item.Active))
         {
             CompositionTarget.Rendering-=JobFrame;watchingJobs=false;
@@ -1398,15 +1414,60 @@ public partial class MainWindow : Window
         if (active.ArchiveRoot != null) { DeleteFromArchive(active); return; } // out of the ZIP: asked there, never to the Recycle Bin
         var sel = active.Selected;
         if (sel.Count == 0) return;
-        var question = $"Permanently delete {(sel.Count == 1 ? $"“{sel[0].Name}”" : $"these {sel.Count} items")}?";
-        const string detail = "They will not go to the Recycle Bin.";
-        // Shift+Delete, Enter deletes, as in Explorer: Yes is the default button, and the shell is not
-        // asked to confirm a second time what was just confirmed here. With the sound off (Settings →
-        // Files) the question is Pathweft' own dialog, which is silent, not a box that plays a warning.
-        if (permanent && !(Settings.DeleteSound
-                ? MessageBox.Show(this, question + "\n\n" + detail, "Delete permanently", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.Yes) == MessageBoxResult.Yes
-                : PromptDialog.Choose(this, question, detail, "Delete", "Cancel") == 0)) return;
-        Recycle(sel.Select(e => e.Path).ToList(), UIOption.AllDialogs, permanent);
+        if (permanent && !AskPermanent(this, sel.Select(e => e.Path).ToList(), "They will not go to the Recycle Bin.")) return;
+        if (permanent) Recycle(sel.Select(e => e.Path).ToList(), UIOption.AllDialogs, permanent: true);
+        else RecycleUndoably(sel.Select(e => e.Path).ToList(), UIOption.AllDialogs);
+    }
+
+    // Shift+Delete, Enter deletes, as in Explorer: Yes is the default button, and the shell is not
+    // asked to confirm a second time what was just confirmed here. With the sound off (Settings →
+    // Files) the question is Pathweft's own dialog, which is silent, not a box that plays a warning.
+    static bool AskPermanent(Window owner, List<string> paths, string detail)
+    {
+        var question = $"Permanently delete {(paths.Count == 1 ? $"“{Path.GetFileName(paths[0].TrimEnd('\\'))}”" : $"these {paths.Count:N0} items")}?";
+        return Settings.DeleteSound
+            ? MessageBox.Show(owner, question + "\n\n" + detail, "Delete permanently", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.Yes) == MessageBoxResult.Yes
+            : PromptDialog.Choose(owner, question, detail, "Delete", "Cancel") == 0;
+    }
+
+    /// The drive's Recycle Bin is switched off in Windows, so a delete there is for good. The shell doesn't say so unless its
+    /// own delete confirmation is on (off by default). Only what is known: a subst drive or a network share has no such
+    /// setting, and the shell warns about those itself.
+    // ponytail: asks about the path's drive, so a volume mounted in a folder counts as the drive above it.
+    internal static bool BinIsOff(string path)
+    {
+        if (!Path.IsPathFullyQualified(path)) return false;
+        var name = new System.Text.StringBuilder(64);
+        var mount = new System.Text.StringBuilder(32768);
+        if (!GetVolumePathName(path, mount, mount.Capacity) || !GetVolumeNameForVolumeMountPoint(mount.ToString(), name, 64)) return false;
+        var volume = name.ToString().Replace(@"\\?\Volume", "").TrimEnd('\\'); // \\?\Volume{guid}\ -> {guid}
+        using var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Explorer\BitBucket\Volume\" + volume);
+        return key?.GetValue("NukeOnDelete") is 1;
+    }
+
+    /// To the Recycle Bin, and what went there is one Undo entry: Ctrl+Z brings that batch back. Right after the delete,
+    /// off the UI thread, each path is matched to the item it became in the bin (its $R file), so Undo restores exactly
+    /// that one and never a later deletion from the same place. An item Windows deleted for good (too big for the bin) has none.
+    internal void RecycleUndoably(List<string> paths, UIOption ui, Action done = null)
+    {
+        var off = paths.GroupBy(p => Path.GetPathRoot(p), StringComparer.OrdinalIgnoreCase).Where(g => BinIsOff(g.First())).SelectMany(g => g).ToList();
+        if (off.Count > 0 && !AskPermanent(Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive) ?? this, off,
+                "The Recycle Bin is turned off on this drive, so this can't be undone."
+                + (off.Count < paths.Count ? $" The other {paths.Count - off.Count:N0} go to the Recycle Bin." : ""))) return;
+        var when = DateTime.Now.AddSeconds(-2); // the $I record's clock and ours may differ a little
+        var recorded = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        undoWork.Add(recorded.Task);
+        Recycle(paths, ui, done: async () =>
+        {
+            try
+            {
+                var found = await Task.Run(() => RecycleBinWindow.Find(paths.Where(p => !Exists(p)), when)); // all, or as many as went before a Cancel
+                if (found.Count > 0)
+                    Remember($"delete of {(found.Count == 1 ? Path.GetFileName(found.Keys.First().TrimEnd('\\')) : $"{found.Count:N0} items")}",
+                             found.Select(f => new UndoStep("restore", f.Key, f.Value)), when);
+            }
+            finally { undoWork.Remove(recorded.Task); recorded.TrySetResult(); done?.Invoke(); }
+        });
     }
 
     /// A permanent delete without the shell, which plays Windows' "Empty Recycle Bin" sound for one.
@@ -1451,18 +1512,21 @@ public partial class MainWindow : Window
 
     // Shift+Delete with the sound on: the shell's delete with its progress window and error prompts, but not
     // its own confirmation (FOF_NOCONFIRMATION) — Pathweft has just asked. Without FOF_ALLOWUNDO it's permanent.
-    static string ShellDelete(IntPtr owner, List<string> paths)
+    static string ShellDelete(IntPtr owner, List<string> paths, ushort flags)
     {
-        var op = new SHFILEOPSTRUCT { hwnd = owner, wFunc = FO_DELETE, pFrom = string.Join("\0", paths) + "\0", fFlags = FOF_NOCONFIRMATION };
+        var op = new SHFILEOPSTRUCT { hwnd = owner, wFunc = FO_DELETE, pFrom = string.Join("\0", paths) + "\0", fFlags = flags };
         int r = SHFileOperation(ref op);
-        return r == 0 || op.fAnyOperationsAborted ? null : $"Not everything could be deleted (error {r}).";
+        return r is 0 or ERROR_CANCELLED || op.fAnyOperationsAborted ? null : $"Not everything could be deleted (error {r}).";
     }
 
     const uint FO_DELETE = 3, PROGDLG_NOTIME = 0x4, PROGDLG_MARQUEEPROGRESS = 0x20;
-    const ushort FOF_NOCONFIRMATION = 0x10;
+    const int ERROR_CANCELLED = 1223;
+    const ushort FOF_SILENT = 0x4, FOF_NOCONFIRMATION = 0x10, FOF_ALLOWUNDO = 0x40, FOF_WANTNUKEWARNING = 0x4000;
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
     struct SHFILEOPSTRUCT { public IntPtr hwnd; public uint wFunc; public string pFrom, pTo; public ushort fFlags; public bool fAnyOperationsAborted; public IntPtr hNameMappings; public string lpszProgressTitle; }
     [DllImport("shell32.dll", CharSet = CharSet.Unicode)] static extern int SHFileOperation(ref SHFILEOPSTRUCT op);
+    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)] static extern bool GetVolumeNameForVolumeMountPoint(string mountPoint, System.Text.StringBuilder name, int size);
+    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)] static extern bool GetVolumePathName(string path, System.Text.StringBuilder mountPoint, int size);
 
     [ComImport, InterfaceType(ComInterfaceType.InterfaceIsIUnknown), Guid("EBBC7C04-315E-11d2-B62F-006097DF5BD4")]
     interface IProgressDialog // only up to SetLine, in vtable order
@@ -1494,11 +1558,10 @@ public partial class MainWindow : Window
             string error = null;
             try
             {
-                if (permanent && Settings.DeleteSound) error = ShellDelete(owner, paths);
+                if (permanent && Settings.DeleteSound) error = ShellDelete(owner, paths, FOF_NOCONFIRMATION);
                 else if (permanent) DeleteWithProgress(owner, paths);
-                else foreach (var p in paths)
-                    if (Directory.Exists(p)) VbFs.DeleteDirectory(p, ui, RecycleOption.SendToRecycleBin, UICancelOption.ThrowException);
-                    else if (File.Exists(p)) VbFs.DeleteFile(p, ui, RecycleOption.SendToRecycleBin, UICancelOption.ThrowException);
+                else if (paths.Where(p => File.Exists(p) || Directory.Exists(p)).ToList() is { Count: > 0 } there) // gone already: nothing to do
+                    error = ShellDelete(owner, there, (ushort)(FOF_ALLOWUNDO | FOF_WANTNUKEWARNING | (ui == UIOption.AllDialogs ? 0 : FOF_SILENT | FOF_NOCONFIRMATION)));
             }
             catch (OperationCanceledException) { }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException) { error = ex.Message; }
@@ -1533,7 +1596,7 @@ public partial class MainWindow : Window
         var path = Path.Combine(active.Dir, name);
         bool existed = Directory.Exists(path);
         if (Run(() => Directory.CreateDirectory(path)) && !existed)
-            Remember($"new folder {name}", () => Directory.Delete(path)); // only while still empty: Delete refuses otherwise
+            Remember($"new folder {name}", new UndoStep("rmdir", path)); // only while still empty
         active.Navigate(active.Dir, name, record: false);
     }
 
@@ -1547,7 +1610,7 @@ public partial class MainWindow : Window
         Run(() => created = dialog.Create(active.Dir));
         if (created == null) return;
         var path = Path.Combine(active.Dir, created);
-        Remember($"new file {created}", () => Recycle(new() { path }, UIOption.OnlyErrorDialogs));
+        Remember($"new file {created}", Made(path));
         active.Navigate(active.Dir, created, record: false);
     }
 
@@ -1576,7 +1639,7 @@ public partial class MainWindow : Window
             return;
         }
         var renamed = Path.Combine(Path.GetDirectoryName(entry.Path), name);
-        if (Run(() => RenamePath(entry.Path, name))) Remember($"rename to {name}", () => RenamePath(renamed, entry.Name));
+        if (Run(() => RenamePath(entry.Path, name))) Remember($"rename to {name}", new UndoStep("rename", renamed, entry.Name, Ferry.Stamp(renamed)));
         if (pane.InSearch) pane.Refresh();
         else pane.Navigate(pane.Dir, name, record: false);
     }

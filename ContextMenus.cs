@@ -202,7 +202,7 @@ public partial class MainWindow
         var mi = new MenuItem
         {
             Header = header, InputGestureText = gesture, IsEnabled = enabled,
-            Icon = new TextBlock { Text = glyph, FontFamily = new FontFamily("Segoe Fluent Icons"), FontSize = 13 },
+            Icon = new TextBlock { Text = glyph, FontFamily = new FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"), FontSize = 13 },
         };
         string icon=header switch{
             "Open"=>"Open","Copy"=>"Copy","Cut"=>"Cut","Paste" or "Paste into folder"=>"Paste",
@@ -356,13 +356,13 @@ public partial class MainWindow
         m.Items.Add(Item("New file…", "", "Ctrl+N", NewFile));
         m.Items.Add(new Separator());
         // View, as in Explorer's own menu for a folder (the Windows menu gets the same from ShellMenu.Show)
-        var view = new MenuItem { Header = $"View  ·  {p.ViewModeName}", Icon = new TextBlock { Text = "", FontFamily = new FontFamily("Segoe Fluent Icons"), FontSize = 13 } };
+        var view = new MenuItem { Header = $"View  ·  {p.ViewModeName}", Icon = new TextBlock { Text = "", FontFamily = new FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"), FontSize = 13 } };
         foreach (var item in p.ViewMenuItems()) view.Items.Add(item);
         m.Items.Add(view);
         var sort = new MenuItem
         {
             Header = $"Sort by  ·  {p.SortKey}",
-            Icon = new TextBlock { Text = p.SortDescending ? "" : "", FontFamily = new FontFamily("Segoe Fluent Icons"), FontSize = 13 },
+            Icon = new TextBlock { Text = p.SortDescending ? "" : "", FontFamily = new FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"), FontSize = 13 },
         };
         foreach (var item in p.SortMenuItems()) sort.Items.Add(item);
         m.Items.Add(sort);

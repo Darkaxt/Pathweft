@@ -40,6 +40,8 @@ public class Job : INotifyPropertyChanged
     public bool IsMove { get; init; }
     public bool Verify { get; init; }
     public bool Parallel { get; init; } // Settings → Transfers: small files several at once, where the drives take it well
+    public IReadOnlyDictionary<string, string> Names { get; init; }
+    public string Journal { get; internal set; }
     public bool ArchiveOperation { get; init; }
     public string Description { get; init; }
     public int SkippedFiles { get; internal set; }
@@ -96,6 +98,47 @@ public class Job : INotifyPropertyChanged
     public readonly Dictionary<string, string> Duplicates = new(StringComparer.OrdinalIgnoreCase); // source → its "- Copy" beside it, which Undo removes
     public readonly System.Collections.Concurrent.ConcurrentQueue<string> Errors = new(); // written by the worker, read by the UI
     public readonly System.Collections.Concurrent.ConcurrentQueue<string> Notes = new();
+
+    // What was done, for Undo, also when the job was cancelled or failed halfway: each item that arrived (Moved: the
+    // source is gone, it came by rename), and the folders the job made that weren't there. A file that replaced another
+    // is left out: the one it replaced can't come back.
+    // Stamp: what the arrival looked like (Ferry.Stamp), so Undo leaves alone something put there in its place later.
+    public readonly System.Collections.Concurrent.ConcurrentQueue<(string From, string To, bool Moved, long Stamp)> Completed = new();
+    public readonly List<string> CreatedDirs = new();
+    public readonly List<string> RemovedDirs = new();
+
+    // ---- the journal: one line per arrival, flushed a few times a second by the worker, never by the UI ----
+    StreamWriter journal;
+
+    internal void Arrived(string from, string to, bool moved)
+    {
+        var item = (from, to, moved, Ferry.Stamp(to));
+        Completed.Enqueue(item);
+        Write($"{(moved ? "moved" : "came")}\t{from}\t{to}\t{item.Item4}");
+    }
+    internal void MadeDir(string dir) { lock (CreatedDirs) CreatedDirs.Add(dir); Write($"dir\t{dir}"); }
+    internal void RemovedDir(string dir) { lock (RemovedDirs) RemovedDirs.Add(dir); Write($"removeddir\t{dir}"); }
+    void Write(string line)
+    {
+        if (Journal == null) return;
+        lock (Completed)
+            try
+            {
+                if (journal == null)
+                {
+                    Directory.CreateDirectory(Path.GetDirectoryName(Journal));
+                    journal = new StreamWriter(Journal, append: false);
+                    journal.WriteLine($"{(IsMove ? "move" : "copy")}\t{Destination}");
+                }
+                journal.WriteLine(line);
+                journal.Flush();
+                ((FileStream)journal.BaseStream).Flush(flushToDisk: true);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { Notes.Enqueue("Undo notes couldn't be written: " + ex.Message); JournalBroken(); }
+    }
+    void JournalBroken() { try { journal?.Dispose(); } catch (IOException) { } journal = null; Journal = null; } // said once; Undo still has Completed
+    internal void CloseJournal() { lock (Completed) try { journal?.Dispose(); } catch (IOException) { } finally { journal = null; } }
+    public bool CanUndo { get; set; } // its Undo button: there is something to take back, and it hasn't been yet
 
     readonly TaskCompletionSource<Choice?> resolved = new(TaskCreationOptions.RunContinuationsAsynchronously);
     public void Resolve(Choice c) => resolved.TrySetResult(c);
@@ -215,12 +258,12 @@ public static class Ferry
 
     // Reserve the destination and every move-source volume through actual completion.
     // Archive cuts also edit their source container after destination verification.
-    public static Job Submit(IEnumerable<string> sources, string destination, bool move, Action<Job> operation = null, string description = null)
+    public static Job Submit(IEnumerable<string> sources, string destination, bool move, Action<Job> operation = null, string description = null, IReadOnlyDictionary<string, string> names = null, string journal = null)
     {
         var selected = sources.Select(Path.GetFullPath).Distinct(StringComparer.Ordinal).ToList();
         selected = selected.Where(source => !selected.Any(parent => parent != source && Directory.Exists(parent)
             && source.StartsWith(Path.TrimEndingDirectorySeparator(parent) + "\\", StringComparison.Ordinal))).ToList();
-        var job = new Job { Sources = selected, Destination = Path.GetFullPath(destination), IsMove = move, Verify = Settings.Verify || move, Parallel = Settings.ParallelCopy, ArchiveOperation = operation != null, Description = description };
+        var job = new Job { Sources = selected, Destination = Path.GetFullPath(destination), IsMove = move, Verify = Settings.Verify || move, Parallel = Settings.ParallelCopy, ArchiveOperation = operation != null, Description = description, Names = names, Journal = journal };
         var volumes = (move ? job.Sources.Select(Path.GetPathRoot).Append(Path.GetPathRoot(job.Destination)) : new[] { Path.GetPathRoot(job.Destination) })
             .Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
         lock (lanes)
@@ -271,6 +314,7 @@ public static class Ferry
         finally
         {
             job.Current = ""; job.CurrentSize = job.CurrentDone = 0;
+            job.CloseJournal();
             try { Finished?.Invoke(job); } finally { job.Complete(); }
         }
     }
@@ -288,13 +332,14 @@ public static class Ferry
         public List<FileEntry> Files = new();
         public List<DirectoryEntry> Dirs = new();
         public List<Conflict> Conflicts = new();
+        public bool InBatch;
     }
 
     static Plan Scan(Job job)
     {
         var plan = new Plan();
         int links = 0;
-        var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var names = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
         TransferFile.RequirePlainDestination(job.Destination);
         if (!Directory.Exists(job.Destination)) throw new IOException("The destination folder is unavailable.");
         void Walk(string dir, string rel)
@@ -313,7 +358,13 @@ public static class Ferry
         void Add(FileSystemInfo fsi, string rel)
         {
             if (fsi.Attributes.HasFlag(FileAttributes.ReparsePoint)) { links++; return; } // Ferry: links reported, not reproduced
-            if (!names.Add(rel)) throw new IOException("Selected inputs map to the same destination name: " + rel);
+            bool directory = fsi is DirectoryInfo;
+            if (!names.TryAdd(rel, directory))
+            {
+                if (names[rel] != directory) throw new IOException("A file and folder share a destination name: " + rel);
+                plan.InBatch = true;
+                job.Merged = true;
+            }
             var snapshot = TransferFile.Inspect(fsi.FullName);
             if (snapshot.Attributes.HasFlag(FileAttributes.ReparsePoint)) { links++; return; }
             string target = Path.Combine(job.Destination, rel);
@@ -353,8 +404,12 @@ public static class Ferry
             // a copy into the folder it is already in is a duplicate beside it, as in Explorer ("name - Copy.ext")
             if (here) { var copy = CopyName(s.TrimEnd('\\'), fsi is DirectoryInfo); job.Duplicates[s] = copy; Add(fsi, Path.GetFileName(copy)); continue; }
             if (fsi is DirectoryInfo && Directory.Exists(Path.Combine(job.Destination, fsi.Name))) job.Merged = true;
-            Add(fsi, fsi.Name);
+            var name = job.Names?.GetValueOrDefault(s) ?? fsi.Name;
+            if (name is "" or "." or ".." || Path.GetFileName(name) != name || name.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
+                throw new IOException("Invalid destination name: " + name);
+            Add(fsi, name);
         }
+        var first = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         for (int i = 0; i < plan.Files.Count; i++)
         {
             var target = new FileInfo(Path.Combine(job.Destination, plan.Files[i].Relative));
@@ -364,6 +419,13 @@ public static class Ferry
                 plan.Conflicts.Add(new Conflict(i, plan.Files[i].Relative, plan.Files[i].Snapshot.Size, DateTime.FromFileTimeUtc(plan.Files[i].Snapshot.Modified).ToLocalTime(), existing.Size, DateTime.FromFileTimeUtc(existing.Modified).ToLocalTime())
                     { SourcePath = plan.Files[i].Source, TargetPath = target.FullName });
             }
+            else if (first.TryGetValue(target.FullName, out var earlier))
+            {
+                var incoming = plan.Files[i]; var prior = plan.Files[earlier];
+                plan.Conflicts.Add(new Conflict(i, incoming.Relative, incoming.Snapshot.Size, DateTime.FromFileTimeUtc(incoming.Snapshot.Modified).ToLocalTime(), prior.Snapshot.Size, DateTime.FromFileTimeUtc(prior.Snapshot.Modified).ToLocalTime())
+                    { SourcePath = incoming.Source, TargetPath = prior.Source });
+            }
+            first.TryAdd(target.FullName, i);
         }
         job.ExcludedItems = links;
         if (links > 0) job.Notes.Enqueue($"{links} reparse point(s) were left alone");
@@ -380,7 +442,7 @@ public static class Ferry
             Check(job);
             string target = Path.Combine(job.Destination, directory.Relative);
             TransferFile.RequirePlainDestination(target);
-            if (!Directory.Exists(target)) { Directory.CreateDirectory(target); Arrived(directory.Relative); }
+            if (!Directory.Exists(target)) { Directory.CreateDirectory(target); job.MadeDir(target); Arrived(directory.Relative); }
         }
 
         var work = new List<(FileEntry File, string Target, bool Overwrite)>();
@@ -399,7 +461,7 @@ public static class Ferry
             }
             work.Add((e, target, overwrite));
         }
-        bool together = job.Parallel && Fast(job.Destination) && job.Sources.All(Fast);
+        bool together = job.Parallel && !plan.InBatch && Fast(job.Destination) && job.Sources.All(Fast);
         var small = together ? work.Where(w => w.File.Size < ParallelBelow).ToList() : new();
         job.Concurrent = small.Count > 1;
 
@@ -407,7 +469,7 @@ public static class Ferry
         {
             var e = w.File;
             TransferFile.Stamp? copiedOutput = null;
-            bool succeeded = false, acceptedOutput = false, countedCopy = false;
+            bool succeeded = false, acceptedOutput = false, countedCopy = false, renamed = false;
             Interlocked.Increment(ref job.ParallelWorkers);
             try
             {
@@ -418,7 +480,6 @@ public static class Ferry
                 CheckTarget(w.Target, w.Overwrite);
                 job.Current = job.Concurrent ? $"{job.ParallelWorkers} active files" : e.Relative;
                 if (!job.Concurrent) { job.CurrentSize = e.Size; job.CurrentDone = 0; }
-                bool renamed = false;
                 if (job.IsMove)
                 {
                     Boundary("before-rename", job, e.Source, w.Target); Check(job);
@@ -506,6 +567,10 @@ public static class Ferry
                 else if (!job.IsCancelled) job.Phase = Phase.Copying;
             }
             if (succeeded) Interlocked.Increment(ref job.DoneFiles);
+            // Accepted arrivals remain undoable when cancellation occurs just
+            // before source removal; incomplete or overwritten output never is.
+            if (!w.Overwrite && (succeeded || acceptedOutput))
+                job.Arrived(e.Source, w.Target, renamed || job.IsMove && !File.Exists(e.Source));
             if (succeeded || (copiedOutput != null && File.Exists(w.Target))) Arrived(e.Relative);
         }
 
@@ -534,10 +599,24 @@ public static class Ferry
                 string[] remaining = Directory.GetFileSystemEntries(directory.Source);
                 if (remaining.Any(path => !directory.Children.Contains(Path.GetFileName(path))))
                     throw new IOException("New source-folder members remain; the folder was retained: " + directory.Source);
-                if (remaining.Length == 0) Directory.Delete(directory.Source);
+                if (remaining.Length == 0) { Directory.Delete(directory.Source); job.RemovedDir(directory.Source); }
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { job.Errors.Enqueue(ex.Message); }
         }
+    }
+    public static long Stamp(string path)
+    {
+        try
+        {
+            var item = TransferFile.Inspect(path);
+            // Include native identity so a replacement with matching size/time
+            // cannot be mistaken for the original. Directory edits do not erase
+            // identity; only empty directories are removed during undo.
+            long value = unchecked((long)item.Id * 1_000_003L + item.Volume * 31L + item.Created);
+            if (!item.Attributes.HasFlag(FileAttributes.Directory)) value = unchecked(value * 31 + item.Size * 31 + item.Modified);
+            return value == 0 ? 1 : value;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException) { return 0; }
     }
     static void Check(Job job)
     {

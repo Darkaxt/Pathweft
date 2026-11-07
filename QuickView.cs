@@ -39,7 +39,11 @@ public partial class MainWindow
             await driveRefreshWork;
             await Task.WhenAll(contextMenuInspections.ToArray());
             await Task.WhenAll(Left.driveListingWork,Right.driveListingWork);
-            await Task.WhenAll(jobs.Where(job => job.ArchiveOperation).Select(job => job.Completion));
+            await Task.WhenAll(jobs.Select(job => job.Completion));
+            // Finished dispatches precede this turn's barrier; drain durable undo
+            // saves before the dispatcher and its completion handlers disappear.
+            await Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Background);
+            await FinishUndoWork();
             MovePreviewHost(PreviewMode.Sidebar);
             previewCloseAccepted = true;
             _ = Dispatcher.BeginInvoke(Close);

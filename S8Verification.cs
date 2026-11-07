@@ -39,6 +39,9 @@ public partial class MainWindow
             if(Environment.GetEnvironmentVariable("PATHWEFT_S8_RESTART")=="1")
             {
                 Check(Settings.NativeTheme&&Appearance.Light&&Settings.NativeMode=="light"&&Settings.Accent=="#007A66"&&!Settings.WindowsAccent,"A separate application process restores Native Light and the chosen custom accent");
+                var retainedPath=Path.Combine(root,"undo-from","before.txt");
+                Check(undo.Any(entry=>entry.Journal!=null&&entry.Steps.Any(step=>step.Kind=="move"&&step.To==retainedPath)),"A separate application process restores the durable pending Undo history");
+                Check(File.ReadAllText(retainedPath)=="new original-location file","Restarting with pending Undo preserves the newer original-location file");
                 await S1Verification.Snapshot(this,evidence,"native-light-restarted");
                 result=0;return;
             }
@@ -72,6 +75,69 @@ public partial class MainWindow
             Check(refused&&new[]{"a","b","c","blocked"}.All(n=>File.ReadAllText(Path.Combine(rename,n+".txt"))==n)&&!Directory.EnumerateFiles(rename,".pathweft-*").Any(),"Failed overlapping batch rename restores every original and leaves the existing target intact");
             var swap=RenameAll(plan.Take(2).ToList());RenameAll(swap);
             Check(File.ReadAllText(plan[0].Path)=="a"&&File.ReadAllText(plan[1].Path)=="b","Successful overlapping rename and its reverse preserve contents");
+
+            var from=Directory.CreateDirectory(Path.Combine(root,"undo-from")).FullName;
+            var to=Directory.CreateDirectory(Path.Combine(root,"undo-to")).FullName;
+            var original=Path.Combine(from,"before.txt");File.WriteAllText(original,"durable undo");
+            var moved=Submit(new(){original},to,true,ask:false,names:new Dictionary<string,string>{{original,"after.txt"}});
+            await moved.Completion;await Settled();await FinishUndoWork();
+            Check(moved.Successful&&undo.Any(entry=>entry.Steps.Any(step=>step.To==original)),"A real submitted move remains undoable after its successful card automatically closes");
+            var savedUndo=System.Text.Json.JsonSerializer.Deserialize<List<UndoEntry>>(File.ReadAllText(UndoFile));
+            Check(savedUndo.Any(entry=>entry.Journal!=null&&entry.Steps.Any(step=>step.Kind=="move"&&step.To==original)),"Move undo survives a serialized history readback with exact original names");
+            Undo(undo.Last(entry=>entry.Steps.Any(step=>step.To==original)));
+            await undoCompletion;await FinishUndoWork();
+            Check(File.ReadAllText(original)=="durable undo"&&!File.Exists(Path.Combine(to,"after.txt"))&&!moved.CanUndo,"Actual Ctrl+Z workflow restores the original name and clears the completed Undo action");
+
+            var tree=Directory.CreateDirectory(Path.Combine(from,"tree","nested")).Parent.FullName;
+            Directory.CreateDirectory(Path.Combine(tree,"empty"));
+            var nested=Path.Combine(tree,"nested","original.txt");File.WriteAllText(nested,"original tree member");
+            var treeMove=Submit(new(){tree},to,true,ask:false);
+            await treeMove.Completion;await Settled();await FinishUndoWork();
+            var transferred=Path.Combine(to,"tree");
+            var later=Path.Combine(transferred,"later.txt");File.WriteAllText(later,"added afterward");
+            Check(treeMove.Successful&&!Directory.Exists(tree),"The native folder move completes and removes its empty original directories");
+            Undo(undo.Last(entry=>entry.Steps.Any(step=>step.To==nested)));
+            await undoCompletion;await FinishUndoWork();
+            Check(File.ReadAllText(nested)=="original tree member"&&Directory.Exists(Path.Combine(tree,"empty"))&&File.ReadAllText(later)=="added afterward"&&!File.Exists(Path.Combine(transferred,"nested","original.txt")),"Folder Undo restores nested files and empty source folders while preserving files added at the destination afterward");
+
+            File.WriteAllText(original,"move again");
+            var occupiedMove=Submit(new(){original},to,true,ask:false);
+            await occupiedMove.Completion;await Settled();await FinishUndoWork();
+            File.WriteAllText(original,"new original-location file");
+            Undo(undo.Last(entry=>entry.Steps.Any(step=>step.To==original)));
+            await undoCompletion;await FinishUndoWork();
+            Check(File.ReadAllText(original)=="new original-location file"&&File.ReadAllText(Path.Combine(to,"before.txt"))=="move again","Undo refuses to overwrite an original-location file created after the move");
+
+            var deleted=Path.Combine(from,"recycle-roundtrip.txt");File.WriteAllText(deleted,"exact recycled item");
+            var recycled=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            RecycleUndoably(new(){deleted},Microsoft.VisualBasic.FileIO.UIOption.OnlyErrorDialogs,()=>recycled.TrySetResult());
+            await recycled.Task;await FinishUndoWork();
+            var deleteEntry=undo.Last(entry=>entry.Steps.Any(step=>step.Kind=="restore"&&step.Path==deleted));
+            Check(!File.Exists(deleted)&&deleteEntry.Steps.All(step=>File.Exists(step.To)),"Actual Windows recycling records the exact native Recycle Bin item for Undo");
+            Undo(deleteEntry);await undoCompletion;await FinishUndoWork();
+            Check(File.ReadAllText(deleted)=="exact recycled item"&&!undo.Contains(deleteEntry),"Delete Undo restores the exact recycled file and retires its durable history entry");
+
+            var partialA=Path.Combine(from,"partial-a.txt");var partialB=Path.Combine(from,"partial-b.txt");
+            File.WriteAllText(partialA,"undo accepted arrival");File.WriteAllText(partialB,"held source stays");
+            var parallel=Settings.ParallelCopy;Settings.ParallelCopy=false;
+            Job partial;
+            using(var held=new FileStream(partialB,FileMode.Open,FileAccess.Read,FileShare.ReadWrite))
+            {
+                partial=Submit(new(){partialA,partialB},to,true,ask:false);
+                await partial.Completion;await Settled();await FinishUndoWork();
+            }
+            Settings.ParallelCopy=parallel;
+            Check(partial.Phase==Phase.Failed&&partial.CanUndo&&File.Exists(partialB)&&!File.Exists(partialA),"A partially failed native move retains its source and exposes Undo only for the accepted arrival");
+            await S1Verification.Snapshot(transfersWindow,evidence,"upstream-partial-transfer-undo");
+            JobUndo_Click(new Button{DataContext=partial},new RoutedEventArgs());
+            await undoCompletion;await FinishUndoWork();
+            Check(File.ReadAllText(partialA)=="undo accepted arrival"&&File.ReadAllText(partialB)=="held source stays"&&!partial.CanUndo,"The transfer-card Undo action restores only the completed part of a failed move");
+            DismissJob(partial);
+
+            AddToBin(Enumerable.Range(0,20000).Select(i=>Path.Combine(from,$"bin-{i}.txt")));
+            await Settled();
+            Check(bin.Count==20000&&inBin.Count==20000&&binFolders.Count==1&&BinList.ItemContainerGenerator.ContainerFromIndex(19999)==null,"The actual Drop bin keeps a large selection with virtualized offscreen rows and distinct-folder counts");
+            EmptyBin();ShowBin();DropBin.Visibility=Visibility.Collapsed;
 
             settings=new SettingsWindow(this);
             var rendered=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);

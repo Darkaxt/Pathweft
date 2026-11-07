@@ -20,6 +20,8 @@ if($LASTEXITCODE -ne 0){throw 'Source commit could not be identified.'}
 $changes=@(& git -C $root status --porcelain)
 if(!$Candidate -and $changes.Count -ne 0){throw 'Final packaging requires the completed verified source commit and a clean worktree. Use -Candidate for pre-commit qualification.'}
 if(!(Test-Path -LiteralPath $Compiler)){throw 'Prepare and verify the pinned compiler first.'}
+$sources=Join-Path $scratch 'corresponding-sources'
+if(!(Test-Path -LiteralPath (Join-Path $sources 'source-manifest.json'))){throw 'Prepare verified corresponding dependency sources first.'}
 $run=if($ResumeCandidateRun){[IO.Path]::GetFullPath($ResumeCandidateRun)}else{Join-Path $scratch ('package-'+[guid]::NewGuid().ToString('N'))}
 if($ResumeCandidateRun -and (!$Candidate -or $run -notmatch ('^'+[regex]::Escape($scratch)+'\\package-[a-f0-9]{32}$'))){throw 'Resume is limited to an exact owned qualification-candidate run, never a final release.'}
 $publish=Join-Path $run 'app'
@@ -125,8 +127,6 @@ if($LASTEXITCODE -ne 0){throw 'Portable archive creation failed.'}
 
 # Corresponding source includes full pinned archives, the interop patch and
 # offline native Rust dependency sources, not only selected reference snippets.
-$sources=Join-Path $scratch 'corresponding-sources'
-if(!(Test-Path -LiteralPath (Join-Path $sources 'source-manifest.json'))){throw 'Prepare verified corresponding dependency sources first.'}
 $performance=Get-Content (Join-Path $root 'vendor/Performance/source-manifest.json') -Raw|ConvertFrom-Json
 $performanceSources=Join-Path $sources 'Performance';[void][IO.Directory]::CreateDirectory($performanceSources)
 foreach($pin in @($performance.archives)+@($performance.packages|ForEach-Object {@{name=$_.packageArchive;sha256=$_.packageSha256}})){

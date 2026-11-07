@@ -403,6 +403,29 @@ public partial class App : Application
             Check(j.Phase == Phase.Done && !Directory.Exists(Path.Combine(src, "tree")) && File.Exists(Path.Combine(mv, "tree", "a.txt")), "same-volume move");
             Check(j.RenamedFiles == j.TotalFiles && j.CopiedFiles == 0 && j.VerifiedFiles == 0, "move preserves identity through the native rename path without claiming copied/hash-verified bytes");
 
+            var named = Directory.CreateDirectory(Path.Combine(root, "named")).FullName;
+            var namedSource = Path.Combine(root, "renamed-input.txt");File.WriteAllText(namedSource,"undo exact name");
+            j = Run(Ferry.Submit(new[]{namedSource}, named, true, names: new Dictionary<string,string>{{namedSource,"original.txt"}}));
+            Check(j.Successful && File.ReadAllText(Path.Combine(named,"original.txt"))=="undo exact name" && !File.Exists(namedSource), "Undo transfer mapping restores the exact requested basename");
+            Check(j.Completed.Count==1 && j.Completed.Single().Moved && j.Completed.Single().Stamp==Ferry.Stamp(Path.Combine(named,"original.txt")), "Native move records the arrived file and its actual identity");
+            var beforeReplacement = Ferry.Stamp(Path.Combine(named,"original.txt"));
+            var oldTime = File.GetLastWriteTimeUtc(Path.Combine(named,"original.txt"));
+            File.Move(Path.Combine(named,"original.txt"),Path.Combine(named,"retained.txt"));
+            File.WriteAllText(Path.Combine(named,"original.txt"),"undo exact name");File.SetLastWriteTimeUtc(Path.Combine(named,"original.txt"),oldTime);
+            Check(Ferry.Stamp(Path.Combine(named,"original.txt"))!=beforeReplacement,"Undo detects a replacement even when size and modification time match");
+
+            var batchOne=Directory.CreateDirectory(Path.Combine(root,"batch-one")).FullName;
+            var batchTwo=Directory.CreateDirectory(Path.Combine(root,"batch-two")).FullName;
+            var batchTarget=Directory.CreateDirectory(Path.Combine(root,"batch-target")).FullName;
+            File.WriteAllText(Path.Combine(batchOne,"same.txt"),"first");File.WriteAllText(Path.Combine(batchTwo,"same.txt"),"second");
+            j=Ferry.Submit(new[]{Path.Combine(batchOne,"same.txt"),Path.Combine(batchTwo,"same.txt")},batchTarget,false);j.Resolve(Choice.Rename);Run(j);
+            Check(j.Successful&&j.Conflicts.Count==1&&Directory.GetFiles(batchTarget).Select(File.ReadAllText).Order().SequenceEqual(new[]{"first","second"}),"Keep both preserves duplicate destination names from separate source folders");
+
+            var journal=Path.Combine(root,"undo-recovery.txt");
+            File.WriteAllLines(journal,new[]{"copy\t"+batchTarget,"came\t"+Path.Combine(batchOne,"same.txt")+"\t"+Path.Combine(batchTarget,"same.txt")+"\t"+Ferry.Stamp(Path.Combine(batchTarget,"same.txt"))});
+            var recovered=FileExplorer.MainWindow.ReadJournal(journal);
+            Check(recovered.Journal==Path.GetFileName(journal)&&recovered.Steps.Single().Kind=="recycle", "Interrupted copy journal restores identified arrivals with a deduplication identity");
+
             // move a folder onto a folder of the same name: merged file by file, never renamed over it,
             // and not undoable (undo would take the files that were already there with it)
             var merge = Directory.CreateDirectory(Path.Combine(root, "merge")).FullName;
@@ -914,6 +937,7 @@ public partial class App : Application
                 && !Agent.Matches(true, true, false, false) && !Agent.Matches(true, false, true, false)
                 && !Agent.Matches(true, false, false, true), "Win+E: only the opted-in unmodified chord");
 
+            Check(!FileExplorer.MainWindow.BinIsOff(@"\\server\share\x.txt") && !FileExplorer.MainWindow.BinIsOff("x.txt"), "a share or a relative path has no Recycle Bin setting to read");
             // 1.0.51 middle-click autoscroll: still inside the dead zone, then faster the further away, either way
             Check(PaneView.AutoscrollSpeed(0) == 0 && PaneView.AutoscrollSpeed(-12) == 0 && PaneView.AutoscrollSpeed(30) > 0 && PaneView.AutoscrollSpeed(-30) == -PaneView.AutoscrollSpeed(30)
                   && PaneView.AutoscrollSpeed(200) > PaneView.AutoscrollSpeed(100) && PaneView.AutoscrollSpeed(100000) == 8000, "autoscroll speed");

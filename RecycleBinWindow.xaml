@@ -30,7 +30,7 @@
                 <GridViewColumn.CellTemplate>
                   <DataTemplate>
                     <StackPanel Orientation="Horizontal">
-                      <TextBlock Text="{Binding Glyph}" FontFamily="Segoe Fluent Icons" Foreground="{Binding GlyphBrush}" Margin="0,1,8,0"/>
+                      <TextBlock Text="{Binding Glyph}" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" Foreground="{Binding GlyphBrush}" Margin="0,1,8,0"/>
                       <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis"/>
                     </StackPanel>
                   </DataTemplate>
