@@ -3,17 +3,20 @@
 Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.80, 2026-11-07,
 including the user-authorized continued comparison requirement TRANSFER-07.
 
-Current2026-11-07: S27 is the only ACTIVE stage for MONITOR-06..08: full-width
-observed-history graphs, physical RAM and five single-row statistics-height
-cards, plus automatic current-folder I/O after permission without focus gating.
-Source104260 and native160216 pass complete counter/RAM/card/focus/navigation/
-visibility/lifecycle workflows. Sampler115172 passes numerical resource budgets;
-actual dark/light100/150% narrow/wide screenshots and card-height parity pass.
-Remaining advancement blockers are delivered graph/source/application checks
-and normal independent delivery. No tracked deferral. Huashu follows
-the established statistics palette/type/spacing and actual compact layout.
-SysOptimizer performance/MCP replacement research is separate; security features,
-DNS and app management are outside the user's requested replacement scope.
+Current2026-11-07: S27 COMPLETE through normal1.1.30/659691f. MONITOR-06..08
+pass source104260, native160216 and sampler115172: actual counters/RAM,
+statistics-height five-card dark/light100/150% narrow/wide layouts, automatic
+folder-scope/navigation/visibility/lifecycle and numerical resource budgets.
+Final154828 and independently retrieved168072 pass source/native/application
+and actual short/hour/gapped rendered graph acceptance. Installed159192 verifies
+11,301 matching members, restarted main174956/helper174452, readiness,22 routes
+and preserved shortcut/profile identity. No blocker or tracked deferral remains.
+Refactor assessment: existing collector/panel/worker ownership remains cohesive;
+no required abstraction or restructuring. Retain evidence and transactionally
+clean spent scratch. No stage is ACTIVE; S25 remains NOT STARTED.
+SysOptimizer performance/MCP research is separate; security, DNS and app management
+are excluded. Later adoption must fit existing Pathweft cards, detail layout,
+themes/type/spacing and narrow/high-DPI behavior as requested by the user.
 
 Previous closure2026-11-07: S26 COMPLETE through normal1.1.29/d66f0c6. Final163400 and
 independent retrieved174916 pass corresponding-source/native/application checks.
@@ -1085,7 +1088,7 @@ plan neither authorizes itself nor adds approval checkpoints.
 | S24 - Transfer progress presentation | COMPLETE | TRANSFER-17; affected TRANSFER-14..16/CORE/LIFE/DELIVERY | S16 delivered; user requests compact progress/counter/action corrections | Source45728/113412 and final99016/independent85284 verify actual layouts, rasterized icon/text alignment, labels, transfer lifecycle and delivered behavior. Normal1.1.27/6b294cf published; installed99016 verifies matching members, restarted main/helper, readiness, routes and preserved identity. No remaining criteria, blockers or tracked deferrals. |
 | S18 - Contextual performance monitoring | COMPLETE | MONITOR-01..05; CORE-25..27; affected CORE-03/LIFE/DELIVERY | S16/S24 COMPLETE | Normal1.1.28/cc9f0ea independently verifies source/native/app workflows. Installed152724 verifies11,301 members, new main/helper, readiness,22 routes and identity. All assigned criteria pass; no blocker or tracked deferral. |
 | S26 - Upstream synchronization and security alert disposition | COMPLETE | User request2026-11-07; affected CORE-05/TRANSFER/LIFE/DELIVERY | S18 COMPLETE; before S25 | Normal1.1.29/d66f0c6 retains upstream8ceb281 ancestry and documented adoption/supersession. Final163400/independent174916 pass source/native/application workflows; installed164052 verifies11,301 members, restarted main/helper, readiness,22 routes and identity. Alert1 justified false-positive disposition is read back; rule retained and CodeQL42392128695 succeeds. No blocker or tracked deferral. |
-| S27 - Compact automatic performance widgets | ACTIVE | MONITOR-06..08; affected MONITOR/LIFE/DELIVERY | S26 COMPLETE; before S25 | Implement full-width observed-time graphs, separate physical RAM, five statistics-height single-row cards and automatic current-folder logical I/O without focus gating after permission. Remaining: complete source/UI/native/resource/lifecycle and normal independent release verification. No tracked deferral. |
+| S27 - Compact automatic performance widgets | COMPLETE | MONITOR-06..08; affected MONITOR/LIFE/DELIVERY | S26 COMPLETE; before S25 | Source104260/native160216/sampler115172 qualify compact RAM/counter/layout, automatic folder-scope and lifecycle/resource behavior. Final154828/independent168072 pass actual graph/source/native/application workflows; installed159192 verifies normal1.1.30/659691f, matching files, restarted main/helper, readiness, routes and shortcut/profile. No remaining criterion, blocker or tracked deferral. |
 | S25 - Summary-card motion | NOT STARTED | MOTION-01..03; affected MONITOR/CORE-03/LIFE/DELIVERY | S18 COMPLETE; after S18 and before S12 | Upward card entry with smooth file-pane squeeze; rotation between Statistics/Performance; reversal/interruption and focus/scroll preservation; reduced-motion support and actual frame/layout/resource qualification. One final independently/installed verified release after implementation authorization. No criteria verified yet. |
 | S12 - Tresorit capability investigation | NOT STARTED | TRES-01..04 | S15 delivered; S16/S18/S25 considered first in the selected execution order | Supported API/client assessment, bounded REA as needed, evidence-backed capability matrix/decision and implementation proposal. Investigation only; no cloud mutation or integration implementation. |
 | S19 - Selected-folder content indexing | NOT STARTED | CONTENT-01..06; affected SEARCH/CORE/LIFE/DELIVERY | After S12 in the selected execution order; qualify extractor APIs, query/location semantics, provider metadata and resource budgets | Toolbar folder opt-in/current magnifier badges; qualified Craft/text extraction; persisted searchable strings and location arrays, periodic incremental refresh and cloud-cache independence. Verify actual search/open/freshness/recovery and one final independently/installed verified release when implementation is authorized. No criteria verified yet. |

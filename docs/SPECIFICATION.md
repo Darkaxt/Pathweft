@@ -2,7 +2,7 @@
 
 Version 0.80 - 2026-11-07. Owner: Darkaxt.
 
-User refinement2026-11-07: S27 is ACTIVE for MONITOR-06..08 and supersedes
+User refinement2026-11-07: S27 COMPLETE through verified1.1.30 for MONITOR-06..08 and supersedes
 S18's focus-only folder-collection behavior. Graphs span the actual observed
 history across their available width (up to one hour), retain real gaps, and
 label the observed duration rather than implying missing time was recorded.
@@ -23,6 +23,13 @@ five-card heights at dark/light100/150% and narrow/wide widths, automatic
 file-pane-focus collection, navigation, visibility suspension/resumption and
 worker exit. Complete one normal independently verified release. S26 COMPLETE;
 S25 and unrelated SysOptimizer/MCP research remain unimplemented.
+
+Design constraint2026-11-07: any later SysOptimizer-derived performance/MCP
+integration must fit Pathweft's existing native app design and layouts. Reuse
+the compact statistics/performance cards, type, spacing, theme tokens and current
+expanded-detail region; qualify narrow/wide and high-DPI layouts. The proposed
+AppControl replacement covers performance tracking/queries only; DNS, app
+management and security enforcement are outside that replacement scope.
 
 User request2026-11-07: synchronize the thirteen upstream commits through
 File Labs8ceb281f0145aefe3768a2966a4942bf80f89f44 and assess GitHub code-scanning

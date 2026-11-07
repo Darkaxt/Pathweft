@@ -1,15 +1,17 @@
 # Pathweft development
 
-Current2026-11-07/spec0.80: S27 is the only ACTIVE stage for MONITOR-06..08:
-full-width observed-history graphs, separate physical RAM, five single-row
-statistics-height cards and automatic supported loaded-folder I/O after Windows
-permission without card focus. Preserve gaps, ownership, tray drive-only history,
-permission cancellation/retry and native/resource/lifecycle/delivery gates.
-Source104260/native160216 and sampler115172 pass actual workflows/resources;
-final delivered graph/source/application acceptance and normal independent
-release remain. No tracked deferral or required refactor.
-S26 COMPLETE; S25 NOT STARTED. SysOptimizer/AppControl replacement remains
-research scoped to performance/MCP; security/DNS/app management are excluded.
+Current2026-11-07/spec0.80: S27 COMPLETE through normal1.1.30/659691f.
+Source104260/native160216/sampler115172 pass actual compact-layout, RAM,
+automatic folder-scope, visibility/lifecycle and numerical resource criteria.
+Final154828 and independently retrieved168072 pass sources/native/application
+and actual short/hour/gapped rendered graph checks. Installed159192 verifies
+11,301 members, restarted main174956/helper174452, readiness,22 routes and
+preserved shortcut/profile identity. Evidence retained; generated scratch is
+transactionally cleaned after its last consumer. No blocker, tracked deferral
+or required refactor remains. No stage is ACTIVE; S25 NOT STARTED.
+SysOptimizer/AppControl replacement remains research scoped to performance/MCP;
+security/DNS/app management are excluded. Any later adoption must fit existing
+Pathweft cards, detail layout, typography, themes, spacing and high-DPI behavior.
 
 Previous closure2026-11-07/spec0.79: S26 COMPLETE through normal1.1.29/d66f0c6.
 Final163400 and independently retrieved174916 pass source/native/application
