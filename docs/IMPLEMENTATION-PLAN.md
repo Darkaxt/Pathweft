@@ -3,19 +3,19 @@
 Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.82, 2026-11-08,
 including the user-authorized continued comparison requirement TRANSFER-07.
 
-Current: S29 is the only ACTIVE stage, for MONITOR-14..16: graph-led moment/range
-investigation from the user's SysOptimizer reference. Existing widgets, optional
-recording and native collector/tracing ownership are preserved. Source acceptance
-passes graph moment/range/events -> linked facts -> reset/navigation/back, actual
-routed keyboard/wheel actions, identities/gaps/query errors, full-theme/scaled
-rendering and natural lifecycle. Resource regression8824 observes expanded CPU
-analysis0.454% normalized CPU/138MiB private, tray0.025% and no retained growth.
-Normal1.1.32/2f3b1cd is published with six verified assets; final165444 and
-independently downloaded175768 pass complete source/native/self-test/application
-checks. Remaining: user-controlled update and installed files/helper/identity
-readback. No tracked deferral.
-Closure review retains one history/sampler owner; no required refactor remains.
-S30, S25 and maintenance remain NOT STARTED.
+Current2026-11-08: S29 COMPLETE for MONITOR-14..16 through normal1.1.32/2f3b1cd.
+Source163416 passes graph moment/range/events -> linked facts -> reset/navigation/
+back, routed keyboard/wheel, identity/gap/error, themed/scaled rendering and natural
+lifecycle checks. Resource8824 observes expanded CPU0.454% normalized/138MiB
+private, tray0.025%, without retained growth. Final165444 and independent175768
+pass complete source/native/self-test/application checks; six published assets
+match. Installed171532 verifies11,304 members, restarted main158024/helper169160,
+readiness,22 routes and preserved shortcut/profile. The earlier shell-DLL load
+attempt preceded actual setup completion; the final readback followed owner exit.
+Evidence/releases retained; spent scratch transactionally cleaned. All assigned
+criteria pass, no blockers or tracked deferrals. Closure review retains one
+history/sampler owner; no required refactor. No stage ACTIVE. S30, S25 and
+maintenance remain NOT STARTED.
 
 Previous closure2026-11-08: S28 COMPLETE through normal1.1.31/e8dc64f. Native170636 passes real CPU/GPU/file
 attribution, focus, navigation, tray and exact worker/session retirement;
@@ -1124,7 +1124,7 @@ plan neither authorizes itself nor adds approval checkpoints.
 | S26 - Upstream synchronization and security alert disposition | COMPLETE | User request2026-11-07; affected CORE-05/TRANSFER/LIFE/DELIVERY | S18 COMPLETE; before S25 | Normal1.1.29/d66f0c6 retains upstream8ceb281 ancestry and documented adoption/supersession. Final163400/independent174916 pass source/native/application workflows; installed164052 verifies11,301 members, restarted main/helper, readiness,22 routes and identity. Alert1 justified false-positive disposition is read back; rule retained and CodeQL42392128695 succeeds. No blocker or tracked deferral. |
 | S27 - Compact automatic performance widgets | COMPLETE | MONITOR-06..08; affected MONITOR/LIFE/DELIVERY | S26 COMPLETE; before S25 | Source104260/native160216/sampler115172 qualify compact RAM/counter/layout, automatic folder-scope and lifecycle/resource behavior. Final154828/independent168072 pass actual graph/source/native/application workflows; installed159192 verifies normal1.1.30/659691f, matching files, restarted main/helper, readiness, routes and shortcut/profile. No remaining criterion, blocker or tracked deferral. |
 | S28 - Integrated system analysis and recorded history | COMPLETE | MONITOR-09..13; affected MONITOR/LIFE/DELIVERY | S27 COMPLETE; user selected performance/history/read-only MCP before maintenance | MONITOR-09..13 verified by source116416/analysis130208/resource172048/native170636 and final92112/independent163252. Normal1.1.31/e8dc64f and six assets published/read back; downloaded hashes/source/native/application checks pass. Installed179008 verifies11,304 matching members, restarted main169944/helper169508, readiness,22 routes and preserved shortcut/profile identity. Spent scratch cleaned; no blocker, required refactor or tracked deferral. |
-| S29 - Interactive performance investigation | ACTIVE | MONITOR-14..16; affected MONITOR/LIFE/DELIVERY | S28 COMPLETE; user reference2026-11-08 | Graph-led moment/range/events, overview/navigation and linked tables pass source163416 and resource8824. Normal1.1.32/2f3b1cd published; final165444 and independent175768 pass complete source/native/application checks. Remaining: user-controlled update and installed files/helper/identity readback. No tracked deferral or required refactor. |
+| S29 - Interactive performance investigation | COMPLETE | MONITOR-14..16; affected MONITOR/LIFE/DELIVERY | S28 COMPLETE; user reference2026-11-08 | Source163416/resource8824 pass graph-led investigation and preserved scope/layout/lifecycle. Normal1.1.32/2f3b1cd published; final165444/independent175768 pass source/native/application checks. Installed171532 verifies11,304 members, restarted ready main/helper,22 routes and preserved identity/profile. Scratch cleaned; all criteria pass. No blocker, deferral or required refactor. |
 | S30 - Reusable administrator access session | NOT STARTED | ACCESS-01..03; affected CORE/LIFE/DELIVERY | After S29, before S25; user request2026-11-08 | Monochrome quartered UAC shield toggles standard/admin browsing; one approved authenticated scoped helper is reusable for protected browsing and existing elevation-dependent features until explicit session end/full app exit. Preserve unelevated UI, user state and tracing scope. Real privilege/consent/owner/cancellation/idle-cost and final delivery acceptance required. No criteria verified yet. |
 | S25 - Summary-card motion | NOT STARTED | MOTION-01..03; affected MONITOR/CORE-03/LIFE/DELIVERY | S18 COMPLETE; after S28 and before S12 | Upward card entry with smooth file-pane squeeze; rotation between Statistics/Performance; reversal/interruption and focus/scroll preservation; reduced-motion support and actual frame/layout/resource qualification. One final independently/installed verified release after implementation authorization. No criteria verified yet. |
 | S12 - Tresorit capability investigation | NOT STARTED | TRES-01..04 | S15 delivered; S16/S18/S25 considered first in the selected execution order | Supported API/client assessment, bounded REA as needed, evidence-backed capability matrix/decision and implementation proposal. Investigation only; no cloud mutation or integration implementation. |

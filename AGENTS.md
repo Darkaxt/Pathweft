@@ -1,16 +1,19 @@
 # Pathweft development
 
-Current spec0.82: S29 is the only ACTIVE stage. User supplied SysOptimizer History
-as the expanded analysis reference. Adapted original History source is pinned and
-retained with MIT provenance. Source checks pass linked moment/range/event facts,
-keyboard/wheel/navigation/reset, themes/scales/scroll reachability, query identity,
-gaps/errors and natural shutdown. Resource8824 passes actual expanded/tray costs.
-Preserve compact cards, opt-in recording, retention and native ownership. Normal
-1.1.32/2f3b1cd is published with six verified assets; final165444 and independently
-downloaded175768 pass source/native/self-test/application checks. Remaining:
-user-controlled update and installed files/helper/identity readback. Pre-update
-identities are retained in .local/evidence/2026-11-08-s29. No tracked deferral or required refactor. S30
-admin/shield, S25 and maintenance remain NOT STARTED. S28 closure is historical.
+Current2026-11-08/spec0.82: S29 COMPLETE through normal1.1.32/2f3b1cd.
+Source163416/resource8824 pass donor-based moment/range/events -> linked facts,
+keyboard/wheel/navigation/reset, themes/scales/scroll reachability, identities,
+gaps/errors, natural lifecycle and actual expanded/tray costs. Final165444 and
+independent175768 pass source/native/self-test/application checks. Installed
+readback171532 verifies11,304 matching members, restarted main158024/helper169160,
+ready event,22 routes and preserved shortcut/profile identity. Its first attempt
+ran before setup finished and could not load the not-yet-copied shell DLL; the
+actual setup owners exited before the successful readback. No app defect is
+inferred from that premature diagnostic. All required evidence/releases retained;
+spent scratch transactionally cleaned. No blocker, tracked deferral or required
+refactor. No stage ACTIVE. S30 admin/shield, S25 and maintenance NOT STARTED.
+Keep compact cards, opt-in recording, retention and native scope ownership.
+Earlier closure notes below are historical.
 
 Current2026-11-08/spec0.81: S28 COMPLETE through normal1.1.31/e8dc64f.
 Native request0ecad834edd14848bf3b40068299c752/ticket25 exited0; app170636
