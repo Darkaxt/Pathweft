@@ -1,5 +1,18 @@
 # Pathweft development
 
+Current2026-11-07/spec0.79: S18 COMPLETE through normal1.1.28/cc9f0ea,
+independent package/source/app acceptance and installed readback152724
+(11,301 members, restarted main173864/helper171780, readiness,22 routes and
+preserved shortcut/profile). S26 is the only ACTIVE stage: user-requested
+thirteen-commit upstream synchronization through8ceb281 and security alert1.
+The exact Monaco worker claim is app-owned unset optional configuration,
+unreachable from file contents/sandboxed Markdown; false-positive dismissal
+is read back and scanning remains enabled. Preserve fork contracts/identity,
+storage, UI and releases; omit upstream promotions. Remaining merged workflow
+acceptance and one normal independently/applicably installed verified release.
+S25 and later work remain NOT STARTED. No tracked deferral. Historical notes
+below do not reopen S18 or authorize concurrent implementation.
+
 Current qualification2026-11-07/spec0.78: S18 is the only ACTIVE stage for
 MONITOR-01..05 and CORE-25..27. Native request8639b6fca3344a1bbb211db3c56587b8/
 ticket20 exited0: real CPU/GPU/file attribution, native focus/scope and whole

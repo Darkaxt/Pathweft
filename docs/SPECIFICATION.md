@@ -1,6 +1,22 @@
 # Pathweft specification
 
-Version 0.78 - 2026-11-07. Owner: Darkaxt.
+Version 0.79 - 2026-11-07. Owner: Darkaxt.
+
+User request2026-11-07: synchronize the thirteen upstream commits through
+File Labs8ceb281f0145aefe3768a2966a4942bf80f89f44 and assess GitHub code-scanning
+alert1. S26 owns this cohesive integration and its next normal verified release,
+before S25. Preserve Pathweft identity, established storage/lifecycle, native
+integration, transfer correctness and current UI contracts. Reconcile incoming
+transfer/undo/rename, recycling, filtering/search and icon changes with their
+existing counterparts; do not import upstream promotions or replace the fork's
+packaging, monthly banners or versioning. Record each adopted or superseded
+change and qualify real affected workflows, rollback/persistence and cancellation.
+Retain scanning coverage; resolve the alert from exact source/control/sink and
+shipped-runtime evidence, correcting an actionable defect or recording a justified
+false-positive disposition. Final acceptance includes ancestry at upstream/main,
+normal publication, independent delivered sources/runtime checks and applicable
+installed readback. S18 is COMPLETE through independently verified and installed
+1.1.28/cc9f0ea; S26 is the single ACTIVE stage. No tracked deferral.
 
 User refinement2026-11-07: remove the duplicate drive-capacity strip and
 free-space label below the address bar. Retain capacity in the sidebar and lower
