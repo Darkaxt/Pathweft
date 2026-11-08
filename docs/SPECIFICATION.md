@@ -1,6 +1,36 @@
 # Pathweft specification
 
-Version 0.84 - 2026-11-08. Owner: Darkaxt.
+Version 0.86 - 2026-11-08. Owner: Darkaxt.
+
+S31 corrective reopening, user instruction 2026-11-08: the automatic rolling
+hour must include process snapshots for hover, moment and range investigation,
+not merely aggregate graph points. The earlier aggregate-only interpretation
+did not satisfy the request. Capture recent selected CPU/RAM/GPU app observations
+every 10 seconds from the existing shared collector even while hidden/in the
+tray, bounded to one hour. Queries combine them with older saved observations
+without double counting. Preserve true gaps, PID/start/GPU identities and the
+automatic persistent history; no command-line retention, new collector, extra
+elevation or MCP activation. Latest direct clarification supersedes the earlier
+opt-in persistence policy: REMOVE the recording/saving switch and its setting.
+Collection and saving start automatically with Pathweft, even hidden/in the tray.
+Ignore legacy performance.record values and stop serializing that obsolete key.
+Retain the existing 1/7/30-day retention control (default 7 days), a 256 MiB SQLite
+database ceiling with oldest-first capacity pruning and bounded WAL/checkpoint
+backpressure. Never erase the history on migration or require a manual enable.
+Recent aggregate history keeps its existing 8 MiB qualification budget; the new
+one-hour process snapshot ring has a separate 8 MiB budget in the 45-process,
+two-adapter workload. Existing steady CPU/private-memory budgets remain unchanged.
+
+MONITOR-21 acceptance: from a fresh profile with no database or recording switch, actual
+background sampling -> hover/moment -> contemporaneous apps -> selected-range
+top apps/app history -> Now works automatically. Verify CPU/RAM/GPU identities,
+overlap with saved facts, durable restart/read-only MCP, gap/empty/cancellation
+states, one-hour memory/CPU and database/WAL capacity bounds, tray lifecycle and
+existing layout/privacy workflows. Optional column metadata remains demand-driven;
+no background command-line/file-I/O logs. User explicitly requests
+fix/verification and a pause before the next release; do not publish or install.
+Reopen S31 only; S30 remains NOT STARTED. Prior 1.1.33 verification is historical
+and does not establish MONITOR-21 acceptance.
 
 ### Performance continuity and process inspection (S31)
 

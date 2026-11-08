@@ -35,7 +35,6 @@ public static class Settings
     public static int Stats = 2;             // the cards below the panes: 2 full, 1 compact (one line each), 0 hidden
     public static double SidebarScale = 1, TabsScale = 1, PathScale = 1, ListScale = 1; // per area, on top of TextScale: 0.8–1.5
     public static HashSet<string> DisabledPreviewModules = new(new[] { "f3d" }, StringComparer.Ordinal);
-    public static volatile bool PerformanceRecording;
     public static volatile int PerformanceRetention=7;
     public static bool TaskbarSearch;        // explicit opt-in; lifetime belongs to the running application
     public static bool TaskbarSearchBox = true;
@@ -147,7 +146,6 @@ public static class Settings
                 case "preview": Preview = v == "1"; break;
                 case "previewwidth" when double.TryParse(v, CultureInfo.InvariantCulture, out var pw) && double.IsFinite(pw): PreviewWidth = Math.Clamp(pw, 200, 1600); break;
                 case "stats" when int.TryParse(v, out var st) && st is >= 0 and <= 2: Stats = st; break;
-                case "performance.record": PerformanceRecording=v=="1"; break;
                 case "performance.days" when int.TryParse(v,out var days)&&days is 1 or 7 or 30: PerformanceRetention=days; break;
                 case "scale.sidebar" when double.TryParse(v, CultureInfo.InvariantCulture, out var s1) && double.IsFinite(s1): SidebarScale = Math.Clamp(s1, 0.8, 1.5); break;
                 case "scale.tabs" when double.TryParse(v, CultureInfo.InvariantCulture, out var s2) && double.IsFinite(s2): TabsScale = Math.Clamp(s2, 0.8, 1.5); break;
@@ -229,7 +227,6 @@ public static class Settings
             $"preview={(Preview ? 1 : 0)}",
             $"previewwidth={PreviewWidth.ToString(CultureInfo.InvariantCulture)}",
             $"stats={Stats}",
-            $"performance.record={(PerformanceRecording?1:0)}",
             $"performance.days={PerformanceRetention}",
             $"scale.sidebar={SidebarScale.ToString(CultureInfo.InvariantCulture)}",
             $"scale.tabs={TabsScale.ToString(CultureInfo.InvariantCulture)}",

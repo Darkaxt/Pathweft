@@ -12,19 +12,23 @@ internal sealed record DiskReading(string Id,double? Read,double? Write,double? 
 internal sealed record RamReading(long Used,long Total)
 {internal double Usage=>100d*Used/Total;}
 internal sealed record PerformanceSample(DateTimeOffset Time,double? Cpu,GpuReading[] Gpus,DiskReading[] Disks,string Issue,RamReading Ram=null);
+internal sealed record PerformanceProcessSnapshot(DateTimeOffset Time,ProcessMetric[] Apps,ProcessMetric[] GpuApps);
 
-// One process-wide sampler. Aggregate-only by default; detailed enumeration is
-// demand-driven or an explicit recording choice. File ETW remains separately
+// One process-wide sampler. The recent hour includes automatic app snapshots;
+// automatic bounded disk persistence extends that history. File ETW remains separately
 // scoped and is never persisted. A time gap remains a displayed history gap.
 internal sealed class PerformanceMonitor : IDisposable
 {
     internal const int Capacity=3600;
+    internal const int ProcessCapacity=360;
+    internal static readonly TimeSpan ProcessCadence=TimeSpan.FromSeconds(10);
     internal static readonly TimeSpan Cadence=TimeSpan.FromSeconds(1);
     static PerformanceMonitor current;
     internal static PerformanceMonitor Current=>current??=new();
     internal static void Stop(){current?.Dispose();current=null;}
     readonly object gate=new();
     readonly Queue<PerformanceSample> history=new(Capacity);
+    readonly Queue<PerformanceProcessSnapshot> processHistory=new(ProcessCapacity);
     readonly CancellationTokenSource stopped=new();
     readonly Task sampling;
     internal event Action Changed;
@@ -37,6 +41,18 @@ internal sealed class PerformanceMonitor : IDisposable
     internal PerformanceMonitor(){sampling=Task.Run(Run);}
     internal PerformanceSample Latest {get{lock(gate)return history.LastOrDefault();}}
     internal PerformanceSample[] History(){lock(gate)return history.ToArray();}
+    internal PerformanceProcessSnapshot[] ProcessHistory(){lock(gate)return processHistory.ToArray();}
+    internal void RecordProcesses(DateTimeOffset time,ProcessMetric[] apps,ProcessMetric[] gpus)
+    {
+        var selected=PerformanceHistory.SelectApps(apps,gpus);
+        var identities=selected.Select(x=>(x.Pid,x.Started)).ToHashSet();
+        var snapshot=new PerformanceProcessSnapshot(time,selected,(gpus??[]).Where(x=>x.Adapter!=null&&identities.Contains((x.Pid,x.Started))).ToArray());
+        lock(gate)
+        {
+            while(processHistory.Count>0&&(processHistory.Count>=ProcessCapacity||time-processHistory.Peek().Time>=TimeSpan.FromHours(1)))processHistory.Dequeue();
+            processHistory.Enqueue(snapshot);
+        }
+    }
     internal void Record(PerformanceSample sample)
     {
         lock(gate)
@@ -57,10 +73,11 @@ internal sealed class PerformanceMonitor : IDisposable
             // The UI may switch cards during a native read. One selection
             // owns this entire tick, including the array that is published.
             int kind=DetailKind;
-            bool recordApps=Settings.PerformanceRecording&&sample.Time-lastApps>=TimeSpan.FromSeconds(10);
+            bool recordApps=sample.Time-lastApps>=ProcessCadence;
             var apps=kind is 1 or 3||recordApps?processMetrics.Read():null;
             var gpuApps=kind==2||recordApps?source.GpuProcesses():null;
             Details=kind is 1 or 3?apps:kind==2?gpuApps:Array.Empty<ProcessMetric>();
+            if(recordApps)RecordProcesses(sample.Time,apps,gpuApps);
             persisted.Record(sample,recordApps?apps:null,recordApps?gpuApps:null);
             if(recordApps)lastApps=sample.Time;
             Record(sample);

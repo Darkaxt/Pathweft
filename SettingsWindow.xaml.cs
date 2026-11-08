@@ -165,11 +165,11 @@ public partial class SettingsWindow : Window
     internal static readonly string[] FilesKeys = { "hidden", "shortcutfolders", "internaleditor", "preview.modules.disabled", "itemtips", "tipdelay", "deletesound", "nativemenu" };
     internal static readonly string[] TransfersKeys = { "verify", "parallel" };
     /// Choices outside these cards retain their own controls: Windows integration,
-    /// explicit history recording/retention in System analysis, and remembered state.
+    /// history retention in System analysis, and remembered state.
     internal static readonly string[] NotReset =
     {
         "wine", "tray", "taskbarsearch", "taskbarsearchbox", "preview", "previewwidth", "lastseen", "recent", "destinations", "sidebar", "sidebarorder", "sidebarcollapsed", "split", "maximized", "window", "quicklist",
-        "performance.record", "performance.days",
+        "performance.days",
     };
 
     void ResetAll_Click(object s, RoutedEventArgs e) =>

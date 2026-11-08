@@ -18,7 +18,6 @@ internal sealed partial class PerformancePanel
     readonly ComboBox range=new(){MinWidth=130},analysisKind=new(){MinWidth=145};
     readonly TextBox appFilter=new(){MinWidth=130,MaxWidth=200,ToolTip="Observed process name"},threshold=new(){Width=65,Text="80",ToolTip="Spike threshold: percent, or bytes/s for drive I/O"};
     readonly TextBlock historyStatus=new(){TextWrapping=TextWrapping.Wrap,FontSize=11,Margin=new(0,8,0,0)};
-    readonly MenuItem record=new(){Header="Record history",IsCheckable=true};
     CancellationTokenSource historyCancel;Task historyQuery=Task.CompletedTask,historyWork=Task.CompletedTask;
     CancellationTokenSource hoverCancel;Task hoverQuery=Task.CompletedTask,hoverWork=Task.CompletedTask;
     bool ready;string sortProperty;ListSortDirection sortDirection;
@@ -28,7 +27,6 @@ internal sealed partial class PerformancePanel
     PerformanceFact[] selectedEvents;
     internal bool Historical=>range.SelectedIndex>0||analysisKind.SelectedIndex>0||investigationMoment.HasValue||investigationFrom.HasValue||selectedEvents!=null||historyEnd.HasValue;
 #if DEBUG
-    internal void RecordForVerification(bool enabled){record.IsChecked=enabled;record.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));}
     internal void RefreshForVerification()=>Refresh();
     internal async Task HistoryForVerification(int kind){range.SelectedIndex=2;analysisKind.SelectedIndex=kind;await historyQuery;}
     internal string HistoryTextForVerification=>detailState.Text;
@@ -38,6 +36,7 @@ internal sealed partial class PerformancePanel
     internal PerformanceTimeline TimelineForVerification=>analysisGraph;
     internal void SetHistorySourceForVerification(string source,bool live=false){historySource=source;includeLiveHistory=source==null||live;}
     internal Task InvestigationReadyForVerification=>historyQuery;
+    internal Task HoverReadyForVerification=>hoverQuery;
     internal void ResetInvestigationForVerification()=>ResetInvestigation();
     internal void MoveHistoryForVerification(int direction)=>MoveHistory(direction);
     internal bool RevealTimelineForVerification()
@@ -76,17 +75,15 @@ internal sealed partial class PerformancePanel
         Add(Glyph("\uE76C",()=>MoveHistory(1)),"Next time range");
         Add(Action("Now",ResetInvestigation),"Clear selection and return to now");
         enable.SetResourceReference(StyleProperty,"AuxiliaryAction");enable.Click+=async(_,_)=>await EnableIo();Add(enable,"Enable detailed I/O");
-        record.IsChecked=Settings.PerformanceRecording;
-        var historyMenu=new ContextMenu();historyMenu.Items.Add(record);
-        var keep=new MenuItem{Header="Keep recorded history"};historyMenu.Items.Add(keep);
+        var historyMenu=new ContextMenu();
+        var keep=new MenuItem{Header="Saved history retention"};historyMenu.Items.Add(keep);
         foreach(int days in new[]{1,7,30})
         {
             var item=new MenuItem{Header=days==1?"1 day":days+" days",IsCheckable=true,IsChecked=Settings.PerformanceRetention==days};keep.Items.Add(item);
             item.Click+=(_,_)=>{Settings.PerformanceRetention=days;foreach(MenuItem sibling in keep.Items)sibling.IsChecked=ReferenceEquals(sibling,item);Settings.Save();UpdateHistoryStatus();};
         }
         var settings=Glyph("\uE713",()=>{});settings.ToolTip="History settings";
-        settings.Click+=(_,_)=>{historyMenu.PlacementTarget=settings;historyMenu.IsOpen=true;};Add(settings,"History recording and retention settings");
-        record.Click+=(_,_)=>{Settings.PerformanceRecording=record.IsChecked==true;Settings.Save();UpdateHistoryStatus();};
+        settings.Click+=(_,_)=>{historyMenu.PlacementTarget=settings;historyMenu.IsOpen=true;};Add(settings,"History retention; collection and saving are automatic");
         controls.SizeChanged+=(_,_)=>{bool narrow=controls.ActualWidth<420;range.MinWidth=narrow?100:130;analysisKind.MinWidth=narrow?100:145;range.FontSize=analysisKind.FontSize=narrow?11:12;};
         range.SelectionChanged+=(_,_)=>{if(changingRange)return;ClearInvestigation();historyEnd=null;historyWindow=null;ChangedAnalysis();};
         analysisKind.SelectionChanged+=(_,_)=>{investigationMoment=null;selectedEvents=null;ChangedAnalysis();};
@@ -147,8 +144,8 @@ internal sealed partial class PerformancePanel
     }
     void UpdateHistoryStatus()
     {
-        historyStatus.Text=monitor.HistoryIssue??(Settings.PerformanceRecording?$"History retained · {Settings.PerformanceRetention} days":"Live hour available");
-        historyStatus.ToolTip=monitor.HistoryIssue??"History settings: aggregates every 5s, selected heavy apps every 10s. Stored in the configured data folder; recording off preserves previous observations.";
+        historyStatus.Text=monitor.HistoryIssue??$"History automatic · up to {Settings.PerformanceRetention} {(Settings.PerformanceRetention==1?"day":"days")} · 256 MiB limit";
+        historyStatus.ToolTip=monitor.HistoryIssue??"Aggregate observations are saved every 5s and selected CPU/RAM/GPU app snapshots every 10s, including in the tray. Oldest observations expire by retention or storage capacity. Command lines and file I/O are not retained.";
     }
     void UpdateAnalysisGraph()
     {
@@ -163,7 +160,8 @@ internal sealed partial class PerformancePanel
             if(cancellation.IsCancellationRequested||disposed||selected<0||selected==Folder)return;
             string metric=selected switch{Ram=>"ram",Gpu=>"gpu",Drive=>"disk",_=>"cpu"};
             var query=new PerformanceQuery(Metric:metric,Device:selected==Gpu?gpu:null);
-            var work=Task.Run(()=>PerformanceInvestigation.Moment(query,time,cancellation.Token,historySource),cancellation.Token);hoverWork=work;
+            var apps=includeLiveHistory?monitor.ProcessHistory():null;
+            var work=Task.Run(()=>PerformanceInvestigation.Moment(query,time,cancellation.Token,historySource,apps),cancellation.Token);hoverWork=work;
             var moment=await work;if(!cancellation.IsCancellationRequested&&!disposed)analysisGraph.SetMoment(moment,metric);
         }
         catch(OperationCanceledException)when(cancellation.IsCancellationRequested){}
@@ -204,20 +202,22 @@ internal sealed partial class PerformancePanel
             var to=historyEnd??DateTimeOffset.UtcNow;
             var query=new PerformanceQuery(tool,minutes,metric,selected==Gpu?gpu:selected==Drive?WindowsPerformanceCounters.ForDisk(monitor.Latest,diskNumber)?.Id:null,appFilter.Text,limit,500,investigationFrom??to-(historyWindow??TimeSpan.FromMinutes(minutes)),investigationTo??to);
             var moment=investigationMoment;var events=selectedEvents;bool selectedRange=investigationFrom.HasValue;
+            if(selectedRange&&analysisKind.SelectedIndex==0&&selected!=Drive)query=query with{Tool="get_top_processes"};
             // Freeze one shared-sampler snapshot for this request. No second
             // collector, recording setting, or live/recorded source switch.
             var live=includeLiveHistory?monitor.History():null;
+            var apps=includeLiveHistory?monitor.ProcessHistory():null;
             detailState.Text="Reading available history…";
             var work=Task.Run(()=>
             {
                 if(moment is {} time)
                 {
-                    var snapshot=PerformanceInvestigation.Moment(query,time,cancellation.Token,historySource);
+                    var snapshot=PerformanceInvestigation.Moment(query,time,cancellation.Token,historySource,apps);
                     return (Result:new PerformanceResult(snapshot.Status,snapshot.Apps,[],snapshot.Apps.Length,false),Timeline:(PerformanceTimelineData)null,Moment:snapshot);
                 }
                 if(events!=null)return(Result:new PerformanceResult("Recorded events / sampled threshold spikes · select another graph moment to inspect contemporaneous apps.",events,[],events.Length,false),Timeline:(PerformanceTimelineData)null,Moment:(PerformanceMoment)null);
-                var result=PerformanceHistory.Query(query,cancellation.Token,historySource,live);
-                var timeline=selectedRange?null:PerformanceInvestigation.Read(query,cancellation.Token,historySource,live);
+                var result=PerformanceHistory.Query(query,cancellation.Token,historySource,live,apps);
+                var timeline=selectedRange?null:PerformanceInvestigation.Read(query,cancellation.Token,historySource,live,apps);
                 return(Result:result,Timeline:timeline,Moment:(PerformanceMoment)null);
             },cancellation.Token);historyWork=work;var loaded=await work;var result=loaded.Result;
             if(cancellation.IsCancellationRequested||disposed)return;

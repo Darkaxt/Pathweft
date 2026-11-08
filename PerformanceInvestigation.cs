@@ -6,35 +6,47 @@ namespace FileExplorer;
 internal sealed record PerformanceTimelineData(PerformanceResult Activity,PerformanceFact[] Events,long EventCount);
 internal sealed record PerformanceMoment(DateTimeOffset Requested,DateTimeOffset? Observed,PerformanceFact[] Apps,string Status);
 
-// Read-only investigation over the existing recording. No second sampler or log.
+// Read-only investigation over the automatic recent hour and saved history.
 internal static class PerformanceInvestigation
 {
-    internal static PerformanceTimelineData Read(PerformanceQuery query,CancellationToken cancel=default,string source=null,PerformanceSample[] live=null)
+    internal static PerformanceTimelineData Read(PerformanceQuery query,CancellationToken cancel=default,string source=null,PerformanceSample[] live=null,PerformanceProcessSnapshot[] liveApps=null)
     {
-        var activity=PerformanceHistory.Query(query with{Tool="get_usage_summary"},cancel,source,live);
-        var events=PerformanceHistory.Query(query with{Tool="get_events"},cancel,source,live);
-        var spikes=PerformanceHistory.Query(query with{Tool="find_spikes"},cancel,source,live);
+        var activity=PerformanceHistory.Query(query with{Tool="get_usage_summary"},cancel,source,live,liveApps);
+        var events=PerformanceHistory.Query(query with{Tool="get_events"},cancel,source,live,liveApps);
+        var spikes=PerformanceHistory.Query(query with{Tool="find_spikes"},cancel,source,live,liveApps);
         var markers=events.Rows.Concat(spikes.Rows.Select(x=>x with{Name="Usage spike",Details=x.Name+" · "+x.Details}))
             .OrderBy(x=>x.Time).Take(query.Limit).ToArray();
         return new(activity,markers,events.Total+spikes.Total);
     }
-    internal static PerformanceMoment Moment(PerformanceQuery query,DateTimeOffset time,CancellationToken cancel=default,string source=null)
+    internal static PerformanceMoment Moment(PerformanceQuery query,DateTimeOffset time,CancellationToken cancel=default,string source=null,PerformanceProcessSnapshot[] liveApps=null)
     {
         PerformanceHistory.Validate(query);
+        cancel.ThrowIfCancellationRequested();
+        if(query.Metric=="disk")return new(time,null,[],"Per-process drive I/O is available in live drive details; it is not retained in the background.");
+        PerformanceMoment recent=null;
+        foreach(var snapshot in liveApps??[])
+        {
+            cancel.ThrowIfCancellationRequested();
+            if(Math.Abs((snapshot.Time-time).TotalSeconds)>10)continue;
+            var apps=(query.Metric=="gpu"?snapshot.GpuApps.Where(x=>query.Device==null||x.Adapter==query.Device):snapshot.Apps).ToArray();
+            if(apps.Length==0||recent!=null&&Math.Abs((recent.Observed.Value-time).Ticks)<=Math.Abs((snapshot.Time-time).Ticks))continue;
+            recent=new(time,snapshot.Time,apps.OrderByDescending(x=>query.Metric=="ram"?x.Memory:x.Usage).Select(x=>new PerformanceFact(snapshot.Time,x.Process,x.Pid,query.Metric=="ram"?x.Memory:x.Usage,null,1,$"Started {new DateTime(x.Started,DateTimeKind.Utc):O}"+(query.Metric=="gpu"?" · "+x.Adapter:" · "+MainWindow.Fmt(x.Memory)+" working set"))).ToArray(),$"Observed {snapshot.Time.ToLocalTime():G} · automatic recent snapshot; selected heavy apps, not proof of cause.");
+        }
         string path=source??PerformanceHistory.FilePath;
-        if(!File.Exists(path))return new(time,null,[],"No recorded app observations at this time. Enable history recording to investigate future activity.");
+        if(!File.Exists(path))return recent??new(time,null,[],"No process observations near this moment. Recent snapshots are collected automatically while Pathweft runs; missing intervals are not zero activity.");
         SqliteRuntime.Ensure();using var db=new SqliteConnection(new SqliteConnectionStringBuilder{DataSource=path,Mode=SqliteOpenMode.ReadOnly,Pooling=false}.ToString());db.Open();
         using var command=db.CreateCommand();command.CommandText="PRAGMA query_only=ON; PRAGMA temp_store=MEMORY;";command.ExecuteNonQuery();
         long at=time.ToUnixTimeMilliseconds();
         command.Parameters.AddWithValue("$from",at-10000);command.Parameters.AddWithValue("$to",at+10000);command.Parameters.AddWithValue("$at",at);
+        command.Parameters.AddWithValue("$live",liveApps is {Length:>0}?liveApps[0].Time.ToUnixTimeMilliseconds():long.MaxValue);
         string table=query.Metric=="gpu"?"gpu_apps":"apps";
         command.Parameters.AddWithValue("$device",query.Device??"");
         string device=query.Metric=="gpu"?" AND ($device='' OR adapter=$device)":"";
-        command.CommandText=$"SELECT t FROM {table} WHERE t BETWEEN $from AND $to{device} ORDER BY abs(t-$at),t LIMIT 1";
+        command.CommandText=$"SELECT t FROM {table} WHERE t BETWEEN $from AND $to AND t<$live{device} ORDER BY abs(t-$at),t LIMIT 1";
         cancel.ThrowIfCancellationRequested();var nearest=command.ExecuteScalar();
-        if(nearest==null)return new(time,null,[],"No recorded app snapshot within 10 seconds of this moment. Missing observations are not zero activity.");
+        if(nearest==null)return recent??new(time,null,[],"No process snapshot within 10 seconds of this moment. Missing observations are not zero activity.");
         var observed=DateTimeOffset.FromUnixTimeMilliseconds(Convert.ToInt64(nearest));
-        if(query.Metric=="disk")return new(time,observed,[],"Historical per-process drive I/O was not recorded. Use live drive details for file attribution.");
+        if(recent!=null&&Math.Abs((recent.Observed.Value-time).Ticks)<=Math.Abs((observed-time).Ticks))return recent;
         command.Parameters.AddWithValue("$sample",observed.ToUnixTimeMilliseconds());
         string value=query.Metric switch{"ram"=>"memory","gpu"=>"usage",_=>"cpu"};
         command.CommandText=$"SELECT name,pid,start,{value}"+(query.Metric=="gpu"?",NULL":",memory")+$" FROM {table} WHERE t=$sample{device} ORDER BY {value} DESC LIMIT 45";

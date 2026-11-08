@@ -43,18 +43,26 @@ sealed partial class PackageProbe
             var ready=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);Action updated=()=>ready.TrySetResult();var changed=monitorType.GetEvent("Changed",Flags);
             changed.GetAddMethod(true).Invoke(monitor,new object[]{updated});try{await ready.Task;}finally{changed.GetRemoveMethod(true).Invoke(monitor,new object[]{updated});}
         }
-        var setting=Type("Settings").GetField("PerformanceRecording",Flags);setting.SetValue(null,true);
-        try{for(int i=0;i<12;i++)await Next();}finally{setting.SetValue(null,false);}
+        Check(Type("Settings").GetField("PerformanceRecording",Flags)==null,"Delivered automatic history has no recording opt-in setting");
+        for(int i=0;i<12;i++)await Next();
         await Next();
         var history=Type("PerformanceHistory");var queryType=Type("PerformanceQuery");
         object Query(string name)=>Activator.CreateInstance(queryType,Flags,null,new object[]{name,60,"cpu",null,null,80d,100,null,null},null);
         var expected=Call(history,null,"Query",Query("get_current_usage"));
         Check(((IEnumerable)Get(expected,"Rows")).Cast<object>().Any(x=>(string)Get(x,"Name")=="CPU %"&&Get(x,"Average") is double),
             "Delivered shared sampler persists real CPU readings, independent of the live graph");
-        string database=(string)history.GetProperty("FilePath",Flags).GetValue(null);byte[] before=SHA256.HashData(File.ReadAllBytes(database));
+        string source=(string)history.GetProperty("FilePath",Flags).GetValue(null);
+        string mcpProfile=Path.Combine(root,"mcp-snapshot"),database=Path.Combine(mcpProfile,"Runtime","Performance","history.sqlite");
+        Directory.CreateDirectory(Path.GetDirectoryName(database));
+        using(var live=new Microsoft.Data.Sqlite.SqliteConnection(new Microsoft.Data.Sqlite.SqliteConnectionStringBuilder{DataSource=source,Mode=Microsoft.Data.Sqlite.SqliteOpenMode.ReadOnly,Pooling=false}.ToString()))
+        using(var copy=new Microsoft.Data.Sqlite.SqliteConnection("Data Source="+database+";Pooling=False"))
+        {live.Open();copy.Open();live.BackupDatabase(copy);}
+        expected=Call(history,null,"Query",Query("get_current_usage"),CancellationToken.None,database);
+        byte[] before=SHA256.HashData(File.ReadAllBytes(database));
         var start=new ProcessStartInfo(Path.Combine(Path.GetDirectoryName(Product.Location),"Pathweft.exe"))
             {UseShellExecute=false,CreateNoWindow=true,RedirectStandardInput=true,RedirectStandardOutput=true,RedirectStandardError=true};
         start.ArgumentList.Add("--performance-mcp");
+        start.Environment["PATHWEFT_PROFILE"]=mcpProfile;
         using var process=Process.Start(start);var error=process.StandardError.ReadToEndAsync();
         async Task<JsonElement> Send(string method,object parameters)
         {

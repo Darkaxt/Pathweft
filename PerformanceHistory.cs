@@ -21,8 +21,11 @@ internal sealed record PerformanceQuery(string Tool="get_usage_summary",int Last
 internal sealed class PerformanceHistory : IDisposable
 {
     internal static string FilePath=>Path.Combine(DataFolder.Bulk,"Performance","history.sqlite");
+    internal const long StorageLimit=256L*1024*1024;
+    internal const long WalLimit=8L*1024*1024;
     readonly string file;
-    internal PerformanceHistory(string file=null){this.file=file;}
+    readonly long storageLimit;
+    internal PerformanceHistory(string file=null,long storageLimit=StorageLimit){this.file=file;this.storageLimit=storageLimit;}
     string StoragePath=>file??FilePath;
     SqliteConnection writer;SqliteTransaction activeTransaction;DateTimeOffset lastWrite,lastPrune;int retainedDays;bool recording;string previousIssue;
     internal string Issue {get;private set;}
@@ -45,19 +48,78 @@ internal sealed class PerformanceHistory : IDisposable
         if(writer!=null)return;Directory.CreateDirectory(Path.GetDirectoryName(StoragePath));writer=Open(StoragePath,false);
         Execute(writer,"PRAGMA auto_vacuum=INCREMENTAL; PRAGMA journal_mode=WAL; CREATE TABLE IF NOT EXISTS samples(t INTEGER PRIMARY KEY,data TEXT NOT NULL); CREATE TABLE IF NOT EXISTS apps(t INTEGER NOT NULL,pid INTEGER NOT NULL,start INTEGER NOT NULL,name TEXT NOT NULL,cpu REAL,memory INTEGER,PRIMARY KEY(t,pid,start)); CREATE INDEX IF NOT EXISTS apps_name_time ON apps(name,t); CREATE TABLE IF NOT EXISTS gpu_apps(t INTEGER NOT NULL,pid INTEGER NOT NULL,start INTEGER NOT NULL,name TEXT NOT NULL,adapter TEXT NOT NULL,usage REAL,PRIMARY KEY(t,pid,start,adapter)); CREATE INDEX IF NOT EXISTS gpu_apps_name_time ON gpu_apps(name,t); CREATE TABLE IF NOT EXISTS events(t INTEGER NOT NULL,kind TEXT NOT NULL,detail TEXT NOT NULL); CREATE INDEX IF NOT EXISTS events_time ON events(t);");
         Execute(writer,"CREATE INDEX IF NOT EXISTS apps_identity_time ON apps(name,pid,start,t); CREATE INDEX IF NOT EXISTS gpu_apps_identity_time ON gpu_apps(name,pid,start,adapter,t);");
+        long pageSize=Scalar("PRAGMA page_size");
+        Execute(writer,$"PRAGMA max_page_count={storageLimit/pageSize}; PRAGMA journal_size_limit=1048576; PRAGMA wal_autocheckpoint=256; PRAGMA busy_timeout=0;");
+    }
+    long Scalar(string sql)
+    {using var command=writer.CreateCommand();command.CommandText=sql;return Convert.ToInt64(command.ExecuteScalar());}
+    bool Checkpoint()
+    {
+        // Do not grow an unbounded WAL behind a long-lived reader. PASSIVE is
+        // non-blocking; TRUNCATE below uses SQLite's explicit busy response.
+        Execute(writer,"PRAGMA wal_checkpoint(PASSIVE);");
+        if(new FileInfo(StoragePath+"-wal") is {Exists:true,Length:>=WalLimit})
+        {
+            Execute(writer,"PRAGMA wal_checkpoint(TRUNCATE);");
+            if(new FileInfo(StoragePath+"-wal") is {Exists:true,Length:>=WalLimit})
+            {Issue="History saving is waiting for an active reader; recent observations remain available.";return false;}
+        }
+        return true;
+    }
+    bool Prune(DateTimeOffset time)
+    {
+        if(!Checkpoint())return false;
+        long pageSize=Scalar("PRAGMA page_size");
+        int days=Math.Clamp(Settings.PerformanceRetention,1,30);
+        bool expire=time-lastPrune>=TimeSpan.FromHours(1)||retainedDays!=days;
+        long cutoff=time.AddDays(-days).ToUnixTimeMilliseconds();
+        while(true)
+        {
+            bool pressure=(Scalar("PRAGMA page_count")-Scalar("PRAGMA freelist_count"))*pageSize>=storageLimit*3/4;
+            if(!expire&&!pressure)break;
+            // Small chronological batches bound individual transactions and
+            // their WAL growth. Retention and capacity remove the oldest facts
+            // together; no full database rewrite or vacuum copy is required.
+            using var next=writer.CreateCommand();
+            next.CommandText="SELECT MAX(t) FROM (SELECT t FROM samples"+(pressure?"":" WHERE t<$cutoff")+" ORDER BY t LIMIT 60)";
+            next.Parameters.AddWithValue("$cutoff",cutoff);
+            var value=next.ExecuteScalar();if(value is null or DBNull)break;
+            using(var transaction=writer.BeginTransaction())
+            {
+                activeTransaction=transaction;
+                Execute(writer,"DELETE FROM samples WHERE t<=$0; DELETE FROM apps WHERE t<=$0; DELETE FROM gpu_apps WHERE t<=$0; DELETE FROM events WHERE t<=$0;",value);
+                transaction.Commit();activeTransaction=null;
+            }
+            if(!Checkpoint())return false;
+        }
+        if(expire)
+        {
+            // Lifecycle events can occur between sample timestamps.
+            Execute(writer,"DELETE FROM events WHERE t<$0",cutoff);
+            lastPrune=time;retainedDays=days;
+        }
+        // Existing history may predate the capacity ceiling. It was created
+        // with incremental auto-vacuum; reclaim free tail pages in small steps
+        // rather than copying/replacing the database or dropping recent facts.
+        long pages=Scalar("PRAGMA page_count"),maximum=storageLimit/pageSize;
+        while(pages>maximum&&Scalar("PRAGMA freelist_count")>0)
+        {
+            Execute(writer,"PRAGMA incremental_vacuum(128);");
+            long reduced=Scalar("PRAGMA page_count");
+            if(reduced>=pages){Issue="History cannot reclaim its existing free pages.";return false;}
+            pages=reduced;if(!Checkpoint())return false;
+        }
+        Scalar($"PRAGMA max_page_count={maximum}");
+        return true;
     }
     internal void Record(PerformanceSample sample,ProcessMetric[] apps,ProcessMetric[] gpuApps)
     {
         try
         {
-            if(!Settings.PerformanceRecording)
-            {
-                if(recording&&writer!=null)Execute(writer,"INSERT INTO events VALUES($0,'Recording stopped','New observations disabled')",sample.Time.ToUnixTimeMilliseconds());
-                recording=false;writer?.Dispose();writer=null;return;
-            }
             EnsureWriter();
-            if(!recording){Execute(writer,"INSERT INTO events VALUES($0,'Recording started','Aggregate samples every 5s; heavy apps every 10s; inaccessible and short-lived processes may be absent')",sample.Time.ToUnixTimeMilliseconds());recording=true;lastWrite=default;}
             if(sample.Time-lastWrite<TimeSpan.FromSeconds(5)&&apps==null)return;
+            if(!Prune(sample.Time))return;
+            if(!recording){Execute(writer,"INSERT INTO events VALUES($0,'Recording started','Aggregate samples every 5s; heavy apps every 10s; inaccessible and short-lived processes may be absent')",sample.Time.ToUnixTimeMilliseconds());recording=true;lastWrite=default;}
             using var transaction=writer.BeginTransaction();
             activeTransaction=transaction;
             if(lastWrite!=default&&sample.Time-lastWrite>TimeSpan.FromSeconds(15))Execute(writer,"INSERT INTO events VALUES($0,'Collection gap',$1)",sample.Time.ToUnixTimeMilliseconds(),$"No observations since {lastWrite:O}");
@@ -65,24 +127,22 @@ internal sealed class PerformanceHistory : IDisposable
             Execute(writer,"INSERT OR REPLACE INTO samples VALUES($0,$1)",sample.Time.ToUnixTimeMilliseconds(),JsonSerializer.Serialize(sample));
             if(apps!=null)
             {
-                var gpuByPid=(gpuApps??Array.Empty<ProcessMetric>()).GroupBy(x=>(x.Pid,x.Started)).ToDictionary(g=>g.Key,g=>g.Max(x=>x.Usage));
-                var selected=apps.OrderByDescending(x=>x.Usage).Take(15).Concat(apps.OrderByDescending(x=>x.Memory).Take(15))
-                    .Concat(apps.OrderByDescending(x=>gpuByPid.GetValueOrDefault((x.Pid,x.Started))).Take(15)).DistinctBy(x=>(x.Pid,x.Started)).ToArray();
+                var selected=SelectApps(apps,gpuApps);
                 foreach(var app in selected)Execute(writer,"INSERT OR REPLACE INTO apps VALUES($0,$1,$2,$3,$4,$5)",sample.Time.ToUnixTimeMilliseconds(),app.Pid,app.Started,app.Process,app.Usage,app.Memory);
                 var identities=selected.Select(x=>(x.Pid,x.Started)).ToHashSet();
                 foreach(var app in gpuApps??[])if(app.Adapter!=null&&identities.Contains((app.Pid,app.Started)))Execute(writer,"INSERT OR REPLACE INTO gpu_apps VALUES($0,$1,$2,$3,$4,$5)",sample.Time.ToUnixTimeMilliseconds(),app.Pid,app.Started,app.Process,app.Adapter,app.Usage);
-            }
-            int days=Settings.PerformanceRetention;
-            if(sample.Time-lastPrune>=TimeSpan.FromHours(1)||retainedDays!=days)
-            {
-                long cutoff=sample.Time.AddDays(-days).ToUnixTimeMilliseconds();
-                Execute(writer,"DELETE FROM samples WHERE t<$0; DELETE FROM apps WHERE t<$0; DELETE FROM gpu_apps WHERE t<$0; DELETE FROM events WHERE t<$0;",cutoff);
-                lastPrune=sample.Time;retainedDays=days;
             }
             transaction.Commit();activeTransaction=null;lastWrite=sample.Time;Issue=null;
         }
         catch(Exception ex)when(ex is IOException or UnauthorizedAccessException or SqliteException)
         {Issue="History recording unavailable: "+ex.Message;activeTransaction=null;writer?.Dispose();writer=null;recording=false;}
+    }
+    internal static ProcessMetric[] SelectApps(ProcessMetric[] apps,ProcessMetric[] gpuApps)
+    {
+        apps??=[];
+        var gpuByPid=(gpuApps??[]).GroupBy(x=>(x.Pid,x.Started)).ToDictionary(g=>g.Key,g=>g.Max(x=>x.Usage));
+        return apps.OrderByDescending(x=>x.Usage).Take(15).Concat(apps.OrderByDescending(x=>x.Memory).Take(15))
+            .Concat(apps.OrderByDescending(x=>gpuByPid.GetValueOrDefault((x.Pid,x.Started))).Take(15)).DistinctBy(x=>(x.Pid,x.Started)).ToArray();
     }
     internal static void Validate(PerformanceQuery query)
     {
@@ -92,17 +152,16 @@ internal sealed class PerformanceHistory : IDisposable
         if(query.Tool=="get_app_history"&&string.IsNullOrWhiteSpace(query.Name))throw new ArgumentException("App name is required");
         if(query.From.HasValue!=query.To.HasValue||query.From>=query.To||query.To-query.From>TimeSpan.FromDays(30))throw new ArgumentException("Use an ordered from/to range of at most 30 days");
     }
-    internal static PerformanceResult Query(PerformanceQuery query,CancellationToken cancel=default,string source=null,PerformanceSample[] live=null)
+    internal static PerformanceResult Query(PerformanceQuery query,CancellationToken cancel=default,string source=null,PerformanceSample[] live=null,PerformanceProcessSnapshot[] liveApps=null)
     {
-        Validate(query);string path=source??FilePath;
+        Validate(query);cancel.ThrowIfCancellationRequested();string path=source??FilePath;
         bool recorded=File.Exists(path);
-        if(!recorded&&live==null)return new("No recorded history. Enable recording in System analysis; the live rolling hour is separate.",[],[],0,false);
+        if(!recorded&&live==null&&liveApps==null)return new("No saved observations yet. Pathweft collects and saves history automatically while running.",[],[],0,false);
         using var db=recorded?Open(path,true):null;using var command=db?.CreateCommand();
         var to=query.To??DateTimeOffset.UtcNow;var from=query.From??to.AddMinutes(-query.LastMinutes);
         command?.Parameters.AddWithValue("$from",from.ToUnixTimeMilliseconds());command?.Parameters.AddWithValue("$to",to.ToUnixTimeMilliseconds());
         var rows=new List<PerformanceFact>();var points=new List<PerformancePoint>();long total=0;
-        string note=live==null?"Recorded observations only; missing intervals are not zero. ":"Available live and recorded observations; missing intervals are not zero. ";
-        if(command==null&&query.Tool is "get_top_processes" or "get_app_history")return new("No retained process snapshots for this interval. Aggregate observations remain available; live process details show current activity.",[],[],0,false);
+        string note=live==null&&liveApps==null?"Saved observations only; missing intervals are not zero. ":"Available recent and saved observations; missing intervals are not zero. ";
         IEnumerable<PerformanceSample> Samples()
         {
             var liveStart=live is {Length:>0}?live[0].Time:DateTimeOffset.MaxValue;
@@ -124,19 +183,49 @@ internal sealed class PerformanceHistory : IDisposable
             if(query.Metric=="disk")throw new ArgumentException("Historical process metrics are cpu, ram or gpu; no background file I/O log is recorded");
             // Stream identity groups from the matching index. Only the bounded
             // top results are sorted, while a separate count covers all matches.
-            string grouping=$" FROM {(gpu?"gpu_apps":"apps")} INDEXED BY {(gpu?"gpu_apps_identity_time":"apps_identity_time")} WHERE t BETWEEN $from AND $to AND ($name='' OR instr(lower(name),lower($name))>0)"+(gpu?" AND ($device='' OR adapter=$device)":"")+$" GROUP BY name,pid,start{(gpu?",adapter":"")}";
-            command.Parameters.AddWithValue("$name",query.Tool=="get_app_history"?query.Name:"");
-            if(gpu)command.Parameters.AddWithValue("$device",query.Device??"");
-            command.CommandText="SELECT COUNT(*) FROM (SELECT 1"+grouping+")";
-            total=Convert.ToInt64(command.ExecuteScalar());cancel.ThrowIfCancellationRequested();
-            command.Parameters.AddWithValue("$limit",query.Limit);
-            command.CommandText=$"SELECT name,pid,start,AVG({column}),MAX({column}),COUNT({column}),MIN(t),MAX(t)"+(gpu?",adapter":"")+grouping+$" ORDER BY AVG({column}) DESC LIMIT $limit";
-            using var reader=command.ExecuteReader();while(reader.Read())
+            string name=query.Tool=="get_app_history"?query.Name:"";
+            var recent=new Dictionary<(string,int,long,string),(double Sum,double Peak,long Count,DateTimeOffset First,DateTimeOffset Last)>();
+            foreach(var snapshot in liveApps??[])
             {
                 cancel.ThrowIfCancellationRequested();
-                rows.Add(new(DateTimeOffset.FromUnixTimeMilliseconds(reader.GetInt64(7)),reader.GetString(0),reader.GetInt32(1),reader.IsDBNull(3)?null:reader.GetDouble(3),reader.IsDBNull(4)?null:reader.GetDouble(4),reader.GetInt64(5),$"Started {new DateTime(reader.GetInt64(2),DateTimeKind.Utc):O}; observed from {DateTimeOffset.FromUnixTimeMilliseconds(reader.GetInt64(6)):O}; {column} {(column=="memory"?"bytes":"%")}"+(gpu?" · "+reader.GetString(8):"")));
+                if(snapshot.Time<from||snapshot.Time>to)continue;
+                foreach(var app in gpu?snapshot.GpuApps:snapshot.Apps)
+                {
+                    if(!app.Process.Contains(name,StringComparison.OrdinalIgnoreCase)||(gpu&&query.Device!=null&&app.Adapter!=query.Device))continue;
+                    var key=(app.Process,app.Pid,app.Started,gpu?app.Adapter:"");
+                    double value=query.Metric=="ram"?app.Memory:app.Usage;
+                    if(recent.TryGetValue(key,out var old))recent[key]=(old.Sum+value,Math.Max(old.Peak,value),old.Count+1,old.First,snapshot.Time);
+                    else recent[key]=(value,value,1,snapshot.Time,snapshot.Time);
+                }
             }
-            note+="Selected heavy apps every 10s; inaccessible, small and short-lived processes may be absent. PID/start distinguishes reuse; observations are not exact launch/exit sessions.";
+            void Add((string Name,int Pid,long Start,string Adapter) key,double sum,double peak,long count,DateTimeOffset first,DateTimeOffset last)
+            {
+                total++;
+                rows.Add(new(last,key.Name,key.Pid,count==0?null:sum/count,count==0?null:peak,count,$"Started {new DateTime(key.Start,DateTimeKind.Utc):O}; observed from {first:O}; {column} {(column=="memory"?"bytes":"%")}"+(gpu?" · "+key.Adapter:"")));
+                // Stream all saved groups, retaining only the requested top
+                // results plus bounded identities present in the recent hour.
+                rows.Sort((a,b)=>{int order=Nullable.Compare(b.Average,a.Average);if(order!=0)return order;order=string.CompareOrdinal(a.Name,b.Name);return order!=0?order:Nullable.Compare(a.Pid,b.Pid);});
+                if(rows.Count>query.Limit)rows.RemoveAt(rows.Count-1);
+            }
+            if(command!=null)
+            {
+                command.Parameters.AddWithValue("$name",name);
+                command.Parameters.AddWithValue("$live",liveApps is {Length:>0}?liveApps[0].Time.ToUnixTimeMilliseconds():long.MaxValue);
+                if(gpu)command.Parameters.AddWithValue("$device",query.Device??"");
+                string grouping=$" FROM {(gpu?"gpu_apps":"apps")} INDEXED BY {(gpu?"gpu_apps_identity_time":"apps_identity_time")} WHERE t BETWEEN $from AND $to AND t<$live AND ($name='' OR instr(lower(name),lower($name))>0)"+(gpu?" AND ($device='' OR adapter=$device)":"")+$" GROUP BY name,pid,start{(gpu?",adapter":"")}";
+                command.CommandText=$"SELECT name,pid,start,SUM({column}),MAX({column}),COUNT({column}),MIN(t),MAX(t)"+(gpu?",adapter":"")+grouping;
+                using var reader=command.ExecuteReader();while(reader.Read())
+                {
+                    cancel.ThrowIfCancellationRequested();
+                    var key=(reader.GetString(0),reader.GetInt32(1),reader.GetInt64(2),gpu?reader.GetString(8):"");
+                    double sum=reader.IsDBNull(3)?0:reader.GetDouble(3),peak=reader.IsDBNull(4)?0:reader.GetDouble(4);long count=reader.GetInt64(5);
+                    var first=DateTimeOffset.FromUnixTimeMilliseconds(reader.GetInt64(6));var last=DateTimeOffset.FromUnixTimeMilliseconds(reader.GetInt64(7));
+                    if(recent.Remove(key,out var item)){sum+=item.Sum;peak=Math.Max(peak,item.Peak);count+=item.Count;last=item.Last;}
+                    Add(key,sum,peak,count,first,last);
+                }
+            }
+            foreach(var (key,item) in recent){cancel.ThrowIfCancellationRequested();Add(key,item.Sum,item.Peak,item.Count,item.First,item.Last);}
+            note+="Automatic recent app snapshots every 10s; selected heavy apps only, so inaccessible, small and short-lived processes may be absent. PID/start distinguishes reuse; observations are not exact launch/exit sessions.";
         }
         else if(query.Tool=="get_events")
         {
@@ -205,7 +294,7 @@ internal sealed class PerformanceHistory : IDisposable
             if(query.Tool!="find_spikes")foreach(var entry in sums){total++;if(rows.Count<query.Limit)rows.Add(new(entry.Value.PeakAt,entry.Key,null,entry.Value.Weight==0?null:entry.Value.Sum/entry.Value.Weight,entry.Value.Count==0?null:entry.Value.Peak,entry.Value.Count,entry.Value.Count==0?"Counter unavailable":"Average over observed intervals; peak time shown"));}
             note+=first==default?"No samples in range.":$"Observed {first:O} to {latest:O}. Latest age {(DateTimeOffset.UtcNow-latest).TotalSeconds:0}s. Interval averages and original-sample peaks; live cadence 1s, recorded cadence 5s.";
         }
-        return new(total==0?"No matching recorded observations. "+note:note,rows.ToArray(),points.ToArray(),total,total>rows.Count);
+        return new(total==0?"No matching observations. "+note:note,rows.ToArray(),points.ToArray(),total,total>rows.Count);
     }
     public void Dispose()
     {

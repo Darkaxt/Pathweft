@@ -12,7 +12,7 @@ public partial class MainWindow
         string path=Path.Combine(root,"investigation.sqlite");var start=DateTimeOffset.UtcNow.AddMinutes(-50);
         var first=new ProcessMetric(42,start.UtcTicks,"observed-first",10,1024);
         var second=new ProcessMetric(42,start.AddSeconds(1).UtcTicks,"observed-second",75,4096);
-        Settings.PerformanceRecording=true;Settings.PerformanceRetention=1;
+        Settings.PerformanceRetention=1;
         using(var store=new PerformanceHistory(path))
         {
             for(int i=0;i<240;i++)
@@ -25,7 +25,7 @@ public partial class MainWindow
             }
             check(store.Issue==null,"Investigation fixture uses actual history persistence and identities");
         }
-        Settings.PerformanceRecording=false;
+
         var query=new PerformanceQuery(LastMinutes:60,From:start.AddSeconds(-5),To:start.AddMinutes(41));
         var timeline=PerformanceInvestigation.Read(query,source:path);
         check(timeline.Events.Any(x=>x.Name=="Usage spike")&&timeline.Events.Any(x=>x.Name=="Collection gap")&&timeline.Activity.Points.Any(x=>x.Value==null),"Timeline combines factual lifecycle/gap events and sampled spikes without filling gaps");
@@ -71,25 +71,78 @@ public partial class MainWindow
         performance.SetHistorySourceForVerification(null);Settings.TextScale=1;Settings.NativeMode="dark";Width=1400;ApplyAppearance();
         performance.Select(-1);performance.LiveForVerification();
         await VerifyLiveContinuity31(root,check);
+        await VerifyAutomaticInvestigation32(root,check);
+    }
+    async Task VerifyAutomaticInvestigation32(string root,Action<bool,string> check)
+    {
+
+        var monitor=PerformanceMonitor.Current;performance.Select(-1);
+        // Observe a new actual sampler snapshot while no detail view requests
+        // process enumeration. Completion is driven by the collector event.
+        var before=DateTimeOffset.UtcNow;
+        var collected=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        void Changed(){if(monitor.ProcessHistory().Any(x=>x.Time>before&&x.Apps.Length>0))collected.TrySetResult();}
+        monitor.Changed+=Changed;try{Changed();await collected.Task;}finally{monitor.Changed-=Changed;}
+        var snapshot=monitor.ProcessHistory().Last(x=>x.Apps.Length>0);
+        check(monitor.DetailKind==0,"Actual background sampler captures process snapshots automatically with no recording switch or detail consumer");
+        check(File.Exists(PerformanceHistory.FilePath)&&PerformanceHistory.Query(new("get_top_processes")).Rows.Length>0,"Fresh-profile collector automatically saves real process snapshots without any recording activation");
+        check(typeof(Settings).GetField("PerformanceRecording")==null&&!Settings.DefaultKeys.Contains("performance.record"),"Obsolete recording switch and serialized key are removed");
+        var missing=Path.Combine(root,"never-recorded-processes.sqlite");
+        performance.SetHistorySourceForVerification(missing,true);performance.LiveForVerification();performance.Select(PerformancePanel.Cpu);
+        performance.TimelineForVerification.HoverForVerification(snapshot.Time);await performance.HoverReadyForVerification;
+        check(performance.TimelineForVerification.MomentAppsForVerification>0,"Automatic actual graph hover resolves contemporaneous process observations without a database");
+        performance.TimelineForVerification.SelectMomentForVerification(snapshot.Time);await performance.InvestigationReadyForVerification;
+        check(performance.HistoryRowsForVerification>0&&performance.HistoryTextForVerification.Contains("automatic recent snapshot")&&!File.Exists(missing),"Automatic graph moment fills its real app table without enabling or writing history");
+        await S1Verification.Snapshot(this,root,"automatic-process-moment");
+        performance.TimelineForVerification.SelectRangeForVerification(snapshot.Time.AddSeconds(-2),snapshot.Time.AddSeconds(2));await performance.InvestigationReadyForVerification;
+        check(performance.HistoryRowsForVerification>0&&performance.HistoryTextForVerification.Contains("Automatic recent app snapshots"),"Automatic selected Activity range investigates contemporaneous apps automatically");
+        performance.ResetInvestigationForVerification();await performance.InvestigationReadyForVerification;
+        check(performance.TimelineForVerification.PointCountForVerification>0,"Now restores the graph while collection and saving continue automatically");
+        var q=new PerformanceQuery("get_app_history",Name:snapshot.Apps[0].Process,From:snapshot.Time.AddSeconds(-2),To:snapshot.Time.AddSeconds(2));
+        var apps=monitor.ProcessHistory();
+        check(PerformanceHistory.Query(q,source:missing,liveApps:apps).Rows.Length>0,"App history uses automatic observations with no saved database");
+        check(PerformanceInvestigation.Moment(q with{Metric="ram"},snapshot.Time,source:missing,liveApps:apps).Apps.Any(x=>x.Average>0),"Automatic RAM investigation exposes actual process working sets");
+        VerifyAutomaticBoundaries32(root,check);
+        performance.SetHistorySourceForVerification(null);performance.LiveForVerification();performance.Select(-1);
+    }
+    static void VerifyAutomaticBoundaries32(string root,Action<bool,string> check)
+    {
+        var at=DateTimeOffset.UtcNow;var old=at.AddSeconds(-20);
+        var identity=new ProcessMetric(42,at.UtcTicks,"automatic-app",20,1024);
+        PerformanceProcessSnapshot[] recent=[new(at,[identity],[identity with{Adapter="gpu-b",Usage=60}]),new(at.AddSeconds(10),[identity with{Started=identity.Started+1,Usage=80}],[identity with{Started=identity.Started+1,Adapter="gpu-b",Usage=30}])];
+        var q=new PerformanceQuery("get_top_processes",From:old.AddSeconds(-1),To:at.AddSeconds(11));
+        string file=Path.Combine(root,"automatic-overlap.sqlite");
+        using(var store=new PerformanceHistory(file))
+        {store.Record(new(old,10,[],[],null),[identity with{Usage=10}],null);store.Record(new(at,99,[],[],null),[identity with{Usage=99}],null);}
+
+        var combined=PerformanceHistory.Query(q,source:file,liveApps:recent);
+        check(combined.Total==2&&combined.Rows.Single(x=>x.Observations==2).Average==15,"Saved and automatic app ranges merge the same PID/start and exclude duplicate overlap while separating PID reuse");
+        var moment=PerformanceInvestigation.Moment(q with{Metric="gpu",Device="gpu-b"},at,source:file,liveApps:recent);
+        check(moment.Apps.Single().Average==60,"Automatic moment honors selected GPU identity and takes precedence over saved overlap");
+        check(PerformanceInvestigation.Moment(q,at.AddMinutes(2),source:file,liveApps:recent).Observed==null,"No app snapshots are invented across a true collection gap");
+        using var cancelled=new CancellationTokenSource();cancelled.Cancel();bool stopped=false;
+        try{PerformanceHistory.Query(q,cancelled.Token,file,liveApps:recent);}catch(OperationCanceledException){stopped=true;}
+        check(stopped,"Automatic app queries honor cancellation");
+        PerformanceStorageVerification.Run(root,check);
     }
     async Task VerifyLiveContinuity31(string root,Action<bool,string> check)
     {
-        Settings.PerformanceRecording=false;
+
         performance.SetHistorySourceForVerification(Path.Combine(root,"unrecorded.sqlite"),true);
         performance.LiveForVerification();performance.Select(PerformancePanel.Cpu);
         var monitor=PerformanceMonitor.Current;var at=DateTimeOffset.UtcNow;
         for(int i=0;i<35;i++)monitor.Record(new(at.AddTicks(i),i<5?95:20,[],[],null,new(40,100)));
         performance.RefreshForVerification();UpdateLayout();
         performance.TimelineForVerification.SelectRangeForVerification(at.AddSeconds(-40),at.AddSeconds(1));await performance.InvestigationReadyForVerification;
-        check(performance.HistoryRowsForVerification>0,"Recording-off range inspects already-visible aggregate observations without a database");
+        check(performance.HistoryRowsForVerification>0,"Automatic range inspects already-visible aggregate observations without a database");
         performance.ResetInvestigationForVerification();await performance.InvestigationReadyForVerification;
-        check(performance.TimelineForVerification.PointCountForVerification>0&&performance.TimelineForVerification.EventCountForVerification>0,"Now recovers the live graph and its sampled events after range selection with recording off");
+        check(performance.TimelineForVerification.PointCountForVerification>0&&performance.TimelineForVerification.EventCountForVerification>0,"Now recovers the automatic graph and sampled events after range selection");
         await performance.HistoryForVerification(0);
         check(performance.TimelineForVerification.PointCountForVerification>0,"Last hour retains live observations without recording");
-        string mixed=Path.Combine(root,"mixed-analysis.sqlite");Settings.PerformanceRecording=true;
+        string mixed=Path.Combine(root,"mixed-analysis.sqlite");
         PerformanceSample Sample(DateTimeOffset time,double cpu)=>new(time,cpu,[],[new("disk-a",100,200,10),new("disk-b",900,1000,80)],null,new(40,100));
         using(var store=new PerformanceHistory(mixed)){store.Record(Sample(at.AddSeconds(-90),10),null,null);store.Record(Sample(at.AddSeconds(-30),99),null,null);}
-        Settings.PerformanceRecording=false;
+
         PerformanceSample[] recent=[Sample(at.AddSeconds(-30),20),Sample(at.AddSeconds(-10),40)];
         var q=new PerformanceQuery(From:at.AddMinutes(-2),To:at);
         var combined=PerformanceHistory.Query(q,source:mixed,live:recent);
@@ -152,7 +205,8 @@ internal sealed partial class PerformancePanel
         table.SelectedItem=row;Space();check(!row.Pinned,"Space unpins the selected process");
         var mismatch=await Task.Run(()=>PerformanceProcessMetadataReader.Read([(identity.Pid,identity.Started+TimeSpan.TicksPerSecond)],CancellationToken.None));
         check(mismatch.Count==0,"Metadata cannot be attached to a mismatched process creation identity");
-        table.SelectedItem=row;table.UpdateLayout();
+        table.SelectedItem=row;table.ScrollIntoView(row);
+        await Dispatcher.InvokeAsync(table.UpdateLayout,DispatcherPriority.ApplicationIdle);
         var container=(System.Windows.Controls.ListViewItem)table.ItemContainerGenerator.ContainerFromItem(row);
         check(container!=null,"Pinned process has a rendered row for the mouse action");
         container.RaiseEvent(new MouseButtonEventArgs(Mouse.PrimaryDevice,0,MouseButton.Left){RoutedEvent=Mouse.MouseUpEvent});

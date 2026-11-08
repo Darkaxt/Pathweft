@@ -1,5 +1,20 @@
 # Pathweft development
 
+Current 2026-11-08/spec0.86: S31 BLOCKED only by the user's explicit pause before
+the next release. MONITOR-21 source/integration acceptance passes: automatic
+collection/saving with no recording setting, actual hover/moment/range/app facts,
+identity/gap/overlap, SQLite retention/capacity/migration/WAL backpressure and
+reopen/read-only MCP. Full app182592, final focused113480, settings self-test152916
+and resource181064 pass; delivered-consumer sources compile. The earlier failed
+virtualized-row diagnostic is retained and corrected without weakening assertions.
+Existing CPU/private-memory and aggregate bounds pass; the 360-snapshot process
+hour adds 4,373,296 bytes in the qualified 45-process/two-adapter workload.
+Source evidence retained; exact task scratch is transactionally cleaned. No
+source blocker or tracked deferral remains. No stage is ACTIVE. S30 NOT STARTED.
+Do not publish/install until the user resumes release work. Publication, package
+retrieval and installed readback remain unsatisfied; installed1.1.33 is unchanged.
+Earlier closures below are historical and did not qualify this missing behavior.
+
 Current 2026-11-08/spec0.84: S31 COMPLETE for MONITOR-17..20 through normal
 1.1.33/97e6cd2. Source app176784/focusedb8168940/resource19744 pass automatic
 live-range recovery, CPU columns/metadata/pins/filter, themed controls, resource

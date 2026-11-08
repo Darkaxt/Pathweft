@@ -873,15 +873,15 @@ public partial class App : Application
             Check(defaults.All(k => resettable.Contains(k) || SettingsWindow.NotReset.Contains(k)), "reset: every setting is in a card or kept on purpose, missing "
                   + string.Join(",", defaults.Where(k => !resettable.Contains(k) && !SettingsWindow.NotReset.Contains(k))));
             Check(resettable.All(defaults.Contains) && resettable.Distinct().Count() == resettable.Count, "reset: the cards name real settings, each once");
-            Settings.PerformanceRecording=true;Settings.PerformanceRetention=30;
+            Settings.PerformanceRetention=30;
             (Settings.Accent, Settings.TipDelay, Settings.Autoscroll, Settings.CloseEmptyPane, Settings.ShowHidden, Settings.Verify, Settings.CloseToTray, Settings.RowPad)
                 = ("#FF0000", 2500, true, true, true, true, true, 6);
             Settings.Reset(SettingsWindow.AppearanceKeys);
             Check(Settings.Accent == "#4C8DFF" && Settings.RowPad == 3 && !Settings.Autoscroll && !Settings.CloseEmptyPane
                   && Settings.TipDelay == 2500 && Settings.ShowHidden && Settings.Verify && Settings.CloseToTray, "reset: one card, and only that card");
             Settings.Reset(resettable);
-            Check(Settings.PerformanceRecording&&Settings.PerformanceRetention==30,"reset: unrelated cards preserve explicit performance recording and retention choices");
-            Settings.PerformanceRecording=false;Settings.PerformanceRetention=7;
+            Check(Settings.PerformanceRetention==30,"reset: unrelated cards preserve performance retention");
+            Settings.PerformanceRetention=7;
             Check(Settings.TipDelay == 1500 && !Settings.ShowHidden && !Settings.Verify && Settings.CloseToTray && Settings.AutoscrollSideways, "reset: all three cards; Windows integration kept");
             Settings.CloseToTray = false;
 

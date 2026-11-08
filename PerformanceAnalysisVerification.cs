@@ -39,7 +39,7 @@ public partial class MainWindow
         check(ReferenceEquals(active,pane)&&pane.Dir==dir&&pane.Selected.Select(x=>x.Path).SequenceEqual(selected)&&PaneArea.IsVisible&&TerminalCommand.IsEnabled,"Returning restores the same pane, path and selection through background listing refreshes");
         var monitor=PerformanceMonitor.Current;
         async Task Next(){var ready=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);void Updated()=>ready.TrySetResult();monitor.Changed+=Updated;try{await ready.Task;}finally{monitor.Changed-=Updated;}}
-        performance.RecordForVerification(true);Settings.PerformanceRetention=7;
+        Settings.PerformanceRetention=7;
         for(int i=0;i<12;i++)await Next();
         var current=PerformanceHistory.Query(new("get_current_usage"));
         check(current.Rows.Any(x=>x.Name=="CPU %"&&x.Average is >=0 and <=100)&&monitor.HistoryIssue==null,"Real shared sampler durably records actual CPU/RAM/device observations");
@@ -47,10 +47,18 @@ public partial class MainWindow
         performance.Select(PerformancePanel.Cpu);await performance.HistoryForVerification(1);UpdateLayout();
         check(performance.HistoryRowsForVerification>0&&!performance.HistoryTextForVerification.StartsWith("History unavailable"),"Actual recorded range renders through the same shared query used by MCP");
         await S1Verification.Snapshot(this,root,"analysis-recorded-summary");
-        performance.Select(-1);performance.RecordForVerification(false);await Next();
-        check(monitor.DetailKind==0,"Recording off leaves no detailed enumeration enabled");
-        string path=PerformanceHistory.FilePath;var before=SHA256.HashData(File.ReadAllBytes(path));
+        performance.Select(-1);await Next();
+        check(monitor.DetailKind==0,"Closing analysis leaves no per-second process detail consumer");
+        string path=PerformanceHistory.FilePath;
+        string mcpProfile=Path.Combine(root,"mcp-snapshot"),snapshot=Path.Combine(mcpProfile,"Runtime","Performance","history.sqlite");
+        Directory.CreateDirectory(Path.GetDirectoryName(snapshot));
+        File.WriteAllText(Path.Combine(mcpProfile,"settings.txt"),"performance.record=0\n");
+        using(var liveDb=new Microsoft.Data.Sqlite.SqliteConnection(new Microsoft.Data.Sqlite.SqliteConnectionStringBuilder{DataSource=path,Mode=Microsoft.Data.Sqlite.SqliteOpenMode.ReadOnly,Pooling=false}.ToString()))
+        using(var copy=new Microsoft.Data.Sqlite.SqliteConnection("Data Source="+snapshot+";Pooling=False"))
+        {liveDb.Open();copy.Open();liveDb.BackupDatabase(copy);}
+        var before=SHA256.HashData(File.ReadAllBytes(snapshot));
         var start=new ProcessStartInfo(Program.Executable){UseShellExecute=false,CreateNoWindow=true,RedirectStandardInput=true,RedirectStandardOutput=true,RedirectStandardError=true};start.ArgumentList.Add("--performance-mcp");
+        start.Environment["PATHWEFT_PROFILE"]=mcpProfile;
         using var child=Process.Start(start);var errors=child.StandardError.ReadToEndAsync();
         async Task<JsonElement> Call(string method,object parameters=null)
         {
@@ -65,18 +73,19 @@ public partial class MainWindow
         check(listed.GetArrayLength()==6&&listed.EnumerateArray().All(x=>x.GetProperty("annotations").GetProperty("readOnlyHint").GetBoolean()),"MCP exposes exactly six read-only tools");
         var reply=(await Call("tools/call",new{name="get_current_usage",arguments=new{}})).GetProperty("result");
         var result=JsonSerializer.Deserialize<PerformanceResult>(reply.GetProperty("content")[0].GetProperty("text").GetString());
-        var persisted=PerformanceHistory.Query(new("get_current_usage"));
+        var persisted=PerformanceHistory.Query(new("get_current_usage"),source:snapshot);
         check(!reply.GetProperty("isError").GetBoolean()&&result.Rows.SequenceEqual(persisted.Rows),"Independent MCP process reads the same committed facts after writer closure");
         check((await Call("tools/call",new{name="get_app_history",arguments=new{}})).GetProperty("result").GetProperty("isError").GetBoolean(),"Invalid app history request returns structured error");
         child.StandardInput.Close();await child.WaitForExitAsync();
-        check(child.ExitCode==0&&(await errors).Length==0&&before.SequenceEqual(SHA256.HashData(File.ReadAllBytes(path))),"MCP exits on EOF without changing history");
+        check(child.ExitCode==0&&(await errors).Length==0&&before.SequenceEqual(SHA256.HashData(File.ReadAllBytes(snapshot))),"Independent reopened history survives while collection continues; MCP exits on EOF without changing it");
         VerifyHistoryBoundaries28(root,check);
         VerifyGraphTransition28(check);
         await VerifyTimeline29(root,check);
-        File.WriteAllText(path,"Invalid SQLite bytes in this isolated test profile");
+        string invalid=Path.Combine(root,"invalid-history.sqlite");File.WriteAllText(invalid,"Invalid SQLite bytes in this isolated test profile");
+        performance.SetHistorySourceForVerification(invalid);
         performance.Select(PerformancePanel.Cpu);await performance.HistoryForVerification(1);
         check(performance.HistoryTextForVerification.StartsWith("History unavailable:"),"Unreadable history is explicit and does not prevent subsequent app/worker shutdown");
-        performance.Select(-1);performance.LiveForVerification();Settings.PerformanceRecording=false;Settings.Save();
+        performance.Select(-1);performance.LiveForVerification();Settings.Save();
     }
     static void VerifyGraphTransition28(Action<bool,string> check)
     {
@@ -92,7 +101,7 @@ public partial class MainWindow
     }
     static void VerifyHistoryBoundaries28(string root,Action<bool,string> check)
     {
-        string path=Path.Combine(root,"history-boundaries.sqlite");Settings.PerformanceRecording=true;Settings.PerformanceRetention=7;
+        string path=Path.Combine(root,"history-boundaries.sqlite");Settings.PerformanceRetention=7;
         var now=DateTimeOffset.UtcNow.AddMinutes(-1);
         var apps=new[]{new ProcessMetric(42,now.UtcTicks,"observed-app",25,1000),new ProcessMetric(42,now.AddSeconds(1).UtcTicks,"observed-app",50,2000)};
         PerformanceSample Sample(DateTimeOffset time,double? cpu)=>new(time,cpu,[new("gpu-a","Adapter A",40,10,100),new("gpu-b","Adapter B",70,20,200)],[new("0 D:",100,200,20),new("1 E:",900,100,30)],null,new(30,100));
@@ -112,7 +121,7 @@ public partial class MainWindow
         var limited=PerformanceHistory.Query(query with{Metric="disk",Limit=1},source:path);
         check(limited.Total==2&&limited.Truncated&&limited.Rows.Length==1,"Bounded output reports full matching count");
         var spikes=PerformanceHistory.Query(query with{Tool="find_spikes",Threshold=80},source:path);
-        check(spikes.Total==1&&spikes.Rows.Single().Peak==90,"Spike query finds observed threshold exceedance");Settings.PerformanceRecording=false;
+        check(spikes.Total==1&&spikes.Rows.Single().Peak==90,"Spike query finds observed threshold exceedance");
     }
 }
 public partial class PaneView

@@ -58,6 +58,8 @@ internal sealed class PerformanceTimeline : FrameworkElement
     internal void SelectEventsForVerification(){var item=events.FirstOrDefault(e=>e.Time>=From&&e.Time<=To);if(item!=null){cursor=item.Time;EventsSelected?.Invoke([item]);InvalidateVisual();}}
     internal int EventCountForVerification=>events.Length;
     internal int PointCountForVerification=>points.Length;
+    internal void HoverForVerification(DateTimeOffset time){hover=time;MomentHovered?.Invoke(time);}
+    internal int MomentAppsForVerification=>moment?.Apps.Length??0;
 #endif
     void ChooseMoment(DateTimeOffset time)
     {
@@ -217,7 +219,7 @@ internal sealed class PerformanceTimeline : FrameworkElement
         var back=TryFindResource("Palette.20242A") as Brush??Brushes.Black;
         dc.DrawRoundedRectangle(back,new Pen(Muted,.7),bounds,7,7);
         dc.PushClip(new RectangleGeometry(new Rect(left+9,bounds.Top+7,width-18,height-14)));
-        Text(dc,moment.Observed is {} seen?"Observed "+seen.ToLocalTime().ToString("T"):"No recorded snapshot",new(left+10,bounds.Top+8),Ink);
+        Text(dc,moment.Observed is {} seen?"Observed "+seen.ToLocalTime().ToString("T"):"No process snapshot",new(left+10,bounds.Top+8),Ink);
         for(int i=0;i<lines.Length;i++)Text(dc,lines[i],new(left+10,bounds.Top+29+i*18),Muted);
         dc.Pop();
     }

@@ -37,7 +37,7 @@ internal static class PerformanceMcp
                     if(initialized)throw new ArgumentException("Already initialized");
                     string proposed=request.GetProperty("params").GetProperty("protocolVersion").GetString();
                     string selected=proposed is "2025-06-18" or "2024-11-05"?proposed:"2025-06-18";
-                    result=new{protocolVersion=selected,capabilities=new{tools=new{listChanged=false}},serverInfo=new{name="Pathweft performance",version=typeof(PerformanceMcp).Assembly.GetName().Version?.ToString()},instructions="Read-only recorded local performance observations. Enable history in Pathweft first. Missing or stale observations are not live usage."};initialized=true;
+                    result=new{protocolVersion=selected,capabilities=new{tools=new{listChanged=false}},serverInfo=new{name="Pathweft performance",version=typeof(PerformanceMcp).Assembly.GetName().Version?.ToString()},instructions="Read-only saved local performance observations. Pathweft collects and saves automatically while running. This endpoint does not start collection. Missing or stale observations are not live usage."};initialized=true;
                 }
                 else if(method=="ping")result=new{};
                 else if(!ready){response=Error(id,-32002,"Initialize and send notifications/initialized first");await output.WriteLineAsync(response.ToJsonString());continue;}
