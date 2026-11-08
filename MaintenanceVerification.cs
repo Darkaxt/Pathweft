@@ -40,6 +40,7 @@ public partial class MainWindow
         check(!PerformanceMode&&!performance.IsVisible&&!performance.Analysis.IsVisible&&performance.Selected==-1&&PerformanceCommand.Tag==null,"Entering Maintenance exits the prior Performance cards and analysis");
         await CloseMaintenance();UpdateLayout();check(!PerformanceMode&&StatsRow.IsVisible&&PaneArea.IsVisible,"Leaving Maintenance returns to files rather than reviving hidden Performance");
         MaintenanceCommand.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await paneModeWork;
+        VerifyMaintenanceGuidance(check);
         foreach(string category in new[]{"Startup","Services","Windows tweaks","Windows apps"})
         {
             await maintenance.CategoryForVerification(category);check(!maintenance.State.Contains("failed",StringComparison.OrdinalIgnoreCase),"Native read-only category opens: "+category);
@@ -61,6 +62,7 @@ public partial class MainWindow
             await maintenance.ClickForVerification("Keep unchanged");
             check(maintenance.Rows.ActualHeight>120&&maintenance.Rows.ActualWidth>400,"Maintenance table remains usable at "+theme+" / "+scale);
         }
+        await VerifyMaintenanceGuidanceUi(root,check);
         Width=820;UpdateLayout();await S1Verification.Snapshot(this,root,"maintenance-narrow");
         check(maintenance.Rows.ActualHeight>100&&maintenance.Rows.ActualWidth>=Math.Min(250,maintenance.ActualWidth-70),"Narrow main-pane maintenance keeps navigation and table visible within the available scaled width");
         Settings.TextScale=1;Settings.NativeMode="dark";ApplyAppearance();Width=1400;
@@ -145,9 +147,9 @@ public partial class MainWindow
             string direction=System.Windows.Automation.AutomationProperties.GetItemStatus(header);
             var view=System.Windows.Data.CollectionViewSource.GetDefaultView(table.ItemsSource);
             check(view.SortDescriptions[0].PropertyName==property&&direction.Length>0,"Actual sortable header selects "+panel.Category+" / "+property);
-            var values=table.Items.Cast<MaintenanceRow>().Select(x=>typeof(MaintenanceRow).GetProperty(property).GetValue(x)).ToArray();
             var comparison=System.Collections.Comparer.Default;
-            check(values.Zip(values.Skip(1),(a,b)=>direction=="Ascending"?comparison.Compare(a,b)<=0:comparison.Compare(a,b)>=0).All(x=>x),"Actual rows follow header ordering: "+panel.Category+" / "+property);
+            var grouped=table.Items.Cast<MaintenanceRow>().GroupBy(x=>panel.Category=="Windows tweaks"?x.Group:"");
+            check(grouped.All(group=>{var values=group.Select(x=>typeof(MaintenanceRow).GetProperty(property).GetValue(x)).ToArray();return values.Zip(values.Skip(1),(a,b)=>direction=="Ascending"?comparison.Compare(a,b)<=0:comparison.Compare(a,b)>=0).All(x=>x);}),"Actual rows follow header ordering within setting categories: "+panel.Category+" / "+property);
             header.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             check(System.Windows.Automation.AutomationProperties.GetItemStatus(header)!=direction,"Header reverses direction: "+property);
         }

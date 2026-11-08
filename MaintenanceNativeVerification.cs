@@ -7,6 +7,57 @@ namespace FileExplorer;
 
 internal static class MaintenanceNativeVerification
 {
+    internal static async Task<int> Guidance(string root)
+    {
+        if(Environment.GetEnvironmentVariable("PATHWEFT_MAINTENANCE_GUEST")!="1"||!Path.GetFullPath(root).StartsWith(@"C:\Coordinator\Work\",StringComparison.OrdinalIgnoreCase))return 2;
+        Directory.CreateDirectory(root);var checks=new List<object>();var qualified=new List<string>();int result=0;
+        void Check(bool pass,string criterion){checks.Add(new{criterion,passed=pass});if(!pass)result=1;}
+        try
+        {
+            foreach(var tweak in Maintenance.Tweaks)
+            {
+                string id="tweak:"+Maintenance.Id("tweak",tweak.Name);var rule=MaintenanceGuidance.Find("tweak",tweak.Name);
+                if(!rule.Supports(MaintenanceGuidance.Build)){checks.Add(new{criterion=rule.Id,notApplicable=true,build=MaintenanceGuidance.Build});continue;}
+                var edits=Maintenance.TweakEdits(id);var before=edits.Select(x=>x.Read()).ToArray();string journal=Path.Combine(root,rule.Id+".json");
+                try
+                {
+                    await using(var client=new MaintenanceClient())Check((await client.Start(new("apply",id,journal,null),false)).Ok,"Native worker Apply "+rule.Id);
+                    Check(edits.All(x=>x.Same(x.Read())),"Every documented target has the requested kind/value: "+rule.Id);
+                    Check(Maintenance.Undo(journal)[id].Before.Zip(before,(a,b)=>a.Same(b)).All(x=>x),"Saved original values are exact: "+rule.Id);
+                }
+                finally
+                {
+                    if(Maintenance.Undo(journal).ContainsKey(id))
+                        await using(var client=new MaintenanceClient())Check((await client.Start(new("restore",id,journal,null),false)).Ok,"Native worker Restore "+rule.Id);
+                    Check(before.All(x=>x.Same(x.Read())),"Dependent feature configuration returned exactly to prior state: "+rule.Id);
+                }
+                qualified.Add(rule.Id);
+            }
+            var services=MaintenanceServices.List([],default);
+            foreach(var rule in MaintenanceGuidance.Data.Rules.Where(r=>r.Kind=="service"&&r.Supports(MaintenanceGuidance.Build)))
+            {
+                var row=services.SingleOrDefault(r=>r.Type.Equals(rule.Target,StringComparison.OrdinalIgnoreCase));
+                if(row==null){checks.Add(new{criterion=rule.Id,notInstalled=true});continue;}
+                var state=MaintenanceServices.Read(rule.Target);
+                Check(row.Details.Contains("Requires:")&&row.Details.Contains(state.Account)&&!string.IsNullOrWhiteSpace(state.Binary),"Native service configuration/dependencies accompany "+rule.Id);
+                string journal=Path.Combine(root,rule.Id+".json");
+                try
+                {
+                    MaintenanceServices.Change(rule.Target,false,journal);
+                    Check(MaintenanceServices.Read(rule.Target).Start==4,"Guest service Disabled differs from Manual: "+rule.Id);
+                }
+                finally
+                {
+                    if(Maintenance.Undo(journal).ContainsKey(row.Id))MaintenanceServices.Change(rule.Target,true,journal);
+                    var actual=MaintenanceServices.Read(rule.Target);
+                    Check(actual.Start==state.Start&&actual.Delayed==state.Delayed&&actual.Dependencies==state.Dependencies&&actual.Account==state.Account&&actual.Binary==state.Binary,"Service configuration/dependency contract restored without donor defaults: "+rule.Id);
+                }
+                qualified.Add(rule.Id);
+            }
+        }
+        catch(Exception ex){checks.Add(new{failure=ex.ToString()});result=1;}
+        File.WriteAllText(Path.Combine(root,"guidance-results.json"),JsonSerializer.Serialize(new{pid=Environment.ProcessId,build=MaintenanceGuidance.Build,result,qualified,checks},new JsonSerializerOptions{WriteIndented=true}));return result;
+    }
     internal static async Task<int> Run(string root)
     {
         if(Environment.GetEnvironmentVariable("PATHWEFT_MAINTENANCE_GUEST")!="1"||!Path.GetFullPath(root).StartsWith(@"C:\Coordinator\Work\",StringComparison.OrdinalIgnoreCase))return 2;

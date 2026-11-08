@@ -6,8 +6,27 @@ Seventeen repositories were shallow-cloned under
 catalogues and licensing inspected. No donor executable or script was run.
 The attachment's popularity figures were not used as evidence of quality.
 This is a bounded adoption assessment, not a full security audit of these projects.
-Private clone/registration receipts and full pins are in
-`.local/evidence/2026-11-08-s33/donors.json`.
+Full immutable pins remain below. Disposable clones and expanded inspection
+receipts were retired under the user's workplace-retention policy.
+
+Implementation authorized2026-11-08 as S39 (MAINT-08..11): the existing typed
+actions gain the descriptive JSON catalog, recommendations, source/effect details,
+native service dependencies/account/executable and searchable grouped settings.
+Win11Debloat's category pattern and WinUtil's per-setting description/source
+separation inform the UI; no donor executable, shell payload, default-reset
+routine or full optimization preset is imported. Unknown exact targets stay
+unassessed. The five bottom navigation cards remain unchanged. Actual per-rule
+qualification and its limits are recorded with the S39 verification.
+
+The first catalog covers the existing typed actions, rather than importing broad
+optimization presets. Fifteen tweak and nine installed service configuration /
+Restore contracts were checked on disposable Windows build26100. Legacy Start
+search, the absent Fax service and the three package entries remain Not assessed
+until their relevant native qualification is available. These checks establish
+configuration and restoration, not measured speed gains or end-to-end testing
+of every optional Windows experience. Server service documentation is used for
+feature descriptions only; Server startup defaults/disable advice are not Windows
+11 desktop recommendations.
 
 ## Proposed fit in Pathweft
 
@@ -43,7 +62,7 @@ Keep Pathweft's exact-state journal and external-change checks rather than a
 donor's hardcoded reset-to-default values. Qualify individual rules in Sandbox,
 including a dependent feature and Restore, before marking them assessed.
 
-This is a proposal only. S33 still owns its already-authorized table, Startup,
+Original investigation boundary (historical): S33 still owns its already-authorized table, Startup,
 Services and pane-mode corrections. No recommendation badges or new tweaks were
 silently added to that implementation, and no additional stage is ACTIVE.
 

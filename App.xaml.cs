@@ -40,6 +40,8 @@ static class Program
 #if DEBUG
         if(args.Length==3&&args[0]=="--verify-administrator-owner")
         {Environment.ExitCode=AdministratorOwnerVerification.Run(args[1],args[2]).GetAwaiter().GetResult();return;}
+        if(args.Length==2&&args[0]=="--verify-maintenance-guidance")
+        {Environment.ExitCode=MaintenanceNativeVerification.Guidance(args[1]).GetAwaiter().GetResult();return;}
         if(args.Length==2&&args[0]=="--verify-maintenance-native")
         {Environment.ExitCode=MaintenanceNativeVerification.Run(args[1]).GetAwaiter().GetResult();return;}
         if(args.Length==2&&args[0]=="--verify-performance-bridge")

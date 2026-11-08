@@ -511,6 +511,7 @@
       <Setter Property="VerticalAlignment" Value="Center"/>
     </Style>
     <Style x:Key="PerformanceFilter" TargetType="TextBox" BasedOn="{StaticResource Bare}">
+      <Setter Property="Tag" Value="Filter processes"/>
       <Setter Property="FontSize" Value="12"/>
       <Setter Property="MinHeight" Value="32"/>
       <Setter Property="Padding" Value="10,6"/>
@@ -521,7 +522,7 @@
             <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
             <TextBlock Text="&#xE721;" FontFamily="Segoe Fluent Icons" FontSize="12" Foreground="{DynamicResource Muted}" Margin="0,0,8,0" VerticalAlignment="Center" IsHitTestVisible="False"/>
             <ScrollViewer x:Name="PART_ContentHost" Grid.Column="1" VerticalAlignment="Center"/>
-            <TextBlock x:Name="Hint" Grid.Column="1" Text="Filter processes" Foreground="{DynamicResource Muted}" VerticalAlignment="Center" IsHitTestVisible="False" Visibility="Collapsed"/>
+            <TextBlock x:Name="Hint" Grid.Column="1" Text="{TemplateBinding Tag}" Foreground="{DynamicResource Muted}" VerticalAlignment="Center" IsHitTestVisible="False" Visibility="Collapsed"/>
           </Grid>
         </Border>
         <ControlTemplate.Triggers>

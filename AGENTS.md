@@ -6,7 +6,15 @@ their published assets are verified. Retain concise verification results and
 reusable fixtures, not repeated expanded cleanup manifests, retired test profiles
 or superseded captures. Clean exact generated targets through transactional-cleanup.
 
-Current2026-11-08/spec0.96: S38 source/native/UI acceptance passes. The user
+Current2026-11-08/spec0.97: S39 is the only ACTIVE stage. Implement
+MAINT-08..11 from docs/MAINTENANCE-DONOR-REVIEW.md with categorized settings,
+bounded guidance catalog, native details, guest qualification and final release.
+Preserve exact Restore and no host maintenance mutations. Native scratch:
+D:/Temp/pathweft-s39 (native/small-file I/O); donor scratch E:/Temp/pathweft-s39.
+Clean spent output under STORAGE-LIFECYCLE.md. S38's no-release-alone instruction
+does not forbid the newly authorized substantial S39 final release.
+
+Historical2026-11-08/spec0.96: S38 source/native/UI acceptance passes. The user
 explicitly directs no further compilation or new release for this fix; finish
 source commit and exact scratch cleanup only. No version bump or package.
 Legacy cleanup5817d834423e7809b825b2c1e98a7395 removed26 hash-verified updater

@@ -1,6 +1,13 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.38 | 2026-11-08 | Categorized Maintenance
+- Windows tweaks are grouped into Privacy and suggestions, Appearance, System, File Explorer, Start and taskbar, and AI. Search or filter categories without leaving Maintenance.
+- Recommendations explain what a setting changes, which features may be lost, its Windows applicability and its source. Unmatched or unqualified entries remain Not assessed.
+- Selected services include their dependencies, service account and executable. Apply confirmations include the same context; Restore retains the exact saved original settings.
+- Unsupported Windows tweaks cannot be applied; their saved settings can still be restored. Existing cleanup, Startup and Services inventories remain available.
+- Successful updater downloads are retired after installation. Disk analysis keeps changing snapshots in a refreshing state instead of reporting a transient result as Incomplete.
+
 ## 1.1.37 | 2026-11-08 | Drive activity and health
 - Drive I/O investigation combines read/write speed, latency and active time for the physical drive backing the current folder. The graphs share history, cursor and range selection.
 - Available drive health includes temperature, remaining life, powered-on hours, lifetime writes and Windows health. Virtual and network paths do not borrow measurements from the host or cache disk.

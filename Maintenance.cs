@@ -6,8 +6,12 @@ using Microsoft.Win32;
 
 namespace FileExplorer;
 
-internal sealed record MaintenanceRow(string Id,string Name,string Scope,string State,string Details,long? Bytes=null,string Type="",string StartupMode="",bool CanChange=true)
-{public string Size=>Bytes is {} size?MainWindow.Fmt(size):"";}
+internal sealed record MaintenanceRow(string Id,string Name,string Scope,string State,string Details,long? Bytes=null,string Type="",string StartupMode="",bool CanChange=true,
+    string Group="",string Recommendation="Not assessed",string Guidance="",string Source="",string RuleId="")
+{
+    public string Size=>Bytes is {} size?MainWindow.Fmt(size):"";
+    public string RecommendationLabel=>(Recommendation switch{"Keep enabled"=>"● ","Optional"=>"◇ ","Advanced"=>"△ ",_=>"○ "})+Recommendation;
+}
 internal sealed record RegistryEdit(string Hive,string Path,string Name,RegistryValueKind Kind,[property:System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)]JsonElement Value,bool Exists,RegistryView View=RegistryView.Registry64)
 {
     internal string Identity=>Hive+"\\"+View+"\\"+Path+"\\"+Name;
@@ -98,7 +102,12 @@ internal static class Maintenance
         if(category=="Windows tweaks")return Tweaks.Select(t=>
         {
             cancel.ThrowIfCancellationRequested();string id="tweak:"+Id("tweak",t.Name);
-            try{return new MaintenanceRow(id,t.Name,"Windows",TweakEdits(id).All(x=>x.Same(x.Read()))?"Applied":"Not applied",t.Description+(undo.ContainsKey(id)?" · original settings saved":""));}
+            try
+            {
+                var edits=TweakEdits(id);string scope=edits.All(x=>x.Hive=="HKEY_CURRENT_USER")?"Current user":edits.All(x=>x.Hive=="HKEY_LOCAL_MACHINE")?"This computer":"User and computer";
+                string effect=MaintenanceGuidance.Find("tweak",t.Name)?.FeatureLoss??t.Description;
+                return new MaintenanceRow(id,t.Name,scope,edits.All(x=>x.Same(x.Read()))?"Applied":"Not applied",effect+(undo.ContainsKey(id)?" · original settings saved":""));
+            }
             catch(UnauthorizedAccessException ex){return new MaintenanceRow(id,t.Name,"Windows","Access denied",ex.Message);}
         }).ToArray();
         throw new ArgumentException("Unknown maintenance category");
@@ -122,6 +131,7 @@ internal static class Maintenance
     }
     internal static void ApplyRegistry(string id,RegistryEdit[] after,string journal=null)
     {
+        if(id.StartsWith("tweak:",StringComparison.Ordinal))MaintenanceGuidance.RequireSupported(id);
         using var lease=new JournalLease(journal);
         var records=Undo(journal);
         if(records.ContainsKey(id))throw new IOException("An earlier change is saved for this item. Restore or review it before applying again.");

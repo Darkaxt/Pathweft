@@ -61,6 +61,7 @@ internal static class HiddenTrialPresentation
          Settings.Profile?.StartsWith(@"D:\Temp\pathweft-s13-s9-s11\", StringComparison.OrdinalIgnoreCase) == true ||
          Settings.Profile?.StartsWith(@"D:\Temp\pathweft-s16\", StringComparison.OrdinalIgnoreCase) == true ||
          Settings.Profile?.StartsWith(@"D:\Temp\pathweft-s18\", StringComparison.OrdinalIgnoreCase) == true ||
+         Settings.Profile?.StartsWith(@"D:\Temp\pathweft-s39\", StringComparison.OrdinalIgnoreCase) == true ||
          Settings.Profile?.StartsWith(@"D:\Temp\pathweft-transfer-progress\", StringComparison.OrdinalIgnoreCase) == true ||
          Settings.Profile?.StartsWith(@"D:\Temp\pathweft-rars-native\", StringComparison.OrdinalIgnoreCase) == true || SandboxIndexTrial);
     internal static bool PrivateSpaceTrial=>Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO") is "space-ui" or "performance-native"&&

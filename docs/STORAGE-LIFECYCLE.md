@@ -25,5 +25,6 @@ application data, source history, upstream provenance or release availability.
   inputs, source, live profiles and unresolved diagnostic records. Location,
   filename and age alone are not deletion authority.
 
-The current source correction remains source-only at the user's request:
-no additional compilation, packaging, version bump or release for this cleanup.
+The S38 storage correction was completed source-only at the user's request.
+It may ship with the subsequently authorized substantial S39 feature; it does
+not receive a separate cleanup-only release.

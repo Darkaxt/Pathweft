@@ -49,13 +49,25 @@ sealed partial class PackageProbe
                 string direction=AutomationProperties.GetItemStatus(header);
                 var sorted=System.Windows.Data.CollectionViewSource.GetDefaultView(rows.ItemsSource).SortDescriptions;
                 Check(sorted.Count>0&&sorted[0].PropertyName==(string)header.Tag&&direction.Length>0,"Delivered header sorts "+categories[i]+" / "+AutomationProperties.GetName(header));
-                var values=rows.Items.Cast<object>().Select(row=>Get(row,(string)header.Tag)).ToArray();
-                Check(values.Zip(values.Skip(1),(a,b)=>direction=="Ascending"?System.Collections.Comparer.Default.Compare(a,b)<=0:System.Collections.Comparer.Default.Compare(a,b)>=0).All(x=>x),"Delivered rows follow selected header ordering: "+AutomationProperties.GetName(header));
+                var grouped=rows.Items.Cast<object>().GroupBy(row=>categories[i]=="Windows tweaks"?(string)Get(row,"Group"):"");
+                Check(grouped.All(group=>{var values=group.Select(row=>Get(row,(string)header.Tag)).ToArray();return values.Zip(values.Skip(1),(a,b)=>direction=="Ascending"?System.Collections.Comparer.Default.Compare(a,b)<=0:System.Collections.Comparer.Default.Compare(a,b)>=0).All(x=>x);}),"Delivered rows follow selected header ordering within setting groups: "+AutomationProperties.GetName(header));
                 rows.RaiseEvent(new RoutedEventArgs(Button.ClickEvent,header));
                 Check(AutomationProperties.GetItemStatus(header)!=direction,"Delivered header reverses "+AutomationProperties.GetName(header));
             }
             if(categories[i]=="Startup")Check(headers.Contains("Type")&&!headers.Contains("Size"),"Delivered Startup identifies its persistence source type");
             if(categories[i]=="Services")Check(headers.Contains("Startup type")&&rows.Items.Count>10,"Delivered Services reads the complete installed Win32 inventory");
+            if(i>0)Check(headers.Contains("Recommendation")&&rows.Items.Cast<object>().All(row=>!string.IsNullOrEmpty((string)Get(row,"Guidance"))),"Delivered entries separate actual state from guidance: "+categories[i]);
+            if(categories[i]=="Windows tweaks")
+            {
+                var search=(TextBox)type.GetField("search",Flags).GetValue(panel);var filter=(ComboBox)type.GetField("groups",Flags).GetValue(panel);
+                int all=rows.Items.Count;search.Text="Storage Sense";
+                Check(rows.Items.Count==1&&(string)Get(rows.Items[0],"Recommendation")=="Keep enabled","Delivered search and exact guidance match the bundled catalog");
+                rows.SelectedIndex=0;
+                Check(((Border)type.GetField("explanation",Flags).GetValue(panel)).Visibility==Visibility.Visible,"Delivered selected setting exposes effect/source details");
+                search.Clear();filter.SelectedItem="File Explorer";
+                Check(rows.Items.Count>0&&rows.Items.Cast<object>().All(row=>(string)Get(row,"Group")=="File Explorer"),"Delivered category selector narrows existing settings");
+                filter.SelectedIndex=0;Check(rows.Items.Count==all,"Delivered All categories restores the full setting list");
+            }
         }
         Check(File.Exists(Path.Combine(Path.GetDirectoryName(Product.Location),"Maintenance-Windows.ps1"))&&
             rows.Items.Cast<object>().All(r=>(string)Get(r,"Scope")=="Current user"),"Delivered optional Windows-app query uses its bundled supervised script");

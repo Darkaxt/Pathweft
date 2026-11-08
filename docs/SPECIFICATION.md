@@ -1,6 +1,31 @@
 # Pathweft specification
 
-Version 0.96 - 2026-11-08. Owner: Darkaxt.
+Version 0.97 - 2026-11-08. Owner: Darkaxt.
+
+### Maintenance recommendations and categorized settings (S39)
+
+User2026-11-08 authorizes implementation of MAINTENANCE-DONOR-REVIEW.md and
+Win11Debloat-like categories. This substantial feature has normal final-release
+authorization; S38's prohibition on compiling/releasing that tiny fix alone is
+preserved. No automatic optimization or mutation of the host is authorized.
+
+| ID | Required behavior and acceptance |
+| --- | --- |
+| MAINT-08 | Bundle an inspectable versioned JSON guidance catalog with stable rule IDs, exact targets, Windows build applicability, suggested action, rationale, lost features, primary/donor sources and review/qualification dates. Startup, Services, Windows tweaks and Windows apps show Keep enabled, Optional, Advanced or Not assessed separately from actual state. Unknown identities remain unassessed; no inference from resource use, broad name patterns or a donor preset. Catalog data cannot introduce executable commands or privileged write targets. |
+| MAINT-09 | Group existing Windows tweaks into meaningful categories inspired by Win11Debloat (Privacy and suggestions, Appearance, System, File Explorer, Start and taskbar, AI). Search and category filtering operate locally over the existing rows. Keep the five bottom Maintenance cards, sortable table, keyboard selection, selected identity and exact-state Restore. Expose effect, applicability, source and selected service dependencies/account/executable details in the existing pane and action confirmation. No extra category sidebar, blanket recommended selection or new daemon. |
+| MAINT-10 | Gate unsupported tweak actions both in UI and worker, retaining Restore of already saved state. Read native service dependencies and distinguish Manual/Disabled and saved original/Windows default. Exact matching for Pathweft's own startup commands may identify its enabled capabilities; third-party entries without verified identity stay unassessed. Never replace exact journal restoration with donor defaults. |
+| MAINT-11 | Verify catalog completeness, exact matching, unsupported builds, source integrity, search/group/sort/selection and disabled/loading states. Qualify adopted actionable rules in a disposable Windows guest with native apply/readback, exact original restoration and dependent-feature configuration checks. No host service/startup/tweak changes. Capture compact dark/light100/150 and narrow evidence under the Huashu contract; independently verify one final normal release and clean spent scratch immediately after consumers exit. |
+
+Huashu contract: retain the app's StatCard surfaces, theme/accent resources,
+16-DIP spacing, existing body typography and compact five-card navigation.
+Use a wrapping filter row above the table, subtle category headers and a bounded
+selected-item explanation below it. Recommendation text plus a small symbol
+must remain understandable without color. Source/applicability text belongs in
+the explanation, not a wide debug column. At narrow widths filters wrap and the
+table scrolls horizontally; no white native controls or inaccessible actions.
+Network/DNS, package management, security enforcement, remote features and
+hardware/thermal monitoring remain excluded. Existing typed actions are the
+adoption boundary; this stage adds guidance/categories, not unreviewed presets.
 
 ### Updater scratch lifetime and live analysis disclosure (S38)
 

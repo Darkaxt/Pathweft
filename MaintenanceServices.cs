@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 
 namespace FileExplorer;
 
-internal sealed record MaintenanceServiceState(uint State,uint Start,bool Delayed,uint Type=0,string Description="")
+internal sealed record MaintenanceServiceState(uint State,uint Start,bool Delayed,uint Type=0,string Description="",string Dependencies="",string Account="",string Binary="")
 {
     internal string Label=>State switch{1=>"Stopped",2=>"Starting",3=>"Stopping",4=>"Running",_=>"Changing"};
     internal string StartLabel=>Start switch{2=>Delayed?"Automatic (delayed)":"Automatic",3=>"Manual",4=>"Disabled",_=>"System"};
@@ -30,7 +30,10 @@ internal static class MaintenanceServices
                     cancel.ThrowIfCancellationRequested();var entry=Marshal.PtrToStructure<ServiceEntry>(buffer+i*stride);string name=Marshal.PtrToStringUni(entry.Name),display=Marshal.PtrToStringUni(entry.Display);
                     try
                     {
-                        var state=Read(name);rows.Add(new("service:"+name,display,"This computer",state.Label,state.Description+(undo.ContainsKey("service:"+name)?" · original configuration saved":""),Type:name,StartupMode:state.StartLabel));
+                        var state=Read(name);rows.Add(new("service:"+name,display,"This computer",state.Label,
+                            state.Description+"\nRequires: "+(string.IsNullOrEmpty(state.Dependencies)?"No declared service dependencies":state.Dependencies)+
+                            "\nAccount: "+state.Account+"\nExecutable: "+state.Binary+
+                            (undo.ContainsKey("service:"+name)?"\nOriginal startup configuration saved; Restore uses that state, not a Windows default.":""),Type:name,StartupMode:state.StartLabel));
                     }
                     catch(Win32Exception problem){rows.Add(new("service:"+name,display,"This computer",problem.NativeErrorCode==5?"Access denied":"Unavailable",problem.Message,Type:name,CanChange:false));}
                 }
@@ -49,7 +52,7 @@ internal static class MaintenanceServices
             if(!QueryServiceStatus(service,out var status))throw new Win32Exception();
             QueryServiceConfig(service,IntPtr.Zero,0,out uint size);config=Marshal.AllocHGlobal((int)size);
             if(!QueryServiceConfig(service,config,size,out _))throw new Win32Exception();
-            uint start=(uint)Marshal.ReadInt32(config,4);bool delayed=false;
+            var configuration=Marshal.PtrToStructure<Configuration>(config);uint start=configuration.Start;bool delayed=false;
             IntPtr delay=Marshal.AllocHGlobal(4);try{if(QueryServiceConfig2(service,3,delay,4,out _))delayed=Marshal.ReadInt32(delay)!=0;}finally{Marshal.FreeHGlobal(delay);}
             string description="";QueryServiceConfig2(service,1,IntPtr.Zero,0,out uint descriptionSize);
             if(descriptionSize>0)
@@ -58,7 +61,10 @@ internal static class MaintenanceServices
                 try{if(QueryServiceConfig2(service,1,text,descriptionSize,out _))description=Marshal.PtrToStringUni(Marshal.ReadIntPtr(text))??"";}
                 finally{Marshal.FreeHGlobal(text);}
             }
-            return new(status.State,start,delayed,status.Type,description);
+            var dependencies=new List<string>();IntPtr item=configuration.Dependencies;
+            if(item!=IntPtr.Zero)for(string value=Marshal.PtrToStringUni(item);!string.IsNullOrEmpty(value);value=Marshal.PtrToStringUni(item))
+            {dependencies.Add(value);item+=2*(value.Length+1);}
+            return new(status.State,start,delayed,status.Type,description,string.Join(", ",dependencies),Marshal.PtrToStringUni(configuration.Account)??"",Marshal.PtrToStringUni(configuration.Binary)??"");
         }
         finally{if(config!=IntPtr.Zero)Marshal.FreeHGlobal(config);if(service!=IntPtr.Zero)CloseServiceHandle(service);CloseServiceHandle(manager);}
     }
@@ -98,6 +104,7 @@ internal static class MaintenanceServices
         finally{if(service!=IntPtr.Zero)CloseServiceHandle(service);CloseServiceHandle(manager);}
     }
     [StructLayout(LayoutKind.Sequential)]struct Status{public uint Type,State,Controls,Exit,Specific,Checkpoint,Hint;}
+    [StructLayout(LayoutKind.Sequential)]struct Configuration{public uint Type,Start,Error;public IntPtr Binary,Group;public uint Tag;public IntPtr Dependencies,Account,Display;}
     [StructLayout(LayoutKind.Sequential)]struct ServiceEntry{public IntPtr Name,Display;public Status Status;public uint ProcessId,Flags;}
     [DllImport("advapi32.dll",EntryPoint="EnumServicesStatusExW",CharSet=CharSet.Unicode,SetLastError=true)]static extern bool EnumServicesStatusEx(IntPtr manager,uint info,uint type,uint state,IntPtr buffer,uint size,out uint needed,out uint returned,ref uint resume,string group);
     [DllImport("advapi32.dll",CharSet=CharSet.Unicode,SetLastError=true)]static extern IntPtr OpenSCManager(string machine,string database,uint access);
