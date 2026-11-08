@@ -19,6 +19,7 @@ internal static class ExplorerIcons
         ("NewFolder","newfolder.svg","\uE8F4"),("NewFile",null,"\uEA1A"),
         ("Delete","windows.ribbondelete.svg","\uE74D"),("Terminal",null,"\uE756"),
         ("AnalyzeSpace",null,"\uE9F5"),
+        ("Maintenance",null,"\uEA99"),
         ("Hidden","windows.showhiddenfiles.svg","\uE890"),("Panes",null,"\uE89F"),
         // These historical filenames are opposite to their visible roles.
         ("Preview","windows.readingpane.svg","\uE90D"),("DetailsPane","windows.previewpane.svg","\uE9F9"),

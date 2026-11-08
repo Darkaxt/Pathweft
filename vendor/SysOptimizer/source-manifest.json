@@ -3,13 +3,93 @@
   "revision": "6ddd104fe4fc3f990bc2a9b376e5795943541d49",
   "license": "MIT",
   "selected": [
-    {"path":"Sysoptimizer/Services/HistoryStore.cs","gitBlob":"13e30e378948f874fecb636e96d01b66895652ca","selectedSource":"vendor/SysOptimizer/upstream/Sysoptimizer_Services_HistoryStore.cs.source"},
-    {"path":"Sysoptimizer/Services/ProcessMonitor.cs","gitBlob":"dae1dd572b436a1ffe5a13d4c0ba6c0584d52b9b","selectedSource":"vendor/SysOptimizer/upstream/Sysoptimizer_Services_ProcessMonitor.cs.source"},
-    {"path":"Sysoptimizer.Mcp/Tools.cs","gitBlob":"7f89f3538eb14050cfb1928423effbf469c8f3a0","selectedSource":"vendor/SysOptimizer/upstream/Sysoptimizer.Mcp_Tools.cs.source"},
-    {"path":"Sysoptimizer.Mcp/Program.cs","gitBlob":"0039322a6e352a1d059d61b61856e47aaa8ad918","selectedSource":"vendor/SysOptimizer/upstream/Sysoptimizer.Mcp_Program.cs.source"},
-    {"path":"Sysoptimizer/MainWindow.History.cs","gitBlob":"f7d7bb61782bbf5e029f6252c5cd07d6633a3c90","selectedSource":"vendor/SysOptimizer/upstream/Sysoptimizer_MainWindow.History.cs.source"},
-    {"path":"Sysoptimizer/MainWindow.Monitor.cs","gitBlob":"610f35133a64fd69a367f2f2661eadbb09a6827c","selectedSource":"vendor/SysOptimizer/upstream/Sysoptimizer_MainWindow.Monitor.cs.source","scope":"UpdateProcessRows case-insensitive filtering, stable row/container reuse and half-percent ordering; maintenance/signature/recording policy excluded"}
+    {
+      "path": "Sysoptimizer/Services/HistoryStore.cs",
+      "gitBlob": "13e30e378948f874fecb636e96d01b66895652ca",
+      "selectedSource": "vendor/SysOptimizer/upstream/Sysoptimizer_Services_HistoryStore.cs.source"
+    },
+    {
+      "path": "Sysoptimizer/Services/ProcessMonitor.cs",
+      "gitBlob": "dae1dd572b436a1ffe5a13d4c0ba6c0584d52b9b",
+      "selectedSource": "vendor/SysOptimizer/upstream/Sysoptimizer_Services_ProcessMonitor.cs.source"
+    },
+    {
+      "path": "Sysoptimizer.Mcp/Tools.cs",
+      "gitBlob": "7f89f3538eb14050cfb1928423effbf469c8f3a0",
+      "selectedSource": "vendor/SysOptimizer/upstream/Sysoptimizer.Mcp_Tools.cs.source"
+    },
+    {
+      "path": "Sysoptimizer.Mcp/Program.cs",
+      "gitBlob": "0039322a6e352a1d059d61b61856e47aaa8ad918",
+      "selectedSource": "vendor/SysOptimizer/upstream/Sysoptimizer.Mcp_Program.cs.source"
+    },
+    {
+      "path": "Sysoptimizer/MainWindow.History.cs",
+      "gitBlob": "f7d7bb61782bbf5e029f6252c5cd07d6633a3c90",
+      "selectedSource": "vendor/SysOptimizer/upstream/Sysoptimizer_MainWindow.History.cs.source"
+    },
+    {
+      "path": "Sysoptimizer/MainWindow.Monitor.cs",
+      "gitBlob": "610f35133a64fd69a367f2f2661eadbb09a6827c",
+      "selectedSource": "vendor/SysOptimizer/upstream/Sysoptimizer_MainWindow.Monitor.cs.source",
+      "scope": "UpdateProcessRows case-insensitive filtering, stable row/container reuse and half-percent ordering; maintenance/signature/recording policy excluded"
+    },
+    {
+      "path": "Sysoptimizer/MainWindow.Alerts.cs",
+      "gitBlob": "6c08fa82d54a8c55dbdd86761c8189bd47b0970c",
+      "selectedSource": "vendor/SysOptimizer/upstream/Sysoptimizer_MainWindow.Alerts.cs.source"
+    },
+    {
+      "path": "Sysoptimizer/MainWindow.AppHistory.cs",
+      "gitBlob": "76bd9df90294ec0fed6cc05e892c535a896cf1f4",
+      "selectedSource": "vendor/SysOptimizer/upstream/Sysoptimizer_MainWindow.AppHistory.cs.source"
+    },
+    {
+      "path": "Sysoptimizer/Services/BloatwareService.cs",
+      "gitBlob": "cc51e578711bf0683ff82f0154fcc150c5e26bf2",
+      "selectedSource": "vendor/SysOptimizer/upstream/Sysoptimizer_Services_BloatwareService.cs.source"
+    },
+    {
+      "path": "Sysoptimizer/Services/BootService.cs",
+      "gitBlob": "df3d59f8489e72fa3a2ed094fd5d21eaf7a00dec",
+      "selectedSource": "vendor/SysOptimizer/upstream/Sysoptimizer_Services_BootService.cs.source"
+    },
+    {
+      "path": "Sysoptimizer/Services/ChangeService.cs",
+      "gitBlob": "2a4176d94c4a8820aaf5ceb22f793b98f946a877",
+      "selectedSource": "vendor/SysOptimizer/upstream/Sysoptimizer_Services_ChangeService.cs.source"
+    },
+    {
+      "path": "Sysoptimizer/Services/CleanupService.cs",
+      "gitBlob": "567c636c83dbcabaed520f6c526922e288758ef8",
+      "selectedSource": "vendor/SysOptimizer/upstream/Sysoptimizer_Services_CleanupService.cs.source"
+    },
+    {
+      "path": "Sysoptimizer/Services/InsightService.cs",
+      "gitBlob": "05370c1921227e697c5f8d112d7bd9c48242643a",
+      "selectedSource": "vendor/SysOptimizer/upstream/Sysoptimizer_Services_InsightService.cs.source"
+    },
+    {
+      "path": "Sysoptimizer/Services/ReportService.cs",
+      "gitBlob": "6149ce7b79b43bacd5286c68e2d5e382d1f5a914",
+      "selectedSource": "vendor/SysOptimizer/upstream/Sysoptimizer_Services_ReportService.cs.source"
+    },
+    {
+      "path": "Sysoptimizer/Services/ServiceManager.cs",
+      "gitBlob": "5bf929aff1d8389ab06d1d067e6c7384a96f4845",
+      "selectedSource": "vendor/SysOptimizer/upstream/Sysoptimizer_Services_ServiceManager.cs.source"
+    },
+    {
+      "path": "Sysoptimizer/Services/StartupService.cs",
+      "gitBlob": "a1578682ffb550e53c0a9297971d42706ede1e1b",
+      "selectedSource": "vendor/SysOptimizer/upstream/Sysoptimizer_Services_StartupService.cs.source"
+    },
+    {
+      "path": "Sysoptimizer/Services/TweakService.cs",
+      "gitBlob": "a5c125e91c5386ac34a5483f2b3e23a767105b7d",
+      "selectedSource": "vendor/SysOptimizer/upstream/Sysoptimizer_Services_TweakService.cs.source"
+    }
   ],
   "inspected": [],
-  "adaptation": "Read-only tool vocabulary, sampled heavy-app policy and history queries in PerformanceHistory.cs and PerformanceMcp.cs. Selected History chart code: absolute-time round-duration columns, peak buckets, rounded-step line/area geometry, heat gradient, grouped markers, pin/range/pan/zoom and overview interaction adapted to Pathweft data/theme/layout. Original Windows counter/tracing ownership retained; SQLite replaces donor CSV indexes. No donor app/runtime/drivers/MCP deployment/configuration are imported."
+  "adaptation": "Read-only tool vocabulary, sampled heavy-app policy and history queries in PerformanceHistory.cs and PerformanceMcp.cs. Selected History chart code: absolute-time round-duration columns, peak buckets, rounded-step line/area geometry, heat gradient, grouped markers, pin/range/pan/zoom and overview interaction adapted to Pathweft data/theme/layout. Original Windows counter/tracing ownership retained; SQLite replaces donor CSV indexes. No donor app/runtime/drivers/MCP deployment/configuration are imported. S32 additionally adapts curated maintenance catalogues into Maintenance*.cs/CleanupReview.cs, native scoped-worker and exact original-state restoration, BootService readers, installed-app change comparison, observed CPU/RAM/GPU small multiples, local threshold/boot insights and escaped CSV/JSON/HTML report tables. Original donor defaults, recursive cleanup, network/sensors/remote/winget/signature/blanket-optimization behavior are not imported. One existing sampler/writer and automatic bounded history remain authoritative."
 }

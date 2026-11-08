@@ -25,6 +25,8 @@ public partial class MainWindow
 {
     internal async Task VerifySpecialists13(string root, Action<bool,string> check)
     {
+        if(Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO")=="maintenance"){await VerifyMaintenance32(root,check);return;}
+        if(Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO")=="performance-adoption"){await VerifyAdoption32(root,check);return;}
         if(Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO")=="performance-analysis")
         {
             performance.AutomaticIo=false;Settings.Stats=2;ApplyStats();SetSinglePane(true);SetActive(Left);

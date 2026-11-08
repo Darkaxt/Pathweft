@@ -7,20 +7,34 @@ namespace FileExplorer;
 public partial class MainWindow
 {
     PerformancePanel performance;
+    MaintenancePanel maintenance;
+    bool maintenanceVisible;
+    bool maintenanceClosing,maintenanceClosed;
     readonly Dictionary<PaneView,bool> performanceModes=new();
     void InitializePerformance()
     {
         performance=new PerformancePanel{Visibility=Visibility.Collapsed,Margin=new Thickness(0,10,0,0)};
         Grid.SetRow(performance,1);((Grid)StatsRow.Parent).Children.Add(performance);
         Grid.SetRow(performance.Analysis,0);((Grid)StatsRow.Parent).Children.Add(performance.Analysis);
-        performance.AnalysisChanged+=()=>{ShowAnalysis();if(performance.Selected<0)active?.FocusList();};
+        performance.AnalysisChanged+=()=>{if(performance.Selected>=0&&maintenanceVisible)_ = CloseMaintenance();ShowAnalysis();if(performance.Selected<0)active?.FocusList();};
         IsVisibleChanged+=(_,_)=>RefreshPerformance();
         StateChanged+=(_,_)=>RefreshPerformance();
         Activated+=(_,_)=>performance.OwnerFocusChanged();Deactivated+=(_,_)=>performance.OwnerFocusChanged();
-        Closed+=(_,_)=>performance.DisposeAsync().AsTask().GetAwaiter().GetResult();
+        Closed+=(_,_)=>{performance.DisposeAsync().AsTask().GetAwaiter().GetResult();};
+        Closing+=async(_,e)=>
+        {
+            if(tray!=null&&!quitting){if(maintenanceVisible)await CloseMaintenance();return;}
+            if(maintenance==null||maintenanceClosed)return;
+            e.Cancel=true;if(maintenanceClosing)return;maintenanceClosing=true;
+            await maintenance.DisposeAsync();maintenanceClosed=true;
+            // A synchronously completed disposal is still inside WPF Closing.
+            // Dispatch the second close after that cancelled event unwinds.
+            _=Dispatcher.BeginInvoke(new Action(Close));
+        };
     }
-    void Performance_Click(object sender,RoutedEventArgs e)
+    async void Performance_Click(object sender,RoutedEventArgs e)
     {
+        if(maintenanceVisible){await CloseMaintenance();if(PerformanceMode){performance.Select(PerformancePanel.Cpu);RefreshPerformance();return;}}
         if(active==null)return;
         performanceModes[active]=!performanceModes.GetValueOrDefault(active);
         if(!performanceModes[active])performance.Select(-1);
@@ -31,22 +45,40 @@ public partial class MainWindow
     {
         if(performance==null)return;
         performance.SetFolder(active?.Dir);
-        performance.Visibility=PerformanceMode&&IsVisible&&WindowState!=WindowState.Minimized?Visibility.Visible:Visibility.Collapsed;
+        performance.Visibility=!maintenanceVisible&&PerformanceMode&&IsVisible&&WindowState!=WindowState.Minimized?Visibility.Visible:Visibility.Collapsed;
         ShowAnalysis();
         PerformanceCommand.Tag=PerformanceMode?"on":null;
         AutomationProperties.SetItemStatus(PerformanceCommand,PerformanceMode?"On":"Off");
         string label=PerformanceMode?"Show folder statistics":"Show performance";
         PerformanceCommand.ToolTip=label;AutomationProperties.SetName(PerformanceCommand,label);
     }
-    bool AnalysisVisible=>performance?.Selected>=0&&PerformanceMode;
+    bool AnalysisVisible=>maintenanceVisible||performance?.Selected>=0&&PerformanceMode;
     void ShowAnalysis()
     {
         if(performance==null)return;
-        bool show=AnalysisVisible;
+        bool show=AnalysisVisible&&!maintenanceVisible;
         performance.Analysis.Visibility=show?Visibility.Visible:Visibility.Collapsed;
-        PaneArea.Visibility=show?Visibility.Collapsed:Visibility.Visible;
+        PaneArea.Visibility=show||maintenanceVisible?Visibility.Collapsed:Visibility.Visible;
         // File actions must never target a selection hidden behind analysis.
         if(PerformanceCommand.Parent is Panel commands)foreach(var child in commands.Children)
-            if(child is Button button&&button!=PerformanceCommand&&button!=TransfersButton)button.IsEnabled=!show&&(button!=AnalyzeSpaceCommand||active?.CanAnalyzeSpace==true);
+            if(child is Button button&&button!=PerformanceCommand&&button!=TransfersButton&&button!=MaintenanceCommand)button.IsEnabled=!show&&!maintenanceVisible&&(button!=AnalyzeSpaceCommand||active?.CanAnalyzeSpace==true);
+        MaintenanceCommand.Tag=maintenanceVisible?"on":null;
+        AutomationProperties.SetItemStatus(MaintenanceCommand,maintenanceVisible?"On":"Off");
+        MaintenanceCommand.ToolTip=maintenanceVisible?"Back to files":"Maintenance";
+    }
+    async void Maintenance_Click(object sender,RoutedEventArgs e)
+    {
+        if(maintenanceVisible){await CloseMaintenance();return;}
+        if(maintenance==null)
+        {
+            maintenance=new();Grid.SetRow(maintenance,0);((Grid)StatsRow.Parent).Children.Add(maintenance);
+            Grid.SetRow(maintenance.Cards,1);((Grid)StatsRow.Parent).Children.Add(maintenance.Cards);
+            maintenance.Back+=async()=>await CloseMaintenance();
+        }
+        performance.Select(-1);maintenanceVisible=true;ArrangeStats();await maintenance.Show();
+    }
+    async Task CloseMaintenance()
+    {
+        if(maintenance!=null)await maintenance.Hide();maintenanceVisible=false;ArrangeStats();active?.FocusList();
     }
 }

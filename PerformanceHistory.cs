@@ -10,6 +10,7 @@ namespace FileExplorer;
 // storage, counter/device identities and lifecycle; no donor app is required.
 internal sealed record PerformanceFact(DateTimeOffset Time,string Name,int? Pid,double? Average,double? Peak,long Observations,string Details)
 {
+    public long Started {get;init;}
     public string When=>Time==default?"":Time.ToLocalTime().ToString("G");
     public string Value=>Average?.ToString("0.##",CultureInfo.CurrentCulture)??"—";
     public string Maximum=>Peak?.ToString("0.##",CultureInfo.CurrentCulture)??"—";
@@ -18,7 +19,7 @@ internal sealed record PerformancePoint(DateTimeOffset Time,double? Value,double
 internal sealed record PerformanceResult(string Status,PerformanceFact[] Rows,PerformancePoint[] Points,long Total,bool Truncated);
 internal sealed record PerformanceQuery(string Tool="get_usage_summary",int LastMinutes=60,string Metric="cpu",string Device=null,string Name=null,double Threshold=80,int Limit=100,DateTimeOffset? From=null,DateTimeOffset? To=null);
 
-internal sealed class PerformanceHistory : IDisposable
+internal sealed partial class PerformanceHistory : IDisposable
 {
     internal static string FilePath=>Path.Combine(DataFolder.Bulk,"Performance","history.sqlite");
     internal const long StorageLimit=256L*1024*1024;
@@ -112,16 +113,17 @@ internal sealed class PerformanceHistory : IDisposable
         Scalar($"PRAGMA max_page_count={maximum}");
         return true;
     }
-    internal void Record(PerformanceSample sample,ProcessMetric[] apps,ProcessMetric[] gpuApps)
+    internal bool Record(PerformanceSample sample,ProcessMetric[] apps,ProcessMetric[] gpuApps,PerformanceFact[] changes=null)
     {
         try
         {
             EnsureWriter();
-            if(sample.Time-lastWrite<TimeSpan.FromSeconds(5)&&apps==null)return;
-            if(!Prune(sample.Time))return;
+            if(sample.Time-lastWrite<TimeSpan.FromSeconds(5)&&apps==null&&changes is not {Length:>0})return false;
+            if(!Prune(sample.Time))return false;
             if(!recording){Execute(writer,"INSERT INTO events VALUES($0,'Recording started','Aggregate samples every 5s; heavy apps every 10s; inaccessible and short-lived processes may be absent')",sample.Time.ToUnixTimeMilliseconds());recording=true;lastWrite=default;}
             using var transaction=writer.BeginTransaction();
             activeTransaction=transaction;
+            foreach(var change in changes??[])Execute(writer,"INSERT INTO events VALUES($0,$1,$2)",change.Time.ToUnixTimeMilliseconds(),change.Name,change.Details);
             if(lastWrite!=default&&sample.Time-lastWrite>TimeSpan.FromSeconds(15))Execute(writer,"INSERT INTO events VALUES($0,'Collection gap',$1)",sample.Time.ToUnixTimeMilliseconds(),$"No observations since {lastWrite:O}");
             if(sample.Issue!=previousIssue){Execute(writer,"INSERT INTO events VALUES($0,$1,$2)",sample.Time.ToUnixTimeMilliseconds(),sample.Issue==null?"Counters restored":"Counters unavailable",sample.Issue??"Aggregate counters available");previousIssue=sample.Issue;}
             Execute(writer,"INSERT OR REPLACE INTO samples VALUES($0,$1)",sample.Time.ToUnixTimeMilliseconds(),JsonSerializer.Serialize(sample));
@@ -132,10 +134,10 @@ internal sealed class PerformanceHistory : IDisposable
                 var identities=selected.Select(x=>(x.Pid,x.Started)).ToHashSet();
                 foreach(var app in gpuApps??[])if(app.Adapter!=null&&identities.Contains((app.Pid,app.Started)))Execute(writer,"INSERT OR REPLACE INTO gpu_apps VALUES($0,$1,$2,$3,$4,$5)",sample.Time.ToUnixTimeMilliseconds(),app.Pid,app.Started,app.Process,app.Adapter,app.Usage);
             }
-            transaction.Commit();activeTransaction=null;lastWrite=sample.Time;Issue=null;
+            transaction.Commit();activeTransaction=null;lastWrite=sample.Time;Issue=null;return true;
         }
         catch(Exception ex)when(ex is IOException or UnauthorizedAccessException or SqliteException)
-        {Issue="History recording unavailable: "+ex.Message;activeTransaction=null;writer?.Dispose();writer=null;recording=false;}
+        {Issue="History recording unavailable: "+ex.Message;activeTransaction=null;writer?.Dispose();writer=null;recording=false;return false;}
     }
     internal static ProcessMetric[] SelectApps(ProcessMetric[] apps,ProcessMetric[] gpuApps)
     {
@@ -201,7 +203,7 @@ internal sealed class PerformanceHistory : IDisposable
             void Add((string Name,int Pid,long Start,string Adapter) key,double sum,double peak,long count,DateTimeOffset first,DateTimeOffset last)
             {
                 total++;
-                rows.Add(new(last,key.Name,key.Pid,count==0?null:sum/count,count==0?null:peak,count,$"Started {new DateTime(key.Start,DateTimeKind.Utc):O}; observed from {first:O}; {column} {(column=="memory"?"bytes":"%")}"+(gpu?" · "+key.Adapter:"")));
+                rows.Add(new(last,key.Name,key.Pid,count==0?null:sum/count,count==0?null:peak,count,$"Started {new DateTime(key.Start,DateTimeKind.Utc):O}; observed from {first:O}; {column} {(column=="memory"?"bytes":"%")}"+(gpu?" · "+key.Adapter:"")){Started=key.Start});
                 // Stream all saved groups, retaining only the requested top
                 // results plus bounded identities present in the recent hour.
                 rows.Sort((a,b)=>{int order=Nullable.Compare(b.Average,a.Average);if(order!=0)return order;order=string.CompareOrdinal(a.Name,b.Name);return order!=0?order:Nullable.Compare(a.Pid,b.Pid);});

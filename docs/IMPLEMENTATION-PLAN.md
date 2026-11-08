@@ -1,9 +1,21 @@
 # Implementation and reconciliation
 
-Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.86, 2026-11-08,
+Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.88, 2026-11-08,
 including the user-authorized continued comparison requirement TRANSFER-07.
 
-Current 2026-11-08: S31 BLOCKED by the user's explicit pre-release pause.
+Current 2026-11-08: S32 COMPLETE for the user-authorized source-only ADOPT-01..06
+outcome: five bottom Maintenance summary tabs, scoped native actions/exact
+restore, app charts, boot/changes/insights and selected-query reports. Actual
+Maintenance172948, adoption177288, history162888, Performance128464,
+resource166776 and disposable native guest4300 pass. Reconciliation and limits:
+verification/2026-11-08-s32-maintenance.md. No source blocker, tracked deferral
+or required refactor remains. Natural close passes with a pending chart UI
+presentation, draining background reads without awaiting the UI. No stage ACTIVE.
+S31 delivery remains BLOCKED by the explicit
+pre-release pause; do not publish/install. S30 NOT STARTED.
+Network and hardware monitoring remain excluded. The user's profile is preserved.
+
+Previous 2026-11-08: S31 BLOCKED by the user's explicit pre-release pause.
 MONITOR-21 source/integration/resource acceptance passes: the recording switch
 and setting are removed, startup/tray collection and saving are automatic,
 hover/moment/range/app facts work, retention/capacity/WAL/migration/reopen/MCP
@@ -1155,6 +1167,7 @@ plan neither authorizes itself nor adds approval checkpoints.
 | S28 - Integrated system analysis and recorded history | COMPLETE | MONITOR-09..13; affected MONITOR/LIFE/DELIVERY | S27 COMPLETE; user selected performance/history/read-only MCP before maintenance | MONITOR-09..13 verified by source116416/analysis130208/resource172048/native170636 and final92112/independent163252. Normal1.1.31/e8dc64f and six assets published/read back; downloaded hashes/source/native/application checks pass. Installed179008 verifies11,304 matching members, restarted main169944/helper169508, readiness,22 routes and preserved shortcut/profile identity. Spent scratch cleaned; no blocker, required refactor or tracked deferral. |
 | S29 - Interactive performance investigation | COMPLETE | MONITOR-14..16; affected MONITOR/LIFE/DELIVERY | S28 COMPLETE; user reference2026-11-08 | Source163416/resource8824 pass graph-led investigation and preserved scope/layout/lifecycle. Normal1.1.32/2f3b1cd published; final165444/independent175768 pass source/native/application checks. Installed171532 verifies11,304 members, restarted ready main/helper,22 routes and preserved identity/profile. Scratch cleaned; all criteria pass. No blocker, deferral or required refactor. |
 | S31 - Performance continuity and process inspection | BLOCKED | MONITOR-17..21 | S29 COMPLETE; before S30 | Automatic collection/saving, recent app investigation, retention/capacity/migration/backpressure, layouts/resources/lifecycle and source checks pass. User-directed pre-release pause blocks publication, retrieved-package and installed delivery verification. Resume this delivery gate first when instructed; no tracked deferral. |
+| S32 - Local SysOptimizer adoption | COMPLETE | ADOPT-01..06 | Source-only work authorized during S31 publication pause | Five bottom Maintenance summary tabs, scoped native actions/exact restore, app charts, boot/changes/insights and reports pass source/native/rendered/lifecycle/resource acceptance; see verification/2026-11-08-s32-maintenance.md. No source blocker or tracked deferral. User validation and paused S31 publication remain separate; no release/install. |
 | S30 - Reusable administrator access session | NOT STARTED | ACCESS-01..03; affected CORE/LIFE/DELIVERY | After S29, before S25; user request2026-11-08 | Monochrome quartered UAC shield toggles standard/admin browsing; one approved authenticated scoped helper is reusable for protected browsing and existing elevation-dependent features until explicit session end/full app exit. Preserve unelevated UI, user state and tracing scope. Real privilege/consent/owner/cancellation/idle-cost and final delivery acceptance required. No criteria verified yet. |
 | S25 - Summary-card motion | NOT STARTED | MOTION-01..03; affected MONITOR/CORE-03/LIFE/DELIVERY | S18 COMPLETE; after S28 and before S12 | Upward card entry with smooth file-pane squeeze; rotation between Statistics/Performance; reversal/interruption and focus/scroll preservation; reduced-motion support and actual frame/layout/resource qualification. One final independently/installed verified release after implementation authorization. No criteria verified yet. |
 | S12 - Tresorit capability investigation | NOT STARTED | TRES-01..04 | S15 delivered; S16/S18/S25 considered first in the selected execution order | Supported API/client assessment, bounded REA as needed, evidence-backed capability matrix/decision and implementation proposal. Investigation only; no cloud mutation or integration implementation. |
@@ -1218,6 +1231,7 @@ owns its complete release/delivery gate; S12 delivers research documents only.
 | MONITOR-09..13 | S28 | Main-pane analysis with preserved browser state; optional bounded recording and shared historical queries; packaged explicit read-only MCP with no client activation; actual UI/protocol/native/resource and final delivery acceptance |
 | MONITOR-14..16 | S29 | Interactive event/spike timeline, moment snapshots and selected ranges linked to factual tables; compact widgets preserved; actual interaction/layout/query/lifecycle and final delivery acceptance |
 | MONITOR-17..21 | S31 | Automatic bounded collection/saving and recent aggregate/process continuity, CPU columns/pins, local donor comparison/adoption and background audit; integrated regression/layout/resource/delivery acceptance |
+| ADOPT-01..06 | S32 | Five scoped bottom Maintenance summary tabs, native actions/exact restore, local performance adoption, donor provenance, integrated workflows/layout/lifecycle checks; source held for user validation |
 | ACCESS-01..03 | S30 | Monochrome UAC shield, standard/admin access mode, authenticated reusable elevated helper and real consent/scope/lifecycle/resource/delivery acceptance |
 | MOTION-01..03 | S25 | Upward summary-card entry and file-pane squeeze; Statistics/Performance rotation; reversible non-blocking state/focus preservation, reduced-motion settings and actual visual/performance/delivery verification |
 | TRES-01..04 | S12 | Evidence-backed Tresorit investigation and implementation proposal; execution remains NOT STARTED |

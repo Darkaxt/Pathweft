@@ -25,6 +25,8 @@ static class Program
     [STAThread]
     static void Main(string[] args)
     {
+        if(args.Length==4&&args[0]=="--maintenance-worker")
+        {Environment.ExitCode=MaintenanceWorker.Run(args[1],int.Parse(args[2]),long.Parse(args[3])).GetAwaiter().GetResult();return;}
         if(args.Length==1&&args[0]=="--performance-mcp")
         {Environment.ExitCode=PerformanceMcp.Run().GetAwaiter().GetResult();return;}
         if(args.Length==4&&args[0]=="--performance-io-worker")
@@ -34,6 +36,8 @@ static class Program
         if(args.FirstOrDefault(a=>a.StartsWith("--relocate-profile=")) is { } relocation)
         { Environment.ExitCode=StorageLocation.Run(relocation["--relocate-profile=".Length..]);return; }
 #if DEBUG
+        if(args.Length==2&&args[0]=="--verify-maintenance-native")
+        {Environment.ExitCode=MaintenanceNativeVerification.Run(args[1]).GetAwaiter().GetResult();return;}
         if(args.Length==2&&args[0]=="--verify-performance-bridge")
         {Environment.ExitCode=PerformanceBridgeVerification.Run(args[1]).GetAwaiter().GetResult();return;}
         if(args.Length==2&&args[0]=="--verify-performance-budget")

@@ -61,9 +61,10 @@ internal sealed partial class PerformancePanel
         {
             control.Margin=new Thickness(0,0,10,6);control.MinHeight=32;AutomationProperties.SetName(control,name);control.ToolTip??=name;
             if(control is ComboBox)control.SetResourceReference(StyleProperty,"PreviewClipCombo");controls.Children.Add(control);
+            if(control is TextBox)control.SetResourceReference(StyleProperty,"PerformanceFilter");
         }
         range.ItemsSource=new[]{"Rolling hour","Last 15 minutes","Last hour","Last 24 hours","Last 7 days","Last 30 days","Selected interval"};range.SelectedIndex=0;
-        analysisKind.ItemsSource=new[]{"Activity","Summary","Top apps","Spikes","App history","Events"};analysisKind.SelectedIndex=0;
+        analysisKind.ItemsSource=new[]{"Activity","Summary","Top apps","Spikes","App history","Events","Boot diagnostics","System changes","Insights"};analysisKind.SelectedIndex=0;
         Add(range,"Performance time range");Add(analysisKind,"Analysis section");
         BuildProcessControls();Add(columnsButton,"Choose process columns");Add(processFilter,"Filter CPU processes");
         gpuPicker.Visibility=Visibility.Collapsed;Add(gpuPicker,"GPU adapter");
@@ -74,6 +75,7 @@ internal sealed partial class PerformancePanel
         Add(Glyph("\uE76B",()=>MoveHistory(-1)),"Previous time range");
         Add(Glyph("\uE76C",()=>MoveHistory(1)),"Next time range");
         Add(Action("Now",ResetInvestigation),"Clear selection and return to now");
+        BuildAdoptionControls(controls);
         enable.SetResourceReference(StyleProperty,"AuxiliaryAction");enable.Click+=async(_,_)=>await EnableIo();Add(enable,"Enable detailed I/O");
         var historyMenu=new ContextMenu();
         var keep=new MenuItem{Header="Saved history retention"};historyMenu.Items.Add(keep);
@@ -94,7 +96,7 @@ internal sealed partial class PerformancePanel
         analysisGraph.EventsSelected+=events=>{investigationFrom=investigationTo=null;selectedEvents=events;investigationMoment=null;SetDetailKind();_ = LoadHistory();};
         analysisGraph.MomentHovered+=time=>{hoverCancel?.Cancel();var previous=hoverQuery;var cancellation=new CancellationTokenSource();hoverCancel=cancellation;hoverQuery=ReadHover(previous,time,cancellation);};
         analysisGraph.SelectionCleared+=ResetInvestigation;
-        Grid.SetRow(analysisGraph,2);grid.Children.Add(analysisGraph);
+        var plots=new Grid();plots.Children.Add(analysisGraph);plots.Children.Add(appCharts);Grid.SetRow(plots,2);grid.Children.Add(plots);
         detailState.TextWrapping=TextWrapping.NoWrap;detailState.TextTrimming=TextTrimming.CharacterEllipsis;detailState.SetBinding(ToolTipProperty,new Binding(nameof(TextBlock.Text)){Source=detailState});detailState.SetResourceReference(TextBlock.ForegroundProperty,"Muted");Grid.SetRow(detailState,3);grid.Children.Add(detailState);
         table.SetResourceReference(Control.ForegroundProperty,"Palette.E8EEF6");AutomationProperties.SetName(table,"Performance activity");
         VirtualizingPanel.SetIsVirtualizing(table,true);VirtualizingPanel.SetVirtualizationMode(table,VirtualizationMode.Recycling);
@@ -114,7 +116,7 @@ internal sealed partial class PerformancePanel
         {
             // Star rows need a finite height even inside the small-window
             // scroller, preserving table virtualization and the whole timeline.
-            grid.Height=Math.Max(analysisScroll.ActualHeight,180+110+heading.ActualHeight+controls.ActualHeight+detailState.ActualHeight+historyStatus.ActualHeight+48);
+            grid.Height=Math.Max(analysisScroll.ActualHeight,(appCharts.IsVisible?290:180)+110+heading.ActualHeight+controls.ActualHeight+detailState.ActualHeight+historyStatus.ActualHeight+48);
         }
         analysisScroll.Content=grid;analysisScroll.SizeChanged+=(_,_)=>FitAnalysis();controls.SizeChanged+=(_,_)=>FitAnalysis();
         details.Child=analysisScroll;ready=true;ChangedAnalysis();
@@ -137,6 +139,7 @@ internal sealed partial class PerformancePanel
     }
     void ChangedAnalysis()
     {
+        appChartCancel?.Cancel();appCharts.Visibility=Visibility.Collapsed;analysisGraph.Visibility=Visibility.Visible;displayedApp=null;displayedResult=null;
         if(!ready)return;historyCancel?.Cancel();SetDetailKind();appFilter.Visibility=analysisKind.SelectedIndex==4?Visibility.Visible:Visibility.Collapsed;
         threshold.Visibility=analysisKind.SelectedIndex==3?Visibility.Visible:Visibility.Collapsed;
         sortProperty=null;if(Historical&&selected>=0)_ = LoadHistory();else {ConfigureTable();Refresh();}
@@ -208,8 +211,10 @@ internal sealed partial class PerformancePanel
             var live=includeLiveHistory?monitor.History():null;
             var apps=includeLiveHistory?monitor.ProcessHistory():null;
             detailState.Text="Reading available history…";
-            var work=Task.Run(()=>
+            int kind=analysisKind.SelectedIndex;
+            var work=Task.Run(async()=>
             {
+                if(kind>=6)return(Result:await ReadAdoption(kind,query,cancellation.Token,live,apps),Timeline:(PerformanceTimelineData)null,Moment:(PerformanceMoment)null);
                 if(moment is {} time)
                 {
                     var snapshot=PerformanceInvestigation.Moment(query,time,cancellation.Token,historySource,apps);
@@ -221,10 +226,12 @@ internal sealed partial class PerformancePanel
                 return(Result:result,Timeline:timeline,Moment:(PerformanceMoment)null);
             },cancellation.Token);historyWork=work;var loaded=await work;var result=loaded.Result;
             if(cancellation.IsCancellationRequested||disposed)return;
+            displayedQuery=query;displayedResult=result;displayedApp=null;
             var view=new GridView{AllowsColumnReorder=false};
             foreach(var column in new[]{("Observed / peak time","When",135d),("Metric / app / event","Name",210d),("PID","Pid",65d),(moment.HasValue?metric=="ram"?"Working set (bytes)":"Usage (%)":"Average","Average",115d),("Peak","Peak",95d),("Samples","Observations",80d),("Details","Details",460d)})
                 view.Columns.Add(new(){Header=column.Item1,Width=column.Item3,DisplayMemberBinding=new Binding(column.Item2){StringFormat=column.Item2 is "Average" or "Peak"?"{0:0.##}":null}});
             table.View=view;table.ItemsSource=result.Rows;sortProperty=null;
+            if(kind==4&&result.Rows.Length>0)table.SelectedIndex=0;
             if(loaded.Moment is {} snapshot)analysisGraph.SetMoment(snapshot,metric);
             if(loaded.Timeline is {} timeline)
             {

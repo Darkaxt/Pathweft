@@ -1019,7 +1019,7 @@ public partial class MainWindow : Window
         StatsRow.ColumnDefinitions[2].Width=folder?new GridLength(1,GridUnitType.Star):new GridLength(0);
         StatsRow.ColumnDefinitions[3].Width=new GridLength(folder&&selection?10:0);
         StatsRow.ColumnDefinitions[4].Width=selection?new GridLength(1,GridUnitType.Star):new GridLength(0);
-        StatsRow.Visibility=!PerformanceMode&&Settings.Stats!=0&&(drive||folder||selection)?Visibility.Visible:Visibility.Collapsed;
+        StatsRow.Visibility=!maintenanceVisible&&!PerformanceMode&&Settings.Stats!=0&&(drive||folder||selection)?Visibility.Visible:Visibility.Collapsed;
     }
 
     readonly System.Windows.Media.Effects.DropShadowEffect FullGlow = new() { Color = Color.FromRgb(0xFF, 0x33, 0x47), BlurRadius = 7, ShadowDepth = 0, Opacity = 0.75 };

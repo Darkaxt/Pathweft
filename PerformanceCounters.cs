@@ -37,6 +37,12 @@ internal sealed class PerformanceMonitor : IDisposable
     internal ProcessMetric[] Details {get;private set;}=Array.Empty<ProcessMetric>();
     readonly ProcessMetrics processMetrics=new();
     readonly PerformanceHistory persisted=new();
+    readonly System.Collections.Concurrent.ConcurrentQueue<(PerformanceFact[] Facts,TaskCompletionSource Saved)> pendingChanges=new();
+    internal Task SaveChanges(PerformanceFact[] facts)
+    {
+        if(facts.Length==0)return Task.CompletedTask;
+        var saved=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);pendingChanges.Enqueue((facts,saved));return saved.Task;
+    }
     internal string HistoryIssue=>persisted.Issue;
     internal PerformanceMonitor(){sampling=Task.Run(Run);}
     internal PerformanceSample Latest {get{lock(gate)return history.LastOrDefault();}}
@@ -78,14 +84,17 @@ internal sealed class PerformanceMonitor : IDisposable
             var gpuApps=kind==2||recordApps?source.GpuProcesses():null;
             Details=kind is 1 or 3?apps:kind==2?gpuApps:Array.Empty<ProcessMetric>();
             if(recordApps)RecordProcesses(sample.Time,apps,gpuApps);
-            persisted.Record(sample,recordApps?apps:null,recordApps?gpuApps:null);
+            var changes=pendingChanges.ToArray();
+            if(persisted.Record(sample,recordApps?apps:null,recordApps?gpuApps:null,changes.SelectMany(x=>x.Facts).ToArray()))
+                foreach(var change in changes){pendingChanges.TryDequeue(out _);change.Saved.TrySetResult();}
+            else if(persisted.Issue!=null)foreach(var change in changes){pendingChanges.TryDequeue(out _);change.Saved.TrySetException(new System.IO.IOException(persisted.Issue));}
             if(recordApps)lastApps=sample.Time;
             Record(sample);
             try{if(!await clock.WaitForNextTickAsync(stopped.Token))break;}
             catch(OperationCanceledException)when(stopped.IsCancellationRequested){break;}
         }
     }
-    public void Dispose(){stopped.Cancel();sampling.GetAwaiter().GetResult();persisted.Dispose();stopped.Dispose();}
+    public void Dispose(){stopped.Cancel();sampling.GetAwaiter().GetResult();while(pendingChanges.TryDequeue(out var pending))pending.Saved.TrySetException(new OperationCanceledException("Collector stopped before saving changes"));persisted.Dispose();stopped.Dispose();}
 }
 
 internal sealed class WindowsPerformanceCounters : IDisposable

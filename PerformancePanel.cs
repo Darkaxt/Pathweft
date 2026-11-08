@@ -149,7 +149,7 @@ internal sealed partial class PerformancePanel : StackPanel,IAsyncDisposable
         var report=folderCollecting?io?.Latest:null;
         values[Folder].Text=report is {Running:true}?(report.Lost>0?"≥ ":"")+CardRate(report.Rows.Sum(x=>x.Total)):"—";
         headings[Folder].Text=ActualWidth<900?"Folder":"Folder I/O";
-        subtitles[Folder].Text=traceFolder==null?"File I/O unavailable for this path":enabling?"Waiting for permission":io?.Latest.State??"Windows permission required";
+        subtitles[Folder].Text=report is {Running:true}?$"Read {CardRate(report.Rows.Sum(x=>x.Read))} · Write {CardRate(report.Rows.Sum(x=>x.Write))}":traceFolder==null?"File I/O unavailable for this path":enabling?"Waiting for permission":io?.Latest.State??"Windows permission required";
         if(Showing&&report!=null&&!ReferenceEquals(lastReport,report))
         {
             lastReport=report;var now=DateTimeOffset.UtcNow;
@@ -160,7 +160,7 @@ internal sealed partial class PerformancePanel : StackPanel,IAsyncDisposable
         buttons[Ram].ToolTip="Physical system RAM · "+values[Ram].Text+" · "+subtitles[Ram].Text;
         buttons[Gpu].ToolTip=(adapter?.Name??"GPU unavailable")+" · "+subtitles[Gpu].Text;
         buttons[Drive].ToolTip=(disk is {Read:{} rd,Write:{} wr}?Rate(rd+wr)+" · ":"")+"Physical device I/O; other partitions on this unit may contribute. File details show logical requests. "+subtitles[Drive].Text;
-        buttons[Folder].ToolTip=folder+" · "+(report is {Running:true}?Rate(report.Rows.Sum(x=>x.Total))+" · ":"")+subtitles[Folder].Text;
+        buttons[Folder].ToolTip=folder+" · "+(report is {Running:true}?Rate(report.Rows.Sum(x=>x.Total))+" · ":"")+subtitles[Folder].Text+(report is {Lost:>0}?" · Displayed throughput is a lower bound: some Windows file events could not be attributed. Open analysis for details.":"");
         graphs[0].Set(history.Select(x=>(x.Time,x.Cpu)).ToArray(),100);
         graphs[Ram].Set(history.Select(x=>(x.Time,x.Ram?.Usage)).ToArray(),100);
         graphs[Gpu].Set(history.Select(x=>(x.Time,x.Gpus.FirstOrDefault(g=>g.Id==gpu)?.Usage)).ToArray(),100);
@@ -246,14 +246,14 @@ internal sealed partial class PerformancePanel : StackPanel,IAsyncDisposable
     static async Task Retire(PerformanceIoClient client,Task previous){await previous.ConfigureAwait(false);await client.DisposeAsync().ConfigureAwait(false);}
     public async ValueTask DisposeAsync()
     {
-        disposed=true;historyCancel?.Cancel();hoverCancel?.Cancel();metadataStopped.Cancel();
+        disposed=true;historyCancel?.Cancel();hoverCancel?.Cancel();metadataStopped.Cancel();appChartCancel?.Cancel();
         // Closed can synchronously drain us on the UI thread. Wait only for
         // native/background reads, never their UI presentation continuation.
-        try{await Task.WhenAll(historyWork,hoverWork,metadataRead).ConfigureAwait(false);}
+        try{await Task.WhenAll(historyWork,hoverWork,metadataRead,appChartRead).ConfigureAwait(false);}
         // These query failures already have a visible unavailable state. They
         // must not prevent retirement of an independent native I/O worker.
         catch(Exception error)when(error is OperationCanceledException or ArgumentException or IOException or UnauthorizedAccessException or Microsoft.Data.Sqlite.SqliteException){}
-        monitor.Changed-=Updated;monitor.DetailKind=0;
+        monitor.Changed-=Updated;monitor.DetailKind=0;appChartCancel?.Dispose();
         await ReleaseIo().ConfigureAwait(false);await mapping.ConfigureAwait(false);historyCancel?.Dispose();hoverCancel?.Dispose();metadataStopped.Dispose();
     }
 }

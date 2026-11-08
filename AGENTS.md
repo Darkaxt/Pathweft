@@ -1,5 +1,19 @@
 # Pathweft development
 
+Current 2026-11-08/spec0.88: S32 COMPLETE for ADOPT-01..06 local SysOptimizer
+adoption and five bottom Maintenance summary tabs. Source/native/integration
+acceptance passes: Maintenance172948, adoption177288, history162888,
+Performance128464, resource166776 and disposable native guest4300. See
+docs/verification/2026-11-08-s32-maintenance.md. S31 source is qualified;
+its release gate remains BLOCKED by the user's pause. Chart-close regression
+passes with a UI presentation pending; native reads drain without awaiting UI.
+No publication/live installation until user validation/resumption. S30 stays
+NOT STARTED. Exclude all network, hardware/thermal sensors, remote/security/app
+management and blanket optimizations. Preserve existing Diskweft/duplicates.
+Use donor 6ddd104 source with notices, existing UI/collector/storage ownership.
+No source acceptance blocker, tracked deferral or required refactor remains.
+No stage is ACTIVE.
+
 Current 2026-11-08/spec0.86: S31 BLOCKED only by the user's explicit pause before
 the next release. MONITOR-21 source/integration acceptance passes: automatic
 collection/saving with no recording setting, actual hover/moment/range/app facts,

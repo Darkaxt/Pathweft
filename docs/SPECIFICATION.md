@@ -1,6 +1,27 @@
 # Pathweft specification
 
-Version 0.86 - 2026-11-08. Owner: Darkaxt.
+Version 0.88 - 2026-11-08. Owner: Darkaxt.
+
+User authorization 2026-11-08: implement the agreed local SysOptimizer adoption
+and brush-led Maintenance, reusing pinned donor source as far as compatible.
+All network functionality (not only DNS), remote monitoring, package management,
+execution security, blanket optimization/memory trimming and duplicate scanners
+are excluded. Hardware sensors/disk health/power/fans/FPS/peripheral monitoring
+are deferred to a separate THRM/Taskbar Thermals consolidation assessment; they
+are not acceptance requirements of this adoption. Preserve existing Diskweft
+expandable largest-first folder tree and existing duplicate finding. Publication
+and live installation remain paused pending user validation; build/test/source
+commit are authorized. S32 owns the following integrated source outcome.
+
+| ID | Required behavior and acceptance |
+| --- | --- |
+| ADOPT-01 | Compact 16-DIP brush command opens themed Maintenance in the current main-pane area and replaces the bottom statistics with five summary-card tabs: Cleanup, Startup, Services, Windows tweaks and Windows apps (optional preinstalled apps). No additional category sidebar. Show analyzed recoverable bytes, enabled Run entries, reviewed automatic services, unapplied settings to review and installed optional apps; state each count's scope, do not invent estimates or treat every tweak as recommended. Preserve cleanup reviews across tab switches. Opening a category is read-only and never elevates. Active-state/tooltip/keyboard accessibility, narrow layouts, theme/scale behavior and Back to files/toggle restore the actual browser selection/path/scroll. Preserve transfers, preview and performance state. No standalone donor UI or extra collector. |
+| ADOPT-02 | Cleanup analyzes explicit curated categories before action. Show review counts/bytes and apply only that review's unchanged files, skipping replacements, links, live/new files and inaccessible members. No recursive directory deletion or default all-category cleanup. Selection, cancellation and accurate partial/error reports are required; clean transient review storage when the review is replaced/closed. |
+| ADOPT-03 | Startup and curated Services show actual state and scope. Explicit apply/restore preserves original registry hive/view/name/type/value and service startup configuration; restore must not overwrite an independently changed value. Journal the exact prior state durably before mutation; surface partial/failing actions honestly. No generic command runner. |
+| ADOPT-04 | Borrow curated Windows tweak definitions with exact original-state restoration, current-state readback, restore-point action and validated selection export/import. Built-in app removal is explicit and current-user scoped, does not remove provisioning/all-user packages, and describes Store reinstallation rather than claiming undo. Use a narrow authenticated one-operation helper for privileged actions, preserving the unelevated GUI. S30 reusable admin-profile work remains separate. Real native verification uses task-owned fixtures, never modifies the user's chosen services/tweaks/apps as a test. |
+| ADOPT-05 | Extend existing System analysis with local app CPU/RAM/GPU charts, user-requested selected-range CSV/JSON/HTML export, boot diagnostics and Windows/app/driver-change events, and on-demand local performance insights using shared retained observations. Compact Folder I/O shows useful read/write rates instead of the persistent debug-like Incomplete observations label; retain honest lower bounds and coverage detail in its tooltip/analysis. Reuse donor readers/rendering/report logic; preserve identity/gap semantics and bounded storage. No network/sensor fields, automatic reports, new recording setting or duplicate sampler. Missing Windows diagnostic access is explicit; UI queries are cancellable and stale results cannot replace current selection. |
+| ADOPT-06 | Retain exact donor source/license/pin mapping and verify the actual in-app navigation, native read/apply/restore/permission/cancel boundaries, malformed inputs, lifecycle, existing browser/performance regressions and representative rendered dark/light/100/150-percent layouts. Keep the completed verified source unreleased for user validation. |
+
 
 S31 corrective reopening, user instruction 2026-11-08: the automatic rolling
 hour must include process snapshots for hover, moment and range investigation,

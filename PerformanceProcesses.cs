@@ -124,8 +124,14 @@ internal sealed partial class PerformancePanel
         }
         columnsButton.Click+=(_,_)=>{processColumnsMenu.PlacementTarget=columnsButton;processColumnsMenu.IsOpen=true;};
         var rowMenu=new ContextMenu();var pin=new MenuItem{Header="Pin / unpin process"};rowMenu.Items.Add(pin);
+        var history=new MenuItem{Header="Inspect app history"};rowMenu.Items.Add(history);
+        history.Click+=(_,_)=>
+        {
+            if(table.SelectedItem is not PerformanceProcessRow row)return;
+            appFilter.Text=row.Process;analysisKind.SelectedIndex=4;
+        };
         pin.Click+=(_,_)=>ToggleProcessPin(table.SelectedItem as PerformanceProcessRow);
-        rowMenu.Opened+=(_,_)=>pin.IsEnabled=table.SelectedItem is PerformanceProcessRow;
+        rowMenu.Opened+=(_,_)=>pin.IsEnabled=history.IsEnabled=table.SelectedItem is PerformanceProcessRow;
         table.ContextMenu=rowMenu;
         table.AddHandler(Mouse.MouseUpEvent,new MouseButtonEventHandler((_,e)=>
         {
