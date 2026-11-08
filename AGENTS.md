@@ -5,8 +5,11 @@ Current2026-11-08/spec0.90: S31 COMPLETE via installed1.1.34 readback233140,
 profile/shortcut. S33 is the only ACTIVE stage: MAINT-01..05 shared table state,
 Startup coverage/Type/exact Restore, all installed SCM services and Performance
 command ownership. Source134872/native3620/Performance60844 pass actual busy
-visuals, source coverage/exact Restore and exclusive modes. Final normal1.1.35,
-independent package and installed readback remain required. Donor investigation
+visuals, source coverage/exact Restore and exclusive modes. Normal1.1.35 from
+2f62564 is published with six verified assets. Final211320 and independently
+downloaded230548 pass actual native/self-test/application checks. Installed
+readback remains required; the user has been asked to use the normal updater.
+Donor investigation
 is documented in docs/MAINTENANCE-DONOR-REVIEW.md; no new safety rule feature is
 implemented or implicitly authorized by that assessment.
 never mutate existing user startup/tasks/services for testing. S32 COMPLETE,

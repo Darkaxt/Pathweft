@@ -54,8 +54,10 @@ The first unpublished 1.1.35 package failed its app-host self-test because the
 in-app changelog still began with 1.1.34 after the version bump. The required
 1.1.35 entry was added; the assertion remains unchanged. That package was not
 published. Its failure log is retained in the private release evidence; the
-corrected committed package must pass all delivery checks before publication.
+corrected committed package passed before publication: final app211320 and
+independently downloaded app230548 both returned 0 with no failed assertions.
+Normal1.1.35/2f62564 is published; all six assets and the remote source/tag match.
 
-Reconciliation: source behavior is verified as above; S33 remains ACTIVE until
-normal publication, independent delivered-package acceptance and installed
-readback. No tracked deferral or required source refactor is identified.
+Reconciliation: source and independent delivered-package behavior are verified as
+above. S33 remains ACTIVE until installed readback after the user's normal update.
+No tracked deferral or required source refactor is identified.
