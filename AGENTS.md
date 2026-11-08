@@ -1,20 +1,18 @@
 # Pathweft development
 
-Current2026-11-08/spec0.84: S31 is the only ACTIVE stage for MONITOR-17..20:
-repair recording-off live-range continuity and complete CPU Columns/path/command
-line and click-to-pin inspection. No recording/source toggle for this repair.
-Keep the shared collector, privacy, identity and resource bounds. S30 NOT STARTED.
-Compare the user-requested local SysOptimizer clone and reuse its applicable
-process filtering/stable list behavior. Audit actual background/tray resources,
-hidden detail/metadata work, bounded history, cancellation and natural exit.
-Earlier S29 closure remains valid and historical; required new acceptance and
-one final independently/installed verified release remain. No tracked deferral.
-S31 source app176784/focusedb8168940/resource19744 pass live-range recovery,
-CPU metadata/pins/filter, themed checkmarks and actual aggregate/recording/tray
-bounds. Donor pin/source blob verified locally; remote features excluded.
-Normal 1.1.33/97e6cd2 is published with six verified assets. Final app12344 and
-independently downloaded app113332 pass source/native/self-test/application
-acceptance. Installed readback after the user-controlled update remains required.
+Current 2026-11-08/spec0.84: S31 COMPLETE for MONITOR-17..20 through normal
+1.1.33/97e6cd2. Source app176784/focusedb8168940/resource19744 pass automatic
+live-range recovery, CPU columns/metadata/pins/filter, themed controls, resource
+bounds, hidden scheduling and natural lifecycle. The local SysOptimizer clone
+and selected source pin were compared; applicable list behavior is adopted and
+remote features excluded. Final app12344 and independently downloaded app113332
+pass source/native/self-test/full application acceptance. All six assets match
+published hashes. Installed readback183244 verifies 11,304 files, restarted
+main182512/helper181108, readiness, 22 routes and preserved shortcut/profile.
+Failed unpublished package/harness diagnostics remain recorded; no assertions
+were weakened. Evidence/releases are retained; spent scratch is transactionally
+cleaned. No blocker, tracked deferral or required refactor remains. No stage is
+ACTIVE. S30 admin/shield and other later work remain NOT STARTED.
 
 Current2026-11-08/spec0.82: S29 COMPLETE through normal1.1.32/2f3b1cd.
 Source163416/resource8824 pass donor-based moment/range/events -> linked facts,

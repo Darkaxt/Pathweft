@@ -72,9 +72,19 @@ full application checks. All six published assets match their remote SHA-256
 metadata; the independent download has the same source/version and package behavior.
 The existing installer remains unsigned; no new signing claim is made.
 
-Remaining acceptance: installed files, restarted helper, ready signal, folder
-routes and shortcut/profile identity after the user's updater. S31 remains ACTIVE;
-there is no tracked deferral. S30 remains NOT STARTED.
+Installed readback183244 after the user-controlled update verifies all 11,304
+manifest members, source/version, new main182512 and helper181108 identities,
+the helper-ready signal, 22 folder-route values and the unchanged shortcut AppID
+and configured profile. The installer owners exited before this readback. The
+wait diagnostic could not retrieve an attached process's native exit code; its
+null result was not a product failure. The actual installed hashes/readiness
+establish successful delivery without desktop input.
+
+All MONITOR-17..20 criteria are satisfied by the source workflow, independent
+resource audit, final/downloaded checks and installed readback above. S31 is
+COMPLETE, with no blocker, tracked deferral or required refactor. No stage is
+ACTIVE; S30 remains NOT STARTED. Required evidence/releases are retained and
+spent generated scratch is transactionally cleaned.
 
 Refactor assessment: preserve existing collector/query/panel/worker ownership.
 The stable row collection directly serves live inspection; no generic provider
