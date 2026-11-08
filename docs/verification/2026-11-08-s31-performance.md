@@ -65,8 +65,15 @@ contracts. One standalone launch lacked media fixture environment bindings and
 failed at that explicit precondition; the source-bound launch then passed. No
 product behavior or acceptance assertion was weakened for these harness fixes.
 
-Remaining acceptance: final committed package/source/native/app checks, normal release,
-independent retrieval and applicable installed readback. S31 remains ACTIVE;
+Normal [1.1.33](https://github.com/Darkaxt/Pathweft/releases/tag/v1.1.33) is
+published from 97e6cd2e8617e4378923eb821a4ae44f1477e767. Final application12344
+and independently downloaded application113332 pass source/native/self-test and
+full application checks. All six published assets match their remote SHA-256
+metadata; the independent download has the same source/version and package behavior.
+The existing installer remains unsigned; no new signing claim is made.
+
+Remaining acceptance: installed files, restarted helper, ready signal, folder
+routes and shortcut/profile identity after the user's updater. S31 remains ACTIVE;
 there is no tracked deferral. S30 remains NOT STARTED.
 
 Refactor assessment: preserve existing collector/query/panel/worker ownership.

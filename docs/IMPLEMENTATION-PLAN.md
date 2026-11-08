@@ -9,10 +9,12 @@ expanded inspection and tray cost; final focused trialb8168940 passes the themed
 filter/checkmarks, real WMI metadata, identity/pins, range recovery and natural
 exit; resource19744 passes aggregate/recording/full-hour bounds and card switches.
 Local donor comparison is recorded in SYSOPTIMIZER-PERFORMANCE-COMPARISON.md.
-Only final committed-package/source/native/app/retrieval/installed delivery
-criteria remain. S30 NOT STARTED; no tracked deferral or required refactor.
+Normal 1.1.33 from 97e6cd2 is published with six hash-verified assets. Final
+application 12344 and independently downloaded application 113332 pass source,
+native, self-test and full application acceptance. Only installed readback after
+the user's updater remains. S30 NOT STARTED; no tracked deferral or required refactor.
 The persistent-only query defect and process inspection requirements are repaired
-and verified. Delivery criteria remain advancement blockers. S29 closure below
+and verified. Installed delivery remains an advancement blocker. S29 closure below
 is historical.
 
 Current2026-11-08: S29 COMPLETE for MONITOR-14..16 through normal1.1.32/2f3b1cd.

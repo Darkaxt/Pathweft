@@ -12,7 +12,9 @@ one final independently/installed verified release remain. No tracked deferral.
 S31 source app176784/focusedb8168940/resource19744 pass live-range recovery,
 CPU metadata/pins/filter, themed checkmarks and actual aggregate/recording/tray
 bounds. Donor pin/source blob verified locally; remote features excluded.
-Final package/native/source/app/retrieval/installed delivery remains required.
+Normal 1.1.33/97e6cd2 is published with six verified assets. Final app12344 and
+independently downloaded app113332 pass source/native/self-test/application
+acceptance. Installed readback after the user-controlled update remains required.
 
 Current2026-11-08/spec0.82: S29 COMPLETE through normal1.1.32/2f3b1cd.
 Source163416/resource8824 pass donor-based moment/range/events -> linked facts,
