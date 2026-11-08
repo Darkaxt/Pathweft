@@ -1,6 +1,19 @@
 # Pathweft development
 
-Current2026-11-08/spec0.95: S37 ACTIVE only for combined final DELIVERY.
+Current2026-11-08/spec0.95: S35/S36/S37 COMPLETE; no ACTIVE stage.
+Normal1.1.37/6097ce4 is published with six checksum-verified assets. Final
+application233952 and independently downloaded199512 pass source/native/self-test/
+application acceptance. The independent run's first Office recovery close hit a
+transient document.docx sharing violation; its holder was not captured. Retained
+evidence and exact crash/cancel/close regression226780 pass; no speculative
+renderer workaround or claim of root-cause repair. User-updated installed1.1.37
+readback222108 verifies11,305 matching members, restarted main234396/helper230560,
+helper readiness,22 routes and preserved profile/shortcut identity. Exact spent
+verification/download/installed-check scratch is transactionally cleaned; release
+assets and required evidence remain. No blocker, tracked deferral or required
+refactor remains. S25 and later stages are not implicitly activated.
+
+Previous source acceptance2026-11-08/spec0.95:
 DRIVE-01..02 implementation acceptance passes final UI187912 and actual approved
 UI176888/helper230364, request0814665296294c7086602d3d8f77ec59. The elevated WMI
 DBNull failure is retained and corrected at the numeric boundary; unsupported
@@ -10,9 +23,9 @@ Final Drive native/history/range/moment/two-drive navigation and dark/light
 100/150-percent1400/820-DIP/resource acceptance passes. Full specialist166052
 remains applicable outside the narrow numeric correction. Delivered consumer
 compiles with the missing-value regression. First candidate186008 predates that
-correction and is historical only. Finish clean-source1.1.37 packaging, native/
-application/source checks, normal six-asset publication, independent retrieval
-and installed readback after user updater. S35/S36 COMPLETE; no other ACTIVE
+correction and is historical only. Subsequent clean-source1.1.37 packaging, native/
+application/source checks, six-asset publication, independent retrieval and
+installed readback are recorded above. S35/S36 COMPLETE; no other ACTIVE
 stage, source blocker or tracked deferral. No icon-only publication or live
 user ACL/profile/installed changes. Retain required evidence; clean spent scratch.
 

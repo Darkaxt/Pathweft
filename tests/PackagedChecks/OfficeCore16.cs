@@ -45,6 +45,30 @@ sealed partial class PackageProbe
             Check(original.SequenceEqual(SHA256.HashData(File.ReadAllBytes(source))),"Core comparison leaves its reference source unchanged: "+name);
         }
         File.WriteAllText(Path.Combine(root,"office-core-comparison.json"),JsonSerializer.Serialize(records,new JsonSerializerOptions{WriteIndented=true}));
+        // Match the primary-crash recovery path, not only native fallback input.
+        // A successful render must also release its snapshot before close returns.
+        for(int cycle=0;cycle<3;cycle++)
+        {
+            using var cancellation=new CancellationTokenSource();
+            string source=Path.Combine(inputs,"document-pages.docx");
+            byte[] original=SHA256.HashData(File.ReadAllBytes(source));
+            var document=Activator.CreateInstance(type,true);
+            string folder=null,profile=null;
+            try
+            {
+                await (Task)Call(type,document,"Open",source,cancellation.Token);
+                folder=(string)type.GetField("folder",Flags).GetValue(document);
+                profile=(string)type.GetField("profile",Flags).GetValue(document);
+                await (Task)Call(type,document,"RenderPage",0,63,CancellationToken.None);
+                var worker=type.GetField("worker",Flags).GetValue(document);
+                using var process=Process.GetProcessById((int)Get(worker,"ProcessId"));
+                process.Kill();await process.WaitForExitAsync();
+                await (Task)Call(type,document,"RenderPage",0,63,CancellationToken.None);
+                Check(string.Equals((string)Get(Get(document,"Info"),"Engine"),"libreoffice",StringComparison.OrdinalIgnoreCase),"Primary process crash uses the actual recovery renderer: "+cycle);
+            }
+            finally{cancellation.Cancel();await ((IAsyncDisposable)document).DisposeAsync();}
+            Check(!Directory.Exists(folder)&&!Directory.Exists(profile)&&original.SequenceEqual(SHA256.HashData(File.ReadAllBytes(source))),"Crash recovery closes its native tree and removes its exact workspace/profile before returning: "+cycle);
+        }
         // Exercise the real fallback's nested native process tree and immediate
         // workspace retirement, including successive document replacements.
         for(int cycle=0;cycle<3;cycle++)

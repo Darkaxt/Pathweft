@@ -7,7 +7,18 @@ Current2026-11-08: S36 COMPLETE for ACCESS-04..05 through actual hidden UI161520
 and helper198244: typed pane denial/action/ribbon, protected root and expanded
 branch analysis mode changes, no privileged-row restoration and natural lifecycle.
 Themes/scales/narrow and existing resource budgets pass. See verification/2026-11-08-s36-access.md.
-S37 is ACTIVE only for final combined DELIVERY. DRIVE-01..02 source/native/UI
+S37 is COMPLETE. Normal1.1.37/6097ce4 is
+published with six verified assets. Final application233952 and independently
+downloaded199512 pass source/native/self-test/application acceptance. A retained
+first-pass Office recovery sharing violation has no identified holder; focused
+crash/cancel/close226780 and the full unchanged delivered application pass. No
+renderer patch or root-cause repair is claimed. User-updated installed readback
+222108 verifies11,305 matching members, restarted main234396/helper230560,
+readiness,22 routes and preserved profile/shortcut identity. Exact spent
+verification/download/installed-check scratch is cleaned through the helper.
+No ACTIVE stage, blocker, tracked deferral or required refactor remains.
+
+Prepublication source acceptance: DRIVE-01..02 source/native/UI
 acceptance passes final UI187912 and approved UI176888/helper230364. Captured
 elevated WMI DBNull conversion failure is corrected at the missing-value boundary;
 actual shared helper health/read/analysis/editor/Cleanup/I/O reuse and natural
@@ -15,9 +26,9 @@ retirement pass. CPU/memory budgets, historical moment/range, physical identity,
 virtual/network refusal, two-real-drive navigation and dark/light/scaled/narrow
 layouts pass. Full specialist166052 remains applicable to unchanged paths;
 the final delivered consumer compiles. Historical candidate186008 predates the
-narrow correction and is not final delivery. Finish clean-source1.1.37 packaging,
-native/application/source checks, normal publication and independent retrieval,
-then installed readback when the user updates. No source blocker, tracked
+narrow correction and is not final delivery. Subsequent clean-source1.1.37
+packaging, native/application/source checks, normal publication, independent
+retrieval and installed readback are recorded above. No source blocker, tracked
 deferral or concurrent implementation stage. Failed and successful evidence is
 retained; spent candidate and native-test scratch is transactionally cleaned.
 S35 is COMPLETE and remains included without an icon-only release. S37 owns the
@@ -1239,7 +1250,7 @@ plan neither authorizes itself nor adds approval checkpoints.
 | S30 - Reusable administrator access session | COMPLETE | ACCESS-01..03; affected CORE/LIFE/DELIVERY | After S34, before S25; renewed user request2026-11-08 | Source218544/helper235336 and owner233356/helper225008 pass protected browser/analysis/editor saves, concurrency, reuse, denial, owner/lifecycle and original resource budgets. Normal1.1.36/12807d2 final197288/independent227432 pass. Installed236392 verifies11,305 matching members, restarted ready main236072/helper123040,22 routes and preserved profile/shortcut. No blocker, deferral or required refactor. |
 | S35 - Toolbar action accents | COMPLETE | CORE-25 | S30 COMPLETE; source-only user instruction2026-11-08 | Actual UI206648 verifies accent mapping, original terminal lettering, smaller gear/brush collar/two-pane divider, neutral outlines,16-DIP geometry, themes/scales/DPI and real commands. Source-only verified scope; no blocker, deferral or required refactor. Publication held against an icon-only release. |
 | S36 - Protected-folder presentation and analyzer access | COMPLETE | ACCESS-04..05 | S35 COMPLETE; before S37 | Actual UI161520/helper198244 pass typed pane denial/action/ribbon, root/expanded analysis privilege changes, no stale privileged listing, layouts and lifecycle/resources. No source blocker/deferral. Final delivery belongs to S37. |
-| S37 - Drive-scoped performance detail | ACTIVE | DRIVE-01..02; final combined DELIVERY | S36 COMPLETE; before S25 | Implementation acceptance passes final UI187912 and approved UI176888/helper230364 after correcting captured DBNull reliability data. Exact native mapping/health/counters, saved channels/old JSON, moment/range, unsupported/two-drive navigation, layouts, helper reuse/natural exit and resources pass. Full specialist166052 applies to unchanged paths; final consumer compiles. Remaining: clean-source1.1.37 final package/source/native/application checks, normal combined publication, independent download and installed readback. No source blocker or tracked deferral. |
+| S37 - Drive-scoped performance detail | COMPLETE | DRIVE-01..02; final combined DELIVERY | S36 COMPLETE; before S25 | Source/native/UI and helper acceptance pass. Normal1.1.37/6097ce4 is published; final233952 and independently downloaded199512 pass source/native/self-test/application checks. Retained uncertain Office sharing failure is followed by exact crash/cancel/close226780 and full unchanged-package acceptance; no speculative renderer patch. Installed222108 verifies matching members, restarted ready main/helper, routes and profile/shortcut identity. Spent scratch cleaned; no blocker or deferral. |
 | S25 - Summary-card motion | NOT STARTED | MOTION-01..03; affected MONITOR/CORE-03/LIFE/DELIVERY | S18 COMPLETE; after S28 and before S12 | Upward card entry with smooth file-pane squeeze; rotation between Statistics/Performance; reversal/interruption and focus/scroll preservation; reduced-motion support and actual frame/layout/resource qualification. One final independently/installed verified release after implementation authorization. No criteria verified yet. |
 | S12 - Tresorit capability investigation | NOT STARTED | TRES-01..04 | S15 delivered; S16/S18/S25 considered first in the selected execution order | Supported API/client assessment, bounded REA as needed, evidence-backed capability matrix/decision and implementation proposal. Investigation only; no cloud mutation or integration implementation. |
 | S19 - Selected-folder content indexing | NOT STARTED | CONTENT-01..06; affected SEARCH/CORE/LIFE/DELIVERY | After S12 in the selected execution order; qualify extractor APIs, query/location semantics, provider metadata and resource budgets | Toolbar folder opt-in/current magnifier badges; qualified Craft/text extraction; persisted searchable strings and location arrays, periodic incremental refresh and cloud-cache independence. Verify actual search/open/freshness/recovery and one final independently/installed verified release when implementation is authorized. No criteria verified yet. |
