@@ -59,6 +59,11 @@ sealed partial class PackageProbe
             if(i>0)Check(headers.Contains("Recommendation")&&rows.Items.Cast<object>().All(row=>!string.IsNullOrEmpty((string)Get(row,"Guidance"))),"Delivered entries separate actual state from guidance: "+categories[i]);
             if(categories[i]=="Windows tweaks")
             {
+                int pending=rows.Items.Cast<object>().Count(row=>(bool)Get(row,"CanChange")&&
+                    ((string)Get(row,"Recommendation")=="Optional"&&(string)Get(row,"State")=="Not applied"||
+                     (string)Get(row,"Recommendation")=="Keep enabled"&&(string)Get(row,"State")=="Applied"));
+                Check(((StackPanel)card.Content).Children.OfType<TextBlock>().ElementAt(1).Text==pending.ToString("N0")&&
+                    card.ToolTip.ToString().Contains("recommended actions pending"),"Delivered Tweaks card counts applicable pending recommendations");
                 var search=(TextBox)type.GetField("search",Flags).GetValue(panel);var filter=(ComboBox)type.GetField("groups",Flags).GetValue(panel);
                 int all=rows.Items.Count;search.Text="Storage Sense";
                 Check(rows.Items.Count==1&&(string)Get(rows.Items[0],"Recommendation")=="Keep enabled","Delivered search and exact guidance match the bundled catalog");
@@ -66,6 +71,7 @@ sealed partial class PackageProbe
                 Check(((Border)type.GetField("explanation",Flags).GetValue(panel)).Visibility==Visibility.Visible,"Delivered selected setting exposes effect/source details");
                 search.Clear();filter.SelectedItem="File Explorer";
                 Check(rows.Items.Count>0&&rows.Items.Cast<object>().All(row=>(string)Get(row,"Group")=="File Explorer"),"Delivered category selector narrows existing settings");
+                Check(((StackPanel)card.Content).Children.OfType<TextBlock>().ElementAt(1).Text==pending.ToString("N0"),"Delivered filtering preserves the whole-category recommendation count");
                 filter.SelectedIndex=0;Check(rows.Items.Count==all,"Delivered All categories restores the full setting list");
             }
         }

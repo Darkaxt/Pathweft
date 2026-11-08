@@ -340,7 +340,7 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
         if(index==0){var reviewed=rows.Where(x=>x.Bytes.HasValue).ToArray();value=reviewed.Length>0?MainWindow.Fmt(reviewed.Sum(x=>x.Bytes.Value)):"—";sub=reviewed.Length>0?$"Up to · {reviewed.Length} of {rows.Length} categories reviewed":"Analyze to estimate";}
         else if(index==1){value=rows.Count(x=>x.State=="Enabled").ToString("N0");sub="startup entries enabled";}
         else if(index==2){value=rows.Count(x=>x.StartupMode.StartsWith("Automatic")).ToString("N0");sub=$"automatic · {rows.Length} installed services";}
-        else if(index==3){value=rows.Count(x=>x.State=="Not applied").ToString("N0");sub="Windows settings to review";}
+        else if(index==3){value=rows.Select(x=>MaintenanceGuidance.Describe(category,x)).Count(MaintenanceGuidance.PendingRecommendation).ToString("N0");sub="recommended actions pending";}
         else{value=rows.Length.ToString("N0");sub="optional preinstalled apps";}
         cardValues[index].Text=value;cardSubtitles[index].Text=sub;cardButtons[index].ToolTip=category+" · "+value+" · "+sub;
     }

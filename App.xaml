@@ -317,7 +317,7 @@
         <Setter Property="Foreground" Value="{DynamicResource Palette.E8EEF6}"/>
         <Setter Property="Padding" Value="8,6"/>
         <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="ComboBoxItem">
-          <Border x:Name="Item" Background="Transparent" Padding="{TemplateBinding Padding}" CornerRadius="3"><ContentPresenter/></Border>
+          <Border x:Name="Item" Background="Transparent" Padding="{TemplateBinding Padding}" CornerRadius="3"><ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Left"/></Border>
           <ControlTemplate.Triggers>
             <Trigger Property="IsHighlighted" Value="True"><Setter TargetName="Item" Property="Background" Value="{DynamicResource Palette.14FFFFFF}"/></Trigger>
             <Trigger Property="IsSelected" Value="True"><Setter TargetName="Item" Property="Background" Value="{DynamicResource AccentSoft}"/></Trigger>
@@ -329,7 +329,7 @@
           <ToggleButton Focusable="False" Foreground="{TemplateBinding Foreground}" IsChecked="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}">
             <ToggleButton.Template><ControlTemplate TargetType="ToggleButton">
               <Border x:Name="Face" Background="{Binding Background, RelativeSource={RelativeSource AncestorType=ComboBox}}" BorderBrush="{Binding BorderBrush, RelativeSource={RelativeSource AncestorType=ComboBox}}" BorderThickness="1" CornerRadius="5" Padding="8,5">
-                <DockPanel><TextBlock DockPanel.Dock="Right" Text="&#xE70D;" FontFamily="Segoe Fluent Icons" FontSize="10" Margin="10,0,0,0" VerticalAlignment="Center"/><ContentPresenter Content="{Binding SelectionBoxItem, RelativeSource={RelativeSource AncestorType=ComboBox}}"/></DockPanel>
+                <DockPanel><TextBlock x:Name="DropDownArrow" DockPanel.Dock="Right" Text="&#xE70D;" FontFamily="Segoe Fluent Icons" FontSize="10" Margin="10,0,0,0" VerticalAlignment="Center"/><ContentPresenter x:Name="SelectionText" VerticalAlignment="Center" HorizontalAlignment="Left" Content="{Binding SelectionBoxItem, RelativeSource={RelativeSource AncestorType=ComboBox}}"/></DockPanel>
               </Border>
               <ControlTemplate.Triggers><Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Face" Property="Background" Value="{DynamicResource Palette.1AFFFFFF}"/></Trigger></ControlTemplate.Triggers>
             </ControlTemplate></ToggleButton.Template>

@@ -39,6 +39,8 @@ internal static class MaintenanceGuidance
     {
         "Windows tweaks"=>Find("tweak",row.Name),"Services"=>Find("service",row.Type),"Windows apps"=>Find("app",row.Id),_=>null
     };
+    internal static bool PendingRecommendation(MaintenanceRow row)=>row.CanChange&&
+        (row.Recommendation=="Optional"&&row.State=="Not applied"||row.Recommendation=="Keep enabled"&&row.State=="Applied");
     internal static void RequireSupported(string id,int? build=null)
     {
         var tweak=Maintenance.Tweaks.SingleOrDefault(t=>"tweak:"+Maintenance.Id("tweak",t.Name)==id)

@@ -3,6 +3,7 @@ using System.IO;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 
 namespace FileExplorer;
 
@@ -23,10 +24,18 @@ public partial class MainWindow
         check(!MaintenanceGuidance.Describe("Windows tweaks",row,99999).CanChange&&MaintenanceGuidance.Describe("Windows tweaks",row,99999).Recommendation=="Not assessed","Unsupported build retains explanation but cannot Apply");
         bool rejected=false;try{MaintenanceGuidance.RequireSupported(row.Id,99999);}catch(InvalidOperationException){rejected=true;}
         check(rejected,"Unsupported build is refused at the typed action boundary, independently of UI");
+        var optional=new MaintenanceRow("fixture","Optional setting","Current user","Not applied","",Recommendation:"Optional");
+        check(MaintenanceGuidance.PendingRecommendation(optional)&&!MaintenanceGuidance.PendingRecommendation(optional with{State="Applied"})&&
+            !MaintenanceGuidance.PendingRecommendation(optional with{Recommendation="Advanced"})&&!MaintenanceGuidance.PendingRecommendation(optional with{Recommendation="Not assessed"})&&
+            !MaintenanceGuidance.PendingRecommendation(optional with{CanChange=false}),"Pending recommendations exclude applied, advanced, unassessed and unavailable actions");
+        check(MaintenanceGuidance.PendingRecommendation(optional with{Recommendation="Keep enabled",State="Applied"}),"A disabled keep-enabled setting remains a pending restore recommendation");
     }
     internal async Task VerifyMaintenanceGuidanceUi(string root,Action<bool,string> check)
     {
         await maintenance.CategoryForVerification("Windows tweaks");int all=maintenance.Rows.Items.Count;
+        string expected=maintenance.Rows.Items.Cast<MaintenanceRow>().Count(MaintenanceGuidance.PendingRecommendation).ToString("N0");
+        var card=(Button)((System.Windows.Controls.Primitives.UniformGrid)maintenance.Cards).Children[3];
+        check(((StackPanel)card.Content).Children.OfType<TextBlock>().ElementAt(1).Text==expected&&card.ToolTip.ToString().Contains("recommended actions pending"),"Tweaks summary counts pending recommendations rather than all unapplied settings");
         check(System.Windows.Data.CollectionViewSource.GetDefaultView(maintenance.Rows.ItemsSource).Groups?.Count>=5,"Actual settings table renders meaningful category groups");
         maintenance.SearchForVerification("Storage Sense");
         check(maintenance.Rows.Items.Count==1&&maintenance.Rows.Items.Cast<MaintenanceRow>().Single().Name=="Storage Sense","Actual search filters settings by name/effect");
@@ -38,11 +47,21 @@ public partial class MainWindow
         {
             Settings.NativeTheme=true;Settings.NativeMode=theme;Settings.TextScale=scale;ApplyAppearance();Width=1500;Height=950;UpdateLayout();
             maintenance.SearchForVerification("Storage Sense");maintenance.Rows.SelectedIndex=0;UpdateLayout();
+            var filter=GuidanceVisuals(maintenance).OfType<ComboBox>().First();
+            var text=GuidanceVisuals(filter).OfType<ContentPresenter>().Single(x=>x.Name=="SelectionText");
+            var arrow=GuidanceVisuals(filter).OfType<TextBlock>().Single(x=>x.Name=="DropDownArrow");
+            double center(FrameworkElement element)=>element.TranslatePoint(new Point(0,element.ActualHeight/2),filter).Y;
+            check(Math.Abs(center(text)-center(arrow))<1,"Category selection text and arrow are vertically aligned at "+theme+scale);
             await S1Verification.Snapshot(this,root,$"guidance-{theme}-{scale:0.0}");
         }
         maintenance.SearchForVerification("");Width=900;UpdateLayout();await S1Verification.Snapshot(this,root,"guidance-narrow");
         check(maintenance.Rows.ActualHeight>100,"Filtered settings retain usable rows with details in narrow layout");
         Settings.TextScale=1;Settings.NativeMode="dark";ApplyAppearance();Width=1500;
+    }
+    static IEnumerable<DependencyObject> GuidanceVisuals(DependencyObject node)
+    {
+        for(int i=0;i<VisualTreeHelper.GetChildrenCount(node);i++)
+        {var child=VisualTreeHelper.GetChild(node,i);yield return child;foreach(var nested in GuidanceVisuals(child))yield return nested;}
     }
 }
 #endif

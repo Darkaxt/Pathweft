@@ -27,6 +27,13 @@ Network/DNS, package management, security enforcement, remote features and
 hardware/thermal monitoring remain excluded. Existing typed actions are the
 adoption boundary; this stage adds guidance/categories, not unreviewed presets.
 
+User refinement2026-11-08: category dropdown text and arrow must share vertical
+alignment at100/150-percent scaling. The Tweaks card counts applicable pending
+recommendations, not every unapplied setting: qualified Optional actions not yet
+applied and Keep enabled settings currently disabled by that tweak. Applied
+Optional, Advanced, unassessed, unsupported and inaccessible actions are omitted.
+Filtering does not change the whole-category summary; no action is auto-selected.
+
 ### Updater scratch lifetime and live analysis disclosure (S38)
 
 User report2026-11-08: Runtime/Temp contains26 successful updater downloads,
