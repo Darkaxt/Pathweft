@@ -1,5 +1,14 @@
 # Pathweft development
 
+Current delivery2026-11-08: S34 COMPLETE, S30 ACTIVE only for ACCESS-03 installed
+acceptance. Normal1.1.36/12807d2 is published with six hash-verified assets.
+Final app197288 and independently downloaded app227432 pass native/self-test/
+whole application checks. Read-only installed check still reports1.1.35; user
+update requested once. Preserve the running app and baseline identities. After
+user updater/reopen, run the existing installed readback with Version1.1.36 and
+release136 evidence; close S30 only when matching files/helper/profile/shortcut
+pass. No additional UAC test approval is pending. Do not begin a later stage.
+
 Current2026-11-08/spec0.92: S34 COMPLETE for MAINT-06..07 through actual UI232500
 and dark/light100/150-percent/narrow captures. Automatic standard Cleanup queue,
 sorting, selection, exact review/cancel/restore criteria pass. S30 now ACTIVE for
