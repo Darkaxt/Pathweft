@@ -379,6 +379,12 @@
           </GridView>
         </ListView.View>
       </local:FileList>
+      <StackPanel x:Name="FolderFailurePanel" Visibility="Collapsed" Panel.ZIndex="2"
+                  HorizontalAlignment="Left" VerticalAlignment="Top" Margin="24,52,24,24" MaxWidth="460">
+        <TextBlock x:Name="FolderFailureTitle" FontSize="20" FontWeight="SemiBold" TextWrapping="Wrap"/>
+        <TextBlock x:Name="FolderFailureDetails" TextWrapping="Wrap" Margin="0,8,0,16" Foreground="{DynamicResource Muted}"/>
+        <Button x:Name="FolderAccessAction" Style="{StaticResource AuxiliaryAction}" HorizontalAlignment="Left" Click="FolderAccess_Click"/>
+      </StackPanel>
       </Grid>
     </DockPanel>
       <!-- The visible diagonal segment meets the right/bottom pane edges, including the footer.
@@ -391,6 +397,16 @@
                 BorderBrush="{DynamicResource Palette.33FFFFFF}" BorderThickness="0,1,0,1" RenderTransformOrigin="0.5,0.5">
           <Border.RenderTransform><RotateTransform Angle="-32"/></Border.RenderTransform>
           <TextBlock Text="READ-ONLY" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource Palette.66FFFFFF}"
+                     HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        </Border>
+      </Canvas>
+      <Canvas x:Name="DeniedWatermark" Visibility="Collapsed" Panel.ZIndex="2" IsHitTestVisible="False"
+              Opacity="0.4" HorizontalAlignment="Right" VerticalAlignment="Bottom"
+              Width="240" Height="150" ClipToBounds="True" AutomationProperties.Name="Access denied">
+        <Border Canvas.Left="-32.5" Canvas.Top="77" Width="360" Height="30"
+                BorderBrush="{DynamicResource TransferError}" BorderThickness="0,1,0,1" RenderTransformOrigin="0.5,0.5">
+          <Border.RenderTransform><RotateTransform Angle="-32"/></Border.RenderTransform>
+          <TextBlock Text="ACCESS DENIED" FontSize="13" FontWeight="SemiBold" Foreground="{DynamicResource TransferError}"
                      HorizontalAlignment="Center" VerticalAlignment="Center"/>
         </Border>
       </Canvas>

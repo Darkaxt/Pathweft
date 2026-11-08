@@ -1,6 +1,47 @@
 # Pathweft specification
 
-Version 0.93 - 2026-11-08. Owner: Darkaxt.
+Version 0.95 - 2026-11-08. Owner: Darkaxt.
+
+### Drive-scoped performance detail (S37)
+
+User request2026-11-08: adapt SysOptimizer's Disks detail into the existing
+Performance > Drive I/O investigation view, scoped to the physical drive backing
+the current path. Reuse donor logic where applicable and Pathweft's current
+collector/history/layout. Include read/write throughput, latency, active time
+and available drive health facts (identity, temperature, remaining life, powered
+hours, writes, Windows health). Qualify donor source and Windows support before
+adoption; never invent missing health facts or match disks by display-name alone.
+No unrelated all-drive dashboard, network features, CPU/motherboard/fan monitoring
+or automatic driver installation. Broader THRM/Taskbar Thermals remains deferred.
+
+| ID | Required behavior and acceptance |
+| --- | --- |
+| DRIVE-01 | Existing Drive I/O investigation shows current backing-drive read/write, latency and active-time details with a shared time range and theme/layout consistent with the current investigation. Reuse qualified donor implementation; preserve path-to-drive identity across navigation and truthful unsupported virtual/network cases. |
+| DRIVE-02 | Present only available, correctly attributed drive-health facts with source/unit context and clear unavailable/permission states. Reuse approved shared administrator access where needed, without blanket elevation or driver deployment. Bound background work, collection/storage and lifecycle; verify real native mapping, telemetry, permissions and representative rendered sizes/themes. |
+
+S37 follows S36 source/native/UI acceptance. One combined final release includes
+S35/S36/S37 after all implementation criteria pass, followed by independent
+download/package checks and installed readback when the user updates.
+
+### Protected-folder presentation and analysis access (S36)
+
+User refinements2026-11-08: a denied folder must not look empty. Status-bar
+diagnostics do not constitute the user-facing explanation. Preserve typed read
+failures and show an in-pane Access denied explanation, a direct action using
+the existing shared administrator session, and a faint red diagonal Access denied
+ribbon matching the Read-only stripe. Clear it after successful reads or leaving
+the destination. Keep normal empty folders normal and generic I/O failures distinct.
+
+| ID | Required behavior and acceptance |
+| --- | --- |
+| ACCESS-04 | Protected Standard browsing presents Access denied in the pane, actionable administrator retry, accessible text and faint red edge-reaching ribbon. Use the existing shared session without reopening the app. Denied/cancelled elevation preserves destination and explanation; successful retry clears the state. No stale asynchronous error after navigation, no administrator-only rows exposed after switching to Standard, and no reliance on localized exception text. Inspect actual dark/light100/150-percent layouts and narrow presentation. |
+| ACCESS-05 | The same shield controls real filesystem access in the existing disk analysis view. Drain the original scan before replacing its access context. Preserve root, mode, expanded identities and appropriate selection; Standard must not retain privileged-only descendants, totals or saved listings. Verify actual pane analysis and repeated Standard/Administrator changes on a real disposable protected fixture, shared-helper reuse and natural retirement. No changes to user ACLs/data. |
+
+Huashu contract: reuse the existing pane typography, theme resources, compact
+button and diagonal Read-only ribbon geometry. Put the explanation and action in
+the list content, with diagnostic details secondary. No modal error or white busy
+surface. S37 owns final combined delivery after both stages' criteria pass; S35's
+instruction prohibits a standalone icon-only release, not this functional repair.
 
 ### Toolbar action accents (S35)
 

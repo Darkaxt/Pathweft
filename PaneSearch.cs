@@ -179,6 +179,7 @@ public partial class PaneView
 
     public void Search(string query)
     {
+        ClearFolderFailure();
         if(SpaceAnalyzing){AfterSpace(()=>Search(query));return;}
 #if DEBUG
         VerificationQueryEvents?.Add("SEARCH " + query + "\n" + Environment.StackTrace);

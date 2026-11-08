@@ -14,6 +14,7 @@ public partial class MainWindow
         end.Click+=async(_,_)=>{accessWork=EndAdministrator();await accessWork;};menu.Items.Add(end);
         menu.Opened+=(_,_)=>end.IsEnabled=AdministratorSession.Available&&!changingAccess;
         AdministratorCommand.ContextMenu=menu;
+        Left.AdministratorRequested+=RequestAdministrator;Right.AdministratorRequested+=RequestAdministrator;
         AdministratorSession.Changed+=AdministratorChanged;
         Closed+=(_,_)=>AdministratorSession.Changed-=AdministratorChanged;
         UpdateAdministrator();
@@ -26,6 +27,7 @@ public partial class MainWindow
         AdministratorCommand.ToolTip=caption;AutomationProperties.SetName(AdministratorCommand,caption);
         AutomationProperties.SetItemStatus(AdministratorCommand,admin?"Administrator":ready?"Standard; administrator session ready":"Standard");
         AdministratorCommand.IsEnabled=!changingAccess;
+        Left.UpdateFolderAccessAction(!changingAccess);Right.UpdateFolderAccessAction(!changingAccess);
     }
     void AdministratorChanged()
     {
@@ -51,6 +53,8 @@ public partial class MainWindow
     }
     async void Administrator_Click(object sender,RoutedEventArgs e)
     {if(changingAccess)return;accessWork=ToggleAdministrator();await accessWork;}
+    async void RequestAdministrator()
+    {if(changingAccess||AdministratorSession.Browsing)return;accessWork=ToggleAdministrator();await accessWork;}
     async Task ToggleAdministrator()
     {
         changingAccess=true;UpdateAdministrator();

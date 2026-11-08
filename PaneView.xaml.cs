@@ -530,7 +530,17 @@ public partial class PaneView : UserControl
         if(space is {} current)
         {
             current.Cancellation.Cancel();await current.Work;current.Cancellation.Dispose();current.Cancellation=new();
-            current.Administrator=AdministratorSession.Browsing;current.QuietRefresh=true;
+            current.Administrator=AdministratorSession.Browsing;current.QuietRefresh=false;
+            current.ExpandedAfterAccess=current.Nodes.Values.Where(row=>row.Expanded).Select(row=>row.Path).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            current.SelectionAfterAccess=Selected.Select(row=>row.Path).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            lock(current.Mailbox){current.Pending.Clear();current.Seen.Clear();}
+            current.Nodes.Clear();
+            current.Nodes[current.Root]=new SpaceEntry{Path=current.Root,Name=Path.GetFileName(current.Root),IsDir=true,Size=-1,State=SpaceState.Pending};
+            current.Visible.Clear(); // selection notifications must observe the replacement root
+            // A privilege change invalidates every old result, including the
+            // ordinary listing restored when leaving analysis.
+            current.SavedItems=new List<Entry>();current.SavedView=new System.Windows.Data.ListCollectionView((System.Collections.IList)current.SavedItems);
+            current.Changed=true;ClearFolderFailure();UpdateSpaceFooter();StatsChanged?.Invoke();
             current.Work=RunSpaceAsync(current,preferIndex:false);return;
         }
         if(!IsWidget&&!InSearch&&!IsVirtual(Dir))Navigate(Dir,null,false,true);
@@ -621,10 +631,14 @@ public partial class PaneView : UserControl
                 ListingLoaded(v);
                 if (error != null)
                 {
-                    Error?.Invoke(error);
-                    if (cached == null) ShowItems(new List<Entry>(), null); // not the last folder's files under this one's name
+                    Listed=false;
+                    ShowItems(new List<Entry>(), null); // denied is not an empty folder or a cached privileged listing
+                    ShowFolderFailure(error);
+                    Error?.Invoke(error.Message);
+                    StatsChanged?.Invoke();
                     return;
                 }
+                ClearFolderFailure();
                 // Same files as the rows on screen: only sizes and dates are brought up to date, so the
                 // scroll position, the selection and the icons stay. Otherwise the list is replaced.
                 bool shown = cached != null && cached.Items == items||refresh&&itemsFolder==di.FullName;
@@ -702,7 +716,7 @@ public partial class PaneView : UserControl
         }
     }
 
-    static List<Entry> ReadFolder(DirectoryInfo di, bool hidden, out string error)
+    static List<Entry> ReadFolder(DirectoryInfo di, bool hidden, out Exception error)
     {
         var list = new List<Entry>();
         error = null;
@@ -719,11 +733,11 @@ public partial class PaneView : UserControl
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or System.Security.SecurityException)
         {
-            error = ex.Message;
+            error = ex;
         }
         return list;
     }
-    static async Task<(List<Entry> Items,string Error)> ReadFolderAsync(DirectoryInfo folder,bool hidden,bool administrator,CancellationToken cancel)
+    static async Task<(List<Entry> Items,Exception Error)> ReadFolderAsync(DirectoryInfo folder,bool hidden,bool administrator,CancellationToken cancel)
     {
         if(!administrator){var ordinary=ReadFolder(folder,hidden,out var failure);return(ordinary,failure);}
         try
@@ -736,8 +750,8 @@ public partial class PaneView : UserControl
                 IsCut=CutPaths.Contains(row.Path),ReadOnlyReason=ReadOnlyIcons.AttributeReason((row.Attributes&FileAttributes.Directory)!=0,row.Attributes)
             }).ToList(),null);
         }
-        catch(OperationCanceledException)when(cancel.IsCancellationRequested){return(new(),"Folder read cancelled");}
-        catch(Exception error)when(error is IOException or UnauthorizedAccessException or InvalidOperationException or System.ComponentModel.Win32Exception){return(new(),error.Message);}
+        catch(OperationCanceledException error)when(cancel.IsCancellationRequested){return(new(),error);}
+        catch(Exception error)when(error is IOException or UnauthorizedAccessException or InvalidOperationException or System.ComponentModel.Win32Exception){return(new(),error);}
     }
 
     /// Reads folders into the cache in the background, so opening one of them costs nothing: the other
@@ -788,6 +802,7 @@ public partial class PaneView : UserControl
         tabs[tab] = path;
         ArchiveRoot = null; // NavigateArchive sets it again right after
         ReadOnlyWatermark.Visibility = Visibility.Collapsed;
+        ClearFolderFailure();
         Visited?.Invoke(path);
         if(!string.Equals(lastVisitedFolder,path,StringComparison.OrdinalIgnoreCase))
         {lastVisitedFolder=path;FolderVisited?.Invoke(path);}

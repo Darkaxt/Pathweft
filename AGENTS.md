@@ -1,6 +1,15 @@
 # Pathweft development
 
-Current2026-11-08/spec0.93: S35 COMPLETE for CORE-25 source-only toolbar accents
+Current2026-11-08/spec0.95: S36 COMPLETE for ACCESS-04..05 through actual UI161520
+and helper198244; typed pane denial/action/red ribbon, real protected analyzer
+context replacement and original lifecycle/resource criteria pass. First failed
+trial217208 root-reset ordering is diagnosed/corrected and retained. See
+docs/verification/2026-11-08-s36-access.md. S37 ACTIVE for DRIVE-01..02: reuse donor
+Disks logic in the existing Drive I/O investigation, scoped to current backing
+drive. Native facts/mapping, layouts/resources and final combined delivery remain.
+No icon-only publication, no other ACTIVE stage, no user ACL/profile/live changes.
+
+Previous2026-11-08/spec0.93: S35 COMPLETE for CORE-25 source-only toolbar accents
 through actual UI206648, themes/scales, palette changes and original glyphs.
 No icon-only release or version bump. S30 installed acceptance is COMPLETE.
 The next user request is protected-folder Access denied UX and administrator

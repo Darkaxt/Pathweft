@@ -1,9 +1,20 @@
 # Implementation and reconciliation
 
-Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.93, 2026-11-08,
+Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.95, 2026-11-08,
 including the user-authorized continued comparison requirement TRANSFER-07.
 
-Current2026-11-08: S35 COMPLETE for CORE-25 source-only accents through actual
+Current2026-11-08: S36 COMPLETE for ACCESS-04..05 through actual hidden UI161520
+and helper198244: typed pane denial/action/ribbon, protected root and expanded
+branch analysis mode changes, no privileged-row restoration and natural lifecycle.
+Themes/scales/narrow and existing resource budgets pass. See verification/2026-11-08-s36-access.md.
+S37 is now the single ACTIVE stage. Drive-focused donor qualification, integration,
+native/layout/resource acceptance and final combined delivery remain outstanding.
+No tracked deferral or concurrent implementation stage.
+S35 is COMPLETE and remains included without an icon-only release. The subsequent
+drive-focused donor request is recorded as S37 NOT STARTED. S37 owns the final
+combined release; no intermediate S36 publication.
+
+Previous2026-11-08: S35 COMPLETE for CORE-25 source-only accents through actual
 UI206648. Palette changes, glyph details/neutral outlines, themes/scales/DPI,
 actual Hidden/pane/preview and file commands pass. No remaining source criterion,
 blocker, tracked deferral or required refactor. No icon-only publication/version
@@ -1218,6 +1229,8 @@ plan neither authorizes itself nor adds approval checkpoints.
 | S34 - Automatic Maintenance review and sorting | COMPLETE | MAINT-06..07 | S33 COMPLETE; before S30 | Actual UI232500 verifies sequential automatic review, incremental summaries/cancel, real headers/numeric units, selection/sort retention and existing exact cleanup/restore with themed layouts. No blocker/deferral/refactor. Final delivery is integrated with S30. |
 | S30 - Reusable administrator access session | COMPLETE | ACCESS-01..03; affected CORE/LIFE/DELIVERY | After S34, before S25; renewed user request2026-11-08 | Source218544/helper235336 and owner233356/helper225008 pass protected browser/analysis/editor saves, concurrency, reuse, denial, owner/lifecycle and original resource budgets. Normal1.1.36/12807d2 final197288/independent227432 pass. Installed236392 verifies11,305 matching members, restarted ready main236072/helper123040,22 routes and preserved profile/shortcut. No blocker, deferral or required refactor. |
 | S35 - Toolbar action accents | COMPLETE | CORE-25 | S30 COMPLETE; source-only user instruction2026-11-08 | Actual UI206648 verifies accent mapping, original terminal lettering, smaller gear/brush collar/two-pane divider, neutral outlines,16-DIP geometry, themes/scales/DPI and real commands. Source-only verified scope; no blocker, deferral or required refactor. Publication held against an icon-only release. |
+| S36 - Protected-folder presentation and analyzer access | COMPLETE | ACCESS-04..05 | S35 COMPLETE; before S37 | Actual UI161520/helper198244 pass typed pane denial/action/ribbon, root/expanded analysis privilege changes, no stale privileged listing, layouts and lifecycle/resources. No source blocker/deferral. Final delivery belongs to S37. |
+| S37 - Drive-scoped performance detail | ACTIVE | DRIVE-01..02; final combined DELIVERY | S36 COMPLETE; before S25 | Reuse SysOptimizer drive detail/health in current Drive I/O view, scoped to backing drive. Native mapping/facts, permissions/resources, themes/layout and final independently verified combined release remain unverified. |
 | S25 - Summary-card motion | NOT STARTED | MOTION-01..03; affected MONITOR/CORE-03/LIFE/DELIVERY | S18 COMPLETE; after S28 and before S12 | Upward card entry with smooth file-pane squeeze; rotation between Statistics/Performance; reversal/interruption and focus/scroll preservation; reduced-motion support and actual frame/layout/resource qualification. One final independently/installed verified release after implementation authorization. No criteria verified yet. |
 | S12 - Tresorit capability investigation | NOT STARTED | TRES-01..04 | S15 delivered; S16/S18/S25 considered first in the selected execution order | Supported API/client assessment, bounded REA as needed, evidence-backed capability matrix/decision and implementation proposal. Investigation only; no cloud mutation or integration implementation. |
 | S19 - Selected-folder content indexing | NOT STARTED | CONTENT-01..06; affected SEARCH/CORE/LIFE/DELIVERY | After S12 in the selected execution order; qualify extractor APIs, query/location semantics, provider metadata and resource budgets | Toolbar folder opt-in/current magnifier badges; qualified Craft/text extraction; persisted searchable strings and location arrays, periodic incremental refresh and cloud-cache independence. Verify actual search/open/freshness/recovery and one final independently/installed verified release when implementation is authorized. No criteria verified yet. |

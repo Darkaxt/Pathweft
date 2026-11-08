@@ -8,7 +8,7 @@ namespace FileExplorer;
 
 internal sealed record MaintenanceRequest(string Action,string Id,string Journal,string Cache);
 internal sealed record AccessEntry(string Name,string Path,FileAttributes Attributes,long Bytes,DateTime Modified);
-internal sealed record MaintenanceReply(bool Ok,string Message,MaintenanceRow Row=null,AccessEntry[] Entries=null,SpaceUpdate[] Updates=null,bool More=false);
+internal sealed record MaintenanceReply(bool Ok,string Message,MaintenanceRow Row=null,AccessEntry[] Entries=null,SpaceUpdate[] Updates=null,bool More=false,int ErrorCode=0);
 
 // Authenticated, task-scoped privilege boundary following PerformanceIoWorker's
 // existing owner/pipe contract. No listener/service, arbitrary shell or driver.
@@ -66,7 +66,7 @@ internal sealed class MaintenanceClient : IAsyncDisposable
             using var cancellation=cancel.Register(()=>pipe?.Dispose());
             while(true)
             {
-                if(!reply.Ok)throw new IOException(reply.Message);publish(reply);if(!reply.More)break;
+                if(!reply.Ok){if(reply.ErrorCode==5)throw new UnauthorizedAccessException(reply.Message);throw new IOException(reply.Message);}publish(reply);if(!reply.More)break;
                 string line=await reader.ReadLineAsync(stopped.Token).ConfigureAwait(false)??throw new IOException("Administrator read ended before completion");
                 if(line.Length>8*1024*1024)throw new InvalidDataException("Administrator read response is too large");
                 reply=JsonSerializer.Deserialize<MaintenanceReply>(line)??throw new InvalidDataException("Invalid administrator read");
@@ -115,6 +115,7 @@ internal sealed class MaintenanceClient : IAsyncDisposable
 }
 internal static class MaintenanceWorker
 {
+    static MaintenanceReply Failure(Exception error)=>new(false,error.Message,ErrorCode:error is UnauthorizedAccessException or System.Security.SecurityException||error is System.ComponentModel.Win32Exception{NativeErrorCode:5}?5:0);
     internal static async Task<int> Run(string name,int pid,long started,CancellationToken session=default)
     {
         using var owner=Process.GetProcessById(pid);
@@ -195,12 +196,12 @@ internal static class MaintenanceWorker
                 MaintenanceReply result;
                 try{result=new(true,await Apply(request,lost.Token));}
                 catch(Exception error)when(error is IOException or InvalidDataException or JsonException or UnauthorizedAccessException or InvalidOperationException or ArgumentException or System.ComponentModel.Win32Exception or System.Security.SecurityException)
-                {result=new(false,error.Message);}
+                {result=Failure(error);}
                 await writer.WriteLineAsync(JsonSerializer.Serialize(result));
             }
             }
             catch(Exception error)when(error is IOException or InvalidDataException or JsonException or UnauthorizedAccessException or InvalidOperationException or ArgumentException or System.ComponentModel.Win32Exception or System.Security.SecurityException)
-            {failure=new(false,error.Message);}
+            {failure=Failure(error);}
             if(failure!=null)await writer.WriteLineAsync(JsonSerializer.Serialize(failure));
             lost.Cancel();
             return 0;

@@ -53,6 +53,8 @@ public partial class PaneView
         internal bool RefreshRequested,Changed,Stopping;
         internal bool SelectFirst=true,QuietRefresh,FullRefresh,Starting=true;
         internal HashSet<string> Dirty=new(StringComparer.OrdinalIgnoreCase);
+        internal HashSet<string> ExpandedAfterAccess=new(StringComparer.OrdinalIgnoreCase);
+        internal HashSet<string> SelectionAfterAccess=new(StringComparer.OrdinalIgnoreCase);
     }
     SpaceView space;
     internal bool SpaceAnalyzing=>space!=null;
@@ -133,6 +135,7 @@ public partial class PaneView
             await ReadSpaceChildren(current,current.Root);
             foreach(var row in current.Nodes.Values.Where(row=>row.Expanded&&!row.ChildrenRead).ToArray())await ReadSpaceChildren(current,row.Path);
             DrainSpace(current);
+            current.SelectionAfterAccess.Clear();
         }
         catch(OperationCanceledException)when(current.Cancellation.IsCancellationRequested){}
         catch(Exception error){if(space==current&&!current.Stopping){var root=current.Nodes[current.Root];root.State=SpaceState.Failed;root.Failure=error.Message;UpdateSpaceFooter();Error?.Invoke("Space analysis: "+error.Message);}}
@@ -156,7 +159,7 @@ public partial class PaneView
         foreach(var update in updates.Values)
         {
             if(!current.Nodes.TryGetValue(update.Path,out var row))
-                current.Nodes[update.Path]=row=new SpaceEntry{Path=update.Path,Name=Path.GetFileName(update.Path),IsDir=true,ParentPath=update.Parent,Size=-1};
+                current.Nodes[update.Path]=row=new SpaceEntry{Path=update.Path,Name=Path.GetFileName(update.Path),IsDir=true,ParentPath=update.Parent,Size=-1,Expanded=current.ExpandedAfterAccess.Contains(update.Path)};
             // A replacement scan owns a new snapshot. Keep the last completed
             // value/count/status until that branch produces its replacement;
             // initial unknown rows and terminal errors remain truthful.
@@ -174,6 +177,7 @@ public partial class PaneView
         var anchor=current.Visible.FirstOrDefault(e=>List.ItemContainerGenerator.ContainerFromItem(e) is FrameworkElement f&&f.TranslatePoint(new Point(),List).Y>=0);
         double anchorY=anchor!=null&&List.ItemContainerGenerator.ContainerFromItem(anchor) is FrameworkElement f?f.TranslatePoint(new Point(),List).Y:0;
         var selected=Selected.Select(e=>e.Path).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        selected.UnionWith(current.SelectionAfterAccess);
         var children=current.Nodes.Values.Where(row=>row.ParentPath!=null).GroupBy(row=>row.ParentPath,StringComparer.OrdinalIgnoreCase).ToDictionary(group=>group.Key,group=>group.OrderByDescending(row=>row.DisplaySize).ThenBy(row=>row.Name,StringComparer.OrdinalIgnoreCase).ToArray(),StringComparer.OrdinalIgnoreCase);
         double total=Math.Max(0,current.Nodes[current.Root].DisplaySize);
         var ordered=new List<Entry>();var stack=new Stack<(SpaceEntry Row,int Depth)>();
@@ -200,6 +204,7 @@ public partial class PaneView
                 selected.Clear();selected.Add(current.Visible[0].Path);
             }
             SetSelection(entry=>selected.Contains(entry.Path));
+            if(Selected.Any())current.SelectionAfterAccess.Clear();
         }
         finally{bulkSelect=previous;}
         List.UpdateLayout();
@@ -216,7 +221,7 @@ public partial class PaneView
             ? (await MaintenanceClient.ReadFolder(path,token)).Select(row=>new SpaceMember(row.Path,row.Name,(row.Attributes&FileAttributes.Directory)!=0,(row.Attributes&FileAttributes.ReparsePoint)!=0,row.Bytes,row.Modified.ToUniversalTime())).ToList()
             : await Task.Run(()=>SpaceScan.Children(path,token),token);}
         catch(Exception error)when(error is System.ComponentModel.Win32Exception or IOException or UnauthorizedAccessException)
-        {if(space==current&&current.Nodes.TryGetValue(path,out var failed)){failed.State=SpaceState.Denied;failed.Failure=error.Message;failed.Updated();RebuildSpace(current);}return false;}
+        {if(space==current&&current.Nodes.TryGetValue(path,out var failed)){failed.State=IsAccessDenied(error)?SpaceState.Denied:SpaceState.Failed;failed.Failure=error.Message;failed.Updated();RebuildSpace(current);}return false;}
         token.ThrowIfCancellationRequested();if(space!=current||current.Stopping)return false;DrainSpace(current);
         var present=members.Select(member=>member.Path).ToHashSet(StringComparer.OrdinalIgnoreCase);
         foreach(var absent in current.Nodes.Values.Where(row=>row.ParentPath==path&&!present.Contains(row.Path)).ToArray())
@@ -231,7 +236,7 @@ public partial class PaneView
             {existing.Modified=member.Modified.ToLocalTime();if(!member.Directory)existing.Size=member.Bytes;continue;}
             bool indexed=sizes.TryGetValue(Path.TrimEndingDirectorySeparator(member.Path),out long bytes);
             current.Nodes[member.Path]=new SpaceEntry{Path=member.Path,Name=member.Name,IsDir=member.Directory,Modified=member.Modified.ToLocalTime(),ParentPath=path,
-                Size=member.Reparse?0:member.Directory?indexed?bytes:-1:member.Bytes,State=member.Reparse?SpaceState.Reparse:member.Directory?indexed?SpaceState.Indexed:SpaceState.Pending:SpaceState.Complete};
+                Size=member.Reparse?0:member.Directory?indexed?bytes:-1:member.Bytes,State=member.Reparse?SpaceState.Reparse:member.Directory?indexed?SpaceState.Indexed:SpaceState.Pending:SpaceState.Complete,Expanded=current.ExpandedAfterAccess.Contains(member.Path)};
         }
         // An indexed parent does not establish coverage of every child. A newly
         // expanded unindexed branch still receives a real metadata measurement.
@@ -265,6 +270,8 @@ public partial class PaneView
     void UpdateSpaceFooter()
     {
         if(space is not {} current)return;var root=current.Nodes[current.Root];
+        if(root.State==SpaceState.Denied)ShowFolderFailure(new UnauthorizedAccessException(root.Failure));
+        else if(root.State is SpaceState.Complete or SpaceState.Indexed)ClearFolderFailure();
         SpaceActivity.Visibility=current.Starting?Visibility.Visible:Visibility.Collapsed;
         SpaceActivity.IsIndeterminate=current.Starting&&Motion.On;
         SpaceActivity.Value=35;

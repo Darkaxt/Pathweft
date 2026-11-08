@@ -82,9 +82,54 @@ public partial class MainWindow
             check(denied,"Task-owned protected fixture is genuinely inaccessible to the standard GUI");
             var rows=await MaintenanceClient.ReadFolder(protectedFolder,default);
             check(rows.Any(x=>x.Name=="protected.txt"&&x.Bytes==23),"The same approved helper reads protected metadata while standard process cannot");
-            AdministratorCommand.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await accessWork;
-            await S1Verification.Navigate(Left,protectedFolder);
+            async Task DeniedFolder()
+            {
+                var failed=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+                void Failed(string message)=>failed.TrySetResult();Left.Error+=Failed;
+                try{Left.Navigate(protectedFolder);await failed.Task;}finally{Left.Error-=Failed;}
+                check(Left.FolderFailurePanel.Visibility==Visibility.Visible&&Left.DeniedWatermark.Visibility==Visibility.Visible&&Left.FolderFailureTitle.Text=="Access denied"&&Left.FolderAccessAction.Content.ToString()=="Use administrator access"&&!Left.Items.Any(),"Real Standard denial has pane explanation, administrator action and red ribbon instead of an empty-looking folder");
+            }
+            await DeniedFolder();
+            foreach(string theme in new[]{"dark","light"})foreach(double scale in new[]{1d,1.5})
+            {
+                Settings.NativeTheme=true;Settings.NativeMode=theme;Settings.TextScale=scale;ApplyAppearance();Width=1400;Height=850;UpdateLayout();
+                check(Left.FolderAccessAction.IsEnabled&&Left.FolderFailurePanel.ActualWidth>100&&Left.DeniedWatermark.Opacity<=0.4,"Denied pane action and faint watermark remain visible and themed at "+theme+scale);
+                await S1Verification.Snapshot(this,root,$"access-denied-{theme}-{scale:0.0}");
+            }
+            Width=900;UpdateLayout();await S1Verification.Snapshot(this,root,"access-denied-narrow");Width=1400;
+            var listing=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            void Listed(){if(Left.Listed&&Left.Items.Any(x=>x.Name=="protected.txt"))listing.TrySetResult();}
+            Left.StatsChanged+=Listed;
+            try{Left.FolderAccessAction.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await accessWork;await listing.Task;}finally{Left.StatsChanged-=Listed;}
             check(Left.Items.Any(x=>x.Name=="protected.txt"),"Actual administrator browser shows the protected folder without reopening Pathweft");
+            check(Left.FolderFailurePanel.Visibility==Visibility.Collapsed&&Left.DeniedWatermark.Visibility==Visibility.Collapsed&&launches==1,"Pane administrator action reuses the approved helper and clears denial after actual successful listing");
+            await Left.ToggleSpaceAsync();await Left.SpaceCompletion;
+            check(Left.SpaceAnalyzing&&Left.SpaceSummary.Bytes==23&&Left.Items.Any(x=>x.Name=="protected.txt"),"Actual protected disk-analysis pane measures and lists through administrator access");
+            AdministratorCommand.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await accessWork;await Left.SpaceCompletion;
+            check(Left.SpaceAnalyzing&&Left.Dir==protectedFolder&&Left.SpaceSummary.Bytes==0&&!Left.Items.Any()&&Left.DeniedWatermark.Visibility==Visibility.Visible,"Switching actual analysis to Standard removes privileged rows/totals and presents denied root without reopening the view");
+            await Left.EndSpaceAsync();
+            // EndSpace refresh is asynchronous. Observe the owned error result,
+            // rather than assuming an empty visible list is successful enumeration.
+            await DeniedFolder();
+            check(!Left.Items.Any(x=>x.Name=="protected.txt"),"Leaving Standard analysis cannot restore its saved administrator-only listing");
+            AdministratorCommand.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await accessWork;
+            await S1Verification.Navigate(Left,protectedFolder);await Left.ToggleSpaceAsync();await Left.SpaceCompletion;
+            check(Left.SpaceSummary.Bytes==23&&Left.DeniedWatermark.Visibility==Visibility.Collapsed&&launches==1,"Switching the same root back to administrator remeasures successfully with one helper launch");
+            await Left.EndSpaceAsync();await S1Verification.Navigate(Left,root);
+            string empty=Path.Combine(root,"empty");Directory.CreateDirectory(empty);await S1Verification.Navigate(Left,empty);
+            check(!Left.Items.Any()&&Left.FolderFailurePanel.Visibility==Visibility.Collapsed&&Left.DeniedWatermark.Visibility==Visibility.Collapsed,"A genuinely empty accessible folder has no denial UI after navigation");
+            await S1Verification.Navigate(Left,root);
+            await Left.ToggleSpaceAsync();await Left.SpaceCompletion;
+            var protectedBranch=(SpaceEntry)Left.Items.Single(x=>x.Path==protectedFolder);
+            Left.List.SelectedItem=protectedBranch;Left.List.ScrollIntoView(protectedBranch);UpdateLayout();
+            var expander=PreviewChildren<Button>(Left.List).Single(button=>ReferenceEquals(button.DataContext,protectedBranch)&&AutomationProperties.GetName(button)=="Expand or collapse folder");
+            expander.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await Left.SpaceCompletion;
+            check(Left.Items.Any(x=>x.Path==Path.Combine(protectedFolder,"protected.txt")),"Actual analyzer expansion exposes the protected file only in administrator mode");
+            AdministratorCommand.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await accessWork;await Left.SpaceCompletion;
+            check(Left.Items.OfType<SpaceEntry>().Any(x=>x.Path==protectedFolder&&x.State==SpaceState.Denied&&x.Expanded)&&Left.Selected.Any(x=>x.Path==protectedFolder)&&!Left.Items.Any(x=>x.Path==Path.Combine(protectedFolder,"protected.txt")),"Standard parent analysis retains selected expanded branch while removing its privileged descendants");
+            AdministratorCommand.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await accessWork;await Left.SpaceCompletion;
+            check(Left.Items.Any(x=>x.Path==Path.Combine(protectedFolder,"protected.txt"))&&Left.Selected.Any(x=>x.Path==protectedFolder)&&launches==1,"Administrator parent analysis restores expansion and selection using the same helper");
+            await Left.EndSpaceAsync();await S1Verification.Navigate(Left,root);
             var measured=new List<SpaceUpdate>();await MaintenanceClient.ScanSpace(protectedFolder,measured.Add,default);
             check(measured.Any(x=>x.Path==protectedFolder&&x.Bytes==23&&x.State==SpaceState.Complete),"Disk analysis uses the approved helper and returns actual protected-file size");
             string protectedFile=Path.Combine(protectedFolder,"protected.txt");
