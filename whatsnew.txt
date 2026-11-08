@@ -1,6 +1,11 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.35 | 2026-11-08 | Complete Maintenance inventory
+- Startup identifies Run, RunOnce, policy Run, Startup-folder files and shortcuts, and tasks triggered at startup or logon. The Type column identifies each source; supported changes preserve their original state for Restore.
+- Services shows installed Windows application services with service name, startup type and description, replacing the inherited shortlist.
+- Tables retain their theme while loading or waiting for confirmation. Maintenance and Performance switch cleanly between mutually exclusive views, with matching toolbar states.
+
 ## 1.1.34 | 2026-11-08 | Maintenance and automatic history
 - The brush opens Maintenance with five summary-card tabs: Cleanup, Startup, Services, Windows tweaks and optional Windows apps. Review actual Windows state, analyze cleanup first, and confirm each change. Supported settings retain their exact original values for Restore.
 - Performance history and recent app observations collect automatically within bounded retention and storage. No recording switch is required to investigate the rolling hour.

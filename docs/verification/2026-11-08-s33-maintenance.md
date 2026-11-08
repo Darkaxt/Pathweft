@@ -50,6 +50,12 @@ badges or new tweaks. Seventeen exact pinned clones were inspected; the named
 RemoveWindowsAI repository could not be cloned (metadata and Git returned 404).
 Spent clones were transactionally removed after retaining pins and findings.
 
+The first unpublished 1.1.35 package failed its app-host self-test because the
+in-app changelog still began with 1.1.34 after the version bump. The required
+1.1.35 entry was added; the assertion remains unchanged. That package was not
+published. Its failure log is retained in the private release evidence; the
+corrected committed package must pass all delivery checks before publication.
+
 Reconciliation: source behavior is verified as above; S33 remains ACTIVE until
 normal publication, independent delivered-package acceptance and installed
 readback. No tracked deferral or required source refactor is identified.
