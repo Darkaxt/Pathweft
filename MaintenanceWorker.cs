@@ -128,6 +128,9 @@ internal static class MaintenanceWorker
         if(request.Action is not ("apply" or "restore"))throw new ArgumentException("Unknown maintenance action");
         bool restore=request.Action=="restore";
         if(request.Id.StartsWith("service:"))return MaintenanceServices.Change(request.Id[8..],restore,request.Journal);
+        if(request.Id.StartsWith("startup-file:"))return MaintenanceStartup.ChangeFile(request.Id,restore,request.Journal);
+        if(request.Id.StartsWith("startup-task:"))
+        {try{return MaintenanceStartup.ChangeTask(request.Id,restore,request.Journal);}catch(COMException error){throw new IOException("Windows Task Scheduler: "+error.Message,error);}}
         if(restore)Maintenance.RestoreRegistry(request.Id,request.Journal);
         else Maintenance.ApplyRegistry(request.Id,request.Id.StartsWith("startup:")?Maintenance.StartupEdits(request.Id):Maintenance.TweakEdits(request.Id),request.Journal);
         return restore?"Original settings restored.":"Change verified. Original settings saved for Restore.";

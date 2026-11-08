@@ -14,11 +14,14 @@ internal static class MaintenanceNativeVerification
         void Check(bool pass,string criterion){checks.Add(new{criterion,passed=pass});if(!pass)result=1;}
         try
         {
-            var prior=MaintenanceServices.Read("Fax");string journal=Path.Combine(root,"service.json");
-            string disabled=MaintenanceServices.Change("Fax",false,journal);
-            Check(MaintenanceServices.Read("Fax").Start==4&&Maintenance.Undo(journal).ContainsKey("service:Fax"),"Native SCM saves the actual service configuration before disabling the guest fixture");
-            MaintenanceServices.Change("Fax",true,journal);var restored=MaintenanceServices.Read("Fax");
+            string service=Environment.GetEnvironmentVariable("PATHWEFT_SERVICE_FIXTURE")??throw new InvalidOperationException("Missing guest fixture identity");
+            var prior=MaintenanceServices.Read(service);string journal=Path.Combine(root,"service.json");
+            Check(Maintenance.Read("Services",default).Any(x=>x.Id=="service:"+service),"All-service enumeration includes a native guest service outside the donor shortlist");
+            string disabled=MaintenanceServices.Change(service,false,journal);
+            Check(MaintenanceServices.Read(service).Start==4&&Maintenance.Undo(journal).ContainsKey("service:"+service),"Native SCM saves the actual service configuration before disabling the guest fixture");
+            MaintenanceServices.Change(service,true,journal);var restored=MaintenanceServices.Read(service);
             Check(restored.Start==prior.Start&&restored.Delayed==prior.Delayed&&Maintenance.Undo(journal).Count==0,"Native SCM restores the original startup/delayed configuration without starting the service");
+            await StartupFixtures(root,Check);
             var tweak=Maintenance.Tweaks.First(x=>x.Name=="Windows telemetry");string id="tweak:"+Maintenance.Id("tweak",tweak.Name);var edits=Maintenance.TweakEdits(id);var before=edits.Select(x=>x.Read()).ToArray();
             await using(var client=new MaintenanceClient())Check((await client.Start(new("apply",id,Path.Combine(root,"tweak.json"),null),false)).Ok,"Authenticated worker applies the selected machine-wide tweak inside the guest");
             Check(edits.All(x=>x.Same(x.Read())),"Actual registry readback matches every requested machine-wide value");
@@ -38,6 +41,57 @@ internal static class MaintenanceNativeVerification
         }
         catch(Exception ex){checks.Add(new{failure=ex.ToString()});result=1;}
         File.WriteAllText(Path.Combine(root,"native-results.json"),JsonSerializer.Serialize(new{pid=Environment.ProcessId,result,checks},new JsonSerializerOptions{WriteIndented=true}));return result;
+    }
+    static async Task StartupFixtures(string root,Action<bool,string> check)
+    {
+        string name="Pathweft-owned-"+Guid.NewGuid().ToString("N"),journal=Path.Combine(root,"startup.json");
+        using(var run=Registry.CurrentUser.CreateSubKey(Maintenance.RunPath))
+        using(var approved=Registry.CurrentUser.CreateSubKey(@"Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run"))
+        {
+            run.SetValue(name,"never-executed.exe");byte[] state=new byte[12];state[0]=3;approved.SetValue(name,state,RegistryValueKind.Binary);
+            try{var row=MaintenanceStartup.Read([],default).Single(r=>r.Id==Maintenance.StartupId("HKEY_CURRENT_USER",RegistryView.Registry64,name));check(row.State=="Disabled"&&!row.CanChange&&((byte[])approved.GetValue(name)).SequenceEqual(state),"Windows-owned StartupApproved disabled state is recognized without rewriting it");}
+            finally{run.DeleteValue(name,false);approved.DeleteValue(name,false);}
+        }
+        foreach(var source in new[]{(RegistryHive.CurrentUser,RegistryView.Registry64,Maintenance.RunPath+"Once"),(RegistryHive.LocalMachine,RegistryView.Registry32,Maintenance.RunPath+"Once"),(RegistryHive.CurrentUser,RegistryView.Registry64,MaintenanceStartup.RegistryPaths[2])})
+        {
+            using var hive=RegistryKey.OpenBaseKey(source.Item1,source.Item2);using var key=hive.CreateSubKey(source.Item3);
+            key.SetValue(name,"%TEMP%\\never-run.exe",RegistryValueKind.ExpandString);
+            string id=MaintenanceStartup.RegistryId(hive.Name,source.Item2,source.Item3,name);
+            try
+            {
+                check(MaintenanceStartup.Read([],default).Any(x=>x.Id==id&&x.Type==(source.Item3.EndsWith("RunOnce")?"Registry RunOnce":"Registry policy Run")),"Native Startup identifies "+hive.Name+source.Item2+source.Item3);
+                await using(var client=new MaintenanceClient())check((await client.Start(new("apply",id,journal,null),false)).Ok,"Worker disables exact owned registry source");
+                check(!key.GetValueNames().Contains(name),"Owned registry source is actually disabled");
+                await using(var client=new MaintenanceClient())check((await client.Start(new("restore",id,journal,null),false)).Ok,"Worker restores exact owned registry source");
+                check(key.GetValueKind(name)==RegistryValueKind.ExpandString&&(string)key.GetValue(name,null,RegistryValueOptions.DoNotExpandEnvironmentNames)=="%TEMP%\\never-run.exe","RunOnce/policy raw kind and value restored");
+            }
+            finally{key.DeleteValue(name,false);}
+        }
+        string folder=Environment.GetFolderPath(Environment.SpecialFolder.CommonStartup);Directory.CreateDirectory(folder);string file=Path.Combine(folder,name+".txt"),fileId=MaintenanceStartup.FileId(file);
+        File.WriteAllText(file,"owned guest startup file, never executed");
+        try
+        {
+            check(MaintenanceStartup.Read([],default).Any(x=>x.Id==fileId&&x.Type=="Startup file"),"Windows Startup folder is enumerated without executing its members");
+            await using(var client=new MaintenanceClient())check((await client.Start(new("apply",fileId,journal,null),false)).Ok,"Worker disables guest startup file using its exact native identity");
+            check(!File.Exists(file)&&File.Exists(Path.Combine(folder,"Pathweft-disabled",Path.GetFileName(file))),"Disabled startup file is outside the launch folder with its original bytes retained");
+            File.WriteAllText(file,"external replacement");
+            await using(var client=new MaintenanceClient())check(!(await client.Start(new("restore",fileId,journal,null),false)).Ok,"Restore preserves an independently created startup file at the original name");
+            check(File.ReadAllText(file)=="external replacement","External replacement remains unchanged");File.Delete(file);
+            await using(var client=new MaintenanceClient())check((await client.Start(new("restore",fileId,journal,null),false)).Ok,"Worker restores the original startup file");
+            check(File.ReadAllText(file)=="owned guest startup file, never executed","Exact startup file content restored");
+        }
+        finally{File.Delete(file);}
+        string taskRoot=Environment.GetEnvironmentVariable("PATHWEFT_TASK_FIXTURE")??throw new InvalidOperationException("Missing task fixture");
+        var tasks=MaintenanceStartup.Read([],default).Where(r=>r.Id.StartsWith("startup-task:")&&r.Details.StartsWith(taskRoot+"\\")).ToArray();
+        check(tasks.Length==2&&tasks.Any(t=>t.Details.Contains("At startup"))&&tasks.Any(t=>t.Details.Contains("At logon")),"Only boot/logon tasks are included; time-only task is excluded");
+        foreach(var task in tasks)
+        {
+            await using(var client=new MaintenanceClient())check((await client.Start(new("apply",task.Id,journal,null),false)).Ok,"Worker disables boot/logon task without running or rewriting it");
+            check(MaintenanceStartup.Read([],default).Single(r=>r.Id==task.Id).State=="Disabled","Task Scheduler reports the disabled state");
+            await using(var client=new MaintenanceClient())check((await client.Start(new("restore",task.Id,journal,null),false)).Ok,"Worker restores the original task state and definition");
+            check(MaintenanceStartup.Read([],default).Single(r=>r.Id==task.Id).State=="Enabled","Task Scheduler reports the restored enabled state");
+        }
+        check(Maintenance.Undo(journal).Count==0,"Every completed startup fixture Restore clears its durable journal record");
     }
 }
 #endif

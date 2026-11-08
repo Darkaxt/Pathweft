@@ -1,16 +1,18 @@
 # Implementation and reconciliation
 
-Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.89, 2026-11-08,
+Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.90, 2026-11-08,
 including the user-authorized continued comparison requirement TRANSFER-07.
 
-Current 2026-11-08: normal 1.1.34/2de366d is published and independently
-downloaded. All six asset hashes match; final app215364 and retrieved app172600
-pass source/native/self-test/application checks, including the five Maintenance
-tabs. S31 BLOCKED only for installed delivery readback after the user's updater
-and reopening, requested through the normal update flow. S32 COMPLETE, S30 NOT
-STARTED; no ACTIVE stage or tracked deferral. The one-time pause is lifted.
-See verification/2026-11-08-release134.md. Source/refactoring reconciliation is
-unchanged; no required source correction remains.
+Current 2026-11-08: S31 COMPLETE through installed1.1.34 readback233140:
+11,305 matching members, restarted main232344/helper233336, ready event,22 routes
+and preserved profile/shortcut identity. Normal publication and independent
+checks remain verified. S33 is the sole ACTIVE stage for MAINT-01..05: shared
+table busy-state palette, Startup source/type/action coverage, all installed
+services and Performance command ownership. Source app134872 and native guest3620
+pass affected table/native/workflow criteria; see verification/2026-11-08-s33-maintenance.md.
+Final normal release, independent package and installed delivery checks remain.
+No tracked deferral. S32 COMPLETE and
+S30 NOT STARTED. No live user startup/service settings will be changed by tests.
 
 Previous 2026-11-08: S32 COMPLETE for the user-authorized source-only ADOPT-01..06
 outcome: five bottom Maintenance summary tabs, scoped native actions/exact
@@ -1175,8 +1177,9 @@ plan neither authorizes itself nor adds approval checkpoints.
 | S27 - Compact automatic performance widgets | COMPLETE | MONITOR-06..08; affected MONITOR/LIFE/DELIVERY | S26 COMPLETE; before S25 | Source104260/native160216/sampler115172 qualify compact RAM/counter/layout, automatic folder-scope and lifecycle/resource behavior. Final154828/independent168072 pass actual graph/source/native/application workflows; installed159192 verifies normal1.1.30/659691f, matching files, restarted main/helper, readiness, routes and shortcut/profile. No remaining criterion, blocker or tracked deferral. |
 | S28 - Integrated system analysis and recorded history | COMPLETE | MONITOR-09..13; affected MONITOR/LIFE/DELIVERY | S27 COMPLETE; user selected performance/history/read-only MCP before maintenance | MONITOR-09..13 verified by source116416/analysis130208/resource172048/native170636 and final92112/independent163252. Normal1.1.31/e8dc64f and six assets published/read back; downloaded hashes/source/native/application checks pass. Installed179008 verifies11,304 matching members, restarted main169944/helper169508, readiness,22 routes and preserved shortcut/profile identity. Spent scratch cleaned; no blocker, required refactor or tracked deferral. |
 | S29 - Interactive performance investigation | COMPLETE | MONITOR-14..16; affected MONITOR/LIFE/DELIVERY | S28 COMPLETE; user reference2026-11-08 | Source163416/resource8824 pass graph-led investigation and preserved scope/layout/lifecycle. Normal1.1.32/2f3b1cd published; final165444/independent175768 pass source/native/application checks. Installed171532 verifies11,304 members, restarted ready main/helper,22 routes and preserved identity/profile. Scratch cleaned; all criteria pass. No blocker, deferral or required refactor. |
-| S31 - Performance continuity and process inspection | BLOCKED | MONITOR-17..21 and final S32 delivery | S29 and S32 COMPLETE; before S30 | Normal1.1.34/2de366d published; final215364 and independent172600 pass source/native/application checks, all six delivered hashes match. Only installed readback after the user's updater/reopen remains, an external delivery boundary. No source blocker or tracked deferral. |
+| S31 - Performance continuity and process inspection | COMPLETE | MONITOR-17..21 and final S32 delivery | S29 and S32 COMPLETE; before S30 | Normal1.1.34/2de366d published; final215364/independent172600 pass all delivered checks. Installed233140 verifies11,305 members, restarted ready main/helper,22 routes and preserved profile/shortcut. No blocker or tracked deferral. |
 | S32 - Local SysOptimizer adoption | COMPLETE | ADOPT-01..06 | Source work authorized during the former S31 publication pause | Five bottom Maintenance summary tabs, scoped native actions/exact restore, app charts, boot/changes/insights and reports pass source/native/rendered/lifecycle/resource acceptance. Delivered in normal1.1.34; final and independent actual assemblies pass. Installed parity remains in S31. No source blocker or tracked deferral. |
+| S33 - Maintenance coverage and table states | ACTIVE | MAINT-01..05 | S31/S32 COMPLETE; before S30 | Source134872/native3620/Performance60844 pass shared disabled-state theme, Startup source/Type/exact Restore, full SCM inventory and mutually exclusive toolbar modes. Normal1.1.35 publication and independent/installed delivery remain. No tracked deferral. |
 | S30 - Reusable administrator access session | NOT STARTED | ACCESS-01..03; affected CORE/LIFE/DELIVERY | After S29, before S25; user request2026-11-08 | Monochrome quartered UAC shield toggles standard/admin browsing; one approved authenticated scoped helper is reusable for protected browsing and existing elevation-dependent features until explicit session end/full app exit. Preserve unelevated UI, user state and tracing scope. Real privilege/consent/owner/cancellation/idle-cost and final delivery acceptance required. No criteria verified yet. |
 | S25 - Summary-card motion | NOT STARTED | MOTION-01..03; affected MONITOR/CORE-03/LIFE/DELIVERY | S18 COMPLETE; after S28 and before S12 | Upward card entry with smooth file-pane squeeze; rotation between Statistics/Performance; reversal/interruption and focus/scroll preservation; reduced-motion support and actual frame/layout/resource qualification. One final independently/installed verified release after implementation authorization. No criteria verified yet. |
 | S12 - Tresorit capability investigation | NOT STARTED | TRES-01..04 | S15 delivered; S16/S18/S25 considered first in the selected execution order | Supported API/client assessment, bounded REA as needed, evidence-backed capability matrix/decision and implementation proposal. Investigation only; no cloud mutation or integration implementation. |

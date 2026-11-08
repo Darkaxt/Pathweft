@@ -1,12 +1,17 @@
 # Pathweft development
 
-Current 2026-11-08/spec0.89: normal 1.1.34/2de366d is published with all six
-digest-matching assets. Final app215364 and independently downloaded app172600
-pass native/source/self-test/application checks, including five real Maintenance
-tabs. S31 BLOCKED only awaiting the user's updater/reopen and installed readback;
-the one-time release pause is lifted. S32 COMPLETE; S30 NOT STARTED. No ACTIVE
-stage. See docs/verification/2026-11-08-release134.md. Do not repeat publication
-approval or force-close/install over the user's running app.
+Current2026-11-08/spec0.90: S31 COMPLETE via installed1.1.34 readback233140,
+11,305 members, ready restarted main232344/helper233336,22 routes and preserved
+profile/shortcut. S33 is the only ACTIVE stage: MAINT-01..05 shared table state,
+Startup coverage/Type/exact Restore, all installed SCM services and Performance
+command ownership. Source134872/native3620/Performance60844 pass actual busy
+visuals, source coverage/exact Restore and exclusive modes. Final normal1.1.35,
+independent package and installed readback remain required. Donor investigation
+is documented in docs/MAINTENANCE-DONOR-REVIEW.md; no new safety rule feature is
+implemented or implicitly authorized by that assessment.
+never mutate existing user startup/tasks/services for testing. S32 COMPLETE,
+S30 NOT STARTED. Normal release authorized after complete integrated acceptance;
+no repeated publication question or force-close/install over the user's app.
 
 Previous 2026-11-08/spec0.88: S32 COMPLETE for ADOPT-01..06 local SysOptimizer
 adoption and five bottom Maintenance summary tabs. Source/native/integration

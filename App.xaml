@@ -80,6 +80,31 @@
 
     <!-- every view's rows: the hover tooltip (Entry.Tip), which Settings → Files can turn off and which keeps
          out of the way of a rename -->
+    <!-- Aero2 replaces a disabled list's transparent surface with white. Keep
+         the application palette in loading and confirmation states as well. -->
+    <Style TargetType="ListBox">
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="Foreground" Value="{DynamicResource Palette.E8EEF6}"/>
+      <Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="ScrollViewer.CanContentScroll" Value="True"/>
+      <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Auto"/>
+      <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto"/>
+      <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="ListBox">
+        <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}">
+          <ScrollViewer Focusable="False" Padding="{TemplateBinding Padding}"><ItemsPresenter/></ScrollViewer>
+        </Border>
+      </ControlTemplate></Setter.Value></Setter>
+    </Style>
+    <Style TargetType="ListView" BasedOn="{StaticResource {x:Type ListBox}}">
+      <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="ListView">
+        <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}">
+          <ScrollViewer x:Name="ListScroll" Focusable="False" Padding="{TemplateBinding Padding}" Style="{DynamicResource {x:Static GridView.GridViewScrollViewerStyleKey}}"><ItemsPresenter/></ScrollViewer>
+        </Border>
+        <ControlTemplate.Triggers>
+          <Trigger Property="View" Value="{x:Null}"><Setter TargetName="ListScroll" Property="Style" Value="{x:Null}"/></Trigger>
+        </ControlTemplate.Triggers>
+      </ControlTemplate></Setter.Value></Setter>
+    </Style>
     <Style x:Key="ItemTip" TargetType="ListViewItem">
       <Setter Property="AutomationProperties.Name" Value="{Binding AccessibleName}"/>
       <Setter Property="ToolTip" Value="{Binding Tip}"/>

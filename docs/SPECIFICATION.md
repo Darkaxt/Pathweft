@@ -1,6 +1,31 @@
 # Pathweft specification
 
-Version 0.89 - 2026-11-08. Owner: Darkaxt.
+Version 0.90 - 2026-11-08. Owner: Darkaxt.
+
+### Maintenance coverage and table-state corrections (S33)
+
+User refinement2026-11-08: eliminate the temporary white table in every module;
+expand common Windows startup coverage with a visible persistence Type; replace
+the inherited ten-service shortlist with actual installed service enumeration;
+correct the Performance toolbar command while Maintenance owns the main pane.
+The original SysOptimizer shortlist was a tune-up catalogue, not a complete
+Windows inventory. Preserve its source/license provenance, not its coverage limit.
+
+| ID | Required behavior and acceptance |
+| --- | --- |
+| MAINT-01 | List tables retain the current dark/light palette while loading, disabled, confirming and cancelling. Fix the shared template/state causing the white surface; preserve real selection, scrolling, virtualization and keyboard access. Verify actual rendered enabled/disabled/loading states across Maintenance categories and other shared table consumers at100/150-percent scale. |
+| MAINT-02 | Startup enumerates current-user/all-user Run and RunOnce registry views, policy Run entries, per-user/common Startup-folder files/shortcuts and registered scheduled tasks with logon or boot triggers. Show Type, scope, current state and location/command; distinguish task triggers and disabled Windows startup approval. Keep stable source identities and existing Run restore journals. Do not claim exhaustive Autoruns/security-hook coverage. Reads never launch entries, tasks or shortcuts and require no elevation; inaccessible sources are explicit without hiding independent readable rows. |
+| MAINT-03 | Disable/Restore for the supported startup types preserves exact original state and rejects newer external changes. Registry value type/hive/view, Startup approval, shortcut identity/content and scheduled task enabled state remain source-bound; do not delete tasks or recreate their definitions. Journal durably before mutation; cancellation and readback are honest. Native mutation tests use only task-owned fixtures through the appropriate isolated Windows boundary, never user entries. |
+| MAINT-04 | Services lists all installed Win32 services via native SCM, not only the donor catalogue or kernel drivers. Show actual service/display name, running state, startup mode, description and scope; keep unreadable properties explicit. Use native service identity for explicit Stop/disable and exact saved configuration Restore, with protected/dependent-service errors surfaced. Summary reports all installed and automatic counts. No blanket recommendation or automatic service change. |
+| MAINT-05 | Performance and Maintenance are mutually exclusive pane modes. Entering either exits the other; only the actual visible mode has an active toolbar/accessibility state. Clicking the active mode or Back restores files and ordinary statistics, without resurfacing a hidden prior analysis. Verify both initial statistics/performance modes, category changes, repeated navigation and browser-state preservation. Complete focused source/native/rendered acceptance and one normal independently verified release with installed readback. |
+
+Huashu contract: retain the current main-pane layout and five bottom card tabs,
+existing palette/Muted/Accent/row templates and compact actions. Startup gains a
+150-DIP Type column; irrelevant Size is omitted from Startup/Services, and Service
+startup mode has its own column. Table content keeps its theme during busy states;
+no white placeholder, extra sidebar, new collector, external tool dependency,
+network/security module or S30 reusable-admin-session work is introduced.
+
 
 Release authorization 2026-11-08: the user explicitly lifts the one-time pause
 and requests publication. Resume S31's final delivery gate for the integrated

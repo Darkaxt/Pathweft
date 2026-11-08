@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 
 namespace FileExplorer;
 
-internal sealed record MaintenanceServiceState(uint State,uint Start,bool Delayed)
+internal sealed record MaintenanceServiceState(uint State,uint Start,bool Delayed,uint Type=0,string Description="")
 {
     internal string Label=>State switch{1=>"Stopped",2=>"Starting",3=>"Stopping",4=>"Running",_=>"Changing"};
     internal string StartLabel=>Start switch{2=>Delayed?"Automatic (delayed)":"Automatic",3=>"Manual",4=>"Disabled",_=>"System"};
@@ -13,6 +13,32 @@ internal sealed record MaintenanceServiceState(uint State,uint Start,bool Delaye
 // preserves exit codes and actual startup state instead of parsing localized sc text.
 internal static class MaintenanceServices
 {
+    internal static MaintenanceRow[] List(Dictionary<string,MaintenanceUndo> undo,CancellationToken cancel)
+    {
+        IntPtr manager=OpenSCManager(null,null,4);if(manager==IntPtr.Zero)throw new Win32Exception();
+        const int capacity=256*1024;IntPtr buffer=Marshal.AllocHGlobal(capacity);uint resume=0;var rows=new List<MaintenanceRow>();
+        try
+        {
+            bool more;
+            do
+            {
+                cancel.ThrowIfCancellationRequested();bool ok=EnumServicesStatusEx(manager,0,0x30,3,buffer,capacity,out _,out uint count,ref resume,null);
+                int error=ok?0:Marshal.GetLastWin32Error();if(!ok&&error!=234)throw new Win32Exception(error);more=!ok;
+                int stride=Marshal.SizeOf<ServiceEntry>();
+                for(int i=0;i<count;i++)
+                {
+                    cancel.ThrowIfCancellationRequested();var entry=Marshal.PtrToStructure<ServiceEntry>(buffer+i*stride);string name=Marshal.PtrToStringUni(entry.Name),display=Marshal.PtrToStringUni(entry.Display);
+                    try
+                    {
+                        var state=Read(name);rows.Add(new("service:"+name,display,"This computer",state.Label,state.Description+(undo.ContainsKey("service:"+name)?" · original configuration saved":""),Type:name,StartupMode:state.StartLabel));
+                    }
+                    catch(Win32Exception problem){rows.Add(new("service:"+name,display,"This computer",problem.NativeErrorCode==5?"Access denied":"Unavailable",problem.Message,Type:name,CanChange:false));}
+                }
+            }while(more);
+            return rows.OrderBy(r=>r.Name,StringComparer.CurrentCultureIgnoreCase).ToArray();
+        }
+        finally{Marshal.FreeHGlobal(buffer);CloseServiceHandle(manager);}
+    }
     internal static MaintenanceServiceState Read(string name)
     {
         IntPtr manager=OpenSCManager(null,null,1);if(manager==IntPtr.Zero)throw new Win32Exception();
@@ -25,15 +51,22 @@ internal static class MaintenanceServices
             if(!QueryServiceConfig(service,config,size,out _))throw new Win32Exception();
             uint start=(uint)Marshal.ReadInt32(config,4);bool delayed=false;
             IntPtr delay=Marshal.AllocHGlobal(4);try{if(QueryServiceConfig2(service,3,delay,4,out _))delayed=Marshal.ReadInt32(delay)!=0;}finally{Marshal.FreeHGlobal(delay);}
-            return new(status.State,start,delayed);
+            string description="";QueryServiceConfig2(service,1,IntPtr.Zero,0,out uint descriptionSize);
+            if(descriptionSize>0)
+            {
+                IntPtr text=Marshal.AllocHGlobal((int)descriptionSize);
+                try{if(QueryServiceConfig2(service,1,text,descriptionSize,out _))description=Marshal.PtrToStringUni(Marshal.ReadIntPtr(text))??"";}
+                finally{Marshal.FreeHGlobal(text);}
+            }
+            return new(status.State,start,delayed,status.Type,description);
         }
         finally{if(config!=IntPtr.Zero)Marshal.FreeHGlobal(config);if(service!=IntPtr.Zero)CloseServiceHandle(service);CloseServiceHandle(manager);}
     }
     internal static string Change(string name,bool restore,string journal=null)
     {
-        if(!Maintenance.Services.Any(s=>s.Key==name))throw new ArgumentException("Unknown service");
         using var lease=new Maintenance.JournalLease(journal);
         var records=Maintenance.Undo(journal);string id="service:"+name;var state=Read(name);
+        if((state.Type&0x30)==0||state.Start is <2 or >4)throw new ArgumentException("Only installed Windows application services can be changed");
         if(restore)
         {
             var saved=records.GetValueOrDefault(id)??throw new InvalidOperationException("No original service configuration is saved");
@@ -65,6 +98,8 @@ internal static class MaintenanceServices
         finally{if(service!=IntPtr.Zero)CloseServiceHandle(service);CloseServiceHandle(manager);}
     }
     [StructLayout(LayoutKind.Sequential)]struct Status{public uint Type,State,Controls,Exit,Specific,Checkpoint,Hint;}
+    [StructLayout(LayoutKind.Sequential)]struct ServiceEntry{public IntPtr Name,Display;public Status Status;public uint ProcessId,Flags;}
+    [DllImport("advapi32.dll",EntryPoint="EnumServicesStatusExW",CharSet=CharSet.Unicode,SetLastError=true)]static extern bool EnumServicesStatusEx(IntPtr manager,uint info,uint type,uint state,IntPtr buffer,uint size,out uint needed,out uint returned,ref uint resume,string group);
     [DllImport("advapi32.dll",CharSet=CharSet.Unicode,SetLastError=true)]static extern IntPtr OpenSCManager(string machine,string database,uint access);
     [DllImport("advapi32.dll",CharSet=CharSet.Unicode,SetLastError=true)]static extern IntPtr OpenService(IntPtr manager,string name,uint access);
     [DllImport("advapi32.dll")]static extern bool CloseServiceHandle(IntPtr handle);

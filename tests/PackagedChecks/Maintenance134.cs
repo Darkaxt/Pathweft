@@ -12,7 +12,7 @@ sealed partial class PackageProbe
         command.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         var panel=owner.GetType().GetField("maintenance",Flags).GetValue(owner);
         var type=panel.GetType();
-        await (Task)type.GetProperty("Ready",Flags).GetValue(panel);
+        await (Task)owner.GetType().GetField("paneModeWork",Flags).GetValue(owner);
         var cards=(UniformGrid)type.GetProperty("Cards",Flags).GetValue(panel);
         var rows=(ListView)type.GetProperty("Rows",Flags).GetValue(panel);
         // The independent consumer never shows its host window. Rendered
@@ -32,12 +32,20 @@ sealed partial class PackageProbe
             string state=(string)type.GetProperty("State",Flags).GetValue(panel);
             Check(state=="No items found."||state.EndsWith("items · no changes made",StringComparison.Ordinal),
                 "Delivered category completes its actual read-only Windows query: "+categories[i]);
+            var headers=((GridView)rows.View).Columns.Select(x=>x.Header.ToString()).ToArray();
+            if(categories[i]=="Startup")Check(headers.Contains("Type")&&!headers.Contains("Size"),"Delivered Startup identifies its persistence source type");
+            if(categories[i]=="Services")Check(headers.Contains("Startup type")&&rows.Items.Count>10,"Delivered Services reads the complete installed Win32 inventory");
         }
         Check(File.Exists(Path.Combine(Path.GetDirectoryName(Product.Location),"Maintenance-Windows.ps1"))&&
             rows.Items.Cast<object>().All(r=>(string)Get(r,"Scope")=="Current user"),"Delivered optional Windows-app query uses its bundled supervised script");
         await (Task)Call(owner.GetType(),owner,"CloseMaintenance");
         Check(cards.Visibility==Visibility.Collapsed&&!(bool)owner.GetType().GetField("maintenanceVisible",Flags).GetValue(owner),
             "Delivered Back to files retires Maintenance and restores browser layout");
+        command.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await (Task)owner.GetType().GetField("paneModeWork",Flags).GetValue(owner);
+        var performanceCommand=(Button)owner.FindName("PerformanceCommand");performanceCommand.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await (Task)owner.GetType().GetField("paneModeWork",Flags).GetValue(owner);
+        Check(!(bool)owner.GetType().GetField("maintenanceVisible",Flags).GetValue(owner)&&Equals(performanceCommand.Tag,"on")&&command.Tag==null,"Delivered Performance and Maintenance toolbar modes are mutually exclusive");
+        performanceCommand.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await (Task)owner.GetType().GetField("paneModeWork",Flags).GetValue(owner);
+        Check(performanceCommand.Tag==null,"Delivered Performance toolbar returns to the file view");
         Check(Type("PerformanceHistory").GetMethod("AppSeries",Flags)!=null&&
             Type("BootService")!=null&&Type("PerformanceChanges")!=null,
             "Delivered local investigation includes app history, boot and change readers");

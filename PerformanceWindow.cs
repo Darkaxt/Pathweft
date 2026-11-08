@@ -10,13 +10,15 @@ public partial class MainWindow
     MaintenancePanel maintenance;
     bool maintenanceVisible;
     bool maintenanceClosing,maintenanceClosed;
+    bool changingPaneMode;
+    Task paneModeWork=Task.CompletedTask;
     readonly Dictionary<PaneView,bool> performanceModes=new();
     void InitializePerformance()
     {
         performance=new PerformancePanel{Visibility=Visibility.Collapsed,Margin=new Thickness(0,10,0,0)};
         Grid.SetRow(performance,1);((Grid)StatsRow.Parent).Children.Add(performance);
         Grid.SetRow(performance.Analysis,0);((Grid)StatsRow.Parent).Children.Add(performance.Analysis);
-        performance.AnalysisChanged+=()=>{if(performance.Selected>=0&&maintenanceVisible)_ = CloseMaintenance();ShowAnalysis();if(performance.Selected<0)active?.FocusList();};
+        performance.AnalysisChanged+=()=>{ShowAnalysis();if(performance.Selected<0&&!maintenanceVisible)active?.FocusList();};
         IsVisibleChanged+=(_,_)=>RefreshPerformance();
         StateChanged+=(_,_)=>RefreshPerformance();
         Activated+=(_,_)=>performance.OwnerFocusChanged();Deactivated+=(_,_)=>performance.OwnerFocusChanged();
@@ -34,13 +36,22 @@ public partial class MainWindow
     }
     async void Performance_Click(object sender,RoutedEventArgs e)
     {
-        if(maintenanceVisible){await CloseMaintenance();if(PerformanceMode){performance.Select(PerformancePanel.Cpu);RefreshPerformance();return;}}
+        if(changingPaneMode)return;paneModeWork=TogglePerformance();await paneModeWork;
+    }
+    async Task TogglePerformance()
+    {
+        if(changingPaneMode)return;changingPaneMode=true;
+        try
+        {
+        if(maintenanceVisible)await CloseMaintenance();
         if(active==null)return;
         performanceModes[active]=!performanceModes.GetValueOrDefault(active);
         if(!performanceModes[active])performance.Select(-1);
         RefreshPerformance();ArrangeStats();
+        }
+        finally{changingPaneMode=false;}
     }
-    bool PerformanceMode=>active!=null&&performanceModes.GetValueOrDefault(active);
+    bool PerformanceMode=>!maintenanceVisible&&active!=null&&performanceModes.GetValueOrDefault(active);
     void RefreshPerformance()
     {
         if(performance==null)return;
@@ -68,6 +79,13 @@ public partial class MainWindow
     }
     async void Maintenance_Click(object sender,RoutedEventArgs e)
     {
+        if(changingPaneMode)return;paneModeWork=ToggleMaintenance();await paneModeWork;
+    }
+    async Task ToggleMaintenance()
+    {
+        if(changingPaneMode)return;changingPaneMode=true;
+        try
+        {
         if(maintenanceVisible){await CloseMaintenance();return;}
         if(maintenance==null)
         {
@@ -75,7 +93,10 @@ public partial class MainWindow
             Grid.SetRow(maintenance.Cards,1);((Grid)StatsRow.Parent).Children.Add(maintenance.Cards);
             maintenance.Back+=async()=>await CloseMaintenance();
         }
+        if(active!=null)performanceModes[active]=false;
         performance.Select(-1);maintenanceVisible=true;ArrangeStats();await maintenance.Show();
+        }
+        finally{changingPaneMode=false;}
     }
     async Task CloseMaintenance()
     {

@@ -6,7 +6,7 @@ using Microsoft.Win32;
 
 namespace FileExplorer;
 
-internal sealed record MaintenanceRow(string Id,string Name,string Scope,string State,string Details,long? Bytes=null)
+internal sealed record MaintenanceRow(string Id,string Name,string Scope,string State,string Details,long? Bytes=null,string Type="",string StartupMode="",bool CanChange=true)
 {public string Size=>Bytes is {} size?MainWindow.Fmt(size):"";}
 internal sealed record RegistryEdit(string Hive,string Path,string Name,RegistryValueKind Kind,[property:System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)]JsonElement Value,bool Exists,RegistryView View=RegistryView.Registry64)
 {
@@ -32,14 +32,14 @@ internal sealed record RegistryEdit(string Hive,string Path,string Name,Registry
     }
     internal bool Same(RegistryEdit other)=>Exists==other.Exists&&(!Exists||Kind==other.Kind&&Value.GetRawText()==other.Value.GetRawText());
 }
-internal sealed record MaintenanceUndo(string Id,RegistryEdit[] Before,RegistryEdit[] After,string Service=null,uint ServiceStart=0,bool ServiceDelayed=false,string Phase="prepared");
+internal sealed record MaintenanceUndo(string Id,RegistryEdit[] Before,RegistryEdit[] After,string Service=null,uint ServiceStart=0,bool ServiceDelayed=false,string Phase="prepared",StartupFileState StartupFile=null,StartupTaskState StartupTask=null);
 
 // Catalogue/Run enumeration adapted from SysOptimizer StartupService, ServiceManager
 // and TweakService (6ddd104, MIT). No donor automatic optimization is imported.
 internal static class Maintenance
 {
     internal const string RunPath=@"Software\Microsoft\Windows\CurrentVersion\Run";
-    static readonly (RegistryHive Hive,RegistryView View)[] StartupRoots=[(RegistryHive.CurrentUser,RegistryView.Registry64),(RegistryHive.LocalMachine,RegistryView.Registry64),(RegistryHive.LocalMachine,RegistryView.Registry32)];
+    internal static readonly (RegistryHive Hive,RegistryView View)[] StartupRoots=[(RegistryHive.CurrentUser,RegistryView.Registry64),(RegistryHive.LocalMachine,RegistryView.Registry64),(RegistryHive.LocalMachine,RegistryView.Registry32)];
     internal static string StartupId(string hive,RegistryView view,string name)=>"startup:"+Id(hive+"/"+view,name);
     internal static string Journal=>Path.Combine(DataFolder.Bulk,"Maintenance","changes.json");
     // Serialize the complete read/write/verify transaction across windows and
@@ -93,29 +93,8 @@ internal static class Maintenance
     {
         var undo=Undo();cancel.ThrowIfCancellationRequested();
         if(category=="Cleanup")return CleanupReview.Targets.Select(t=>new MaintenanceRow(t.Id,t.Name,"This computer","Not analyzed",t.Description)).ToArray();
-        if(category=="Startup")
-        {
-            var rows=new List<MaintenanceRow>();
-            foreach(var source in StartupRoots)
-            {
-                using var root=RegistryKey.OpenBaseKey(source.Hive,source.View);
-                using var key=root.OpenSubKey(RunPath);if(key==null)continue;
-                foreach(string name in key.GetValueNames())
-                {
-                    cancel.ThrowIfCancellationRequested();string id=StartupId(root.Name,source.View,name);
-                    rows.Add(new(id,name,source.Hive==RegistryHive.CurrentUser?"Current user":"All users","Enabled",source.View+" · "+(key.GetValue(name,null,RegistryValueOptions.DoNotExpandEnvironmentNames)?.ToString()??"")));
-                }
-            }
-            foreach(var item in undo.Values.Where(x=>x.Id.StartsWith("startup:")))
-                if(!rows.Any(r=>r.Id==item.Id)&&item.Before.Length==1)
-                    rows.Add(new(item.Id,item.Before[0].Name,item.Before[0].Hive=="HKEY_CURRENT_USER"?"Current user":"All users",item.Phase=="applied"?"Disabled":"Needs review",item.Before[0].Value.ToString()));
-            return rows.OrderBy(r=>r.Name,StringComparer.CurrentCultureIgnoreCase).ToArray();
-        }
-        if(category=="Services")return Services.Select(s=>
-        {
-            cancel.ThrowIfCancellationRequested();try{var state=MaintenanceServices.Read(s.Key);return new MaintenanceRow("service:"+s.Key,s.Name,"This computer",state.Label,s.Description+" · "+state.StartLabel+(undo.ContainsKey("service:"+s.Key)?" · original configuration saved":""));}
-            catch(System.ComponentModel.Win32Exception ex){return new MaintenanceRow("service:"+s.Key,s.Name,"This computer",ex.NativeErrorCode==1060?"Not installed":"Unavailable",ex.Message);}
-        }).ToArray();
+        if(category=="Startup")return MaintenanceStartup.Read(undo,cancel);
+        if(category=="Services")return MaintenanceServices.List(undo,cancel);
         if(category=="Windows tweaks")return Tweaks.Select(t=>
         {
             cancel.ThrowIfCancellationRequested();string id="tweak:"+Id("tweak",t.Name);
@@ -127,11 +106,12 @@ internal static class Maintenance
     internal static RegistryEdit[] StartupEdits(string id)
     {
         foreach(var source in StartupRoots)
+        foreach(string path in MaintenanceStartup.RegistryPaths)
         {
             using var root=RegistryKey.OpenBaseKey(source.Hive,source.View);
-            using var key=root.OpenSubKey(RunPath);if(key==null)continue;
-            foreach(string name in key.GetValueNames())if(id==StartupId(root.Name,source.View,name))
-                return [new RegistryEdit(root.Name,RunPath,name,RegistryValueKind.String,default,false,source.View)];
+            using var key=root.OpenSubKey(path);if(key==null)continue;
+            foreach(string name in key.GetValueNames())if(id==MaintenanceStartup.RegistryId(root.Name,source.View,path,name))
+                return [new RegistryEdit(root.Name,path,name,RegistryValueKind.String,default,false,source.View)];
         }
         throw new IOException("The startup entry changed or was removed; refresh before changing it");
     }
@@ -170,7 +150,7 @@ internal static class Maintenance
         RegistryEdit[] allowed;
         if(saved.Id.StartsWith("startup:")&&saved.Before.Length==1)
         {
-            var item=saved.Before[0];if(item.Path!=RunPath||saved.Id!=StartupId(item.Hive,item.View,item.Name))throw new InvalidDataException("Invalid startup restore target");
+            var item=saved.Before[0];if(!MaintenanceStartup.RegistryPaths.Contains(item.Path)||saved.Id!=MaintenanceStartup.RegistryId(item.Hive,item.View,item.Path,item.Name)||!StartupRoots.Any(s=>s.Hive.ToString()==(item.Hive=="HKEY_CURRENT_USER"?"CurrentUser":item.Hive=="HKEY_LOCAL_MACHINE"?"LocalMachine":"")&&s.View==item.View))throw new InvalidDataException("Invalid startup restore target");
             allowed=[item];
         }
         else allowed=TweakEdits(saved.Id);

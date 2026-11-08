@@ -25,6 +25,7 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
     readonly Dictionary<string,CleanupReview> reviews=new();
     readonly Dictionary<string,MaintenanceClient> elevatedReviews=new();
     readonly Dictionary<string,MaintenanceRow> analyzedRows=new();
+    MaintenanceRow[] overviewSelection;
     CancellationTokenSource reading=new();Task work=Task.CompletedTask;bool busy,disposed;Func<Task> pending;
     internal Task Ready=>work;
     internal string Category=>Categories[selectedCategory];
@@ -55,7 +56,7 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
         var scroll=new ScrollViewer{VerticalScrollBarVisibility=ScrollBarVisibility.Auto,HorizontalScrollBarVisibility=ScrollBarVisibility.Disabled,Content=body};content.Children.Add(scroll);
         var intro=new StackPanel();description.SetResourceReference(TextBlock.ForegroundProperty,"Muted");intro.Children.Add(description);body.Children.Add(intro);
         table.SetResourceReference(Control.ForegroundProperty,"Palette.E8EEF6");VirtualizingPanel.SetIsVirtualizing(table,true);VirtualizingPanel.SetVirtualizationMode(table,VirtualizationMode.Recycling);ScrollViewer.SetCanContentScroll(table,true);
-        var view=new GridView();foreach(var column in new[]{("Name","Name",230d),("Scope","Scope",110d),("State","State",130d),("Size","Size",95d),("Details","Details",540d)})view.Columns.Add(new(){Header=column.Item1,DisplayMemberBinding=new Binding(column.Item2),Width=column.Item3});table.View=view;Grid.SetRow(table,1);body.Children.Add(table);AutomationProperties.SetName(table,"Maintenance items");
+        Columns();Grid.SetRow(table,1);body.Children.Add(table);AutomationProperties.SetName(table,"Maintenance items");
         actions.Margin=new Thickness(0,12,0,0);Grid.SetRow(actions,2);body.Children.Add(actions);
         refresh=Button("Refresh",async()=>{await Overview();await Load();});analyze=Button("Analyze",Analyze);change=Button("Apply",()=>Confirm(Change));restore=Button("Restore",()=>Confirm(()=>Apply("restore")));
         restorePoint=Button("Create restore point",()=>Confirm(()=>Apply("restore-point"),"Create a Windows restore point?"));export=Button("Export selection…",Export);import=Button("Import selection…",Import);
@@ -108,18 +109,19 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
     async Task Load()
     {
         pending=null;approval.Visibility=Visibility.Collapsed;reading.Dispose();reading=new();string category=Category;
-        status.Text="Reading Windows state…";
+        status.Text="Reading Windows state…";Columns();
         fullDescription=category switch
         {
             "Cleanup"=>"Select a category and Analyze. Clean applies only to its reviewed, unchanged files; files in use and new files are skipped.",
-            "Startup"=>"Programs registered in Windows Run keys. Disable preserves their original hive, value and type for Restore.",
+            "Startup"=>"Run and RunOnce keys, policy Run entries, startup folders and tasks triggered at startup or logon. Type identifies the source. Disable saves the exact original state for Restore.",
             "Services"=>"Review each service before changing it. Stop and disable saves the actual startup configuration. Restore returns that configuration without starting the service.",
             "Windows tweaks"=>"Apply individual Windows settings. Restore uses the exact saved original values. Some changes take effect after sign-out or restart.",
             _=>"Installed built-in apps for the current user. Removal leaves other users and Windows provisioning unchanged. Reinstall through Microsoft Store if needed."
         };
         Presentation();
-        MaintenanceRow[] rows;
-        if(category=="Windows apps")
+        MaintenanceRow[] rows=overviewSelection;overviewSelection=null;
+        if(rows!=null){}
+        else if(category=="Windows apps")
         {
             var packages=JsonSerializer.Deserialize<string[]>(await MaintenanceWorker.WindowsAction("ListApps",cancel:reading.Token))?.ToHashSet(StringComparer.OrdinalIgnoreCase)??[];
             rows=Maintenance.Apps.Where(a=>packages.Contains(a.Package)).Select(a=>new MaintenanceRow(a.Package,a.Name,"Current user","Installed",a.Package)).ToArray();
@@ -164,7 +166,7 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
         description.Text=!narrow?fullDescription:Category switch
         {
             "Cleanup"=>"Analyze first. Clean removes only reviewed, unchanged files.",
-            "Startup"=>"Disable a Run entry; Restore returns its exact original value.",
+            "Startup"=>"Windows startup entries by source. Disable saves their original state for Restore.",
             "Services"=>"Stop and disable a reviewed service; Restore returns its startup settings.",
             "Windows tweaks"=>"Review each setting before applying. Restore returns saved values.",
             _=>"Optional Windows apps for this user. Reinstall through Microsoft Store."
@@ -239,7 +241,7 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
         for(int i=0;i<5;i++)if(cardButtons[i]!=null){cardButtons[i].IsEnabled=idle;cardButtons[i].Tag=i==selectedCategory?"on":null;AutomationProperties.SetItemStatus(cardButtons[i],i==selectedCategory?"Selected":"");}
         table.IsEnabled=idle;analyze.Visibility=cleanup?Visibility.Visible:Visibility.Collapsed;analyze.IsEnabled=idle&&row!=null;
         change.Content=Category switch{"Cleanup"=>"Clean reviewed","Startup"=>"Disable","Services"=>"Stop and disable","Windows apps"=>"Remove",_=>"Apply"};
-        change.IsEnabled=idle&&row!=null&&(!cleanup||reviews.ContainsKey(row.Id)||elevatedReviews.ContainsKey(row.Id));
+        change.IsEnabled=idle&&row?.CanChange==true&&(!cleanup||reviews.ContainsKey(row.Id)||elevatedReviews.ContainsKey(row.Id));
         restore.Visibility=Category is "Startup" or "Services" or "Windows tweaks"?Visibility.Visible:Visibility.Collapsed;
         try{restore.IsEnabled=idle&&row!=null&&Maintenance.Undo().ContainsKey(row.Id);}catch(Exception error)when(error is IOException or JsonException or UnauthorizedAccessException){restore.IsEnabled=false;status.Text="Saved maintenance state unavailable: "+error.Message;}
         restorePoint.Visibility=export.Visibility=import.Visibility=tweaks?Visibility.Visible:Visibility.Collapsed;
@@ -256,20 +258,31 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
     async Task Overview()
     {
         var rows=await Task.Run(()=>new[]{"Cleanup","Startup","Services","Windows tweaks"}.Select(category=>(category,rows:Maintenance.Read(category,reading.Token))).ToArray(),reading.Token);
-        foreach(var item in rows)Summary(item.category,item.category=="Cleanup"?item.rows.Select(r=>analyzedRows.GetValueOrDefault(r.Id,r)):item.rows);
+        foreach(var item in rows){Summary(item.category,item.category=="Cleanup"?item.rows.Select(r=>analyzedRows.GetValueOrDefault(r.Id,r)):item.rows);if(item.category==Category)overviewSelection=item.rows;}
         var packages=JsonSerializer.Deserialize<string[]>(await MaintenanceWorker.WindowsAction("ListApps",cancel:reading.Token))?.ToHashSet(StringComparer.OrdinalIgnoreCase)??[];
-        Summary("Windows apps",Maintenance.Apps.Where(a=>packages.Contains(a.Package)).Select(a=>new MaintenanceRow(a.Package,a.Name,"Current user","Installed",a.Package)));
+        var apps=Maintenance.Apps.Where(a=>packages.Contains(a.Package)).Select(a=>new MaintenanceRow(a.Package,a.Name,"Current user","Installed",a.Package)).ToArray();Summary("Windows apps",apps);if(Category=="Windows apps")overviewSelection=apps;
     }
     void Summary(string category,IEnumerable<MaintenanceRow> items)
     {
         int index=Array.IndexOf(Categories,category);var rows=items.ToArray();string value,sub;
         if(index==0){var reviewed=rows.Where(x=>x.Bytes.HasValue).ToArray();value=reviewed.Length>0?MainWindow.Fmt(reviewed.Sum(x=>x.Bytes.Value)):"—";sub=reviewed.Length>0?$"Up to · {reviewed.Length} of {rows.Length} categories reviewed":"Analyze to estimate";}
         else if(index==1){value=rows.Count(x=>x.State=="Enabled").ToString("N0");sub="startup entries enabled";}
-        else if(index==2){value=rows.Count(x=>x.Details.Contains("Automatic")).ToString("N0");sub=$"automatic · {rows.Length} services reviewed";}
+        else if(index==2){value=rows.Count(x=>x.StartupMode.StartsWith("Automatic")).ToString("N0");sub=$"automatic · {rows.Length} installed services";}
         else if(index==3){value=rows.Count(x=>x.State=="Not applied").ToString("N0");sub="Windows settings to review";}
         else{value=rows.Length.ToString("N0");sub="optional preinstalled apps";}
         cardValues[index].Text=value;cardSubtitles[index].Text=sub;cardButtons[index].ToolTip=category+" · "+value+" · "+sub;
     }
     internal Task Show(){Visibility=cards.Visibility=Visibility.Visible;Queue(async()=>{await Overview();await Load();});return work;}
+    void Columns()
+    {
+        var view=new GridView();var columns=new List<(string Header,string Property,double Width)>{("Name","Name",230)};
+        if(Category=="Startup")columns.Add(("Type","Type",150));
+        if(Category=="Services")columns.Add(("Service name","Type",180));else columns.Add(("Scope","Scope",110));
+        columns.Add(("State","State",130));
+        if(Category=="Services")columns.Add(("Startup type","StartupMode",160));else if(Category=="Cleanup")columns.Add(("Size","Size",95));
+        columns.Add(("Details","Details",600));
+        foreach(var column in columns)view.Columns.Add(new(){Header=column.Header,DisplayMemberBinding=new Binding(column.Property),Width=column.Width});
+        table.View=view;
+    }
     public async ValueTask DisposeAsync(){disposed=true;await Hide();reading.Dispose();}
 }

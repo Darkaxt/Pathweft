@@ -15,22 +15,39 @@ public partial class MainWindow
         performance.AutomaticIo=false;SetSinglePane(true);SetActive(Left);await S1Verification.Navigate(active,root);
         File.WriteAllText(Path.Combine(root,"selection.txt"),"Maintenance must preserve this browser");await S1Verification.Navigate(active,root);
         active.ListForVerification.SelectedItem=active.Items.First(x=>!x.IsUp);string path=active.Dir;var selection=active.Selected.Select(x=>x.Path).ToArray();
-        MaintenanceCommand.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await maintenance.Ready;UpdateLayout();
+        MaintenanceCommand.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await paneModeWork;UpdateLayout();
         check(maintenance.IsVisible&&!PaneArea.IsVisible&&AnalysisVisible&&!TerminalCommand.IsEnabled&&Equals(MaintenanceCommand.Tag,"on"),"Actual brush opens Maintenance in the main pane and disables hidden file actions");
         check(maintenance.Rows.Items.Count==4&&maintenance.State.Contains("no changes"),"Opening Cleanup is read-only and lists only curated categories");
         check(maintenance.Cards.IsVisible&&!StatsRow.IsVisible&&!performance.IsVisible&&((System.Windows.Controls.Primitives.UniformGrid)maintenance.Cards).Children.Count==5,"Brush replaces the bottom statistics with exactly five maintenance summary tabs");
+        check(!PerformanceMode&&PerformanceCommand.Tag==null&&System.Windows.Automation.AutomationProperties.GetItemStatus(PerformanceCommand)=="Off","Maintenance exclusively owns the pane and Performance is off");
+        PerformanceCommand.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await paneModeWork;UpdateLayout();
+        check(!maintenanceVisible&&!maintenance.IsVisible&&PerformanceMode&&MaintenanceCommand.Tag==null&&Equals(PerformanceCommand.Tag,"on"),"Performance toolbar atomically replaces Maintenance and owns its selected state");
+        PerformanceCommand.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await paneModeWork;UpdateLayout();
+        check(!PerformanceMode&&PerformanceCommand.Tag==null&&StatsRow.IsVisible&&PaneArea.IsVisible,"Performance toolbar switches off to the standard file view");
+        PerformanceCommand.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await paneModeWork;performance.Select(PerformancePanel.Cpu);UpdateLayout();
+        check(PerformanceMode&&performance.Analysis.IsVisible&&Equals(PerformanceCommand.Tag,"on"),"Performance owns the pane before switching to Maintenance");
+        MaintenanceCommand.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await paneModeWork;UpdateLayout();
+        check(!PerformanceMode&&!performance.IsVisible&&!performance.Analysis.IsVisible&&performance.Selected==-1&&PerformanceCommand.Tag==null,"Entering Maintenance exits the prior Performance cards and analysis");
+        await CloseMaintenance();UpdateLayout();check(!PerformanceMode&&StatsRow.IsVisible&&PaneArea.IsVisible,"Leaving Maintenance returns to files rather than reviving hidden Performance");
+        MaintenanceCommand.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await paneModeWork;
         foreach(string category in new[]{"Startup","Services","Windows tweaks","Windows apps"})
         {
             await maintenance.CategoryForVerification(category);check(!maintenance.State.Contains("failed",StringComparison.OrdinalIgnoreCase),"Native read-only category opens: "+category);
             check(category=="Windows apps"||maintenance.Rows.Items.Count>0,"Category exposes actual Windows rows: "+category);
+            var headers=((GridView)maintenance.Rows.View).Columns.Select(x=>x.Header.ToString()).ToArray();
+            if(category=="Startup")check(headers.Contains("Type")&&!headers.Contains("Size")&&maintenance.Rows.Items.Cast<MaintenanceRow>().Any(x=>x.Type=="Registry Run"),"Startup presents source Type and omits the irrelevant Size column");
+            if(category=="Services")check(maintenance.Rows.Items.Count>10&&headers.Contains("Startup type")&&maintenance.Rows.Items.Cast<MaintenanceRow>().All(x=>x.State!="Not installed"),"Services enumerates installed SCM entries beyond the donor shortlist and exposes actual startup modes");
             var selected=((System.Windows.Controls.Primitives.UniformGrid)maintenance.Cards).Children.Cast<Button>().Where(x=>Equals(x.Tag,"on")).ToArray();
             check(selected.Length==1&&System.Windows.Automation.AutomationProperties.GetName(selected[0])==category+" maintenance","Bottom summary tab selects the actual main section: "+category);
         }
         foreach(string theme in new[]{"dark","light"})foreach(double scale in new[]{1d,1.5})
         {
             Settings.NativeTheme=true;Settings.NativeMode=theme;Settings.TextScale=scale;ApplyAppearance();Width=1400;Height=850;UpdateLayout();
-            await maintenance.CategoryForVerification("Windows tweaks");UpdateLayout();
+            await maintenance.CategoryForVerification("Windows tweaks");maintenance.Rows.SelectedIndex=0;
+            await maintenance.ClickForVerification("Apply");UpdateLayout();
+            var surfaces=TableSurface(maintenance.Rows).ToArray();check(!maintenance.Rows.IsEnabled&&surfaces.Length>0&&surfaces.All(b=>b.Color.A==0),"Disabled confirmation table retains its transparent themed surface at "+theme+scale);
             await S1Verification.Snapshot(this,root,$"maintenance-{theme}-{scale:0.0}");
+            await maintenance.ClickForVerification("Keep unchanged");
             check(maintenance.Rows.ActualHeight>120&&maintenance.Rows.ActualWidth>400,"Maintenance table remains usable at "+theme+" / "+scale);
         }
         Width=820;UpdateLayout();await S1Verification.Snapshot(this,root,"maintenance-narrow");
@@ -100,6 +117,11 @@ public partial class MainWindow
         check(PaneArea.IsVisible&&active.Dir==path&&active.Selected.Select(x=>x.Path).SequenceEqual(selection)&&TerminalCommand.IsEnabled,"Back/toggle restores the existing browser path, selection and file commands");
         string reviews=Path.Combine(DataFolder.Cache,"Maintenance");check(!Directory.Exists(reviews)||!Directory.EnumerateFiles(reviews).Any(),"Closing Maintenance retires transient cleanup review manifests");
         File.WriteAllText(Path.Combine(root,"maintenance-native.json"),JsonSerializer.Serialize(new{journal=Maintenance.Undo().Count,services=Maintenance.Services.Length,tweaks=Maintenance.Tweaks.Length,processOwned=true}));
+    }
+    static IEnumerable<System.Windows.Media.SolidColorBrush> TableSurface(ListView table)
+    {
+        for(int i=0;i<System.Windows.Media.VisualTreeHelper.GetChildrenCount(table);i++)
+            if(System.Windows.Media.VisualTreeHelper.GetChild(table,i) is Border border&&border.Background is System.Windows.Media.SolidColorBrush brush)yield return brush;
     }
     [DllImport("kernel32.dll",EntryPoint="CreateHardLinkW",CharSet=CharSet.Unicode,SetLastError=true)]
     static extern bool MaintenanceFixtureLink(string alias,string existing,IntPtr security);
