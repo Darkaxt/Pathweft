@@ -53,6 +53,11 @@ test correctly receives Access Denied for ETW; it does not request elevation.
 Existing real elevated I/O qualification remains applicable because tracing/IPC
 and its ownership code are unchanged.
 
+The first unpublished 1.1.33 package passed source and native routing checks but
+failed its application self-test because the embedded changelog omitted 1.1.33.
+The missing entry is added without weakening the release-order/current-version
+assertion. The failed package receipts are retained; it was never published.
+
 Remaining acceptance: final committed package/source/native/app checks, normal release,
 independent retrieval and applicable installed readback. S31 remains ACTIVE;
 there is no tracked deferral. S30 remains NOT STARTED.

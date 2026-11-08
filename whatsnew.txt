@@ -1,6 +1,11 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.33 | 2026-11-08 | Continuous performance inspection
+- Explore the live rolling hour without enabling history recording. Selecting a range and returning to Now preserves available observations, events and gaps.
+- Choose CPU process columns, including executable path and command line. Click a process or press Space to pin it above the changing list; filter the list without hiding pinned processes.
+- Process filters and column menus match Pathweft's themes. Background collection stays shared and bounded, with detailed process queries limited to the visible analysis.
+
 ## 1.1.32 | 2026-11-08 | Interactive performance investigation
 - Explore the expanded timeline with grouped events and spikes, pinned moments, zoom, pan and overview range selection. Linked tables show the recorded apps or facts for your selection.
 - Analysis keeps Pathweft's themes, keyboard controls and compact cards. Narrow windows and larger text can scroll to the full graph and its controls.
