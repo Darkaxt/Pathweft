@@ -6,6 +6,7 @@ using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Media;
+using System.Windows.Input;
 using Microsoft.Win32;
 
 namespace FileExplorer;
@@ -20,9 +21,8 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
     internal FrameworkElement Cards=>cards;
     readonly ListView table=new(){SelectionMode=SelectionMode.Single,Background=Brushes.Transparent,BorderThickness=new(0)};
     readonly TextBlock title=new(){Text="Maintenance",FontSize=18,FontWeight=FontWeights.SemiBold,TextTrimming=TextTrimming.CharacterEllipsis},status=new(){TextWrapping=TextWrapping.Wrap,Margin=new(0,8,0,0)},description=new(){TextWrapping=TextWrapping.Wrap,Margin=new(0,8,0,12)};
-    readonly WrapPanel actions=new(),approval=new(){Visibility=Visibility.Collapsed};
+    readonly WrapPanel actions=new();
     readonly Button refresh,analyze,change,restore,restorePoint,export,import,cancel;
-    readonly TextBlock confirmText=new(){TextWrapping=TextWrapping.Wrap,MaxWidth=600,Margin=new(0,0,12,6)};
     readonly Dictionary<string,CleanupReview> reviews=new();
     readonly Dictionary<string,MaintenanceClient> elevatedReviews=new();
     readonly Dictionary<string,MaintenanceRow> analyzedRows=new();
@@ -34,11 +34,11 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
     readonly TextBox search=new(){Tag="Search settings and effects",Width=240,MinHeight=32,Margin=new(0,0,8,6),Padding=new(10,5,10,5)};
     readonly Border explanation=new(){Padding=new(12),Margin=new(0,10,0,0),Visibility=Visibility.Collapsed};
     readonly TextBlock explanationTitle=new(){FontWeight=FontWeights.SemiBold,TextWrapping=TextWrapping.Wrap};
-    readonly TextBlock explanationText=new(){TextWrapping=TextWrapping.Wrap,Margin=new(0,6,0,0)};
+    readonly TextBox explanationText=new(){IsReadOnly=true,TextWrapping=TextWrapping.Wrap,Margin=new(0,6,0,0),Background=Brushes.Transparent,BorderThickness=new(0),Padding=new(0),IsReadOnlyCaretVisible=true};
     readonly TextBlock sourceText=new(){Margin=new(0,6,0,0),TextWrapping=TextWrapping.Wrap};
     bool updatingFilters;
     MaintenanceRow[] overviewSelection;
-    CancellationTokenSource reading=new();Task work=Task.CompletedTask;bool busy,disposed;Func<Task> pending;
+    CancellationTokenSource reading=new();Task work=Task.CompletedTask;bool busy,disposed;
     internal Task Ready=>work;
     internal string Category=>Categories[selectedCategory];
     internal ListView Rows=>table;
@@ -57,6 +57,11 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
     internal void SearchForVerification(string text)=>search.Text=text;
     internal void GroupForVerification(string text)=>groups.SelectedItem=text;
     internal string ExplanationForVerification=>explanationText.Text;
+    internal Task DoubleClickForVerification(DependencyObject source)
+    {
+        table.RaiseEvent(new MouseButtonEventArgs(InputManager.Current.PrimaryMouseDevice,0,MouseButton.Left){RoutedEvent=Control.MouseDoubleClickEvent,Source=source});
+        return work;
+    }
     static IEnumerable<Button> Buttons(DependencyObject parent)
     {
         for(int i=0;i<VisualTreeHelper.GetChildrenCount(parent);i++)
@@ -69,7 +74,7 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
         var grid=new Grid();grid.RowDefinitions.Add(new(){Height=GridLength.Auto});grid.RowDefinitions.Add(new());
         var heading=new DockPanel();var back=Button("Back to files",()=>{Back?.Invoke();return Task.CompletedTask;});DockPanel.SetDock(back,Dock.Right);heading.Children.Add(back);heading.Children.Add(title);grid.Children.Add(heading);
         var content=new Grid{Margin=new(0,14,0,0)};Grid.SetRow(content,1);grid.Children.Add(content);
-        var body=new Grid();foreach(var height in new[]{GridLength.Auto,new GridLength(1,GridUnitType.Star),GridLength.Auto,GridLength.Auto,GridLength.Auto,GridLength.Auto})body.RowDefinitions.Add(new(){Height=height});
+        var body=new Grid();foreach(var height in new[]{GridLength.Auto,new GridLength(1,GridUnitType.Star),GridLength.Auto,GridLength.Auto,GridLength.Auto})body.RowDefinitions.Add(new(){Height=height});
         var scroll=new ScrollViewer{VerticalScrollBarVisibility=ScrollBarVisibility.Auto,HorizontalScrollBarVisibility=ScrollBarVisibility.Disabled,Content=body};content.Children.Add(scroll);
         var intro=new StackPanel();description.SetResourceReference(TextBlock.ForegroundProperty,"Muted");intro.Children.Add(description);body.Children.Add(intro);
         groups.SetResourceReference(StyleProperty,"PreviewClipCombo");AutomationProperties.SetName(groups,"Maintenance category filter");
@@ -79,7 +84,7 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
         search.TextChanged+=(_,_)=>FilterRows();groups.SelectionChanged+=(_,_)=>FilterRows();
         explanation.SetResourceReference(BackgroundProperty,"Palette.0AFFFFFF");explanation.CornerRadius=new(8);
         var detail=new StackPanel();detail.Children.Add(explanationTitle);detail.Children.Add(explanationText);detail.Children.Add(sourceText);
-        explanationText.SetResourceReference(TextBlock.ForegroundProperty,"Muted");
+        explanationText.SetResourceReference(Control.ForegroundProperty,"Muted");AutomationProperties.SetName(explanationText,"Selected maintenance assessment");
         explanation.Child=new ScrollViewer{Content=detail,MaxHeight=150,VerticalScrollBarVisibility=ScrollBarVisibility.Auto};Grid.SetRow(explanation,2);body.Children.Add(explanation);
         table.SetResourceReference(Control.ForegroundProperty,"Palette.E8EEF6");VirtualizingPanel.SetIsVirtualizing(table,true);VirtualizingPanel.SetIsVirtualizingWhenGrouping(table,true);VirtualizingPanel.SetVirtualizationMode(table,VirtualizationMode.Recycling);ScrollViewer.SetCanContentScroll(table,true);
         Columns();Grid.SetRow(table,1);body.Children.Add(table);AutomationProperties.SetName(table,"Maintenance items");
@@ -91,13 +96,21 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
             SortRows();
         }));
         actions.Margin=new Thickness(0,12,0,0);Grid.SetRow(actions,3);body.Children.Add(actions);
-        refresh=Button("Refresh",async()=>{await Overview();await Load();if(Category=="Cleanup")await AnalyzeAll();});analyze=Button("Analyze",Analyze);change=Button("Apply",()=>Confirm(Change));restore=Button("Restore",()=>Confirm(()=>Apply("restore")));
-        restorePoint=Button("Create restore point",()=>Confirm(()=>Apply("restore-point"),"Create a Windows restore point?"));export=Button("Export selection…",Export);import=Button("Import selection…",Import);
+        refresh=Button("Refresh",async()=>{await Overview();await Load();if(Category=="Cleanup")await AnalyzeAll();});analyze=Button("Analyze",Analyze);change=Button("Apply",Change);restore=Button("Restore",()=>Apply("restore"));
+        restorePoint=Button("Create restore point",()=>Apply("restore-point"));export=Button("Export selection…",Export);import=Button("Import selection…",Import);
+        restorePoint.ToolTip="Create a Windows restore point. Administrator permission is required.";
+        table.MouseDoubleClick+=(_,e)=>
+        {
+            if(busy||disposed||Category!="Startup"||e.ChangedButton!=MouseButton.Left||
+                e.OriginalSource is not DependencyObject source||ItemsControl.ContainerFromElement(table,source) is not ListViewItem {Content:MaintenanceRow row}||
+                table.SelectedItem is not MaintenanceRow selected||selected.Id!=row.Id)return;
+            var action=row.State=="Enabled"?change:restore;
+            if(action.IsEnabled){e.Handled=true;action.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent));}
+        };
         cancel=new Button{Content="Cancel",MinHeight=32,Margin=new(0,0,8,6)};cancel.SetResourceReference(StyleProperty,"AuxiliaryAction");
         cancel.Click+=(_,_)=>{reading.Cancel();status.Text="Cancelling…";};
         foreach(var button in new[]{refresh,analyze,change,restore,restorePoint,export,import,cancel})actions.Children.Add(button);
-        approval.Children.Add(confirmText);approval.Children.Add(Button("Confirm",async()=>{var action=pending;pending=null;approval.Visibility=Visibility.Collapsed;if(action!=null)await action();}));approval.Children.Add(Button("Keep unchanged",()=>{pending=null;approval.Visibility=Visibility.Collapsed;return Task.CompletedTask;}));
-        Grid.SetRow(approval,4);body.Children.Add(approval);status.SetResourceReference(TextBlock.ForegroundProperty,"Muted");Grid.SetRow(status,5);body.Children.Add(status);
+        status.SetResourceReference(TextBlock.ForegroundProperty,"Muted");Grid.SetRow(status,4);body.Children.Add(status);
         Child=grid;table.SelectionChanged+=(_,_)=>{if(table.SelectedItem is MaintenanceRow row)selections[Category]=row.Id;Explain();UpdateActions();};
         var groupCaption=new FrameworkElementFactory(typeof(TextBlock));groupCaption.SetBinding(TextBlock.TextProperty,new Binding("Name"));groupCaption.SetValue(TextBlock.FontWeightProperty,FontWeights.SemiBold);groupCaption.SetValue(MarginProperty,new Thickness(8,12,0,6));groupCaption.SetResourceReference(TextBlock.ForegroundProperty,"Muted");
         table.GroupStyle.Add(new GroupStyle{HeaderTemplate=new DataTemplate{VisualTree=groupCaption}});
@@ -108,7 +121,7 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
             cardSubtitles[i]=new TextBlock{Text=i==0?"Analyze to estimate":"Not checked",FontSize=11,TextTrimming=TextTrimming.CharacterEllipsis};cardSubtitles[i].SetResourceReference(TextBlock.ForegroundProperty,"Muted");
             stack.Children.Add(label);stack.Children.Add(cardValues[i]);stack.Children.Add(cardSubtitles[i]);
             var button=cardButtons[i]=new Button{Content=stack,MinHeight=84,Padding=new Thickness(12,9,14,9),Margin=new Thickness(0,0,i==4?0:10,0),HorizontalContentAlignment=HorizontalAlignment.Stretch,VerticalContentAlignment=VerticalAlignment.Stretch};button.SetResourceReference(StyleProperty,"PerformanceCard");AutomationProperties.SetName(button,Categories[i]+" maintenance");
-            button.Click+=(_,_)=>{if(busy||pending!=null)return;selectedCategory=index;Queue(Load);};cards.Children.Add(button);
+            button.Click+=(_,_)=>{if(busy)return;selectedCategory=index;Queue(Load);};cards.Children.Add(button);
         }
         cards.SizeChanged+=(_,_)=>
         {
@@ -117,9 +130,9 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
         };
         void Fit()
         {
-            body.Height=Math.Max(scroll.ActualHeight,intro.ActualHeight+explanation.ActualHeight+actions.ActualHeight+approval.ActualHeight+status.ActualHeight+170);
+            body.Height=Math.Max(scroll.ActualHeight,intro.ActualHeight+explanation.ActualHeight+actions.ActualHeight+status.ActualHeight+170);
         }
-        SizeChanged+=(_,_)=>{Presentation();Fit();};scroll.SizeChanged+=(_,_)=>Fit();actions.SizeChanged+=(_,_)=>Fit();approval.SizeChanged+=(_,_)=>Fit();explanation.SizeChanged+=(_,_)=>Fit();
+        SizeChanged+=(_,_)=>{Presentation();Fit();};scroll.SizeChanged+=(_,_)=>Fit();actions.SizeChanged+=(_,_)=>Fit();explanation.SizeChanged+=(_,_)=>Fit();
         UpdateActions();
     }
     Button Button(string label,Func<Task> action)
@@ -143,7 +156,7 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
     }
     async Task Load()
     {
-        pending=null;approval.Visibility=Visibility.Collapsed;reading.Dispose();reading=new();string category=Category;
+        reading.Dispose();reading=new();string category=Category;
         updatingFilters=true;search.Clear();groups.SelectedIndex=0;updatingFilters=false;
         status.Text="Reading Windows state…";Columns();
         fullDescription=category switch
@@ -235,14 +248,6 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
             _=>"Optional Windows apps for this user. Reinstall through Microsoft Store."
         };
     }
-    Task Confirm(Func<Task> action,string caption=null)
-    {
-        if(table.SelectedItem is not MaintenanceRow&&caption==null)return Task.CompletedTask;
-        string name=(table.SelectedItem as MaintenanceRow)?.Name??"Windows restore point";
-        confirmText.Text=caption??(Category=="Cleanup"?$"Remove the reviewed unused files in {name}? New, changed and busy files will be skipped.":$"Confirm the requested Windows action for {name}. Administrator permission will be requested if needed.");
-        if(caption==null&&table.SelectedItem is MaintenanceRow selected&&Category!="Cleanup")confirmText.Text+="\n"+selected.Recommendation+" · "+selected.Guidance+"\n"+selected.Details;
-        pending=action;approval.Visibility=Visibility.Visible;return Task.CompletedTask;
-    }
     Task Change()=>Category=="Cleanup"?Clean():Apply(Category=="Windows apps"?"remove-app":"apply");
     async Task Clean()
     {
@@ -300,7 +305,7 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
     void UpdateActions()
     {
         if(refresh==null)return;bool cleanup=Category=="Cleanup",tweaks=Category=="Windows tweaks";var row=table.SelectedItem as MaintenanceRow;
-        bool idle=!busy&&pending==null;
+        bool idle=!busy;
         filters.IsEnabled=idle;
         foreach(var button in new[]{refresh,analyze,change,restore,restorePoint,export,import})button.IsEnabled=idle;
         for(int i=0;i<5;i++)if(cardButtons[i]!=null){cardButtons[i].IsEnabled=idle;cardButtons[i].Tag=i==selectedCategory?"on":null;AutomationProperties.SetItemStatus(cardButtons[i],i==selectedCategory?"Selected":"");}
@@ -318,7 +323,7 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
         foreach(var review in reviews.Values)review.Dispose();reviews.Clear();
         foreach(var client in elevatedReviews.Values)await client.DisposeAsync();elevatedReviews.Clear();
         analyzedRows.Clear();
-        approval.Visibility=Visibility.Collapsed;pending=null;Visibility=cards.Visibility=Visibility.Collapsed;
+        Visibility=cards.Visibility=Visibility.Collapsed;
     }
     internal async Task EndAdministratorReviews()
     {
@@ -360,9 +365,17 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
     void FilterRows(){if(updatingFilters||table.ItemsSource==null)return;CollectionViewSource.GetDefaultView(table.ItemsSource).Refresh();Explain();}
     void Explain()
     {
-        if(Category=="Cleanup"||table.SelectedItem is not MaintenanceRow row){explanation.Visibility=Visibility.Collapsed;return;}
-        explanation.Visibility=Visibility.Visible;explanationTitle.Text=row.RecommendationLabel+" · "+row.Name;
-        explanationText.Text=row.Guidance+"\n"+row.Details;sourceText.Inlines.Clear();
+        if(table.SelectedItem is not MaintenanceRow row){explanation.Visibility=Visibility.Collapsed;return;}
+        explanation.Visibility=Visibility.Visible;explanationTitle.Text=Category=="Cleanup"?row.Name:row.RecommendationLabel+" · "+row.Name;
+        string effect=Category switch
+        {
+            "Cleanup"=>"Clean reviewed removes only the reviewed, unchanged files. New, changed and busy files are skipped.",
+            "Startup"=>"Disable prevents this entry from running at startup. Restore returns its exact saved original state. Double-click to Disable or Restore.",
+            "Services"=>"Stop and disable stops this service and disables automatic startup. Restore returns its saved startup configuration without starting the service.",
+            "Windows tweaks"=>"Apply changes this Windows setting. Restore returns its exact saved original values.",
+            _=>"Remove uninstalls this app for the current user. Reinstall through Microsoft Store if needed."
+        };
+        explanationText.Text=effect+"\n"+(Category=="Cleanup"?"":row.Guidance+"\n")+row.Details;sourceText.Inlines.Clear();
         if(!string.IsNullOrEmpty(row.Source))
         {
             var uri=new Uri(row.Source);var link=new System.Windows.Documents.Hyperlink(new System.Windows.Documents.Run("Source · "+uri.Host)){NavigateUri=uri};

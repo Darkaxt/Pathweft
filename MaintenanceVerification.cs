@@ -55,11 +55,9 @@ public partial class MainWindow
         foreach(string theme in new[]{"dark","light"})foreach(double scale in new[]{1d,1.5})
         {
             Settings.NativeTheme=true;Settings.NativeMode=theme;Settings.TextScale=scale;ApplyAppearance();Width=1400;Height=850;UpdateLayout();
-            await maintenance.CategoryForVerification("Windows tweaks");maintenance.Rows.SelectedIndex=0;
-            await maintenance.ClickForVerification("Apply");UpdateLayout();
-            var surfaces=TableSurface(maintenance.Rows).ToArray();check(!maintenance.Rows.IsEnabled&&surfaces.Length>0&&surfaces.All(b=>b.Color.A==0),"Disabled confirmation table retains its transparent themed surface at "+theme+scale);
+            await maintenance.CategoryForVerification("Windows tweaks");maintenance.Rows.SelectedIndex=0;UpdateLayout();
+            var surfaces=TableSurface(maintenance.Rows).ToArray();check(surfaces.Length>0&&surfaces.All(b=>b.Color.A==0),"Maintenance table retains its transparent themed surface at "+theme+scale);
             await S1Verification.Snapshot(this,root,$"maintenance-{theme}-{scale:0.0}");
-            await maintenance.ClickForVerification("Keep unchanged");
             check(maintenance.Rows.ActualHeight>120&&maintenance.Rows.ActualWidth>400,"Maintenance table remains usable at "+theme+" / "+scale);
         }
         await VerifyMaintenanceGuidanceUi(root,check);
@@ -81,18 +79,33 @@ public partial class MainWindow
         try
         {
             await maintenance.CategoryForVerification("Startup");maintenance.Rows.SelectedItem=maintenance.Rows.Items.Cast<MaintenanceRow>().Single(x=>x.Id==id);
+            maintenance.Rows.ScrollIntoView(maintenance.Rows.SelectedItem);UpdateLayout();
+            var container=(ListViewItem)maintenance.Rows.ItemContainerGenerator.ContainerFromItem(maintenance.Rows.SelectedItem);
+            check(container!=null&&maintenance.ExplanationForVerification.Contains("Disable prevents")&&maintenance.ExplanationForVerification.Contains("%TEMP%"),"Selecting a startup entry exposes its effect and full raw command before acting");
+            var assessment=FindMaintenanceAssessment(maintenance);
+            assessment.Select(assessment.Text.IndexOf("%TEMP%",StringComparison.Ordinal),"%TEMP%\\Pathweft-missing-fixture.exe".Length);
+            check(assessment.IsReadOnly&&assessment.SelectedText=="%TEMP%\\Pathweft-missing-fixture.exe"&&((System.Windows.Media.SolidColorBrush)assessment.Background).Color.A==0,"Actual themed assessment allows selecting the exact command for copying without editing or using the desktop clipboard");
+            await maintenance.DoubleClickForVerification((GridViewColumnHeader)((GridView)maintenance.Rows.View).Columns[0].Header);
+            await maintenance.DoubleClickForVerification(maintenance.Rows);
+            using(var key=Registry.CurrentUser.OpenSubKey(Maintenance.RunPath))check(key.GetValueNames().Contains(name),"Double-clicking a header or blank table does not change the selected startup entry");
+            var toggle=maintenance.DoubleClickForVerification(container);
+            check(!maintenance.Rows.IsEnabled,"Actual double-click disables the table while the original native action runs");
+            await toggle;
+            using(var key=Registry.CurrentUser.OpenSubKey(Maintenance.RunPath))check(!key.GetValueNames().Contains(name)&&Maintenance.Undo().ContainsKey(id),"One startup row double-click disables the owned entry and journals its original value without a second confirmation");
+            maintenance.Rows.ScrollIntoView(maintenance.Rows.SelectedItem);UpdateLayout();
+            container=(ListViewItem)maintenance.Rows.ItemContainerGenerator.ContainerFromItem(maintenance.Rows.SelectedItem);
+            await maintenance.DoubleClickForVerification(container);
+            using(var key=Registry.CurrentUser.OpenSubKey(Maintenance.RunPath))check(key.GetValueKind(name)==RegistryValueKind.ExpandString&&!Maintenance.Undo().ContainsKey(id),"A second row double-click restores the saved startup value directly");
             await maintenance.ClickForVerification("Disable");
-            using(var key=Registry.CurrentUser.OpenSubKey(Maintenance.RunPath))check(key.GetValueNames().Contains(name),"Selecting Disable only opens inline confirmation; no early mutation");
-            await maintenance.ClickForVerification("Confirm");
-            using(var key=Registry.CurrentUser.OpenSubKey(Maintenance.RunPath))check(!key.GetValueNames().Contains(name)&&Maintenance.Undo().ContainsKey(id),"Confirmed native worker disables the task-owned startup entry and journals its exact prior state");
+            using(var key=Registry.CurrentUser.OpenSubKey(Maintenance.RunPath))check(!key.GetValueNames().Contains(name)&&Maintenance.Undo().ContainsKey(id),"Explicit Disable executes directly with the same native worker and exact journal");
             maintenance.Rows.SelectedItem=maintenance.Rows.Items.Cast<MaintenanceRow>().Single(x=>x.Id==id);
             // A later external value must not be overwritten by Restore.
             using(var key=Registry.CurrentUser.OpenSubKey(Maintenance.RunPath,true))key.SetValue(name,"external-fixture",RegistryValueKind.String);
-            await maintenance.ClickForVerification("Restore");await maintenance.ClickForVerification("Confirm");
+            await maintenance.ClickForVerification("Restore");
             using(var key=Registry.CurrentUser.OpenSubKey(Maintenance.RunPath))check((string)key.GetValue(name)=="external-fixture"&&maintenance.State.Contains("outside"),"Actual Restore refuses to overwrite a newer independently changed value");
             using(var key=Registry.CurrentUser.OpenSubKey(Maintenance.RunPath,true))key.DeleteValue(name);
             await maintenance.ClickForVerification("Refresh");maintenance.Rows.SelectedItem=maintenance.Rows.Items.Cast<MaintenanceRow>().Single(x=>x.Id==id);
-            await maintenance.ClickForVerification("Restore");await maintenance.ClickForVerification("Confirm");
+            await maintenance.ClickForVerification("Restore");
             using(var key=Registry.CurrentUser.OpenSubKey(Maintenance.RunPath))check(key.GetValueKind(name)==RegistryValueKind.ExpandString&&(string)key.GetValue(name,null,RegistryValueOptions.DoNotExpandEnvironmentNames)=="%TEMP%\\Pathweft-missing-fixture.exe"&&!Maintenance.Undo().ContainsKey(id),"Native restore preserves the raw expandable value, hive and view, and removes its completed journal record");
         }
         finally{using var key=Registry.CurrentUser.OpenSubKey(Maintenance.RunPath,true);key?.DeleteValue(name,false);}
@@ -118,8 +131,9 @@ public partial class MainWindow
         if(!MaintenanceFixtureLink(laterAlias,laterLinked,IntPtr.Zero))throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error());
         using(var held=new FileStream(busy,FileMode.Open,FileAccess.ReadWrite,FileShare.Read))
         {
-            await maintenance.ClickForVerification("Clean reviewed");await maintenance.ClickForVerification("Confirm");
-            check(!File.Exists(candidate)&&File.Exists(changed)&&File.Exists(busy)&&File.Exists(added),"Actual cleanup confirmation deletes reviewed unchanged files and preserves new, changed and active files");
+            check(maintenance.ExplanationForVerification.Contains("New, changed and busy files are skipped"),"Selected Cleanup review explains its removal scope before the action");
+            await maintenance.ClickForVerification("Clean reviewed");
+            check(!File.Exists(candidate)&&File.Exists(changed)&&File.Exists(busy)&&File.Exists(added),"One explicit cleanup action deletes reviewed unchanged files and preserves new, changed and active files");
             check(File.Exists(linked)&&File.Exists(linkedAlias)&&File.Exists(laterLinked)&&File.Exists(laterAlias),"Cleanup skips hard links present during analysis and links created after its review");
             check(maintenance.State.Contains("removed")&&maintenance.State.Contains("skipped"),"Cleanup reports its actual removed and skipped counts");
         }
@@ -170,6 +184,16 @@ public partial class MainWindow
     {
         for(int i=0;i<System.Windows.Media.VisualTreeHelper.GetChildrenCount(table);i++)
             if(System.Windows.Media.VisualTreeHelper.GetChild(table,i) is Border border&&border.Background is System.Windows.Media.SolidColorBrush brush)yield return brush;
+    }
+    static TextBox FindMaintenanceAssessment(DependencyObject parent)
+    {
+        for(int i=0;i<System.Windows.Media.VisualTreeHelper.GetChildrenCount(parent);i++)
+        {
+            var child=System.Windows.Media.VisualTreeHelper.GetChild(parent,i);
+            if(child is TextBox text&&System.Windows.Automation.AutomationProperties.GetName(text)=="Selected maintenance assessment")return text;
+            if(FindMaintenanceAssessment(child) is { } found)return found;
+        }
+        return null;
     }
     [DllImport("kernel32.dll",EntryPoint="CreateHardLinkW",CharSet=CharSet.Unicode,SetLastError=true)]
     static extern bool MaintenanceFixtureLink(string alias,string existing,IntPtr security);

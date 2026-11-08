@@ -6,13 +6,17 @@ their published assets are verified. Retain concise verification results and
 reusable fixtures, not repeated expanded cleanup manifests, retired test profiles
 or superseded captures. Clean exact generated targets through transactional-cleanup.
 
-Current2026-11-08/spec0.97: S39 is the only ACTIVE stage. Implement
-MAINT-08..11 from docs/MAINTENANCE-DONOR-REVIEW.md with categorized settings,
-bounded guidance catalog, native details, guest qualification and final release.
-Preserve exact Restore and no host maintenance mutations. Native scratch:
-D:/Temp/pathweft-s39 (native/small-file I/O); donor scratch E:/Temp/pathweft-s39.
-Clean spent output under STORAGE-LIFECYCLE.md. S38's no-release-alone instruction
-does not forbid the newly authorized substantial S39 final release.
+Current2026-11-09/spec0.98: S39 COMPLETE. Normal1.1.38/5df239e is published;
+final235436/independent233852 pass actual package/source/native/application checks.
+Installed230000 verifies11,305 members, ready restarted main232036/helper213028,
+22 routes and preserved profile/shortcut. Spent build/retrieval/test scratch and
+verified obsolete dist1.1.37 are transactionally cleaned; current release retained.
+S40 COMPLETE through actual UI204416: direct Maintenance actions, selectable
+selected assessment and Startup double-click/exact Restore. No user entries
+changed. S41 is the only ACTIVE stage: Scoop cache/obsolete-version Cleanup,
+preserving current/persistent/active consumers, followed by combined final delivery.
+Use owned native scratch D:/Temp/pathweft-s40 for native/small-file I/O and clean
+spent outputs after consumers exit. Never mutate host Scoop in verification.
 
 Historical2026-11-08/spec0.96: S38 source/native/UI acceptance passes. The user
 explicitly directs no further compilation or new release for this fix; finish

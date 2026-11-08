@@ -1,6 +1,27 @@
 # Pathweft specification
 
-Version 0.97 - 2026-11-08. Owner: Darkaxt.
+Version 0.98 - 2026-11-09. Owner: Darkaxt.
+
+### Direct Maintenance actions (S40)
+
+User2026-11-09 requires guidance when selecting an entry rather than a second
+confirmation after an explicit action. This supersedes earlier inline action
+confirmation requirements in MAINT-09 and prior Maintenance criteria.
+
+| ID | Required behavior and acceptance |
+| --- | --- |
+| MAINT-12 | Show applicable action effects/guidance in the selected-row explanation before acting, including Cleanup's reviewed-file scope. Explicit Apply/Disable/Clean reviewed/Remove/Restore and Create restore point execute directly without an application confirmation step. Double-clicking a real Startup row disables an enabled entry or restores its Pathweft-saved original state; rows with no supported transition, headers and empty space do nothing. Retain explicit action buttons/keyboard accessibility, unsupported/busy gates, exact-state journal/external-change protection, and shared administrator-session/UAC handling. Do not auto-elevate on selection. Verify real owned Startup fixture double-click round trips, direct buttons/Restore, selected information, ignored header/empty gestures and busy handling without mutating user entries; verify one normal final release independently. |
+| MAINT-13 | The selected assessment is read-only but supports mouse/keyboard text selection and Copy of the complete identity, registry value/command, effects and guidance. Preserve the existing themed compact explanation and link, with no white editing surface or mutation. Verify selected text exactly without using the user's clipboard. |
+
+### Package-manager cleanup (S41)
+
+User2026-11-09 requests package-installer leftovers in Cleanup, illustrated by
+obsolete Scoop app-version folders beside a current junction. Start with Scoop
+download-cache and obsolete-version inventory. Preserve the current target,
+persistent app data, active consumers and manager bookkeeping. No age-based
+folder sweep or Windows Installer-cache purge. Integrate analysis/review/action
+with the existing Cleanup tab/card and verify owned package fixtures and one
+combined normal release after S40 and S41 acceptance.
 
 ### Maintenance recommendations and categorized settings (S39)
 

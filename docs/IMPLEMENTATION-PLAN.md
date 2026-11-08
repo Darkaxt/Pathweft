@@ -3,16 +3,16 @@
 Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.97, 2026-11-08,
 including the user-authorized continued comparison requirement TRANSFER-07.
 
-Current2026-11-08: S39 ACTIVE for MAINT-08..11. Implement the donor review's
-versioned recommendation catalog and categorized/searchable existing settings,
-native service details and contextual confirmations. Remaining acceptance:
-final release and independent package verification. Integrated source UI98992
-and guest4040/build26100 pass, including pending-card and dropdown refinements.
-No external blocker or tracked deferral. S38 source-only
-work is committed as b6019fe; its prior no-release-alone boundary is preserved.
-No host maintenance action will be applied during qualification. S25 remains
-NOT STARTED. Native build/guest scratch uses exact D:/Temp/pathweft-s39 for
-small-file/native I/O; disposable donor retrieval uses E:/Temp/pathweft-s39.
+Current2026-11-09: S39 COMPLETE: source98992 and guest4040/build26100;
+normal1.1.38/5df239e final235436/independent233852 pass. Installed230000 verifies
+11,305 members, ready restarted main232036/helper213028,22 routes and unchanged
+profile/shortcut identity. Spent scratch and obsolete local dist1.1.37 are cleaned.
+S40 COMPLETE through actual UI204416 for MAINT-12..13: direct actions, Startup
+double-click/exact Restore, selection/Copy, ignored header/blank gestures and busy
+gates with themed layouts. No required refactor. S41 ACTIVE for Scoop installer
+leftovers and combined final release. No external blocker or deferral.
+S25 remains NOT STARTED. Native scratch D:/Temp/pathweft-s40 uses D for native/
+small-file I/O; clean each spent output after its last consumer exits.
 
 Current2026-11-08: S38 is COMPLETE at the user's explicit source-only boundary
 after the already completed source/native/UI checks205020 and226536, and consumer
@@ -1284,7 +1284,9 @@ plan neither authorizes itself nor adds approval checkpoints.
 | S36 - Protected-folder presentation and analyzer access | COMPLETE | ACCESS-04..05 | S35 COMPLETE; before S37 | Actual UI161520/helper198244 pass typed pane denial/action/ribbon, root/expanded analysis privilege changes, no stale privileged listing, layouts and lifecycle/resources. No source blocker/deferral. Final delivery belongs to S37. |
 | S37 - Drive-scoped performance detail | COMPLETE | DRIVE-01..02; final combined DELIVERY | S36 COMPLETE; before S25 | Source/native/UI and helper acceptance pass. Normal1.1.37/6097ce4 is published; final233952 and independently downloaded199512 pass source/native/self-test/application checks. Retained uncertain Office sharing failure is followed by exact crash/cancel/close226780 and full unchanged-package acceptance; no speculative renderer patch. Installed222108 verifies matching members, restarted ready main/helper, routes and profile/shortcut identity. Spent scratch cleaned; no blocker or deferral. |
 | S38 - Updater scratch and live analysis disclosure | COMPLETE | STORAGE-01/SPACE-08 | S37 COMPLETE; explicit source-only boundary | Actual source205020/226536 and consumer compilation pass. Legacy cleanup removes26 checksum-verified updater downloads,8,906,892,051 bytes. Preserve relocated profile; no further compilation, version bump or release for this fix. No blocker/deferral/refactor. |
-| S39 - Maintenance guidance and categorized settings | ACTIVE | MAINT-08..11; final DELIVERY | S38 COMPLETE; newly authorized substantial feature | Versioned exact-target guidance, six searchable settings groups, native service details and contextual confirmations are integrated. Source UI98992 and guest4040/build26100 pass, including pending recommendations and dropdown alignment; final package and independent normal-release acceptance remain. No external blocker or tracked deferral. |
+| S39 - Maintenance guidance and categorized settings | COMPLETE | MAINT-08..11; final DELIVERY | S38 COMPLETE | Source98992/guest4040; published1.1.38/5df239e final235436/independent233852 and installed230000 pass. Pending recommendations/dropdown alignment verified; spent scratch cleaned. No blocker/deferral or required refactor. |
+| S40 - Direct Maintenance actions | COMPLETE | MAINT-12..13 | S39 COMPLETE | Actual UI204416 verifies owned Startup double-click/exact Restore, direct buttons/external-change refusal/Cleanup, selectable exact assessment, ignored header/blank and busy gating, dark/light/scaled/narrow presentation. No required refactor/blocker/deferral. S41 owns combined final delivery. |
+| S41 - Package-manager cleanup | ACTIVE | Scoop cleanup requirements and final DELIVERY | S40 COMPLETE | Analyze and review obsolete Scoop versions/download caches, preserving current/persistent/active versions. Verify actual owned fixtures then one combined normal independently verified release. |
 | S25 - Summary-card motion | NOT STARTED | MOTION-01..03; affected MONITOR/CORE-03/LIFE/DELIVERY | S18 COMPLETE; after S28 and before S12 | Upward card entry with smooth file-pane squeeze; rotation between Statistics/Performance; reversal/interruption and focus/scroll preservation; reduced-motion support and actual frame/layout/resource qualification. One final independently/installed verified release after implementation authorization. No criteria verified yet. |
 | S12 - Tresorit capability investigation | NOT STARTED | TRES-01..04 | S15 delivered; S16/S18/S25 considered first in the selected execution order | Supported API/client assessment, bounded REA as needed, evidence-backed capability matrix/decision and implementation proposal. Investigation only; no cloud mutation or integration implementation. |
 | S19 - Selected-folder content indexing | NOT STARTED | CONTENT-01..06; affected SEARCH/CORE/LIFE/DELIVERY | After S12 in the selected execution order; qualify extractor APIs, query/location semantics, provider metadata and resource budgets | Toolbar folder opt-in/current magnifier badges; qualified Craft/text extraction; persisted searchable strings and location arrays, periodic incremental refresh and cloud-cache independence. Verify actual search/open/freshness/recovery and one final independently/installed verified release when implementation is authorized. No criteria verified yet. |
@@ -1331,6 +1333,7 @@ owns its complete release/delivery gate; S12 delivers research documents only.
 | Requirements | Owner | Later boundary |
 | --- | --- | --- |
 | MAINT-08..11 | S39 | Existing-action guidance/category adoption, exact Restore and native guest configuration qualification, actual themed UI and final independently verified normal release |
+| MAINT-12..13 | S40 | Direct explicit Maintenance actions, Startup row double-click and selectable selected-row guidance; exact Restore and real owned-fixture UI workflow; S41 owns combined independently verified release |
 | CORE-23 | S23 | Complete missing-folder tab activation/restoration recovery, preservation regressions and normal final independently verified release |
 | ENV-01..04 | Setup | Committed/remote document and head readback at setup delivery |
 | WINDOW-01..03, UPDATE-02, TRANSFER-14 | S14 | Shared auxiliary windows, immediate manual check/results and successful-transfer dismissal; combined S15 independently retrieved/installed release |
