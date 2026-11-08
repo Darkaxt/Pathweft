@@ -76,7 +76,7 @@ internal static class MaintenanceStartup
             if(saved.StartupFile is {} file)rows.Add(new(saved.Id,Path.GetFileName(file.Path),FolderScope(file.Path),saved.Phase=="applied"?"Disabled":"Needs review",file.Path,Type:"Startup file",CanChange:false));
             else if(saved.StartupTask is {} task)rows.Add(new(saved.Id,task.Path,"All users","Needs review","Saved task is no longer present",Type:"Scheduled task",CanChange:false));
             else if(saved.Before.Length==1)
-            {var item=saved.Before[0];rows.Add(new(saved.Id,item.Name,item.Hive=="HKEY_CURRENT_USER"?"Current user":"All users",saved.Phase=="applied"?"Disabled":"Needs review",item.Value.ToString(),Type:item.Path.EndsWith("RunOnce")?"Registry RunOnce":item.Path.Contains("Policies")?"Registry policy Run":"Registry Run",CanChange:false));}
+            {var item=saved.Before[0];rows.Add(new(saved.Id,item.Name,item.Hive=="HKEY_CURRENT_USER"?"Current user":"All users",saved.Phase=="applied"?"Disabled":"Needs review",item.Hive+"\\"+item.Path+" · "+item.View+" · "+item.Value.ToString(),Type:item.Path.EndsWith("RunOnce")?"Registry RunOnce":item.Path.Contains("Policies")?"Registry policy Run":"Registry Run",CanChange:false));}
         }
         return rows.OrderBy(r=>r.Name,StringComparer.CurrentCultureIgnoreCase).ThenBy(r=>r.Type).ToArray();
     }

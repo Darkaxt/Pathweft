@@ -40,6 +40,7 @@ internal static class MaintenanceNativeVerification
                 if(row==null){checks.Add(new{criterion=rule.Id,notInstalled=true});continue;}
                 var state=MaintenanceServices.Read(rule.Target);
                 Check(row.Details.Contains("Requires:")&&row.Details.Contains(state.Account)&&!string.IsNullOrWhiteSpace(state.Binary),"Native service configuration/dependencies accompany "+rule.Id);
+                if(rule.ReadOnlyEvidence){qualified.Add(rule.Id+":read-only");continue;}
                 string journal=Path.Combine(root,rule.Id+".json");
                 try
                 {

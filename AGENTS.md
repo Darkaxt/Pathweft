@@ -6,15 +6,18 @@ their published assets are verified. Retain concise verification results and
 reusable fixtures, not repeated expanded cleanup manifests, retired test profiles
 or superseded captures. Clean exact generated targets through transactional-cleanup.
 
-Current2026-11-09/spec0.98: S39 COMPLETE. Normal1.1.38/5df239e is published;
+Current2026-11-09/spec0.99: S39 COMPLETE. Normal1.1.38/5df239e is published;
 final235436/independent233852 pass actual package/source/native/application checks.
 Installed230000 verifies11,305 members, ready restarted main232036/helper213028,
 22 routes and preserved profile/shortcut. Spent build/retrieval/test scratch and
 verified obsolete dist1.1.37 are transactionally cleaned; current release retained.
 S40 COMPLETE through actual UI204416: direct Maintenance actions, selectable
 selected assessment and Startup double-click/exact Restore. No user entries
-changed. S41 is the only ACTIVE stage: Scoop cache/obsolete-version Cleanup,
-preserving current/persistent/active consumers, followed by combined final delivery.
+changed. S41 is the only ACTIVE stage: 24 adopted donor actions (40 total),
+24 exact core-service Keep enabled rules, repaired own Startup matching, compact
+selectable details and Scoop cache/obsolete-version Cleanup. Guest4340/build26100
+passes native Apply/readback/exact Restore; actual UI205736 passes integrated
+Maintenance/Scoop safety and themed layouts. Combined final delivery remains.
 Use owned native scratch D:/Temp/pathweft-s40 for native/small-file I/O and clean
 spent outputs after consumers exit. Never mutate host Scoop in verification.
 

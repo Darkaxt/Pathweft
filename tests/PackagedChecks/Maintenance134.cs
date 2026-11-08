@@ -8,6 +8,9 @@ sealed partial class PackageProbe
 {
     async Task VerifyMaintenance134()
     {
+        string application=Path.GetDirectoryName(owner.GetType().Assembly.Location);
+        foreach(string donor in new[]{"Scoop","Win11Debloat"})
+            Check(File.Exists(Path.Combine(application,"vendor",donor,"License.txt"))&&File.Exists(Path.Combine(application,"vendor",donor,"source-manifest.json")),"Delivered Maintenance donor provenance and notices: "+donor);
         var shield=(Button)owner.FindName("AdministratorCommand");var hidden=(Button)owner.FindName("HiddenToggle");
         var commands=((Panel)shield.Parent).Children.OfType<Button>().ToArray();
         Check(Array.IndexOf(commands,shield)==Array.IndexOf(commands,hidden)+1&&shield.Content is Image{Width:16,Height:16}&&shield.Tag==null&&AutomationProperties.GetItemStatus(shield)=="Standard", "Delivered administrator shield is compact, starts Standard and sits beside Hidden");
@@ -24,7 +27,7 @@ sealed partial class PackageProbe
         Check(cards.Columns==5&&cards.Children.Count==5&&cards.Visibility==Visibility.Visible,
             "Delivered brush opens five bottom Maintenance summary tabs");
         Check(shield.IsEnabled&&shield.ContextMenu?.Items.OfType<MenuItem>().Any(x=>(string)x.Header=="End administrator session")==true,"Delivered access toggle remains available in Maintenance with an explicit session-end action");
-        Check(rows.Items.Count==4&&rows.Items.Cast<object>().All(r=>Get(r,"Bytes")!=null)&&
+        Check(rows.Items.Count==6&&rows.Items.Cast<object>().All(r=>Get(r,"Bytes")!=null)&&
             (string)type.GetProperty("State",Flags).GetValue(panel)=="All categories reviewed. Nothing has been removed.","Delivered Maintenance automatically reviews all Cleanup categories without row selection or UAC");
         string[] categories=["Cleanup","Startup","Services","Windows tweaks","Windows apps"];
         for(int i=0;i<categories.Length;i++)
@@ -36,7 +39,7 @@ sealed partial class PackageProbe
                 AutomationProperties.GetItemStatus(card)=="Selected"&&card.ToolTip!=null,
                 "Delivered Maintenance card selects its real category and summary: "+categories[i]);
             string state=(string)type.GetProperty("State",Flags).GetValue(panel);
-            Check(state=="No items found."||state.EndsWith("items · no changes made",StringComparison.Ordinal),
+            Check(state=="No items found."||state.Contains("items · no changes made",StringComparison.Ordinal),
                 "Delivered category completes its actual read-only Windows query: "+categories[i]);
             var headers=((GridView)rows.View).Columns.Select(x=>AutomationProperties.GetName((GridViewColumnHeader)x.Header)).ToArray();
             foreach(var column in ((GridView)rows.View).Columns)
@@ -56,9 +59,13 @@ sealed partial class PackageProbe
             }
             if(categories[i]=="Startup")Check(headers.Contains("Type")&&!headers.Contains("Size"),"Delivered Startup identifies its persistence source type");
             if(categories[i]=="Services")Check(headers.Contains("Startup type")&&rows.Items.Count>10,"Delivered Services reads the complete installed Win32 inventory");
+            if(categories[i]=="Services")Check(rows.Items.Cast<object>().Any(row=>(string)Get(row,"Type")=="AppXSvc"&&(string)Get(row,"Recommendation")=="Keep enabled")&&
+                rows.Items.Cast<object>().All(row=>((string)Get(row,"Summary")).IndexOfAny(['\r','\n'])<0),"Delivered Services includes matched guidance and compact details");
             if(i>0)Check(headers.Contains("Recommendation")&&rows.Items.Cast<object>().All(row=>!string.IsNullOrEmpty((string)Get(row,"Guidance"))),"Delivered entries separate actual state from guidance: "+categories[i]);
             if(categories[i]=="Windows tweaks")
             {
+                Check(rows.Items.Count==40&&rows.Items.Cast<object>().Count(row=>((string)Get(row,"RuleId")).StartsWith("donor."))==24&&
+                    rows.Items.Cast<object>().Where(row=>((string)Get(row,"RuleId")).StartsWith("donor.")).All(row=>(string)Get(row,"Recommendation")!="Not assessed"),"Delivered catalog contains all qualified adopted donor actions");
                 int pending=rows.Items.Cast<object>().Count(row=>(bool)Get(row,"CanChange")&&
                     ((string)Get(row,"Recommendation")=="Optional"&&(string)Get(row,"State")=="Not applied"||
                      (string)Get(row,"Recommendation")=="Keep enabled"&&(string)Get(row,"State")=="Applied"));
@@ -69,6 +76,8 @@ sealed partial class PackageProbe
                 Check(rows.Items.Count==1&&(string)Get(rows.Items[0],"Recommendation")=="Keep enabled","Delivered search and exact guidance match the bundled catalog");
                 rows.SelectedIndex=0;
                 Check(((Border)type.GetField("explanation",Flags).GetValue(panel)).Visibility==Visibility.Visible,"Delivered selected setting exposes effect/source details");
+                var assessment=(TextBox)type.GetField("explanationText",Flags).GetValue(panel);
+                Check(assessment.IsReadOnly&&assessment.Text.Contains((string)Get(rows.Items[0],"Details")),"Delivered assessment retains selectable complete source details");
                 search.Clear();filter.SelectedItem="File Explorer";
                 Check(rows.Items.Count>0&&rows.Items.Cast<object>().All(row=>(string)Get(row,"Group")=="File Explorer"),"Delivered category selector narrows existing settings");
                 Check(((StackPanel)card.Content).Children.OfType<TextBlock>().ElementAt(1).Text==pending.ToString("N0"),"Delivered filtering preserves the whole-category recommendation count");

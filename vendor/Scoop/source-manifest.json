@@ -1,0 +1,7 @@
+{
+  "repository": "https://github.com/ScoopInstaller/Scoop",
+  "revision": "e6aa3b366bdee8ed138c1e0f7b85192ebdd35d0f",
+  "license": "MIT",
+  "selectedBehavior": ["libexec/scoop-cleanup.ps1", "lib/versions.ps1 Select-CurrentVersion", "lib/core.ps1 root/cache configuration"],
+  "adaptation": "Current-user root/cache discovery and obsolete-version identification. Pathweft independently reviews native identities, current binding, active consumers and persistent links; no Scoop executable/scripts are bundled or executed. No-junction or ambiguous installations are preserved. Cache cleanup covers completed numeric versions older than the active installed version."
+}

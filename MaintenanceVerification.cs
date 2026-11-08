@@ -12,18 +12,36 @@ public partial class MainWindow
 {
     internal async Task VerifyMaintenance32(string root,Action<bool,string> check)
     {
+        string scoop=Environment.GetEnvironmentVariable("SCOOP"),cache=Environment.GetEnvironmentVariable("SCOOP_CACHE");
+        try
+        {
+            await ScoopCleanupVerification.Run(root,check);
+            string uiScoop=Path.Combine(root,"ui-scoop");ScoopCleanupVerification.Package(uiScoop,"owned-ui-package");
+            Environment.SetEnvironmentVariable("SCOOP",uiScoop);
+            Environment.SetEnvironmentVariable("SCOOP_CACHE",Path.Combine(uiScoop,"cache"));
+            await VerifyMaintenanceCore(root,check);
+        }
+        finally{Environment.SetEnvironmentVariable("SCOOP",scoop);Environment.SetEnvironmentVariable("SCOOP_CACHE",cache);}
+    }
+    async Task VerifyMaintenanceCore(string root,Action<bool,string> check)
+    {
         performance.AutomaticIo=false;SetSinglePane(true);SetActive(Left);await S1Verification.Navigate(active,root);
         File.WriteAllText(Path.Combine(root,"selection.txt"),"Maintenance must preserve this browser");await S1Verification.Navigate(active,root);
         active.ListForVerification.SelectedItem=active.Items.First(x=>!x.IsUp);string path=active.Dir;var selection=active.Selected.Select(x=>x.Path).ToArray();
         MaintenanceCommand.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await paneModeWork;UpdateLayout();
         check(maintenance.IsVisible&&!PaneArea.IsVisible&&AnalysisVisible&&!TerminalCommand.IsEnabled&&Equals(MaintenanceCommand.Tag,"on"),"Actual brush opens Maintenance in the main pane and disables hidden file actions");
-        check(maintenance.Rows.Items.Count==4&&maintenance.Rows.Items.Cast<MaintenanceRow>().All(r=>r.Bytes.HasValue)&&maintenance.State=="All categories reviewed. Nothing has been removed.","Actual Maintenance button automatically queues every read-only Cleanup estimate without selecting a row or requesting elevation");
+        check(maintenance.Rows.Items.Count==CleanupReview.Targets.Length&&maintenance.Rows.Items.Cast<MaintenanceRow>().All(r=>r.Bytes.HasValue)&&maintenance.State=="All categories reviewed. Nothing has been removed.","Actual Maintenance button automatically queues every read-only Cleanup estimate without selecting a row or requesting elevation");
         check(maintenance.Rows.SelectedItem==null,"Automatic analysis does not select a cleanup action on the user's behalf");
+        var scoopRow=maintenance.Rows.Items.Cast<MaintenanceRow>().Single(r=>r.Id=="scoop-versions");maintenance.Rows.SelectedItem=scoopRow;
+        check(scoopRow.Bytes>0&&maintenance.ExplanationForVerification.Contains("owned-ui-package"),"Automatic Scoop estimate and full candidate path reach the actual selected assessment");
+        await maintenance.ClickForVerification("Clean reviewed");
+        string uiScoop=Environment.GetEnvironmentVariable("SCOOP");
+        check(!Directory.Exists(Path.Combine(uiScoop,"apps","owned-ui-package","1.0"))&&Directory.Exists(Path.Combine(uiScoop,"apps","owned-ui-package","2.0")),"Actual Cleanup action removes the reviewed owned obsolete package and preserves its current version");
         VerifyMaintenanceSorting(maintenance,check);
         var reached=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);var resume=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         maintenance.AnalyzeStepForVerification=async index=>{if(index==1){reached.TrySetResult();await resume.Task;}};
         var originalWork=maintenance.Show();await reached.Task;
-        check(maintenance.State.Contains("2 of 4")&&maintenance.Rows.Items.Cast<MaintenanceRow>().Single(x=>x.Id=="user-temp").Bytes.HasValue,"Automatic Cleanup publishes completed category estimates before the queue finishes");
+        check(maintenance.State.Contains("2 of "+CleanupReview.Targets.Length)&&maintenance.Rows.Items.Cast<MaintenanceRow>().Single(x=>x.Id=="user-temp").Bytes.HasValue,"Automatic Cleanup publishes completed category estimates before the queue finishes");
         maintenance.CancelForVerification();resume.SetResult();await originalWork;maintenance.AnalyzeStepForVerification=null;
         check(maintenance.State.StartsWith("Cancelled")&&maintenance.Rows.Items.Cast<MaintenanceRow>().Single(x=>x.Id=="user-temp").Bytes.HasValue,"Actual Cancel drains the original analysis queue and retains completed reviews");
         maintenance.Rows.SelectedItem=null;await maintenance.ClickForVerification("Analyze");

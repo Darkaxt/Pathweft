@@ -18,8 +18,9 @@ internal sealed class MaintenanceTweak
 }
 internal static class MaintenanceTweaks
 {
-    internal static List<MaintenanceTweak> All() => new()
-    {
+    internal static List<MaintenanceTweak> All() =>
+    [
+        .. MaintenanceDonorTweaks.All(),
         new MaintenanceTweak
         {
             Name = "Windows telemetry",
@@ -202,7 +203,7 @@ internal static class MaintenanceTweaks
             Apply = edits => Dword(edits, Registry.LocalMachine, @"SOFTWARE\Policies\Microsoft\Windows\WindowsAI", "DisableAIDataAnalysis", 1),
             Revert = edits => Remove(edits, Registry.LocalMachine, @"SOFTWARE\Policies\Microsoft\Windows\WindowsAI", "DisableAIDataAnalysis"),
         },
-    };
+    ];
 
 
     static int? ReadDword(RegistryKey root,string path,string name)

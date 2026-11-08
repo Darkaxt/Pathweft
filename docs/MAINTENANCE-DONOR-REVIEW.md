@@ -28,7 +28,38 @@ of every optional Windows experience. Server service documentation is used for
 feature descriptions only; Server startup defaults/disable advice are not Windows
 11 desktop recommendations.
 
-## Proposed fit in Pathweft
+## S41 adoption, 2026-11-09
+
+The initial16-action catalogue did not fulfil the requested donor expansion.
+S41 adds24 individually selectable registry actions from the immutable MIT
+Win11Debloat revision below: suggestions/privacy preferences, Explorer behavior,
+Start/taskbar options, appearance, input/accessibility and Fast Startup. The
+selected source files, hashes, license and adaptation notes are preserved in
+`vendor/Win11Debloat`. Pathweft uses those definitions through its existing typed
+worker and saved-original Restore; it does not execute the donor's scripts or
+restore hardcoded defaults. Native worker Apply, every requested value/kind,
+journal originals and exact Restore passed on disposable Windows build26100.
+This qualifies configuration behavior, not a claim of faster performance or
+visual verification of every Windows experience after sign-out/restart.
+
+Services adds24 exact Keep enabled rules for documented core, app, audio and
+desktop dependencies, accompanied by actual SCM configuration/dependency reads.
+Those read-only recommendations do not require disabling critical services for
+testing. They do not force Automatic or substitute Server defaults. The original
+optional-service action/Restore checks remain separate. Unknown third-party
+Startup entries remain Not assessed; only exact app-owned Pathweft commands are
+recognized, including their hive, registry view, executable and arguments.
+
+All Maintenance categories use compact single-line table summaries and the same
+complete selectable detail well. Coverage is stated beside the inventory count.
+Scoop Cleanup follows its pinned installation/current-version conventions and
+adds old installed versions and completed obsolete download caches, preserving
+current bindings, persisted data, active consumers and ambiguous installations.
+Native cleanup and integrated UI205736 passed, including active-process,
+current-binding, persistent-data, changed/new/busy-file and hardlink preservation.
+Final package and independent delivery acceptance remain before S41 closes.
+
+## Fit in Pathweft
 
 Keep the five existing Maintenance cards and current table layout. Add a compact
 **Recommendation** column to Startup, Services, Windows tweaks and optional
@@ -56,7 +87,7 @@ stays unassessed. Low recent CPU/RAM does not prove an entry is dispensable.
 The smallest useful adoption is a bundled, versioned JSON rule catalogue with
 stable IDs, supported Windows builds, exact target, suggested action, reason,
 feature loss, source link and verification date. It feeds the existing rows and
-confirmation view; it must not execute downloaded scripts or add another daemon.
+selected detail well; it must not execute downloaded scripts or add another daemon.
 Configuration/catalogue import must not supply arbitrary privileged commands.
 Keep Pathweft's exact-state journal and external-change checks rather than a
 donor's hardcoded reset-to-default values. Qualify individual rules in Sandbox,

@@ -1,14 +1,20 @@
-# Pathweft 1.1.35
+# Pathweft 1.1.39
 
 The brush beside Performance opens Maintenance. Five bottom summary cards select
 Cleanup, Startup, Services, Windows tweaks and optional Windows apps. Cleanup
-shows recoverable bytes only after Analyze; Clean removes only reviewed,
-unchanged files. Startup covers Run/RunOnce and policy Run entries, Startup-folder
+automatically analyzes six categories, including obsolete Scoop versions and
+completed old downloads. Clean removes only reviewed, unchanged files. Scoop
+current installations, persistent data, active consumers and ambiguous versions
+are preserved; downloads and installed versions are separate categories. Startup covers Run/RunOnce and policy Run entries, Startup-folder
 files/shortcuts and scheduled boot/logon tasks, with a Type column identifying the
 source. Windows-owned startup approval is read without rewriting its flags.
 Services lists installed Windows application services with actual startup modes
-and descriptions. Tweaks show settings to review rather than blanket recommendations.
-Changes require confirmation. Supported registry/service changes save exact
+and descriptions. All categories use compact single-line summaries with a
+complete selectable detail well. Forty individual tweaks include24 definitions
+adapted from Win11Debloat, grouped by category. Guidance distinguishes reviewed
+Keep enabled, Optional and Advanced advice from unknown identities. Selecting
+an entry shows its effects before acting. Explicit actions run directly without
+an extra app confirmation; double-click toggles supported Startup entries. Supported registry/service changes save exact
 original values for Restore; supported Startup files and tasks retain their exact
 original file/definition and enabled state. Independently changed values or files
 are not overwritten. Maintenance and Performance are mutually exclusive views;

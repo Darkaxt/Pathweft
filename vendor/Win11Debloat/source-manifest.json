@@ -1,0 +1,72 @@
+{
+  "repository": "https://github.com/Raphire/Win11Debloat",
+  "revision": "eef5c592fb078a1f4ab0a5dc2c1a4e4d98ea0a44",
+  "license": "MIT",
+  "adaptation": "Selected registry setting definitions reimplemented as individually journaled typed actions. Source files are provenance only, never executed. Undo defaults and broad presets are not used.",
+  "files": [
+    {
+      "path": "Regfiles/Align_Taskbar_Left.reg",
+      "sha256": "f94b4247c21de0e276b4f91393dc4e4bdabe57c7c28680be020167638e1e5d79"
+    },
+    {
+      "path": "Regfiles/Combine_Taskbar_Never.reg",
+      "sha256": "e22c0105c14866baddfcab1461cba34feffdf71751e2a162080fc447f06b79c3"
+    },
+    {
+      "path": "Regfiles/Disable_Enhance_Pointer_Precision.reg",
+      "sha256": "cd8cfe6ac1a77681210b39bd85e670f88dc51a5911547540480902745e289c8e"
+    },
+    {
+      "path": "Regfiles/Disable_Fast_Startup.reg",
+      "sha256": "ba8ac3589193fcaaa26ff5a88fdb4ccf973c7a64dec28b727cf5e2677a80b67c"
+    },
+    {
+      "path": "Regfiles/Disable_Lockscreen_Tips.reg",
+      "sha256": "b44b7100e1a2cf08f0ad80e955907d0931cc808d7fdc6879a47294f1da9689ec"
+    },
+    {
+      "path": "Regfiles/Disable_Snap_Assist.reg",
+      "sha256": "94951ac1867d6eaee60a312a12881c1e6c1fa635a783f5ec7582d1836b03f538"
+    },
+    {
+      "path": "Regfiles/Disable_Sticky_Keys_Shortcut.reg",
+      "sha256": "af3d002f5fe0ad3e71abf6281849258efeca6ecbc9dc9fee350a7a380f2c3cc2"
+    },
+    {
+      "path": "Regfiles/Disable_Telemetry.reg",
+      "sha256": "943d1348671c7c0b37f0cf13359113190fb012da4d0253cbf7f839b5d439caec"
+    },
+    {
+      "path": "Regfiles/Disable_Windows_Suggestions.reg",
+      "sha256": "6db962db6da06045b60c9d4561f1151b5bfb0d2b14af6171c57e889f16be715b"
+    },
+    {
+      "path": "Regfiles/Enable_Dark_Mode.reg",
+      "sha256": "8960ca278b878a45a2e6d5e61b4ee63364e2f864c2d2b0ef84ad9914433ea6a8"
+    },
+    {
+      "path": "Regfiles/Enable_Last_Active_Click.reg",
+      "sha256": "46ade8ebc36771b25955010888f05275c6b4a1563f236c65f53a2746e654a265"
+    },
+    {
+      "path": "Regfiles/Hide_Search_Taskbar.reg",
+      "sha256": "0f7b2aa743b5dc843f5be9da4308f65628bfc7214c1281d890b1cdf46c87bde7"
+    },
+    {
+      "path": "Regfiles/Hide_Tabs_In_Alt_Tab.reg",
+      "sha256": "55f9190338255ad7067e78113102c27d865e5240c52967902393b311234301be"
+    },
+    {
+      "path": "Regfiles/Hide_Taskview_Taskbar.reg",
+      "sha256": "894caccfad9ca3a577d596c8638f5b32225a76510244e819b2bbf52b090414e5"
+    },
+    {
+      "path": "Regfiles/Launch_File_Explorer_To_This_PC.reg",
+      "sha256": "1c28fc06aa1fc5c6821ea6c6bd39c1b1e0ea056cdf3aab40410c4ed6ca13578e"
+    },
+    {
+      "path": "Regfiles/Show_Drive_Letters_First.reg",
+      "sha256": "a98f249d5f230e3d708a49b5de4a4798fc6f7e189b2f18051f545583f54a372b"
+    }
+  ]
+}

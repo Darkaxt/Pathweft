@@ -54,6 +54,17 @@ try{
     try{$base=$reader.ReadToEnd()|ConvertFrom-Json}finally{$reader.Dispose()}
     foreach($pin in $base){CheckDependency $pin.name $pin.sha256}
     $marked=ReadJson 'vendor/Marked/runtime-manifest.json'
+    foreach($donor in @('Scoop','Win11Debloat')){
+        $pin=ReadJson ('vendor/'+$donor+'/source-manifest.json')
+        if($pin.revision -notmatch '^[a-f0-9]{40}$' -or $pin.license -ne 'MIT' -or !$source.GetEntry('Pathweft/vendor/'+$donor+'/License.txt')){throw ('Maintenance donor provenance missing: '+$donor)}
+        foreach($file in $pin.files){
+            $entry=$source.GetEntry('Pathweft/vendor/'+$donor+'/'+$file.path)
+            if(!$entry){throw ('Selected donor source missing: '+$file.path)}
+            $stream=$entry.Open()
+            try{$actual=[Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($stream))}finally{$stream.Dispose()}
+            if($actual -ne $file.sha256){throw ('Selected donor source differs: '+$file.path)}
+        }
+    }
     CheckDependency ('Marked/'+$marked.sourceArchive) $marked.sourceSha256
     CheckDependency 'Marked/marked-18.1.2.tgz' $marked.npmSha256
     $mpv=ReadJson 'vendor/MPV/runtime-manifest.json'

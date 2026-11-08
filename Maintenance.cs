@@ -10,6 +10,7 @@ internal sealed record MaintenanceRow(string Id,string Name,string Scope,string 
     string Group="",string Recommendation="Not assessed",string Guidance="",string Source="",string RuleId="")
 {
     public string Size=>Bytes is {} size?MainWindow.Fmt(size):"";
+    public string Summary=>Details?.Split(['\r','\n'],2)[0]??"";
     public string RecommendationLabel=>(Recommendation switch{"Keep enabled"=>"● ","Optional"=>"◇ ","Advanced"=>"△ ",_=>"○ "})+Recommendation;
 }
 internal sealed record RegistryEdit(string Hive,string Path,string Name,RegistryValueKind Kind,[property:System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)]JsonElement Value,bool Exists,RegistryView View=RegistryView.Registry64)

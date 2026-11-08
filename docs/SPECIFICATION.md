@@ -1,6 +1,6 @@
 # Pathweft specification
 
-Version 0.98 - 2026-11-09. Owner: Darkaxt.
+Version 0.99 - 2026-11-09. Owner: Darkaxt.
 
 ### Direct Maintenance actions (S40)
 
@@ -22,6 +22,44 @@ persistent app data, active consumers and manager bookkeeping. No age-based
 folder sweep or Windows Installer-cache purge. Integrate analysis/review/action
 with the existing Cleanup tab/card and verify owned package fixtures and one
 combined normal release after S40 and S41 acceptance.
+
+MAINT-14: add Scoop obsolete installed versions and completed obsolete download
+cache entries to the existing automatic Cleanup queue. Resolve the current-user
+Scoop root/cache from its environment/configuration and defaults. Identify
+installed versions using Scoop metadata and a valid current junction; ambiguous
+or no-junction installations are preserved. Exclude the Scoop manager itself,
+current version/cache, partial downloads, unknown files and persistent data.
+Review exact members, then recheck current binding, native file identities,
+changes, active consumers and links before removal; remove only reviewed empty
+directories and persistent-data link names without traversing their targets.
+Show candidate names/paths in selectable assessment and aggregate their bytes
+in Cleanup. Verify owned fixtures for normal cleanup, current retargeting,
+changed/new/busy/hardlinked files, persistent links and active executables; never
+clean the host's package installation as a test. Final S41 delivery bundles S40
+and MAINT-14 in one normal independently verified release.
+
+User refinements2026-11-09: all Maintenance tables use compact single-line
+details and the same selectable selected-item well (including Services).
+Expand the sparse guidance using the reviewed donors/primary sources, retaining
+exact identity and explicit feature-loss conditions. Repair app-owned Startup
+matching after the source-detail format changed. Unknown entries must not be
+invented as safe. Configuration qualification is required for disable/apply
+recommendations; documented Keep enabled guidance can be verified read-only
+against exact installed Windows services and their native dependent features.
+Show review coverage clearly; lack of a rule is distinct from a recommendation.
+
+MAINT-15: complete the donor adoption requested again on2026-11-09. Add real,
+individually selectable Windows settings from the pinned MIT Win11Debloat source,
+covering privacy/suggestions, Explorer, Start/taskbar, appearance and local input/
+power preferences. Each action has inspectable exact registry targets, current
+state detection, build bounds, specific effects and exact journal-based Restore;
+no donor preset/default reset, script execution or automatic application. Keep
+network/DNS, app installation, security enforcement and thermal controls excluded.
+Verify every new action through the real worker Apply/readback/Restore in the
+disposable guest. Expand exact service guidance, repair app-owned Startup identity
+matching, retain honest unknowns, and show assessed coverage. Verify compact rows
+and the complete selectable detail well for Services and Startup, all themes/
+scales/narrow layout, package/source notices and combined independent delivery.
 
 ### Maintenance recommendations and categorized settings (S39)
 

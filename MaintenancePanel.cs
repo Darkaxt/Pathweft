@@ -178,7 +178,9 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
         else rows=await Task.Run(()=>Maintenance.Read(category,reading.Token),reading.Token);
         if(disposed)return;
         if(category=="Cleanup")rows=rows.Select(r=>analyzedRows.GetValueOrDefault(r.Id,r)).ToArray();
-        SetRows(rows);Summary(category,rows);status.Text=rows.Length==0?"No items found.":$"{rows.Length:N0} items · no changes made";
+        SetRows(rows);Summary(category,rows);
+        int assessed=rows.Count(r=>MaintenanceGuidance.Describe(category,r).Recommendation!="Not assessed");
+        status.Text=rows.Length==0?"No items found.":$"{rows.Length:N0} items · no changes made"+(category=="Cleanup"?"":$" · {assessed:N0} with guidance");
     }
     async Task Analyze()
     {
@@ -422,7 +424,9 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
             var arrow=new TextBlock{Width=14,Margin=new(6,0,0,0),VerticalAlignment=VerticalAlignment.Center,TextAlignment=TextAlignment.Center};
             var caption=new StackPanel{Orientation=Orientation.Horizontal};caption.Children.Add(new TextBlock{Text=column.Header});caption.Children.Add(arrow);
             var header=new GridViewColumnHeader{Content=caption,Tag=property,Focusable=true};AutomationProperties.SetName(header,column.Header);headers[property]=(header,arrow);
-            view.Columns.Add(new(){Header=header,DisplayMemberBinding=new Binding(column.Property),Width=column.Width});
+            // All categories use the same compact rows and selected detail well.
+            // Service dependencies/account/path are multiline secondary content.
+            view.Columns.Add(new(){Header=header,DisplayMemberBinding=new Binding(column.Property=="Details"?"Summary":column.Property),Width=column.Width});
         }
         table.View=view;SortRows();
     }

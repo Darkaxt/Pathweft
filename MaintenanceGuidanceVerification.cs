@@ -16,6 +16,10 @@ public partial class MainWindow
         var unknown=new MaintenanceRow("service:WSearch-fake","Windows Search","This computer","Running","",Type:"WSearch-fake");
         check(MaintenanceGuidance.Describe("Services",unknown,26100).Recommendation=="Not assessed","A familiar display name or prefix does not classify an unknown service");
         check(MaintenanceGuidance.Describe("Startup",new("third-party","Pathweft","Current user","Enabled","Registry64 · fake.exe",Type:"Registry Run"),26100).Recommendation=="Not assessed","Third-party startup names never imply trusted publisher/product identity");
+        string ownCommand="HKEY_CURRENT_USER\\"+Maintenance.RunPath+" · Registry64 · \""+Program.Executable+"\" --agent";
+        check(MaintenanceGuidance.Describe("Startup",new("own","Pathweft Agent","Current user","Enabled",ownCommand,Type:"Registry Run"),26100).Recommendation=="Keep enabled"&&
+            MaintenanceGuidance.Describe("Startup",new("fake","Pathweft Agent","Current user","Enabled",ownCommand+"-fake",Type:"Registry Run"),26100).Recommendation=="Not assessed","Complete source/view/raw command matches app-owned startup without accepting a similar suffix");
+        check(MaintenanceDonorTweaks.All().Length==24&&Maintenance.Tweaks.Count()==40&&rules.Count(r=>r.Kind=="service"&&r.ReadOnlyEvidence)>=24,"Expanded catalog contains real typed donor actions and documented native service dependencies");
         check(rules.All(r=>r.MinBuild<=r.MaxBuild&&r.Source.StartsWith("https://")&&!string.IsNullOrWhiteSpace(r.FeatureLoss)),"Every bundled rule has bounded applicability, effect and source");
         check(rules.All(r=>r.Qualified.Length==0||DateOnly.TryParseExact(r.Qualified,"yyyy-MM-dd",out _)&&r.Supports(r.QualifiedBuild)),"Configuration qualification has an explicit date and actual guest build");
         var unqualified=rules.First(r=>r.Qualified.Length==0&&r.Kind=="app");
@@ -32,7 +36,16 @@ public partial class MainWindow
     }
     internal async Task VerifyMaintenanceGuidanceUi(string root,Action<bool,string> check)
     {
+        await maintenance.CategoryForVerification("Services");maintenance.Rows.SelectedIndex=0;maintenance.Rows.ScrollIntoView(maintenance.Rows.SelectedItem);UpdateLayout();
+        var service=(MaintenanceRow)maintenance.Rows.SelectedItem;
+        var serviceContainer=(ListViewItem)maintenance.Rows.ItemContainerGenerator.ContainerFromItem(service);
+        check(service.Summary.IndexOfAny(['\r','\n'])<0&&serviceContainer.ActualHeight<40&&maintenance.ExplanationForVerification.Contains(service.Details)&&
+            FindMaintenanceAssessment(maintenance).IsReadOnly,"Services uses compact single-line rows and the same complete selectable detail well as Startup");
+        check(maintenance.Rows.Items.Cast<MaintenanceRow>().Any(r=>r.Type=="AppXSvc"&&r.Recommendation=="Keep enabled")&&maintenance.State.Contains("with guidance"),"Real installed service receives documented guidance and visible coverage");
+        await S1Verification.Snapshot(this,root,"services-compact");
         await maintenance.CategoryForVerification("Windows tweaks");int all=maintenance.Rows.Items.Count;
+        check(all==40&&maintenance.Rows.Items.Cast<MaintenanceRow>().Count(r=>r.RuleId.StartsWith("donor."))==24,"Actual searchable grouped table contains all newly adopted donor actions");
+        check(maintenance.Rows.Items.Cast<MaintenanceRow>().Where(r=>r.RuleId.StartsWith("donor.")).All(r=>r.Recommendation!="Not assessed"&&r.Guidance.Contains("configuration and Restore checked")),"Adopted donor settings expose their actual qualified guidance rather than empty recommendation scaffolding");
         string expected=maintenance.Rows.Items.Cast<MaintenanceRow>().Count(MaintenanceGuidance.PendingRecommendation).ToString("N0");
         var card=(Button)((System.Windows.Controls.Primitives.UniformGrid)maintenance.Cards).Children[3];
         check(((StackPanel)card.Content).Children.OfType<TextBlock>().ElementAt(1).Text==expected&&card.ToolTip.ToString().Contains("recommended actions pending"),"Tweaks summary counts pending recommendations rather than all unapplied settings");

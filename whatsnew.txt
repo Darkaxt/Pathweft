@@ -1,6 +1,12 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.39 | 2026-11-09 | Complete Maintenance tools
+- Review 40 individual Windows settings, including 24 adopted Win11Debloat controls for suggestions, Explorer, Start/taskbar, appearance and input. Restore uses your exact saved original values.
+- Core Windows services gain matched Keep enabled guidance. Unknown entries remain unassessed, and each inventory reports its guidance coverage.
+- Maintenance tables use compact summaries and complete selectable details. Explicit actions run without a second app confirmation; double-click toggles supported Startup entries.
+- Cleanup analyzes obsolete Scoop versions and completed old downloads alongside its existing categories. Current versions, persistent data, active packages and changed files are preserved.
+
 ## 1.1.38 | 2026-11-08 | Categorized Maintenance
 - Windows tweaks are grouped into Privacy and suggestions, Appearance, System, File Explorer, Start and taskbar, and AI. Search or filter categories without leaving Maintenance.
 - Recommendations explain what a setting changes, which features may be lost, its Windows applicability and its source. Unmatched or unqualified entries remain Not assessed.
