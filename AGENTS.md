@@ -1,6 +1,11 @@
 # Pathweft development
 
-Current 2026-11-08/spec0.88: S32 COMPLETE for ADOPT-01..06 local SysOptimizer
+Current 2026-11-08/spec0.89: S31 ACTIVE for normal 1.1.34 publication and
+independently retrieved delivery checks. The user explicitly lifted the one-time
+release pause. S32 source/native/integration acceptance remains COMPLETE; S30
+NOT STARTED. No other ACTIVE stage. Do not repeat the publication question.
+
+Previous 2026-11-08/spec0.88: S32 COMPLETE for ADOPT-01..06 local SysOptimizer
 adoption and five bottom Maintenance summary tabs. Source/native/integration
 acceptance passes: Maintenance172948, adoption177288, history162888,
 Performance128464, resource166776 and disposable native guest4300. See

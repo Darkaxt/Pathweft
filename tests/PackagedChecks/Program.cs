@@ -268,6 +268,7 @@ sealed partial class PackageProbe
             owner=new MainWindow(); // construct real controls/resources, never show
             new System.Windows.Interop.WindowInteropHelper(owner).EnsureHandle(); // Owner requires an HWND; never show the host window.
             await VerifyPerformance128();
+            await VerifyMaintenance134();
             await VerifyTransferProgress127();
             await VerifyMissingTabs125();
             VerifyWindows119();

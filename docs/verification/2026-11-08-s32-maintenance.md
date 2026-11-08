@@ -1,9 +1,10 @@
 # S32 local adoption verification
 
 Authority: SPECIFICATION.md 0.88, ADOPT-01..06. This is a verified **source-only**
-outcome held for the user's validation. The explicit pre-release pause remains;
-there is no new published package or installed update. S31's delivery gate is
-still BLOCKED by that pause, and S30 remains NOT STARTED.
+outcome originally held for the user's validation. The user has now lifted that
+one-time pause and requested release; S31 owns final 1.1.34 delivery verification.
+This report records source/native acceptance and does not itself establish
+publication or installed parity. S30 remains NOT STARTED.
 
 ## Acceptance reconciliation
 

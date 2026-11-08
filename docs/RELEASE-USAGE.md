@@ -1,4 +1,14 @@
-# Pathweft 1.1.29
+# Pathweft 1.1.34
+
+The brush beside Performance opens Maintenance. Five bottom summary cards select
+Cleanup, Startup, Services, Windows tweaks and optional Windows apps. Cleanup
+shows recoverable bytes only after Analyze; Clean removes only reviewed,
+unchanged files. Startup covers Windows Run entries, Services a curated reviewed
+catalogue, and tweaks show settings to review rather than blanket recommendations.
+Changes require confirmation. Supported registry/service changes save exact
+original values for Restore; independently changed values are not overwritten.
+Optional app removal applies only to the current user and does not remove Windows
+provisioning. Reinstall removed apps through Microsoft Store.
 
 Ctrl+Z retains Undo history across restarts in the selected bulk-data folder.
 Successful transfers still close their cards automatically. Interrupted or
@@ -8,11 +18,14 @@ contents cannot be restored by Undo. Native deletes restore the exact Windows
 Recycle Bin item; permanent deletes remain irreversible.
 
 The Performance command beside Analyze space swaps the lower summary region for
-CPU, GPU, current physical-drive and focused-folder I/O cards. Click a card for
-process or file details; Back to cards restores the compact presentation. One
-shared in-memory rolling hour of aggregate observations continues while the
-browser is in the tray. Restarting begins a new observed history; missing sources
-and collection gaps are not represented as measured zero activity.
+CPU, RAM, GPU, current physical-drive and loaded-folder I/O cards. Click a card
+for main-pane investigation; Back to files restores the browser. One shared
+collector automatically retains the rolling hour and recent app observations
+while the browser is in the tray. Saved history uses the configured data folder,
+bounded retention and a 256-MiB database cap. No recording switch is required.
+Missing sources and collection gaps are not represented as measured zero activity.
+App history shows CPU/RAM/GPU charts; boot and system-change readers report actual
+Windows events or unavailable access. Selected queries export to CSV/JSON/HTML.
 
 Detailed I/O requires explicit Enable and normal Windows administrator consent.
 The bundled app-owned worker traces logical file requests, including cached I/O,

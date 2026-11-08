@@ -1,6 +1,12 @@
 # Pathweft specification
 
-Version 0.88 - 2026-11-08. Owner: Darkaxt.
+Version 0.89 - 2026-11-08. Owner: Darkaxt.
+
+Release authorization 2026-11-08: the user explicitly lifts the one-time pause
+and requests publication. Resume S31's final delivery gate for the integrated
+MONITOR-21 and completed S32/ADOPT-01..06 result as normal release 1.1.34.
+Verify the actual package and independently downloaded assets through the
+established release path. No additional publication confirmation is required.
 
 User authorization 2026-11-08: implement the agreed local SysOptimizer adoption
 and brush-led Maintenance, reusing pinned donor source as far as compatible.
@@ -10,8 +16,8 @@ are excluded. Hardware sensors/disk health/power/fans/FPS/peripheral monitoring
 are deferred to a separate THRM/Taskbar Thermals consolidation assessment; they
 are not acceptance requirements of this adoption. Preserve existing Diskweft
 expandable largest-first folder tree and existing duplicate finding. Publication
-and live installation remain paused pending user validation; build/test/source
-commit are authorized. S32 owns the following integrated source outcome.
+was held for user validation; that hold is now lifted by the release instruction
+above. S32 owns the following integrated source outcome.
 
 | ID | Required behavior and acceptance |
 | --- | --- |
@@ -20,7 +26,7 @@ commit are authorized. S32 owns the following integrated source outcome.
 | ADOPT-03 | Startup and curated Services show actual state and scope. Explicit apply/restore preserves original registry hive/view/name/type/value and service startup configuration; restore must not overwrite an independently changed value. Journal the exact prior state durably before mutation; surface partial/failing actions honestly. No generic command runner. |
 | ADOPT-04 | Borrow curated Windows tweak definitions with exact original-state restoration, current-state readback, restore-point action and validated selection export/import. Built-in app removal is explicit and current-user scoped, does not remove provisioning/all-user packages, and describes Store reinstallation rather than claiming undo. Use a narrow authenticated one-operation helper for privileged actions, preserving the unelevated GUI. S30 reusable admin-profile work remains separate. Real native verification uses task-owned fixtures, never modifies the user's chosen services/tweaks/apps as a test. |
 | ADOPT-05 | Extend existing System analysis with local app CPU/RAM/GPU charts, user-requested selected-range CSV/JSON/HTML export, boot diagnostics and Windows/app/driver-change events, and on-demand local performance insights using shared retained observations. Compact Folder I/O shows useful read/write rates instead of the persistent debug-like Incomplete observations label; retain honest lower bounds and coverage detail in its tooltip/analysis. Reuse donor readers/rendering/report logic; preserve identity/gap semantics and bounded storage. No network/sensor fields, automatic reports, new recording setting or duplicate sampler. Missing Windows diagnostic access is explicit; UI queries are cancellable and stale results cannot replace current selection. |
-| ADOPT-06 | Retain exact donor source/license/pin mapping and verify the actual in-app navigation, native read/apply/restore/permission/cancel boundaries, malformed inputs, lifecycle, existing browser/performance regressions and representative rendered dark/light/100/150-percent layouts. Keep the completed verified source unreleased for user validation. |
+| ADOPT-06 | Retain exact donor source/license/pin mapping and verify the actual in-app navigation, native read/apply/restore/permission/cancel boundaries, malformed inputs, lifecycle, existing browser/performance regressions and representative rendered dark/light/100/150-percent layouts. Publish the completed verified result through the resumed S31 delivery gate. |
 
 
 S31 corrective reopening, user instruction 2026-11-08: the automatic rolling
