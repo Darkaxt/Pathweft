@@ -57,6 +57,13 @@ The first unpublished 1.1.33 package passed source and native routing checks but
 failed its application self-test because the embedded changelog omitted 1.1.33.
 The missing entry is added without weakening the release-order/current-version
 assertion. The failed package receipts are retained; it was never published.
+The replacement passed that self-test, then exposed a missing System.IO import
+in the independent packaged-check consumer. With the import corrected, the
+complete consumer passes against the extracted application, including the S31
+live ring, column chooser, actual Windows process observations, pin and filter
+contracts. One standalone launch lacked media fixture environment bindings and
+failed at that explicit precondition; the source-bound launch then passed. No
+product behavior or acceptance assertion was weakened for these harness fixes.
 
 Remaining acceptance: final committed package/source/native/app checks, normal release,
 independent retrieval and applicable installed readback. S31 remains ACTIVE;
