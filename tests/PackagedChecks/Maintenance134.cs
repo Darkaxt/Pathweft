@@ -42,11 +42,16 @@ sealed partial class PackageProbe
             foreach(var column in ((GridView)rows.View).Columns)
             {
                 var header=(GridViewColumnHeader)column.Header;
-                header.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                // This independent host never renders its headers. Route the
+                // real header's click through its owning table; source/native
+                // acceptance separately qualifies rendered header bubbling.
+                rows.RaiseEvent(new RoutedEventArgs(Button.ClickEvent,header));
                 string direction=AutomationProperties.GetItemStatus(header);
                 var sorted=System.Windows.Data.CollectionViewSource.GetDefaultView(rows.ItemsSource).SortDescriptions;
                 Check(sorted.Count>0&&sorted[0].PropertyName==(string)header.Tag&&direction.Length>0,"Delivered header sorts "+categories[i]+" / "+AutomationProperties.GetName(header));
-                header.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                var values=rows.Items.Cast<object>().Select(row=>Get(row,(string)header.Tag)).ToArray();
+                Check(values.Zip(values.Skip(1),(a,b)=>direction=="Ascending"?System.Collections.Comparer.Default.Compare(a,b)<=0:System.Collections.Comparer.Default.Compare(a,b)>=0).All(x=>x),"Delivered rows follow selected header ordering: "+AutomationProperties.GetName(header));
+                rows.RaiseEvent(new RoutedEventArgs(Button.ClickEvent,header));
                 Check(AutomationProperties.GetItemStatus(header)!=direction,"Delivered header reverses "+AutomationProperties.GetName(header));
             }
             if(categories[i]=="Startup")Check(headers.Contains("Type")&&!headers.Contains("Size"),"Delivered Startup identifies its persistence source type");

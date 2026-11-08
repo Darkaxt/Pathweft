@@ -8,6 +8,10 @@ pass protected enumeration/analysis/editor saves, concurrent admission, Cleanup/
 reuse, denial/non-owner/natural exit and original1% CPU/96MiB budgets. Toolbar229196
 and integrated Maintenance234920 pass. Final normal release and independent/installed
 delivery acceptance remain outstanding. Deliver both in one release.
+First unpublished1.1.36 package diagnostics are retained: corrected hidden-header
+consumer and twelve passing fallback close cycles after one transient file lock.
+No renderer patch is justified by that uncertain lock holder. Rebuild the committed
+consumer corrections and require full final/independent package acceptance.
 No concurrent stage or unrelated donor risk-feature work. Earlier closures
 below remain historical; never mutate user services/startup/tasks in tests.
 

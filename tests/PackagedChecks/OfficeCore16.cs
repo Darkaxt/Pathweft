@@ -45,5 +45,23 @@ sealed partial class PackageProbe
             Check(original.SequenceEqual(SHA256.HashData(File.ReadAllBytes(source))),"Core comparison leaves its reference source unchanged: "+name);
         }
         File.WriteAllText(Path.Combine(root,"office-core-comparison.json"),JsonSerializer.Serialize(records,new JsonSerializerOptions{WriteIndented=true}));
+        // Exercise the real fallback's nested native process tree and immediate
+        // workspace retirement, including successive document replacements.
+        for(int cycle=0;cycle<3;cycle++)
+        foreach(string name in new[]{"fallback-FillPatterns.ppt","fallback-closed-shapes.odp","fallback-fdo57117-1.vsd","fallback-Visio2013drawing.vsdx"})
+        {
+            string source=Path.Combine(inputs,name);byte[] original=SHA256.HashData(File.ReadAllBytes(source));
+            var document=Activator.CreateInstance(type,true);
+            string folder=null,profile=null;
+            try
+            {
+                await (Task)Call(type,document,"Open",source,CancellationToken.None);
+                folder=(string)type.GetField("folder",Flags).GetValue(document);
+                profile=(string)type.GetField("profile",Flags).GetValue(document);
+                await (Task)Call(type,document,"RenderPage",0,0,CancellationToken.None);
+            }
+            finally{await ((IAsyncDisposable)document).DisposeAsync();}
+            Check(!Directory.Exists(folder)&&!Directory.Exists(profile)&&original.SequenceEqual(SHA256.HashData(File.ReadAllBytes(source))),"Fallback closes its native tree and removes its exact workspace/profile before returning: "+cycle+"/"+name);
+        }
     }
 }

@@ -14,6 +14,10 @@ protected browser/analysis/editor saves, concurrent-read admission, Cleanup/I/O 
 denial, exact owner/non-owner and natural retirement. UI229196 verifies compact toolbar
 themes/scales and existing file commands; Maintenance234920 passes integrated queue/sort.
 Final integrated release and independent/installed readback remain acceptance blockers.
+The unpublished first1.1.36 package's independent header consumer was corrected
+and now asserts actual sorted values. A transient Office temporary-file lock was
+retained; twelve repeated fallback close cycles pass without a renderer patch.
+The replacement committed package still requires full final acceptance.
 No intermediate S34 publication. S30 owns final delivery. See verification/2026-11-08-s30-access.md.
 
 Previous 2026-11-08: S31 COMPLETE through installed1.1.34 readback233140:
