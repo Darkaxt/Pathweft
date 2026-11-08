@@ -1,6 +1,31 @@
 # Pathweft specification
 
-Version 0.82 - 2026-11-08. Owner: Darkaxt.
+Version 0.84 - 2026-11-08. Owner: Darkaxt.
+
+### Performance continuity and process inspection (S31)
+
+User refinement2026-11-08: range selection emptied the live graph and restoring
+Last hour did not recover it. Recording must not be a prerequisite for inspecting
+already-visible observations. Add CPU columns and click-to-pin inspection.
+
+| ID | Required behavior and acceptance |
+| --- | --- |
+| MONITOR-17 | Analysis automatically combines available rolling-hour aggregate observations with older recorded observations, preferring live observations at overlap without double counting. Range, zoom, presets, reset/Now and navigation retain samples/events without depending on recording. Preserve true gaps, empty/error states and device identity. Live aggregates do not imply retained process snapshots; unavailable historical attribution remains explicit. No recording activation or new collection/retention. |
+| MONITOR-18 | CPU process table offers a compact themed Columns chooser including executable path and command line. Resolve metadata asynchronously on demand, bound to PID/start identity; missing/exited/protected metadata is explicit. No elevation or persistent command-line recording. Keep column choices through live refreshes. Clicking a process row pins that identity above changing/sorted rows; clicking again or its unpin action restores ordinary ordering. Preserve pin/selection through refresh and never substitute a reused PID. Keyboard operation and accessible state are required. |
+| MONITOR-19 | Verify recording-off range -> presets/Now -> recovered graph/events, mixed recorded/live overlap/gaps, repeated/cancelled queries, actual metadata, pin/unpin through refresh/sort/exit/PID reuse, themed narrow/high-DPI layouts, existing resources/privacy/browser state and one normal independently/package/installed verified release. |
+| MONITOR-20 | Before this release, compare performance modules with the locally cloned SysOptimizer source and retain a feature/adoption matrix with exact source pins. Reuse applicable existing behavior rather than duplicate a collector or storage engine. Adopt its live process filtering, row reuse and half-percent stable ordering while preserving PID/start identity and explicit pinning. Filter locally without new sampling; executable/command matching uses only metadata already requested by visible columns. Audit background/tray CPU, memory/ring bounds, recording writes, hidden detail/metadata work, cancellation, native ownership and natural shutdown. Verify actual resource observations and regression workflows; do not activate recording, MCP or new drivers. |
+
+Huashu: preserve the graph-led main pane, AuxiliaryAction/PreviewClipCombo,
+Muted/Accent tokens, 32-DIP actions and virtualized GridView. Columns uses a
+checked menu; optional long values use tooltip and horizontal scrolling. A small
+monochrome pin marks pinned identities. No recording/source selector is added.
+The CPU filter uses the existing AuxiliaryField palette/radius with a small
+search glyph, "Filter processes" hint and visible keyboard focus border; verify
+the rendered input and separate popup surface in dark/light and narrow/high-DPI.
+S31 is the single ACTIVE stage, before the unstarted S30 administrator feature.
+User clarification2026-11-08: remote-PC monitoring/features are excluded; this
+integration concerns only the local computer. Donor comparison does not add
+remote agents, listeners, credentials, device selectors or remote history.
 
 ### Reusable administrator access session (S30)
 

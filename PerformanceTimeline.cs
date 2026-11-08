@@ -57,6 +57,7 @@ internal sealed class PerformanceTimeline : FrameworkElement
     internal void SelectRangeForVerification(DateTimeOffset from,DateTimeOffset to){ChooseRange(from,to);}
     internal void SelectEventsForVerification(){var item=events.FirstOrDefault(e=>e.Time>=From&&e.Time<=To);if(item!=null){cursor=item.Time;EventsSelected?.Invoke([item]);InvalidateVisual();}}
     internal int EventCountForVerification=>events.Length;
+    internal int PointCountForVerification=>points.Length;
 #endif
     void ChooseMoment(DateTimeOffset time)
     {

@@ -119,6 +119,7 @@ internal sealed partial class PerformancePanel : StackPanel,IAsyncDisposable
     void ConfigureTable()
     {
         var view=new GridView{AllowsColumnReorder=false};
+        if(selected==Cpu&&!Historical){ConfigureProcessTable(view);table.View=view;return;}
         void Column(string title,string property,double width)=>view.Columns.Add(new GridViewColumn{Header=title,DisplayMemberBinding=new Binding(property),Width=width});
         Column("Process","Process",145);Column("PID","Pid",70);
         if(selected is Cpu or Ram or Gpu){if(selected!=Ram)Column(selected==Cpu?"CPU":"GPU","Percent",100);if(selected!=Gpu)Column("Working set","MemoryText",120);}
@@ -166,6 +167,8 @@ internal sealed partial class PerformancePanel : StackPanel,IAsyncDisposable
         graphs[Drive].Set(history.Select(x=>{var d=WindowsPerformanceCounters.ForDisk(x,diskNumber);return(x.Time,d?.Read+d?.Write);}).ToArray());
         graphs[Folder].Set(folderHistory.ToArray());
         if(selected<0)return;
+        columnsButton.Visibility=selected==Cpu&&!Historical?Visibility.Visible:Visibility.Collapsed;
+        processFilter.Visibility=columnsButton.Visibility;
         UpdateAnalysisGraph();
         detailTitle.Text=new[]{"CPU","Physical RAM","GPU",$"Drive · {volumeRoot??PathRoot(folder)}",$"Folder · {folder}"}[selected];
         gpuPicker.Visibility=selected==Gpu?Visibility.Visible:Visibility.Collapsed;
@@ -180,7 +183,8 @@ internal sealed partial class PerformancePanel : StackPanel,IAsyncDisposable
         if(selected<Drive)
         {
             detailState.Text=selected==Cpu?"CPU usage across all logical processors · inaccessible processes omitted":selected==Ram?"Process working sets may share pages; their sum is not system RAM usage":"Busiest GPU engine · "+adapter?.Name;
-            table.ItemsSource=selected==Gpu?monitor.Details.Where(x=>x.Adapter==gpu).ToArray():selected==Ram?monitor.Details.OrderByDescending(x=>x.Memory).ToArray():monitor.Details;
+            if(selected==Cpu)RefreshProcessRows(monitor.Details);
+            else table.ItemsSource=selected==Gpu?monitor.Details.Where(x=>x.Adapter==gpu).ToArray():monitor.Details.OrderByDescending(x=>x.Memory).ToArray();
         }
         else
         {
@@ -242,13 +246,15 @@ internal sealed partial class PerformancePanel : StackPanel,IAsyncDisposable
     static async Task Retire(PerformanceIoClient client,Task previous){await previous.ConfigureAwait(false);await client.DisposeAsync().ConfigureAwait(false);}
     public async ValueTask DisposeAsync()
     {
-        disposed=true;historyCancel?.Cancel();hoverCancel?.Cancel();
-        try{await Task.WhenAll(historyWork,hoverWork).ConfigureAwait(false);}
+        disposed=true;historyCancel?.Cancel();hoverCancel?.Cancel();metadataStopped.Cancel();
+        // Closed can synchronously drain us on the UI thread. Wait only for
+        // native/background reads, never their UI presentation continuation.
+        try{await Task.WhenAll(historyWork,hoverWork,metadataRead).ConfigureAwait(false);}
         // These query failures already have a visible unavailable state. They
         // must not prevent retirement of an independent native I/O worker.
         catch(Exception error)when(error is OperationCanceledException or ArgumentException or IOException or UnauthorizedAccessException or Microsoft.Data.Sqlite.SqliteException){}
         monitor.Changed-=Updated;monitor.DetailKind=0;
-        await ReleaseIo().ConfigureAwait(false);await mapping.ConfigureAwait(false);historyCancel?.Dispose();hoverCancel?.Dispose();
+        await ReleaseIo().ConfigureAwait(false);await mapping.ConfigureAwait(false);historyCancel?.Dispose();hoverCancel?.Dispose();metadataStopped.Dispose();
     }
 }
 

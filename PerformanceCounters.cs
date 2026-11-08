@@ -28,7 +28,8 @@ internal sealed class PerformanceMonitor : IDisposable
     readonly CancellationTokenSource stopped=new();
     readonly Task sampling;
     internal event Action Changed;
-    internal int DetailKind {get;set;}
+    int detailKind;
+    internal int DetailKind {get=>Volatile.Read(ref detailKind);set=>Volatile.Write(ref detailKind,value);}
     internal ProcessMetric[] Details {get;private set;}=Array.Empty<ProcessMetric>();
     readonly ProcessMetrics processMetrics=new();
     readonly PerformanceHistory persisted=new();
@@ -53,10 +54,13 @@ internal sealed class PerformanceMonitor : IDisposable
         while(!stopped.IsCancellationRequested)
         {
             var sample=source.Read();
+            // The UI may switch cards during a native read. One selection
+            // owns this entire tick, including the array that is published.
+            int kind=DetailKind;
             bool recordApps=Settings.PerformanceRecording&&sample.Time-lastApps>=TimeSpan.FromSeconds(10);
-            var apps=DetailKind is 1 or 3||recordApps?processMetrics.Read():null;
-            var gpuApps=DetailKind==2||recordApps?source.GpuProcesses():null;
-            Details=DetailKind is 1 or 3?apps:DetailKind==2?gpuApps:Array.Empty<ProcessMetric>();
+            var apps=kind is 1 or 3||recordApps?processMetrics.Read():null;
+            var gpuApps=kind==2||recordApps?source.GpuProcesses():null;
+            Details=kind is 1 or 3?apps:kind==2?gpuApps:Array.Empty<ProcessMetric>();
             persisted.Record(sample,recordApps?apps:null,recordApps?gpuApps:null);
             if(recordApps)lastApps=sample.Time;
             Record(sample);

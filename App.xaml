@@ -485,6 +485,26 @@
       <Setter Property="BorderThickness" Value="0"/>
       <Setter Property="VerticalAlignment" Value="Center"/>
     </Style>
+    <Style x:Key="PerformanceFilter" TargetType="TextBox" BasedOn="{StaticResource Bare}">
+      <Setter Property="FontSize" Value="12"/>
+      <Setter Property="MinHeight" Value="32"/>
+      <Setter Property="Padding" Value="10,6"/>
+      <Setter Property="CaretBrush" Value="{DynamicResource Palette.E8EEF6}"/>
+      <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="TextBox">
+        <Border x:Name="Surface" Background="{DynamicResource Palette.12FFFFFF}" BorderBrush="{DynamicResource Palette.16FFFFFF}" BorderThickness="1" CornerRadius="6" Padding="{TemplateBinding Padding}">
+          <Grid>
+            <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+            <TextBlock Text="&#xE721;" FontFamily="Segoe Fluent Icons" FontSize="12" Foreground="{DynamicResource Muted}" Margin="0,0,8,0" VerticalAlignment="Center" IsHitTestVisible="False"/>
+            <ScrollViewer x:Name="PART_ContentHost" Grid.Column="1" VerticalAlignment="Center"/>
+            <TextBlock x:Name="Hint" Grid.Column="1" Text="Filter processes" Foreground="{DynamicResource Muted}" VerticalAlignment="Center" IsHitTestVisible="False" Visibility="Collapsed"/>
+          </Grid>
+        </Border>
+        <ControlTemplate.Triggers>
+          <Trigger Property="Text" Value=""><Setter TargetName="Hint" Property="Visibility" Value="Visible"/></Trigger>
+          <Trigger Property="IsKeyboardFocusWithin" Value="True"><Setter TargetName="Surface" Property="BorderBrush" Value="{DynamicResource AccentEdge}"/></Trigger>
+        </ControlTemplate.Triggers>
+      </ControlTemplate></Setter.Value></Setter>
+    </Style>
     <BooleanToVisibilityConverter x:Key="Vis"/>
 
     <!-- Thin progress bar: WPF fills PART_Indicator to Value/Maximum of PART_Track -->

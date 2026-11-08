@@ -1,7 +1,19 @@
 # Implementation and reconciliation
 
-Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.82, 2026-11-08,
+Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.84, 2026-11-08,
 including the user-authorized continued comparison requirement TRANSFER-07.
+
+Current2026-11-08: S31 ACTIVE for MONITOR-17..20.
+Source/integration/background acceptance now passes: app176784 measures cards,
+expanded inspection and tray cost; final focused trialb8168940 passes the themed
+filter/checkmarks, real WMI metadata, identity/pins, range recovery and natural
+exit; resource19744 passes aggregate/recording/full-hour bounds and card switches.
+Local donor comparison is recorded in SYSOPTIMIZER-PERFORMANCE-COMPARISON.md.
+Only final committed-package/source/native/app/retrieval/installed delivery
+criteria remain. S30 NOT STARTED; no tracked deferral or required refactor.
+The persistent-only query defect and process inspection requirements are repaired
+and verified. Delivery criteria remain advancement blockers. S29 closure below
+is historical.
 
 Current2026-11-08: S29 COMPLETE for MONITOR-14..16 through normal1.1.32/2f3b1cd.
 Source163416 passes graph moment/range/events -> linked facts -> reset/navigation/
@@ -1125,6 +1137,7 @@ plan neither authorizes itself nor adds approval checkpoints.
 | S27 - Compact automatic performance widgets | COMPLETE | MONITOR-06..08; affected MONITOR/LIFE/DELIVERY | S26 COMPLETE; before S25 | Source104260/native160216/sampler115172 qualify compact RAM/counter/layout, automatic folder-scope and lifecycle/resource behavior. Final154828/independent168072 pass actual graph/source/native/application workflows; installed159192 verifies normal1.1.30/659691f, matching files, restarted main/helper, readiness, routes and shortcut/profile. No remaining criterion, blocker or tracked deferral. |
 | S28 - Integrated system analysis and recorded history | COMPLETE | MONITOR-09..13; affected MONITOR/LIFE/DELIVERY | S27 COMPLETE; user selected performance/history/read-only MCP before maintenance | MONITOR-09..13 verified by source116416/analysis130208/resource172048/native170636 and final92112/independent163252. Normal1.1.31/e8dc64f and six assets published/read back; downloaded hashes/source/native/application checks pass. Installed179008 verifies11,304 matching members, restarted main169944/helper169508, readiness,22 routes and preserved shortcut/profile identity. Spent scratch cleaned; no blocker, required refactor or tracked deferral. |
 | S29 - Interactive performance investigation | COMPLETE | MONITOR-14..16; affected MONITOR/LIFE/DELIVERY | S28 COMPLETE; user reference2026-11-08 | Source163416/resource8824 pass graph-led investigation and preserved scope/layout/lifecycle. Normal1.1.32/2f3b1cd published; final165444/independent175768 pass source/native/application checks. Installed171532 verifies11,304 members, restarted ready main/helper,22 routes and preserved identity/profile. Scratch cleaned; all criteria pass. No blocker, deferral or required refactor. |
+| S31 - Performance continuity and process inspection | ACTIVE | MONITOR-17..20 | S29 COMPLETE; before S30 | Repair live-range/preset/reset continuity, automatic live/recorded overlap, CPU column chooser and identity-bound metadata/pins. Local SysOptimizer comparison and process filtering/stable row adaptation are implemented; actual integrated/background/layout acceptance and final delivery remain required. No tracked deferral. |
 | S30 - Reusable administrator access session | NOT STARTED | ACCESS-01..03; affected CORE/LIFE/DELIVERY | After S29, before S25; user request2026-11-08 | Monochrome quartered UAC shield toggles standard/admin browsing; one approved authenticated scoped helper is reusable for protected browsing and existing elevation-dependent features until explicit session end/full app exit. Preserve unelevated UI, user state and tracing scope. Real privilege/consent/owner/cancellation/idle-cost and final delivery acceptance required. No criteria verified yet. |
 | S25 - Summary-card motion | NOT STARTED | MOTION-01..03; affected MONITOR/CORE-03/LIFE/DELIVERY | S18 COMPLETE; after S28 and before S12 | Upward card entry with smooth file-pane squeeze; rotation between Statistics/Performance; reversal/interruption and focus/scroll preservation; reduced-motion support and actual frame/layout/resource qualification. One final independently/installed verified release after implementation authorization. No criteria verified yet. |
 | S12 - Tresorit capability investigation | NOT STARTED | TRES-01..04 | S15 delivered; S16/S18/S25 considered first in the selected execution order | Supported API/client assessment, bounded REA as needed, evidence-backed capability matrix/decision and implementation proposal. Investigation only; no cloud mutation or integration implementation. |
@@ -1187,6 +1200,7 @@ owns its complete release/delivery gate; S12 delivers research documents only.
 | MONITOR-06..08 | S27 | Full-width actual observed histories, separate physical RAM, five statistics-height cards and automatic visible current-folder I/O; supersedes S18 focus-only tracing; real source/render/native/lifecycle and normal independent delivery acceptance |
 | MONITOR-09..13 | S28 | Main-pane analysis with preserved browser state; optional bounded recording and shared historical queries; packaged explicit read-only MCP with no client activation; actual UI/protocol/native/resource and final delivery acceptance |
 | MONITOR-14..16 | S29 | Interactive event/spike timeline, moment snapshots and selected ranges linked to factual tables; compact widgets preserved; actual interaction/layout/query/lifecycle and final delivery acceptance |
+| MONITOR-17..20 | S31 | Automatic live/recorded continuity, CPU columns/pins, local donor comparison/adoption and background audit; integrated regression/layout/resource/delivery acceptance |
 | ACCESS-01..03 | S30 | Monochrome UAC shield, standard/admin access mode, authenticated reusable elevated helper and real consent/scope/lifecycle/resource/delivery acceptance |
 | MOTION-01..03 | S25 | Upward summary-card entry and file-pane squeeze; Statistics/Performance rotation; reversible non-blocking state/focus preservation, reduced-motion settings and actual visual/performance/delivery verification |
 | TRES-01..04 | S12 | Evidence-backed Tresorit investigation and implementation proposal; execution remains NOT STARTED |

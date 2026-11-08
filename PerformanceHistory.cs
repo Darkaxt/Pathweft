@@ -92,15 +92,32 @@ internal sealed class PerformanceHistory : IDisposable
         if(query.Tool=="get_app_history"&&string.IsNullOrWhiteSpace(query.Name))throw new ArgumentException("App name is required");
         if(query.From.HasValue!=query.To.HasValue||query.From>=query.To||query.To-query.From>TimeSpan.FromDays(30))throw new ArgumentException("Use an ordered from/to range of at most 30 days");
     }
-    internal static PerformanceResult Query(PerformanceQuery query,CancellationToken cancel=default,string source=null)
+    internal static PerformanceResult Query(PerformanceQuery query,CancellationToken cancel=default,string source=null,PerformanceSample[] live=null)
     {
         Validate(query);string path=source??FilePath;
-        if(!File.Exists(path))return new("No recorded history. Enable recording in System analysis; the live rolling hour is separate.",[],[],0,false);
-        using var db=Open(path,true);using var command=db.CreateCommand();
+        bool recorded=File.Exists(path);
+        if(!recorded&&live==null)return new("No recorded history. Enable recording in System analysis; the live rolling hour is separate.",[],[],0,false);
+        using var db=recorded?Open(path,true):null;using var command=db?.CreateCommand();
         var to=query.To??DateTimeOffset.UtcNow;var from=query.From??to.AddMinutes(-query.LastMinutes);
-        command.Parameters.AddWithValue("$from",from.ToUnixTimeMilliseconds());command.Parameters.AddWithValue("$to",to.ToUnixTimeMilliseconds());
+        command?.Parameters.AddWithValue("$from",from.ToUnixTimeMilliseconds());command?.Parameters.AddWithValue("$to",to.ToUnixTimeMilliseconds());
         var rows=new List<PerformanceFact>();var points=new List<PerformancePoint>();long total=0;
-        string note="Recorded observations only; missing intervals are not zero. ";
+        string note=live==null?"Recorded observations only; missing intervals are not zero. ":"Available live and recorded observations; missing intervals are not zero. ";
+        if(command==null&&query.Tool is "get_top_processes" or "get_app_history")return new("No retained process snapshots for this interval. Aggregate observations remain available; live process details show current activity.",[],[],0,false);
+        IEnumerable<PerformanceSample> Samples()
+        {
+            var liveStart=live is {Length:>0}?live[0].Time:DateTimeOffset.MaxValue;
+            if(command!=null)
+            {
+                command.CommandText=query.Tool=="get_current_usage"?"SELECT data FROM samples ORDER BY t DESC LIMIT 1":"SELECT data FROM samples WHERE t BETWEEN $from AND $to ORDER BY t";
+                using var reader=command.ExecuteReader();
+                while(reader.Read())
+                {
+                    cancel.ThrowIfCancellationRequested();var sample=JsonSerializer.Deserialize<PerformanceSample>(reader.GetString(0));
+                    if(sample.Time<liveStart)yield return sample;
+                }
+            }
+            foreach(var sample in live??[]){cancel.ThrowIfCancellationRequested();if(sample.Time>=from&&sample.Time<=to)yield return sample;}
+        }
         if(query.Tool is "get_top_processes" or "get_app_history")
         {
             string column=query.Metric switch{"ram"=>"memory","gpu"=>"usage",_=>"cpu"};bool gpu=query.Metric=="gpu";
@@ -123,21 +140,36 @@ internal sealed class PerformanceHistory : IDisposable
         }
         else if(query.Tool=="get_events")
         {
-            command.CommandText="SELECT t,kind,detail FROM events WHERE t BETWEEN $from AND $to ORDER BY t DESC";
-            using var reader=command.ExecuteReader();while(reader.Read()){cancel.ThrowIfCancellationRequested();total++;if(rows.Count<query.Limit)rows.Add(new(DateTimeOffset.FromUnixTimeMilliseconds(reader.GetInt64(0)),reader.GetString(1),null,null,null,1,reader.GetString(2)));}
+            if(command!=null)
+            {
+                command.CommandText="SELECT t,kind,detail FROM events WHERE t BETWEEN $from AND $to ORDER BY t DESC";
+                using var reader=command.ExecuteReader();while(reader.Read()){cancel.ThrowIfCancellationRequested();total++;if(rows.Count<query.Limit)rows.Add(new(DateTimeOffset.FromUnixTimeMilliseconds(reader.GetInt64(0)),reader.GetString(1),null,null,null,1,reader.GetString(2)));}
+            }
+            PerformanceSample previous=null;
+            foreach(var sample in live??[])
+            {
+                cancel.ThrowIfCancellationRequested();
+                if(sample.Time>=from&&sample.Time<=to)
+                {
+                    void Event(string name,string detail){if(rows.Any(x=>x.Time==sample.Time&&x.Name==name))return;total++;if(rows.Count<query.Limit)rows.Add(new(sample.Time,name,null,null,null,1,detail));}
+                    if(previous!=null&&sample.Time-previous.Time>TimeSpan.FromSeconds(5))Event("Collection gap","No live observations in the preceding interval");
+                    if(previous!=null&&previous.Issue!=sample.Issue)Event(sample.Issue==null?"Counters restored":"Counters unavailable",sample.Issue??"Live counters available");
+                }
+                previous=sample;
+            }
         }
         else
         {
-            command.CommandText=query.Tool=="get_current_usage"?"SELECT data FROM samples ORDER BY t DESC LIMIT 1":"SELECT data FROM samples WHERE t BETWEEN $from AND $to ORDER BY t";
             var sums=new Dictionary<string,(double Sum,double Weight,double Peak,DateTimeOffset PeakAt,long Count)>();
             var buckets=new Dictionary<long,(DateTimeOffset Time,double Sum,int Count,double Peak)>();var breaks=new HashSet<long>();
             DateTimeOffset first=default,latest=default,previous=default,spikeStart=default;double spikeMax=0;long spikeCount=0;string spikeDevice=null;
             void EndSpike(){if(spikeCount==0)return;total++;if(rows.Count<query.Limit)rows.Add(new(spikeStart,spikeDevice,null,null,spikeMax,spikeCount,"Threshold exceedances at sampled times; coincident apps are not proof of cause"));spikeCount=0;}
-            using var reader=command.ExecuteReader();while(reader.Read())
+            foreach(var sample in Samples())
             {
-                cancel.ThrowIfCancellationRequested();var sample=JsonSerializer.Deserialize<PerformanceSample>(reader.GetString(0));
+                cancel.ThrowIfCancellationRequested();
                 if(first==default)first=sample.Time;latest=sample.Time;
-                bool gap=previous!=default&&sample.Time-previous>TimeSpan.FromSeconds(15);
+                bool liveSample=live is {Length:>0}&&previous>=live[0].Time;
+                bool gap=previous!=default&&sample.Time-previous>TimeSpan.FromSeconds(liveSample?5:15);
                 double weight=previous==default||gap?1:Math.Min(5,Math.Max(0,(sample.Time-previous).TotalSeconds));
                 IEnumerable<(string Name,double? Value)> metrics=query.Tool=="get_current_usage"?
                     new[]{("CPU %",sample.Cpu),("Physical RAM %",sample.Ram?.Usage)}.Concat(sample.Gpus.Select(x=>("GPU % · "+x.Name+" · "+x.Id,x.Usage))).Concat(sample.Disks.Select(x=>("Drive bytes/s · "+x.Id,x.Read+x.Write))):
@@ -171,7 +203,7 @@ internal sealed class PerformanceHistory : IDisposable
                 points.Add(new(bucket.Value.Time,bucket.Value.Count==0?null:bucket.Value.Sum/bucket.Value.Count,bucket.Value.Count==0?null:bucket.Value.Peak));
             }
             if(query.Tool!="find_spikes")foreach(var entry in sums){total++;if(rows.Count<query.Limit)rows.Add(new(entry.Value.PeakAt,entry.Key,null,entry.Value.Weight==0?null:entry.Value.Sum/entry.Value.Weight,entry.Value.Count==0?null:entry.Value.Peak,entry.Value.Count,entry.Value.Count==0?"Counter unavailable":"Average over observed intervals; peak time shown"));}
-            note+=first==default?"No samples in range.":$"Observed {first:O} to {latest:O}. Latest age {(DateTimeOffset.UtcNow-latest).TotalSeconds:0}s. Aggregate cadence 5s; interval averages and peaks, table original-sample peaks.";
+            note+=first==default?"No samples in range.":$"Observed {first:O} to {latest:O}. Latest age {(DateTimeOffset.UtcNow-latest).TotalSeconds:0}s. Interval averages and original-sample peaks; live cadence 1s, recorded cadence 5s.";
         }
         return new(total==0?"No matching recorded observations. "+note:note,rows.ToArray(),points.ToArray(),total,total>rows.Count);
     }

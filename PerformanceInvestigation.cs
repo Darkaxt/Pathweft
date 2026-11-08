@@ -9,11 +9,11 @@ internal sealed record PerformanceMoment(DateTimeOffset Requested,DateTimeOffset
 // Read-only investigation over the existing recording. No second sampler or log.
 internal static class PerformanceInvestigation
 {
-    internal static PerformanceTimelineData Read(PerformanceQuery query,CancellationToken cancel=default,string source=null)
+    internal static PerformanceTimelineData Read(PerformanceQuery query,CancellationToken cancel=default,string source=null,PerformanceSample[] live=null)
     {
-        var activity=PerformanceHistory.Query(query with{Tool="get_usage_summary"},cancel,source);
-        var events=PerformanceHistory.Query(query with{Tool="get_events"},cancel,source);
-        var spikes=PerformanceHistory.Query(query with{Tool="find_spikes"},cancel,source);
+        var activity=PerformanceHistory.Query(query with{Tool="get_usage_summary"},cancel,source,live);
+        var events=PerformanceHistory.Query(query with{Tool="get_events"},cancel,source,live);
+        var spikes=PerformanceHistory.Query(query with{Tool="find_spikes"},cancel,source,live);
         var markers=events.Rows.Concat(spikes.Rows.Select(x=>x with{Name="Usage spike",Details=x.Name+" · "+x.Details}))
             .OrderBy(x=>x.Time).Take(query.Limit).ToArray();
         return new(activity,markers,events.Total+spikes.Total);

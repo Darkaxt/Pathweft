@@ -1,5 +1,19 @@
 # Pathweft development
 
+Current2026-11-08/spec0.84: S31 is the only ACTIVE stage for MONITOR-17..20:
+repair recording-off live-range continuity and complete CPU Columns/path/command
+line and click-to-pin inspection. No recording/source toggle for this repair.
+Keep the shared collector, privacy, identity and resource bounds. S30 NOT STARTED.
+Compare the user-requested local SysOptimizer clone and reuse its applicable
+process filtering/stable list behavior. Audit actual background/tray resources,
+hidden detail/metadata work, bounded history, cancellation and natural exit.
+Earlier S29 closure remains valid and historical; required new acceptance and
+one final independently/installed verified release remain. No tracked deferral.
+S31 source app176784/focusedb8168940/resource19744 pass live-range recovery,
+CPU metadata/pins/filter, themed checkmarks and actual aggregate/recording/tray
+bounds. Donor pin/source blob verified locally; remote features excluded.
+Final package/native/source/app/retrieval/installed delivery remains required.
+
 Current2026-11-08/spec0.82: S29 COMPLETE through normal1.1.32/2f3b1cd.
 Source163416/resource8824 pass donor-based moment/range/events -> linked facts,
 keyboard/wheel/navigation/reset, themes/scales/scroll reachability, identities,

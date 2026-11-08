@@ -22,20 +22,21 @@ internal sealed partial class PerformancePanel
     CancellationTokenSource historyCancel;Task historyQuery=Task.CompletedTask,historyWork=Task.CompletedTask;
     CancellationTokenSource hoverCancel;Task hoverQuery=Task.CompletedTask,hoverWork=Task.CompletedTask;
     bool ready;string sortProperty;ListSortDirection sortDirection;
-    string historySource;
+    string historySource;bool includeLiveHistory=true;
     DateTimeOffset? investigationMoment,investigationFrom,investigationTo,historyEnd;
     TimeSpan? historyWindow;bool changingRange;
     PerformanceFact[] selectedEvents;
     internal bool Historical=>range.SelectedIndex>0||analysisKind.SelectedIndex>0||investigationMoment.HasValue||investigationFrom.HasValue||selectedEvents!=null||historyEnd.HasValue;
 #if DEBUG
     internal void RecordForVerification(bool enabled){record.IsChecked=enabled;record.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));}
+    internal void RefreshForVerification()=>Refresh();
     internal async Task HistoryForVerification(int kind){range.SelectedIndex=2;analysisKind.SelectedIndex=kind;await historyQuery;}
     internal string HistoryTextForVerification=>detailState.Text;
     internal int HistoryRowsForVerification=>table.Items.Count;
     internal void LiveForVerification(){range.SelectedIndex=0;analysisKind.SelectedIndex=0;}
     internal bool AnalysisLayoutForVerification=>analysisGraph.ActualHeight>=60&&table.ActualHeight>=80&&table.ActualHeight<details.ActualHeight;
     internal PerformanceTimeline TimelineForVerification=>analysisGraph;
-    internal void SetHistorySourceForVerification(string source)=>historySource=source;
+    internal void SetHistorySourceForVerification(string source,bool live=false){historySource=source;includeLiveHistory=source==null||live;}
     internal Task InvestigationReadyForVerification=>historyQuery;
     internal void ResetInvestigationForVerification()=>ResetInvestigation();
     internal void MoveHistoryForVerification(int direction)=>MoveHistory(direction);
@@ -65,6 +66,7 @@ internal sealed partial class PerformancePanel
         range.ItemsSource=new[]{"Rolling hour","Last 15 minutes","Last hour","Last 24 hours","Last 7 days","Last 30 days","Selected interval"};range.SelectedIndex=0;
         analysisKind.ItemsSource=new[]{"Activity","Summary","Top apps","Spikes","App history","Events"};analysisKind.SelectedIndex=0;
         Add(range,"Performance time range");Add(analysisKind,"Analysis section");
+        BuildProcessControls();Add(columnsButton,"Choose process columns");Add(processFilter,"Filter CPU processes");
         gpuPicker.Visibility=Visibility.Collapsed;Add(gpuPicker,"GPU adapter");
         gpuPicker.SelectionChanged+=(_,_)=>{gpu=(gpuPicker.SelectedItem as GpuReading)?.Id;Refresh();if(ready&&Historical)_ = LoadHistory();};
         Add(appFilter,"App history name");Add(threshold,"Spike threshold");
@@ -102,8 +104,11 @@ internal sealed partial class PerformancePanel
         ScrollViewer.SetCanContentScroll(table,true);
         table.AddHandler(GridViewColumnHeader.ClickEvent,new RoutedEventHandler((sender,e)=>
         {
-            if(e.OriginalSource is not GridViewColumnHeader {Column.DisplayMemberBinding:Binding binding})return;
-            string property=binding.Path.Path;sortDirection=sortProperty==property&&sortDirection==ListSortDirection.Descending?ListSortDirection.Ascending:ListSortDirection.Descending;sortProperty=property;SortRows();
+            if(e.OriginalSource is not GridViewColumnHeader header)return;
+            string property=header.Tag as string??(header.Column?.DisplayMemberBinding as Binding)?.Path.Path;
+            if(property==null)return;
+            if(ReferenceEquals(table.ItemsSource,processItems))property=property switch{"Percent"=>"SortUsage","MemoryText"=>"Memory",_=>property};
+            sortDirection=sortProperty==property&&sortDirection==ListSortDirection.Descending?ListSortDirection.Ascending:ListSortDirection.Descending;sortProperty=property;SortRows();
         }));
         Grid.SetRow(table,4);grid.Children.Add(table);
         historyStatus.SetResourceReference(TextBlock.ForegroundProperty,"Muted");Grid.SetRow(historyStatus,5);grid.Children.Add(historyStatus);
@@ -123,8 +128,15 @@ internal sealed partial class PerformancePanel
     }
     void SortRows()
     {
-        if(table.ItemsSource==null||sortProperty==null)return;
-        var view=CollectionViewSource.GetDefaultView(table.ItemsSource);view.SortDescriptions.Clear();view.SortDescriptions.Add(new(sortProperty,sortDirection));
+        if(table.ItemsSource==null)return;
+        var view=CollectionViewSource.GetDefaultView(table.ItemsSource);using var defer=view.DeferRefresh();view.SortDescriptions.Clear();
+        bool processes=ReferenceEquals(table.ItemsSource,processItems);
+        if(processes)view.SortDescriptions.Add(new("Pinned",ListSortDirection.Descending));
+        string filter=processFilter.Text.Trim();
+        view.Filter=processes&&filter.Length>0?item=>item is PerformanceProcessRow row&&(row.Pinned||row.Process.Contains(filter,StringComparison.OrdinalIgnoreCase)||row.Pid.ToString().Contains(filter,StringComparison.OrdinalIgnoreCase)||(processColumns["ExecutablePath"]&&row.ExecutablePath.Contains(filter,StringComparison.OrdinalIgnoreCase))||(processColumns["CommandLine"]&&row.CommandLine.Contains(filter,StringComparison.OrdinalIgnoreCase))):null;
+        if(sortProperty!=null)view.SortDescriptions.Add(new(sortProperty,sortDirection));
+        else if(processes)view.SortDescriptions.Add(new("SortUsage",ListSortDirection.Descending));
+        if(processes){view.SortDescriptions.Add(new("Process",ListSortDirection.Ascending));view.SortDescriptions.Add(new("Pid",ListSortDirection.Ascending));}
     }
     void ChangedAnalysis()
     {
@@ -135,7 +147,7 @@ internal sealed partial class PerformancePanel
     }
     void UpdateHistoryStatus()
     {
-        historyStatus.Text=monitor.HistoryIssue??(Settings.PerformanceRecording?$"Recording · {Settings.PerformanceRetention} days":"Recording off · live hour retained");
+        historyStatus.Text=monitor.HistoryIssue??(Settings.PerformanceRecording?$"History retained · {Settings.PerformanceRetention} days":"Live hour available");
         historyStatus.ToolTip=monitor.HistoryIssue??"History settings: aggregates every 5s, selected heavy apps every 10s. Stored in the configured data folder; recording off preserves previous observations.";
     }
     void UpdateAnalysisGraph()
@@ -162,7 +174,7 @@ internal sealed partial class PerformancePanel
     void ResetInvestigation()
     {
         ClearInvestigation();historyEnd=null;historyWindow=null;
-        if(range.SelectedIndex==6){changingRange=true;try{range.SelectedIndex=2;}finally{changingRange=false;}}
+        changingRange=true;try{range.SelectedIndex=0;}finally{changingRange=false;}
         SetDetailKind();if(Historical)_ = LoadHistory();else{ConfigureTable();Refresh();}
     }
     void MoveHistory(int direction)
@@ -191,9 +203,11 @@ internal sealed partial class PerformancePanel
             int minutes=RangeMinutes();
             var to=historyEnd??DateTimeOffset.UtcNow;
             var query=new PerformanceQuery(tool,minutes,metric,selected==Gpu?gpu:selected==Drive?WindowsPerformanceCounters.ForDisk(monitor.Latest,diskNumber)?.Id:null,appFilter.Text,limit,500,investigationFrom??to-(historyWindow??TimeSpan.FromMinutes(minutes)),investigationTo??to);
-            if(investigationFrom.HasValue&&analysisKind.SelectedIndex==0&&metric!="disk")query=query with{Tool="get_top_processes"};
             var moment=investigationMoment;var events=selectedEvents;bool selectedRange=investigationFrom.HasValue;
-            detailState.Text="Reading recorded history…";
+            // Freeze one shared-sampler snapshot for this request. No second
+            // collector, recording setting, or live/recorded source switch.
+            var live=includeLiveHistory?monitor.History():null;
+            detailState.Text="Reading available history…";
             var work=Task.Run(()=>
             {
                 if(moment is {} time)
@@ -202,8 +216,8 @@ internal sealed partial class PerformancePanel
                     return (Result:new PerformanceResult(snapshot.Status,snapshot.Apps,[],snapshot.Apps.Length,false),Timeline:(PerformanceTimelineData)null,Moment:snapshot);
                 }
                 if(events!=null)return(Result:new PerformanceResult("Recorded events / sampled threshold spikes · select another graph moment to inspect contemporaneous apps.",events,[],events.Length,false),Timeline:(PerformanceTimelineData)null,Moment:(PerformanceMoment)null);
-                var result=PerformanceHistory.Query(query,cancellation.Token,historySource);
-                var timeline=selectedRange?null:PerformanceInvestigation.Read(query,cancellation.Token,historySource);
+                var result=PerformanceHistory.Query(query,cancellation.Token,historySource,live);
+                var timeline=selectedRange?null:PerformanceInvestigation.Read(query,cancellation.Token,historySource,live);
                 return(Result:result,Timeline:timeline,Moment:(PerformanceMoment)null);
             },cancellation.Token);historyWork=work;var loaded=await work;var result=loaded.Result;
             if(cancellation.IsCancellationRequested||disposed)return;
@@ -217,7 +231,7 @@ internal sealed partial class PerformancePanel
                 analysisGraph.SetHistory(timeline.Activity.Points.Select(x=>(x.Time,x.Peak??x.Value)).ToArray(),metric=="disk"?0:100,Math.Max(15,(query.To.Value-query.From.Value).TotalSeconds/600*2));
                 analysisGraph.SetEvents(timeline.Events);
             }
-            string status=loaded.Timeline is {}?$"{query.From.Value.ToLocalTime():g} – {query.To.Value.ToLocalTime():g} · recorded peaks; gaps retained":result.Status;
+            string status=loaded.Timeline is {}?$"{query.From.Value.ToLocalTime():g} – {query.To.Value.ToLocalTime():g} · observed peaks; gaps retained":result.Status;
             detailState.Text=(selectedRange?$"Selected {query.From.Value.ToLocalTime():g} – {query.To.Value.ToLocalTime():g} · ":"")+status+(result.Truncated?$" Showing {result.Rows.Length:N0} of {result.Total:N0} rows; refine the range.":"")+(loaded.Timeline is {EventCount:>0} rail?$" · {rail.Events.Length:N0} of {rail.EventCount:N0} markers":"");
             detailState.ToolTip=result.Status;
         }

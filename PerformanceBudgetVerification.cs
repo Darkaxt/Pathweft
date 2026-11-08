@@ -37,6 +37,10 @@ internal static class PerformanceBudgetVerification
         GC.Collect();GC.WaitForPendingFinalizers();GC.Collect();process.Refresh();long recordingPrivate=process.PrivateMemorySize64-historyMemory;
         Settings.PerformanceRecording=false;await Next();
         bool recordingPass=monitor.HistoryIssue==null&&recordingCpu<=1&&recordingPrivate<=32*1024*1024&&PerformanceHistory.Query(new("get_current_usage")).Rows.Length>0;
+        bool detailSwitchPass=true;
+        foreach(int kind in new[]{1,2,3,0,2,1,0})
+        {monitor.DetailKind=kind;await Next();detailSwitchPass&=monitor.Details!=null;}
+        monitor.DetailKind=0;
         var time=DateTimeOffset.UtcNow.AddHours(2);
         // Independent copies model actual native-read payload allocation, not
         // thousands of references to the same sample's arrays.
@@ -53,9 +57,9 @@ internal static class PerformanceBudgetVerification
         // the child; it must not wait forever for a pipe whose server vanished.
         var pending=new PerformanceIoClient();var connection=pending.Enable(false);
         await pending.DisposeAsync();await connection;
-        bool pass=cpuPercent<=0.5&&steadyPrivate<=32*1024*1024&&retained<=8*1024*1024&&!pending.Connected&&recordingPass;
+        bool pass=cpuPercent<=0.5&&steadyPrivate<=32*1024*1024&&retained<=8*1024*1024&&!pending.Connected&&recordingPass&&detailSwitchPass;
         File.WriteAllText(Path.Combine(root,"budget.json"),JsonSerializer.Serialize(new{pass,pid=Environment.ProcessId,seconds=watch.Elapsed.TotalSeconds,
-            cpuPercent,steadyPrivate,retained,recordingCpu,recordingPrivate,recordingPass,samples=monitor.History().Length,gpus=real.Gpus,disks=real.Disks,permission,nativeDiagnostics=client.NativeDiagnostics},new JsonSerializerOptions{WriteIndented=true}));
+            cpuPercent,steadyPrivate,retained,recordingCpu,recordingPrivate,recordingPass,detailSwitchPass,samples=monitor.History().Length,gpus=real.Gpus,disks=real.Disks,permission,nativeDiagnostics=client.NativeDiagnostics},new JsonSerializerOptions{WriteIndented=true}));
         return pass?0:1;
     }
 }
