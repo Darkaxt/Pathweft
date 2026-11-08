@@ -1,14 +1,15 @@
 # Pathweft development
 
-Current2026-11-08/spec0.90: S31 COMPLETE via installed1.1.34 readback233140,
-11,305 members, ready restarted main232344/helper233336,22 routes and preserved
-profile/shortcut. S33 is the only ACTIVE stage: MAINT-01..05 shared table state,
+Current2026-11-08/spec0.90: S33 COMPLETE via installed1.1.35 readback203112,
+11,305 matching members, ready restarted main231460/helper207140,22 routes and
+preserved profile/shortcut identity. MAINT-01..05 cover shared table state,
 Startup coverage/Type/exact Restore, all installed SCM services and Performance
 command ownership. Source134872/native3620/Performance60844 pass actual busy
 visuals, source coverage/exact Restore and exclusive modes. Normal1.1.35 from
 2f62564 is published with six verified assets. Final211320 and independently
 downloaded230548 pass actual native/self-test/application checks. Installed
-readback remains required; the user has been asked to use the normal updater.
+delivery is verified, diagnostic scratch transactionally cleaned. No stage is
+ACTIVE, and no blocker, tracked deferral or required refactor remains for S33.
 Donor investigation
 is documented in docs/MAINTENANCE-DONOR-REVIEW.md; no new safety rule feature is
 implemented or implicitly authorized by that assessment.

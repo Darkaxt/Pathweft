@@ -1,7 +1,7 @@
 # S33 Maintenance coverage and table-state verification
 
-Specification 0.90, MAINT-01..05. Source acceptance 2026-11-08; normal release
-and independent/installed delivery verification remain required.
+Specification 0.90, MAINT-01..05. Source, normal release, independent retrieval
+and installed delivery acceptance passed 2026-11-08.
 
 - **MAINT-01:** the WPF Aero2 disabled ListBox template supplied an opaque white
   background. Shared application templates now retain the transparent themed
@@ -58,6 +58,12 @@ corrected committed package passed before publication: final app211320 and
 independently downloaded app230548 both returned 0 with no failed assertions.
 Normal1.1.35/2f62564 is published; all six assets and the remote source/tag match.
 
-Reconciliation: source and independent delivered-package behavior are verified as
-above. S33 remains ACTIVE until installed readback after the user's normal update.
-No tracked deferral or required source refactor is identified.
+Installed readback203112 after the user's normal update verifies11,305 matching
+members from2f62564, restarted main231460/helper207140, helper readiness,22 owned
+route values, the existing selected profile and Darkaxt.Pathweft shortcut identity.
+The diagnostic used no desktop input or configuration mutation; its exact scratch
+was transactionally cleaned after process exit.
+
+Reconciliation: every MAINT-01..05 acceptance criterion and the required normal,
+independent and installed delivery checks pass. S33 is COMPLETE. No blocker,
+tracked deferral or required source refactor remains. No stage is ACTIVE.
