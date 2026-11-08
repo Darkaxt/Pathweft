@@ -8,7 +8,7 @@ namespace FileExplorer;
 
 internal sealed record MaintenanceRequest(string Action,string Id,string Journal,string Cache);
 internal sealed record AccessEntry(string Name,string Path,FileAttributes Attributes,long Bytes,DateTime Modified);
-internal sealed record MaintenanceReply(bool Ok,string Message,MaintenanceRow Row=null,AccessEntry[] Entries=null,SpaceUpdate[] Updates=null,bool More=false,int ErrorCode=0);
+internal sealed record MaintenanceReply(bool Ok,string Message,MaintenanceRow Row=null,AccessEntry[] Entries=null,SpaceUpdate[] Updates=null,bool More=false,int ErrorCode=0,DriveHealth Health=null);
 
 // Authenticated, task-scoped privilege boundary following PerformanceIoWorker's
 // existing owner/pipe contract. No listener/service, arbitrary shell or driver.
@@ -29,7 +29,7 @@ internal sealed class MaintenanceClient : IAsyncDisposable
         {
             if(elevated)
             {
-                session=await AdministratorSession.Open(name,"maintenance",cancel,enable:request.Action is not ("list" or "space")).ConfigureAwait(false);
+                session=await AdministratorSession.Open(name,"maintenance",cancel,enable:request.Action is not ("list" or "space" or "disk-health")).ConfigureAwait(false);
                 sessionStop=session.Stopped.Register(()=>{stopped.Cancel();pipe.Dispose();});
             }
             else
@@ -172,6 +172,12 @@ internal static class MaintenanceWorker
                     }
                     finally{lost.Cancel();await scan.ConfigureAwait(false);}
                 }
+            }
+            else if(request.Action=="disk-health")
+            {
+                if(!uint.TryParse(request.Id,System.Globalization.NumberStyles.None,System.Globalization.CultureInfo.InvariantCulture,out uint number))throw new ArgumentException("A physical drive number is required");
+                var health=await Task.Run(()=>WindowsDriveHealth.Read(number)).ConfigureAwait(false);
+                await writer.WriteLineAsync(JsonSerializer.Serialize(new MaintenanceReply(true,"Drive health read",Health:health))).ConfigureAwait(false);
             }
             else if(request.Action=="analyze")
             {

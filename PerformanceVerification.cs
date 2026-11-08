@@ -59,6 +59,7 @@ public partial class MainWindow
         Width=1400;Settings.NativeMode="dark";Settings.TextScale=1;ApplyAppearance();performance.Select(0);await Next();
         await S1Verification.Snapshot(this,root,"performance-cpu-details");
         await VerifyAnalysis28(root,check);
+        await VerifyDrive37(root,check);
         performance.Select(-1);await Settle();double performanceHeight=performance.ActualHeight;Click(PerformanceCommand);await Settle();
         File.WriteAllText(Path.Combine(root,"card-heights.json"),JsonSerializer.Serialize(new{performanceHeight,statisticsHeight=StatsRow.ActualHeight}));
         check(Math.Abs(performanceHeight-StatsRow.ActualHeight)<=4,"Five single-row performance cards match the ordinary statistics vertical footprint");

@@ -79,7 +79,7 @@ internal static class PerformanceProcessMetadataReader
         }
         return result;
     }
-    static object Property(object row,string name)
+    internal static object Property(object row,string name)
     {
         object properties=null,property=null;
         try{properties=((dynamic)row).Properties_;property=((dynamic)properties).Item(name,0);return ((dynamic)property).Value;}

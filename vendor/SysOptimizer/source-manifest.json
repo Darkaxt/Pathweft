@@ -88,6 +88,30 @@
       "path": "Sysoptimizer/Services/TweakService.cs",
       "gitBlob": "a5c125e91c5386ac34a5483f2b3e23a767105b7d",
       "selectedSource": "vendor/SysOptimizer/upstream/Sysoptimizer_Services_TweakService.cs.source"
+    },
+    {
+      "gitBlob": "400dcd22dcd83a3c6c2df465b931feee8f08cb78",
+      "path": "Sysoptimizer/Services/DiskHealthService.cs",
+      "selectedSource": "vendor/SysOptimizer/upstream/Sysoptimizer_Services_DiskHealthService.cs.source",
+      "scope": "Disk PDH counters, two-track throughput/latency presentation, health fact projection and warning policy only. No all-device watcher or unrelated features."
+    },
+    {
+      "gitBlob": "d47616fdff69fe5757783aaae0dcc52c674399ea",
+      "path": "Sysoptimizer/Services/ResourceMonitor.cs",
+      "selectedSource": "vendor/SysOptimizer/upstream/Sysoptimizer_Services_ResourceMonitor.cs.source",
+      "scope": "Disk PDH counters, two-track throughput/latency presentation, health fact projection and warning policy only. No all-device watcher or unrelated features."
+    },
+    {
+      "gitBlob": "db25e8017f58f12f04e8af1ac17f7f95c69e1ed3",
+      "path": "Sysoptimizer/Models/ResourceSnapshot.cs",
+      "selectedSource": "vendor/SysOptimizer/upstream/Sysoptimizer_Models_ResourceSnapshot.cs.source",
+      "scope": "Disk PDH counters, two-track throughput/latency presentation, health fact projection and warning policy only. No all-device watcher or unrelated features."
+    },
+    {
+      "gitBlob": "5fb15290140bcec3116a7e0eaf4593556d54f89c",
+      "path": "Sysoptimizer/MainWindow.xaml.cs",
+      "selectedSource": "vendor/SysOptimizer/upstream/Sysoptimizer_MainWindow.xaml.cs.source",
+      "scope": "Disk PDH counters, two-track throughput/latency presentation, health fact projection and warning policy only. No all-device watcher or unrelated features."
     }
   ],
   "inspected": [],

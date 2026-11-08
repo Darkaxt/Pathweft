@@ -35,7 +35,7 @@ internal sealed partial class PerformancePanel : StackPanel,IAsyncDisposable
     bool permissionAttempted;
     internal void OwnerFocusChanged()=>_ = UpdateScope();
     internal async Task EndAdministratorIo(){permissionAttempted=true;await ReleaseIo();Refresh();}
-    internal void AdministratorReady(){if(AutomaticIo&&Showing&&!disposed){permissionAttempted=false;MaybeEnableIo();}}
+    internal void AdministratorReady(){healthAt=default;if(AutomaticIo&&Showing&&!disposed){permissionAttempted=false;MaybeEnableIo();}if(!disposed)Refresh();}
     internal int Selected=>selected;
     internal string Scope=>folder;
 #if DEBUG
@@ -94,9 +94,12 @@ internal sealed partial class PerformancePanel : StackPanel,IAsyncDisposable
         if(!disposed&&!Dispatcher.HasShutdownStarted)_ = Dispatcher.BeginInvoke(()=>
         {
             if(disposed||folder!=path)return;
-            diskNumber=resolved.Disk;traceFolder=resolved.Folder;volumeRoot=resolved.Volume;Refresh();_ = UpdateScope();MaybeEnableIo();
+            diskNumber=resolved.Disk;traceFolder=resolved.Folder;volumeRoot=resolved.Volume;Refresh();if(selected==Drive&&Historical)_ = LoadHistory();_ = UpdateScope();MaybeEnableIo();
         });
     }
+#if DEBUG
+    internal Task DriveMappingForVerification=>mapping;
+#endif
     void Updated()
     {
         if(disposed||!presented||Dispatcher.HasShutdownStarted)return;
@@ -172,6 +175,7 @@ internal sealed partial class PerformancePanel : StackPanel,IAsyncDisposable
         columnsButton.Visibility=selected==Cpu&&!Historical?Visibility.Visible:Visibility.Collapsed;
         processFilter.Visibility=columnsButton.Visibility;
         UpdateAnalysisGraph();
+        RefreshDrive(history);
         detailTitle.Text=new[]{"CPU","Physical RAM","GPU",$"Drive · {volumeRoot??PathRoot(folder)}",$"Folder · {folder}"}[selected];
         gpuPicker.Visibility=selected==Gpu?Visibility.Visible:Visibility.Collapsed;
         if(selected==Gpu&&sample!=null)
@@ -251,10 +255,10 @@ internal sealed partial class PerformancePanel : StackPanel,IAsyncDisposable
         disposed=true;historyCancel?.Cancel();hoverCancel?.Cancel();metadataStopped.Cancel();appChartCancel?.Cancel();
         // Closed can synchronously drain us on the UI thread. Wait only for
         // native/background reads, never their UI presentation continuation.
-        try{await Task.WhenAll(historyWork,hoverWork,metadataRead,appChartRead).ConfigureAwait(false);}
+        try{await Task.WhenAll(historyWork,hoverWork,metadataRead,appChartRead,healthWork).ConfigureAwait(false);}
         // These query failures already have a visible unavailable state. They
         // must not prevent retirement of an independent native I/O worker.
-        catch(Exception error)when(error is OperationCanceledException or ArgumentException or IOException or UnauthorizedAccessException or Microsoft.Data.Sqlite.SqliteException){}
+        catch(Exception error)when(error is OperationCanceledException or ArgumentException or IOException or UnauthorizedAccessException or Microsoft.Data.Sqlite.SqliteException or System.Runtime.InteropServices.COMException or System.ComponentModel.Win32Exception or TypeLoadException){}
         monitor.Changed-=Updated;monitor.DetailKind=0;appChartCancel?.Dispose();
         await ReleaseIo().ConfigureAwait(false);await mapping.ConfigureAwait(false);historyCancel?.Dispose();hoverCancel?.Dispose();metadataStopped.Dispose();
     }

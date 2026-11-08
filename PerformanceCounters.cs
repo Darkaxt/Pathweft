@@ -8,7 +8,7 @@ namespace FileExplorer;
 
 internal sealed record GpuReading(string Id,string Name,double? Usage,long? Memory,long Capacity)
 {public override string ToString()=>Name;}
-internal sealed record DiskReading(string Id,double? Read,double? Write,double? Busy);
+internal sealed record DiskReading(string Id,double? Read,double? Write,double? Busy,double? LatencyMs=null);
 internal sealed record RamReading(long Used,long Total)
 {internal double Usage=>100d*Used/Total;}
 internal sealed record PerformanceSample(DateTimeOffset Time,double? Cpu,GpuReading[] Gpus,DiskReading[] Disks,string Issue,RamReading Ram=null);
@@ -100,7 +100,7 @@ internal sealed class PerformanceMonitor : IDisposable
 internal sealed class WindowsPerformanceCounters : IDisposable
 {
     readonly IntPtr query;
-    readonly IntPtr engines,memory,reads,writes,idle;
+    readonly IntPtr engines,memory,reads,writes,idle,latency;
     Dictionary<string,double> lastEngines=new();
     readonly Dictionary<string,(string Name,long Capacity)> adapters=GpuAdapters.Read();
     ulong previousIdle,previousKernel,previousUser;
@@ -114,6 +114,9 @@ internal sealed class WindowsPerformanceCounters : IDisposable
         reads=Add(@"\PhysicalDisk(*)\Disk Read Bytes/sec");
         writes=Add(@"\PhysicalDisk(*)\Disk Write Bytes/sec");
         idle=Add(@"\PhysicalDisk(*)\% Idle Time");
+        // SysOptimizer ResourceMonitor: Avg. Disk sec/Transfer is seconds,
+        // unlike the millisecond label used by its disk detail chart.
+        latency=Add(@"\PhysicalDisk(*)\Avg. Disk sec/Transfer");
     }
     IntPtr Add(string path)=>PdhAddEnglishCounter(query,path,UIntPtr.Zero,out var counter)==0?counter:IntPtr.Zero;
     internal PerformanceSample Read()
@@ -144,10 +147,11 @@ internal sealed class WindowsPerformanceCounters : IDisposable
             return new GpuReading(id,identity.Name,continuous&&busy.Length>0?Math.Clamp(busy.Max(),0,100):null,
                 mem.Where(x=>Id(x.Key)==id).Select(x=>(long?)x.Value).FirstOrDefault(),identity.Capacity);
         }).ToArray();
-        var r=Values(reads);var w=Values(writes);var quiet=Values(idle);
+        var r=Values(reads);var w=Values(writes);var quiet=Values(idle);var delays=Values(latency);
         var disks=r.Keys.Concat(w.Keys).Distinct().Where(x=>x!="_Total").Select(id=>new DiskReading(id,
             continuous&&r.TryGetValue(id,out var rv)?rv:null,continuous&&w.TryGetValue(id,out var wv)?wv:null,
-            continuous&&quiet.TryGetValue(id,out var qv)?Math.Clamp(100-qv,0,100):null)).ToArray();
+            continuous&&quiet.TryGetValue(id,out var qv)?Math.Clamp(100-qv,0,100):null,
+            continuous&&delays.TryGetValue(id,out var seconds)?seconds*1000:null)).ToArray();
         var physical=new MemoryStatus{Length=(uint)Marshal.SizeOf<MemoryStatus>()};
         RamReading ram=GlobalMemoryStatusEx(ref physical)&&physical.Total>0&&physical.Available<=physical.Total?
             new((long)(physical.Total-physical.Available),(long)physical.Total):null;

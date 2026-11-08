@@ -72,6 +72,13 @@ public partial class MainWindow
             check(AdministratorSession.Available&&AdministratorSession.Browsing&&Equals(AdministratorCommand.Tag,"on")&&launches==1,"Actual approved helper activates administrator browsing through the real shield handler");
             var concurrent=await Task.WhenAll(Enumerable.Range(0,16).Select(_=>MaintenanceClient.ReadFolder(root,default)));
             check(concurrent.All(rows=>rows.Any(x=>x.Name=="keep.txt"))&&launches==1,"Overlapping folder reads queue within the shared session capacity and all retire without busy failures");
+            var drive=await Task.Run(()=>WindowsPerformanceCounters.MapPath(root));
+            await using(var client=new MaintenanceClient())
+            {
+                var reply=await client.Start(new("disk-health",drive.Disk.Value.ToString(System.Globalization.CultureInfo.InvariantCulture),null,null),true);
+                check(reply.Ok&&reply.Health?.Disk==drive.Disk&&reply.Health.Name.Length>0&&launches==1,"Read-only native drive health reuses the same approved helper and exact physical identity");
+                File.WriteAllText(Path.Combine(root,"drive-admin-health.json"),JsonSerializer.Serialize(reply.Health,new JsonSerializerOptions{WriteIndented=true}));
+            }
             await S1Verification.Navigate(Left,root);
             Left.List.SelectedItem=Left.Items.Single(x=>x.Name=="keep.txt");
             AdministratorCommand.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await accessWork;

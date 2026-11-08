@@ -55,7 +55,7 @@ internal sealed partial class PerformancePanel
         var heading=new DockPanel();
         var back=Action("Back to files",()=>Select(-1));DockPanel.SetDock(back,Dock.Right);heading.Children.Add(back);
         detailTitle.FontSize=18;detailTitle.VerticalAlignment=VerticalAlignment.Center;
-        var title=new StackPanel();var category=new TextBlock{Text="System analysis",FontSize=11};category.SetResourceReference(TextBlock.ForegroundProperty,"Muted");title.Children.Add(category);title.Children.Add(detailTitle);heading.Children.Add(title);grid.Children.Add(heading);
+        var title=new StackPanel();var category=new TextBlock{Text="System analysis",FontSize=11};category.SetResourceReference(TextBlock.ForegroundProperty,"Muted");title.Children.Add(category);title.Children.Add(detailTitle);BuildDriveHeader(title);heading.Children.Add(title);grid.Children.Add(heading);
         var controls=new WrapPanel{Margin=new(0,10,0,0)};Grid.SetRow(controls,1);grid.Children.Add(controls);
         void Add(Control control,string name)
         {
@@ -116,7 +116,7 @@ internal sealed partial class PerformancePanel
         {
             // Star rows need a finite height even inside the small-window
             // scroller, preserving table virtualization and the whole timeline.
-            grid.Height=Math.Max(analysisScroll.ActualHeight,(appCharts.IsVisible?290:180)+110+heading.ActualHeight+controls.ActualHeight+detailState.ActualHeight+historyStatus.ActualHeight+48);
+            grid.Height=Math.Max(analysisScroll.ActualHeight,(appCharts.IsVisible||selected==Drive?290:180)+110+heading.ActualHeight+controls.ActualHeight+detailState.ActualHeight+historyStatus.ActualHeight+48);
         }
         analysisScroll.Content=grid;analysisScroll.SizeChanged+=(_,_)=>FitAnalysis();controls.SizeChanged+=(_,_)=>FitAnalysis();
         details.Child=analysisScroll;ready=true;ChangedAnalysis();
@@ -162,7 +162,7 @@ internal sealed partial class PerformancePanel
         {
             if(cancellation.IsCancellationRequested||disposed||selected<0||selected==Folder)return;
             string metric=selected switch{Ram=>"ram",Gpu=>"gpu",Drive=>"disk",_=>"cpu"};
-            var query=new PerformanceQuery(Metric:metric,Device:selected==Gpu?gpu:null);
+            var query=new PerformanceQuery(Metric:metric,Device:selected==Gpu?gpu:selected==Drive?diskNumber?.ToString(System.Globalization.CultureInfo.InvariantCulture):null);
             var apps=includeLiveHistory?monitor.ProcessHistory():null;
             var work=Task.Run(()=>PerformanceInvestigation.Moment(query,time,cancellation.Token,historySource,apps),cancellation.Token);hoverWork=work;
             var moment=await work;if(!cancellation.IsCancellationRequested&&!disposed)analysisGraph.SetMoment(moment,metric);
@@ -198,12 +198,13 @@ internal sealed partial class PerformancePanel
         {
             if(cancellation.IsCancellationRequested||disposed||selected<0)return;
             if(selected==Folder){detailState.Text="Folder/file activity is live only; no background folder I/O history is retained.";table.ItemsSource=null;analysisGraph.Set([]);return;}
+            if(selected==Drive&&diskNumber==null){detailState.Text="Physical-drive history is unavailable for this path.";table.ItemsSource=null;analysisGraph.Set([]);analysisGraph.SetDrive([]);return;}
             string metric=selected switch{Ram=>"ram",Gpu=>"gpu",Drive=>"disk",_=>"cpu"};
             string tool=analysisKind.SelectedIndex switch{2=>"get_top_processes",3=>"find_spikes",4=>"get_app_history",5=>"get_events",_=>"get_usage_summary"};
             if(!double.TryParse(threshold.Text,out double limit))throw new ArgumentException("Enter a numeric spike threshold");
             int minutes=RangeMinutes();
             var to=historyEnd??DateTimeOffset.UtcNow;
-            var query=new PerformanceQuery(tool,minutes,metric,selected==Gpu?gpu:selected==Drive?WindowsPerformanceCounters.ForDisk(monitor.Latest,diskNumber)?.Id:null,appFilter.Text,limit,500,investigationFrom??to-(historyWindow??TimeSpan.FromMinutes(minutes)),investigationTo??to);
+            var query=new PerformanceQuery(tool,minutes,metric,selected==Gpu?gpu:selected==Drive?diskNumber.Value.ToString(System.Globalization.CultureInfo.InvariantCulture):null,appFilter.Text,limit,500,investigationFrom??to-(historyWindow??TimeSpan.FromMinutes(minutes)),investigationTo??to);
             var moment=investigationMoment;var events=selectedEvents;bool selectedRange=investigationFrom.HasValue;
             if(selectedRange&&analysisKind.SelectedIndex==0&&selected!=Drive)query=query with{Tool="get_top_processes"};
             // Freeze one shared-sampler snapshot for this request. No second
@@ -218,9 +219,9 @@ internal sealed partial class PerformancePanel
                 if(moment is {} time)
                 {
                     var snapshot=PerformanceInvestigation.Moment(query,time,cancellation.Token,historySource,apps);
-                    return (Result:new PerformanceResult(snapshot.Status,snapshot.Apps,[],snapshot.Apps.Length,false),Timeline:(PerformanceTimelineData)null,Moment:snapshot);
+                    return (Result:new PerformanceResult(snapshot.Status,snapshot.Apps,[],snapshot.Apps.Length,false),Timeline:metric=="disk"?PerformanceInvestigation.Read(query,cancellation.Token,historySource,live,apps):null,Moment:snapshot);
                 }
-                if(events!=null)return(Result:new PerformanceResult("Recorded events / sampled threshold spikes · select another graph moment to inspect contemporaneous apps.",events,[],events.Length,false),Timeline:(PerformanceTimelineData)null,Moment:(PerformanceMoment)null);
+                if(events!=null)return(Result:new PerformanceResult("Recorded events / sampled threshold spikes · select another graph moment to inspect contemporaneous apps.",events,[],events.Length,false),Timeline:metric=="disk"?PerformanceInvestigation.Read(query,cancellation.Token,historySource,live,apps):null,Moment:(PerformanceMoment)null);
                 var result=PerformanceHistory.Query(query,cancellation.Token,historySource,live,apps);
                 var timeline=selectedRange?null:PerformanceInvestigation.Read(query,cancellation.Token,historySource,live,apps);
                 return(Result:result,Timeline:timeline,Moment:(PerformanceMoment)null);
@@ -237,6 +238,12 @@ internal sealed partial class PerformancePanel
             {
                 analysisGraph.SetHistory(timeline.Activity.Points.Select(x=>(x.Time,x.Peak??x.Value)).ToArray(),metric=="disk"?0:100,Math.Max(15,(query.To.Value-query.From.Value).TotalSeconds/600*2));
                 analysisGraph.SetEvents(timeline.Events);
+            }
+            if(selected==Drive&&kind==0)
+            {
+                var activity=loaded.Timeline?.Activity??result;
+                analysisGraph.SetHistory(activity.Points.Select(x=>(x.Time,x.Peak??x.Value)).ToArray(),0,Math.Max(15,(query.To.Value-query.From.Value).TotalSeconds/600*2));
+                analysisGraph.SetDrive(activity.DrivePoints);
             }
             string status=loaded.Timeline is {}?$"{query.From.Value.ToLocalTime():g} – {query.To.Value.ToLocalTime():g} · observed peaks; gaps retained":result.Status;
             detailState.Text=(selectedRange?$"Selected {query.From.Value.ToLocalTime():g} – {query.To.Value.ToLocalTime():g} · ":"")+status+(result.Truncated?$" Showing {result.Rows.Length:N0} of {result.Total:N0} rows; refine the range.":"")+(loaded.Timeline is {EventCount:>0} rail?$" · {rail.Events.Length:N0} of {rail.EventCount:N0} markers":"");

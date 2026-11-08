@@ -25,6 +25,7 @@ public partial class MainWindow
 {
     internal async Task VerifySpecialists13(string root, Action<bool,string> check)
     {
+        if(Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO")=="drive"){await VerifyDrive37(root,check);return;}
         if(Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO")=="administrator"){await VerifyAdministrator30(root,check);return;}
         if(Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO")=="maintenance"){await VerifyMaintenance32(root,check);return;}
         if(Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO")=="performance-adoption"){await VerifyAdoption32(root,check);return;}

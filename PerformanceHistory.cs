@@ -16,7 +16,9 @@ internal sealed record PerformanceFact(DateTimeOffset Time,string Name,int? Pid,
     public string Maximum=>Peak?.ToString("0.##",CultureInfo.CurrentCulture)??"—";
 }
 internal sealed record PerformancePoint(DateTimeOffset Time,double? Value,double? Peak=null);
-internal sealed record PerformanceResult(string Status,PerformanceFact[] Rows,PerformancePoint[] Points,long Total,bool Truncated);
+internal sealed record DrivePoint(DateTimeOffset Time,double? Read,double? Write,double? LatencyMs,double? Busy);
+internal sealed record PerformanceResult(string Status,PerformanceFact[] Rows,PerformancePoint[] Points,long Total,bool Truncated)
+{internal DrivePoint[] DrivePoints {get;init;}=[];}
 internal sealed record PerformanceQuery(string Tool="get_usage_summary",int LastMinutes=60,string Metric="cpu",string Device=null,string Name=null,double Threshold=80,int Limit=100,DateTimeOffset? From=null,DateTimeOffset? To=null);
 
 internal sealed partial class PerformanceHistory : IDisposable
@@ -162,7 +164,7 @@ internal sealed partial class PerformanceHistory : IDisposable
         using var db=recorded?Open(path,true):null;using var command=db?.CreateCommand();
         var to=query.To??DateTimeOffset.UtcNow;var from=query.From??to.AddMinutes(-query.LastMinutes);
         command?.Parameters.AddWithValue("$from",from.ToUnixTimeMilliseconds());command?.Parameters.AddWithValue("$to",to.ToUnixTimeMilliseconds());
-        var rows=new List<PerformanceFact>();var points=new List<PerformancePoint>();long total=0;
+        var rows=new List<PerformanceFact>();var points=new List<PerformancePoint>();var drivePoints=new List<DrivePoint>();long total=0;
         string note=live==null&&liveApps==null?"Saved observations only; missing intervals are not zero. ":"Available recent and saved observations; missing intervals are not zero. ";
         IEnumerable<PerformanceSample> Samples()
         {
@@ -253,6 +255,7 @@ internal sealed partial class PerformanceHistory : IDisposable
         {
             var sums=new Dictionary<string,(double Sum,double Weight,double Peak,DateTimeOffset PeakAt,long Count)>();
             var buckets=new Dictionary<long,(DateTimeOffset Time,double Sum,int Count,double Peak)>();var breaks=new HashSet<long>();
+            var driveBuckets=new Dictionary<long,DrivePoint>();
             DateTimeOffset first=default,latest=default,previous=default,spikeStart=default;double spikeMax=0;long spikeCount=0;string spikeDevice=null;
             void EndSpike(){if(spikeCount==0)return;total++;if(rows.Count<query.Limit)rows.Add(new(spikeStart,spikeDevice,null,null,spikeMax,spikeCount,"Threshold exceedances at sampled times; coincident apps are not proof of cause"));spikeCount=0;}
             foreach(var sample in Samples())
@@ -268,7 +271,7 @@ internal sealed partial class PerformanceHistory : IDisposable
                     {
                         "ram"=>[("Physical RAM %",sample.Ram?.Usage)],
                         "gpu"=>sample.Gpus.Where(x=>query.Device==null||x.Id==query.Device).Select(x=>("GPU % · "+x.Name+" · "+x.Id,x.Usage)),
-                        "disk"=>sample.Disks.Where(x=>query.Device==null||x.Id==query.Device).Select(x=>("Drive bytes/s · "+x.Id,x.Read+x.Write)),
+                        "disk"=>sample.Disks.Where(x=>DiskMatches(x.Id,query.Device)).Select(x=>("Drive bytes/s · "+x.Id,x.Read+x.Write)),
                         _=>[("CPU %",sample.Cpu)]
                     };
                 var values=metrics.ToArray();foreach(var (name,value) in values)
@@ -279,6 +282,14 @@ internal sealed partial class PerformanceHistory : IDisposable
                 }
                 // Never sum adapters; the plot is the first named selected device.
                 var plotted=values.FirstOrDefault();long bucket=(long)((sample.Time-from).TotalSeconds/Math.Max(1,(to-from).TotalSeconds/600));
+                if(query.Metric=="disk")
+                {
+                    var disk=sample.Disks.FirstOrDefault(x=>DiskMatches(x.Id,query.Device));
+                    var old=driveBuckets.GetValueOrDefault(bucket);
+                    double? Peak(double? a,double? b)=>a.HasValue&&b.HasValue?Math.Max(a.Value,b.Value):a??b;
+                    driveBuckets[bucket]=new(sample.Time,Peak(old?.Read,disk?.Read),Peak(old?.Write,disk?.Write),Peak(old?.LatencyMs,disk?.LatencyMs),Peak(old?.Busy,disk?.Busy));
+                    if(disk==null)breaks.Add(bucket);
+                }
                 if(gap){EndSpike();breaks.Add(bucket);}
                 if(plotted.Value is {} v)
                 {
@@ -293,11 +304,17 @@ internal sealed partial class PerformanceHistory : IDisposable
                 if(breaks.Contains(bucket.Key))points.Add(new(bucket.Value.Time.AddMilliseconds(-1),null));
                 points.Add(new(bucket.Value.Time,bucket.Value.Count==0?null:bucket.Value.Sum/bucket.Value.Count,bucket.Value.Count==0?null:bucket.Value.Peak));
             }
+            foreach(var bucket in driveBuckets.OrderBy(x=>x.Key))
+            {
+                if(breaks.Contains(bucket.Key))drivePoints.Add(new(bucket.Value.Time.AddMilliseconds(-1),null,null,null,null));
+                drivePoints.Add(bucket.Value);
+            }
             if(query.Tool!="find_spikes")foreach(var entry in sums){total++;if(rows.Count<query.Limit)rows.Add(new(entry.Value.PeakAt,entry.Key,null,entry.Value.Weight==0?null:entry.Value.Sum/entry.Value.Weight,entry.Value.Count==0?null:entry.Value.Peak,entry.Value.Count,entry.Value.Count==0?"Counter unavailable":"Average over observed intervals; peak time shown"));}
             note+=first==default?"No samples in range.":$"Observed {first:O} to {latest:O}. Latest age {(DateTimeOffset.UtcNow-latest).TotalSeconds:0}s. Interval averages and original-sample peaks; live cadence 1s, recorded cadence 5s.";
         }
-        return new(total==0?"No matching observations. "+note:note,rows.ToArray(),points.ToArray(),total,total>rows.Count);
+        return new(total==0?"No matching observations. "+note:note,rows.ToArray(),points.ToArray(),total,total>rows.Count){DrivePoints=drivePoints.ToArray()};
     }
+    internal static bool DiskMatches(string id,string device)=>device==null||id==device||uint.TryParse(device,out uint number)&&uint.TryParse(id.Split(' ')[0],out uint observed)&&number==observed;
     public void Dispose()
     {
         try{if(recording&&writer!=null)Execute(writer,"INSERT INTO events VALUES($0,'Collector stopped','Pathweft exited; no observations while stopped')",DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());}

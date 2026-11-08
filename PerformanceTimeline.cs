@@ -11,6 +11,7 @@ namespace FileExplorer;
 internal sealed class PerformanceTimeline : FrameworkElement
 {
     (DateTimeOffset Time,double? Value)[] points=[];
+    DrivePoint[] drive;
     PerformanceFact[] events=[];
     readonly List<(Rect Bounds,PerformanceFact[] Events)> groups=[];
     double ceiling,gapSeconds=15;DateTimeOffset? cursor,hover,selectionFrom,selectionTo,viewFrom,viewTo;
@@ -35,6 +36,7 @@ internal sealed class PerformanceTimeline : FrameworkElement
     internal void SetHistory((DateTimeOffset,double?)[] values,double maximum,double gap)
     {points=values;ceiling=maximum;gapSeconds=gap;InvalidateVisual();}
     internal void Set((DateTimeOffset,double?)[] values)=>SetHistory(values,0,15);
+    internal void SetDrive(DrivePoint[] values){drive=values;InvalidateVisual();}
     internal void SetLive(PerformanceGraph source)
     {
         SetHistory(source.Points,source.Ceiling,source.GapSeconds);
@@ -53,6 +55,7 @@ internal sealed class PerformanceTimeline : FrameworkElement
     internal void SetMoment(PerformanceMoment value,string metric)
     {if((hover??cursor) is {} at&&value.Requested.ToUnixTimeSeconds()/10==at.ToUnixTimeSeconds()/10){moment=value;momentMetric=metric;InvalidateVisual();}}
 #if DEBUG
+    internal int DriveCountForVerification=>drive?.Length??0;
     internal void SelectMomentForVerification(DateTimeOffset time){ChooseMoment(time);}
     internal void SelectRangeForVerification(DateTimeOffset from,DateTimeOffset to){ChooseRange(from,to);}
     internal void SelectEventsForVerification(){var item=events.FirstOrDefault(e=>e.Time>=From&&e.Time<=To);if(item!=null){cursor=item.Time;EventsSelected?.Invoke([item]);InvalidateVisual();}}
@@ -74,7 +77,7 @@ internal sealed class PerformanceTimeline : FrameworkElement
         selectionFrom=viewFrom=from;selectionTo=viewTo=to;cursor=hover=null;moment=null;
         RangeSelected?.Invoke(from,to);InvalidateVisual();
     }
-    Rect Plot=>new(0,34,Math.Max(0,ActualWidth-66),Math.Max(0,ActualHeight-119));
+    Rect Plot=>new(0,drive==null?34:58,Math.Max(0,ActualWidth-66),Math.Max(0,ActualHeight-(drive==null?119:143)));
     Rect Overview=>new(0,Math.Max(0,ActualHeight-36),Math.Max(0,ActualWidth-66),20);
     double Fraction(DateTimeOffset value)=>From is {} from&&To is {} to?Math.Clamp((value-from).TotalSeconds/Math.Max(1,(to-from).TotalSeconds),0,1):0;
     double X(DateTimeOffset time)=>Plot.Width*Fraction(time);
@@ -91,23 +94,26 @@ internal sealed class PerformanceTimeline : FrameworkElement
     Brush Ink=>TryFindResource("Palette.E8EEF6") as Brush??Brushes.White;
     Brush Muted=>TryFindResource("Muted") as Brush??Brushes.Gray;
     Brush Accent=>TryFindResource("Accent") as Brush??Brushes.DodgerBlue;
-    void Text(DrawingContext dc,string text,Point where,Brush brush,double size=11)
+    void Text(DrawingContext dc,string text,Point where,Brush brush,double size=11,double? width=null)
     {
-        var formatted=new FormattedText(text,CultureInfo.CurrentCulture,FlowDirection.LeftToRight,new Typeface("Segoe UI"),size,brush,VisualTreeHelper.GetDpi(this).PixelsPerDip){MaxTextWidth=Math.Max(1,ActualWidth-where.X),MaxLineCount=1,Trimming=TextTrimming.CharacterEllipsis};
+        var formatted=new FormattedText(text,CultureInfo.CurrentCulture,FlowDirection.LeftToRight,new Typeface("Segoe UI"),size,brush,VisualTreeHelper.GetDpi(this).PixelsPerDip){MaxTextWidth=Math.Max(1,Math.Min(width??double.MaxValue,ActualWidth-where.X)),MaxLineCount=1,Trimming=TextTrimming.CharacterEllipsis};
         dc.DrawText(formatted,where);
     }
     protected override void OnRender(DrawingContext dc)
     {
         base.OnRender(dc);if(ActualWidth<80||ActualHeight<115)return;
         dc.DrawRectangle(Brushes.Transparent,null,new Rect(RenderSize));var plot=Plot;groups.Clear();
+        var throughput=drive==null?plot:new Rect(plot.X,plot.Y,plot.Width,plot.Height*.49);
         double max=ceiling>0?ceiling:points.Length==0?1:Math.Max(1,points.Max(p=>p.Value??0));
         for(int i=0;i<3;i++)
         {
-            double y=plot.Top+plot.Height*i/2;dc.PushOpacity(.18);dc.DrawLine(new Pen(Muted,1),new(0,y),new(plot.Right,y));dc.Pop();
+            double y=throughput.Top+throughput.Height*i/2;dc.PushOpacity(.18);dc.DrawLine(new Pen(Muted,1),new(0,y),new(plot.Right,y));dc.Pop();
             Text(dc,ceiling==100?$"{max*(1-i/2d):0}%":MainWindow.Fmt((long)(max*(1-i/2d)))+"/s",new(plot.Right+6,y-8),Muted,10);
         }
         if(points.Length==0){Text(dc,"No observations in this range",new(8,plot.Top+12),Muted);return;}
-        DrawSeries(dc,plot,max,1.6);dc.PushOpacity(.55);DrawSeries(dc,Overview,max,1);dc.Pop();
+        if(drive==null)DrawSeries(dc,plot,max,1.6);
+        else DrawDrive(dc,plot,throughput,max);
+        dc.PushOpacity(.55);DrawSeries(dc,Overview,max,1);dc.Pop();
         // Donor DrawLaunchBadges groups relative to the first badge so two
         // events straddling a pixel bucket cannot create overlapping capsules.
         var eventGroups=new List<List<PerformanceFact>>();
@@ -143,6 +149,55 @@ internal sealed class PerformanceTimeline : FrameworkElement
         string end=To.Value.ToLocalTime().ToString(format);var endLabel=new FormattedText(end,CultureInfo.CurrentCulture,FlowDirection.LeftToRight,new Typeface("Segoe UI"),10,Muted,VisualTreeHelper.GetDpi(this).PixelsPerDip);
         Text(dc,end,new(Math.Max(0,plot.Right-endLabel.Width),ActualHeight-13),Muted,10);
         if(IsKeyboardFocused)dc.DrawRectangle(null,new Pen(Accent,1){DashStyle=DashStyles.Dot},new Rect(1,0,Math.Max(0,ActualWidth-2),Math.Max(0,ActualHeight-1)));
+    }
+    void DrawDrive(DrawingContext dc,Rect plot,Rect throughput,double max)
+    {
+        // Donor Disks: throughput and latency together. Both use the same
+        // timeline, cursor, range/overview and peak-preserving bucket geometry.
+        var write=TryFindResource("TransferWarn") as Brush??Brushes.DarkOrange;
+        var latency=new Rect(plot.X,plot.Top+plot.Height*.67,plot.Width,plot.Height*.33);
+        var shown=drive.Where(p=>p.Time>=From&&p.Time<=To).ToArray();
+        double delay=Math.Max(1,shown.Select(p=>p.LatencyMs??0).DefaultIfEmpty().Max());
+        var at=hover??cursor??To;
+        var current=drive.Length==0?null:drive.MinBy(p=>Math.Abs((p.Time-at.Value).TotalSeconds));
+        if(current!=null&&Math.Abs((current.Time-at.Value).TotalSeconds)>gapSeconds)current=null;
+        string Rate(double? value)=>value.HasValue?MainWindow.Fmt((long)value.Value)+"/s":"—";
+        Series(drive.Select(p=>(p.Time,p.Read)).ToArray(),throughput,max,Accent);
+        Series(drive.Select(p=>(p.Time,p.Write)).ToArray(),throughput,max,write);
+        double second=Math.Min(175,throughput.Width*.5),labelWidth=Math.Max(1,second-8);bool compact=throughput.Width<300;
+        Text(dc,(compact?"R ":"Read ")+Rate(current?.Read),new(4,throughput.Top-20),Accent,11,labelWidth);
+        Text(dc,(compact?"W ":"Write ")+Rate(current?.Write),new(second,throughput.Top-20),write,11,throughput.Width-second);
+        Text(dc,(compact?"":"Latency ")+(current?.LatencyMs is {} ms?$"{ms:0.##} ms":"—"),new(4,latency.Top-22),Ink,11,labelWidth);
+        Text(dc,current?.Busy is {} busy?$"{busy:0.#}% active":"Active time —",new(second,latency.Top-22),Muted,11,latency.Width-second);
+        for(int i=0;i<3;i++)
+        {
+            double y=latency.Top+latency.Height*i/2;dc.PushOpacity(.18);dc.DrawLine(new Pen(Muted,1),new(0,y),new(latency.Right,y));dc.Pop();
+            Text(dc,$"{delay*(1-i/2d):0.##} ms",new(latency.Right+6,y-8),Muted,10);
+        }
+        Series(drive.Select(p=>(p.Time,p.LatencyMs)).ToArray(),latency,delay,Accent);
+        void Series((DateTimeOffset Time,double? Value)[] values,Rect rect,double maximum,Brush ink)
+        {
+            var cols=PerformanceHistoryChart.MakeColumns(From.Value.UtcDateTime,Math.Max(1,(To.Value-From.Value).TotalSeconds),rect.Width,Math.Max(1,(int)Math.Min(rect.Width/4,Math.Max(1,(To.Value-From.Value).TotalSeconds/5))));
+            var peaks=PerformanceHistoryChart.Bucket(values,cols);
+            // Only bridge observed cadence; explicit missing fields/collection
+            // gaps remain blank (old history does not contain latency).
+            PerformanceHistoryChart.BridgeShortGaps(peaks,(int)(gapSeconds/cols.Seconds));
+            DateTimeOffset previous=default;
+            foreach(var p in values)
+            {
+                int b=(int)((p.Time.UtcDateTime-cols.Origin).TotalSeconds/cols.Seconds);
+                if(p.Value==null&&b>=0&&b<peaks.Length)peaks[b]=float.NaN;
+                if(previous!=default&&(p.Time-previous).TotalSeconds>gapSeconds)
+                {
+                    int start=Math.Max(0,(int)((previous.UtcDateTime-cols.Origin).TotalSeconds/cols.Seconds)+1);
+                    for(int n=start;n<Math.Min(b,peaks.Length);n++)peaks[n]=float.NaN;
+                }
+                previous=p.Time;
+            }
+            double Y(double number)=>rect.Bottom-Math.Clamp(number/maximum,0,1)*rect.Height;
+            dc.PushClip(new RectangleGeometry(rect));dc.PushOpacity(.1);dc.DrawGeometry(ink,null,PerformanceHistoryChart.SmoothRuns(peaks,cols,Y,rect.Bottom));dc.Pop();
+            dc.DrawGeometry(null,new Pen(ink,1.6),PerformanceHistoryChart.SmoothRuns(peaks,cols,Y,null));dc.Pop();
+        }
     }
     void DrawAxis(DrawingContext dc,Rect plot)
     {

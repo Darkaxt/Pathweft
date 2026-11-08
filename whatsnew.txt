@@ -1,6 +1,12 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.37 | 2026-11-08 | Drive activity and health
+- Drive I/O investigation combines read/write speed, latency and active time for the physical drive backing the current folder. The graphs share history, cursor and range selection.
+- Available drive health includes temperature, remaining life, powered-on hours, lifetime writes and Windows health. Virtual and network paths do not borrow measurements from the host or cache disk.
+- Protected folders show an Access denied explanation, a faint red ribbon and an action to use the shared administrator session. Disk analysis refreshes its contents when access mode changes.
+- Toolbar details follow the chosen accent while retaining neutral outlines and the original compact icons.
+
 ## 1.1.36 | 2026-11-08 | Shared administrator access
 - The shield beside Hidden switches between Standard and Administrator browsing without restarting Pathweft. One approved session serves protected folders, disk analysis, Maintenance, file I/O and protected editor saves. Switching back to Standard keeps that session available; its menu can end it explicitly.
 - Opening Maintenance automatically reviews the Cleanup categories and updates the recoverable-space estimate. Nothing is deleted without reviewing and confirming the cleanup.

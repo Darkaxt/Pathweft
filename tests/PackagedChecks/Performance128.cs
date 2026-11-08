@@ -43,6 +43,7 @@ sealed partial class PackageProbe
         Check(command.Tag==null&&AutomationProperties.GetItemStatus(command)=="Off","Delivered command restores the statistics mode");
         VerifyObservedGraphs();
         await VerifyPerformance131();
+        await VerifyDrive137();
 
         var release=Type("WhatsNewWindow").GetNestedType("Release",BindingFlags.NonPublic);
         var hashes=new HashSet<string>();
