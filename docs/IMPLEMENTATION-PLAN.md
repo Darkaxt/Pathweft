@@ -1,9 +1,22 @@
 # Implementation and reconciliation
 
-Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.90, 2026-11-08,
+Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.92, 2026-11-08,
 including the user-authorized continued comparison requirement TRANSFER-07.
 
-Current 2026-11-08: S31 COMPLETE through installed1.1.34 readback233140:
+Current2026-11-08: S34 COMPLETE for MAINT-06..07 source/integration acceptance
+through actual UI232500: automatic incremental/cancellable Cleanup queue,
+numeric/bidirectional sorting across five tables, retained selection/reviews,
+exact cleanup/restore and dark/light100/150-percent/narrow layouts. No blocker,
+tracked deferral or required consolidation. S30 is now the single ACTIVE stage
+for the renewed reusable administrator-toggle request. ACCESS-01..03 implementation,
+real privilege/lifecycle/resource qualification now pass in UI218544 with helper235336:
+protected browser/analysis/editor saves, concurrent-read admission, Cleanup/I/O reuse,
+denial, exact owner/non-owner and natural retirement. UI229196 verifies compact toolbar
+themes/scales and existing file commands; Maintenance234920 passes integrated queue/sort.
+Final integrated release and independent/installed readback remain acceptance blockers.
+No intermediate S34 publication. S30 owns final delivery. See verification/2026-11-08-s30-access.md.
+
+Previous 2026-11-08: S31 COMPLETE through installed1.1.34 readback233140:
 11,305 matching members, restarted main232344/helper233336, ready event,22 routes
 and preserved profile/shortcut identity. Normal publication and independent
 checks remain verified. S33 is COMPLETE for MAINT-01..05: shared
@@ -1184,7 +1197,8 @@ plan neither authorizes itself nor adds approval checkpoints.
 | S31 - Performance continuity and process inspection | COMPLETE | MONITOR-17..21 and final S32 delivery | S29 and S32 COMPLETE; before S30 | Normal1.1.34/2de366d published; final215364/independent172600 pass all delivered checks. Installed233140 verifies11,305 members, restarted ready main/helper,22 routes and preserved profile/shortcut. No blocker or tracked deferral. |
 | S32 - Local SysOptimizer adoption | COMPLETE | ADOPT-01..06 | Source work authorized during the former S31 publication pause | Five bottom Maintenance summary tabs, scoped native actions/exact restore, app charts, boot/changes/insights and reports pass source/native/rendered/lifecycle/resource acceptance. Delivered in normal1.1.34; final and independent actual assemblies pass. Installed parity remains in S31. No source blocker or tracked deferral. |
 | S33 - Maintenance coverage and table states | COMPLETE | MAINT-01..05 | S31/S32 COMPLETE; before S30 | Source134872/native3620/Performance60844 pass shared disabled-state theme, Startup source/Type/exact Restore, full SCM inventory and mutually exclusive toolbar modes. Normal1.1.35/2f62564 is published; final211320 and independent230548 pass actual native/self-test/application checks. Installed203112 verifies11,305 matching members, restarted ready main/helper,22 routes and preserved profile/shortcut identity. Scratch cleaned. No blocker, tracked deferral or required refactor. |
-| S30 - Reusable administrator access session | NOT STARTED | ACCESS-01..03; affected CORE/LIFE/DELIVERY | After S29, before S25; user request2026-11-08 | Monochrome quartered UAC shield toggles standard/admin browsing; one approved authenticated scoped helper is reusable for protected browsing and existing elevation-dependent features until explicit session end/full app exit. Preserve unelevated UI, user state and tracing scope. Real privilege/consent/owner/cancellation/idle-cost and final delivery acceptance required. No criteria verified yet. |
+| S34 - Automatic Maintenance review and sorting | COMPLETE | MAINT-06..07 | S33 COMPLETE; before S30 | Actual UI232500 verifies sequential automatic review, incremental summaries/cancel, real headers/numeric units, selection/sort retention and existing exact cleanup/restore with themed layouts. No blocker/deferral/refactor. Final delivery is integrated with S30. |
+| S30 - Reusable administrator access session | ACTIVE | ACCESS-01..03; affected CORE/LIFE/DELIVERY | After S34, before S25; renewed user request2026-11-08 | Source218544/helper235336 and owner233356/helper225008 pass protected browsing/analysis/atomic editor saves, queued concurrent reads, Cleanup/I/O reuse, denial, non-owner rejection and natural owner-loss retirement. Original active/idle1% CPU/96MiB budgets pass; compact themed toolbar229196 and integrated Maintenance234920 pass. Final release and independent/installed delivery acceptance remain. No tracked deferral or required refactor. |
 | S25 - Summary-card motion | NOT STARTED | MOTION-01..03; affected MONITOR/CORE-03/LIFE/DELIVERY | S18 COMPLETE; after S28 and before S12 | Upward card entry with smooth file-pane squeeze; rotation between Statistics/Performance; reversal/interruption and focus/scroll preservation; reduced-motion support and actual frame/layout/resource qualification. One final independently/installed verified release after implementation authorization. No criteria verified yet. |
 | S12 - Tresorit capability investigation | NOT STARTED | TRES-01..04 | S15 delivered; S16/S18/S25 considered first in the selected execution order | Supported API/client assessment, bounded REA as needed, evidence-backed capability matrix/decision and implementation proposal. Investigation only; no cloud mutation or integration implementation. |
 | S19 - Selected-folder content indexing | NOT STARTED | CONTENT-01..06; affected SEARCH/CORE/LIFE/DELIVERY | After S12 in the selected execution order; qualify extractor APIs, query/location semantics, provider metadata and resource budgets | Toolbar folder opt-in/current magnifier badges; qualified Craft/text extraction; persisted searchable strings and location arrays, periodic incremental refresh and cloud-cache independence. Verify actual search/open/freshness/recovery and one final independently/installed verified release when implementation is authorized. No criteria verified yet. |
@@ -1248,7 +1262,7 @@ owns its complete release/delivery gate; S12 delivers research documents only.
 | MONITOR-14..16 | S29 | Interactive event/spike timeline, moment snapshots and selected ranges linked to factual tables; compact widgets preserved; actual interaction/layout/query/lifecycle and final delivery acceptance |
 | MONITOR-17..21 | S31 | Automatic bounded collection/saving and recent aggregate/process continuity, CPU columns/pins, local donor comparison/adoption and background audit; integrated regression/layout/resource/delivery acceptance |
 | ADOPT-01..06 | S32 | Five scoped bottom Maintenance summary tabs, native actions/exact restore, local performance adoption, donor provenance, integrated workflows/layout/lifecycle checks; source held for user validation |
-| ACCESS-01..03 | S30 | Monochrome UAC shield, standard/admin access mode, authenticated reusable elevated helper and real consent/scope/lifecycle/resource/delivery acceptance |
+| ACCESS-01..03 | S30 | Compact UAC shield beside Hidden, standard/admin access mode, authenticated reusable elevated helper and real consent/scope/lifecycle/resource/delivery acceptance |
 | MOTION-01..03 | S25 | Upward summary-card entry and file-pane squeeze; Statistics/Performance rotation; reversible non-blocking state/focus preservation, reduced-motion settings and actual visual/performance/delivery verification |
 | TRES-01..04 | S12 | Evidence-backed Tresorit investigation and implementation proposal; execution remains NOT STARTED |
 | CONTENT-01..06 | S19 | Selected-folder content extraction, compact searchable strings/location arrays, periodic freshness/current badges, original-file navigation and verified final delivery after implementation authorization |

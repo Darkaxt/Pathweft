@@ -15,6 +15,7 @@ public partial class MainWindow
     readonly Dictionary<PaneView,bool> performanceModes=new();
     void InitializePerformance()
     {
+        InitializeAdministrator();
         performance=new PerformancePanel{Visibility=Visibility.Collapsed,Margin=new Thickness(0,10,0,0)};
         Grid.SetRow(performance,1);((Grid)StatsRow.Parent).Children.Add(performance);
         Grid.SetRow(performance.Analysis,0);((Grid)StatsRow.Parent).Children.Add(performance.Analysis);
@@ -72,7 +73,7 @@ public partial class MainWindow
         PaneArea.Visibility=show||maintenanceVisible?Visibility.Collapsed:Visibility.Visible;
         // File actions must never target a selection hidden behind analysis.
         if(PerformanceCommand.Parent is Panel commands)foreach(var child in commands.Children)
-            if(child is Button button&&button!=PerformanceCommand&&button!=TransfersButton&&button!=MaintenanceCommand)button.IsEnabled=!show&&!maintenanceVisible&&(button!=AnalyzeSpaceCommand||active?.CanAnalyzeSpace==true);
+            if(child is Button button&&button!=PerformanceCommand&&button!=TransfersButton&&button!=MaintenanceCommand&&button!=AdministratorCommand)button.IsEnabled=!show&&!maintenanceVisible&&(button!=AnalyzeSpaceCommand||active?.CanAnalyzeSpace==true);
         MaintenanceCommand.Tag=maintenanceVisible?"on":null;
         AutomationProperties.SetItemStatus(MaintenanceCommand,maintenanceVisible?"On":"Off");
         MaintenanceCommand.ToolTip=maintenanceVisible?"Back to files":"Maintenance";

@@ -34,6 +34,8 @@ internal sealed partial class PerformancePanel : StackPanel,IAsyncDisposable
     internal bool AutomaticIo {get;set;}=true;
     bool permissionAttempted;
     internal void OwnerFocusChanged()=>_ = UpdateScope();
+    internal async Task EndAdministratorIo(){permissionAttempted=true;await ReleaseIo();Refresh();}
+    internal void AdministratorReady(){if(AutomaticIo&&Showing&&!disposed){permissionAttempted=false;MaybeEnableIo();}}
     internal int Selected=>selected;
     internal string Scope=>folder;
 #if DEBUG

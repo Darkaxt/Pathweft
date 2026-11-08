@@ -1,6 +1,24 @@
 # Pathweft specification
 
-Version 0.90 - 2026-11-08. Owner: Darkaxt.
+Version 0.92 - 2026-11-08. Owner: Darkaxt.
+
+### Automatic Maintenance review and sortable tables (S34)
+
+User refinements2026-11-08: entering Maintenance queues every Cleanup category
+and updates its summary without row-by-row Analyze clicks. Every Maintenance
+table must sort, particularly enabled/disabled state. The renewed administrator
+toggle request activates the already specified S30 after this cohesive usability
+stage; deliver S34 and S30 together in one release, not an intermediate release.
+
+| ID | Required behavior and acceptance |
+| --- | --- |
+| MAINT-06 | Entering Maintenance automatically performs one sequential, cancellable read-only Cleanup review of all categories, publishing each completed estimate to its row and bottom summary. Preserve completed exact reviews across category navigation. Initial standard-access analysis never prompts repeatedly or deletes files; protected remainder can be explicitly reviewed through the approved administrator session. Refresh/re-analysis remains available without requiring a selected row. Hide/exit cancels and drains the original work and retires manifests. Partial access and cancellation remain truthful without blocking independent categories; deletion still requires selection and confirmation and preserves new/changed/busy files. |
+| MAINT-07 | All displayed Maintenance column headers sort in both directions, with visible/accessibility direction. Size uses numeric bytes, not formatted text. Name/identity break ties deterministically. Retain per-category sort and selected identity through refresh, analysis row replacement, apply/restore and navigation. Exercise actual headers across all five tables, numeric ordering, row replacement and dark/light100/150-percent layouts. |
+
+Huashu contract: preserve existing compact WPF main pane, five bottom cards,
+palette, table headers and command spacing. Add only a small header chevron and
+concise queued-analysis progress. No white busy surface or extra navigation UI.
+
 
 ### Maintenance coverage and table-state corrections (S33)
 
@@ -120,13 +138,22 @@ not a second Windows profile or a permission/ACL change.
 
 | ID | Required behavior and acceptance |
 | --- | --- |
-| ACCESS-01 | Add a compact monochrome quartered UAC shield matching the user's OK-button reference and the existing toolbar icon proportions. Expose Standard / Administrator browsing through active state, tooltip and accessible name. Initial mode is Standard; switching can be done without reopening or losing pane/tab/selection/scroll state. UAC denial leaves the previous mode and data intact. |
+| ACCESS-01 | Add a compact UAC shield immediately beside Show/Hide hidden files, using blue internal lines and a neutral outer outline matching the latest user reference and existing toolbar proportions. Expose Standard / Administrator browsing through active state, tooltip and accessible name. Initial mode is Standard; switching can be done without reopening or losing pane/tab/selection/scroll state. UAC denial leaves the previous mode and data intact. |
 | ACCESS-02 | Authenticate and bind a narrowly scoped elevated helper to the exact Pathweft owner/session. One approved helper serves protected folder enumeration and existing privileged analysis/I/O requests; standard browsing stops issuing elevated enumeration requests but the approved helper can remain available until explicit End administrator session or full app exit. Stop traces when their ordinary visible scope ends. No scheduled task/service, credential storage, UAC setting changes, ACL changes or blanket privileged shell execution. Existing destructive-action confirmations and actual access failures remain explicit. |
 | ACCESS-03 | Qualify real approved/denied/reused UAC lifecycle, standard/admin browsing of task-owned protected fixtures, privilege/mode indication, cancellation, owner exit/crash, non-owner rejection and unchanged standard drag/drop/profile identity. Bound idle cost and cleanly retire the elevated session. One normal independently/installed verified release after integrated acceptance. |
 
-Design: preserve the Windows shield silhouette and alternating monochrome
-quadrants; use existing command-button foreground/hover/active tokens and tooltip
-behavior. Do not use the blue/yellow UAC bitmap or recolor unrelated commands.
+Design refinement2026-11-08: place the shield immediately beside Show/Hide
+hidden files. Adapt the user-supplied `uac-shield.svg` silhouette: transparent
+quarters, full cyan interior dividers and a neutral outer outline (white in dark
+mode, dark in light mode, system foreground in high contrast). This latest
+direction replaces the earlier monochrome-quarter rendering, not the session
+behavior: Standard browsing leaves other privileged features' approved session
+available. Active state, tooltip and accessibility distinguish browsing mode
+from session availability. No blue/yellow bitmap or unrelated command recoloring.
+The existing protected text-editor save must reuse this session too: retain its
+explicit Save as administrator confirmation, hash-bound staged contents and
+atomic destination replacement with original ACLs. Do not launch a privileged
+shell command for saving, or acknowledge a save before replacement completes.
 Windows' split-token model and authenticated IPC inform implementation:
 https://learn.microsoft.com/windows/security/application-security/application-control/user-account-control/how-it-works
 and https://learn.microsoft.com/windows/win32/ipc/named-pipe-security-and-access-rights.

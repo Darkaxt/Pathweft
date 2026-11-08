@@ -1,6 +1,12 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.36 | 2026-11-08 | Shared administrator access
+- The shield beside Hidden switches between Standard and Administrator browsing without restarting Pathweft. One approved session serves protected folders, disk analysis, Maintenance, file I/O and protected editor saves. Switching back to Standard keeps that session available; its menu can end it explicitly.
+- Opening Maintenance automatically reviews the Cleanup categories and updates the recoverable-space estimate. Nothing is deleted without reviewing and confirming the cleanup.
+- Maintenance tables sort on their column headers, including state and numeric sizes, and retain the selected row and sort direction during updates.
+- Protected editor saves use the approved session and atomically replace the file while preserving its permissions.
+
 ## 1.1.35 | 2026-11-08 | Complete Maintenance inventory
 - Startup identifies Run, RunOnce, policy Run, Startup-folder files and shortcuts, and tasks triggered at startup or logon. The Type column identifies each source; supported changes preserve their original state for Restore.
 - Services shows installed Windows application services with service name, startup type and description, replacing the inherited shortlist.

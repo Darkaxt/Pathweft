@@ -1,4 +1,5 @@
 using System.IO;
+using System.ComponentModel;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Automation;
@@ -25,6 +26,9 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
     readonly Dictionary<string,CleanupReview> reviews=new();
     readonly Dictionary<string,MaintenanceClient> elevatedReviews=new();
     readonly Dictionary<string,MaintenanceRow> analyzedRows=new();
+    readonly Dictionary<string,(string Property,ListSortDirection Direction)> sorts=new();
+    readonly Dictionary<string,string> selections=new();
+    readonly Dictionary<string,(GridViewColumnHeader Header,TextBlock Arrow)> headers=new();
     MaintenanceRow[] overviewSelection;
     CancellationTokenSource reading=new();Task work=Task.CompletedTask;bool busy,disposed;Func<Task> pending;
     internal Task Ready=>work;
@@ -32,6 +36,8 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
     internal ListView Rows=>table;
     internal string State=>status.Text;
 #if DEBUG
+    internal Func<int,Task> AnalyzeStepForVerification;
+    internal void CancelForVerification()=>cancel.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent));
     internal async Task CategoryForVerification(string category){cardButtons[Array.IndexOf(Categories,category)].RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent));await work;}
     internal async Task ClickForVerification(string label)
     {
@@ -57,15 +63,22 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
         var intro=new StackPanel();description.SetResourceReference(TextBlock.ForegroundProperty,"Muted");intro.Children.Add(description);body.Children.Add(intro);
         table.SetResourceReference(Control.ForegroundProperty,"Palette.E8EEF6");VirtualizingPanel.SetIsVirtualizing(table,true);VirtualizingPanel.SetVirtualizationMode(table,VirtualizationMode.Recycling);ScrollViewer.SetCanContentScroll(table,true);
         Columns();Grid.SetRow(table,1);body.Children.Add(table);AutomationProperties.SetName(table,"Maintenance items");
+        table.AddHandler(GridViewColumnHeader.ClickEvent,new RoutedEventHandler((_,e)=>
+        {
+            if(e.OriginalSource is not GridViewColumnHeader {Tag:string property})return;
+            var current=sorts.GetValueOrDefault(Category,("Name",ListSortDirection.Ascending));
+            sorts[Category]=(property,current.Item1==property&&current.Item2==ListSortDirection.Ascending?ListSortDirection.Descending:ListSortDirection.Ascending);
+            SortRows();
+        }));
         actions.Margin=new Thickness(0,12,0,0);Grid.SetRow(actions,2);body.Children.Add(actions);
-        refresh=Button("Refresh",async()=>{await Overview();await Load();});analyze=Button("Analyze",Analyze);change=Button("Apply",()=>Confirm(Change));restore=Button("Restore",()=>Confirm(()=>Apply("restore")));
+        refresh=Button("Refresh",async()=>{await Overview();await Load();if(Category=="Cleanup")await AnalyzeAll();});analyze=Button("Analyze",Analyze);change=Button("Apply",()=>Confirm(Change));restore=Button("Restore",()=>Confirm(()=>Apply("restore")));
         restorePoint=Button("Create restore point",()=>Confirm(()=>Apply("restore-point"),"Create a Windows restore point?"));export=Button("Export selection…",Export);import=Button("Import selection…",Import);
         cancel=new Button{Content="Cancel",MinHeight=32,Margin=new(0,0,8,6)};cancel.SetResourceReference(StyleProperty,"AuxiliaryAction");
         cancel.Click+=(_,_)=>{reading.Cancel();status.Text="Cancelling…";};
         foreach(var button in new[]{refresh,analyze,change,restore,restorePoint,export,import,cancel})actions.Children.Add(button);
         approval.Children.Add(confirmText);approval.Children.Add(Button("Confirm",async()=>{var action=pending;pending=null;approval.Visibility=Visibility.Collapsed;if(action!=null)await action();}));approval.Children.Add(Button("Keep unchanged",()=>{pending=null;approval.Visibility=Visibility.Collapsed;return Task.CompletedTask;}));
         Grid.SetRow(approval,3);body.Children.Add(approval);status.SetResourceReference(TextBlock.ForegroundProperty,"Muted");Grid.SetRow(status,4);body.Children.Add(status);
-        Child=grid;table.SelectionChanged+=(_,_)=>UpdateActions();
+        Child=grid;table.SelectionChanged+=(_,_)=>{if(table.SelectedItem is MaintenanceRow row)selections[Category]=row.Id;UpdateActions();};
         for(int i=0;i<5;i++)
         {
             int index=i;var stack=new StackPanel();var label=cardLabels[i]=new TextBlock{Text=Categories[i],FontSize=11,TextTrimming=TextTrimming.CharacterEllipsis};label.SetResourceReference(TextBlock.ForegroundProperty,"Muted");
@@ -112,7 +125,7 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
         status.Text="Reading Windows state…";Columns();
         fullDescription=category switch
         {
-            "Cleanup"=>"Select a category and Analyze. Clean applies only to its reviewed, unchanged files; files in use and new files are skipped.",
+            "Cleanup"=>"Categories are analyzed automatically. Select a result to clean its reviewed, unchanged files; files in use and new files are skipped. Analyze refreshes the selected category, or all categories with nothing selected.",
             "Startup"=>"Run and RunOnce keys, policy Run entries, startup folders and tasks triggered at startup or logon. Type identifies the source. Disable saves the exact original state for Restore.",
             "Services"=>"Review each service before changing it. Stop and disable saves the actual startup configuration. Restore returns that configuration without starting the service.",
             "Windows tweaks"=>"Apply individual Windows settings. Restore uses the exact saved original values. Some changes take effect after sign-out or restart.",
@@ -129,23 +142,45 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
         else rows=await Task.Run(()=>Maintenance.Read(category,reading.Token),reading.Token);
         if(disposed)return;
         if(category=="Cleanup")rows=rows.Select(r=>analyzedRows.GetValueOrDefault(r.Id,r)).ToArray();
-        table.ItemsSource=rows;Summary(category,rows);status.Text=rows.Length==0?"No items found.":$"{rows.Length:N0} items · no changes made";
+        SetRows(rows);Summary(category,rows);status.Text=rows.Length==0?"No items found.":$"{rows.Length:N0} items · no changes made";
     }
     async Task Analyze()
     {
-        if(table.SelectedItem is not MaintenanceRow row)return;
+        if(table.SelectedItem is not MaintenanceRow row){await AnalyzeAll();return;}
+        await AnalyzeRow(row,true);
+        status.Text="Review ready. Nothing has been removed.";
+    }
+    async Task AnalyzeAll()
+    {
+        var rows=Maintenance.Read("Cleanup",reading.Token);
+        for(int i=0;i<rows.Length;i++)
+        {
+            reading.Token.ThrowIfCancellationRequested();
+            status.Text=$"Analyzing {i+1} of {rows.Length} · {rows[i].Name}…";
+#if DEBUG
+            if(AnalyzeStepForVerification!=null)await AnalyzeStepForVerification(i);
+#endif
+            reading.Token.ThrowIfCancellationRequested();
+            try{await AnalyzeRow(rows[i],AdministratorSession.Available);}
+            catch(Exception error)when(error is IOException or UnauthorizedAccessException or System.ComponentModel.Win32Exception)
+            {PublishReview(rows[i] with{State="Unavailable",Details=error.Message,Bytes=null,CanChange=false});}
+        }
+        status.Text="All categories reviewed. Nothing has been removed.";
+    }
+    async Task AnalyzeRow(MaintenanceRow row,bool allowElevation)
+    {
         analyzedRows.Remove(row.Id);
         if(reviews.Remove(row.Id,out var previous))previous.Dispose();
         if(elevatedReviews.Remove(row.Id,out var old))await old.DisposeAsync();
         var target=CleanupReview.Targets.Single(t=>t.Id==row.Id);status.Text="Analyzing "+row.Name+"…";
         MaintenanceRow result;
-        if(row.Id is "windows-temp" or "error-reports")
+        if(allowElevation&&row.Id is ("windows-temp" or "error-reports"))
         {
             var client=new MaintenanceClient();
             try
             {
                 var reply=await client.Start(new("analyze",row.Id,Maintenance.Journal,Path.Combine(DataFolder.Cache,"Maintenance")),true,reading.Token);
-                if(!reply.Ok){status.Text=reply.Message;await client.DisposeAsync();return;}
+                if(!reply.Ok)throw new InvalidOperationException(reply.Message);
                 elevatedReviews.Add(row.Id,client);result=reply.Row;
             }
             catch{await client.DisposeAsync();throw;}
@@ -156,8 +191,13 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
             try{await Task.Run(()=>review.Analyze(reading.Token));reviews.Add(row.Id,review);result=review.Row;}
             catch{review.Dispose();throw;}
         }
-        analyzedRows[row.Id]=result;
-        table.ItemsSource=((IEnumerable<MaintenanceRow>)table.ItemsSource).Select(r=>r.Id==row.Id?result:r).ToArray();table.SelectedItem=result;Summary(Category,(IEnumerable<MaintenanceRow>)table.ItemsSource);status.Text="Review ready. Nothing has been removed.";
+        PublishReview(result);
+    }
+    void PublishReview(MaintenanceRow result)
+    {
+        analyzedRows[result.Id]=result;
+        if(Category=="Cleanup")SetRows(((IEnumerable<MaintenanceRow>)table.ItemsSource).Select(r=>r.Id==result.Id?result:r).ToArray());
+        Summary("Cleanup",Maintenance.Read("Cleanup",reading.Token).Select(r=>analyzedRows.GetValueOrDefault(r.Id,r)));
     }
     void Presentation()
     {
@@ -165,7 +205,7 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
         description.ToolTip=fullDescription;
         description.Text=!narrow?fullDescription:Category switch
         {
-            "Cleanup"=>"Analyze first. Clean removes only reviewed, unchanged files.",
+            "Cleanup"=>"Automatic estimates. Clean removes only reviewed, unchanged files.",
             "Startup"=>"Windows startup entries by source. Disable saves their original state for Restore.",
             "Services"=>"Stop and disable a reviewed service; Restore returns its startup settings.",
             "Windows tweaks"=>"Review each setting before applying. Restore returns saved values.",
@@ -194,7 +234,7 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
             finally{review.Dispose();}
         }
         var original=CleanupReview.Targets.Single(t=>t.Id==row.Id);var reset=new MaintenanceRow(row.Id,row.Name,row.Scope,"Analyze again",original.Description);
-        table.ItemsSource=((IEnumerable<MaintenanceRow>)table.ItemsSource).Select(r=>r.Id==row.Id?reset:r).ToArray();table.SelectedItem=reset;
+        SetRows(((IEnumerable<MaintenanceRow>)table.ItemsSource).Select(r=>r.Id==row.Id?reset:r).ToArray());
         Summary(Category,(IEnumerable<MaintenanceRow>)table.ItemsSource);
     }
     async Task Apply(string action)
@@ -239,7 +279,7 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
         bool idle=!busy&&pending==null;
         foreach(var button in new[]{refresh,analyze,change,restore,restorePoint,export,import})button.IsEnabled=idle;
         for(int i=0;i<5;i++)if(cardButtons[i]!=null){cardButtons[i].IsEnabled=idle;cardButtons[i].Tag=i==selectedCategory?"on":null;AutomationProperties.SetItemStatus(cardButtons[i],i==selectedCategory?"Selected":"");}
-        table.IsEnabled=idle;analyze.Visibility=cleanup?Visibility.Visible:Visibility.Collapsed;analyze.IsEnabled=idle&&row!=null;
+        table.IsEnabled=idle;analyze.Visibility=cleanup?Visibility.Visible:Visibility.Collapsed;analyze.IsEnabled=idle;
         change.Content=Category switch{"Cleanup"=>"Clean reviewed","Startup"=>"Disable","Services"=>"Stop and disable","Windows apps"=>"Remove",_=>"Apply"};
         change.IsEnabled=idle&&row?.CanChange==true&&(!cleanup||reviews.ContainsKey(row.Id)||elevatedReviews.ContainsKey(row.Id));
         restore.Visibility=Category is "Startup" or "Services" or "Windows tweaks"?Visibility.Visible:Visibility.Collapsed;
@@ -254,6 +294,13 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
         foreach(var client in elevatedReviews.Values)await client.DisposeAsync();elevatedReviews.Clear();
         analyzedRows.Clear();
         approval.Visibility=Visibility.Collapsed;pending=null;Visibility=cards.Visibility=Visibility.Collapsed;
+    }
+    internal async Task EndAdministratorReviews()
+    {
+        await work;
+        foreach(var pair in elevatedReviews.ToArray())
+        {await pair.Value.DisposeAsync();elevatedReviews.Remove(pair.Key);analyzedRows.Remove(pair.Key);}
+        if(Visibility==Visibility.Visible)Queue(Load);
     }
     async Task Overview()
     {
@@ -272,17 +319,50 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
         else{value=rows.Length.ToString("N0");sub="optional preinstalled apps";}
         cardValues[index].Text=value;cardSubtitles[index].Text=sub;cardButtons[index].ToolTip=category+" · "+value+" · "+sub;
     }
-    internal Task Show(){Visibility=cards.Visibility=Visibility.Visible;Queue(async()=>{await Overview();await Load();});return work;}
+    internal Task Show(){Visibility=cards.Visibility=Visibility.Visible;Queue(async()=>{await Overview();await Load();await AnalyzeAll();});return work;}
+    void SetRows(MaintenanceRow[] rows)
+    {
+        string selected=selections.GetValueOrDefault(Category);
+        table.ItemsSource=rows;SortRows();table.SelectedItem=rows.FirstOrDefault(r=>r.Id==selected);
+    }
+    void SortRows()
+    {
+        var sort=sorts.GetValueOrDefault(Category,(Property:"Name",Direction:ListSortDirection.Ascending));
+        if(table.ItemsSource!=null)
+        {
+            var view=CollectionViewSource.GetDefaultView(table.ItemsSource);
+            using(view.DeferRefresh())
+            {
+                view.SortDescriptions.Clear();view.SortDescriptions.Add(new(sort.Property,sort.Direction));
+                if(sort.Property!="Name")view.SortDescriptions.Add(new("Name",ListSortDirection.Ascending));
+                view.SortDescriptions.Add(new("Id",ListSortDirection.Ascending));
+            }
+        }
+        foreach(var (property,parts) in headers)
+        {
+            bool active=property==sort.Property;string direction=sort.Direction==ListSortDirection.Ascending?"Ascending":"Descending";
+            parts.Arrow.Text=active?(sort.Direction==ListSortDirection.Ascending?"⌃":"⌄"):"";
+            AutomationProperties.SetItemStatus(parts.Header,active?direction:"");parts.Header.ToolTip="Sort by "+AutomationProperties.GetName(parts.Header)+(active?" · "+direction:"");
+        }
+    }
     void Columns()
     {
+        headers.Clear();
         var view=new GridView();var columns=new List<(string Header,string Property,double Width)>{("Name","Name",230)};
         if(Category=="Startup")columns.Add(("Type","Type",150));
         if(Category=="Services")columns.Add(("Service name","Type",180));else columns.Add(("Scope","Scope",110));
         columns.Add(("State","State",130));
         if(Category=="Services")columns.Add(("Startup type","StartupMode",160));else if(Category=="Cleanup")columns.Add(("Size","Size",95));
         columns.Add(("Details","Details",600));
-        foreach(var column in columns)view.Columns.Add(new(){Header=column.Header,DisplayMemberBinding=new Binding(column.Property),Width=column.Width});
-        table.View=view;
+        foreach(var column in columns)
+        {
+            string property=column.Property=="Size"?"Bytes":column.Property;
+            var arrow=new TextBlock{Width=14,Margin=new(6,0,0,0),VerticalAlignment=VerticalAlignment.Center,TextAlignment=TextAlignment.Center};
+            var caption=new StackPanel{Orientation=Orientation.Horizontal};caption.Children.Add(new TextBlock{Text=column.Header});caption.Children.Add(arrow);
+            var header=new GridViewColumnHeader{Content=caption,Tag=property,Focusable=true};AutomationProperties.SetName(header,column.Header);headers[property]=(header,arrow);
+            view.Columns.Add(new(){Header=header,DisplayMemberBinding=new Binding(column.Property),Width=column.Width});
+        }
+        table.View=view;SortRows();
     }
     public async ValueTask DisposeAsync(){disposed=true;await Hide();reading.Dispose();}
 }

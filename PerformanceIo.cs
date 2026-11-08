@@ -18,12 +18,12 @@ internal sealed record IoRequest(string Scope,bool Start,long Generation);
 // its unique real-time session and exits on owner/pipe loss. No ETL file is made.
 internal static class PerformanceIoWorker
 {
-    internal static async Task<int> Run(string pipeName,int ownerPid,long ownerStarted)
+    internal static async Task<int> Run(string pipeName,int ownerPid,long ownerStarted,CancellationToken session=default)
     {
         using var owner=Process.GetProcessById(ownerPid);
         if(owner.StartTime.ToUniversalTime().Ticks!=ownerStarted||!string.Equals(owner.MainModule.FileName,Environment.ProcessPath,StringComparison.OrdinalIgnoreCase))return 2;
         using var pipe=new NamedPipeClientStream(".",pipeName,PipeDirection.InOut,PipeOptions.Asynchronous);
-        using var lostOwner=new CancellationTokenSource();
+        using var lostOwner=CancellationTokenSource.CreateLinkedTokenSource(session);
         owner.EnableRaisingEvents=true;owner.Exited+=(_,_)=>lostOwner.Cancel();
         if(owner.HasExited)return 2;
         using var release=EventWaitHandle.OpenExisting(pipeName+"-stop");
@@ -182,6 +182,7 @@ internal sealed class IoCollection : IDisposable
 internal sealed class PerformanceIoClient : IAsyncDisposable
 {
     NamedPipeServerStream pipe;Process process;StreamWriter writer;Task receiving,starting,disposal;CancellationTokenSource stop=new();
+    AdministratorSession.Operation administrator;CancellationTokenRegistration sessionStop;
     EventWaitHandle release;int closing;
     internal IoReport Latest {get;private set;}=new("Enable detailed I/O to collect activity",Array.Empty<IoRow>(),0,false);
     internal event Action Changed;
@@ -208,6 +209,17 @@ internal sealed class PerformanceIoClient : IAsyncDisposable
         foreach(var arg in new[]{"--performance-io-worker",name,Environment.ProcessId.ToString(),self.StartTime.ToUniversalTime().Ticks.ToString()})launch.ArgumentList.Add(arg);
         try
         {
+            if(elevation
+#if DEBUG
+                &&LaunchForVerification==null
+#endif
+            )
+            {
+                administrator=await AdministratorSession.Open(name,"io",stop.Token).ConfigureAwait(false);
+                sessionStop=administrator.Stopped.Register(()=>{release.Set();stop.Cancel();});
+            }
+            else
+            {
 #if DEBUG
             process=LaunchForVerification!=null?await LaunchForVerification(launch).ConfigureAwait(false):Process.Start(launch);
 #else
@@ -218,9 +230,10 @@ internal sealed class PerformanceIoClient : IAsyncDisposable
             // on child exit can discard the final permission/failure response.
             process.EnableRaisingEvents=true;process.Exited+=(_,_)=>{if(writer==null)stop.Cancel();};
             if(process.HasExited)stop.Cancel();
+            }
             await pipe.WaitForConnectionAsync(stop.Token).ConfigureAwait(false);
             stop.Token.ThrowIfCancellationRequested();
-            if(!GetNamedPipeClientProcessId(pipe.SafePipeHandle.DangerousGetHandle(),out uint client)||client!=process.Id)throw new IOException("Detailed I/O worker identity differs");
+            if(!GetNamedPipeClientProcessId(pipe.SafePipeHandle.DangerousGetHandle(),out uint client)||client!=(administrator?.Pid??process.Id))throw new IOException("Detailed I/O worker identity differs");
             writer=new StreamWriter(pipe,leaveOpen:true){AutoFlush=true};
             receiving=Receive();
         }
@@ -282,6 +295,7 @@ internal sealed class PerformanceIoClient : IAsyncDisposable
 #endif
             process.Dispose();
         }
+        sessionStop.Dispose();if(administrator!=null)await administrator.DisposeAsync().ConfigureAwait(false);
         release?.Dispose();stop.Dispose();
         // Late focus notifications may still enter the managed semaphore. They
         // observe closing under the gate and never touch retired native handles.

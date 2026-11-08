@@ -35,6 +35,7 @@ internal static class ExplorerIcons
     internal static void Apply()
     {
         Application.Current.Resources["CommandIcon.Performance"]=Performance();
+        Application.Current.Resources["CommandIcon.Administrator"]=Administrator();
         string variant=SystemParameters.HighContrast
             ? (SystemColors.WindowColor.R+SystemColors.WindowColor.G+SystemColors.WindowColor.B<384?"contrast-black":"contrast-white")
             : Appearance.Light?"contrast-standard/theme-light":"contrast-standard/theme-dark";
@@ -135,6 +136,17 @@ internal static class ExplorerIcons
         group.Freeze();var image=new DrawingImage(group);image.Freeze();return image;
     }
 
+    static DrawingImage Administrator()
+    {
+        // User-provided uac-shield.svg silhouette, simplified as requested:
+        // cyan internal dividers, neutral outer outline, transparent quarters.
+        var shield=Geometry.Parse("M12,2.15 C9.55,3.87 6.46,4.88 3.48,5.12 C3.20,7.37 3.20,9.72 3.48,12 C4.05,16.65 7.18,19.69 12,21.85 C16.82,19.69 19.95,16.65 20.52,12 C20.80,9.72 20.80,7.37 20.52,5.12 C17.54,4.88 14.45,3.87 12,2.15 Z");
+        var group=new DrawingGroup{Transform=new ScaleTransform(2d/3,2d/3)};group.Children.Add(new GeometryDrawing(Brushes.Transparent,null,new RectangleGeometry(new Rect(0,0,24,24))));
+        var quarters=new DrawingGroup{ClipGeometry=shield};var blue=SystemParameters.HighContrast?CommandInk:new SolidColorBrush(Color.FromRgb(0x37,0xBF,0xFF));
+        quarters.Children.Add(new GeometryDrawing(null,new Pen(blue,1.6),Geometry.Parse("M12,2.15 L12,21.85 M3.48,12 L20.52,12")));group.Children.Add(quarters);
+        group.Children.Add(new GeometryDrawing(null,new Pen(CommandInk,1.6){LineJoin=PenLineJoin.Round},shield));
+        group.Freeze();var image=new DrawingImage(group);image.Freeze();return image;
+    }
     internal static System.Windows.Controls.Image Image(string key,double size=14)
     {
         var image=new System.Windows.Controls.Image{Width=size,Height=size,Stretch=Stretch.Uniform,SnapsToDevicePixels=true};

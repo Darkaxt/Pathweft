@@ -339,7 +339,7 @@ public sealed class EditorWindow : Window
         if (ready) web.CoreWebView2.PostWebMessageAsJson(json); else queue.Add(json);
     }
 
-    void OnMessage(object sender, CoreWebView2WebMessageReceivedEventArgs e)
+    async void OnMessage(object sender, CoreWebView2WebMessageReceivedEventArgs e)
     {
         using var doc = JsonDocument.Parse(e.WebMessageAsJson);
         var m = doc.RootElement;
@@ -368,7 +368,7 @@ public sealed class EditorWindow : Window
                 Title = m.GetProperty("title").GetString() is { Length: > 0 } t ? $"{Path.GetFileName(t)}  ·  {Path.GetDirectoryName(t)}" : "Pathweft editor";
                 break;
             case "save":
-                SaveTab(Id(), m.GetProperty("text").GetString(), m.GetProperty("encoding").GetString(), m.GetProperty("version").GetInt32());
+                await SaveTab(Id(), m.GetProperty("text").GetString(), m.GetProperty("encoding").GetString(), m.GetProperty("version").GetInt32());
                 break;
             case "closeRequest":
                 _ = CloseDirtyTab(Id());
@@ -386,10 +386,14 @@ public sealed class EditorWindow : Window
         }
     }
 
-    bool SaveTab(int id, string text, string encoding, int version)
+    Task<bool> saving=Task.FromResult(true);
+    Task<bool> SaveTab(int id,string text,string encoding,int version)
+    {var previous=saving;return saving=SaveAfter(previous,id,text,encoding,version);}
+    async Task<bool> SaveAfter(Task<bool> previous,int id, string text, string encoding, int version)
     {
+        await previous;
         var d = docs[id];
-        if (!Write(d.Path, Encode(text, encoding))) return false;
+        if (!await Write(d.Path, Encode(text, encoding))) return false;
         d.Encoding = encoding;
         d.KnownWrite = Stamp(d.Path);
         d.Dirty = false;
@@ -399,13 +403,14 @@ public sealed class EditorWindow : Window
 
     // Written next to the file, then swapped in: a failed write never leaves a half-written file.
     // File.Replace keeps the original's attributes and permissions. A file the user may not write
-    // (hosts, anything under Program Files) can be saved through an elevated copy instead.
-    bool Write(string path, byte[] bytes)
+    // (hosts, anything under Program Files) uses the approved helper's atomic save.
+    async Task<bool> Write(string path, byte[] bytes)
     {
-        var temp = path + ".pathweft-tmp";
+        var temp = path + ".pathweft-"+Guid.NewGuid().ToString("N")+".tmp";
         try
         {
-            File.WriteAllBytes(temp, bytes);
+            using(var output=new FileStream(temp,FileMode.CreateNew,FileAccess.Write,FileShare.None))
+            {output.Write(bytes);output.Flush(true);}
             if (File.Exists(path)) File.Replace(temp, path, null); else File.Move(temp, path);
             return true;
         }
@@ -413,8 +418,8 @@ public sealed class EditorWindow : Window
         {
             TryDelete(temp);
             return PromptDialog.Choose(this, $"Save {Path.GetFileName(path)} as administrator?",
-                "You don't have permission to change this file. Windows will ask to confirm.", "Save as administrator", "Cancel") == 0
-                && WriteElevated(path, bytes);
+                AdministratorSession.Available?"Use the approved administrator session to save this file.":"You don't have permission to change this file. Windows will ask to confirm.", "Save as administrator", "Cancel") == 0
+                && await WriteElevated(path, bytes);
         }
         catch (IOException ex)
         {
@@ -424,23 +429,19 @@ public sealed class EditorWindow : Window
         }
     }
 
-    // The new contents go to %TEMP% first; an elevated cmd copies them over the file, which keeps the
-    // file's own permissions. Windows shows its UAC prompt for it.
-    bool WriteElevated(string path, byte[] bytes)
+    // Reuse the approved session; its fixed save operation verifies the staged
+    // contents and atomically replaces the destination without a shell command.
+    async Task<bool> WriteElevated(string path, byte[] bytes)
     {
-        var temp = Path.Combine(Path.GetTempPath(), $"pathweft-save-{Guid.NewGuid():N}");
+        web.IsEnabled=false;
         try
         {
-            File.WriteAllBytes(temp, bytes);
-            using var p = Process.Start(new ProcessStartInfo("cmd.exe", $"/c copy /y /b \"{temp}\" \"{path}\"")
-                { UseShellExecute = true, Verb = "runas", WindowStyle = ProcessWindowStyle.Hidden });
-            p.WaitForExit();
-            if (p.ExitCode == 0) return true;
-            PromptDialog.Choose(this, $"Couldn't save {Path.GetFileName(path)} as administrator either", null, "OK");
-            return false;
+            await MaintenanceClient.SaveEditor(path,bytes);return true;
         }
         catch (System.ComponentModel.Win32Exception) { return false; } // UAC prompt declined
-        finally { TryDelete(temp); }
+        catch(Exception error)when(error is IOException or UnauthorizedAccessException or OperationCanceledException)
+        {PromptDialog.Choose(this,$"Couldn't save {Path.GetFileName(path)}",error.Message,"OK");return false;}
+        finally { web.IsEnabled=true; }
     }
 
     static void TryDelete(string path)
@@ -460,13 +461,14 @@ public sealed class EditorWindow : Window
 
     async Task CloseDirtyTab(int id)
     {
+        await saving;
         var answer = PromptDialog.Choose(this, $"Save changes to {Path.GetFileName(docs[id].Path)}?",
             "Your changes are lost if you don't save them.", "Save", "Don't save", "Cancel");
         if (answer is 2 or -1) return;
         if (answer == 0)
         {
             var t = JsonNode.Parse(await web.CoreWebView2.ExecuteScriptAsync($"textOf({id})"))!;
-            if (!SaveTab(id, (string)t["text"], (string)t["encoding"], -1)) return;
+            if (!await SaveTab(id, (string)t["text"], (string)t["encoding"], -1)) return;
         }
         Post(new JsonObject { ["type"] = "close", ["id"] = id });
     }
@@ -482,6 +484,7 @@ public sealed class EditorWindow : Window
 
     async Task CloseAll()
     {
+        await saving;
         var dirty = docs.Where(d => d.Value.Dirty).ToList();
         if (dirty.Count > 0)
         {
@@ -491,7 +494,7 @@ public sealed class EditorWindow : Window
             if (answer is 2 or -1) return;
             if (answer == 0)
                 foreach (var t in JsonNode.Parse(await web.CoreWebView2.ExecuteScriptAsync("dirtyTexts()"))!.AsArray())
-                    if (!SaveTab((int)t!["id"], (string)t["text"], (string)t["encoding"], -1)) return;
+                    if (!await SaveTab((int)t!["id"], (string)t["text"], (string)t["encoding"], -1)) return;
         }
         var session = JsonNode.Parse(await web.CoreWebView2.ExecuteScriptAsync("sessionState()"));
         SaveState(settings: null, session: session);

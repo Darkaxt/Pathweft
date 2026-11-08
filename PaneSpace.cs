@@ -34,6 +34,7 @@ public partial class PaneView
     {
         internal string Root;
         internal CancellationTokenSource Cancellation=new();
+        internal bool Administrator=AdministratorSession.Browsing;
         internal Task Work=Task.CompletedTask;
         internal Dictionary<string,SpaceEntry> Nodes=new(StringComparer.OrdinalIgnoreCase);
         internal readonly object Mailbox=new();
@@ -124,7 +125,7 @@ public partial class PaneView
 #endif
         try
         {
-            await SpaceScan.RunAsync(current.Root,preferIndex,SearchInstance,update=>QueueSpace(current,update),current.Cancellation.Token);
+            await ScanWithAccess(current,current.Root,preferIndex,update=>QueueSpace(current,update));
             DrainSpace(current);
             // Indexed descendants are discovered lazily; retain their identities
             // until their own parent enumeration establishes actual membership.
@@ -136,6 +137,9 @@ public partial class PaneView
         catch(OperationCanceledException)when(current.Cancellation.IsCancellationRequested){}
         catch(Exception error){if(space==current&&!current.Stopping){var root=current.Nodes[current.Root];root.State=SpaceState.Failed;root.Failure=error.Message;UpdateSpaceFooter();Error?.Invoke("Space analysis: "+error.Message);}}
     }
+    Task ScanWithAccess(SpaceView current,string path,bool preferIndex,Action<SpaceUpdate> publish)=>current.Administrator
+        ? MaintenanceClient.ScanSpace(path,publish,current.Cancellation.Token)
+        : SpaceScan.RunAsync(path,preferIndex,SearchInstance,publish,current.Cancellation.Token);
     void QueueSpace(SpaceView current,SpaceUpdate update)
     {
         lock(current.Mailbox)
@@ -208,7 +212,9 @@ public partial class PaneView
     {
         var token=current.Cancellation.Token;
         List<SpaceMember> members;
-        try{members=await Task.Run(()=>SpaceScan.Children(path,token),token);}
+        try{members=current.Administrator
+            ? (await MaintenanceClient.ReadFolder(path,token)).Select(row=>new SpaceMember(row.Path,row.Name,(row.Attributes&FileAttributes.Directory)!=0,(row.Attributes&FileAttributes.ReparsePoint)!=0,row.Bytes,row.Modified.ToUniversalTime())).ToList()
+            : await Task.Run(()=>SpaceScan.Children(path,token),token);}
         catch(Exception error)when(error is System.ComponentModel.Win32Exception or IOException or UnauthorizedAccessException)
         {if(space==current&&current.Nodes.TryGetValue(path,out var failed)){failed.State=SpaceState.Denied;failed.Failure=error.Message;failed.Updated();RebuildSpace(current);}return false;}
         token.ThrowIfCancellationRequested();if(space!=current||current.Stopping)return false;DrainSpace(current);
@@ -231,7 +237,7 @@ public partial class PaneView
         // expanded unindexed branch still receives a real metadata measurement.
         foreach(var member in missing.Where(member=>measureMissing&&!sizes.ContainsKey(Path.TrimEndingDirectorySeparator(member.Path))))
         {
-            await SpaceScan.RunAsync(member.Path,false,SearchInstance,update=>QueueSpace(current,update),token);
+            await ScanWithAccess(current,member.Path,false,update=>QueueSpace(current,update));
             DrainSpace(current);
         }
         if(current.Nodes.TryGetValue(path,out var parent))parent.ChildrenRead=true;
@@ -340,7 +346,7 @@ public partial class PaneView
         foreach(var branch in branches)
         {
             var seen=new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            await SpaceScan.RunAsync(branch.Path,false,SearchInstance,update=>{seen.Add(update.Path);QueueSpace(current,update);},token);
+            await ScanWithAccess(current,branch.Path,false,update=>{seen.Add(update.Path);QueueSpace(current,update);});
             DrainSpace(current);
             if(branch.State==SpaceState.Complete)
                 foreach(var key in current.Nodes.Values.Where(row=>row.IsDir&&SizeCache.Within(row.Path,branch.Path)&&!seen.Contains(row.Path)).Select(row=>row.Path).ToArray())

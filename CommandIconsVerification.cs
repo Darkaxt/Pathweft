@@ -26,8 +26,8 @@ public partial class MainWindow
         check(utilities.Select(button=>button.Name).SequenceEqual(new[]{"UpdateButton","WhatsNewButton","HelpButton","SettingsButton"})&&utilities.All(button=>button.ToolTip is string&& !string.IsNullOrEmpty(AutomationProperties.GetName(button))),"Sidebar utilities retain their original actions, accessible names and hover labels at the top");
         check(SidebarFooter.Children.Count==1&&ReferenceEquals(SidebarFooter.Children[0],BinButton)&&FindName("VersionText")==null,"Only Drop bin remains at the bottom; the sidebar brand no longer shows a version");
         var buttons=CommandButtons.Children.OfType<Button>().ToArray();
-        check(buttons.Select(button=>button.Name).SequenceEqual(new[]{"NewFolderCommand","NewFileCommand","OpenCommand","RenameCommand","DeleteCommand","CopyButton","MoveButton","TransfersButton","TerminalCommand","AnalyzeSpaceCommand","HiddenToggle","PanesCommand","PreviewCommand"})&&CommandButtons.Children.OfType<Border>().Count()==4,"The command row groups creation, selected-item actions, transfers, tools and view controls in keyboard/visual order");
-        check(buttons.Length==13&&buttons.All(button=>button.Content is Image {Source:DrawingImage,Width:16,Height:16}),"All existing bottom commands use vector artwork at16 DIP without text labels");
+        check(buttons.Select(button=>button.Name).SequenceEqual(new[]{"NewFolderCommand","NewFileCommand","OpenCommand","RenameCommand","DeleteCommand","CopyButton","MoveButton","TransfersButton","TerminalCommand","AnalyzeSpaceCommand","PerformanceCommand","MaintenanceCommand","HiddenToggle","AdministratorCommand","PanesCommand","PreviewCommand"})&&CommandButtons.Children.OfType<Border>().Count()==4,"The command row groups creation, selected-item actions, transfers, tools and view controls; administrator access sits beside Hidden");
+        check(buttons.Length==16&&buttons.All(button=>button.Content is Image {Source:DrawingImage,Width:16,Height:16}),"All existing bottom commands use vector artwork at16 DIP without text labels");
         check(buttons.All(button=>!string.IsNullOrWhiteSpace(AutomationProperties.GetName(button))&&button.ToolTip is string {Length:>0}),"Icon-only commands retain accessible names and hover guidance");
         foreach(string key in new[]{"Rename","Open","Copy","Move","NewFolder","Delete","Hidden","Preview","DetailsPane","Sort","IconsXL","IconsL","IconsM","List","Details"})
             foreach(string variant in new[]{"contrast-standard/theme-light","contrast-standard/theme-dark","contrast-black","contrast-white"})
@@ -42,7 +42,7 @@ public partial class MainWindow
                 Settings.TextScale=scale;Width=scale==1?1200:1500;Height=850;ApplyAppearance();await Layout();
                 check(Grid.GetRow(SidebarHeaderActions)==0&&utilities.All(button=>button.TranslatePoint(new Point(button.ActualWidth,button.ActualHeight),SidebarHeader).X<=SidebarHeader.ActualWidth+0.1),"Utilities fit beside the brand at the usual sidebar width: "+appearance.Item1+" / "+scale);
                 check(buttons.Where(button=>button.IsVisible).All(button=>button.ActualWidth<=30.1&&button.ActualHeight<=24.1),"Compact command dimensions stay at Pathweft scale: "+appearance.Item1+" / "+scale);
-                check(CommandButtons.ActualWidth<=396.1&&CommandBar.ActualHeight<=24.1,"The grouped command row has only narrow separators, with no Explorer-sized spacing or extra toolbar: "+appearance.Item1+" / "+scale);
+                check(CommandButtons.ActualWidth<=486.1&&CommandBar.ActualHeight<=24.1,"The grouped command row has only narrow separators, with no Explorer-sized spacing or extra toolbar: "+appearance.Item1+" / "+scale);
                 foreach(var pane in new[]{Left,Right})
                 {
                     var view=(Button)pane.FindName("ViewButton");var sort=(Button)pane.FindName("SortButton");

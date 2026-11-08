@@ -25,6 +25,8 @@ static class Program
     [STAThread]
     static void Main(string[] args)
     {
+        if(args.Length==5&&args[0]=="--administrator-session")
+        {Environment.ExitCode=AdministratorSession.Run(args[1],int.Parse(args[2]),long.Parse(args[3]),args[4]).GetAwaiter().GetResult();return;}
         if(args.Length==4&&args[0]=="--maintenance-worker")
         {Environment.ExitCode=MaintenanceWorker.Run(args[1],int.Parse(args[2]),long.Parse(args[3])).GetAwaiter().GetResult();return;}
         if(args.Length==1&&args[0]=="--performance-mcp")
@@ -36,6 +38,8 @@ static class Program
         if(args.FirstOrDefault(a=>a.StartsWith("--relocate-profile=")) is { } relocation)
         { Environment.ExitCode=StorageLocation.Run(relocation["--relocate-profile=".Length..]);return; }
 #if DEBUG
+        if(args.Length==3&&args[0]=="--verify-administrator-owner")
+        {Environment.ExitCode=AdministratorOwnerVerification.Run(args[1],args[2]).GetAwaiter().GetResult();return;}
         if(args.Length==2&&args[0]=="--verify-maintenance-native")
         {Environment.ExitCode=MaintenanceNativeVerification.Run(args[1]).GetAwaiter().GetResult();return;}
         if(args.Length==2&&args[0]=="--verify-performance-bridge")
@@ -329,6 +333,7 @@ public partial class App : Application
     protected override void OnExit(ExitEventArgs e)
     {
         PerformanceMonitor.Stop();
+        AdministratorSession.End().GetAwaiter().GetResult();
 #if DEBUG
         HiddenTrialPresentation.StopObserver();
 #endif

@@ -7,13 +7,16 @@ using System.Text.Json;
 namespace FileExplorer;
 
 internal sealed record MaintenanceRequest(string Action,string Id,string Journal,string Cache);
-internal sealed record MaintenanceReply(bool Ok,string Message,MaintenanceRow Row=null);
+internal sealed record AccessEntry(string Name,string Path,FileAttributes Attributes,long Bytes,DateTime Modified);
+internal sealed record MaintenanceReply(bool Ok,string Message,MaintenanceRow Row=null,AccessEntry[] Entries=null,SpaceUpdate[] Updates=null,bool More=false);
 
 // Authenticated, task-scoped privilege boundary following PerformanceIoWorker's
 // existing owner/pipe contract. No listener/service, arbitrary shell or driver.
 internal sealed class MaintenanceClient : IAsyncDisposable
 {
     NamedPipeServerStream pipe;Process process;StreamReader reader;StreamWriter writer;
+    AdministratorSession.Operation session;CancellationTokenRegistration sessionStop;
+    Task disposal;
     readonly CancellationTokenSource stopped=new();
     internal async Task<MaintenanceReply> Start(MaintenanceRequest request,bool elevated,CancellationToken cancel=default)
     {
@@ -24,11 +27,20 @@ internal sealed class MaintenanceClient : IAsyncDisposable
         foreach(string arg in new[]{"--maintenance-worker",name,Environment.ProcessId.ToString(),owner.StartTime.ToUniversalTime().Ticks.ToString()})launch.ArgumentList.Add(arg);
         try
         {
-            process=await Task.Run(()=>Process.Start(launch))??throw new IOException("Maintenance worker did not start");
-            process.EnableRaisingEvents=true;process.Exited+=(_,_)=>{if(reader==null)stopped.Cancel();};if(process.HasExited)stopped.Cancel();
-            using var waiting=CancellationTokenSource.CreateLinkedTokenSource(stopped.Token,cancel);
-            await pipe.WaitForConnectionAsync(waiting.Token);
-            if(!GetNamedPipeClientProcessId(pipe.SafePipeHandle.DangerousGetHandle(),out uint client)||client!=process.Id)throw new IOException("Maintenance worker identity differs");
+            if(elevated)
+            {
+                session=await AdministratorSession.Open(name,"maintenance",cancel,enable:request.Action is not ("list" or "space")).ConfigureAwait(false);
+                sessionStop=session.Stopped.Register(()=>{stopped.Cancel();pipe.Dispose();});
+            }
+            else
+            {
+                process=await Task.Run(()=>Process.Start(launch))??throw new IOException("Maintenance worker did not start");
+                process.EnableRaisingEvents=true;process.Exited+=(_,_)=>{if(reader==null)stopped.Cancel();};if(process.HasExited)stopped.Cancel();
+            }
+            // Admission has already started this exact operation; connect it
+            // before honoring cancellation so the hosted reader can retire.
+            await pipe.WaitForConnectionAsync(stopped.Token);
+            if(!GetNamedPipeClientProcessId(pipe.SafePipeHandle.DangerousGetHandle(),out uint client)||client!=(session?.Pid??process.Id))throw new IOException("Maintenance worker identity differs");
             reader=new(pipe,leaveOpen:true);writer=new(pipe,leaveOpen:true){AutoFlush=true};
             return await Send(request,cancel);
         }
@@ -41,12 +53,53 @@ internal sealed class MaintenanceClient : IAsyncDisposable
         {
             await writer.WriteLineAsync(JsonSerializer.Serialize(request));
             string line=await reader.ReadLineAsync(stopped.Token)??throw new IOException("Maintenance worker exited before returning its result");
-            if(line.Length>256*1024)throw new InvalidDataException("Maintenance response is too large");
+            if(line.Length>8*1024*1024)throw new InvalidDataException("Maintenance response is too large");
             return JsonSerializer.Deserialize<MaintenanceReply>(line)??throw new InvalidDataException("Invalid maintenance response");
         }
         catch(Exception)when(cancel.IsCancellationRequested){throw new OperationCanceledException(cancel);}
     }
-    public async ValueTask DisposeAsync()
+    internal async Task Stream(MaintenanceRequest request,Action<MaintenanceReply> publish,CancellationToken cancel)
+    {
+        try
+        {
+            var reply=await Start(request,true,cancel).ConfigureAwait(false);
+            using var cancellation=cancel.Register(()=>pipe?.Dispose());
+            while(true)
+            {
+                if(!reply.Ok)throw new IOException(reply.Message);publish(reply);if(!reply.More)break;
+                string line=await reader.ReadLineAsync(stopped.Token).ConfigureAwait(false)??throw new IOException("Administrator read ended before completion");
+                if(line.Length>8*1024*1024)throw new InvalidDataException("Administrator read response is too large");
+                reply=JsonSerializer.Deserialize<MaintenanceReply>(line)??throw new InvalidDataException("Invalid administrator read");
+            }
+        }
+        catch(Exception)when(cancel.IsCancellationRequested){throw new OperationCanceledException(cancel);}
+    }
+    internal static async Task<List<AccessEntry>> ReadFolder(string path,CancellationToken cancel)
+    {
+        var rows=new List<AccessEntry>();await using var client=new MaintenanceClient();
+        await client.Stream(new("list",path,null,null),reply=>{if(reply.Entries!=null)rows.AddRange(reply.Entries);},cancel).ConfigureAwait(false);return rows;
+    }
+    internal static async Task ScanSpace(string path,Action<SpaceUpdate> publish,CancellationToken cancel)
+    {
+        await using var client=new MaintenanceClient();
+        await client.Stream(new("space",path,null,null),reply=>{if(reply.Updates!=null)foreach(var update in reply.Updates)publish(update);},cancel).ConfigureAwait(false);
+    }
+    internal static async Task SaveEditor(string path,byte[] bytes)
+    {
+        string staging=Path.Combine(DataFolder.Cache,"EditorSaves");Directory.CreateDirectory(staging);
+        string source=Path.Combine(staging,Guid.NewGuid().ToString("N"));
+        try
+        {
+            await File.WriteAllBytesAsync(source,bytes).ConfigureAwait(false);
+            string hash=Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(bytes));
+            await using var client=new MaintenanceClient();
+            var result=await client.Start(new("save-editor",Path.GetFullPath(path),hash,source),true).ConfigureAwait(false);
+            if(!result.Ok)throw new IOException(result.Message);
+        }
+        finally{File.Delete(source);}
+    }
+    public ValueTask DisposeAsync()=>new(disposal??=Close());
+    async Task Close()
     {
         stopped.Cancel();
         // Cancellation may already have closed the pipe. Retiring the native
@@ -54,6 +107,7 @@ internal sealed class MaintenanceClient : IAsyncDisposable
         try{writer?.Dispose();}catch(Exception error)when(error is IOException or ObjectDisposedException){}
         try{reader?.Dispose();}catch(Exception error)when(error is IOException or ObjectDisposedException){}
         pipe?.Dispose();
+        sessionStop.Dispose();if(session!=null)await session.DisposeAsync().ConfigureAwait(false);
         try{if(process!=null){if(reader==null&&!process.HasExited)process.Kill(entireProcessTree:true);await process.WaitForExitAsync();}}
         finally{process?.Dispose();stopped.Dispose();}
     }
@@ -61,11 +115,11 @@ internal sealed class MaintenanceClient : IAsyncDisposable
 }
 internal static class MaintenanceWorker
 {
-    internal static async Task<int> Run(string name,int pid,long started)
+    internal static async Task<int> Run(string name,int pid,long started,CancellationToken session=default)
     {
         using var owner=Process.GetProcessById(pid);
         if(owner.StartTime.ToUniversalTime().Ticks!=started||!string.Equals(owner.MainModule.FileName,Environment.ProcessPath,StringComparison.OrdinalIgnoreCase))return 2;
-        using var lost=new CancellationTokenSource();owner.EnableRaisingEvents=true;owner.Exited+=(_,_)=>lost.Cancel();if(owner.HasExited)return 2;
+        using var lost=CancellationTokenSource.CreateLinkedTokenSource(session);owner.EnableRaisingEvents=true;owner.Exited+=(_,_)=>lost.Cancel();if(owner.HasExited)return 2;
         using var pipe=new NamedPipeClientStream(".",name,PipeDirection.InOut,PipeOptions.Asynchronous);
         try
         {
@@ -76,7 +130,49 @@ internal static class MaintenanceWorker
             MaintenanceReply failure=null;
             try
             {
-            if(request.Action=="analyze")
+            if(request.Action is "list" or "space")
+            {
+                if(!Path.IsPathFullyQualified(request.Id))throw new ArgumentException("An absolute filesystem folder is required");
+                string folder=Path.GetFullPath(request.Id);
+                var disconnected=Read();_=disconnected.ContinueWith(_=>lost.Cancel(),TaskScheduler.Default);
+                if(request.Action=="list")
+                {
+                    await Task.Run(()=>
+                    {
+                        var page=new List<AccessEntry>(16);
+                        foreach(var entry in new DirectoryInfo(folder).EnumerateFileSystemInfos())
+                        {
+                            lost.Token.ThrowIfCancellationRequested();
+                            page.Add(new(entry.Name,entry.FullName,entry.Attributes,entry is FileInfo file?file.Length:-1,entry.LastWriteTime));
+                            if(page.Count==16){writer.WriteLine(JsonSerializer.Serialize(new MaintenanceReply(true,"Reading folder",Entries:page.ToArray(),More:true)));page.Clear();}
+                        }
+                        writer.WriteLine(JsonSerializer.Serialize(new MaintenanceReply(true,"Folder read",Entries:page.ToArray())));
+                    },lost.Token).ConfigureAwait(false);
+                }
+                else
+                {
+                    var channel=System.Threading.Channels.Channel.CreateBounded<SpaceUpdate>(512);
+                    var scan=Task.Run(async()=>
+                    {
+                        try{await SpaceScan.RunAsync(folder,false,null,update=>channel.Writer.WriteAsync(update,lost.Token).AsTask().GetAwaiter().GetResult(),lost.Token).ConfigureAwait(false);channel.Writer.TryComplete();}
+                        catch(Exception error){channel.Writer.TryComplete(error);throw;}
+                    });
+                    try
+                    {
+                        var page=new List<SpaceUpdate>(8);
+                        await foreach(var update in channel.Reader.ReadAllAsync(lost.Token).ConfigureAwait(false))
+                        {
+                            page.Add(update);
+                            if(page.Count==8||update.Path.Equals(folder,StringComparison.OrdinalIgnoreCase)&&update.State is not (SpaceState.Pending or SpaceState.Scanning))
+                            {await writer.WriteLineAsync(JsonSerializer.Serialize(new MaintenanceReply(true,"Measuring folder",Updates:page.ToArray(),More:true))).ConfigureAwait(false);page.Clear();}
+                        }
+                        await scan.ConfigureAwait(false);
+                        await writer.WriteLineAsync(JsonSerializer.Serialize(new MaintenanceReply(true,"Folder measured",Updates:page.ToArray()))).ConfigureAwait(false);
+                    }
+                    finally{lost.Cancel();await scan.ConfigureAwait(false);}
+                }
+            }
+            else if(request.Action=="analyze")
             {
                 var target=CleanupReview.Targets.SingleOrDefault(t=>t.Id==request.Id)??throw new ArgumentException("Unknown cleanup category");
                 // Keep the exact review with its owner until Clean or disconnect.
@@ -119,6 +215,7 @@ internal static class MaintenanceWorker
     }
     internal static async Task<string> Apply(MaintenanceRequest request,CancellationToken cancel=default)
     {
+        if(request.Action=="save-editor")return SaveEditor(request,cancel);
         if(request.Action=="restore-point")return await WindowsAction("RestorePoint",cancel:cancel);
         if(request.Action=="remove-app")
         {
@@ -134,6 +231,27 @@ internal static class MaintenanceWorker
         if(restore)Maintenance.RestoreRegistry(request.Id,request.Journal);
         else Maintenance.ApplyRegistry(request.Id,request.Id.StartsWith("startup:")?Maintenance.StartupEdits(request.Id):Maintenance.TweakEdits(request.Id),request.Journal);
         return restore?"Original settings restored.":"Change verified. Original settings saved for Restore.";
+    }
+    static string SaveEditor(MaintenanceRequest request,CancellationToken cancel)
+    {
+        if(!Path.IsPathFullyQualified(request.Id)||!Path.IsPathFullyQualified(request.Cache))throw new ArgumentException("An absolute editor destination and staged source are required");
+        string source=Path.GetFullPath(request.Cache),destination=Path.GetFullPath(request.Id);
+        string staging=Path.Combine(DataFolder.Cache,"EditorSaves");
+        if(!string.Equals(Path.GetDirectoryName(source),staging,StringComparison.OrdinalIgnoreCase)||!Guid.TryParseExact(Path.GetFileName(source),"N",out _))throw new ArgumentException("Editor source is outside its staging folder");
+        if((File.GetAttributes(source)&FileAttributes.ReparsePoint)!=0)throw new IOException("Editor source is a link");
+        using var input=new FileStream(source,FileMode.Open,FileAccess.Read,FileShare.Read);
+        if(!Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(input)).Equals(request.Journal,StringComparison.Ordinal))throw new IOException("Editor contents changed before saving");
+        input.Position=0;cancel.ThrowIfCancellationRequested();
+        string temporary=destination+".pathweft-"+Guid.NewGuid().ToString("N")+".tmp";
+        try
+        {
+            using(var output=new FileStream(temporary,FileMode.CreateNew,FileAccess.Write,FileShare.None))
+            {input.CopyTo(output);output.Flush(true);}
+            cancel.ThrowIfCancellationRequested();
+            if(File.Exists(destination))File.Replace(temporary,destination,null);else File.Move(temporary,destination);
+            return "File saved";
+        }
+        finally{File.Delete(temporary);}
     }
     internal static async Task<string> WindowsAction(string action,string package=null,CancellationToken cancel=default)
     {

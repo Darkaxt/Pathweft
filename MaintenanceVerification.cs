@@ -17,7 +17,17 @@ public partial class MainWindow
         active.ListForVerification.SelectedItem=active.Items.First(x=>!x.IsUp);string path=active.Dir;var selection=active.Selected.Select(x=>x.Path).ToArray();
         MaintenanceCommand.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await paneModeWork;UpdateLayout();
         check(maintenance.IsVisible&&!PaneArea.IsVisible&&AnalysisVisible&&!TerminalCommand.IsEnabled&&Equals(MaintenanceCommand.Tag,"on"),"Actual brush opens Maintenance in the main pane and disables hidden file actions");
-        check(maintenance.Rows.Items.Count==4&&maintenance.State.Contains("no changes"),"Opening Cleanup is read-only and lists only curated categories");
+        check(maintenance.Rows.Items.Count==4&&maintenance.Rows.Items.Cast<MaintenanceRow>().All(r=>r.Bytes.HasValue)&&maintenance.State=="All categories reviewed. Nothing has been removed.","Actual Maintenance button automatically queues every read-only Cleanup estimate without selecting a row or requesting elevation");
+        check(maintenance.Rows.SelectedItem==null,"Automatic analysis does not select a cleanup action on the user's behalf");
+        VerifyMaintenanceSorting(maintenance,check);
+        var reached=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);var resume=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        maintenance.AnalyzeStepForVerification=async index=>{if(index==1){reached.TrySetResult();await resume.Task;}};
+        var originalWork=maintenance.Show();await reached.Task;
+        check(maintenance.State.Contains("2 of 4")&&maintenance.Rows.Items.Cast<MaintenanceRow>().Single(x=>x.Id=="user-temp").Bytes.HasValue,"Automatic Cleanup publishes completed category estimates before the queue finishes");
+        maintenance.CancelForVerification();resume.SetResult();await originalWork;maintenance.AnalyzeStepForVerification=null;
+        check(maintenance.State.StartsWith("Cancelled")&&maintenance.Rows.Items.Cast<MaintenanceRow>().Single(x=>x.Id=="user-temp").Bytes.HasValue,"Actual Cancel drains the original analysis queue and retains completed reviews");
+        maintenance.Rows.SelectedItem=null;await maintenance.ClickForVerification("Analyze");
+        check(maintenance.State=="All categories reviewed. Nothing has been removed.","Analyze can run the complete queue without selecting a row");
         check(maintenance.Cards.IsVisible&&!StatsRow.IsVisible&&!performance.IsVisible&&((System.Windows.Controls.Primitives.UniformGrid)maintenance.Cards).Children.Count==5,"Brush replaces the bottom statistics with exactly five maintenance summary tabs");
         check(!PerformanceMode&&PerformanceCommand.Tag==null&&System.Windows.Automation.AutomationProperties.GetItemStatus(PerformanceCommand)=="Off","Maintenance exclusively owns the pane and Performance is off");
         PerformanceCommand.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await paneModeWork;UpdateLayout();
@@ -34,7 +44,8 @@ public partial class MainWindow
         {
             await maintenance.CategoryForVerification(category);check(!maintenance.State.Contains("failed",StringComparison.OrdinalIgnoreCase),"Native read-only category opens: "+category);
             check(category=="Windows apps"||maintenance.Rows.Items.Count>0,"Category exposes actual Windows rows: "+category);
-            var headers=((GridView)maintenance.Rows.View).Columns.Select(x=>x.Header.ToString()).ToArray();
+            var headers=((GridView)maintenance.Rows.View).Columns.Select(x=>System.Windows.Automation.AutomationProperties.GetName((GridViewColumnHeader)x.Header)).ToArray();
+            VerifyMaintenanceSorting(maintenance,check);
             if(category=="Startup")check(headers.Contains("Type")&&!headers.Contains("Size")&&maintenance.Rows.Items.Cast<MaintenanceRow>().Any(x=>x.Type=="Registry Run"),"Startup presents source Type and omits the irrelevant Size column");
             if(category=="Services")check(maintenance.Rows.Items.Count>10&&headers.Contains("Startup type")&&maintenance.Rows.Items.Cast<MaintenanceRow>().All(x=>x.State!="Not installed"),"Services enumerates installed SCM entries beyond the donor shortlist and exposes actual startup modes");
             var selected=((System.Windows.Controls.Primitives.UniformGrid)maintenance.Cards).Children.Cast<Button>().Where(x=>Equals(x.Tag,"on")).ToArray();
@@ -92,8 +103,13 @@ public partial class MainWindow
         await maintenance.CategoryForVerification("Cleanup");maintenance.Rows.SelectedItem=maintenance.Rows.Items.Cast<MaintenanceRow>().Single(x=>x.Id=="user-temp");
         await maintenance.ClickForVerification("Analyze");
         long? reviewed=maintenance.Rows.Items.Cast<MaintenanceRow>().Single(x=>x.Id=="user-temp").Bytes;
+        var sizeHeader=(GridViewColumnHeader)((GridView)maintenance.Rows.View).Columns.Single(x=>((GridViewColumnHeader)x.Header).Tag as string=="Bytes").Header;
+        sizeHeader.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        await maintenance.ClickForVerification("Analyze");
+        check((maintenance.Rows.SelectedItem as MaintenanceRow)?.Id=="user-temp"&&System.Windows.Automation.AutomationProperties.GetItemStatus(sizeHeader)=="Ascending", "Analysis replaces rows without losing selection or numeric sort");
         await maintenance.CategoryForVerification("Startup");await maintenance.CategoryForVerification("Cleanup");
         check(reviewed.HasValue&&maintenance.Rows.Items.Cast<MaintenanceRow>().Single(x=>x.Id=="user-temp").Bytes==reviewed,"Cleanup summary and exact review survive switching bottom tabs");
+        check((maintenance.Rows.SelectedItem as MaintenanceRow)?.Id=="user-temp"&&System.Windows.Data.CollectionViewSource.GetDefaultView(maintenance.Rows.ItemsSource).SortDescriptions[0].PropertyName=="Bytes","Category navigation preserves the selected identity and category's sort");
         maintenance.Rows.SelectedItem=maintenance.Rows.Items.Cast<MaintenanceRow>().Single(x=>x.Id=="user-temp");
         await S1Verification.Snapshot(this,root,"maintenance-cleanup-reviewed");
         File.WriteAllText(changed,"changed since review");File.WriteAllText(added,"not reviewed");
@@ -117,6 +133,36 @@ public partial class MainWindow
         check(PaneArea.IsVisible&&active.Dir==path&&active.Selected.Select(x=>x.Path).SequenceEqual(selection)&&TerminalCommand.IsEnabled,"Back/toggle restores the existing browser path, selection and file commands");
         string reviews=Path.Combine(DataFolder.Cache,"Maintenance");check(!Directory.Exists(reviews)||!Directory.EnumerateFiles(reviews).Any(),"Closing Maintenance retires transient cleanup review manifests");
         File.WriteAllText(Path.Combine(root,"maintenance-native.json"),JsonSerializer.Serialize(new{journal=Maintenance.Undo().Count,services=Maintenance.Services.Length,tweaks=Maintenance.Tweaks.Length,processOwned=true}));
+    }
+    static void VerifyMaintenanceSorting(MaintenancePanel panel,Action<bool,string> check)
+    {
+        var table=panel.Rows;var columns=((GridView)table.View).Columns;
+        string selected=(table.SelectedItem as MaintenanceRow)?.Id;
+        foreach(var column in columns)
+        {
+            var header=(GridViewColumnHeader)column.Header;string property=(string)header.Tag;
+            header.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            string direction=System.Windows.Automation.AutomationProperties.GetItemStatus(header);
+            var view=System.Windows.Data.CollectionViewSource.GetDefaultView(table.ItemsSource);
+            check(view.SortDescriptions[0].PropertyName==property&&direction.Length>0,"Actual sortable header selects "+panel.Category+" / "+property);
+            var values=table.Items.Cast<MaintenanceRow>().Select(x=>typeof(MaintenanceRow).GetProperty(property).GetValue(x)).ToArray();
+            var comparison=System.Collections.Comparer.Default;
+            check(values.Zip(values.Skip(1),(a,b)=>direction=="Ascending"?comparison.Compare(a,b)<=0:comparison.Compare(a,b)>=0).All(x=>x),"Actual rows follow header ordering: "+panel.Category+" / "+property);
+            header.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            check(System.Windows.Automation.AutomationProperties.GetItemStatus(header)!=direction,"Header reverses direction: "+property);
+        }
+        check((table.SelectedItem as MaintenanceRow)?.Id==selected,"Header sorting retains the selected identity");
+        if(panel.Category=="Cleanup")
+        {
+            var original=table.ItemsSource;
+            table.ItemsSource=new[]{new MaintenanceRow("kb","Kilobytes","This computer","Ready","",2048),new MaintenanceRow("mb","Megabytes","This computer","Ready","",1048576),new MaintenanceRow("b","Bytes","This computer","Ready","",10),new MaintenanceRow("unknown","Unknown","This computer","Pending","")};
+            var header=(GridViewColumnHeader)columns.Single(c=>((GridViewColumnHeader)c.Header).Tag as string=="Bytes").Header;
+            header.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            check(table.Items.Cast<MaintenanceRow>().Where(x=>x.Bytes.HasValue).Select(x=>x.Bytes.Value).SequenceEqual(new long[]{10,2048,1048576}),"Size header compares bytes numerically across differently formatted units and unknown estimates");
+            header.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            check(table.Items.Cast<MaintenanceRow>().Where(x=>x.Bytes.HasValue).Select(x=>x.Bytes.Value).SequenceEqual(new long[]{1048576,2048,10}),"Numeric size order reverses correctly");
+            table.ItemsSource=original;table.SelectedItem=table.Items.Cast<MaintenanceRow>().FirstOrDefault(x=>x.Id==selected);
+        }
     }
     static IEnumerable<System.Windows.Media.SolidColorBrush> TableSurface(ListView table)
     {

@@ -470,6 +470,7 @@
           <Border Style="{StaticResource CommandDivider}"/>
           <!-- View -->
           <Button x:Name="HiddenToggle" Style="{StaticResource CompactCommand}" Click="Hidden_Click" ToolTip="Show or hide Windows hidden and dot-prefixed files (Ctrl+H)" AutomationProperties.Name="Show hidden files"><Image Width="16" Height="16" Source="{DynamicResource CommandIcon.Hidden}"/></Button>
+          <Button x:Name="AdministratorCommand" Style="{StaticResource CompactCommand}" Click="Administrator_Click" ToolTip="Standard access — switch to administrator" AutomationProperties.Name="Standard access — switch to administrator"><Image Width="16" Height="16" Source="{DynamicResource CommandIcon.Administrator}"/></Button>
           <!-- in screen order: first pane, second pane, preview -->
           <Button x:Name="PanesCommand" Style="{StaticResource CompactCommand}" Click="Panes_Click" ToolTip="One pane or two (Ctrl+P)" AutomationProperties.Name="One or two panes"><Image Width="16" Height="16" Source="{DynamicResource CommandIcon.Panes}"/></Button>
           <Button x:Name="PreviewCommand" Style="{StaticResource CompactCommand}" Click="Preview_Click" ToolTip="Show the selected file beside the panes (Alt+P)" AutomationProperties.Name="Preview pane"><Image Width="16" Height="16" Source="{DynamicResource CommandIcon.Preview}"/></Button>

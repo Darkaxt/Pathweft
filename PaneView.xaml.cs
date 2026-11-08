@@ -523,6 +523,18 @@ public partial class PaneView : UserControl
     public static bool WindowShown;
     public bool Listed; // its first folder is on screen (the startup clock waits for it)
     int navVersion; // a newer Navigate wins; a slow share must not overwrite the folder you moved on to
+    CancellationTokenSource accessReading;
+    internal async Task RefreshAccessMode()
+    {
+        accessReading?.Cancel();prefetching?.Cancel();lock(listCache)listCache.Clear();
+        if(space is {} current)
+        {
+            current.Cancellation.Cancel();await current.Work;current.Cancellation.Dispose();current.Cancellation=new();
+            current.Administrator=AdministratorSession.Browsing;current.QuietRefresh=true;
+            current.Work=RunSpaceAsync(current,preferIndex:false);return;
+        }
+        if(!IsWidget&&!InSearch&&!IsVirtual(Dir))Navigate(Dir,null,false,true);
+    }
 
     public void Navigate(string dir, string select = null, bool record = true)
         => Navigate(dir,select,record,refresh:false);
@@ -577,6 +589,7 @@ public partial class PaneView : UserControl
         bool foregroundLoading=loadingListing>=0;
         int v = GoTo(di.FullName, record,preserveAddress:refresh&&di.FullName.Equals(Dir,StringComparison.OrdinalIgnoreCase)&&!InSearch);
         ListingLoading(v,!refresh||foregroundLoading);
+        accessReading?.Cancel();accessReading?.Dispose();var access=accessReading=new();var accessToken=access.Token;bool administrator=AdministratorSession.Browsing;
         // Observe before reading or sizing: an installation can finish during either operation.
         if(watcher?.Path!=di.FullName)Watch();
 
@@ -592,7 +605,7 @@ public partial class PaneView : UserControl
         // Reading the folder can block — on a network share for
         // the best part of a second — so they happen off the UI thread and the list is handed over
         // when it's ready. The window never freezes on a folder change.
-        Task.Run(() =>
+        Task.Run(async () =>
         {
 #if DEBUG
             BeforeListingForVerification?.Invoke(di.FullName);
@@ -600,11 +613,11 @@ public partial class PaneView : UserControl
             // Always read: a folder's timestamp moves when a child is added, removed or renamed, but not
             // when a file inside is rewritten — a growing download or log kept its old size forever.
             long stamp = Stamp(di.FullName);
-            var list = ReadFolder(di, hidden, out var error);
+            var (list,error)=await ReadFolderAsync(di,hidden,administrator,accessToken);
 
             Dispatcher.BeginInvoke(() =>
             {
-                if (v != navVersion) return; // the user has already moved on
+                if (v != navVersion||access.IsCancellationRequested) return; // the user has already moved on
                 ListingLoaded(v);
                 if (error != null)
                 {
@@ -614,10 +627,10 @@ public partial class PaneView : UserControl
                 }
                 // Same files as the rows on screen: only sizes and dates are brought up to date, so the
                 // scroll position, the selection and the icons stay. Otherwise the list is replaced.
-                bool shown = cached != null && cached.Items == items;
+                bool shown = cached != null && cached.Items == items||refresh&&itemsFolder==di.FullName;
                 if (shown && Patch(list))
                 {
-                    Remember(di.FullName, cached.Items, stamp, hidden);
+                    Remember(di.FullName, items as List<Entry>??items.ToList(), stamp, hidden);
                     if (select != null && items.FirstOrDefault(e => e.Name.Equals(select, StringComparison.OrdinalIgnoreCase)) is { } row)
                     {
                         List.SelectedItem = row;
@@ -652,7 +665,7 @@ public partial class PaneView : UserControl
     }
 
     // ---- the folder cache: what makes tab switching and re-opening a folder instant ----
-    sealed class Listing { public List<Entry> Items; public long Stamp; public long UsedAt; public bool Hidden; }
+    sealed class Listing { public List<Entry> Items; public long Stamp; public long UsedAt; public bool Hidden; public bool Administrator; }
 
     // Per pane, so a rename in one pane can't dim rows in the other. 200 folders is a few MB.
     readonly Dictionary<string, Listing> listCache = new(StringComparer.OrdinalIgnoreCase);
@@ -668,7 +681,7 @@ public partial class PaneView : UserControl
     {
         lock (listCache)
         {
-            if (!listCache.TryGetValue(path, out var hit) || hit.Hidden != ShowHidden) return null;
+            if (!listCache.TryGetValue(path, out var hit) || hit.Hidden != ShowHidden||hit.Administrator!=AdministratorSession.Browsing) return null;
             hit.UsedAt = DateTime.UtcNow.Ticks;
             return hit;
         }
@@ -679,7 +692,7 @@ public partial class PaneView : UserControl
         lock (listCache)
         {
             if (hidden != ShowHidden) return;
-            listCache[path] = new Listing { Items = list, Stamp = stamp, UsedAt = DateTime.UtcNow.Ticks, Hidden = hidden };
+            listCache[path] = new Listing { Items = list, Stamp = stamp, UsedAt = DateTime.UtcNow.Ticks, Hidden = hidden,Administrator=AdministratorSession.Browsing };
             while (listCache.Count > MaxFolders || listCache.Values.Sum(l => l.Items.Count) > MaxEntries)
             {
                 var oldest = listCache.OrderBy(kv => kv.Value.UsedAt).First().Key;
@@ -710,6 +723,22 @@ public partial class PaneView : UserControl
         }
         return list;
     }
+    static async Task<(List<Entry> Items,string Error)> ReadFolderAsync(DirectoryInfo folder,bool hidden,bool administrator,CancellationToken cancel)
+    {
+        if(!administrator){var ordinary=ReadFolder(folder,hidden,out var failure);return(ordinary,failure);}
+        try
+        {
+            var rows=await MaintenanceClient.ReadFolder(folder.FullName,cancel).ConfigureAwait(false);
+            return(rows.Where(row=>FileVisibility.Visible(row.Name,row.Attributes,hidden)).Select(row=>new Entry
+            {
+                Name=row.Name,Path=row.Path,IsDir=(row.Attributes&FileAttributes.Directory)!=0,Attributes=row.Attributes,
+                Modified=row.Modified,Size=(row.Attributes&FileAttributes.Directory)!=0?SizeCache.Peek(row.Path,row.Modified.ToUniversalTime()):row.Bytes,
+                IsCut=CutPaths.Contains(row.Path),ReadOnlyReason=ReadOnlyIcons.AttributeReason((row.Attributes&FileAttributes.Directory)!=0,row.Attributes)
+            }).ToList(),null);
+        }
+        catch(OperationCanceledException)when(cancel.IsCancellationRequested){return(new(),"Folder read cancelled");}
+        catch(Exception error)when(error is IOException or UnauthorizedAccessException or InvalidOperationException or System.ComponentModel.Win32Exception){return(new(),error.Message);}
+    }
 
     /// Reads folders into the cache in the background, so opening one of them costs nothing: the other
     /// tabs first (those are one click away), then the subfolders of the one being shown.
@@ -724,6 +753,7 @@ public partial class PaneView : UserControl
             .Concat(items.Where(e => e.IsDir && !e.IsUp).Select(e => e.Path).Take(40))
             .Distinct(StringComparer.OrdinalIgnoreCase).ToList();
         bool hidden = ShowHidden;
+        bool administrator=AdministratorSession.Browsing;
         Task.Run(() =>
         {
             foreach (var path in todo)
@@ -731,8 +761,11 @@ public partial class PaneView : UserControl
                 if (cts.IsCancellationRequested) return;
                 long stamp = Stamp(path);
                 if (stamp == 0 || Cached(path) is { } hit && hit.Stamp == stamp) continue; // already fresh
+                // Do not issue privileged reads speculatively. The explicit
+                // foreground navigation owns each administrator enumeration.
+                if(administrator)continue;
                 var list = ReadFolder(new DirectoryInfo(path), hidden, out var error);
-                if (error == null && !cts.IsCancellationRequested) Dispatcher.BeginInvoke(() => Remember(path, list, stamp, hidden));
+                if (error == null && !cts.IsCancellationRequested) Dispatcher.BeginInvoke(() => {if(!cts.IsCancellationRequested&&!AdministratorSession.Browsing)Remember(path, list, stamp, hidden);});
             }
         }, cts.Token);
     }
@@ -1437,6 +1470,7 @@ public partial class PaneView : UserControl
         indexedSearch=false;
         StopColumns();
         indexedCancellation?.Cancel();sizing?.Cancel();prefetching?.Cancel();icons?.Cancel();thumbs?.Cancel();
+        accessReading?.Cancel();
         renameTimer.Stop();zoomTimer?.Stop();overlayTimer?.Stop();
     }
 

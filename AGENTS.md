@@ -1,5 +1,16 @@
 # Pathweft development
 
+Current2026-11-08/spec0.92: S34 COMPLETE for MAINT-06..07 through actual UI232500
+and dark/light100/150-percent/narrow captures. Automatic standard Cleanup queue,
+sorting, selection, exact review/cancel/restore criteria pass. S30 now ACTIVE for
+the renewed admin-toggle request. Source218544/helper235336 and owner233356/helper225008
+pass protected enumeration/analysis/editor saves, concurrent admission, Cleanup/I/O
+reuse, denial/non-owner/natural exit and original1% CPU/96MiB budgets. Toolbar229196
+and integrated Maintenance234920 pass. Final normal release and independent/installed
+delivery acceptance remain outstanding. Deliver both in one release.
+No concurrent stage or unrelated donor risk-feature work. Earlier closures
+below remain historical; never mutate user services/startup/tasks in tests.
+
 Current2026-11-08/spec0.90: S33 COMPLETE via installed1.1.35 readback203112,
 11,305 matching members, ready restarted main231460/helper207140,22 routes and
 preserved profile/shortcut identity. MAINT-01..05 cover shared table state,
