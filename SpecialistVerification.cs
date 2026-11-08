@@ -44,7 +44,7 @@ public partial class MainWindow
         if(Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO")=="transfer-progress"){await VerifyTransferProgress24(root,check);return;}
         if(Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO")=="preview-selection"){await VerifyPreviewSelection38(root,check);return;}
         if(Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO")=="space-entry"){await VerifySpaceStartup23(root,check);return;}
-        if(Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO") is "space-refresh" or "space-ui"){await VerifySpaceRefresh21(root,check);return;}
+        if(Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO") is "space-refresh" or "space-ui"){await VerifyUpdateStorage38(root,check);await VerifySpaceRefresh21(root,check);return;}
         if(Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO")=="live-indexed-sizes"){await VerifyLiveIndexedSizes15(root,check);return;}
         if(Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO")=="indexed-sizes"){await VerifyIndexedSizes15(root,check);return;}
         if(Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO")=="space"){await VerifySpace15(root,check);return;}

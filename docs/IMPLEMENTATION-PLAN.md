@@ -1,7 +1,28 @@
 # Implementation and reconciliation
 
-Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.95, 2026-11-08,
+Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.96, 2026-11-08,
 including the user-authorized continued comparison requirement TRANSFER-07.
+
+Current2026-11-08: S38 is COMPLETE at the user's explicit source-only boundary
+after the already completed source/native/UI checks205020 and226536, and consumer
+compilation. Exact cleanup5817d834423e7809b825b2c1e98a7395 removed26 retained-release
+checksum-matching obsolete setup downloads,8,906,892,051 bytes. No further build,
+package, version bump or release is authorized for this fix. Profile location
+is unchanged. Spent build/test scratch is cleaned. The user-requested workplace
+cleanup removes48,002,348,829 bytes of hash-matching published release copies and
+5,586,164,979 bytes of superseded evidence; current delivery and reusable inputs
+remain. STORAGE-LIFECYCLE.md replaces blanket local retention. Final source
+commit follows; no other stage is activated. See verification/2026-11-08-s38-storage.md.
+
+Initial S38 investigation (historical):
+Evidence:26 updater setup files in the exact relocated Runtime/Temp; Download
+only discards failed transfers. Expanded tree reads await the entire prior
+scan, and changed cache measurements share the terminal Incomplete state with
+unreadable subtrees. Remaining acceptance: lifecycle correction, responsive
+direct membership, accurate states, real regression verification, exact legacy
+cleanup and final verified release. The subsequent user instruction replaces
+that release boundary with source-only completion. Initial internal blockers:
+no tracked deferral. Preserve current profile and unrelated runtime consumers.
 
 Current2026-11-08: S36 COMPLETE for ACCESS-04..05 through actual hidden UI161520
 and helper198244: typed pane denial/action/ribbon, protected root and expanded
@@ -1251,6 +1272,7 @@ plan neither authorizes itself nor adds approval checkpoints.
 | S35 - Toolbar action accents | COMPLETE | CORE-25 | S30 COMPLETE; source-only user instruction2026-11-08 | Actual UI206648 verifies accent mapping, original terminal lettering, smaller gear/brush collar/two-pane divider, neutral outlines,16-DIP geometry, themes/scales/DPI and real commands. Source-only verified scope; no blocker, deferral or required refactor. Publication held against an icon-only release. |
 | S36 - Protected-folder presentation and analyzer access | COMPLETE | ACCESS-04..05 | S35 COMPLETE; before S37 | Actual UI161520/helper198244 pass typed pane denial/action/ribbon, root/expanded analysis privilege changes, no stale privileged listing, layouts and lifecycle/resources. No source blocker/deferral. Final delivery belongs to S37. |
 | S37 - Drive-scoped performance detail | COMPLETE | DRIVE-01..02; final combined DELIVERY | S36 COMPLETE; before S25 | Source/native/UI and helper acceptance pass. Normal1.1.37/6097ce4 is published; final233952 and independently downloaded199512 pass source/native/self-test/application checks. Retained uncertain Office sharing failure is followed by exact crash/cancel/close226780 and full unchanged-package acceptance; no speculative renderer patch. Installed222108 verifies matching members, restarted ready main/helper, routes and profile/shortcut identity. Spent scratch cleaned; no blocker or deferral. |
+| S38 - Updater scratch and live analysis disclosure | COMPLETE | STORAGE-01/SPACE-08 | S37 COMPLETE; explicit source-only boundary | Actual source205020/226536 and consumer compilation pass. Legacy cleanup removes26 checksum-verified updater downloads,8,906,892,051 bytes. Preserve relocated profile; no further compilation, version bump or release for this fix. No blocker/deferral/refactor. |
 | S25 - Summary-card motion | NOT STARTED | MOTION-01..03; affected MONITOR/CORE-03/LIFE/DELIVERY | S18 COMPLETE; after S28 and before S12 | Upward card entry with smooth file-pane squeeze; rotation between Statistics/Performance; reversal/interruption and focus/scroll preservation; reduced-motion support and actual frame/layout/resource qualification. One final independently/installed verified release after implementation authorization. No criteria verified yet. |
 | S12 - Tresorit capability investigation | NOT STARTED | TRES-01..04 | S15 delivered; S16/S18/S25 considered first in the selected execution order | Supported API/client assessment, bounded REA as needed, evidence-backed capability matrix/decision and implementation proposal. Investigation only; no cloud mutation or integration implementation. |
 | S19 - Selected-folder content indexing | NOT STARTED | CONTENT-01..06; affected SEARCH/CORE/LIFE/DELIVERY | After S12 in the selected execution order; qualify extractor APIs, query/location semantics, provider metadata and resource budgets | Toolbar folder opt-in/current magnifier badges; qualified Craft/text extraction; persisted searchable strings and location arrays, periodic incremental refresh and cloud-cache independence. Verify actual search/open/freshness/recovery and one final independently/installed verified release when implementation is authorized. No criteria verified yet. |

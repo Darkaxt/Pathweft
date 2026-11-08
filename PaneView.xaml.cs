@@ -486,7 +486,7 @@ public partial class PaneView : UserControl
     // This PC the selection is empty to every command (the menu there is Windows' own, MainWindow.ShowMenu).
     public List<Entry> Selected => !InSearch && Dir == ThisPC ? new() : List.SelectedItems.Cast<Entry>().Where(e => !e.IsUp).ToList();
     public long FolderTotal => SpaceAnalyzing?SpaceSummary.Bytes:Items.Sum(e => Math.Max(0, e.DisplaySize));
-    public bool SizesPending => SpaceAnalyzing?space.Nodes[space.Root].State is SpaceState.Pending or SpaceState.Scanning:Items.Any(e => e.Size == -1);
+    public bool SizesPending => SpaceAnalyzing?space.Nodes[space.Root].State is SpaceState.Pending or SpaceState.Scanning||(space.RefreshRequested&&space.Nodes[space.Root].State==SpaceState.Changed):Items.Any(e => e.Size == -1);
 
     // Active pane: lighter surface and accent edge. Inactive: darker and slightly faded, so it recedes.
     // The three changes are animated together, or switching panes reads as a flash.

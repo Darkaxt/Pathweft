@@ -77,8 +77,8 @@ public static class Updater
     /// Downloads the installer, reporting 0..1 progress. Returns its path.
     public static async Task<string> Download(Release release, IProgress<DownloadProgress> progress, CancellationToken token)
     {
-        var path = Path.Combine(Path.GetTempPath(), $"Pathweft-{release.Version}-setup.exe");
-        bool complete=false,created=false;
+        var path = UpdateDownloads.Create(release.Version);
+        bool complete=false;
         try
         {
         using (var response = await http.GetAsync(release.AssetUrl, HttpCompletionOption.ResponseHeadersRead, token))
@@ -87,7 +87,6 @@ public static class Updater
             var total = response.Content.Headers.ContentLength ?? release.AssetSize;
             using var source = await response.Content.ReadAsStreamAsync(token);
             using var file = File.Create(path);
-            created=true;
             var buffer = new byte[128 * 1024];
             long done = 0;
             int n;
@@ -121,7 +120,7 @@ public static class Updater
         token.ThrowIfCancellationRequested();
         complete=true;return path;
         }
-        finally{if(!complete&&created&&File.Exists(path))File.Delete(path);}
+        finally{if(!complete)UpdateDownloads.Discard(path);}
     }
 
     /// Start the per-user update. Setup observes this exact process's exit;
@@ -134,6 +133,14 @@ public static class Updater
             using var caller=Process.GetCurrentProcess();
             foreach(var argument in InstallationArguments(caller.Id,caller.StartTime.ToUniversalTime().ToFileTimeUtc(),AppContext.BaseDirectory))launch.ArgumentList.Add(argument);
             using var process=Process.Start(launch)??throw new IOException("The installer did not start.");
+            try{UpdateDownloads.Handoff(installer,process);}
+            catch
+            {
+                // Setup is waiting for this exact caller to exit. If its durable
+                // handoff cannot be saved, retire only that uncommitted launch.
+                if(!process.HasExited)process.Kill(entireProcessTree:true);
+                process.WaitForExit();throw;
+            }
             return true;
         }
         catch (System.ComponentModel.Win32Exception ex) when (ex.NativeErrorCode == 1223) { return false; } // ERROR_CANCELLED: UAC declined

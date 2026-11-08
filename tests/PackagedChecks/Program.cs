@@ -273,6 +273,7 @@ sealed partial class PackageProbe
             await VerifyMissingTabs125();
             VerifyWindows119();
             await VerifySizing119();
+            await VerifyUpdate138();
             await VerifySpaceEntry122();
             string downloads=(string)Call(typeof(MainWindow),null,"DownloadsFolder");
             Check(((Panel)owner.FindName("Favorites")).Children.OfType<Button>().Any(button=>button.ToolTip as string==downloads),"Delivered Favorites contains the actual Windows Downloads location");

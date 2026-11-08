@@ -6,7 +6,7 @@ using FILETIME=System.Runtime.InteropServices.ComTypes.FILETIME;
 
 namespace FileExplorer;
 
-internal enum SpaceState{Pending,Scanning,Complete,Indexed,Incomplete,Denied,Cancelled,Failed,Reparse}
+internal enum SpaceState{Pending,Scanning,Complete,Indexed,Incomplete,Denied,Cancelled,Failed,Reparse,Changed}
 internal sealed record SpaceUpdate(string Path,string Parent,long Bytes,long Files,long Folders,SpaceState State,string Error="");
 internal sealed record SpaceMember(string Path,string Name,bool Directory,bool Reparse,long Bytes,DateTime Modified);
 
@@ -57,7 +57,8 @@ internal static class SpaceScan
     sealed class Frame(string path,string parent)
     {
         internal string Path=path,Parent=parent;
-        internal List<SpaceMember> Children=new();internal int Next;internal bool Opened,Valid=true,Indexed,FailedSelf;
+        internal List<SpaceMember> Children=new();internal int Next;internal bool Opened,Valid=true,Indexed,FailedSelf,Partial;
+        internal string Failure="";
         internal long Bytes,Files,Folders;
         internal SizeCache.Measurement Measurement;
     }
@@ -115,7 +116,7 @@ internal static class SpaceScan
                         }
                     }
                     catch(Exception ex)when(ex is Win32Exception or IOException or UnauthorizedAccessException)
-                    {frame.Valid=false;frame.FailedSelf=true;frame.Children.Clear();Send(frame,ex is Win32Exception{NativeErrorCode:5} or UnauthorizedAccessException?SpaceState.Denied:SpaceState.Failed,ex.Message);}
+                    {frame.Valid=false;frame.FailedSelf=true;frame.Partial=true;frame.Failure=frame.Path+": "+ex.Message;frame.Children.Clear();Send(frame,ex is Win32Exception{NativeErrorCode:5} or UnauthorizedAccessException?SpaceState.Denied:SpaceState.Failed,ex.Message);}
                 }
                 if(frame.Next<frame.Children.Count)
                 {var child=frame.Children[frame.Next++];stack.Push(new(child.Path,frame.Path));continue;}
@@ -123,10 +124,11 @@ internal static class SpaceScan
                 bool valid=frame.Valid&&!frame.Measurement.Invalid;
                 if(valid&&!frame.Indexed)valid=frame.Measurement.Complete(Directory.GetLastWriteTimeUtc(frame.Path),frame.Bytes);
                 if(!valid)frame.Measurement.Discard();
-                if(!frame.FailedSelf)Send(frame,valid?(frame.Indexed?SpaceState.Indexed:SpaceState.Complete):SpaceState.Incomplete,valid?"":"Changed or incomplete while measuring");
+                if(!frame.FailedSelf)Send(frame,valid?(frame.Indexed?SpaceState.Indexed:SpaceState.Complete):frame.Partial?SpaceState.Incomplete:SpaceState.Changed,
+                    valid?"":frame.Partial?frame.Failure:"Contents changed during this measurement; the last observed total is retained.");
                 stack.Pop();frame.Measurement.Dispose();
                 if(stack.TryPeek(out var parent))
-                {parent.Valid&=valid;parent.Indexed|=frame.Indexed;parent.Folders+=frame.Folders;}
+                {parent.Valid&=valid;parent.Indexed|=frame.Indexed;parent.Folders+=frame.Folders;parent.Partial|=frame.Partial;if(frame.Failure.Length>0)parent.Failure=frame.Failure;}
                 // Direct-file and indexed-byte deltas were already propagated.
             }
         }

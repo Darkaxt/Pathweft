@@ -129,16 +129,16 @@ public partial class MainWindow
             var release=new Updater.Release(new Version(0,0,114),"fixture","",$"http://127.0.0.1:{((IPEndPoint)listener.LocalEndpoint).Port}/setup.exe",bytes.Length,badHash?new string('0',64):Convert.ToHexString(SHA256.HashData(bytes)));
             var reports=new List<Updater.DownloadProgress>();
             var progress=new Progress<Updater.DownloadProgress>(item=>{reports.Add(item);if(cancel&&item.Received>0)cancelled.Cancel();});
-            string target=Path.Combine(Path.GetTempPath(),"Pathweft-0.0.114-setup.exe");bool rejected=false;
+            string target=null;bool rejected=false;
             try
             {
-                try{await Updater.Download(release,progress,cancelled.Token);}catch(Exception error)when((badHash&&error is IOException)||(cancel&&error is OperationCanceledException)){rejected=true;}
+                try{target=await Updater.Download(release,progress,cancelled.Token);}catch(Exception error)when((badHash&&error is IOException)||(cancel&&error is OperationCanceledException)){rejected=true;}
                 await server;
                 await Application.Current.Dispatcher.InvokeAsync(()=>{},System.Windows.Threading.DispatcherPriority.ApplicationIdle);
-                if(badHash||cancel)check(rejected&&!File.Exists(target),"A real "+(cancel?"cancelled":"checksum-rejected")+" download discards its owned partial installer and cannot deploy");
+                if(badHash||cancel)check(rejected&&(!Directory.Exists(UpdateDownloads.Root)||!Directory.EnumerateFiles(UpdateDownloads.Root,"Pathweft-0.0.114-setup.exe",SearchOption.AllDirectories).Any()),"A real "+(cancel?"cancelled":"checksum-rejected")+" download discards its owned partial installer and cannot deploy");
                 else check(File.ReadAllBytes(target).SequenceEqual(bytes)&&reports.Any(item=>item.Stage=="Checking update")&&reports.Any(item=>item.Received==bytes.Length),"Real HTTP download, measured byte progress and checksum verification preserve the installer bytes");
             }
-            finally{listener.Stop();}
+            finally{listener.Stop();if(target!=null)UpdateDownloads.Discard(target);}
         }
         await Run(false,false);await Run(true,false);await Run(false,true);
     }

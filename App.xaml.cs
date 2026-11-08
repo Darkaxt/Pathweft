@@ -282,6 +282,7 @@ public partial class App : Application
         catch(Exception error)when(error is IOException or UnauthorizedAccessException or InvalidOperationException or System.Security.SecurityException)
         {folderUpgradeIssue="Folder integration could not be updated. Review Settings > Windows integration.";}
         Appearance.Initialize();
+        updateRetirement=Task.Run(()=>UpdateDownloads.RetireAsync(updateRetirementCancellation.Token));
 #if DEBUG
         if (e.Args.Any(a => a.StartsWith("--verify-s4=") || a.StartsWith("--verify-fileui=") || a.StartsWith("--verify-s5=") || a.StartsWith("--verify-s8=") || a.StartsWith("--verify-s8-appearance=")) && Environment.GetEnvironmentVariable("PATHWEFT_TEST_HIDDEN") == "1" && !HiddenTrialPresentation.Enabled)
         { Shutdown(2); return; } // fail before constructing a window when a hidden trial profile is unrecognized
@@ -329,9 +330,14 @@ public partial class App : Application
     Mutex instance;
     readonly CancellationTokenSource listenCancellation = new();
     Task listening;
+    readonly CancellationTokenSource updateRetirementCancellation=new();
+    Task updateRetirement=Task.CompletedTask;
 
     protected override void OnExit(ExitEventArgs e)
     {
+        updateRetirementCancellation.Cancel();
+        try{updateRetirement.GetAwaiter().GetResult();}catch(OperationCanceledException)when(updateRetirementCancellation.IsCancellationRequested){}
+        updateRetirementCancellation.Dispose();
         PerformanceMonitor.Stop();
         AdministratorSession.End().GetAwaiter().GetResult();
 #if DEBUG

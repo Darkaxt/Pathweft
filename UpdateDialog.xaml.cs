@@ -87,10 +87,11 @@ public partial class UpdateDialog : Window
         if(Owner is MainWindow current&&current.UpdateInstallationBlocker is { } blocker){Status.Text=blocker;return;}
         UpdateButton.IsEnabled=false;
         BeginDownload();
+        string installer=null;bool handedOff=false;
         try
         {
             var progress = new Progress<Updater.DownloadProgress>(ReportDownload);
-            var installer = await Updater.Download(release, progress, cancel.Token);
+            installer = await Updater.Download(release, progress, cancel.Token);
             if(Owner is MainWindow owner&&owner.UpdateInstallationBlocker is { } pending)
             {
                 Status.Text=pending;Progress.Visibility=Visibility.Collapsed;
@@ -105,6 +106,7 @@ public partial class UpdateDialog : Window
                 RestoreButtons();
                 return;
             }
+            handedOff=true;
             Application.Current.Shutdown(); // the installer replaces our files; nothing of ours may stay
         }
         catch (Exception ex) when (ex is HttpRequestException or IOException or TaskCanceledException or System.ComponentModel.Win32Exception)
@@ -113,6 +115,7 @@ public partial class UpdateDialog : Window
             Status.Text = ex.Message;
             RestoreButtons();
         }
+        finally{if(installer!=null&&!handedOff)UpdateDownloads.Discard(installer);}
     }
     void RestoreButtons()
     {

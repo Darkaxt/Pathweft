@@ -13,7 +13,7 @@ internal sealed class SpaceEntry:Entry
 {
     internal string ParentPath;
     internal int Depth;
-    internal bool Expanded,ChildrenRead;
+    internal bool Expanded,ChildrenRead,ChildrenReading,Refreshing;
     internal SpaceState State;
     internal long Files,Folders;
     internal string Failure="";
@@ -21,7 +21,7 @@ internal sealed class SpaceEntry:Entry
     public Thickness TreeIndent=>new(Math.Min(Depth,128)*16,0,0,0);
     public string ExpandGlyph=>Expanded?"\uE70D":"\uE76C";
     public Visibility ExpandVisible=>IsDir&&State!=SpaceState.Reparse?Visibility.Visible:Visibility.Hidden;
-    public string SpaceStatus=>State switch{SpaceState.Pending=>"Pending",SpaceState.Scanning=>"Measuring…",SpaceState.Complete=>"Measured",SpaceState.Indexed=>"Indexed",SpaceState.Denied=>"Access denied",SpaceState.Reparse=>"Link skipped",SpaceState.Incomplete=>"Incomplete",SpaceState.Cancelled=>"Cancelled",_=>"Unavailable"};
+    public string SpaceStatus=>Refreshing&&State==SpaceState.Changed?"Updating…":State switch{SpaceState.Pending=>"Pending",SpaceState.Scanning=>"Measuring…",SpaceState.Complete=>"Measured",SpaceState.Indexed=>"Indexed",SpaceState.Denied=>"Access denied",SpaceState.Reparse=>"Link skipped",SpaceState.Incomplete=>"Partially measured",SpaceState.Changed=>"Changed during scan",SpaceState.Cancelled=>"Cancelled",_=>"Unavailable"};
     public string SpaceTip=>State==SpaceState.Indexed?"Everything index · excluded files may be omitted":Failure;
     public double Usage=>RootBytes>0?Math.Clamp(DisplaySize/RootBytes*100,0,100):0;
     public string UsageText=>RootBytes>0?$"{Usage:0.#}%":"";
@@ -127,6 +127,7 @@ public partial class PaneView
 #endif
         try
         {
+            await ReadSpaceChildren(current,current.Root,preferIndex:false,measureMissing:false);
             await ScanWithAccess(current,current.Root,preferIndex,update=>QueueSpace(current,update));
             DrainSpace(current);
             // Indexed descendants are discovered lazily; retain their identities
@@ -163,8 +164,9 @@ public partial class PaneView
             // A replacement scan owns a new snapshot. Keep the last completed
             // value/count/status until that branch produces its replacement;
             // initial unknown rows and terminal errors remain truthful.
-            if(current.QuietRefresh&&row.DisplaySize>=0&&(row.State is not (SpaceState.Pending or SpaceState.Scanning))&&(update.State is SpaceState.Pending or SpaceState.Scanning))continue;
+            if(current.QuietRefresh&&row.DisplaySize>=0&&(row.State is SpaceState.Complete or SpaceState.Indexed)&&(update.State is SpaceState.Pending or SpaceState.Scanning or SpaceState.Changed))continue;
             row.State=update.State;row.Failure=update.Error;row.Files=update.Files;row.Folders=update.Folders;
+            row.Refreshing=current.RefreshRequested;
             if(update.State is SpaceState.Complete or SpaceState.Indexed||update.State!=SpaceState.Pending&&(row.DisplaySize<0||update.Bytes>=row.DisplaySize))row.Size=update.Bytes;
             row.SizeSource=update.State==SpaceState.Indexed?"Everything index · excluded files may be omitted":"Filesystem measurement";
         }
@@ -254,10 +256,19 @@ public partial class PaneView
     {
         if(space is not {} current||!row.IsDir||row.State==SpaceState.Reparse)return;
         row.Expanded=!row.Expanded;row.Updated();RebuildSpace(current);
-        if(row.Expanded&&!row.ChildrenRead)
+        if(row.Expanded&&!row.ChildrenRead&&!row.ChildrenReading)
         {
-            var previous=current.Work;current.Work=ReadAfter();
-            async Task ReadAfter(){try{await previous;await ReadSpaceChildren(current,row.Path);}catch(OperationCanceledException)when(current.Cancellation.IsCancellationRequested){}}
+            // Direct membership is independent of the recursive scan. Keep both
+            // operations owned until completion, but never wait for an unrelated
+            // branch before showing this folder's files or launch a duplicate walk.
+            var previous=current.Work;bool scanning=!previous.IsCompleted;
+            row.ChildrenReading=true;current.Work=Task.WhenAll(previous,ReadNow());
+            async Task ReadNow()
+            {
+                try{await ReadSpaceChildren(current,row.Path,measureMissing:!scanning);}
+                catch(OperationCanceledException)when(current.Cancellation.IsCancellationRequested){}
+                finally{row.ChildrenReading=false;}
+            }
         }
     }
     void SpaceKey(object sender,KeyEventArgs args)
@@ -338,7 +349,12 @@ public partial class PaneView
             }
             catch(OperationCanceledException)when(current.Cancellation.IsCancellationRequested){}
             catch(Exception error){if(space==current&&!current.Stopping)Error?.Invoke("Space analysis: "+error.Message);}
-            finally{current.QuietRefresh=false;current.RefreshRequested=false;}
+            finally
+            {
+                current.QuietRefresh=false;current.RefreshRequested=false;
+                foreach(var row in current.Nodes.Values){row.Refreshing=false;row.Updated();}
+                if(space==current&&!current.Stopping){UpdateSpaceFooter();StatsChanged?.Invoke();}
+            }
         }
     }
     async Task RefreshSpaceBranches(SpaceView current,string[] dirty)
@@ -369,9 +385,12 @@ public partial class PaneView
         root.Size=children.Sum(row=>Math.Max(0,row.DisplaySize));
         root.Files=files.LongLength+directories.Sum(row=>row.Files);
         root.Folders=directories.LongLength+directories.Sum(row=>row.Folders);
-        root.State=directories.Any(row=>row.State is not (SpaceState.Complete or SpaceState.Indexed or SpaceState.Reparse))?SpaceState.Incomplete:
+        root.State=directories.Any(row=>row.State is SpaceState.Incomplete or SpaceState.Denied or SpaceState.Failed)?SpaceState.Incomplete:
+            directories.Any(row=>row.State is SpaceState.Changed or SpaceState.Pending or SpaceState.Scanning)?SpaceState.Changed:
             directories.Any(row=>row.State==SpaceState.Indexed)?SpaceState.Indexed:SpaceState.Complete;
-        root.Failure=root.State==SpaceState.Incomplete?"Changed or incomplete while measuring":"";
+        root.Refreshing=current.RefreshRequested;
+        root.Failure=root.State==SpaceState.Incomplete?directories.First(row=>row.State is SpaceState.Incomplete or SpaceState.Denied or SpaceState.Failed).Failure:
+            root.State==SpaceState.Changed?"Contents changed during measurement; updating the observed total.":"";
         RebuildSpace(current);
     }
     internal async Task DrainSpaceAndSizesAsync(){await EndSpaceAsync();await StopSizingAsync();await spaceTransition;}

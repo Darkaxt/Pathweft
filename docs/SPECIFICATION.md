@@ -1,6 +1,26 @@
 # Pathweft specification
 
-Version 0.95 - 2026-11-08. Owner: Darkaxt.
+Version 0.96 - 2026-11-08. Owner: Darkaxt.
+
+### Updater scratch lifetime and live analysis disclosure (S38)
+
+User report2026-11-08: Runtime/Temp contains26 successful updater downloads,
+while analysis temporarily shows their8.9GB aggregate without the file children
+and labels a changing snapshot Incomplete. S38 is source-only per the user's
+subsequent explicit instruction: no further compilation and no release for this
+fix. Retain the already completed checks; bundle the source in a later release.
+Keep the installed per-user/relocated profile binding; the user's question about
+beside-binary config is explanatory, not authorization to migrate it.
+
+| ID | Required behavior and acceptance |
+| --- | --- |
+| STORAGE-01 | Successful updater downloads are owned through the exact installer process exit, then removed. Cancelled, rejected and unlaunched downloads are discarded. Recover abandoned owned downloads on the next normal launch; never delete a running installer, unrelated Temp members or a replaced file. Verify actual process-completion and HTTP/cancel/error workflows. Remove the evidenced obsolete live downloads using reviewed exact-file cleanup after provenance/consumer checks. |
+| SPACE-08 | Expanding a branch presents its actual direct files during unrelated root scanning, without another recursive scan, unbounded whole-tree file materialization or premature owner completion. Distinguish changed snapshots from terminal partial coverage; display queued refresh as updating, never Incomplete for ordinary active work. Preserve last known values, typed denial, cancellation, navigation and resource bounds. Verify a held unrelated scan, expansion, invalidation and true denied-child cases with actual UI/native operations. |
+
+Huashu contract: retain existing compact tree columns, palette, typography,
+chevrons and widths. Use concise status text with contextual cause details;
+no modal or new settings. Final delivery for this request is the verified source
+commit and exact legacy cleanup; do not create a package or version bump.
 
 ### Drive-scoped performance detail (S37)
 
