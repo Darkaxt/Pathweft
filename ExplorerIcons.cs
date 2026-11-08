@@ -29,11 +29,15 @@ internal static class ExplorerIcons
         ("Details","windows.iconsize.details.svg","\uE700")
     };
     static readonly Dictionary<(string Variant,string Key),DrawingImage> cache=new();
+    static Color? cachedAccent;
     static string SourceRoot=>Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows),
         "SystemApps","MicrosoftWindows.Client.FileExp_cw5n1h2txyewy","FileExplorerExtensions","Assets","images");
 
     internal static void Apply()
     {
+        // Retain only the current accent's artwork as the color picker changes.
+        var accent=Appearance.Accent;
+        if(cachedAccent!=accent){cache.Clear();cachedAccent=accent;}
         Application.Current.Resources["CommandIcon.Performance"]=Performance();
         Application.Current.Resources["CommandIcon.Administrator"]=Administrator();
         string variant=SystemParameters.HighContrast
@@ -45,6 +49,15 @@ internal static class ExplorerIcons
             if(SystemParameters.HighContrast||!cache.TryGetValue((variant,icon.Key),out var image))
             {
                 image=Load(icon.File,variant)??Glyph(icon.Glyph);
+                image=icon.Key switch
+                {
+                    "NewFile"=>NewFile(),
+                    "Terminal"=>Terminal(),
+                    "Delete"=>DeleteDetail(image),
+                    "AnalyzeSpace"=>SmallerCog(),
+                    "Maintenance"=>GlyphDetail("\uEA99",Geometry.Parse("M4,6.5 L9.5,12").GetWidenedPathGeometry(new Pen(Brushes.Black,1.4))),
+                    _=>image
+                };
                 if(!SystemParameters.HighContrast)cache[(variant,icon.Key)]=image;
             }
             Application.Current.Resources["CommandIcon."+icon.Key]=image;
@@ -93,6 +106,8 @@ internal static class ExplorerIcons
             bool ink=color.R+color.G+color.B>384;
             color=sourceDark==ink?SystemColors.WindowTextColor:SystemColors.WindowColor;
         }
+        else if(color==Color.FromRgb(0,0x78,0xD4)||color==Color.FromRgb(0x4C,0xC2,0xFF))
+            color=Appearance.Accent; // Map only Windows' blue details, never neutral ink.
         var brush=new SolidColorBrush(color);brush.Freeze();return brush;
     }
 
@@ -113,18 +128,64 @@ internal static class ExplorerIcons
     }
 
     static Brush CommandInk=>SystemParameters.HighContrast?SystemColors.WindowTextBrush:new SolidColorBrush(Appearance.Light?Color.FromRgb(70,70,70):Color.FromRgb(224,223,223));
+    static Brush CommandAccent=>SystemParameters.HighContrast?CommandInk:new SolidColorBrush(Appearance.Accent);
+    static DrawingImage NewFile()
+    {
+        var group=new DrawingGroup();group.Children.Add(new GeometryDrawing(Brushes.Transparent,null,new RectangleGeometry(new Rect(0,0,16,16))));
+        var pen=new Pen(CommandInk,1){LineJoin=PenLineJoin.Round};
+        group.Children.Add(new GeometryDrawing(null,pen,Geometry.Parse("M2,7 L2,2 Q2,1 3,1 L9,1 14,6 14,14 Q14,15 13,15 L9,15 M9,1 L9,5 Q9,6 10,6 L14,6")));
+        group.Children.Add(new GeometryDrawing(CommandAccent,null,new EllipseGeometry(new Point(4,12),3.5,3.5)));
+        var badgeInk=SystemParameters.HighContrast?SystemColors.WindowBrush:MainWindow.Contrast(Appearance.Accent,Colors.Black)>=MainWindow.Contrast(Appearance.Accent,Colors.White)?Brushes.Black:Brushes.White;
+        group.Children.Add(new GeometryDrawing(null,new Pen(badgeInk,1){StartLineCap=PenLineCap.Round,EndLineCap=PenLineCap.Round},Geometry.Parse("M2,12 L6,12 M4,10 L4,14")));
+        group.Freeze();var image=new DrawingImage(group);image.Freeze();return image;
+    }
+    static DrawingImage Terminal()
+    {
+        // Keep the original terminal glyph, including its exact C:\ lettering.
+        return GlyphDetail("\uE756",new RectangleGeometry(new Rect(3,5,10,7)));
+    }
+    static DrawingImage GlyphDetail(string glyph,Geometry detail)
+    {
+        var source=Glyph(glyph);
+        return GlyphDetail(source,detail);
+    }
+    static DrawingImage SmallerCog()
+    {
+        var source=Glyph("\uE9F5");
+        var shape=((GeometryDrawing)((DrawingGroup)source.Drawing).Children[1]).Geometry.GetFlattenedPathGeometry();
+        // Use the actual two gear outlines and retain the smaller one's holes.
+        // Their positions differ between Fluent Icons and the Win10 fallback.
+        var parts=shape.Figures.Select(figure=>(Figure:figure,Bounds:new PathGeometry(new[]{figure}){Transform=shape.Transform}.Bounds)).ToArray();
+        var smaller=parts.OrderByDescending(part=>part.Bounds.Width*part.Bounds.Height).Take(2).Last().Bounds;
+        var detail=new PathGeometry(parts.Where(part=>smaller.Contains(part.Bounds)).Select(part=>part.Figure),shape.FillRule,shape.Transform);
+        return GlyphDetail(source,detail);
+    }
+    static DrawingImage GlyphDetail(DrawingImage source,Geometry detail)
+    {
+        var shape=((GeometryDrawing)((DrawingGroup)source.Drawing).Children[1]).Geometry;
+        var group=new DrawingGroup();group.Children.Add(source.Drawing);
+        group.Children.Add(new GeometryDrawing(CommandAccent,null,new CombinedGeometry(GeometryCombineMode.Intersect,shape,detail)));
+        group.Freeze();var image=new DrawingImage(group);image.Freeze();return image;
+    }
+    static DrawingImage DeleteDetail(DrawingImage source)
+    {
+        // Keep Windows' outline (or the Win10 glyph) and accent its two inner slots.
+        var group=new DrawingGroup();group.Children.Add(source.Drawing);
+        group.Children.Add(new GeometryDrawing(null,new Pen(CommandAccent,1){StartLineCap=PenLineCap.Round,EndLineCap=PenLineCap.Round},Geometry.Parse("M6.5,6.5 L6.5,11.5 M9.5,6.5 L9.5,11.5")));
+        group.Freeze();var image=new DrawingImage(group);image.Freeze();return image;
+    }
     internal static DrawingImage Performance()
     {
         var group=new DrawingGroup();group.Children.Add(new GeometryDrawing(Brushes.Transparent,null,new RectangleGeometry(new Rect(0,0,16,16))));
         var pen=new Pen(CommandInk,1.15){LineJoin=PenLineJoin.Round,StartLineCap=PenLineCap.Round,EndLineCap=PenLineCap.Round};
         group.Children.Add(new GeometryDrawing(null,pen,new RectangleGeometry(new Rect(1.5,1.5,13,13),2.5,2.5)));
-        group.Children.Add(new GeometryDrawing(null,pen,Geometry.Parse("M2,9 L5,9 6.5,5 9,12 10.5,7 14,7")));
+        group.Children.Add(new GeometryDrawing(null,new Pen(CommandAccent,1.15){LineJoin=PenLineJoin.Round,StartLineCap=PenLineCap.Round,EndLineCap=PenLineCap.Round},Geometry.Parse("M2,9 L5,9 6.5,5 9,12 10.5,7 14,7")));
         group.Freeze();var image=new DrawingImage(group);image.Freeze();return image;
     }
     internal static DrawingImage Crossed(DrawingImage source)
     {
         var group=new DrawingGroup();group.Children.Add(source.Drawing);
-        group.Children.Add(new GeometryDrawing(null,new Pen(CommandInk,1.5){StartLineCap=PenLineCap.Round,EndLineCap=PenLineCap.Round},new LineGeometry(new Point(2,14),new Point(14,2))));
+        group.Children.Add(new GeometryDrawing(null,new Pen(CommandAccent,1.5){StartLineCap=PenLineCap.Round,EndLineCap=PenLineCap.Round},new LineGeometry(new Point(2,14),new Point(14,2))));
         group.Freeze();var image=new DrawingImage(group);image.Freeze();return image;
     }
     internal static DrawingImage PaneLayout(bool two)
@@ -132,17 +193,17 @@ internal static class ExplorerIcons
         var group=new DrawingGroup();group.Children.Add(new GeometryDrawing(Brushes.Transparent,null,new RectangleGeometry(new Rect(0,0,16,16))));
         var pen=new Pen(CommandInk,1);
         group.Children.Add(new GeometryDrawing(null,pen,new RectangleGeometry(new Rect(1,2,14,12),1.5,1.5)));
-        if(two)group.Children.Add(new GeometryDrawing(null,pen,new LineGeometry(new Point(8,2),new Point(8,14))));
+        if(two)group.Children.Add(new GeometryDrawing(null,new Pen(CommandAccent,1),new LineGeometry(new Point(8,2),new Point(8,14))));
         group.Freeze();var image=new DrawingImage(group);image.Freeze();return image;
     }
 
     static DrawingImage Administrator()
     {
         // User-provided uac-shield.svg silhouette, simplified as requested:
-        // cyan internal dividers, neutral outer outline, transparent quarters.
+        // accent-colored internal dividers, neutral outline, transparent quarters.
         var shield=Geometry.Parse("M12,2.15 C9.55,3.87 6.46,4.88 3.48,5.12 C3.20,7.37 3.20,9.72 3.48,12 C4.05,16.65 7.18,19.69 12,21.85 C16.82,19.69 19.95,16.65 20.52,12 C20.80,9.72 20.80,7.37 20.52,5.12 C17.54,4.88 14.45,3.87 12,2.15 Z");
         var group=new DrawingGroup{Transform=new ScaleTransform(2d/3,2d/3)};group.Children.Add(new GeometryDrawing(Brushes.Transparent,null,new RectangleGeometry(new Rect(0,0,24,24))));
-        var quarters=new DrawingGroup{ClipGeometry=shield};var blue=SystemParameters.HighContrast?CommandInk:new SolidColorBrush(Color.FromRgb(0x37,0xBF,0xFF));
+        var quarters=new DrawingGroup{ClipGeometry=shield};var blue=CommandAccent;
         quarters.Children.Add(new GeometryDrawing(null,new Pen(blue,1.6),Geometry.Parse("M12,2.15 L12,21.85 M3.48,12 L20.52,12")));group.Children.Add(quarters);
         group.Children.Add(new GeometryDrawing(null,new Pen(CommandInk,1.6){LineJoin=PenLineJoin.Round},shield));
         group.Freeze();var image=new DrawingImage(group);image.Freeze();return image;

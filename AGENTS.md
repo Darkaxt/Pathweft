@@ -1,5 +1,12 @@
 # Pathweft development
 
+Current2026-11-08/spec0.93: S35 COMPLETE for CORE-25 source-only toolbar accents
+through actual UI206648, themes/scales, palette changes and original glyphs.
+No icon-only release or version bump. S30 installed acceptance is COMPLETE.
+The next user request is protected-folder Access denied UX and administrator
+toggle behavior in disk analysis; establish S36 before implementation. No stage
+ACTIVE. Preserve current app/profile and reuse only exact owned build scratch.
+
 Current delivery2026-11-08: S34 and S30 COMPLETE. Normal1.1.36/12807d2 is
 published and independently downloaded/qualified. Installed readback236392
 verifies11,305 matching members, restarted ready main236072/helper123040,

@@ -5,6 +5,7 @@ using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 
 namespace FileExplorer;
 
@@ -33,6 +34,7 @@ public partial class MainWindow
             foreach(string variant in new[]{"contrast-standard/theme-light","contrast-standard/theme-dark","contrast-black","contrast-white"})
                 check(ExplorerIcons.NativeForVerification(key,variant)!=null,"The actual Windows SVG is supported for "+key+" / "+variant);
         check(ExplorerIcons.Glyph("\uE8C8") is {IsFrozen:true}&&ExplorerIcons.Glyph("\uE8C8").Width==16,"The font compatibility path produces a frozen16-DIP vector without the Win11 asset set");
+        Settings.WindowsAccent=false;Settings.Accent="#0078D4";
 
         foreach(var appearance in new[]{("native-dark",true,"dark"),("native-light",true,"light"),("original",false,"dark")})
         {
@@ -40,6 +42,7 @@ public partial class MainWindow
             foreach(double scale in new[]{1.0,1.5})
             {
                 Settings.TextScale=scale;Width=scale==1?1200:1500;Height=850;ApplyAppearance();await Layout();
+                CheckAccentDetails();
                 check(Grid.GetRow(SidebarHeaderActions)==0&&utilities.All(button=>button.TranslatePoint(new Point(button.ActualWidth,button.ActualHeight),SidebarHeader).X<=SidebarHeader.ActualWidth+0.1),"Utilities fit beside the brand at the usual sidebar width: "+appearance.Item1+" / "+scale);
                 check(buttons.Where(button=>button.IsVisible).All(button=>button.ActualWidth<=30.1&&button.ActualHeight<=24.1),"Compact command dimensions stay at Pathweft scale: "+appearance.Item1+" / "+scale);
                 check(CommandButtons.ActualWidth<=486.1&&CommandBar.ActualHeight<=24.1,"The grouped command row has only narrow separators, with no Explorer-sized spacing or extra toolbar: "+appearance.Item1+" / "+scale);
@@ -62,6 +65,32 @@ public partial class MainWindow
                 await S1Verification.Snapshot(this,root,$"commands-{appearance.Item1}-{scale*100:0}");
             }
         }
+        // Change the actual shared palette twice; native SVG cache entries and
+        // generated glyphs must both follow, without recoloring neutral outlines.
+        Settings.NativeTheme=true;Settings.NativeMode="dark";Settings.TextScale=1;ApplyAppearance();
+        foreach(string accent in new[]{"#D85C22","#0078D4"})
+        {
+            Settings.Accent=accent;ApplyAppearance();await Layout();CheckAccentDetails();
+            Settings.ShowHidden=false;UpdateCommandStates();await Layout();
+            check(AccentPixels((DrawingImage)((Image)HiddenToggle.Content).Source,Appearance.Accent)>2,"The concealed-files eye has an accent slash: "+accent);
+            await S1Verification.Snapshot(this,root,"commands-accent-"+accent[1..]);
+            var detailVisual=new DrawingVisual();using(var drawing=detailVisual.RenderOpen())
+            {
+                drawing.DrawRectangle(new SolidColorBrush(Appearance.Background),null,new Rect(0,0,240,160));
+                var samples=new[]{("Terminal","\uE756"),("AnalyzeSpace","\uE9F5"),("Maintenance","\uEA99")};
+                for(int i=0;i<samples.Length;i++)
+                {
+                    drawing.DrawImage(ExplorerIcons.Glyph(samples[i].Item2),new Rect(i*80+8,8,64,64));
+                    drawing.DrawImage((DrawingImage)FindResource("CommandIcon."+samples[i].Item1),new Rect(i*80+8,88,64,64));
+                }
+            }
+            var detailBitmap=new RenderTargetBitmap(480,320,192,192,PixelFormats.Pbgra32);detailBitmap.Render(detailVisual);
+            var encoder=new PngBitmapEncoder();encoder.Frames.Add(BitmapFrame.Create(detailBitmap));
+            using(var output=File.Create(Path.Combine(root,"commands-details-"+accent[1..]+".png")))encoder.Save(output);
+            Click(HiddenToggle);await Layout();
+            check(Settings.ShowHidden&&AccentPixels((DrawingImage)((Image)HiddenToggle.Content).Source,Appearance.Accent)==0,"Showing hidden files removes the colored slash entirely: "+accent);
+        }
+        await S1Verification.Snapshot(this,root,"commands-hidden-visible");
         // Exercise the relocated buttons through their existing handlers, while
         // keeping network update checks and all settings mutations untouched.
         Click(HelpButton);await Layout();check(helpWindow?.IsVisible==true,"The header Help icon opens the actual Help window");helpWindow.Close();
@@ -127,6 +156,30 @@ public partial class MainWindow
         }
         check(dpi.Contains(96)&&dpi.Contains(144),"Compact command layout qualifies actual96/144-DPI HWND transitions");
         check(HiddenTrialPresentation.ForegroundViolations==0,"Compact command verification caused no foreground activation or desktop input: "+System.Text.Json.JsonSerializer.Serialize(HiddenTrialPresentation.ForegroundEvents));
+        void CheckAccentDetails()
+        {
+            check(AccentPixels(ExplorerIcons.PaneLayout(true),Appearance.Accent)>2&&AccentPixels(ExplorerIcons.PaneLayout(false),Appearance.Accent)==0,"Only the two-pane divider follows the current accent; one-pane outline stays neutral");
+            var ink=Appearance.Light?Color.FromRgb(70,70,70):Color.FromRgb(224,223,223);
+            foreach(string key in new[]{"NewFolder","NewFile","Rename","Copy","Move","Terminal","Delete","AnalyzeSpace","Maintenance","Performance","Preview","Sort","Administrator"})
+            {
+                var image=(DrawingImage)FindResource("CommandIcon."+key);
+                check(image.IsFrozen&&image.Width==16&&image.Height==16&&AccentPixels(image,Appearance.Accent)>2,"Actual16-DIP artwork uses the current accent detail: "+key+" / "+Settings.NativeMode+" / "+Settings.TextScale);
+                // Native neutral artwork has slightly different gray values.
+                if(key!="Move")check(AccentPixels(image,ink,24)>2,"Neutral outlines remain neutral: "+key+" / "+Settings.NativeMode);
+            }
+        }
+        static int AccentPixels(DrawingImage image,Color color,int tolerance=4)
+        {
+            var visual=new DrawingVisual();using(var drawing=visual.RenderOpen())drawing.DrawImage(image,new Rect(0,0,16,16));
+            var bitmap=new RenderTargetBitmap(32,32,192,192,PixelFormats.Pbgra32);bitmap.Render(visual);
+            byte[] pixels=new byte[32*32*4];bitmap.CopyPixels(pixels,128,0);int count=0;
+            for(int i=0;i<pixels.Length;i+=4)
+            {
+                int alpha=pixels[i+3];if(alpha<100)continue;
+                if(Math.Abs(pixels[i+2]*255d/alpha-color.R)<=tolerance&&Math.Abs(pixels[i+1]*255d/alpha-color.G)<=tolerance&&Math.Abs(pixels[i]*255d/alpha-color.B)<=tolerance)count++;
+            }
+            return count;
+        }
         static ContextMenu FindMenu(Button button)
         {
             // WPF keeps open popup roots in its presentation sources, not button.ContextMenu.

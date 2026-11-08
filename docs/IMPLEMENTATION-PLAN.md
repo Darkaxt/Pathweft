@@ -1,7 +1,14 @@
 # Implementation and reconciliation
 
-Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.92, 2026-11-08,
+Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.93, 2026-11-08,
 including the user-authorized continued comparison requirement TRANSFER-07.
+
+Current2026-11-08: S35 COMPLETE for CORE-25 source-only accents through actual
+UI206648. Palette changes, glyph details/neutral outlines, themes/scales/DPI,
+actual Hidden/pane/preview and file commands pass. No remaining source criterion,
+blocker, tracked deferral or required refactor. No icon-only publication/version
+bump. No stage ACTIVE. Establish separate S36 for the subsequently requested
+protected-folder denial UX and analyzer administrator-mode qualification.
 
 Delivery2026-11-08: S34 and S30 COMPLETE. Normal1.1.36/12807d2 is published;
 final197288 and independent227432 pass source/native/self-test/application checks.
@@ -1210,6 +1217,7 @@ plan neither authorizes itself nor adds approval checkpoints.
 | S33 - Maintenance coverage and table states | COMPLETE | MAINT-01..05 | S31/S32 COMPLETE; before S30 | Source134872/native3620/Performance60844 pass shared disabled-state theme, Startup source/Type/exact Restore, full SCM inventory and mutually exclusive toolbar modes. Normal1.1.35/2f62564 is published; final211320 and independent230548 pass actual native/self-test/application checks. Installed203112 verifies11,305 matching members, restarted ready main/helper,22 routes and preserved profile/shortcut identity. Scratch cleaned. No blocker, tracked deferral or required refactor. |
 | S34 - Automatic Maintenance review and sorting | COMPLETE | MAINT-06..07 | S33 COMPLETE; before S30 | Actual UI232500 verifies sequential automatic review, incremental summaries/cancel, real headers/numeric units, selection/sort retention and existing exact cleanup/restore with themed layouts. No blocker/deferral/refactor. Final delivery is integrated with S30. |
 | S30 - Reusable administrator access session | COMPLETE | ACCESS-01..03; affected CORE/LIFE/DELIVERY | After S34, before S25; renewed user request2026-11-08 | Source218544/helper235336 and owner233356/helper225008 pass protected browser/analysis/editor saves, concurrency, reuse, denial, owner/lifecycle and original resource budgets. Normal1.1.36/12807d2 final197288/independent227432 pass. Installed236392 verifies11,305 matching members, restarted ready main236072/helper123040,22 routes and preserved profile/shortcut. No blocker, deferral or required refactor. |
+| S35 - Toolbar action accents | COMPLETE | CORE-25 | S30 COMPLETE; source-only user instruction2026-11-08 | Actual UI206648 verifies accent mapping, original terminal lettering, smaller gear/brush collar/two-pane divider, neutral outlines,16-DIP geometry, themes/scales/DPI and real commands. Source-only verified scope; no blocker, deferral or required refactor. Publication held against an icon-only release. |
 | S25 - Summary-card motion | NOT STARTED | MOTION-01..03; affected MONITOR/CORE-03/LIFE/DELIVERY | S18 COMPLETE; after S28 and before S12 | Upward card entry with smooth file-pane squeeze; rotation between Statistics/Performance; reversal/interruption and focus/scroll preservation; reduced-motion support and actual frame/layout/resource qualification. One final independently/installed verified release after implementation authorization. No criteria verified yet. |
 | S12 - Tresorit capability investigation | NOT STARTED | TRES-01..04 | S15 delivered; S16/S18/S25 considered first in the selected execution order | Supported API/client assessment, bounded REA as needed, evidence-backed capability matrix/decision and implementation proposal. Investigation only; no cloud mutation or integration implementation. |
 | S19 - Selected-folder content indexing | NOT STARTED | CONTENT-01..06; affected SEARCH/CORE/LIFE/DELIVERY | After S12 in the selected execution order; qualify extractor APIs, query/location semantics, provider metadata and resource budgets | Toolbar folder opt-in/current magnifier badges; qualified Craft/text extraction; persisted searchable strings and location arrays, periodic incremental refresh and cloud-cache independence. Verify actual search/open/freshness/recovery and one final independently/installed verified release when implementation is authorized. No criteria verified yet. |
@@ -1263,6 +1271,7 @@ owns its complete release/delivery gate; S12 delivers research documents only.
 | TRANSFER-16 | S17 | Metadata-difference review, newer-destination ordering/warnings, matching-file reveal, full-set choices, distinguishing values and verified next release |
 | PREVIEW-38 | S17 | Selection-following PiP/Windowed, preserved host state/teardown, small accessible glyphs and combined next release |
 | CORE-22 | S17 | Approved yellow folder/darker compass icon, transparent multiresolution assets, embedded WPF/native use and unchanged Windows identity |
+| CORE-25 | S35 | Map only blue toolbar details to the app accent; Hidden slash state, compact native/fallback artwork, actual accent/theme/scale/action verification; source-only publication hold |
 | CORE-24 | S16 next-release companion | Approximately10-15% larger visible taskbar artwork; preserved design, bounds and identity; actual packaged/display-scale visual verification |
 | CORE-25 | S18 next-release companion | Twelve distinct ImageGen monthly changelog banners; consistent Pathweft style/960:170 presentation; selected-release month and year rollover coverage; inspected assets and actual packaged rendering |
 | CORE-26..27 | S18 user refinements | Remove duplicate capacity strip; centered edge-to-edge read-only archive ribbon; real foreground loading within address field with quiet background refresh, preserved drafts/caret/focus, reduced-motion and delivered/theme/scale qualification |

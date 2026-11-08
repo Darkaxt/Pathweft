@@ -1,6 +1,30 @@
 # Pathweft specification
 
-Version 0.92 - 2026-11-08. Owner: Darkaxt.
+Version 0.93 - 2026-11-08. Owner: Darkaxt.
+
+### Toolbar action accents (S35)
+
+User refinement2026-11-08: add restrained blue details to the remaining neutral
+toolbar artwork. New file uses a blue plus badge like New folder; Hidden uses a
+blue slash only while hidden files are concealed; Terminal accents its C:\
+prompt; Performance accents the trace; Delete accents its inner slots. Keep
+existing neutral silhouettes,16-DIP canvases, compact hit areas, group spacing,
+tooltips, accessible states and actions. The user then clarified: map only blue
+icon details to the current application accent; keep neutral outlines unchanged.
+Reuse the existing accessible accent tone and system ink in high contrast.
+Refresh already-open controls without retaining old accent-color variants.
+Further refinement: accent the smaller gear of Diskweft's dual-cog glyph and
+the brush collar between bristles and handle. Preserve the original terminal
+glyph and its exact lettering; recolor that geometry rather than replacing
+the characters with a different font. The two-pane icon also accents only its
+middle divider; its outer frame and the one-pane icon remain neutral.
+Inspect actual dark/light/original,100/150-percent, narrow and hidden/visible
+states. This is a source-only refinement: the user explicitly directed holding
+publication until more changes are included. No standalone icon release.
+
+| ID | Required behavior and acceptance |
+| --- | --- |
+| CORE-25 | Consistent action details for New file, Hidden, Terminal, Performance and Delete. Map the icons' blue detail fills/strokes to the existing application accent, retaining neutral outlines, compact geometry, native/fallback support and system high-contrast ink. Verify actual accent changes, rendered artwork, Hidden toggle and existing actions/themes/scales. Commit the verified source; publication remains held by the user's explicit instruction. |
 
 ### Automatic Maintenance review and sortable tables (S34)
 
