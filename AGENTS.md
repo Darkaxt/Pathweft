@@ -1,9 +1,12 @@
 # Pathweft development
 
-Current 2026-11-08/spec0.89: S31 ACTIVE for normal 1.1.34 publication and
-independently retrieved delivery checks. The user explicitly lifted the one-time
-release pause. S32 source/native/integration acceptance remains COMPLETE; S30
-NOT STARTED. No other ACTIVE stage. Do not repeat the publication question.
+Current 2026-11-08/spec0.89: normal 1.1.34/2de366d is published with all six
+digest-matching assets. Final app215364 and independently downloaded app172600
+pass native/source/self-test/application checks, including five real Maintenance
+tabs. S31 BLOCKED only awaiting the user's updater/reopen and installed readback;
+the one-time release pause is lifted. S32 COMPLETE; S30 NOT STARTED. No ACTIVE
+stage. See docs/verification/2026-11-08-release134.md. Do not repeat publication
+approval or force-close/install over the user's running app.
 
 Previous 2026-11-08/spec0.88: S32 COMPLETE for ADOPT-01..06 local SysOptimizer
 adoption and five bottom Maintenance summary tabs. Source/native/integration

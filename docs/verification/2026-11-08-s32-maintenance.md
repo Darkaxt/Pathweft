@@ -4,7 +4,9 @@ Authority: SPECIFICATION.md 0.88, ADOPT-01..06. This is a verified **source-only
 outcome originally held for the user's validation. The user has now lifted that
 one-time pause and requested release; S31 owns final 1.1.34 delivery verification.
 This report records source/native acceptance and does not itself establish
-publication or installed parity. S30 remains NOT STARTED.
+publication or installed parity. Normal1.1.34 is now published and independently
+verified; see [release verification](2026-11-08-release134.md). Installed readback
+remains in S31. S30 remains NOT STARTED.
 
 ## Acceptance reconciliation
 
@@ -15,7 +17,7 @@ publication or installed parity. S30 remains NOT STARTED.
 | ADOPT-03 | A task-owned HKCU Run entry is disabled through the real authenticated worker, with durable original-state journal/readback. Restore rejects an independently changed value, then restores the exact expandable string/hive/view. Disposable Windows Sandbox native SCM saves and restores a guest-only Fax service's startup/delayed configuration without starting it. |
 | ADOPT-04 | Curated registry definitions and validated selection export/import are integrated. Malformed selection fields produce a readable validation error. The guest worker applies/readbacks/restores the machine-wide telemetry definition, rejects an unapproved restore target/package identity, and supervises a real current-user AppX query to native process-tree exit. Removal uses an exact allowlisted current-user package and verifies absence; restore-point success requires an actually new Windows restore point. No user-selected host app/service/tweak was changed by qualification. |
 | ADOPT-05 | Actual app-history selection shows CPU/RAM/GPU charts preserving PID/start identity and gaps. Native boot/change queries report facts or access/log limitations. Insights and selected-query CSV/JSON/HTML exports pass, including spreadsheet-formula neutralization and HTML escaping. Compact Folder I/O shows read/write rates; lower-bound/coverage information stays in the tooltip and investigation view. Existing automatic history/retention/MCP behavior and collector budgets pass. |
-| ADOPT-06 | Exact donor source/license mapping, Debug and Release builds, integrated browser/performance/lifecycle regression checks, representative dark/light/scaled/narrow captures and scoped native guest verification pass. The verified source remains unreleased for user validation. |
+| ADOPT-06 | Exact donor source/license mapping, Debug and Release builds, integrated browser/performance/lifecycle regression checks, representative dark/light/scaled/narrow captures and scoped native guest verification pass. Normal1.1.34 is published; final215364 and independently downloaded172600 pass actual delivered native/application checks. |
 
 ## Inspected evidence
 
