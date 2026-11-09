@@ -8,7 +8,6 @@ public partial class MainWindow
     void UpdateCommandStates()
     {
         UpdateSpaceCommandState();
-        HiddenToggle.Tag=Settings.ShowHidden?"on":null;
         PanesCommand.Tag=Settings.SinglePane?null:"on";
         PreviewCommand.Tag=Settings.Preview?"on":null;
         System.Windows.Automation.AutomationProperties.SetItemStatus(HiddenToggle,Settings.ShowHidden?"On":"Off");
@@ -27,8 +26,8 @@ public partial class MainWindow
     {
         if(AnalyzeSpaceCommand!=null)
         {
-            AnalyzeSpaceCommand.IsEnabled=active?.CanAnalyzeSpace==true;
-            AnalyzeSpaceCommand.Tag=active?.SpaceAnalyzing==true?"on":null;
+            AnalyzeSpaceCommand.IsEnabled=!AnalysisVisible&&active?.CanAnalyzeSpace==true;
+            AnalyzeSpaceCommand.Tag=!AnalysisVisible&&active?.SpaceAnalyzing==true?"on":null;
             AnalyzeSpaceCommand.ToolTip=active?.SpaceAnalyzing==true?"Restore the previous view":"Analyze space in this folder";
             System.Windows.Automation.AutomationProperties.SetItemStatus(AnalyzeSpaceCommand,active?.SpaceAnalyzing==true?"On":"Off");
         }

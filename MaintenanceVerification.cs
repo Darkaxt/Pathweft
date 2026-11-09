@@ -29,8 +29,11 @@ public partial class MainWindow
         File.WriteAllText(Path.Combine(root,"selection.txt"),"Maintenance must preserve this browser");await S1Verification.Navigate(active,root);
         active.ListForVerification.SelectedItem=active.Items.First(x=>!x.IsUp);string path=active.Dir;var selection=active.Selected.Select(x=>x.Path).ToArray();
         MaintenanceCommand.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await paneModeWork;UpdateLayout();
-        check(maintenance.IsVisible&&!PaneArea.IsVisible&&AnalysisVisible&&!TerminalCommand.IsEnabled&&Equals(MaintenanceCommand.Tag,"on"),"Actual brush opens Maintenance in the main pane and disables hidden file actions");
-        check(maintenance.Rows.Items.Count==CleanupReview.Targets.Length&&maintenance.Rows.Items.Cast<MaintenanceRow>().All(r=>r.Bytes.HasValue)&&maintenance.State=="All categories reviewed. Nothing has been removed.","Actual Maintenance button automatically queues every read-only Cleanup estimate without selecting a row or requesting elevation");
+        check(!maintenance.IsVisible&&PaneArea.IsVisible&&!AnalysisVisible&&TerminalCommand.IsEnabled&&Equals(MaintenanceCommand.Tag,"on")&&maintenance.Cards.IsVisible,"Brush first opens only the five Maintenance cards, preserving the usable file browser");
+        string automaticState=maintenance.State;
+        await maintenance.CategoryForVerification("Cleanup");UpdateLayout();
+        check(maintenance.IsVisible&&!PaneArea.IsVisible&&AnalysisVisible&&!TerminalCommand.IsEnabled,"Cleanup card opens the analysis section and gates hidden file actions");
+        check(maintenance.Rows.Items.Count==CleanupReview.Targets.Length&&maintenance.Rows.Items.Cast<MaintenanceRow>().All(r=>r.Bytes.HasValue)&&automaticState=="All categories reviewed. Nothing has been removed.","Actual Maintenance button automatically queues every read-only Cleanup estimate without selecting a row or requesting elevation");
         check(maintenance.Rows.SelectedItem==null,"Automatic analysis does not select a cleanup action on the user's behalf");
         var scoopRow=maintenance.Rows.Items.Cast<MaintenanceRow>().Single(r=>r.Id=="scoop-versions");maintenance.Rows.SelectedItem=scoopRow;
         check(scoopRow.Bytes>0&&maintenance.ExplanationForVerification.Contains("owned-ui-package"),"Automatic Scoop estimate and full candidate path reach the actual selected assessment");
@@ -40,7 +43,7 @@ public partial class MainWindow
         VerifyMaintenanceSorting(maintenance,check);
         var reached=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);var resume=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         maintenance.AnalyzeStepForVerification=async index=>{if(index==1){reached.TrySetResult();await resume.Task;}};
-        var originalWork=maintenance.Show();await reached.Task;
+        var originalWork=maintenance.Show();await reached.Task;maintenance.SelectCategoryForVerification("Cleanup");
         check(maintenance.State.Contains("2 of "+CleanupReview.Targets.Length)&&maintenance.Rows.Items.Cast<MaintenanceRow>().Single(x=>x.Id=="user-temp").Bytes.HasValue,"Automatic Cleanup publishes completed category estimates before the queue finishes");
         check(maintenance.Rows.IsEnabled&&!maintenance.AnalyzeEnabledForVerification,"Cleanup leaves inspection enabled while gating duplicate analysis and mutations");
         maintenance.Rows.SelectedItem=maintenance.Rows.Items.Cast<MaintenanceRow>().First();
@@ -54,13 +57,23 @@ public partial class MainWindow
         check(maintenance.State=="All categories reviewed. Nothing has been removed.","Analyze can run the complete queue without selecting a row");
         reached=new(TaskCreationOptions.RunContinuationsAsynchronously);resume=new(TaskCreationOptions.RunContinuationsAsynchronously);
         maintenance.AnalyzeStepForVerification=async index=>{if(index==4){reached.TrySetResult();await resume.Task;}};
-        originalWork=maintenance.Show();await reached.Task;
-        check(HiddenToggle.Visibility==Visibility.Collapsed,"File-browser hidden-files state is absent from Maintenance's command strip");
+        originalWork=maintenance.Show();await reached.Task;maintenance.SelectCategoryForVerification("Cleanup");
+        check(HiddenToggle.Visibility==Visibility.Visible&&HiddenToggle.Tag==null,"Hidden-files eye remains visible with no inherited active square in Maintenance");
+        int diskTransitions=0;var diskEnabled=System.ComponentModel.DependencyPropertyDescriptor.FromProperty(IsEnabledProperty,typeof(Button));
+        EventHandler diskStateChanged=(_,_)=>diskTransitions++;diskEnabled.AddValueChanged(AnalyzeSpaceCommand,diskStateChanged);
+        try{for(int i=0;i<12;i++){UpdateStats();UpdateCommandStates();}}
+        finally{diskEnabled.RemoveValueChanged(AnalyzeSpaceCommand,diskStateChanged);}
+        check(diskTransitions==0&&!AnalyzeSpaceCommand.IsEnabled,"Statistics and toolbar updates do not repeatedly re-enable/disable the disk-analysis command");
         var leaving=maintenance.ClickForVerification("Back to files");UpdateLayout();
-        check(PaneArea.IsVisible&&!maintenance.IsVisible&&HiddenToggle.Visibility==Visibility.Visible&&!originalWork.IsCompleted,"Back restores files immediately while the original cancelled analysis drains");
-        resume.SetResult();await originalWork;await leaving;await paneModeWork;maintenance.AnalyzeStepForVerification=null;
+        check(PaneArea.IsVisible&&!maintenance.IsVisible&&maintenance.Cards.IsVisible&&maintenanceVisible&&!originalWork.IsCompleted,"Back restores the file browser and leaves the Maintenance cards and original scan running");
+        var retiring=CloseMaintenance();
+        PerformanceCommand.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));UpdateLayout();
+        check(PerformanceMode&&PaneArea.IsVisible&&!changingPaneMode&&!originalWork.IsCompleted,"Performance mode is immediately usable while cancelled Maintenance work drains");
+        PerformanceCommand.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        check(!PerformanceMode&&!changingPaneMode,"A second mode action is not blocked by the previous scan's drainage");
+        resume.SetResult();await originalWork;await leaving;await retiring;await paneModeWork;maintenance.AnalyzeStepForVerification=null;
         MaintenanceCommand.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await paneModeWork;UpdateLayout();
-        check(maintenance.IsVisible&&maintenance.State=="All categories reviewed. Nothing has been removed.","Maintenance reopens normally after the original analysis and review disposal finish");
+        check(!maintenance.IsVisible&&PaneArea.IsVisible&&maintenance.State=="All categories reviewed. Nothing has been removed.","Maintenance reopens cards-first after the original analysis and review disposal finish");
         check(maintenance.Cards.IsVisible&&!StatsRow.IsVisible&&!performance.IsVisible&&((System.Windows.Controls.Primitives.UniformGrid)maintenance.Cards).Children.Count==5,"Brush replaces the bottom statistics with exactly five maintenance summary tabs");
         check(!PerformanceMode&&PerformanceCommand.Tag==null&&System.Windows.Automation.AutomationProperties.GetItemStatus(PerformanceCommand)=="Off","Maintenance exclusively owns the pane and Performance is off");
         PerformanceCommand.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await paneModeWork;UpdateLayout();

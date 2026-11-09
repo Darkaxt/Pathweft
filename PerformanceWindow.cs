@@ -12,6 +12,7 @@ public partial class MainWindow
     bool maintenanceClosing,maintenanceClosed;
     bool changingPaneMode;
     Task paneModeWork=Task.CompletedTask;
+    Task maintenanceRetiring=Task.CompletedTask;
     readonly Dictionary<PaneView,bool> performanceModes=new();
     void InitializePerformance()
     {
@@ -42,15 +43,17 @@ public partial class MainWindow
     async Task TogglePerformance()
     {
         if(changingPaneMode)return;changingPaneMode=true;
+        Task draining=Task.CompletedTask;
         try
         {
-        if(maintenanceVisible)await CloseMaintenance();
+        if(maintenanceVisible)draining=CloseMaintenance();
         if(active==null)return;
         performanceModes[active]=!performanceModes.GetValueOrDefault(active);
         if(!performanceModes[active])performance.Select(-1);
         RefreshPerformance();ArrangeStats();
         }
         finally{changingPaneMode=false;}
+        await draining;
     }
     bool PerformanceMode=>!maintenanceVisible&&active!=null&&performanceModes.GetValueOrDefault(active);
     void RefreshPerformance()
@@ -64,20 +67,22 @@ public partial class MainWindow
         string label=PerformanceMode?"Show folder statistics":"Show performance";
         PerformanceCommand.ToolTip=label;AutomationProperties.SetName(PerformanceCommand,label);
     }
-    bool AnalysisVisible=>maintenanceVisible||performance?.Selected>=0&&PerformanceMode;
+    bool AnalysisVisible=>maintenanceVisible&&maintenance?.Expanded==true||performance?.Selected>=0&&PerformanceMode;
     void ShowAnalysis()
     {
         if(performance==null)return;
         bool show=AnalysisVisible&&!maintenanceVisible;
         performance.Analysis.Visibility=show?Visibility.Visible:Visibility.Collapsed;
-        PaneArea.Visibility=show||maintenanceVisible?Visibility.Collapsed:Visibility.Visible;
-        HiddenToggle.Visibility=show||maintenanceVisible?Visibility.Collapsed:Visibility.Visible;
+        PaneArea.Visibility=AnalysisVisible?Visibility.Collapsed:Visibility.Visible;
+        HiddenToggle.Visibility=Visibility.Visible;
+        HiddenToggle.Tag=!maintenanceVisible&&!PerformanceMode&&Settings.ShowHidden?"on":null;
         // File actions must never target a selection hidden behind analysis.
         if(PerformanceCommand.Parent is Panel commands)foreach(var child in commands.Children)
-            if(child is Button button&&button!=PerformanceCommand&&button!=TransfersButton&&button!=MaintenanceCommand&&button!=AdministratorCommand)button.IsEnabled=!show&&!maintenanceVisible&&(button!=AnalyzeSpaceCommand||active?.CanAnalyzeSpace==true);
+            if(child is Button button&&button!=PerformanceCommand&&button!=TransfersButton&&button!=MaintenanceCommand&&button!=AdministratorCommand&&button!=AnalyzeSpaceCommand)button.IsEnabled=!AnalysisVisible;
+        UpdateSpaceCommandState();
         MaintenanceCommand.Tag=maintenanceVisible?"on":null;
         AutomationProperties.SetItemStatus(MaintenanceCommand,maintenanceVisible?"On":"Off");
-        MaintenanceCommand.ToolTip=maintenanceVisible?"Back to files":"Maintenance";
+        MaintenanceCommand.ToolTip=maintenanceVisible?"Show folder statistics":"Show maintenance";
     }
     async void Maintenance_Click(object sender,RoutedEventArgs e)
     {
@@ -89,21 +94,30 @@ public partial class MainWindow
         Task loading=Task.CompletedTask;
         try
         {
-        if(maintenanceVisible){await CloseMaintenance();return;}
+        if(maintenanceVisible){loading=CloseMaintenance();}
+        else
+        {
         if(maintenance==null)
         {
             maintenance=new();Grid.SetRow(maintenance,0);((Grid)StatsRow.Parent).Children.Add(maintenance);
             Grid.SetRow(maintenance.Cards,1);((Grid)StatsRow.Parent).Children.Add(maintenance.Cards);
-            maintenance.Back+=()=>Maintenance_Click(this,new RoutedEventArgs());
+            maintenance.AnalysisChanged+=ShowAnalysis;
+            maintenance.Back+=()=>{ShowAnalysis();active?.FocusList();};
         }
         if(active!=null)performanceModes[active]=false;
-        performance.Select(-1);maintenanceVisible=true;ArrangeStats();loading=maintenance.Show();
+        performance.Select(-1);maintenanceVisible=true;ArrangeStats();loading=OpenMaintenance();
+        }
         }
         finally{changingPaneMode=false;}
         await loading;
     }
+    async Task OpenMaintenance()
+    {
+        await maintenanceRetiring;
+        if(maintenanceVisible)await maintenance.Show();
+    }
     async Task CloseMaintenance()
     {
-        maintenanceVisible=false;var draining=maintenance?.Hide()??Task.CompletedTask;ArrangeStats();active?.FocusList();await draining;
+        maintenanceVisible=false;maintenanceRetiring=maintenance?.Hide()??Task.CompletedTask;ArrangeStats();active?.FocusList();await maintenanceRetiring;
     }
 }

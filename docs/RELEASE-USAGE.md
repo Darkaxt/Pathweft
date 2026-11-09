@@ -1,9 +1,13 @@
-# Pathweft 1.1.40
+# Pathweft 1.1.41
 
-The brush beside Performance opens Maintenance. Five bottom summary cards select
+The brush beside Performance opens five Maintenance summary cards while the
+file browser remains usable. The cards select
 Cleanup, Startup, Services, Windows tweaks and optional Windows apps. Cleanup
 automatically analyzes six categories, including obsolete Scoop versions and
-completed old downloads. Clean removes only reviewed, unchanged files. Scoop
+completed old downloads. Temporary files and downloads use exact reviewed-file
+removal. Obsolete Scoop versions use Everything size estimates, with native
+metadata enumeration only when an indexed size is unavailable. Clean removes
+each selected obsolete version folder and all its contents. Scoop
 current installations, persistent data, active consumers and ambiguous versions
 are preserved; downloads and installed versions are separate categories. Startup covers Run/RunOnce and policy Run entries, Startup-folder
 files/shortcuts and scheduled boot/logon tasks, with a Type column identifying the
@@ -20,10 +24,12 @@ original file/definition and enabled state. Independently changed values or file
 are not overwritten. Maintenance and Performance are mutually exclusive views;
 switching either off returns to files and ordinary statistics.
 Read-only analysis keeps selection, sorting, filtering and already loaded tabs
-available. Back returns to files while cancelling and draining the original
-scan. Mutations and duplicate scans remain gated; Scoop checks cancellation
-between native consumer-registration batches. File-browser visibility controls
-are hidden while an analysis pane owns the view.
+available. Back returns to files and keeps the cards and scan available. Switching
+Maintenance off cancels and drains its original scan without blocking mode
+navigation. Mutations and duplicate scans remain gated. Scoop checks consumers
+only during explicit removal, observing cancellation between registration batches.
+The hidden-files eye remains visible without its active square in Maintenance
+and Performance modes; its original state returns with ordinary folder statistics.
 Optional app removal applies only to the current user and does not remove Windows
 provisioning. Reinstall removed apps through Microsoft Store.
 

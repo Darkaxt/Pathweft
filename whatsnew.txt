@@ -1,6 +1,11 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.41 | 2026-11-09 | Fast Scoop estimates and usable Maintenance
+- Obsolete Scoop versions use Everything folder-size estimates without per-file inspection. Clean removes whole obsolete version folders, preserving current versions, packages in use and external persistent data.
+- The Maintenance button shows its five summary cards first. Open a section from its card, or return to files while analysis continues. Switching modes stays available while a cancelled scan drains.
+- Keep the hidden-files eye visible without its inherited active square in analysis modes. Disk-analysis toolbar updates no longer repeatedly enable and disable the button.
+
 ## 1.1.40 | 2026-11-09 | Responsive Cleanup analysis
 - Inspect, sort and filter Cleanup results while analysis runs. Loaded Maintenance categories stay accessible, and Back returns to files while the cancelled scan drains.
 - Scoop analysis observes cancellation between native resource-registration batches and releases its directory handles, preserving unprocessed files and packages in use.

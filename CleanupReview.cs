@@ -6,12 +6,12 @@ using Microsoft.Win32.SafeHandles;
 namespace FileExplorer;
 
 internal sealed record CleanupTarget(string Id,string Name,string Description,string Root,string Pattern="*");
-internal sealed record CleanupMember(string Relative,long Size,long Modified,uint Volume,ulong Identity,int Kind=0,int Group=-1);
+internal sealed record CleanupMember(string Relative,long Size,long Modified,uint Volume,ulong Identity,int Group=-1);
 internal sealed record CleanupOutcome(long Deleted,long Skipped,long Bytes,bool Cancelled);
 
 // Curated targets and analyze-first flow from SysOptimizer CleanupService (MIT).
-// A disk-streamed review and exact-handle deletion replace the donor's rescan /
-// recursive directory delete. New/changed members are never part of the review.
+// Temporary files/cache use a streamed exact-file review. Obsolete Scoop
+// versions use indexed estimates and explicit whole-folder deletion instead.
 internal sealed class CleanupReview : IDisposable
 {
     internal static CleanupTarget[] Targets
@@ -37,6 +37,8 @@ internal sealed class CleanupReview : IDisposable
     internal long Unreadable {get;private set;}
     readonly string manifest;
     readonly List<ScoopCleanup.Group> groups=[];
+    readonly List<long> versionBytes=[];
+    internal bool IndexedVersions {get;private set;}
     readonly List<string> examples=[];
     readonly HashSet<int> excludedGroups=[];
     bool disposed;
@@ -47,6 +49,7 @@ internal sealed class CleanupReview : IDisposable
     }
     internal void Analyze(CancellationToken cancel)
     {
+        if(Target.Id=="scoop-versions"){AnalyzeVersions(cancel);return;}
         using var stream=new FileStream(manifest,FileMode.CreateNew,FileAccess.Write,FileShare.Read);
         using var output=new StreamWriter(stream);
         if(ScoopCleanup.IsScoop(Target))
@@ -58,8 +61,7 @@ internal sealed class CleanupReview : IDisposable
                 try
                 {
                     using var guard=ScoopCleanup.Guard(group,cancel);
-                    if(group.Cache){foreach(string file in ScoopCleanup.CacheFiles(group))Record(file,0,index);}
-                    else Scan(group.Folder,index);
+                    foreach(string file in ScoopCleanup.CacheFiles(group))Record(file,index);
                     if(Unreadable>unreadable){excludedGroups.Add(index);Count=before;Bytes=beforeBytes;}
                     if(Count>before&&examples.Count<12)examples.Add(group.Cache?Path.GetFileName(Path.GetDirectoryName(group.Current))+" · old downloads":group.Folder);
                 }
@@ -92,46 +94,67 @@ internal sealed class CleanupReview : IDisposable
             }
             catch(Exception ex)when(ex is IOException or UnauthorizedAccessException or System.ComponentModel.Win32Exception){Unreadable++;}
         }
-        void Record(string path,int kind,int group)
+        void Record(string path,int group)
         {
             cancel.ThrowIfCancellationRequested();
             try
             {
                 using var handle=Open(path,false);var item=Info(handle,path);
-                if(item.Links!=1&&kind==0){Unreadable++;return;}
+                if(item.Links!=1){Unreadable++;return;}
                 bool directory=(item.Attributes&(uint)FileAttributes.Directory)!=0,link=(item.Attributes&(uint)FileAttributes.ReparsePoint)!=0;
-                if(kind==0&&(directory||link)||kind==1&&(!directory||link)||kind==2&&(!directory||!link))return;
-                long size=kind==0?((long)item.HighSize<<32)|item.LowSize:0;
-                output.WriteLine(JsonSerializer.Serialize(new CleanupMember(Path.GetRelativePath(Target.Root,path),size,item.Modified,item.Volume,item.Identity,kind,group)));
-                if(kind==0){Count++;Bytes+=size;}
+                if(directory||link)return;
+                long size=((long)item.HighSize<<32)|item.LowSize;
+                output.WriteLine(JsonSerializer.Serialize(new CleanupMember(Path.GetRelativePath(Target.Root,path),size,item.Modified,item.Volume,item.Identity,group)));
+                Count++;Bytes+=size;
             }
             catch(Exception ex)when(ScoopCleanup.Expected(ex)){Unreadable++;}
         }
-        void Scan(string folder,int group)
+    }
+    void AnalyzeVersions(CancellationToken cancel)
+    {
+        groups.AddRange(ScoopCleanup.Candidates(Target,cancel));
+        var sizes=ScoopCleanup.VersionSizes(groups,cancel);
+        IndexedVersions=sizes.Indexed;
+        foreach(var group in groups)
         {
-            var pending=new Stack<(string Folder,bool Visited)>();pending.Push((folder,false));
-            while(pending.TryPop(out var entry))
+            cancel.ThrowIfCancellationRequested();
+            if(!sizes.Bytes.TryGetValue(group.Folder,out long size)){Unreadable++;versionBytes.Add(-1);continue;}
+            versionBytes.Add(size);Count++;Bytes+=size;
+            if(examples.Count<12)examples.Add(group.Folder);
+        }
+    }
+    CleanupOutcome CleanVersions(CancellationToken cancel)
+    {
+        long deleted=0,skipped=0,bytes=0;
+        try
+        {
+            for(int i=0;i<groups.Count;i++)
             {
                 cancel.ThrowIfCancellationRequested();
-                if(entry.Visited){Record(entry.Folder,1,group);continue;}
-                if((File.GetAttributes(entry.Folder)&FileAttributes.ReparsePoint)!=0){Unreadable++;continue;}
-                foreach(string file in Directory.EnumerateFiles(entry.Folder))Record(file,0,group);
-                pending.Push((entry.Folder,true));
-                foreach(string child in Directory.EnumerateDirectories(entry.Folder))
+                if(versionBytes[i]<0){skipped++;continue;}
+                try
                 {
-                    if((File.GetAttributes(child)&FileAttributes.ReparsePoint)==0)pending.Push((child,false));
-                    else if(ScoopCleanup.PersistentLink(child,groups[group]))Record(child,2,group);
-                    else Unreadable++;
+                    using var guard=ScoopCleanup.Guard(groups[i],cancel);
+                    ScoopCleanup.DeleteVersion(groups[i],cancel);
+                    deleted++;bytes+=versionBytes[i];
+                }
+                catch(Exception error)when(ScoopCleanup.Expected(error)){
+#if DEBUG
+                    ScoopCleanup.DeleteFailureForVerification?.Invoke(error.ToString());
+#endif
+                    skipped++;
                 }
             }
+            return new(deleted,skipped,bytes,false);
         }
+        catch(OperationCanceledException)when(cancel.IsCancellationRequested){return new(deleted,skipped,bytes,true);}
     }
     internal CleanupOutcome Clean(CancellationToken cancel)
     {
+        if(Target.Id=="scoop-versions")return CleanVersions(cancel);
         long deleted=0,skipped=0,bytes=0;
         using var source=new StreamReader(manifest);
         IDisposable guard=null;int guarded=-1;bool allowed=true;
-        bool groupSkipped=false;var metadata=new List<CleanupMember>(4);
         try
         {
         while(source.ReadLine() is {} line)
@@ -143,7 +166,6 @@ internal sealed class CleanupReview : IDisposable
                 if(item.Group!=guarded)
                 {
                     guard?.Dispose();guard=null;guarded=item.Group;allowed=true;
-                    groupSkipped=false;metadata.Clear();
                     if(item.Group>=0)
                         try{if(excludedGroups.Contains(item.Group))throw new IOException("Version contains unavailable members");guard=ScoopCleanup.Guard(groups[item.Group],cancel);}
                         catch(Exception ex)when(ScoopCleanup.Expected(ex)){allowed=false;}
@@ -151,9 +173,6 @@ internal sealed class CleanupReview : IDisposable
                 if(!allowed){skipped++;continue;}
                 string path=Path.GetFullPath(Path.Combine(Target.Root,item.Relative)),root=Path.TrimEndingDirectorySeparator(Path.GetFullPath(Target.Root));
                 if(!path.StartsWith(root+Path.DirectorySeparatorChar,StringComparison.OrdinalIgnoreCase))throw new InvalidDataException("Cleanup member is outside its reviewed category");
-                if(item.Group>=0&&!groups[item.Group].Cache&&item.Kind==0&&ScoopCleanup.Same(Path.GetDirectoryName(path),groups[item.Group].Folder)&&
-                   Path.GetFileName(path) is "install.json" or "manifest.json" or "scoop-install.json" or "scoop-manifest.json")
-                {metadata.Add(item);continue;}
                 string parent=Path.GetDirectoryName(path);bool linked=false;
                 using var parents=new ParentHandles();
                 while(parent!=null&&(item.Group>=0||parent.Length>=root.Length))
@@ -161,48 +180,23 @@ internal sealed class CleanupReview : IDisposable
                     if(item.Group>=0)parents.Add(Open(parent,false,3));
                     if((File.GetAttributes(parent)&FileAttributes.ReparsePoint)!=0){linked=true;break;}parent=Path.GetDirectoryName(parent);
                 }
-                if(linked){skipped++;groupSkipped=true;continue;}
-                // Keep the reviewed object itself open before touching package
-                // metadata; a replaced directory must never lose its identity.
+                if(linked){skipped++;continue;}
                 using var handle=Open(path,true);var actual=Info(handle,path);
                 long length=((long)actual.HighSize<<32)|actual.LowSize;
                 bool directory=(actual.Attributes&(uint)FileAttributes.Directory)!=0,reparse=(actual.Attributes&(uint)FileAttributes.ReparsePoint)!=0;
-                if(actual.Volume!=item.Volume||actual.Identity!=item.Identity||
-                   item.Kind==0&&(actual.Links!=1||actual.Modified!=item.Modified||length!=item.Size||directory||reparse)||
-                   item.Kind==1&&(!directory||reparse)||
-                   item.Kind==2&&(!directory||!reparse||!ScoopCleanup.PersistentLink(path,groups[item.Group]))) {skipped++;groupSkipped=true;continue;}
-                if(item.Group>=0&&item.Kind==1&&ScoopCleanup.Same(path,groups[item.Group].Folder))
-                {
-                    // Keep installation identity until every other reviewed
-                    // member is gone. New/changed/busy leftovers remain eligible
-                    // for a future review instead of losing their metadata.
-                    if(groupSkipped||Directory.EnumerateFileSystemEntries(path).Any(p=>!metadata.Any(m=>ScoopCleanup.Same(p,Path.Combine(Target.Root,m.Relative)))))
-                    {skipped++;continue;}
-                    var metadataHandles=new List<SafeFileHandle>();
-                    try
-                    {
-                        foreach(var m in metadata)
-                        {
-                            var h=Open(Path.Combine(Target.Root,m.Relative),true);metadataHandles.Add(h);var metadataInfo=Info(h,m.Relative);
-                            if(metadataInfo.Links!=1||metadataInfo.Identity!=m.Identity||metadataInfo.Volume!=m.Volume||metadataInfo.Modified!=m.Modified||((long)metadataInfo.HighSize<<32|metadataInfo.LowSize)!=m.Size||
-                               (metadataInfo.Attributes&(uint)(FileAttributes.Directory|FileAttributes.ReparsePoint))!=0)throw new IOException("Package metadata changed");
-                        }
-                        foreach(var h in metadataHandles){bool remove=true;if(!SetFileInformationByHandle(h,4,ref remove,1))throw new System.ComponentModel.Win32Exception();}
-                        deleted+=metadata.Count;bytes+=metadata.Sum(m=>m.Size);
-                    }
-                    finally{foreach(var h in metadataHandles)h.Dispose();}
-                }
+                if(actual.Volume!=item.Volume||actual.Identity!=item.Identity||actual.Links!=1||actual.Modified!=item.Modified||length!=item.Size||directory||reparse)
+                {skipped++;continue;}
                 bool disposition=true;if(!SetFileInformationByHandle(handle,4,ref disposition,1))throw new System.ComponentModel.Win32Exception();
-                if(item.Kind==0){deleted++;bytes+=length;}
+                deleted++;bytes+=length;
             }
-            catch(Exception ex)when(ex is IOException or UnauthorizedAccessException or System.ComponentModel.Win32Exception){skipped++;groupSkipped=true;}
+            catch(Exception ex)when(ex is IOException or UnauthorizedAccessException or System.ComponentModel.Win32Exception){skipped++;}
         }
         return new(deleted,skipped,bytes,false);
         }
         catch(OperationCanceledException)when(cancel.IsCancellationRequested){return new(deleted,skipped,bytes,true);}
         finally{guard?.Dispose();}
     }
-    internal MaintenanceRow Row=>new(Target.Id,Target.Name,"This computer",$"{Count:N0} reviewed files",Target.Description+(Unreadable>0?$" · {Unreadable:N0} unavailable entries":"")+(examples.Count>0?"\n"+string.Join("\n",examples):""),Bytes);
+    internal MaintenanceRow Row=>new(Target.Id,Target.Name,"This computer",Target.Id=="scoop-versions"?$"{Count:N0} obsolete versions":$"{Count:N0} reviewed files",Target.Description+(Unreadable>0?$" · {Unreadable:N0} unavailable entries":"")+(examples.Count>0?"\n"+string.Join("\n",examples):""),Bytes);
     public void Dispose(){if(disposed)return;disposed=true;File.Delete(manifest);}
     sealed class ParentHandles:IDisposable
     {readonly List<SafeFileHandle> handles=[];internal void Add(SafeFileHandle h)=>handles.Add(h);public void Dispose(){foreach(var h in handles)h.Dispose();}}

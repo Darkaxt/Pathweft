@@ -6,7 +6,16 @@ their published assets are verified. Retain concise verification results and
 reusable fixtures, not repeated expanded cleanup manifests, retired test profiles
 or superseded captures. Clean exact generated targets through transactional-cleanup.
 
-Current2026-11-09/spec1.00: S41 remains the only ACTIVE stage. MAINT-16 corrects
+Current2026-11-09/spec1.01: S41 remains the only ACTIVE stage. Actual UI196476
+passes the complete corrected Maintenance workflow: Everything sizing without
+consumer registration or per-file version manifests; whole obsolete-folder
+removal; current/active/external-data preservation; cards-first entry; navigation
+during scan/drain; visible neutral eye and stable disk-command state. Read-only
+host inventory returned34 versions/4,814,387,987 bytes in1,764ms, fully indexed.
+No host Scoop mutation. Native guest4340 donor-action/Restore evidence remains
+applicable. Final and independent normal1.1.41 delivery remain; no other stage.
+
+Previous2026-11-09/spec1.00: S41 remains the only ACTIVE stage. MAINT-16 corrects
 read-only inspection/navigation gating during Cleanup and cancellation between
 Scoop resource-registration batches. Hidden is absent from analysis views.
 Actual UI213476 passes held-scan navigation, native cancellation, category-result

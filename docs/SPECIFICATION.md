@@ -1,6 +1,6 @@
 # Pathweft specification
 
-Version 1.00 - 2026-11-09. Owner: Darkaxt.
+Version 1.01 - 2026-11-09. Owner: Darkaxt.
 
 ### Direct Maintenance actions (S40)
 
@@ -23,16 +23,21 @@ folder sweep or Windows Installer-cache purge. Integrate analysis/review/action
 with the existing Cleanup tab/card and verify owned package fixtures and one
 combined normal release after S40 and S41 acceptance.
 
-MAINT-16 (S41 responsiveness correction): automatic Cleanup analysis must not
+MAINT-16 (S41 responsiveness correction, revised by the user2026-11-09): automatic Cleanup analysis must not
 lock the browser's navigation or its read-only Maintenance inspection. Keep
 selection, sorting, selected details and already loaded category tabs usable
-while analysis runs; mutation and duplicate analysis remain gated. Back to files
-cancels and drains the original scan without withholding the file view. Observe
+while analysis runs; mutation and duplicate analysis remain gated. Leaving
+Maintenance cancels/drains the original scan without withholding the file view. Observe
 cancellation throughout Scoop consumer-check enumeration and between native
 registration calls; retain active-package protection and release every native
 session/handle on cancellation. Show the category being analyzed in its row.
-The hidden-files eye belongs to file browsing and is absent while Maintenance
-or Performance analysis owns the main pane, returning with its preserved state.
+The brush first replaces the bottom cards only, just like Performance. A card
+opens its analysis section; Back to files restores the browser and keeps the
+cards. Leaving Maintenance mode cancels/drains its original work without blocking
+switching modes or file tabs. Keep the hidden-files eye visible; suppress its
+selected square in Maintenance/Performance and restore the preserved browser
+state on return. Disk-analysis enabled/selected state has one context-aware
+writer and must not oscillate on statistics updates.
 Verify actual UI actions during an event-held scan, cancellation during native
 Scoop resource registration, original-task drainage and repeat entry. The
 published1.1.39 independent popup-search assertion failed; preserve and
@@ -46,12 +51,20 @@ Scoop root/cache from its environment/configuration and defaults. Identify
 installed versions using Scoop metadata and a valid current junction; ambiguous
 or no-junction installations are preserved. Exclude the Scoop manager itself,
 current version/cache, partial downloads, unknown files and persistent data.
-Review exact members, then recheck current binding, native file identities,
-changes, active consumers and links before removal; remove only reviewed empty
-directories and persistent-data link names without traversing their targets.
+User2026-11-09 explicitly replaces the per-file review/deletion contract for
+obsolete Scoop versions: inventory candidate version folders and estimate bytes
+using Everything, with bounded native metadata enumeration only if the index
+does not cover them. Analysis never registers package files with Restart Manager
+or creates per-file deletion manifests. On explicit Clean, recheck current binding,
+installation metadata and active consumers, then remove each obsolete version
+folder recursively. Contents added/changed within that obsolete version are
+included, as requested; never traverse persistent-data links or other reparse
+targets. Current versions, active versions and external persistent data remain
+protected. Download-cache cleanup retains its exact reviewed-file contract.
 Show candidate names/paths in selectable assessment and aggregate their bytes
 in Cleanup. Verify owned fixtures for normal cleanup, current retargeting,
-changed/new/busy/hardlinked files, persistent links and active executables; never
+whole-version removal including new/changed members, busy files, hardlink names,
+persistent links and active executables; never
 clean the host's package installation as a test. Final S41 delivery bundles S40
 and MAINT-14 in one normal independently verified release.
 

@@ -1,8 +1,43 @@
 # Complete Maintenance adoption
 
-Authority: specification1.00, MAINT-12..16. S40 source acceptance is included in
+Authority: specification1.01, MAINT-12..16. S40 source acceptance is included in
 the combined Maintenance delivery. S41 remains ACTIVE until package/publication and
 independent delivered checks pass.
+
+## Current correction acceptance
+
+Actual hidden application196476/result0 passes the complete integrated workflow.
+Automatic obsolete-version analysis queries Everything folder sizes and creates
+neither a per-file deletion manifest nor Restart Manager registrations. A read-only
+host inventory returned34 obsolete versions/4,814,387,987 bytes in1,764ms, all
+indexed. Missing indexed sizes use metadata-only enumeration. Host Scoop was never
+cleaned during verification.
+
+Explicit Clean revalidates the current binding, installed metadata and active
+consumers, then removes the entire candidate folder, including new/changed
+contents. Owned fixtures preserve the current/retargeted version, a running old
+executable, busy versions, manager/unknown folders and external persistent data.
+The .NET recursive directory implementation treats junctions as possible volume
+mounts; its DeleteVolumeMountPoint path caused Access denied for the owned
+persistent-data fixture. Unlinking reparse directory names before recursive
+removal resolves that cause without traversing their targets. See the
+[.NET10 implementation](https://raw.githubusercontent.com/dotnet/runtime/v10.0.0/src/libraries/System.Private.CoreLib/src/System/IO/FileSystem.Windows.cs).
+Temporary-file/download-cache cleanup retains exact reviewed-file checks.
+
+The real UI verifies cards-first entry with the browser usable, all six automatic
+categories, actual owned-version Clean, selectable assessment/sorting/filtering,
+category switching during an event-held scan, Back retaining cards/analysis,
+immediate Performance navigation while cancellation drains, and repeat entry.
+The eye stays visible and neutral in analysis modes. Twelve statistics/command
+refresh cycles produce zero disk-button enabled-state transitions. Dark/light,
+100/150-percent and narrow presentation passes. Existing direct Startup actions,
+double-click/exact Restore and generic Cleanup safety checks also pass.
+
+The initial owned-junction failure and a later test-harness status-order failure
+are retained alongside the final results; no failed acceptance was ignored.
+Native guest4340 donor-action/readback/exact Restore evidence below remains
+applicable to unchanged definitions. Final normal1.1.41 publication and its full
+final/independent delivered consumers remain outstanding.
 
 ## Verified implementation
 
@@ -66,6 +101,9 @@ is unexplained; no production search fix, timeout, retry or weakened assertion
 was introduced. The new focused route records the actual query/notice/count/style
 for diagnosing any recurrence.
 
-Pending: committed clean-source
-1.1.40 package, full final/independent delivered checks, normal publication and
-exact spent-output cleanup. No tracked deferral or external blocker.
+Normal1.1.40/b2969b2 final and independent203532/session78571 checks passed.
+Its delivered behavior did not include the subsequent spec1.01 correction above.
+Spent independent extraction/downloads and verified obsolete local releases were
+transactionally cleaned. Pending: clean-source1.1.41 package, full final/independent
+delivered checks, normal publication and exact spent-output cleanup. No tracked
+deferral or external blocker.

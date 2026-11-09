@@ -18,8 +18,8 @@ sealed partial class PackageProbe
         command.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         var panel=owner.GetType().GetField("maintenance",Flags).GetValue(owner);
         var type=panel.GetType();
-        Check(hidden.Visibility==Visibility.Collapsed&&((ListView)type.GetProperty("Rows",Flags).GetValue(panel)).IsEnabled,
-            "Delivered read-only Maintenance keeps its table interactive and hides the inherited file-visibility command");
+        Check(hidden.Visibility==Visibility.Visible&&hidden.Tag==null&&((Border)panel).Visibility==Visibility.Collapsed&&((FrameworkElement)owner.FindName("PaneArea")).Visibility==Visibility.Visible,
+            "Delivered Maintenance starts with cards and browser; Hidden stays visible without an active square");
         await (Task)owner.GetType().GetField("paneModeWork",Flags).GetValue(owner);
         var cards=(UniformGrid)type.GetProperty("Cards",Flags).GetValue(panel);
         var rows=(ListView)type.GetProperty("Rows",Flags).GetValue(panel);
@@ -37,6 +37,7 @@ sealed partial class PackageProbe
             var card=(Button)cards.Children[i];
             card.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             await (Task)type.GetProperty("Ready",Flags).GetValue(panel);
+            Check(((Border)panel).Visibility==Visibility.Visible&&hidden.Visibility==Visibility.Visible&&hidden.Tag==null,"Delivered card opens the main analysis without hiding or selecting the eye");
             Check((string)type.GetProperty("Category",Flags).GetValue(panel)==categories[i]&&
                 AutomationProperties.GetItemStatus(card)=="Selected"&&card.ToolTip!=null,
                 "Delivered Maintenance card selects its real category and summary: "+categories[i]);

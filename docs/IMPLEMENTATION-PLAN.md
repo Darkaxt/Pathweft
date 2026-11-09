@@ -1,9 +1,21 @@
 # Implementation and reconciliation
 
-Authority: [SPECIFICATION.md](SPECIFICATION.md), version 1.00, 2026-11-09,
+Authority: [SPECIFICATION.md](SPECIFICATION.md), version 1.01, 2026-11-09,
 including the user-authorized continued comparison requirement TRANSFER-07.
 
-Current2026-11-09: S39 COMPLETE: source98992 and guest4040/build26100;
+Current correction2026-11-09: S41 remains ACTIVE for final1.1.41 delivery.
+Actual UI196476/result0 verifies Everything-based version estimates without
+Restart Manager or deletion manifests, whole obsolete-folder removal with
+current/active/external-data preservation, cards-first Maintenance, category/file
+navigation during analysis/drainage, visible neutral eye and stable disk state.
+Read-only host Scoop inventory returned34 versions/4,814,387,987 bytes in1,764ms,
+fully indexed, without consumer registration. Native guest4340 donor-action and
+exact Restore evidence remains applicable. Independent1.1.40/session78571 finished
+result0; its spent retrieval/extraction and hash-verified obsolete local releases
+were transactionally cleaned. Require final and independently downloaded1.1.41
+package checks and publication. No external blocker, deferral or other ACTIVE stage.
+
+Previous checkpoint2026-11-09: S39 COMPLETE: source98992 and guest4040/build26100;
 normal1.1.38/5df239e final235436/independent233852 pass. Installed230000 verifies
 11,305 members, ready restarted main232036/helper213028,22 routes and unchanged
 profile/shortcut identity. Spent scratch and obsolete local dist1.1.37 are cleaned.
@@ -1297,7 +1309,7 @@ plan neither authorizes itself nor adds approval checkpoints.
 | S38 - Updater scratch and live analysis disclosure | COMPLETE | STORAGE-01/SPACE-08 | S37 COMPLETE; explicit source-only boundary | Actual source205020/226536 and consumer compilation pass. Legacy cleanup removes26 checksum-verified updater downloads,8,906,892,051 bytes. Preserve relocated profile; no further compilation, version bump or release for this fix. No blocker/deferral/refactor. |
 | S39 - Maintenance guidance and categorized settings | COMPLETE | MAINT-08..11; final DELIVERY | S38 COMPLETE | Source98992/guest4040; published1.1.38/5df239e final235436/independent233852 and installed230000 pass. Pending recommendations/dropdown alignment verified; spent scratch cleaned. No blocker/deferral or required refactor. |
 | S40 - Direct Maintenance actions | COMPLETE | MAINT-12..13 | S39 COMPLETE | Actual UI204416 verifies owned Startup double-click/exact Restore, direct buttons/external-change refusal/Cleanup, selectable exact assessment, ignored header/blank and busy gating, dark/light/scaled/narrow presentation. No required refactor/blocker/deferral. S41 owns combined final delivery. |
-| S41 - Complete Maintenance adoption and cleanup | ACTIVE | MAINT-14..16 and final DELIVERY | S40 COMPLETE | Real donor actions/exact Restore, guidance/selectable details, reviewed Scoop cleanup with responsive inspection/navigation and native cancellation. Existing source/native evidence passes; require current affected UI and final/independent1.1.40 delivery. Preserve the unexplained1.1.39 independent popup failure. |
+| S41 - Complete Maintenance adoption and cleanup | ACTIVE | MAINT-14..16 and final DELIVERY | S40 COMPLETE | Native guest4340 donor actions/exact Restore and current actual UI196476 full Maintenance workflow pass, including indexed estimates, whole-version removal, cards-first/navigation/drain and stable toolbar states. Final/independent1.1.41 package, normal publication and cleanup remain. Preserve the unexplained1.1.39 independent popup failure. |
 | S25 - Summary-card motion | NOT STARTED | MOTION-01..03; affected MONITOR/CORE-03/LIFE/DELIVERY | S18 COMPLETE; after S28 and before S12 | Upward card entry with smooth file-pane squeeze; rotation between Statistics/Performance; reversal/interruption and focus/scroll preservation; reduced-motion support and actual frame/layout/resource qualification. One final independently/installed verified release after implementation authorization. No criteria verified yet. |
 | S12 - Tresorit capability investigation | NOT STARTED | TRES-01..04 | S15 delivered; S16/S18/S25 considered first in the selected execution order | Supported API/client assessment, bounded REA as needed, evidence-backed capability matrix/decision and implementation proposal. Investigation only; no cloud mutation or integration implementation. |
 | S19 - Selected-folder content indexing | NOT STARTED | CONTENT-01..06; affected SEARCH/CORE/LIFE/DELIVERY | After S12 in the selected execution order; qualify extractor APIs, query/location semantics, provider metadata and resource budgets | Toolbar folder opt-in/current magnifier badges; qualified Craft/text extraction; persisted searchable strings and location arrays, periodic incremental refresh and cloud-cache independence. Verify actual search/open/freshness/recovery and one final independently/installed verified release when implementation is authorized. No criteria verified yet. |

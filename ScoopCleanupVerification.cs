@@ -11,6 +11,23 @@ internal static class ScoopCleanupVerification
         string before=Environment.GetEnvironmentVariable("SCOOP"),cacheBefore=Environment.GetEnvironmentVariable("SCOOP_CACHE");
         try
         {
+            ScoopCleanup.DeleteFailureForVerification=error=>File.AppendAllText(Path.Combine(root,"scoop-delete-errors.txt"),error+Environment.NewLine);
+            // Read-only qualification against the real inventory, before the
+            // fixture environment is selected. Never clean a host package.
+            var live=CleanupReview.Targets.Single(t=>t.Id=="scoop-versions");
+            if(Directory.Exists(live.Root))
+            {
+                int registrations=0;ScoopCleanup.ResourcesRegisteredForVerification=()=>registrations++;
+                try
+                {
+                    var clock=Stopwatch.StartNew();
+                    using var estimate=new CleanupReview(live,Path.Combine(root,"live-estimate"));
+                    await Task.Run(()=>estimate.Analyze(default));clock.Stop();
+                    File.WriteAllText(Path.Combine(root,"scoop-live-estimate.json"),System.Text.Json.JsonSerializer.Serialize(new{live.Root,estimate.Count,estimate.Bytes,estimate.Unreadable,estimate.IndexedVersions,milliseconds=clock.Elapsed.TotalMilliseconds,registrations}));
+                    check(registrations==0&&Directory.GetFiles(Path.Combine(root,"live-estimate")).Length==0,"Real Scoop estimation performs no consumer registration or per-file deletion manifest");
+                }
+                finally{ScoopCleanup.ResourcesRegisteredForVerification=null;}
+            }
             string fixture=Fixture("normal");var version=Package(fixture,"sample");
             string persistent=Path.Combine(fixture,"persist","sample");Directory.CreateDirectory(persistent);File.WriteAllText(Path.Combine(persistent,"user.txt"),"user data");
             await Junction(Path.Combine(version.Old,"data"),persistent);
@@ -41,8 +58,11 @@ internal static class ScoopCleanupVerification
                     if(change=="busy")busy=new(file,FileMode.Open,FileAccess.ReadWrite,FileShare.None);
                     if(change=="hardlink")check(CreateHardLink(Path.Combine(fixture,"alias.txt"),file,IntPtr.Zero),"Owned Scoop hardlink fixture created");
                     var outcome=review.Clean(default);
-                    check(outcome.Skipped>0&&Directory.Exists(version.Old)&&File.Exists(Path.Combine(version.Old,"manifest.json"))&&File.Exists(Path.Combine(version.Active,"payload.txt"))&&
-                        (change=="new"?File.Exists(Path.Combine(version.Old,"new.txt")):File.Exists(file)),"Scoop cleanup preserves current or changed/new/busy/linked members and installation identity: "+change);
+                    if(change is "retarget" or "busy")
+                        check(outcome.Skipped>0&&Directory.Exists(version.Old)&&File.Exists(file)&&File.Exists(Path.Combine(version.Active,"payload.txt")),"Scoop whole-version cleanup preserves a current or busy version: "+change);
+                    else
+                        check(outcome.Deleted==1&&!Directory.Exists(version.Old)&&File.Exists(Path.Combine(version.Active,"payload.txt"))&&
+                            (change!="hardlink"||File.ReadAllText(Path.Combine(fixture,"alias.txt"))=="original package 1.0"),"Scoop deletes the entire obsolete version, including added/changed contents and only the owned hardlink name: "+change);
                 }
                 finally{busy?.Dispose();}
             }
@@ -57,7 +77,7 @@ internal static class ScoopCleanupVerification
                     // the first output line can therefore include that prefix.
                     while(await process.StandardOutput.ReadLineAsync() is {} line)if(line.TrimEnd().EndsWith("PATHWEFT_READY",StringComparison.Ordinal))break;
                     using var review=Review(fixture,false);review.Analyze(default);var outcome=review.Clean(default);
-                    check(!process.HasExited&&review.Count==0&&outcome.Deleted==0&&File.Exists(executable)&&File.Exists(Path.Combine(version.Old,"manifest.json")),"Native Restart Manager identifies an old package's running executable and preserves the entire version");
+                    check(!process.HasExited&&review.Count==1&&outcome.Deleted==0&&outcome.Skipped==1&&File.Exists(executable)&&File.Exists(Path.Combine(version.Old,"manifest.json")),"Fast estimate includes the old version; explicit Clean detects its running executable and preserves the entire version");
                 }
                 finally{if(!process.HasExited){await process.StandardInput.WriteLineAsync("exit");process.StandardInput.Close();await process.WaitForExitAsync();}}
             }
@@ -73,7 +93,9 @@ internal static class ScoopCleanupVerification
                 try
                 {
                     using var review=Review(fixture,false);
-                    try{review.Analyze(cancellation.Token);}catch(OperationCanceledException){cancelled=true;}
+                    review.Analyze(cancellation.Token);
+                    check(registered==0&&review.Count==1,"Version estimation never performs Restart Manager file registration");
+                    cancelled=review.Clean(cancellation.Token).Cancelled;
                     check(cancelled&&registered==1&&File.Exists(Path.Combine(version.Old,"payload.txt")),"Scoop cancellation stops between native registration batches without deleting any package");
                 }
                 finally{ScoopCleanup.ResourcesRegisteredForVerification=null;}
@@ -88,7 +110,7 @@ internal static class ScoopCleanupVerification
                 finally{ScoopCleanup.ResourcesRegisteredForVerification=null;}
             }
         }
-        finally{Environment.SetEnvironmentVariable("SCOOP",before);Environment.SetEnvironmentVariable("SCOOP_CACHE",cacheBefore);}
+        finally{ScoopCleanup.DeleteFailureForVerification=null;Environment.SetEnvironmentVariable("SCOOP",before);Environment.SetEnvironmentVariable("SCOOP_CACHE",cacheBefore);}
 
         string Fixture(string name)
         {string path=Path.Combine(root,"scoop-fixtures",name);Directory.CreateDirectory(path);Environment.SetEnvironmentVariable("SCOOP",path);Environment.SetEnvironmentVariable("SCOOP_CACHE",Path.Combine(path,"cache"));return path;}

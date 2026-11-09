@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
 using Microsoft.Win32.SafeHandles;
+using FileExplorer.Search;
 
 namespace FileExplorer;
 
@@ -37,6 +38,37 @@ internal static class ScoopCleanup
     }
     static string Full(string path)=>Path.TrimEndingDirectorySeparator(Path.GetFullPath(Environment.ExpandEnvironmentVariables(path)));
     internal static bool IsScoop(CleanupTarget target)=>target.Id is "scoop-versions" or "scoop-cache";
+    internal static (Dictionary<string,long> Bytes,bool Indexed) VersionSizes(IReadOnlyList<Group> groups,CancellationToken cancel)
+    {
+        var sizes=new Dictionary<string,long>(StringComparer.OrdinalIgnoreCase);
+        if(groups.Count==0)return(sizes,false);
+        try
+        {
+            sizes=EverythingSearchClient.Shared.FolderSizesAsync(groups.Select(g=>g.Folder),"",cancel).GetAwaiter().GetResult();
+        }
+        catch(Exception error)when(error is InvalidOperationException or System.ComponentModel.Win32Exception){ }
+        bool indexed=groups.Count>0&&sizes.Count==groups.Count;
+        foreach(var group in groups)
+        {
+            cancel.ThrowIfCancellationRequested();
+            if(sizes.ContainsKey(group.Folder))continue;
+            try
+            {
+                // File metadata only when Everything has no folder-size entry.
+                // No file handles, deletion manifest or consumer registration.
+                long bytes=0;var folders=new Stack<string>();folders.Push(group.Folder);
+                while(folders.TryPop(out string folder))
+                {
+                    cancel.ThrowIfCancellationRequested();
+                    if(Linked(folder))continue;
+                    SpaceScan.Enumerate(folder,item=>{if(item.Reparse)return;if(item.Directory)folders.Push(item.Path);else bytes+=item.Bytes;},cancel);
+                }
+                sizes[group.Folder]=bytes;
+            }
+            catch(Exception error)when(Expected(error)){ }
+        }
+        return(sizes,indexed);
+    }
     internal static IEnumerable<Group> Candidates(CleanupTarget target,CancellationToken cancel)
     {
         string apps=target.Id=="scoop-versions"?target.Root:Path.Combine(Locations().Root,"apps");
@@ -98,8 +130,28 @@ internal static class ScoopCleanup
         string destination=new DirectoryInfo(path).ResolveLinkTarget(false)?.FullName;
         return destination!=null&&(Same(destination,persist)||Below(destination,persist));
     }
+    internal static void DeleteVersion(Group group,CancellationToken cancel)
+    {
+        // Unlink directory junction names before recursive removal. .NET's
+        // recursive path calls DeleteVolumeMountPoint for junctions, requiring
+        // volume-management access even for an ordinary user-owned Scoop link.
+        // Non-recursive deletion removes the link itself, never its target.
+        var folders=new Stack<string>();folders.Push(group.Folder);
+        while(folders.TryPop(out string folder))
+        {
+            cancel.ThrowIfCancellationRequested();
+            foreach(string child in Directory.EnumerateDirectories(folder))
+            {
+                cancel.ThrowIfCancellationRequested();
+                if(Linked(child))Directory.Delete(child,false);else folders.Push(child);
+            }
+        }
+        cancel.ThrowIfCancellationRequested();
+        Directory.Delete(group.Folder,true);
+    }
 #if DEBUG
     internal static Action ResourcesRegisteredForVerification;
+    internal static Action<string> DeleteFailureForVerification;
 #endif
     internal static IDisposable Guard(Group group,CancellationToken cancel=default)
     {
