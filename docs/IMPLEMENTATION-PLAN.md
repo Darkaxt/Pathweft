@@ -1,7 +1,32 @@
 # Implementation and reconciliation
 
-Authority: [SPECIFICATION.md](SPECIFICATION.md), version 1.05, 2026-11-09,
+Authority: [SPECIFICATION.md](SPECIFICATION.md), version 1.06, 2026-11-09,
 including the user-authorized continued comparison requirement TRANSFER-07.
+
+Current2026-11-09: S41 is BLOCKED on the managed .NET compilation boundary.
+The 1.1.46 source correction and owned ReadOnly-file fixture are present, but
+Coordinator build ticket `194fa54cbc569b5cb29534bbe68aeec1` rejects exact
+Debug attempt 1 before a workflow starts with `BUILD_INPUTS_CHANGED`; the
+source pins match their files, and the same native rejection occurs with the
+issued command/environment through the supported wrapper. `build-status`
+reports no workflow or compiler result. The supported correction path requires
+a failed workflow identity, which the predispatch rejection did not create.
+This external gate condition blocks compiled fixture acceptance, final commit,
+1.1.46 packaging/publication and installed readback. Resolve the original
+ticket through the Coordinator's supported owner path; do not run a competing
+direct build. The 15 user-reported host obsolete folders are now absent,
+current bindings and six persist roots remain, and installed 1.1.45 passed
+member/profile/routing readback. No other ACTIVE stage or tracked deferral.
+
+Previous correction2026-11-09: S41 remained ACTIVE. Normal 1.1.45/113ae07 was
+published with six hash-matched assets, independently downloaded and source
+verified, then installed with 11,309 matching members, unchanged profile and
+22 live shell values. Its exact host retry removed 14 of 15 reviewed obsolete
+versions in 14.5 seconds. The sole MSYS2 residual stopped at a regular ReadOnly
+`cacerts` file after partial deletion; current bindings and six persistent
+targets remain intact. Correct direct deletion's ReadOnly recovery, verify an
+owned fixture, deliver and installed-verify 1.1.46, then remove the exact
+remaining residual. No other ACTIVE stage or tracked deferral.
 
 Current correction2026-11-09: S41 is ACTIVE again for the installed MAINT-17
 ReadOnly-junction regression. Live Cleanup completed 3 of 18 versions and

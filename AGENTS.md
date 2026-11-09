@@ -6,7 +6,27 @@ their published assets are verified. Retain concise verification results and
 reusable fixtures, not repeated expanded cleanup manifests, retired test profiles
 or superseded captures. Clean exact generated targets through transactional-cleanup.
 
-Current2026-11-09/spec1.05: S41 is ACTIVE for the installed MAINT-17
+Current2026-11-09/spec1.06: S41 is BLOCKED on Coordinator's managed .NET
+build admission. Original ticket `194fa54cbc569b5cb29534bbe68aeec1`
+rejects exact Debug attempt 1 with `BUILD_INPUTS_CHANGED` before workflow
+dispatch; no compiler ran and no failed workflow exists for build-correct.
+The 1.1.46 ReadOnly-file source patch is uncompiled and unreleased. Installed
+1.1.45 is fully read back, and all 15 originally reported host obsolete folders
+are now gone through its 14 successful deletions and exact residual removal.
+Resolve the original gate ticket through supported owner recovery before
+verification, commit, final publication and installed 1.1.46 readback. No
+other ACTIVE stage or deferral.
+
+Previous2026-11-09/spec1.06: S41 was ACTIVE for the installed MAINT-17
+ReadOnly-file correction. Normal 1.1.45/113ae07 passed publication,
+independent source and installed readback. The exact live retry removed 14 of
+15 reviewed obsolete versions in 14.5 seconds; the remaining partially
+removed MSYS2 tree contains an ordinary ReadOnly `cacerts` file. Preserve
+current versions and six persistent targets. Correct the failure-only ReadOnly
+recovery, verify the owned fixture, release and installed-verify 1.1.46, then
+remove only the exact MSYS2 residual. No other ACTIVE stage or deferral.
+
+Previous2026-11-09/spec1.05: S41 was ACTIVE for the installed MAINT-17
 ReadOnly-junction regression. The user's live Cleanup removed 3 of 18 reviewed
 obsolete versions but skipped 15 at ReadOnly Scoop persistent-data junctions.
 An owned NTFS fixture and unfixed app trial reproduce the nonrecursive .NET

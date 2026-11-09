@@ -143,7 +143,41 @@ internal static class ScoopCleanup
                 else folders.Push(child);
             }
         }
-        Directory.Delete(group.Folder,true);
+        try{Directory.Delete(group.Folder,true);}
+        catch(Exception error)when(error is IOException or UnauthorizedAccessException)
+        {
+            // Native recursive deletion can stop at an ordinary ReadOnly file.
+            // Only after that actual failure, inspect the remaining package
+            // tree and clear ReadOnly on its own regular members. Never change
+            // attributes through a reparse point into persistent user data.
+            bool changed=false;
+            var remaining=new Stack<string>();remaining.Push(group.Folder);
+            while(remaining.TryPop(out string folder))
+            {
+                cancel.ThrowIfCancellationRequested();
+                var folderAttributes=File.GetAttributes(folder);
+                if((folderAttributes&FileAttributes.ReparsePoint)!=0)continue;
+                if((folderAttributes&FileAttributes.ReadOnly)!=0)
+                {
+                    File.SetAttributes(folder,folderAttributes&~FileAttributes.ReadOnly);
+                    changed=true;
+                }
+                foreach(string file in Directory.EnumerateFiles(folder))
+                {
+                    cancel.ThrowIfCancellationRequested();
+                    var attributes=File.GetAttributes(file);
+                    if((attributes&(FileAttributes.ReparsePoint|FileAttributes.ReadOnly))==FileAttributes.ReadOnly)
+                    {
+                        File.SetAttributes(file,attributes&~FileAttributes.ReadOnly);
+                        changed=true;
+                    }
+                }
+                foreach(string child in Directory.EnumerateDirectories(folder))
+                    if((File.GetAttributes(child)&FileAttributes.ReparsePoint)==0)remaining.Push(child);
+            }
+            if(!changed)throw;
+            Directory.Delete(group.Folder,true);
+        }
     }
 #if DEBUG
     internal static Action<string> DeleteFailureForVerification;

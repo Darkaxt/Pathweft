@@ -29,8 +29,11 @@ internal static class ScoopCleanupVerification
             await Junction(persistentLink,persistent);
             var persistentAttributes=File.GetAttributes(persistent);
             File.SetAttributes(persistentLink,File.GetAttributes(persistentLink)|FileAttributes.ReadOnly);
+            string readOnlyFile=Path.Combine(version.Old,"etc","pki","ca-trust","extracted","java","cacerts");
+            Directory.CreateDirectory(Path.GetDirectoryName(readOnlyFile));File.WriteAllText(readOnlyFile,"owned package certificate data");
+            File.SetAttributes(readOnlyFile,File.GetAttributes(readOnlyFile)|FileAttributes.ReadOnly);
             check((File.GetAttributes(persistentLink)&FileAttributes.ReadOnly)!=0&&File.GetAttributes(persistent)==persistentAttributes,
-                "Owned Scoop fixture has a ReadOnly persistent junction without changing its target");
+                "Owned Scoop fixture has a ReadOnly persistent junction and regular file without changing the junction target");
             Package(fixture,"scoop");string unknown=Path.Combine(fixture,"apps","unknown","1.0");Directory.CreateDirectory(unknown);File.WriteAllText(Path.Combine(unknown,"user.txt"),"not an installed package");
             using(var review=Review(fixture,false))
             {
@@ -39,7 +42,7 @@ internal static class ScoopCleanupVerification
                 check(outcome.Deleted>0&&outcome.Skipped==0&&!Directory.Exists(version.Old)&&File.Exists(Path.Combine(version.Active,"payload.txt"))&&
                     File.ReadAllText(Path.Combine(persistent,"user.txt"))=="user data"&&File.GetAttributes(persistent)==persistentAttributes&&
                     Directory.Exists(Path.Combine(fixture,"apps","scoop","1.0"))&&Directory.Exists(unknown),
-                    "Real Scoop cleanup removes a ReadOnly persistent junction name and obsolete version, preserving current, persisted data, manager and unknown folders");
+                    "Real Scoop cleanup removes a ReadOnly persistent junction and regular file with its obsolete version, preserving current, persisted data, manager and unknown folders");
             }
             string cache=Path.Combine(fixture,"cache");Directory.CreateDirectory(cache);
             foreach(string name in new[]{"sample#1.0#old.zip","sample#2.0#current.zip","sample#3.0#future.zip","sample#1.0#partial.zip.download","unknown#1.0#unowned.zip"})File.WriteAllText(Path.Combine(cache,name),name);

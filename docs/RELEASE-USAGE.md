@@ -1,4 +1,4 @@
-# Pathweft 1.1.45
+# Pathweft 1.1.46
 
 The brush beside Performance opens five Maintenance summary cards while the
 file browser remains usable. The cards select
@@ -8,8 +8,10 @@ completed old downloads. Temporary files and downloads use exact reviewed-file
 removal. Obsolete Scoop versions use Everything size estimates without
 recursively enumerating package members. Clean starts removing each reviewed
 obsolete version folder directly. It unlinks ReadOnly junction names into
-Scoop's persistent data without changing that data. A locked file or other
-access failure leaves an incomplete version and explicit error. Current
+Scoop's persistent data without changing that data. If native deletion stops
+at a ReadOnly regular file, it clears that obsolete file's ReadOnly bit and
+finishes removal. A locked file or other access failure leaves an incomplete
+version and explicit error. Current
 installations and ambiguous versions remain protected; downloads and installed
 versions are separate categories. Startup covers Run/RunOnce and policy Run entries, Startup-folder
 files/shortcuts and scheduled boot/logon tasks, with a Type column identifying the

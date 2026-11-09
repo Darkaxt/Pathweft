@@ -7,7 +7,8 @@ param(
     [string]$CacheRoot='D:\BuildCache\Pathweft',
     [string]$Compiler='D:\Tools\InnoSetup\6.7.4\ISCC.exe',
     [switch]$Candidate,
-    [string]$ResumeCandidateRun
+    [string]$ResumeCandidateRun,
+    [string]$PrebuiltPublishRoot
 )
 $ErrorActionPreference='Stop'
 $root=$PSScriptRoot
@@ -24,7 +25,16 @@ $sources=Join-Path $scratch 'corresponding-sources'
 if(!(Test-Path -LiteralPath (Join-Path $sources 'source-manifest.json'))){throw 'Prepare verified corresponding dependency sources first.'}
 $run=if($ResumeCandidateRun){[IO.Path]::GetFullPath($ResumeCandidateRun)}else{Join-Path $scratch ('package-'+[guid]::NewGuid().ToString('N'))}
 if($ResumeCandidateRun -and (!$Candidate -or $run -notmatch ('^'+[regex]::Escape($scratch)+'\\package-[a-f0-9]{32}$'))){throw 'Resume is limited to an exact owned qualification-candidate run, never a final release.'}
-$publish=Join-Path $run 'app'
+$publish=if($PrebuiltPublishRoot){[IO.Path]::GetFullPath($PrebuiltPublishRoot)}else{Join-Path $run 'app'}
+if($PrebuiltPublishRoot){
+    if($Candidate -or $ResumeCandidateRun -or !$publish.StartsWith($scratch+'\',[StringComparison]::OrdinalIgnoreCase)){
+        throw 'A prebuilt final publish must belong to the exact delivery scratch root.'
+    }
+    if(!(Test-Path -LiteralPath (Join-Path $publish 'Pathweft.exe')) -or
+        ![Diagnostics.FileVersionInfo]::GetVersionInfo((Join-Path $publish 'Pathweft.exe')).ProductVersion.StartsWith($version+'+'+$commit)){
+        throw 'The prebuilt application does not identify the verified final source commit.'
+    }
+}
 $deliveryName=if($ResumeCandidateRun){'delivery-'+[guid]::NewGuid().ToString('N')}else{'delivery'}
 $delivery=if($Candidate){Join-Path $run $deliveryName}else{Join-Path $root "dist/$version"}
 if(!$ResumeCandidateRun){
@@ -43,7 +53,7 @@ if($ResumeCandidateRun){
     $existing=Get-Content -LiteralPath (Join-Path $publish 'release-manifest.json') -Raw | ConvertFrom-Json
     if($existing.sourceState -ne 'qualification candidate; not a published release' -or $existing.version -ne $version -or $existing.sourceCommit -ne $commit){throw 'The interrupted candidate identity differs.'}
     foreach($file in $existing.files){if((Get-FileHash -LiteralPath (Join-Path $publish $file.path)).Hash -ne $file.sha256){throw "Interrupted candidate member changed: $($file.path)"}}
-}else{
+}elseif(!$PrebuiltPublishRoot){
     & (Join-Path $root 'scripts/Build-Development.ps1') -ScratchRoot $run -CacheRoot $CacheRoot -Operation Publish -PublishDirectory $publish -Configuration Release -BuildProperty @('ContinuousIntegrationBuild=true','DebugType=embedded','DebugSymbols=false')
     if($LASTEXITCODE -ne 0){throw 'Self-contained publish failed.'}
 }

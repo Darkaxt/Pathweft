@@ -1,6 +1,6 @@
 # Pathweft specification
 
-Version 1.05 - 2026-11-09. Owner: Darkaxt.
+Version 1.06 - 2026-11-09. Owner: Darkaxt.
 
 ### Direct Maintenance actions (S40)
 
@@ -89,6 +89,14 @@ changing their persistent targets or contents. Retain honest failure reporting
 for genuine locks and permissions. Verify the exact ReadOnly-junction behavior
 in an owned fixture and verify the corrected installed release before retrying
 the previously selected host obsolete versions.
+Installed 1.1.45 retry removed 14 of those 15 versions but stopped at an
+ordinary ReadOnly `msys2/.../cacerts` file in the last partially removed tree.
+When direct native deletion fails for this reason, clear ReadOnly only on
+ordinary remaining members of that obsolete version and retry deletion once;
+never change attributes through a reparse point into persistent data. Preserve
+the current binding and genuine lock/permission failure reporting. Verify an
+owned ReadOnly regular file and the corrected installed release, then remove
+the exact remaining MSYS2 residual without sweeping other Scoop versions.
 Clean immediately opens a themed, modeless deletion window with phase/current
 folder, completed/total progress and cancellation. Native recursive deletion is
 one operation per version; cancellation stops before the next folder and must
