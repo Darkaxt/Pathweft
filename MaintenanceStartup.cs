@@ -16,6 +16,9 @@ internal sealed record StartupTaskState(string Path,string Definition,bool Enabl
 // runs/registers a task. Each mutation reopens its actual source in the worker.
 internal static class MaintenanceStartup
 {
+#if DEBUG
+    internal static int ReadCountForVerification;
+#endif
     internal static readonly string[] RegistryPaths=[Maintenance.RunPath,Maintenance.RunPath+"Once",@"Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\Run"];
     const string DisabledFolder="Pathweft-disabled";
     internal static string RegistryId(string hive,RegistryView view,string path,string name)=>path==Maintenance.RunPath?Maintenance.StartupId(hive,view,name):"startup:"+Maintenance.Id(hive+"/"+view+"/"+path,name);
@@ -29,6 +32,9 @@ internal static class MaintenanceStartup
     static bool ReadError(Exception error)=>error is IOException or UnauthorizedAccessException or System.Security.SecurityException or Win32Exception or COMException;
     internal static MaintenanceRow[] Read(Dictionary<string,MaintenanceUndo> undo,CancellationToken cancel)
     {
+#if DEBUG
+        Interlocked.Increment(ref ReadCountForVerification);
+#endif
         var rows=new List<MaintenanceRow>();
         foreach(var source in Maintenance.StartupRoots)
         foreach(string path in RegistryPaths)

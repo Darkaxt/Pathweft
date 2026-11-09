@@ -38,6 +38,11 @@ public partial class MainWindow
         check(maintenance.Rows.SelectedItem==null,"Automatic analysis does not select a cleanup action on the user's behalf");
         var scoopRow=maintenance.Rows.Items.Cast<MaintenanceRow>().Single(r=>r.Id=="scoop-versions");maintenance.Rows.SelectedItem=scoopRow;
         check(scoopRow.State=="2 obsolete versions"&&maintenance.ExplanationForVerification.Contains("owned-ui-package"),"Automatic Scoop inventory and full candidate path reach the assessment independently of index coverage");
+        int startupReads=MaintenanceStartup.ReadCountForVerification;
+        maintenance.SelectCategoryForVerification("Startup");
+        check(maintenance.Rows.Items.Count>0&&MaintenanceStartup.ReadCountForVerification==startupReads,
+            "Cleanup-to-Startup displays cached Windows rows without a second startup enumeration");
+        maintenance.SelectCategoryForVerification("Cleanup");
         using(var released=new ManualResetEventSlim())
         {
             var cleaningReached=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -153,6 +158,9 @@ public partial class MainWindow
         using(var key=Registry.CurrentUser.CreateSubKey(Maintenance.RunPath))key.SetValue(name,"%TEMP%\\Pathweft-missing-fixture.exe",RegistryValueKind.ExpandString);
         try
         {
+            startupReads=MaintenanceStartup.ReadCountForVerification;
+            await maintenance.ClickForVerification("Refresh");
+            check(MaintenanceStartup.ReadCountForVerification>startupReads,"Refresh rereads current Windows startup sources");
             await maintenance.CategoryForVerification("Startup");maintenance.Rows.SelectedItem=maintenance.Rows.Items.Cast<MaintenanceRow>().Single(x=>x.Id==id);
             maintenance.Rows.ScrollIntoView(maintenance.Rows.SelectedItem);UpdateLayout();
             var container=(ListViewItem)maintenance.Rows.ItemContainerGenerator.ContainerFromItem(maintenance.Rows.SelectedItem);

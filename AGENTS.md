@@ -6,7 +6,16 @@ their published assets are verified. Retain concise verification results and
 reusable fixtures, not repeated expanded cleanup manifests, retired test profiles
 or superseded captures. Clean exact generated targets through transactional-cleanup.
 
-Current2026-11-09/spec1.06: S41 is BLOCKED on Coordinator's managed .NET
+Current2026-11-09/spec1.07: S42 is ACTIVE for MAINT-18. Startup tab selection
+now presents rows loaded for the Maintenance summary rather than repeating
+Task Scheduler and registry enumeration; absent rows show a loading state.
+Actual UI timing/freshness and combined 1.1.46 delivery remain. S41 is parked
+BLOCKED on Coordinator's managed .NET build admission. Original ticket
+`194fa54cbc569b5cb29534bbe68aeec1` rejects before workflow dispatch;
+resolve its supported owner path before compiled acceptance. No other ACTIVE
+stage or tracked deferral.
+
+Previous2026-11-09/spec1.06: S41 was BLOCKED on Coordinator's managed .NET
 build admission. Original ticket `194fa54cbc569b5cb29534bbe68aeec1`
 rejects exact Debug attempt 1 with `BUILD_INPUTS_CHANGED` before workflow
 dispatch; no compiler ran and no failed workflow exists for build-correct.

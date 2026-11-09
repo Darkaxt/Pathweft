@@ -130,8 +130,14 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
             {
                 if(disposed||busy&&(!(inspecting||cleaning)||!loadedRows.ContainsKey(Categories[index])))return;
                 selectedCategory=index;Expanded=true;Visibility=Visibility.Visible;AnalysisChanged?.Invoke();
-                if(busy){Present(loadedRows[Category]);UpdateActions();}
-                else Queue(Load,true);
+                if(loadedRows.TryGetValue(Category,out var cached))
+                {
+                    Present(cached);if(!busy)ShowRowCount(Category,cached);UpdateActions();
+                }
+                else
+                {
+                    Present([],false);status.Text="Loading "+Category+"…";Queue(Load,true);
+                }
             };cards.Children.Add(button);
         }
         cards.SizeChanged+=(_,_)=>
@@ -181,10 +187,14 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
         loadedRows[category]=rows;
         if(category!=Category)return;
         Present(rows);
+        ShowRowCount(category,rows);
+    }
+    void ShowRowCount(string category,MaintenanceRow[] rows)
+    {
         int assessed=rows.Count(r=>MaintenanceGuidance.Describe(category,r).Recommendation!="Not assessed");
         status.Text=rows.Length==0?"No items found.":$"{rows.Length:N0} items · no changes made"+(category=="Cleanup"?"":$" · {assessed:N0} with guidance");
     }
-    void Present(MaintenanceRow[] rows)
+    void Present(MaintenanceRow[] rows,bool updateSummary=true)
     {
         string category=Category;
         updatingFilters=true;search.Clear();groups.SelectedIndex=0;updatingFilters=false;
@@ -199,7 +209,7 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
         };
         Presentation();
         if(category=="Cleanup")rows=rows.Select(r=>analyzedRows.GetValueOrDefault(r.Id,r)).ToArray();
-        SetRows(rows);Summary(category,rows);
+        SetRows(rows);if(updateSummary)Summary(category,rows);
     }
     async Task Analyze()
     {

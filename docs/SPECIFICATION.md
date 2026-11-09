@@ -1,6 +1,12 @@
 # Pathweft specification
 
-Version 1.06 - 2026-11-09. Owner: Darkaxt.
+Version 1.07 - 2026-11-09. Owner: Darkaxt.
+
+### Maintenance tab navigation (S42)
+
+| ID | Required behavior and acceptance |
+| --- | --- |
+| MAINT-18 | Switching from Cleanup to Startup displays the Startup view without waiting for a second registry, Startup-folder and Task Scheduler enumeration. Reuse rows already loaded for the Maintenance summary; when rows have not yet loaded, show the selected view and an explicit loading state while enumeration runs asynchronously. A user Refresh and a completed Startup action still obtain fresh Windows state. Preserve the selected row, filters, sorting, action availability, card summaries and existing cancellation/lifecycle behavior. Verify an actual Cleanup-to-Startup transition and fresh Refresh/action results before the combined normal release. |
 
 ### Direct Maintenance actions (S40)
 
