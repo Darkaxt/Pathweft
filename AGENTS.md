@@ -6,13 +6,14 @@ their published assets are verified. Retain concise verification results and
 reusable fixtures, not repeated expanded cleanup manifests, retired test profiles
 or superseded captures. Clean exact generated targets through transactional-cleanup.
 
-Current2026-11-09/spec1.02: S41 remains the only ACTIVE stage pending installed
+Current2026-11-09/spec1.02: S41 is BLOCKED only on installed
 delivery verification. Normal v1.1.43 at 7c26ab4 is published with six assets;
 the final local and independently downloaded package checks both pass, including
 real Everything search, popup, Maintenance and Office workflows. Exact obsolete
 dist and spent D:/E: task scratch were reviewed and removed through
 transactional-cleanup. The installed 1.1.41 app remains running at D:/Tools/Pathweft;
-preserve that session until the user chooses how to close it for the 1.1.43 update.
+preserve that session until the user closes it or authorizes closing it for the
+1.1.43 update. Resume S41 for actual installed readback; no other ACTIVE stage.
 
 Previous2026-11-09/spec1.02: S41 remains the only ACTIVE stage through final
 delivery. MAINT-17 source/owned-fixture UI passes: indexed-only Scoop estimates,

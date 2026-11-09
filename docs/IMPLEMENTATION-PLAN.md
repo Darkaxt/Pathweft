@@ -3,17 +3,18 @@
 Authority: [SPECIFICATION.md](SPECIFICATION.md), version 1.02, 2026-11-09,
 including the user-authorized continued comparison requirement TRANSFER-07.
 
-Current delivery2026-11-09: S41 remains ACTIVE pending installed verification.
+Current delivery2026-11-09: S41 is BLOCKED only on installed verification.
 Normal v1.1.43 at 7c26ab4 is published with six assets; final local and
 independently downloaded packages pass source/package/application checks,
 including real Everything search, compact popup, Maintenance and Office.
 Owned-fixture MAINT-17 UI and host read-only timing acceptance passed below.
 Obsolete local dist1.1.41/1.1.42 matched their published assets before exact
 transactional removal; spent D:/E: scratch has been cleaned. Installed 1.1.41
-is still running from D:/Tools/Pathweft. Its update/readback criterion remains
-unsatisfied until the user closes it or authorizes closing that live session;
-do not claim installed parity from package verification. No other ACTIVE stage
-or tracked deferral.
+is still running from D:/Tools/Pathweft. External blocker: its update/readback
+criterion remains unsatisfied until the user closes it or authorizes closing
+that live session. Resume S41 for the actual update, member/identity/profile
+readback and final reconciliation. No other ACTIVE stage or tracked deferral;
+do not claim installed parity from package verification.
 
 Previous correction2026-11-09: S41 remains ACTIVE through final delivery.
 MAINT-17 source and owned-fixture UI acceptance pass: Everything index misses
