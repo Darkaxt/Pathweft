@@ -109,6 +109,32 @@ internal static class ScoopCleanupVerification
                 try{check(review.Clean(cancellation.Token).Cancelled&&File.Exists(Path.Combine(version.Old,"payload.txt")),"Cancelling consumer recheck during Clean returns a cancelled outcome and preserves the package");}
                 finally{ScoopCleanup.ResourcesRegisteredForVerification=null;}
             }
+            fixture=Fixture("unindexed-batch");version=Package(fixture,"sample");Package(fixture,"second");Package(fixture,"third");
+            int queries=0;ScoopCleanup.ConsumerQueryForVerification=()=>queries++;
+            ScoopCleanup.VersionSizesForVerification=(_,_)=>new(new Dictionary<string,long>(StringComparer.OrdinalIgnoreCase),false);
+            try
+            {
+                using var review=Review(fixture,false);review.Analyze(default);
+                check(review.Count==3&&review.UnknownVersionSizes==3&&review.Row.Bytes==null&&review.Row.Details.Contains(version.Old),"Missing Everything estimates retain all obsolete folders without recursive sizing or pretending their size is zero");
+                var updates=new List<CleanupProgress>();var outcome=review.Clean(default,updates.Add);
+                check(outcome.Deleted==3&&queries==1&&updates.First().Phase.StartsWith("Checking")&&updates.Last().Completed==3&&updates.All(x=>x.Total==3),"Unindexed obsolete folders clean through one combined native consumer query with real completed/total progress");
+            }
+            finally{ScoopCleanup.VersionSizesForVerification=null;ScoopCleanup.ConsumerQueryForVerification=null;}
+            fixture=Fixture("cancel-inflight");var first=Package(fixture,"first");var second=Package(fixture,"second");
+            using(var review=Review(fixture,false))
+            using(var cancellation=new CancellationTokenSource())
+            {
+                review.Analyze(default);string started=null;
+                ScoopCleanup.VersionDeleteStartedForVerification=folder=>{started=folder;cancellation.Cancel();};
+                try
+                {
+                    var outcome=review.Clean(cancellation.Token);
+                    check(outcome.Cancelled&&outcome.Deleted==1&&started!=null&&!Directory.Exists(started)&&
+                        new[]{first.Old,second.Old}.Count(Directory.Exists)==1,
+                        "Cancellation during a started version finishes that folder and stops before the next version");
+                }
+                finally{ScoopCleanup.VersionDeleteStartedForVerification=null;}
+            }
         }
         finally{ScoopCleanup.DeleteFailureForVerification=null;Environment.SetEnvironmentVariable("SCOOP",before);Environment.SetEnvironmentVariable("SCOOP_CACHE",cacheBefore);}
 

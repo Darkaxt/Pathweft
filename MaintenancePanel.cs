@@ -41,7 +41,7 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
     readonly TextBlock sourceText=new(){Margin=new(0,6,0,0),TextWrapping=TextWrapping.Wrap};
     bool updatingFilters;
     MaintenanceRow[] overviewSelection;
-    CancellationTokenSource reading=new();Task work=Task.CompletedTask,hiding;bool busy,inspecting,disposed;
+    CancellationTokenSource reading=new();Task work=Task.CompletedTask,hiding;bool busy,inspecting,cleaning,disposed;
     internal Task Ready=>work;
     internal string Category=>Categories[selectedCategory];
     internal ListView Rows=>table;
@@ -128,7 +128,7 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
             var button=cardButtons[i]=new Button{Content=stack,MinHeight=84,Padding=new Thickness(12,9,14,9),Margin=new Thickness(0,0,i==4?0:10,0),HorizontalContentAlignment=HorizontalAlignment.Stretch,VerticalContentAlignment=VerticalAlignment.Stretch};button.SetResourceReference(StyleProperty,"PerformanceCard");AutomationProperties.SetName(button,Categories[i]+" maintenance");
             button.Click+=(_,_)=>
             {
-                if(disposed||busy&&(!inspecting||!loadedRows.ContainsKey(Categories[index])))return;
+                if(disposed||busy&&(!(inspecting||cleaning)||!loadedRows.ContainsKey(Categories[index])))return;
                 selectedCategory=index;Expanded=true;Visibility=Visibility.Visible;AnalysisChanged?.Invoke();
                 if(busy){Present(loadedRows[Category]);UpdateActions();}
                 else Queue(Load,true);
@@ -275,19 +275,27 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
     async Task Clean()
     {
         if(table.SelectedItem is not MaintenanceRow row)return;
+        cleaning=true;UpdateActions();string category=Category;status.Text="Preparing cleanup…";
+        var progress=new CleanupProgressWindow(Window.GetWindow(this),row.Name,()=>reading.Cancel());
+        progress.Show();bool completed=false;
+        try
+        {
         analyzedRows.Remove(row.Id);
         if(elevatedReviews.Remove(row.Id,out var client))
         {
-            try{var reply=await client.Send(new("clean",row.Id,null,null),reading.Token);status.Text=reply.Message;}finally{await client.DisposeAsync();}
+            try{var reply=await client.Send(new("clean",row.Id,null,null),reading.Token,progress.Report);status.Text=reply.Message;bool cancelled=reply.Outcome?.Cancelled==true;progress.Finish(reply.Message,!reply.Ok||reply.Outcome is{Skipped:>0}||cancelled,reply.Outcome?.Details,cancelled);completed=true;}finally{await client.DisposeAsync();}
         }
         else if(reviews.Remove(row.Id,out var review))
         {
-            try{var result=await Task.Run(()=>review.Clean(reading.Token));status.Text=$"{result.Deleted:N0} removed · {MainWindow.Fmt(result.Bytes)} · {result.Skipped:N0} skipped"+(result.Cancelled?" · cancelled":"");}
+            try{var result=await Task.Run(()=>review.Clean(reading.Token,progress.Report));status.Text=$"{result.Deleted:N0} removed · {MainWindow.Fmt(result.Bytes)} · {result.Skipped:N0} skipped"+(result.Cancelled?" · cancelled":"");progress.Finish(status.Text,result.Skipped>0||result.Cancelled,result.Details,result.Cancelled);completed=true;}
             finally{review.Dispose();}
         }
         var original=CleanupReview.Targets.Single(t=>t.Id==row.Id);var reset=new MaintenanceRow(row.Id,row.Name,row.Scope,"Analyze again",original.Description);
-        SetRows(((IEnumerable<MaintenanceRow>)table.ItemsSource).Select(r=>r.Id==row.Id?reset:r).ToArray());
-        Summary(Category,(IEnumerable<MaintenanceRow>)table.ItemsSource);
+        var rows=loadedRows[category].Select(r=>analyzedRows.GetValueOrDefault(r.Id,r)).Select(r=>r.Id==row.Id?reset:r).ToArray();
+        loadedRows[category]=rows;if(Category==category)SetRows(rows);Summary(category,rows);
+        }
+        catch(Exception error){bool cancelled=error is OperationCanceledException;progress.Finish(cancelled?"Cleanup cancelled.":error.Message,true,"",cancelled);completed=true;throw;}
+        finally{cleaning=false;if(!completed)progress.Finish("Cleanup ended.",false);}
     }
     async Task Apply(string action)
     {
@@ -329,10 +337,10 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
     {
         if(refresh==null)return;bool cleanup=Category=="Cleanup",tweaks=Category=="Windows tweaks";var row=table.SelectedItem as MaintenanceRow;
         bool idle=!busy;
-        filters.IsEnabled=idle||inspecting;
+        bool inspectable=idle||inspecting||cleaning;filters.IsEnabled=inspectable;
         foreach(var button in new[]{refresh,analyze,change,restore,restorePoint,export,import})button.IsEnabled=idle;
-        for(int i=0;i<5;i++)if(cardButtons[i]!=null){cardButtons[i].IsEnabled=idle||inspecting&&loadedRows.ContainsKey(Categories[i]);cardButtons[i].Tag=Expanded&&i==selectedCategory?"on":null;AutomationProperties.SetItemStatus(cardButtons[i],Expanded&&i==selectedCategory?"Selected":"");}
-        table.IsEnabled=idle||inspecting;analyze.Visibility=cleanup?Visibility.Visible:Visibility.Collapsed;analyze.IsEnabled=idle;
+        for(int i=0;i<5;i++)if(cardButtons[i]!=null){cardButtons[i].IsEnabled=idle||inspectable&&loadedRows.ContainsKey(Categories[i]);cardButtons[i].Tag=Expanded&&i==selectedCategory?"on":null;AutomationProperties.SetItemStatus(cardButtons[i],Expanded&&i==selectedCategory?"Selected":"");}
+        table.IsEnabled=inspectable;analyze.Visibility=cleanup?Visibility.Visible:Visibility.Collapsed;analyze.IsEnabled=idle;
         change.Content=Category switch{"Cleanup"=>"Clean reviewed","Startup"=>"Disable","Services"=>"Stop and disable","Windows apps"=>"Remove",_=>"Apply"};
         change.IsEnabled=idle&&row?.CanChange==true&&(!cleanup||reviews.ContainsKey(row.Id)||elevatedReviews.ContainsKey(row.Id));
         restore.Visibility=Category is "Startup" or "Services" or "Windows tweaks"?Visibility.Visible:Visibility.Collapsed;

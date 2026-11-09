@@ -1,6 +1,6 @@
 # Pathweft specification
 
-Version 1.01 - 2026-11-09. Owner: Darkaxt.
+Version 1.02 - 2026-11-09. Owner: Darkaxt.
 
 ### Direct Maintenance actions (S40)
 
@@ -53,14 +53,26 @@ or no-junction installations are preserved. Exclude the Scoop manager itself,
 current version/cache, partial downloads, unknown files and persistent data.
 User2026-11-09 explicitly replaces the per-file review/deletion contract for
 obsolete Scoop versions: inventory candidate version folders and estimate bytes
-using Everything, with bounded native metadata enumeration only if the index
-does not cover them. Analysis never registers package files with Restart Manager
+using Everything only; an absent size remains unknown and never causes recursive
+enumeration or excludes an otherwise identified obsolete version. Analysis never registers package files with Restart Manager
 or creates per-file deletion manifests. On explicit Clean, recheck current binding,
 installation metadata and active consumers, then remove each obsolete version
 folder recursively. Contents added/changed within that obsolete version are
 included, as requested; never traverse persistent-data links or other reparse
 targets. Current versions, active versions and external persistent data remain
 protected. Download-cache cleanup retains its exact reviewed-file contract.
+MAINT-17: correct the reported two-minute analysis and unresponsive/opaque Clean.
+Batch Windows consumer detection across the obsolete folders, narrowing only
+when Windows identifies a consumer. Keep real current/busy/persistent protections.
+Clean immediately opens a themed, modeless deletion window with phase/current
+folder, completed/total progress and cancellation. Native recursive deletion is
+one operation per version; cancellation stops before the next folder and must
+not claim that an in-flight native operation has already stopped. Navigation,
+selection, sorting and loaded Maintenance categories remain usable during Clean;
+duplicate actions stay disabled. Report actual completion, skipped folders and
+errors, and auto-close successful work. Verify actual owned deletion/cancellation,
+busy/current/persistent preservation, missing-index inventory, held-worker UI
+navigation and real phase timings. Never mutate host Scoop packages as a test.
 Show candidate names/paths in selectable assessment and aggregate their bytes
 in Cleanup. Verify owned fixtures for normal cleanup, current retargeting,
 whole-version removal including new/changed members, busy files, hardlink names,

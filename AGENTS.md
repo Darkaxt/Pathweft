@@ -6,7 +6,18 @@ their published assets are verified. Retain concise verification results and
 reusable fixtures, not repeated expanded cleanup manifests, retired test profiles
 or superseded captures. Clean exact generated targets through transactional-cleanup.
 
-Current2026-11-09/spec1.01: S41 remains the only ACTIVE stage. Actual UI196476
+Current2026-11-09/spec1.02: S41 remains the only ACTIVE stage through final
+delivery. MAINT-17 removes recursive analysis fallback, batches consumer checks,
+and shows modeless Clean progress/cancellation with usable navigation. Actual
+owned-fixture UI checks pass, including cancellation during a started version
+deletion. Read-only host timing finds18 candidates in72ms, indexed sizes in
+about1s, and batched consumer detection in23.5s. Final and independent1.1.42
+package acceptance, publication and applicable installed verification remain.
+Published1.1.41 failed its independent popup search while Everything was hung;
+the original delivered consumer later queries successfully, without a claimed
+root-cause search repair. No host Scoop mutation or live-app closure/restart.
+
+Previous2026-11-09/spec1.01: S41 remains the only ACTIVE stage. Actual UI196476
 passes the complete corrected Maintenance workflow: Everything sizing without
 consumer registration or per-file version manifests; whole obsolete-folder
 removal; current/active/external-data preservation; cards-first entry; navigation

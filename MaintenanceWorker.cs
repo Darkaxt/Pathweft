@@ -8,7 +8,7 @@ namespace FileExplorer;
 
 internal sealed record MaintenanceRequest(string Action,string Id,string Journal,string Cache);
 internal sealed record AccessEntry(string Name,string Path,FileAttributes Attributes,long Bytes,DateTime Modified);
-internal sealed record MaintenanceReply(bool Ok,string Message,MaintenanceRow Row=null,AccessEntry[] Entries=null,SpaceUpdate[] Updates=null,bool More=false,int ErrorCode=0,DriveHealth Health=null);
+internal sealed record MaintenanceReply(bool Ok,string Message,MaintenanceRow Row=null,AccessEntry[] Entries=null,SpaceUpdate[] Updates=null,bool More=false,int ErrorCode=0,DriveHealth Health=null,CleanupProgress Progress=null,CleanupOutcome Outcome=null);
 
 // Authenticated, task-scoped privilege boundary following PerformanceIoWorker's
 // existing owner/pipe contract. No listener/service, arbitrary shell or driver.
@@ -46,15 +46,20 @@ internal sealed class MaintenanceClient : IAsyncDisposable
         }
         catch(System.ComponentModel.Win32Exception ex)when(ex.NativeErrorCode==1223){return new(false,"Administrator permission cancelled. Nothing changed.");}
     }
-    internal async Task<MaintenanceReply> Send(MaintenanceRequest request,CancellationToken cancel=default)
+    internal async Task<MaintenanceReply> Send(MaintenanceRequest request,CancellationToken cancel=default,Action<CleanupProgress> progress=null)
     {
         using var cancellation=cancel.Register(()=>pipe.Dispose());
         try
         {
             await writer.WriteLineAsync(JsonSerializer.Serialize(request));
-            string line=await reader.ReadLineAsync(stopped.Token)??throw new IOException("Maintenance worker exited before returning its result");
-            if(line.Length>8*1024*1024)throw new InvalidDataException("Maintenance response is too large");
-            return JsonSerializer.Deserialize<MaintenanceReply>(line)??throw new InvalidDataException("Invalid maintenance response");
+            while(true)
+            {
+                string line=await reader.ReadLineAsync(stopped.Token)??throw new IOException("Maintenance worker exited before returning its result");
+                if(line.Length>8*1024*1024)throw new InvalidDataException("Maintenance response is too large");
+                var reply=JsonSerializer.Deserialize<MaintenanceReply>(line)??throw new InvalidDataException("Invalid maintenance response");
+                if(reply.Progress!=null)progress?.Invoke(reply.Progress);
+                if(!reply.More||reply.Progress==null)return reply;
+            }
         }
         catch(Exception)when(cancel.IsCancellationRequested){throw new OperationCanceledException(cancel);}
     }
@@ -193,8 +198,15 @@ internal static class MaintenanceWorker
                 // while the file loop owns the worker thread.
                 var disconnected=Read();
                 _=disconnected.ContinueWith(_=>lost.Cancel(),TaskScheduler.Default);
-                var result=await Task.Run(()=>review.Clean(lost.Token),lost.Token);
-                await writer.WriteLineAsync(JsonSerializer.Serialize(new MaintenanceReply(true,$"{result.Deleted:N0} removed · {MainWindow.Fmt(result.Bytes)} · {result.Skipped:N0} skipped")));
+                long shown=0;
+                var result=await Task.Run(()=>review.Clean(lost.Token,progress=>
+                {
+                    long now=Environment.TickCount64;
+                    // Rendering/IPC cadence only, never operation synchronization.
+                    if(now-shown<100&&progress.Completed!=progress.Total)return;shown=now;
+                    writer.WriteLine(JsonSerializer.Serialize(new MaintenanceReply(true,progress.Phase,More:true,Progress:progress)));
+                }),lost.Token);
+                await writer.WriteLineAsync(JsonSerializer.Serialize(new MaintenanceReply(true,$"{result.Deleted:N0} removed · {MainWindow.Fmt(result.Bytes)} · {result.Skipped:N0} skipped",Outcome:result)));
             }
             else
             {
