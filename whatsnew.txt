@@ -1,6 +1,11 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.42 | 2026-11-09 | Cleanup progress and cancellation
+- Scoop Cleanup lists obsolete versions quickly, even when Everything has no size for a folder. It checks Windows package consumers in a batch before removing obsolete versions.
+- Clean opens a progress window immediately and keeps Maintenance inspection usable. It shows the current phase and folder, completed count, skipped items and errors.
+- Cancelling stops before the next version. A version already being deleted finishes first, so a partially removed folder is not reported as complete.
+
 ## 1.1.41 | 2026-11-09 | Fast Scoop estimates and usable Maintenance
 - Obsolete Scoop versions use Everything folder-size estimates without per-file inspection. Clean removes whole obsolete version folders, preserving current versions, packages in use and external persistent data.
 - The Maintenance button shows its five summary cards first. Open a section from its card, or return to files while analysis continues. Switching modes stays available while a cancelled scan drains.
