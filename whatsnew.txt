@@ -1,6 +1,10 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.44 | 2026-11-09 | Faster Scoop cleanup
+- Clean starts removing reviewed obsolete Scoop versions immediately, without scanning their files or waiting for a Windows package-use query.
+- If Windows refuses a locked file, Clean reports that version as incomplete; its remaining files can be reviewed again. Current versions and linked persistent data stay protected.
+
 ## 1.1.43 | 2026-11-09 | Search and Cleanup reliability
 - Search can submit its asynchronous Everything request while the index window is busy and display the correlated result when it arrives.
 - Maintenance Cleanup includes fast Scoop estimates, a batched consumer check, modeless deletion progress and safe cancellation between obsolete versions.

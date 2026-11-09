@@ -130,15 +130,13 @@ internal sealed class CleanupReview : IDisposable
         long deleted=0,skipped=0,bytes=0;var failures=new List<string>();
         try
         {
-            progress?.Invoke(new("Checking packages in use","",0,groups.Count,0,0,0));
-            var blocked=ScoopCleanup.Consumers(groups,cancel,path=>progress?.Invoke(new("Checking packages in use",path,0,groups.Count,0,0,0)));
+            progress?.Invoke(new("Deleting obsolete versions","",0,groups.Count,0,0,0));
             for(int i=0;i<groups.Count;i++)
             {
                 cancel.ThrowIfCancellationRequested();
                 progress?.Invoke(new("Deleting obsolete versions",groups[i].Folder,i,groups.Count,deleted,skipped,bytes));
                 try
                 {
-                    if(blocked.TryGetValue(groups[i],out string reason))throw new IOException(reason);
                     using var guard=ScoopCleanup.Guard(groups[i],cancel);
                     ScoopCleanup.DeleteVersion(groups[i],cancel);
                     deleted++;bytes+=Math.Max(0,versionBytes[i]);

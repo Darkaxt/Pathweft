@@ -17,27 +17,11 @@ internal static class ScoopCleanupVerification
             var live=CleanupReview.Targets.Single(t=>t.Id=="scoop-versions");
             if(Directory.Exists(live.Root))
             {
-                int registrations=0;ScoopCleanup.ResourcesRegisteredForVerification=_=>registrations++;
-                try
-                {
-                    var clock=Stopwatch.StartNew();
-                    using var estimate=new CleanupReview(live,Path.Combine(root,"live-estimate"));
-                    await Task.Run(()=>estimate.Analyze(default));clock.Stop();
-                    File.WriteAllText(Path.Combine(root,"scoop-live-estimate.json"),System.Text.Json.JsonSerializer.Serialize(new{live.Root,estimate.Count,estimate.Bytes,estimate.Unreadable,estimate.IndexedVersions,milliseconds=clock.Elapsed.TotalMilliseconds,registrations}));
-                    check(registrations==0&&Directory.GetFiles(Path.Combine(root,"live-estimate")).Length==0,"Real Scoop estimation performs no consumer registration or per-file deletion manifest");
-                }
-                finally{ScoopCleanup.ResourcesRegisteredForVerification=null;}
-                int executablePaths=0,liveQueries=0;bool executableOnly=true;
-                ScoopCleanup.ResourcesRegisteredForVerification=files=>{executablePaths+=files.Count;executableOnly&=files.All(file=>file.EndsWith(".exe",StringComparison.OrdinalIgnoreCase));};
-                ScoopCleanup.ConsumerQueryForVerification=()=>liveQueries++;
-                try
-                {
-                    var candidates=ScoopCleanup.Candidates(live,default).ToArray();var clock=Stopwatch.StartNew();
-                    var blocked=ScoopCleanup.Consumers(candidates,default);clock.Stop();
-                    File.WriteAllText(Path.Combine(root,"scoop-live-consumers.json"),System.Text.Json.JsonSerializer.Serialize(new{groups=candidates.Length,executablePaths,queries=liveQueries,blocked=blocked.Count,milliseconds=clock.Elapsed.TotalMilliseconds}));
-                    check(executableOnly,"Real Scoop consumer preflight registers only executable names and does not delete host packages");
-                }
-                finally{ScoopCleanup.ResourcesRegisteredForVerification=null;ScoopCleanup.ConsumerQueryForVerification=null;}
+                var clock=Stopwatch.StartNew();
+                using var estimate=new CleanupReview(live,Path.Combine(root,"live-estimate"));
+                await Task.Run(()=>estimate.Analyze(default));clock.Stop();
+                File.WriteAllText(Path.Combine(root,"scoop-live-estimate.json"),System.Text.Json.JsonSerializer.Serialize(new{live.Root,estimate.Count,estimate.Bytes,estimate.Unreadable,estimate.IndexedVersions,milliseconds=clock.Elapsed.TotalMilliseconds}));
+                check(Directory.GetFiles(Path.Combine(root,"live-estimate")).Length==0,"Real Scoop estimation writes no per-file deletion manifest and never cleans host packages");
             }
             string fixture=Fixture("normal");var version=Package(fixture,"sample");
             string persistent=Path.Combine(fixture,"persist","sample");Directory.CreateDirectory(persistent);File.WriteAllText(Path.Combine(persistent,"user.txt"),"user data");
@@ -89,52 +73,31 @@ internal static class ScoopCleanupVerification
                     // the first output line can therefore include that prefix.
                     while(await process.StandardOutput.ReadLineAsync() is {} line)if(line.TrimEnd().EndsWith("PATHWEFT_READY",StringComparison.Ordinal))break;
                     using var review=Review(fixture,false);review.Analyze(default);var outcome=review.Clean(default);
-                    check(!process.HasExited&&review.Count==1&&outcome.Deleted==0&&outcome.Skipped==1&&File.Exists(executable)&&File.Exists(Path.Combine(version.Old,"manifest.json")),"Fast estimate includes the old version; explicit Clean detects its running executable and preserves the entire version");
+                    check(!process.HasExited&&review.Count==1&&outcome.Deleted==0&&outcome.Skipped==1&&
+                        Directory.Exists(version.Old)&&File.Exists(executable)&&File.Exists(Path.Combine(version.Active,"payload.txt"))&&
+                        outcome.Details.Contains("may be partially removed"),
+                        "Native deletion reports the locked running executable as an incomplete obsolete version while preserving the current version");
                 }
                 finally{if(!process.HasExited){await process.StandardInput.WriteLineAsync("exit");process.StandardInput.Close();await process.WaitForExitAsync();}}
             }
             fixture=Fixture("ambiguous");version=Package(fixture,"sample");Directory.Delete(version.Current);
             using(var review=Review(fixture,false)){review.Analyze(default);check(review.Count==0&&review.Clean(default).Deleted==0&&Directory.Exists(version.Old),"Missing current binding preserves ambiguous/no-junction installations");}
-            fixture=Fixture("cancel-registration");version=Package(fixture,"sample");
-            for(int i=0;i<260;i++)File.WriteAllText(Path.Combine(version.Old,$"member-{i}.txt"),"owned");
-            File.Copy(Path.Combine(Environment.SystemDirectory,"cmd.exe"),Path.Combine(version.Old,"owned-cmd.exe"));
-            var target=new CleanupTarget("scoop-versions","Owned Scoop","Cancellation fixture",Path.Combine(fixture,"apps"));
-            using(var cancellation=new CancellationTokenSource())
+            fixture=Fixture("cancel-before-delete");version=Package(fixture,"sample");
+            using(var review=Review(fixture,false))using(var cancellation=new CancellationTokenSource())
             {
-                int registered=0;bool onlyExecutables=true;bool cancelled=false;
-                ScoopCleanup.ResourcesRegisteredForVerification=files=>{registered++;onlyExecutables&=files.All(file=>file.EndsWith(".exe",StringComparison.OrdinalIgnoreCase));cancellation.Cancel();};
-                try
-                {
-                    using var review=Review(fixture,false);
-                    review.Analyze(cancellation.Token);
-                    check(registered==0&&review.Count==1,"Version estimation never performs Restart Manager file registration");
-                    cancelled=review.Clean(cancellation.Token).Cancelled;
-                    check(cancelled&&registered==1&&onlyExecutables&&File.Exists(Path.Combine(version.Old,"payload.txt")),"Scoop registers only executable names and cancellation stops before deleting any package");
-                }
-                finally{ScoopCleanup.ResourcesRegisteredForVerification=null;}
-                string moved=Path.Combine(fixture,"apps-renamed");Directory.Move(target.Root,moved);Directory.Move(moved,target.Root);
-                check(Directory.Exists(version.Old),"Cancelled Scoop registration releases its directory leases before completion");
+                review.Analyze(default);cancellation.Cancel();var outcome=review.Clean(cancellation.Token);
+                check(outcome.Cancelled&&outcome.Deleted==0&&File.Exists(Path.Combine(version.Old,"payload.txt")),"Cancellation before native deletion preserves the reviewed obsolete version");
             }
-            using(var review=Review(fixture,false))
-            {
-                review.Analyze(default);using var cancellation=new CancellationTokenSource();
-                ScoopCleanup.ResourcesRegisteredForVerification=_=>cancellation.Cancel();
-                try{check(review.Clean(cancellation.Token).Cancelled&&File.Exists(Path.Combine(version.Old,"payload.txt")),"Cancelling consumer recheck during Clean returns a cancelled outcome and preserves the package");}
-                finally{ScoopCleanup.ResourcesRegisteredForVerification=null;}
-            }
-            fixture=Fixture("unindexed-batch");version=Package(fixture,"sample");var secondVersion=Package(fixture,"second");var thirdVersion=Package(fixture,"third");
-            foreach(var group in new[]{version,secondVersion,thirdVersion})File.Copy(Path.Combine(Environment.SystemDirectory,"cmd.exe"),Path.Combine(group.Old,"owned-cmd.exe"));
-            int queries=0,registeredExecutables=0;bool onlyExecutablePaths=true;ScoopCleanup.ConsumerQueryForVerification=()=>queries++;
-            ScoopCleanup.ResourcesRegisteredForVerification=files=>{registeredExecutables+=files.Count;onlyExecutablePaths&=files.All(file=>file.EndsWith(".exe",StringComparison.OrdinalIgnoreCase));};
+            fixture=Fixture("unindexed-batch");version=Package(fixture,"sample");Package(fixture,"second");Package(fixture,"third");
             ScoopCleanup.VersionSizesForVerification=(_,_)=>new(new Dictionary<string,long>(StringComparer.OrdinalIgnoreCase),false);
             try
             {
                 using var review=Review(fixture,false);review.Analyze(default);
                 check(review.Count==3&&review.UnknownVersionSizes==3&&review.Row.Bytes==null&&review.Row.Details.Contains(version.Old),"Missing Everything estimates retain all obsolete folders without recursive sizing or pretending their size is zero");
                 var updates=new List<CleanupProgress>();var outcome=review.Clean(default,updates.Add);
-                check(outcome.Deleted==3&&queries==1&&registeredExecutables==3&&onlyExecutablePaths&&updates.First().Phase.StartsWith("Checking")&&updates.Last().Completed==3&&updates.All(x=>x.Total==3),"Unindexed obsolete folders register only executable names in one native query with real completed/total progress");
+                check(outcome.Deleted==3&&updates.First().Phase=="Deleting obsolete versions"&&updates.Last().Completed==3&&updates.All(x=>x.Total==3),"Unindexed obsolete folders begin direct deletion with real completed/total progress");
             }
-            finally{ScoopCleanup.VersionSizesForVerification=null;ScoopCleanup.ConsumerQueryForVerification=null;ScoopCleanup.ResourcesRegisteredForVerification=null;}
+            finally{ScoopCleanup.VersionSizesForVerification=null;}
             fixture=Fixture("cancel-inflight");var first=Package(fixture,"first");var second=Package(fixture,"second");
             using(var review=Review(fixture,false))
             using(var cancellation=new CancellationTokenSource())

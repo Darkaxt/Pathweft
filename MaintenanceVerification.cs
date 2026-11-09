@@ -16,8 +16,8 @@ public partial class MainWindow
         try
         {
             await ScoopCleanupVerification.Run(root,check);
-            string uiScoop=Path.Combine(root,"ui-scoop");var uiPackage=ScoopCleanupVerification.Package(uiScoop,"owned-ui-package");
-            File.Copy(Path.Combine(Environment.SystemDirectory,"cmd.exe"),Path.Combine(uiPackage.Old,"owned-cmd.exe"));
+            string uiScoop=Path.Combine(root,"ui-scoop");ScoopCleanupVerification.Package(uiScoop,"owned-ui-package");
+            ScoopCleanupVerification.Package(uiScoop,"owned-ui-second");
             Environment.SetEnvironmentVariable("SCOOP",uiScoop);
             Environment.SetEnvironmentVariable("SCOOP_CACHE",Path.Combine(uiScoop,"cache"));
             await VerifyMaintenanceCore(root,check);
@@ -37,11 +37,11 @@ public partial class MainWindow
         check(maintenance.Rows.Items.Count==CleanupReview.Targets.Length&&maintenance.Rows.Items.Cast<MaintenanceRow>().All(r=>r.Bytes.HasValue||r.Id=="scoop-versions"&&r.State.Contains("obsolete versions"))&&automaticState=="All categories reviewed. Nothing has been removed.","Actual Maintenance button automatically queues every read-only Cleanup estimate without selecting a row or requesting elevation");
         check(maintenance.Rows.SelectedItem==null,"Automatic analysis does not select a cleanup action on the user's behalf");
         var scoopRow=maintenance.Rows.Items.Cast<MaintenanceRow>().Single(r=>r.Id=="scoop-versions");maintenance.Rows.SelectedItem=scoopRow;
-        check(scoopRow.State=="1 obsolete versions"&&maintenance.ExplanationForVerification.Contains("owned-ui-package"),"Automatic Scoop inventory and full candidate path reach the assessment independently of index coverage");
+        check(scoopRow.State=="2 obsolete versions"&&maintenance.ExplanationForVerification.Contains("owned-ui-package"),"Automatic Scoop inventory and full candidate path reach the assessment independently of index coverage");
         using(var released=new ManualResetEventSlim())
         {
             var cleaningReached=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-            ScoopCleanup.ResourcesRegisteredForVerification=_=>{cleaningReached.TrySetResult();released.Wait();};
+            ScoopCleanup.VersionDeleteStartedForVerification=_=>{cleaningReached.TrySetResult();released.Wait();};
             var cleaning=maintenance.ClickForVerification("Clean reviewed");
             CleanupProgressWindow progress=null;
             try
@@ -59,7 +59,7 @@ public partial class MainWindow
                 progress.CancelButtonForVerification.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                 check(progress.IsVisible&&!cleaning.IsCompleted,"Cancelling cleanup keeps progress visible until the native operation drains");
             }
-            finally{released.Set();await cleaning;ScoopCleanup.ResourcesRegisteredForVerification=null;}
+            finally{released.Set();await cleaning;ScoopCleanup.VersionDeleteStartedForVerification=null;}
             check(progress?.IsVisible==true&&progress.PhaseForVerification=="Cleanup cancelled"&&progress.CancelButtonForVerification.Content is "Close","Cancelled cleanup reports its outcome and offers Close after the original operation drains");
             progress?.Close();
         }

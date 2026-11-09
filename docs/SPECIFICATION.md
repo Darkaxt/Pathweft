@@ -1,6 +1,6 @@
 # Pathweft specification
 
-Version 1.03 - 2026-11-09. Owner: Darkaxt.
+Version 1.04 - 2026-11-09. Owner: Darkaxt.
 
 ### Direct Maintenance actions (S40)
 
@@ -71,17 +71,15 @@ included, as requested; never traverse persistent-data links or other reparse
 targets. Current versions, active versions and external persistent data remain
 protected. Download-cache cleanup retains its exact reviewed-file contract.
 MAINT-17: correct the reported two-minute analysis and unresponsive/opaque Clean.
-User correction2026-11-09: the Clean preflight must register at most `.exe`
-paths, never every file in the obsolete version folders. Enumerate only
-executable names under non-linked directories and batch those names into one
-Windows consumer query; narrow a positive or error result by candidate.
-Preserve current-version binding and persistent links. A lock on a non-executable
-member may make native recursive deletion fail after partial work; report the
-incomplete version and retained locked member honestly rather than claim it was
-cleaned. Do not introduce a per-file handle or manifest scan to regain that
-former guarantee. Verify that non-executable members are not registered and
-that a running executable preserves its version; measure actual host read-only
-preflight time before final delivery.
+User correction2026-11-09: do not run a package-use preflight. The user wants
+reviewed obsolete folders deleted directly, letting Windows reject files in
+use. Register no individual files or executables with Restart Manager; do not
+enumerate package members for a use check or require administrator access for
+this action. Preserve current-version binding and persistent links. A lock may
+make recursive deletion fail after partial work; report the incomplete version
+and retained locked member honestly rather than claim it was cleaned. Verify
+that Clean begins deletion without a consumer-query delay, that a locked member
+is reported, and that no host Scoop package is deleted as a test.
 Clean immediately opens a themed, modeless deletion window with phase/current
 folder, completed/total progress and cancellation. Native recursive deletion is
 one operation per version; cancellation stops before the next folder and must
