@@ -64,12 +64,14 @@ User2026-11-09 explicitly replaces the per-file review/deletion contract for
 obsolete Scoop versions: inventory candidate version folders and estimate bytes
 using Everything only; an absent size remains unknown and never causes recursive
 enumeration or excludes an otherwise identified obsolete version. Analysis never registers package files with Restart Manager
-or creates per-file deletion manifests. On explicit Clean, recheck current binding,
-installation metadata and active consumers, then remove each obsolete version
+or creates per-file deletion manifests. On explicit Clean, recheck current binding
+and installation metadata, then remove each obsolete version
 folder recursively. Contents added/changed within that obsolete version are
 included, as requested; never traverse persistent-data links or other reparse
-targets. Current versions, active versions and external persistent data remain
-protected. Download-cache cleanup retains its exact reviewed-file contract.
+targets. Current versions and external persistent data remain protected. An
+in-use obsolete version can be partially deleted before Windows rejects a
+locked member; report that incomplete result. Download-cache cleanup retains
+its exact reviewed-file contract.
 MAINT-17: correct the reported two-minute analysis and unresponsive/opaque Clean.
 User correction2026-11-09: do not run a package-use preflight. The user wants
 reviewed obsolete folders deleted directly, letting Windows reject files in

@@ -3,16 +3,16 @@
 Authority: [SPECIFICATION.md](SPECIFICATION.md), version 1.04, 2026-11-09,
 including the user-authorized continued comparison requirement TRANSFER-07.
 
-Current correction2026-11-09: S41 is ACTIVE. The user superseded the earlier
-executable-only preflight with direct deletion: do not enumerate package
-members or call Restart Manager; let native deletion fail on locks and report
-partial results. The previous `.exe`-only check still took 23.217 seconds for
-18 host candidates; this did not solve responsiveness. Complete the direct
-delete path, owned-fixture and read-only host checks, then build, publish,
-independently retrieve and verify one normal corrective release and its
-installed update. The latest request to go ahead and remove blockers resumes
-the release build despite the earlier 20-second compilation limit. No other
-ACTIVE stage or deferral.
+Current closure2026-11-09: S41 is COMPLETE. The user superseded the earlier
+executable-only preflight with direct deletion; the 23.217-second preflight
+for 18 host candidates is gone. Owned-fixture UI verifies immediate deletion,
+locked-member/incomplete reporting, cancellation, current-binding and
+persistent-link protection. Normal1.1.44/a88da1d is published with six
+hash-verified assets; independent package/source/native/application checks and
+installed readback pass. The installed 11,309 members match the release;
+settings/editor hashes and live routing are verified. Exact spent scratch and
+obsolete local release copies are transactionally cleaned. No host Scoop
+package was deleted as a test. No S41 blocker, tracked deferral or ACTIVE stage.
 
 Previous delivery2026-11-09: S41 was BLOCKED only on installed verification.
 Normal v1.1.43 at 7c26ab4 is published with six assets; final local and
@@ -1356,7 +1356,7 @@ plan neither authorizes itself nor adds approval checkpoints.
 | S38 - Updater scratch and live analysis disclosure | COMPLETE | STORAGE-01/SPACE-08 | S37 COMPLETE; explicit source-only boundary | Actual source205020/226536 and consumer compilation pass. Legacy cleanup removes26 checksum-verified updater downloads,8,906,892,051 bytes. Preserve relocated profile; no further compilation, version bump or release for this fix. No blocker/deferral/refactor. |
 | S39 - Maintenance guidance and categorized settings | COMPLETE | MAINT-08..11; final DELIVERY | S38 COMPLETE | Source98992/guest4040; published1.1.38/5df239e final235436/independent233852 and installed230000 pass. Pending recommendations/dropdown alignment verified; spent scratch cleaned. No blocker/deferral or required refactor. |
 | S40 - Direct Maintenance actions | COMPLETE | MAINT-12..13 | S39 COMPLETE | Actual UI204416 verifies owned Startup double-click/exact Restore, direct buttons/external-change refusal/Cleanup, selectable exact assessment, ignored header/blank and busy gating, dark/light/scaled/narrow presentation. No required refactor/blocker/deferral. S41 owns combined final delivery. |
-| S41 - Complete Maintenance adoption and cleanup | ACTIVE | MAINT-14..17 and final DELIVERY | S40 COMPLETE | Earlier UI and owned-fixture criteria passed; normal1.1.43 was published and independently verified. Direct-delete correction is now required: remove the 23-second consumer preflight, test owned lock/partial outcomes and modeless cancellation, then build, publish, independently retrieve and verify the installed correction. No tracked deferral. |
+| S41 - Complete Maintenance adoption and cleanup | COMPLETE | MAINT-14..17 and final DELIVERY | S40 COMPLETE | Direct-delete owned-fixture UI and host read-only checks pass. Normal1.1.44/a88da1d has six hash-matched assets; independent package/source/native/application checks pass. Installed1.1.44 has 11,309 matching members, preserved settings/editor hashes and verified routing. Spent scratch and obsolete local delivery copies cleaned. No host Scoop deletion test, blocker or tracked deferral. |
 | S25 - Summary-card motion | NOT STARTED | MOTION-01..03; affected MONITOR/CORE-03/LIFE/DELIVERY | S18 COMPLETE; after S28 and before S12 | Upward card entry with smooth file-pane squeeze; rotation between Statistics/Performance; reversal/interruption and focus/scroll preservation; reduced-motion support and actual frame/layout/resource qualification. One final independently/installed verified release after implementation authorization. No criteria verified yet. |
 | S12 - Tresorit capability investigation | NOT STARTED | TRES-01..04 | S15 delivered; S16/S18/S25 considered first in the selected execution order | Supported API/client assessment, bounded REA as needed, evidence-backed capability matrix/decision and implementation proposal. Investigation only; no cloud mutation or integration implementation. |
 | S19 - Selected-folder content indexing | NOT STARTED | CONTENT-01..06; affected SEARCH/CORE/LIFE/DELIVERY | After S12 in the selected execution order; qualify extractor APIs, query/location semantics, provider metadata and resource budgets | Toolbar folder opt-in/current magnifier badges; qualified Craft/text extraction; persisted searchable strings and location arrays, periodic incremental refresh and cloud-cache independence. Verify actual search/open/freshness/recovery and one final independently/installed verified release when implementation is authorized. No criteria verified yet. |

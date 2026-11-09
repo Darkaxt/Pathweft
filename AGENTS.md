@@ -6,13 +6,16 @@ their published assets are verified. Retain concise verification results and
 reusable fixtures, not repeated expanded cleanup manifests, retired test profiles
 or superseded captures. Clean exact generated targets through transactional-cleanup.
 
-Current2026-11-09/spec1.04: S41 is ACTIVE for MAINT-17 direct deletion. The
-user superseded the executable-only preflight after it still took 23.217 seconds
-for 18 host candidates. Do not enumerate package members or invoke Restart
-Manager for a use check. Let Windows reject locked files during native deletion,
-report incomplete versions honestly, and retain current-binding/persistent-link
-protection. Verify owned fixtures, then deliver and independently/installed
-verify one corrective normal release. No other ACTIVE stage.
+Current2026-11-09/spec1.04: S41 is COMPLETE for MAINT-17 direct deletion.
+The user superseded the executable-only preflight after it took 23.217 seconds
+for 18 host candidates. Clean now starts native obsolete-folder deletion without
+package-member enumeration or Restart Manager registration; Windows lock errors
+produce honest incomplete results. Owned-fixture UI verifies current-binding,
+persistent-link, cancellation and lock behavior. Normal1.1.44/a88da1d is
+published with six hash-matched assets, independently verified and installed;
+all 11,309 installed members match. Settings/editor state and live shell routing
+are verified. Spent scratch and obsolete local release copies are cleaned.
+No host Scoop package was deleted as a test. No blocker, deferral or ACTIVE stage.
 
 Previous2026-11-09/spec1.02: S41 is BLOCKED only on installed
 delivery verification. Normal v1.1.43 at 7c26ab4 is published with six assets;
