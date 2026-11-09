@@ -12,7 +12,12 @@ native cache actions, seven explicit unsafe/unavailable reasons, and an owned
 contract fixture. WinGet's configured installer directory is user Downloads.
 The integrated source is uncompiled. S41 and S42 remain parked on original
 Coordinator ticket `194fa54cbc569b5cb29534bbe68aeec1`, which rejects before
-dispatch; no compiler ran. One combined normal release follows all three stages'
+dispatch; no compiler ran. Installed Coordinator 0.26.0 drops the issued build
+environment on execution; its separately owned 0.26.1 correction is pending
+broker consent. The original ticket's source pins are now stale after S42/S43,
+and no failed workflow exists for its documented correction path. Preserve the
+ticket and resolve this through the supported owner path. One combined normal
+release follows all three stages'
 acceptance. No ACTIVE stage or tracked deferral.
 
 Previous2026-11-09/spec1.07: S42 was ACTIVE for MAINT-18. Startup tab selection

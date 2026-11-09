@@ -48,3 +48,8 @@ recheck/readback, changed-root rejection, Downloads exclusion and unsupported
 WinGet behavior. Its source is present but has not run. No Pathweft build,
 installed UI or release acceptance has run for MAINT-19. The managed .NET gate
 still rejects the previously issued S41 ticket before dispatch.
+The installed 0.26.0 client passes an empty execution environment against that
+ticket's nonempty issued environment. A separately owned 0.26.1 candidate fixes
+environment forwarding but is awaiting protected broker installation. The
+original ticket also predates S42/S43 source edits and has no failed workflow
+identity for its supported correction route. No alternate build was launched.

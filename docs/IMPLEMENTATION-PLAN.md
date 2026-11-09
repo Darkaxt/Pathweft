@@ -37,6 +37,15 @@ source pins match their files, and the same native rejection occurs with the
 issued command/environment through the supported wrapper. `build-status`
 reports no workflow or compiler result. The supported correction path requires
 a failed workflow identity, which the predispatch rejection did not create.
+Inspection of the installed 0.26.0 native client and its source at `2cbd031`
+identified the cause: execution constructs an empty environment while the
+issued check contains the declared build environment. An independently owned
+0.26.1/`26ff1e1` candidate binds the issued environment and has passed package
+verification, but its install is awaiting broker consent in its original owner
+session. Separately, S42/S43 modified original pinned source documents, so the
+old ticket's source digest is now stale. Do not create a replacement S41 scope
+or bypass its correction history; resolve the original receipt through a
+supported owner path after the Coordinator repair is installed.
 This external gate condition blocks compiled fixture acceptance, final commit,
 1.1.46 packaging/publication and installed readback. Resolve the original
 ticket through the Coordinator's supported owner path; do not run a competing
@@ -1418,7 +1427,7 @@ plan neither authorizes itself nor adds approval checkpoints.
 | S38 - Updater scratch and live analysis disclosure | COMPLETE | STORAGE-01/SPACE-08 | S37 COMPLETE; explicit source-only boundary | Actual source205020/226536 and consumer compilation pass. Legacy cleanup removes26 checksum-verified updater downloads,8,906,892,051 bytes. Preserve relocated profile; no further compilation, version bump or release for this fix. No blocker/deferral/refactor. |
 | S39 - Maintenance guidance and categorized settings | COMPLETE | MAINT-08..11; final DELIVERY | S38 COMPLETE | Source98992/guest4040; published1.1.38/5df239e final235436/independent233852 and installed230000 pass. Pending recommendations/dropdown alignment verified; spent scratch cleaned. No blocker/deferral or required refactor. |
 | S40 - Direct Maintenance actions | COMPLETE | MAINT-12..13 | S39 COMPLETE | Actual UI204416 verifies owned Startup double-click/exact Restore, direct buttons/external-change refusal/Cleanup, selectable exact assessment, ignored header/blank and busy gating, dark/light/scaled/narrow presentation. No required refactor/blocker/deferral. S41 owns combined final delivery. |
-| S41 - Complete Maintenance adoption and cleanup | BLOCKED | MAINT-14..17 and final DELIVERY | S40 COMPLETE | Installed 1.1.45 removed 14 versions; the exact MSYS2 ReadOnly-file residual was safely removed separately and all 15 host folders are absent. 1.1.46 source fixes ordinary ReadOnly members, but the issued managed build ticket rejects before dispatch with `BUILD_INPUTS_CHANGED`; compiled fixture/release/installed acceptance await supported gate recovery. No tracked deferral. |
+| S41 - Complete Maintenance adoption and cleanup | BLOCKED | MAINT-14..17 and final DELIVERY | S40 COMPLETE | Installed 1.1.45 removed 14 versions; the exact MSYS2 ReadOnly-file residual was safely removed separately and all 15 host folders are absent. 1.1.46 source fixes ordinary ReadOnly members. Installed Coordinator 0.26.0 rejects the issued nonempty environment before dispatch, and S42/S43 edits subsequently stale its source pins. No failed workflow exists for the documented correction route; compiled fixture/release/installed acceptance await supported gate recovery. No tracked deferral. |
 | S42 - Fast Maintenance tab navigation | BLOCKED | MAINT-18 and combined final DELIVERY | S41 source correction present; S41 parked on external gate admission | Source and native regression checks are committed. Actual transition timing, freshness and installed release await managed .NET build admission; no compiler ran. No tracked deferral. |
 | S43 - UniGetUI manager-aware Cleanup | BLOCKED | MAINT-19 and combined final DELIVERY | S41/S42 source present; both parked on external gate admission | Eleven manager rows, four qualified native actions, seven unavailable reasons and DEBUG owned contract fixture are in source. Read-only installed-manager inventory and `git diff --check` pass. The original gate ticket has no workflow and rejects before compiler dispatch, preventing fixture/UI acceptance and one normal independently and installed-verified release. No tracked deferral. |
 | S25 - Summary-card motion | NOT STARTED | MOTION-01..03; affected MONITOR/CORE-03/LIFE/DELIVERY | S18 COMPLETE; after S28 and before S12 | Upward card entry with smooth file-pane squeeze; rotation between Statistics/Performance; reversal/interruption and focus/scroll preservation; reduced-motion support and actual frame/layout/resource qualification. One final independently/installed verified release after implementation authorization. No criteria verified yet. |
