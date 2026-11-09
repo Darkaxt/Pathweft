@@ -1,5 +1,18 @@
 # UniGetUI manager cleanup review (2026-11-09)
 
+Final corrective result (2026-11-10): v1.1.47 at c275de26 adds reviewed
+native cache actions for Chocolatey, Pip, Npm and .NET Tool. The installed
+configured Scoop Python is found even when the app's process PATH is stale.
+Pip, Npm and NuGet previews now report reviewed file counts and byte estimates;
+the seven managers without a qualified generic action no longer appear as
+Cleanup rows. The owned Maintenance UI trial passed 220 checks, and the
+delivered-package probe passed 1,193 checks. The normal release was published,
+all six assets were independently downloaded and hash checked, and the app's
+own updater installed 1.1.47. All 11,309 installed members matched the
+downloaded release manifest; registration, original profile path, restarted
+processes and installed --selftest were verified. No host manager cache was
+deleted to test this correction. The records below preserve earlier checkpoints.
+
 Corrective checkpoint: normal v1.1.46 was independently verified, published and
 installed, but its actual Cleanup view displayed seven non-actionable manager
 rows, a NuGet `HTTP cache present` flag without count/size, and false Pip

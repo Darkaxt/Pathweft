@@ -6,7 +6,15 @@ their published assets are verified. Retain concise verification results and
 reusable fixtures, not repeated expanded cleanup manifests, retired test profiles
 or superseded captures. Clean exact generated targets through transactional-cleanup.
 
-Current2026-11-09/spec1.09: S41/S42 are COMPLETE after v1.1.46 was published,
+Current2026-11-10/spec1.09: S41-S43 are COMPLETE. Normal v1.1.47 was published
+from c275de26 and independently downloaded; all six release assets matched
+their recorded hashes. The built-in updater installed it at D:\Tools\Pathweft:
+11,309 installed members matched the downloaded manifest, registration reports
+1.1.47, the original profile pointer was retained, both app processes restarted,
+and the installed --selftest passed. S43 adds four qualified native cache actions
+and removes unsupported manager rows. No ACTIVE stage or tracked deferral.
+
+Previous2026-11-09/spec1.09: S41/S42 are COMPLETE after v1.1.46 was published,
 independently verified and installed with exact member readback. S43 is sole
 ACTIVE for the user's Cleanup correction. Installed 1.1.46 showed seven
 non-actionable manager rows, unmeasured NuGet HTTP cache and false Pip

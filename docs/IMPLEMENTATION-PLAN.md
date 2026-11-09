@@ -3,7 +3,17 @@
 Authority: [SPECIFICATION.md](SPECIFICATION.md), version 1.09, 2026-11-09,
 including the user-authorized continued comparison requirement TRANSFER-07.
 
-Current2026-11-09: S41 and S42 are COMPLETE after normal v1.1.46 publication
+Current2026-11-10: S41-S43 are COMPLETE. S43's four qualified native actions
+and exclusion of unsupported managers passed the owned Maintenance UI trial
+(220 checks), the delivered package probe (1,193 checks), release-source audit
+and downloaded-asset SHA-256 readback. Normal v1.1.47 at c275de26 is published
+at https://github.com/Darkaxt/Pathweft/releases/tag/v1.1.47. Its built-in
+updater replaced installed 1.1.46; all 11,309 installed members match the
+independently downloaded release manifest, the uninstall entry reports 1.1.47,
+the original profile path was retained, both app processes restarted and the
+installed --selftest exited 0. No ACTIVE stage, blocker or tracked deferral.
+
+Previous2026-11-09: S41 and S42 are COMPLETE after normal v1.1.46 publication
 and installed readback. S43 is the sole ACTIVE stage. The installed 1.1.46
 Cleanup UI exposed seven unusable placeholder rows, a NuGet HTTP cache flag
 without count or size, and a false missing-Python result for the installed
@@ -1482,7 +1492,7 @@ plan neither authorizes itself nor adds approval checkpoints.
 | S40 - Direct Maintenance actions | COMPLETE | MAINT-12..13 | S39 COMPLETE | Actual UI204416 verifies owned Startup double-click/exact Restore, direct buttons/external-change refusal/Cleanup, selectable exact assessment, ignored header/blank and busy gating, dark/light/scaled/narrow presentation. No required refactor/blocker/deferral. S41 owns combined final delivery. |
 | S41 - Complete Maintenance adoption and cleanup | COMPLETE | MAINT-14..17 and final DELIVERY | S40 COMPLETE | Scoop cleanup checks passed and normal v1.1.46 was independently verified, published and installed with exact member readback. No blocker or tracked deferral. |
 | S42 - Fast Maintenance tab navigation | COMPLETE | MAINT-18 and combined final DELIVERY | S41 required UI checks passed | Actual Cleanup-to-Startup transition, Refresh and action results passed; normal v1.1.46 delivery and installed readback completed. No blocker or tracked deferral. |
-| S43 - UniGetUI manager-aware Cleanup | ACTIVE | MAINT-19 and corrective final DELIVERY | S41/S42 COMPLETE | Installed v1.1.46 exposed placeholder rows, unmeasured NuGet and false Pip unavailability. Corrective source is in progress. Verify four actionable native caches and exclusion of unsupported managers, then release and installed-verify v1.1.47. No tracked deferral. |
+| S43 - UniGetUI manager-aware Cleanup | COMPLETE | MAINT-19 and corrective final DELIVERY | S41/S42 COMPLETE | Four actionable native caches and exclusion of unsupported managers passed actual UI, package and installed checks. Normal v1.1.47 was published, independently downloaded and installed with exact member readback. No blocker or tracked deferral. |
 | S25 - Summary-card motion | NOT STARTED | MOTION-01..03; affected MONITOR/CORE-03/LIFE/DELIVERY | S18 COMPLETE; after S28 and before S12 | Upward card entry with smooth file-pane squeeze; rotation between Statistics/Performance; reversal/interruption and focus/scroll preservation; reduced-motion support and actual frame/layout/resource qualification. One final independently/installed verified release after implementation authorization. No criteria verified yet. |
 | S12 - Tresorit capability investigation | NOT STARTED | TRES-01..04 | S15 delivered; S16/S18/S25 considered first in the selected execution order | Supported API/client assessment, bounded REA as needed, evidence-backed capability matrix/decision and implementation proposal. Investigation only; no cloud mutation or integration implementation. |
 | S19 - Selected-folder content indexing | NOT STARTED | CONTENT-01..06; affected SEARCH/CORE/LIFE/DELIVERY | After S12 in the selected execution order; qualify extractor APIs, query/location semantics, provider metadata and resource budgets | Toolbar folder opt-in/current magnifier badges; qualified Craft/text extraction; persisted searchable strings and location arrays, periodic incremental refresh and cloud-cache independence. Verify actual search/open/freshness/recovery and one final independently/installed verified release when implementation is authorized. No criteria verified yet. |
