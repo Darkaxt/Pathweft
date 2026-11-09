@@ -1,0 +1,17 @@
+<Project DefaultTargets="Build">
+  <!-- One Coordinator-owned validation checks the Debug fixtures and produces
+       the Release publish tree from the same committed source revision. -->
+  <PropertyGroup>
+    <PathweftProject>$(MSBuildThisFileDirectory)..\FileExplorer.csproj</PathweftProject>
+  </PropertyGroup>
+  <Target Name="Restore" />
+  <Target Name="Build">
+    <Error Condition="'$(ValidationScratch)' == ''" Text="Pass the exact task-owned ValidationScratch directory." />
+    <MSBuild Projects="$(PathweftProject)" Targets="Restore;Build"
+             Properties="Configuration=Debug;ArtifactsPath=$(ValidationScratch)/debug-artifacts"
+             BuildInParallel="false" />
+    <MSBuild Projects="$(PathweftProject)" Targets="Restore;Publish"
+             Properties="Configuration=Release;ArtifactsPath=$(ValidationScratch)/release-artifacts;RuntimeIdentifier=win-x64;SelfContained=true;PublishDir=$(ValidationScratch)/release-publish/;ContinuousIntegrationBuild=true;DebugType=embedded;DebugSymbols=false"
+             BuildInParallel="false" />
+  </Target>
+</Project>

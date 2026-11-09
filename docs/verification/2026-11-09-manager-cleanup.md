@@ -48,7 +48,19 @@ recheck/readback, changed-root rejection, Downloads exclusion and unsupported
 WinGet behavior. Its source is present but has not run. No Pathweft build,
 installed UI or release acceptance has run for MAINT-19. The managed .NET gate
 still rejects the previously issued S41 ticket before dispatch.
-The installed 0.26.0 client passes an empty execution environment against that
+Current build checkpoint: installed Coordinator 0.26.1 fixes the environment
+binding and admitted integrated ticket `15b17f87457117bfebabbaa3f093ce5b`.
+The assistant erroneously stopped its Debug attempt at 18.5 seconds by applying
+the user's 20-second Scoop-deletion limit to compilation. The user clarified
+that builds may run to completion. The Release attempt failed before launch
+because the .NET gate accepts `dotnet build`, not `dotnet publish`. Preserve
+the cancelled Debug workflow and failed Release workflow under the original
+ticket; no compiled acceptance or release is established. The failed Release
+target requires a failure-linked corrected gate command that validates both
+Debug fixtures and a Release publish tree from the completed source. The
+cancelled Debug attempt is not a failed build or replay permission.
+
+Previous gate diagnosis: the installed 0.26.0 client passed an empty execution environment against that
 ticket's nonempty issued environment. A separately owned 0.26.1 candidate fixes
 environment forwarding but is awaiting protected broker installation. The
 original ticket also predates S42/S43 source edits and has no failed workflow

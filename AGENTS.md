@@ -6,7 +6,22 @@ their published assets are verified. Retain concise verification results and
 reusable fixtures, not repeated expanded cleanup manifests, retired test profiles
 or superseded captures. Clean exact generated targets through transactional-cleanup.
 
-Current2026-11-09/spec1.08: S43 is BLOCKED at compiled acceptance for MAINT-19.
+Current2026-11-09/spec1.08: S41-S43 source is integrated but compiled acceptance
+and normal 1.1.46 delivery remain BLOCKED. Coordinator 0.26.1 is installed.
+Integrated ticket `15b17f87457117bfebabbaa3f093ce5b` admitted Debug attempt 1,
+which the assistant mistakenly stopped after 18.5 seconds; its process tree
+exited and no build passed. The user clarified that the 20-second limit applies
+to Scoop deletion, not compilation. Release attempt 2 failed before launch
+because the gate accepts `dotnet build`, not `dotnet publish`. Preserve both
+outcomes. A failure-linked correction of attempt 2 must use the original
+ticket; the cancelled Debug attempt cannot be treated as a failed build or
+silently replayed. Verify both Debug fixture and Release publish from the
+corrected integrated check, then finish one normal independently and installed-
+verified 1.1.46 release. S41 is the sole ACTIVE stage for integrated compiled
+acceptance; S42/S43 remain parked until their assigned criteria are verified.
+No tracked deferral is open.
+
+Previous2026-11-09/spec1.08: S43 was BLOCKED at compiled acceptance for MAINT-19.
 The eleven UniGetUI managers besides Scoop have source coverage: four qualified
 native cache actions, seven explicit unsafe/unavailable reasons, and an owned
 contract fixture. WinGet's configured installer directory is user Downloads.
