@@ -56,8 +56,14 @@ that builds may run to completion. The Release attempt failed before launch
 because the .NET gate accepts `dotnet build`, not `dotnet publish`. Preserve
 the cancelled Debug workflow and failed Release workflow under the original
 ticket; no compiled acceptance or release is established. The failed Release
-target requires a failure-linked corrected gate command that validates both
-Debug fixtures and a Release publish tree from the completed source. The
+target was corrected to a managed integrated `dotnet build`, but its first
+native run failed with 14 missing WebView2 references in the WPF-generated
+temporary project. The main Debug assets contain the pinned WebView2 package.
+The integrated MSBuild task had invoked Restore and Build in one evaluation;
+NuGet's generated imports require a fresh build evaluation. The corrected
+validation project invokes sequential Debug and Release-Publish `dotnet build`
+children inside the same Coordinator-owned tree, so the failed native workflow
+can receive a failure-linked correction on the original ticket. The
 cancelled Debug attempt is not a failed build or replay permission.
 
 Previous gate diagnosis: the installed 0.26.0 client passed an empty execution environment against that

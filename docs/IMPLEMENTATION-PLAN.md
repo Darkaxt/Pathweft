@@ -8,10 +8,16 @@ completed S41-S43 source. S42 and S43 remain BLOCKED on their assigned
 compiled/UI and combined delivery checks until S41's first required validation
 passes; no other stage is ACTIVE and no tracked deferral is open. The failed
 Release target on integrated ticket `15b17f87457117bfebabbaa3f093ce5b`
-can be corrected through the original failure-linked route to a single
+was corrected through the original failure-linked route to a single
 Coordinator-owned `dotnet build` of `scripts/Build-IntegratedMaintenance146.proj`.
-That target builds Debug for owned fixtures and publishes Release sequentially
-within the same managed process tree. The cancelled Debug attempt remains
+Its first native attempt `17f20316035faa023be1034ae172a197` failed with
+14 WebView2 reference errors in WPF's generated temporary project. The
+package was present in the restored assets; the wrapper's `Restore;Build`
+MSBuild task used one project evaluation, so restored NuGet imports were not
+available to that compile. The project now runs separate sequential child
+`dotnet build` commands for Debug and Release Publish within the same managed
+process tree. A failure-linked correction of attempt 3 on the original ticket
+is required. The cancelled Debug attempt remains
 cancelled; it is not presented as a failure or replayed. The user's 20-second
 limit applies to Scoop deletion only, so the admitted compilation runs to its
 actual result. Normal 1.1.46 release and installed verification remain.

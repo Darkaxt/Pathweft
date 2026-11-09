@@ -17,7 +17,15 @@ outcomes. A failure-linked correction of attempt 2 must use the original
 ticket; the cancelled Debug attempt cannot be treated as a failed build or
 silently replayed. Verify both Debug fixture and Release publish from the
 corrected integrated check, then finish one normal independently and installed-
-verified 1.1.46 release. S41 is the sole ACTIVE stage for integrated compiled
+verified 1.1.46 release. Corrected attempt 3 reached native compilation but
+failed in the WPF temporary project: 14 WebView2 reference errors. Its first
+MSBuild task combined NuGet Restore and Build in one evaluation, contrary to
+NuGet's required restore/build reevaluation; the main assets file contained
+WebView2. The integrated validation project now starts separate sequential
+child `dotnet build` processes inside the same Coordinator-owned tree, with
+one MSBuild node and no shared compiler. Correct the failed attempt 3 on the
+original ticket after source reconciliation; do not reuse cancelled attempt 1.
+S41 is the sole ACTIVE stage for integrated compiled
 acceptance; S42/S43 remain parked until their assigned criteria are verified.
 No tracked deferral is open.
 

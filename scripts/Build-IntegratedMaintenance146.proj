@@ -1,17 +1,18 @@
 <Project DefaultTargets="Build">
-  <!-- One Coordinator-owned validation checks the Debug fixtures and produces
-       the Release publish tree from the same committed source revision. -->
+  <!-- One Coordinator-owned tree runs two sequential dotnet build commands.
+       Separate processes ensure NuGet's restored props/targets are reevaluated
+       before WPF temporary projects compile. -->
   <PropertyGroup>
     <PathweftProject>$(MSBuildThisFileDirectory)..\FileExplorer.csproj</PathweftProject>
+    <DotNetHost>C:\Program Files\dotnet\dotnet.exe</DotNetHost>
+    <CommonBuildArgs>--disable-build-servers --nologo --verbosity minimal -maxcpucount:1 -nodeReuse:false -p:UseSharedCompilation=false -p:F3DRuntimeRoot=$(F3DRuntimeRoot) -p:SevenZipRuntimeRoot=$(SevenZipRuntimeRoot) -p:SharpSevenZipRuntimeRoot=$(SharpSevenZipRuntimeRoot) -p:RarsRuntimeRoot=$(RarsRuntimeRoot) -p:MpvRuntimeRoot=$(MpvRuntimeRoot) -p:MediaInfoRuntimeRoot=$(MediaInfoRuntimeRoot) -p:OfficeRuntimeRoot=$(OfficeRuntimeRoot) -p:EverythingRuntimeRoot=$(EverythingRuntimeRoot) -p:ShellRouterRoot=$(ShellRouterRoot)</CommonBuildArgs>
   </PropertyGroup>
   <Target Name="Restore" />
   <Target Name="Build">
     <Error Condition="'$(ValidationScratch)' == ''" Text="Pass the exact task-owned ValidationScratch directory." />
-    <MSBuild Projects="$(PathweftProject)" Targets="Restore;Build"
-             Properties="Configuration=Debug;ArtifactsPath=$(ValidationScratch)/debug-artifacts"
-             BuildInParallel="false" />
-    <MSBuild Projects="$(PathweftProject)" Targets="Restore;Publish"
-             Properties="Configuration=Release;ArtifactsPath=$(ValidationScratch)/release-artifacts;RuntimeIdentifier=win-x64;SelfContained=true;PublishDir=$(ValidationScratch)/release-publish/;ContinuousIntegrationBuild=true;DebugType=embedded;DebugSymbols=false"
-             BuildInParallel="false" />
+    <Exec Command="&quot;$(DotNetHost)&quot; build &quot;$(PathweftProject)&quot; $(CommonBuildArgs) --configuration Debug --artifacts-path &quot;$(ValidationScratch)/debug-artifacts&quot;"
+          WorkingDirectory="$(MSBuildThisFileDirectory).." />
+    <Exec Command="&quot;$(DotNetHost)&quot; build &quot;$(PathweftProject)&quot; $(CommonBuildArgs) --configuration Release --artifacts-path &quot;$(ValidationScratch)/release-artifacts&quot; -r win-x64 --self-contained true -t:Publish -p:PublishDir=$(ValidationScratch)/release-publish/ -p:ContinuousIntegrationBuild=true -p:DebugType=embedded -p:DebugSymbols=false"
+          WorkingDirectory="$(MSBuildThisFileDirectory).." />
   </Target>
 </Project>
