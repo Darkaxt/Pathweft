@@ -3,9 +3,12 @@
 Authority: [SPECIFICATION.md](SPECIFICATION.md), version 1.08, 2026-11-09,
 including the user-authorized continued comparison requirement TRANSFER-07.
 
-Current2026-11-09: S41 is ACTIVE for integrated UI acceptance of the completed
-S41-S43 source. S42 and S43 remain BLOCKED on their assigned UI and combined
-delivery checks; no other stage is ACTIVE and no tracked deferral is open.
+Current2026-11-09: S41 is BLOCKED on combined 1.1.46 delivery until S42/S43
+acceptance closes; its owned Scoop and integrated UI checks passed. S42 is the
+single ACTIVE stage for fresh compiled package and delivery preparation; its
+cached Startup transition, Refresh and action freshness checks passed in the
+full hidden trial. S43 remains BLOCKED pending S42's package checks before its
+combined normal release. No tracked deferral is open.
 Integrated ticket `15b17f87457117bfebabbaa3f093ce5b` completed managed
 Debug and Release Publish compilation on attempt 4, workflow
 `b21c49d120a34b2a6e9aa2122d685fcb`, with native exit 0 and verified tree
@@ -14,9 +17,14 @@ manager-cache and cached Startup checks, then failed on Startup header reversal.
 The trial raised a click before laying out the newly replaced GridView header;
 the old assertion accepted the default Name sort as proof of its first click.
 The DEBUG fixture now realizes each category before header clicks and requires
-the first click to change direction. This fixture correction requires fresh
-managed compilation and the full UI trial. Normal 1.1.46 release and installed
-verification remain. The user's 20-second limit applies to Scoop deletion only.
+the first click to change direction. Corrected managed workflow
+`622528e0838a88bce0c7ab1d12c6c677` completed Debug and Release Publish
+with native exit 0 and verified tree exit. Its full 216-criterion hidden
+Maintenance trial passed with no failure. Final package scripts now consume a
+managed prebuilt independent assembly probe, avoiding an unmanaged .NET build
+inside package verification. Source/release/probe rebuild, package and normal
+1.1.46 publication/installed verification remain. The user's 20-second limit
+applies to Scoop deletion only.
 
 Previous2026-11-09: S43 was BLOCKED at compiled acceptance for MAINT-19.
 Coordinator 0.26.1 is active and the integrated S41-S43 build receipt
@@ -1460,9 +1468,9 @@ plan neither authorizes itself nor adds approval checkpoints.
 | S38 - Updater scratch and live analysis disclosure | COMPLETE | STORAGE-01/SPACE-08 | S37 COMPLETE; explicit source-only boundary | Actual source205020/226536 and consumer compilation pass. Legacy cleanup removes26 checksum-verified updater downloads,8,906,892,051 bytes. Preserve relocated profile; no further compilation, version bump or release for this fix. No blocker/deferral/refactor. |
 | S39 - Maintenance guidance and categorized settings | COMPLETE | MAINT-08..11; final DELIVERY | S38 COMPLETE | Source98992/guest4040; published1.1.38/5df239e final235436/independent233852 and installed230000 pass. Pending recommendations/dropdown alignment verified; spent scratch cleaned. No blocker/deferral or required refactor. |
 | S40 - Direct Maintenance actions | COMPLETE | MAINT-12..13 | S39 COMPLETE | Actual UI204416 verifies owned Startup double-click/exact Restore, direct buttons/external-change refusal/Cleanup, selectable exact assessment, ignored header/blank and busy gating, dark/light/scaled/narrow presentation. No required refactor/blocker/deferral. S41 owns combined final delivery. |
-| S41 - Complete Maintenance adoption and cleanup | ACTIVE | MAINT-14..17 and final DELIVERY | S40 COMPLETE | Installed 1.1.45 cleared all 15 reported obsolete folders. The 1.1.46 ReadOnly-file correction passed its actual owned hidden trial after managed Debug/Release compilation. Integrated UI acceptance stopped at a Startup header fixture sequencing failure; correct and rerun the trial before release and installed acceptance. No tracked deferral. |
-| S42 - Fast Maintenance tab navigation | BLOCKED | MAINT-18 and combined final DELIVERY | S41 ACTIVE on integrated UI acceptance | Cached Startup navigation and the no-second-enumeration check passed in the first hidden trial. Actual transition timing, freshness and installed release remain. The user's 20-second limit applies to Scoop deletion, not compilation. No tracked deferral. |
-| S43 - UniGetUI manager-aware Cleanup | BLOCKED | MAINT-19 and combined final DELIVERY | S41 ACTIVE on integrated UI acceptance | Eleven manager rows, four qualified native actions, seven unavailable reasons and the owned manager contract fixture passed in the first hidden trial. The full UI trial, packaging and one independently and installed-verified normal release remain. No tracked deferral. |
+| S41 - Complete Maintenance adoption and cleanup | BLOCKED | MAINT-14..17 and final DELIVERY | S40 COMPLETE | The 1.1.46 ReadOnly-file correction and full owned hidden trial pass, including current/persistent protection. Combined final release and installed acceptance cannot close before S42/S43 acceptance. Resume after S43 delivery. No tracked deferral. |
+| S42 - Fast Maintenance tab navigation | ACTIVE | MAINT-18 and combined final DELIVERY | S41 required UI checks passed; S41 parked on combined delivery | Actual Cleanup-to-Startup transition without a second enumeration, fresh Refresh and action results, selected identity and sorting passed in the full hidden trial. Final package/probe verification and combined installed release remain. The user's 20-second limit applies to Scoop deletion, not compilation. No tracked deferral. |
+| S43 - UniGetUI manager-aware Cleanup | BLOCKED | MAINT-19 and combined final DELIVERY | S42 ACTIVE on final package qualification | Eleven manager rows, four qualified native actions, seven unavailable reasons, actual installed native preview and owned manager contracts passed in the full hidden trial. Activate for one independently and installed-verified normal release after package checks. No tracked deferral. |
 | S25 - Summary-card motion | NOT STARTED | MOTION-01..03; affected MONITOR/CORE-03/LIFE/DELIVERY | S18 COMPLETE; after S28 and before S12 | Upward card entry with smooth file-pane squeeze; rotation between Statistics/Performance; reversal/interruption and focus/scroll preservation; reduced-motion support and actual frame/layout/resource qualification. One final independently/installed verified release after implementation authorization. No criteria verified yet. |
 | S12 - Tresorit capability investigation | NOT STARTED | TRES-01..04 | S15 delivered; S16/S18/S25 considered first in the selected execution order | Supported API/client assessment, bounded REA as needed, evidence-backed capability matrix/decision and implementation proposal. Investigation only; no cloud mutation or integration implementation. |
 | S19 - Selected-folder content indexing | NOT STARTED | CONTENT-01..06; affected SEARCH/CORE/LIFE/DELIVERY | After S12 in the selected execution order; qualify extractor APIs, query/location semantics, provider metadata and resource budgets | Toolbar folder opt-in/current magnifier badges; qualified Craft/text extraction; persisted searchable strings and location arrays, periodic incremental refresh and cloud-cache independence. Verify actual search/open/freshness/recovery and one final independently/installed verified release when implementation is authorized. No criteria verified yet. |

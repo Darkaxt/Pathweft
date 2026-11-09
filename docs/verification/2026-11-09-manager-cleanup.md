@@ -48,7 +48,16 @@ recheck/readback, changed-root rejection, Downloads exclusion and unsupported
 WinGet behavior. Its source is present but has not run. No Pathweft build,
 installed UI or release acceptance has run for MAINT-19. The managed .NET gate
 still rejects the previously issued S41 ticket before dispatch.
-Current trial checkpoint: integrated workflow
+Current acceptance checkpoint: managed workflow
+`622528e0838a88bce0c7ab1d12c6c677` completed fresh Debug and Release
+Publish with native exit 0 and verified process-tree exit. The complete owned
+hidden Maintenance trial exited 0 with all 216 checks passing, including the
+ordinary ReadOnly Scoop file, all manager previews/rejections, cached Startup
+navigation, header sorting, fresh Startup Refresh/action and native cleanup
+boundaries. No host Scoop package was deleted by this trial. Final package,
+independent download and installed delivery remain.
+
+Previous trial checkpoint: integrated workflow
 `b21c49d120a34b2a6e9aa2122d685fcb` completed managed Debug and Release
 Publish compilation with native exit 0 and verified tree exit. The first hidden
 Maintenance trial passed owned Scoop ReadOnly deletion, manager cache contracts,

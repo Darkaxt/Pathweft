@@ -14,5 +14,7 @@
           WorkingDirectory="$(MSBuildThisFileDirectory).." />
     <Exec Command="&quot;$(DotNetHost)&quot; build &quot;$(PathweftProject)&quot; $(CommonBuildArgs) --configuration Release --artifacts-path &quot;$(ValidationScratch)/release-artifacts&quot; -r win-x64 --self-contained true -t:Publish -p:PublishDir=$(ValidationScratch)/release-publish/ -p:ContinuousIntegrationBuild=true -p:DebugType=embedded -p:DebugSymbols=false"
           WorkingDirectory="$(MSBuildThisFileDirectory).." />
+    <Exec Command="&quot;$(DotNetHost)&quot; build &quot;$(MSBuildThisFileDirectory)..\tests\PackagedChecks\PackagedChecks.csproj&quot; --disable-build-servers --nologo --verbosity minimal -maxcpucount:1 -nodeReuse:false -p:UseSharedCompilation=false --configuration Release --artifacts-path &quot;$(ValidationScratch)/probe-artifacts&quot; -p:PathweftAssembly=$(ValidationScratch)/release-publish/Pathweft.dll"
+          WorkingDirectory="$(MSBuildThisFileDirectory).." />
   </Target>
 </Project>

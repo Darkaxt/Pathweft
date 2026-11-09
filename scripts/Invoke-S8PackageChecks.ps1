@@ -1,5 +1,5 @@
 [CmdletBinding()]
-param([Parameter(Mandatory)][string]$DeliveryRoot,[switch]$InstallTrial,[string]$MediaInputs=$env:PATHWEFT_MEDIA113_INPUTS,[string]$SpecialistInputs=$env:PATHWEFT_SPECIALIST_INPUTS)
+param([Parameter(Mandatory)][string]$DeliveryRoot,[switch]$InstallTrial,[string]$MediaInputs=$env:PATHWEFT_MEDIA113_INPUTS,[string]$SpecialistInputs=$env:PATHWEFT_SPECIALIST_INPUTS,[string]$PrebuiltProbeRoot)
 $ErrorActionPreference='Stop'
 $project=Split-Path -Parent $PSScriptRoot
 $scratch='D:\Temp\pathweft-s8-delivery'
@@ -45,7 +45,7 @@ $env:PATHWEFT_PROFILE=Join-Path $run 'profile'
 $selftest=Start-Process -FilePath (Join-Path $product 'Pathweft.exe') -ArgumentList '--selftest' -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $run 'selftest-output.txt') -RedirectStandardError (Join-Path $run 'selftest-error.txt')
 $selftest.WaitForExit();$selftest.Refresh()
 if($selftest.ExitCode -ne 0){Get-Content (Join-Path $env:TEMP 'pathweft-selftest.txt') -ErrorAction SilentlyContinue;throw 'Actual portable app-host self-test failed.'}
-& (Join-Path $PSScriptRoot 'Invoke-S8PackageProbe.ps1') -ProductDirectory $product -RunRoot $run
+& (Join-Path $PSScriptRoot 'Invoke-S8PackageProbe.ps1') -ProductDirectory $product -RunRoot $run -PrebuiltProbeRoot $PrebuiltProbeRoot
 if($LASTEXITCODE -ne 0){throw 'Delivered assembly integration check failed.'}
 Verify-Members $product
 Get-Content -LiteralPath (Join-Path $run 'results.json')

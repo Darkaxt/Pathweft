@@ -6,7 +6,18 @@ their published assets are verified. Retain concise verification results and
 reusable fixtures, not repeated expanded cleanup manifests, retired test profiles
 or superseded captures. Clean exact generated targets through transactional-cleanup.
 
-Current2026-11-09/spec1.08: S41 is ACTIVE for 1.1.46 integrated UI acceptance;
+Current2026-11-09/spec1.08: S41 is BLOCKED on the combined release until
+S42/S43 acceptance; its Scoop and full UI checks passed. S42 is the sole
+ACTIVE stage for final package and independent probe qualification. S43 is
+BLOCKED pending that package result, then owns normal 1.1.46 release and
+installed readback. Managed workflow `622528e0838a88bce0c7ab1d12c6c677`
+completed Debug/Release Publish with exit 0 and verified tree exit; its full
+216-criterion hidden Maintenance trial passed. Final packaging now accepts a
+managed prebuilt independent assembly probe, so package verification must not
+compile .NET directly. Rebuild source/release/probe through the actual S42
+managed ticket after committing the package-script changes. No tracked deferral.
+
+Previous2026-11-09/spec1.08: S41 is ACTIVE for 1.1.46 integrated UI acceptance;
 S42/S43 remain BLOCKED pending their assigned checks and combined delivery.
 Integrated ticket `15b17f87457117bfebabbaa3f093ce5b` completed sequential
 managed Debug and Release Publish compilation on corrected attempt 4,

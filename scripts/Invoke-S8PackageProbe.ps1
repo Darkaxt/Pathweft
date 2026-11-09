@@ -1,5 +1,5 @@
 [CmdletBinding()]
-param([Parameter(Mandatory)][string]$ProductDirectory,[Parameter(Mandatory)][string]$RunRoot,[switch]$EngineStateOnly,[switch]$OfficeCoreOnly,[switch]$WidgetOnly)
+param([Parameter(Mandatory)][string]$ProductDirectory,[Parameter(Mandatory)][string]$RunRoot,[switch]$EngineStateOnly,[switch]$OfficeCoreOnly,[switch]$WidgetOnly,[string]$PrebuiltProbeRoot)
 $ErrorActionPreference='Stop'
 $project=Split-Path -Parent $PSScriptRoot
 $run=[IO.Path]::GetFullPath($RunRoot)
@@ -18,9 +18,16 @@ $env:PATHWEFT_PROFILE=$probeProfile
 $env:TEMP=$env:TMP=Join-Path $run 'temp'
 if($OfficeCoreOnly){$env:PATHWEFT_OFFICE_CORE_ONLY='1'}
 if($WidgetOnly){$env:PATHWEFT_WIDGET_ONLY='1'}
-& (Join-Path $PSScriptRoot 'Build-Development.ps1') -ScratchRoot (Join-Path $run 'probe-build') -Configuration Release -ProjectFile (Join-Path $project 'tests/PackagedChecks/PackagedChecks.csproj') -BuildProperty @("PathweftAssembly=$product\Pathweft.dll")
-if($LASTEXITCODE -ne 0){throw 'Independent delivered-assembly consumer did not compile.'}
-$probeOutput=Join-Path $run 'probe-build/artifacts/bin/PackagedChecks/release'
+if($PrebuiltProbeRoot){
+    $probeOutput=[IO.Path]::GetFullPath($PrebuiltProbeRoot)
+    if($probeOutput -notmatch '^D:\\Temp\\[^\\]+\\' -or !(Test-Path -LiteralPath $probeOutput -PathType Container)){
+        throw 'Prebuilt independent consumer must come from exact managed-build scratch.'
+    }
+}else{
+    & (Join-Path $PSScriptRoot 'Build-Development.ps1') -ScratchRoot (Join-Path $run 'probe-build') -Configuration Release -ProjectFile (Join-Path $project 'tests/PackagedChecks/PackagedChecks.csproj') -BuildProperty @("PathweftAssembly=$product\Pathweft.dll")
+    if($LASTEXITCODE -ne 0){throw 'Independent delivered-assembly consumer did not compile.'}
+    $probeOutput=Join-Path $run 'probe-build/artifacts/bin/PackagedChecks/release'
+}
 foreach($name in @('PackagedChecks.exe','PackagedChecks.dll','PackagedChecks.deps.json','PackagedChecks.runtimeconfig.json')){Copy-Item -LiteralPath (Join-Path $probeOutput $name) -Destination $product}
 if($EngineStateOnly){
     & dotnet (Join-Path $product 'PackagedChecks.dll') --engine-state $run
