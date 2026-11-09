@@ -6,7 +6,19 @@ their published assets are verified. Retain concise verification results and
 reusable fixtures, not repeated expanded cleanup manifests, retired test profiles
 or superseded captures. Clean exact generated targets through transactional-cleanup.
 
-Current2026-11-09/spec1.08: S41 is BLOCKED on the combined release until
+Current2026-11-09/spec1.08: S41/S42 are BLOCKED only on combined 1.1.46
+delivery; their owned Scoop and cached Startup UI checks passed. S43 is sole
+ACTIVE for final package qualification and normal release. Managed S42 workflow
+`8f1ac7325cdebdc2176f318ca6455ab4` built source-stamped Debug, Release
+Publish and independent probe, exit 0 with verified tree exit. The assembled
+1.1.46 package check stopped at a stale six-row Cleanup assertion because
+eleven required manager rows are now present. Corrected probe requires six
+reviewed categories plus eleven managers. Rebuild/reassemble/independently
+verify the final package, publish and installed-verify one normal 1.1.46.
+Do not run the package probe's direct .NET build; use its prebuilt managed path.
+No tracked deferral.
+
+Previous2026-11-09/spec1.08: S41 is BLOCKED on the combined release until
 S42/S43 acceptance; its Scoop and full UI checks passed. S42 is the sole
 ACTIVE stage for final package and independent probe qualification. S43 is
 BLOCKED pending that package result, then owns normal 1.1.46 release and

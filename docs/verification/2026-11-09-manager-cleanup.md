@@ -48,7 +48,17 @@ recheck/readback, changed-root rejection, Downloads exclusion and unsupported
 WinGet behavior. Its source is present but has not run. No Pathweft build,
 installed UI or release acceptance has run for MAINT-19. The managed .NET gate
 still rejects the previously issued S41 ticket before dispatch.
-Current acceptance checkpoint: managed workflow
+Current delivered-package checkpoint: managed workflow
+`8f1ac7325cdebdc2176f318ca6455ab4` compiled source-stamped Debug, Release
+Publish and the independent assembly probe with native exit 0 and verified
+tree exit. 1.1.46 was assembled from commit `3df1988`. Its extracted-package
+check passed x64 and x86 native shell routing, then stopped at the independent
+Maintenance probe's obsolete six-row Cleanup assumption. This version has six
+original reviewed categories plus eleven manager rows. The assertion now
+requires both sets rather than excluding manager entries. Fresh build/package
+and complete independent acceptance remain; no release was published.
+
+Previous acceptance checkpoint: managed workflow
 `622528e0838a88bce0c7ab1d12c6c677` completed fresh Debug and Release
 Publish with native exit 0 and verified process-tree exit. The complete owned
 hidden Maintenance trial exited 0 with all 216 checks passing, including the

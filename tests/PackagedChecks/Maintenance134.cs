@@ -29,7 +29,11 @@ sealed partial class PackageProbe
         Check(cards.Columns==5&&cards.Children.Count==5&&cards.Visibility==Visibility.Visible,
             "Delivered brush opens five bottom Maintenance summary tabs");
         Check(shield.IsEnabled&&shield.ContextMenu?.Items.OfType<MenuItem>().Any(x=>(string)x.Header=="End administrator session")==true,"Delivered access toggle remains available in Maintenance with an explicit session-end action");
-        Check(rows.Items.Count==6&&rows.Items.Cast<object>().All(r=>Get(r,"Bytes")!=null)&&
+        string[] reviewedCleanup=["error-reports","scoop-cache","scoop-versions","thumbnail-cache","user-temp","windows-temp"];
+        var cleanupRows=rows.Items.Cast<object>().ToArray();
+        Check(cleanupRows.Length==reviewedCleanup.Length+11&&
+            reviewedCleanup.All(id=>cleanupRows.Any(r=>(string)Get(r,"Id")==id&&Get(r,"Bytes")!=null))&&
+            cleanupRows.Count(r=>((string)Get(r,"Id")).StartsWith("manager-",StringComparison.Ordinal))==11&&
             (string)type.GetProperty("State",Flags).GetValue(panel)=="All categories reviewed. Nothing has been removed.","Delivered Maintenance automatically reviews all Cleanup categories without row selection or UAC");
         string[] categories=["Cleanup","Startup","Services","Windows tweaks","Windows apps"];
         for(int i=0;i<categories.Length;i++)
