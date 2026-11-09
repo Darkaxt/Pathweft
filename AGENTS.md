@@ -7,11 +7,14 @@ reusable fixtures, not repeated expanded cleanup manifests, retired test profile
 or superseded captures. Clean exact generated targets through transactional-cleanup.
 
 Current2026-11-09/spec1.02: S41 remains the only ACTIVE stage through final
-delivery. MAINT-17 removes recursive analysis fallback, batches consumer checks,
-and shows modeless Clean progress/cancellation with usable navigation. Actual
-owned-fixture UI checks pass, including cancellation during a started version
-deletion. Read-only host timing finds18 candidates in72ms, indexed sizes in
-about1s, and batched consumer detection in23.5s. Final and independent1.1.42
+delivery. MAINT-17 source/owned-fixture UI passes: indexed-only Scoop estimates,
+batched consumer checks, modeless Clean progress/cancellation and usable
+navigation. Host read-only timing finds18 candidates in72ms, indexed sizes in
+about1s and batched consumer detection in23.5s. Normal1.1.42/dd8d730 is
+published and passed local package checks; its independent check exposed an
+intermittent Office snapshot sharing violation and repeated Everything window
+preflight rejection. The SDK's asynchronous query can proceed through the
+dedicated dispatcher; 1.1.43 removes the preflight. Final and independent1.1.43
 package acceptance, publication and applicable installed verification remain.
 Published1.1.41 failed its independent popup search while Everything was hung;
 the original delivered consumer later queries successfully, without a claimed

@@ -137,7 +137,10 @@ internal sealed class EverythingSearchClient
                 string cls = "EVERYTHING_TASKBAR_NOTIFICATION" + (request.Instance.Length == 0 ? "" : "_(" + request.Instance + ")");
                 var engine = Native.FindWindowW(cls, null);
                 if (engine == IntPtr.Zero) throw new InvalidOperationException("Everything is unavailable. Start Everything, then search again.");
-                if (Native.IsHungAppWindow(engine)) throw new InvalidOperationException("Everything is not responding. Search again when it is ready.");
+                // The SDK query below posts asynchronously and returns to this
+                // dedicated dispatcher. A busy notification window can recover
+                // and still deliver the correlated reply; its advisory hung
+                // flag is not a failed IPC query.
                 Native.GetWindowThreadProcessId(engine, out uint pid);
                 var process = request.Process = Process.GetProcessById((int)pid);
                 string version = FileVersionInfo.GetVersionInfo(process.MainModule.FileName).FileVersion;
@@ -236,7 +239,6 @@ internal sealed class EverythingSearchClient
     {
         const string Dll = "Everything64.dll";
         [DllImport("user32.dll", CharSet = CharSet.Unicode)] internal static extern IntPtr FindWindowW(string cls, string title);
-        [DllImport("user32.dll")] internal static extern bool IsHungAppWindow(IntPtr hwnd);
         [DllImport("user32.dll")] internal static extern uint GetWindowThreadProcessId(IntPtr hwnd, out uint pid);
         [DllImport(Dll)] internal static extern bool Everything_IsDBLoaded();
         [DllImport(Dll)] internal static extern bool Everything_IsFileInfoIndexed(uint information);

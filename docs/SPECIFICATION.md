@@ -45,6 +45,15 @@ investigate that result, without weakening the assertion, before independently
 qualifying the corrected release. An unreplicated diagnostic is not evidence of
 a repaired production search defect.
 
+Delivery correction2026-11-09: independent1.1.41 and1.1.42 probes reproduce
+the real-index search rejection while Everything's notification window is
+temporarily marked hung; an independent read-only Everything CLI query succeeds.
+The SDK's nonwaiting query is asynchronous and the client already uses a
+dedicated dispatcher and correlated reply. Remove the advisory hung-window
+preflight that rejects an otherwise available query; retain native IPC error,
+engine identity, cancellation and reply checks. Qualify the real index search,
+compact popup and Maintenance review from the final downloaded package.
+
 MAINT-14: add Scoop obsolete installed versions and completed obsolete download
 cache entries to the existing automatic Cleanup queue. Resolve the current-user
 Scoop root/cache from its environment/configuration and defaults. Identify

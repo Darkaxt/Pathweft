@@ -1,6 +1,10 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.43 | 2026-11-09 | Search and Cleanup reliability
+- Search can submit its asynchronous Everything request while the index window is busy and display the correlated result when it arrives.
+- Maintenance Cleanup includes fast Scoop estimates, a batched consumer check, modeless deletion progress and safe cancellation between obsolete versions.
+
 ## 1.1.42 | 2026-11-09 | Cleanup progress and cancellation
 - Scoop Cleanup lists obsolete versions quickly, even when Everything has no size for a folder. It checks Windows package consumers in a batch before removing obsolete versions.
 - Clean opens a progress window immediately and keeps Maintenance inspection usable. It shows the current phase and folder, completed count, skipped items and errors.
