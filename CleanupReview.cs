@@ -139,7 +139,7 @@ internal sealed class CleanupReview : IDisposable
                 try
                 {
                     if(blocked.TryGetValue(groups[i],out string reason))throw new IOException(reason);
-                    using var guard=ScoopCleanup.Guard(groups[i],cancel,checkConsumers:false);
+                    using var guard=ScoopCleanup.Guard(groups[i],cancel);
                     ScoopCleanup.DeleteVersion(groups[i],cancel);
                     deleted++;bytes+=Math.Max(0,versionBytes[i]);
                 }
@@ -148,7 +148,8 @@ internal sealed class CleanupReview : IDisposable
                     ScoopCleanup.DeleteFailureForVerification?.Invoke(error.ToString());
 #endif
                     skipped++;
-                    if(failures.Count<50)failures.Add(groups[i].Folder+"\n"+error.Message);
+                    if(failures.Count<50)failures.Add(groups[i].Folder+"\n"+error.Message+
+                        (Directory.Exists(groups[i].Folder)?"\nRemoval was incomplete; this obsolete version may be partially removed.":""));
                 }
                 progress?.Invoke(new("Deleting obsolete versions",groups[i].Folder,i+1,groups.Count,deleted,skipped,bytes));
             }

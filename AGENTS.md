@@ -6,7 +6,17 @@ their published assets are verified. Retain concise verification results and
 reusable fixtures, not repeated expanded cleanup manifests, retired test profiles
 or superseded captures. Clean exact generated targets through transactional-cleanup.
 
-Current2026-11-09/spec1.02: S41 is BLOCKED only on installed
+Current2026-11-09/spec1.03: S41 is BLOCKED at delivery for MAINT-17's user-required
+executable-only consumer preflight. Published 1.1.43 registers every file in
+obsolete Scoop versions with Restart Manager and stalls visible Clean progress.
+Register at most `.exe` paths, preserve current binding/persistent links and
+running executable protection and incomplete native deletion reporting pass the
+Debug owned-fixture test. Host read-only check covered 18 candidate folders and
+479 `.exe` paths in 23.217 seconds. The user's 20-second compilation limit bars
+the known 44.66-second build path; Release build, corrective publication,
+independent retrieval and installed verification remain. No other ACTIVE stage.
+
+Previous2026-11-09/spec1.02: S41 is BLOCKED only on installed
 delivery verification. Normal v1.1.43 at 7c26ab4 is published with six assets;
 the final local and independently downloaded package checks both pass, including
 real Everything search, popup, Maintenance and Office workflows. Exact obsolete

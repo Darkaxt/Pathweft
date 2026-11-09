@@ -139,15 +139,15 @@ internal static class ScoopCleanup
         Directory.Delete(group.Folder,true);
     }
 #if DEBUG
-    internal static Action ResourcesRegisteredForVerification;
+    internal static Action<IReadOnlyList<string>> ResourcesRegisteredForVerification;
     internal static Action<string> DeleteFailureForVerification;
     internal static Func<IReadOnlyList<Group>,CancellationToken,(Dictionary<string,long> Bytes,bool Indexed)> VersionSizesForVerification;
     internal static Action ConsumerQueryForVerification;
     internal static Action<string> VersionDeleteStartedForVerification;
 #endif
-    internal static IDisposable Guard(Group group,CancellationToken cancel=default,bool checkConsumers=true)
+    internal static IDisposable Guard(Group group,CancellationToken cancel=default)
     {
-        var handles=new List<SafeFileHandle>();uint session=0;bool started=false;
+        var handles=new List<SafeFileHandle>();
         try
         {
             cancel.ThrowIfCancellationRequested();
@@ -165,42 +165,14 @@ internal static class ScoopCleanup
             if(!group.Cache)
             {
                 if(Linked(group.Folder)||!Installed(group.Folder))throw new IOException("Scoop version changed");
-                if(!checkConsumers)return new Lease(handles,session,started);
-                int code=RmStartSession(out session,0,new StringBuilder(33));
-                if(code!=0)throw new IOException("Cannot check package consumers: "+code);started=true;
-                var files=new List<string>(128);var folders=new Stack<string>();folders.Push(group.Folder);
-                while(folders.TryPop(out var folder))
-                {
-                    cancel.ThrowIfCancellationRequested();
-                    foreach(string file in Directory.EnumerateFiles(folder))
-                    {
-                        cancel.ThrowIfCancellationRequested();
-                        files.Add(file);
-                        if(files.Count==128){Register();files.Clear();}
-                    }
-                    foreach(string child in Directory.EnumerateDirectories(folder)){cancel.ThrowIfCancellationRequested();if(!Linked(child))folders.Push(child);}
-                }
-                if(files.Count>0)Register();
-                cancel.ThrowIfCancellationRequested();
-                uint needed=0,count=0,reasons=0;code=RmGetList(session,out needed,ref count,IntPtr.Zero,ref reasons);
-                if(code!=0||needed!=0)throw new IOException("Package is in use; preserved");
-                void Register()
-                {
-                    cancel.ThrowIfCancellationRequested();
-                    int result=RmRegisterResources(session,(uint)files.Count,files.ToArray(),0,IntPtr.Zero,0,IntPtr.Zero);if(result!=0)throw new IOException("Cannot check package consumers: "+result);
-#if DEBUG
-                    ResourcesRegisteredForVerification?.Invoke();
-#endif
-                    cancel.ThrowIfCancellationRequested();
-                }
             }
-            return new Lease(handles,session,started);
+            return new Lease(handles);
         }
-        catch{foreach(var h in handles)h.Dispose();if(started)RmEndSession(session);throw;}
+        catch{foreach(var h in handles)h.Dispose();throw;}
     }
-    // One native consumer query for the usual case (no obsolete package in use).
-    // Only a positive/error result is narrowed to individual groups. Reuse the
-    // enumerated paths during narrowing, not a second recursive filesystem scan.
+    // Register only executable paths, never every member of a package tree.
+    // One native consumer query handles the usual case; only a positive/error
+    // result is narrowed to individual groups using the same executable paths.
     internal static Dictionary<Group,string> Consumers(IReadOnlyList<Group> groups,CancellationToken cancel,Action<string> progress=null)
     {
         var blocked=new Dictionary<Group,string>();var resources=new List<(Group Group,List<string> Files)>();
@@ -209,12 +181,12 @@ internal static class ScoopCleanup
             cancel.ThrowIfCancellationRequested();progress?.Invoke(group.Folder);
             try
             {
-                using var binding=Guard(group,cancel,checkConsumers:false);
+                using var binding=Guard(group,cancel);
                 var files=new List<string>();var folders=new Stack<string>();folders.Push(group.Folder);
                 while(folders.TryPop(out string folder))
                 {
                     cancel.ThrowIfCancellationRequested();
-                    foreach(string file in Directory.EnumerateFiles(folder)){cancel.ThrowIfCancellationRequested();files.Add(file);}
+                    foreach(string file in Directory.EnumerateFiles(folder,"*.exe")){cancel.ThrowIfCancellationRequested();files.Add(file);}
                     foreach(string child in Directory.EnumerateDirectories(folder)){cancel.ThrowIfCancellationRequested();if(!Linked(child))folders.Push(child);}
                 }
                 resources.Add((group,files));
@@ -225,6 +197,7 @@ internal static class ScoopCleanup
         void Inspect(int first,int length)
         {
             if(length==0)return;cancel.ThrowIfCancellationRequested();
+            if(!resources.Skip(first).Take(length).Any(group=>group.Files.Count>0))return;
             uint session=0;bool started=false;string reason=null;
             try
             {
@@ -244,10 +217,10 @@ internal static class ScoopCleanup
                 reason=code is 0 or 234?"Package is in use; preserved":"Cannot check package consumers: "+code;
                 void Register()
                 {
-                    int result=RmRegisterResources(session,(uint)batch.Count,batch.ToArray(),0,IntPtr.Zero,0,IntPtr.Zero);
+                    var paths=batch.ToArray();int result=RmRegisterResources(session,(uint)paths.Length,paths,0,IntPtr.Zero,0,IntPtr.Zero);
                     if(result!=0)throw new IOException("Cannot check package consumers: "+result);batch.Clear();
 #if DEBUG
-                    ResourcesRegisteredForVerification?.Invoke();
+                    ResourcesRegisteredForVerification?.Invoke(paths);
 #endif
                     cancel.ThrowIfCancellationRequested();
                 }
@@ -258,8 +231,8 @@ internal static class ScoopCleanup
             int half=length/2;Inspect(first,half);Inspect(first+half,length-half);
         }
     }
-    sealed class Lease(List<SafeFileHandle> handles,uint session,bool started):IDisposable
-    {public void Dispose(){foreach(var h in handles)h.Dispose();if(started)RmEndSession(session);}}
+    sealed class Lease(List<SafeFileHandle> handles):IDisposable
+    {public void Dispose(){foreach(var h in handles)h.Dispose();}}
     static SafeFileHandle OpenDirectory(string path)
     {
         var h=CreateFile(path,0x80,3,IntPtr.Zero,3,0x02200000,IntPtr.Zero);

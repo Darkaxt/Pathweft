@@ -1,9 +1,25 @@
 # Implementation and reconciliation
 
-Authority: [SPECIFICATION.md](SPECIFICATION.md), version 1.02, 2026-11-09,
+Authority: [SPECIFICATION.md](SPECIFICATION.md), version 1.03, 2026-11-09,
 including the user-authorized continued comparison requirement TRANSFER-07.
 
-Current delivery2026-11-09: S41 is BLOCKED only on installed verification.
+Current correction2026-11-09: S41 is BLOCKED at final delivery for the user's MAINT-17 executable-only
+consumer check. Root cause: v1.1.43 recursively registers every member of each
+obsolete Scoop version with Restart Manager before deletion, so the 18-folder
+progress window remains at zero during an expensive preflight. The user now
+requires `.exe` paths at most. Update the native check, accurate failure
+reporting and owned-fixture acceptance pass in the Debug build. Host read-only
+preflight measured 18 candidates, 479 registered `.exe` paths, one native query,
+zero blocked packages and 23.217 seconds; indexed size estimation took 1.797
+seconds. The source correction is verified in owned fixtures, including an
+active executable and held non-executable, but the product outcome is not yet
+delivered. The user now limits compilations to at most 20 seconds; the actual
+Debug build took 44.66 seconds, so a Release build cannot be started under that
+limit. Resolve by an explicitly permitted build within the limit or a changed
+limit, then publish, independently retrieve and verify the normal corrective
+release and its installed update. No other ACTIVE stage or deferral.
+
+Previous delivery2026-11-09: S41 was BLOCKED only on installed verification.
 Normal v1.1.43 at 7c26ab4 is published with six assets; final local and
 independently downloaded packages pass source/package/application checks,
 including real Everything search, compact popup, Maintenance and Office.
@@ -1345,7 +1361,7 @@ plan neither authorizes itself nor adds approval checkpoints.
 | S38 - Updater scratch and live analysis disclosure | COMPLETE | STORAGE-01/SPACE-08 | S37 COMPLETE; explicit source-only boundary | Actual source205020/226536 and consumer compilation pass. Legacy cleanup removes26 checksum-verified updater downloads,8,906,892,051 bytes. Preserve relocated profile; no further compilation, version bump or release for this fix. No blocker/deferral/refactor. |
 | S39 - Maintenance guidance and categorized settings | COMPLETE | MAINT-08..11; final DELIVERY | S38 COMPLETE | Source98992/guest4040; published1.1.38/5df239e final235436/independent233852 and installed230000 pass. Pending recommendations/dropdown alignment verified; spent scratch cleaned. No blocker/deferral or required refactor. |
 | S40 - Direct Maintenance actions | COMPLETE | MAINT-12..13 | S39 COMPLETE | Actual UI204416 verifies owned Startup double-click/exact Restore, direct buttons/external-change refusal/Cleanup, selectable exact assessment, ignored header/blank and busy gating, dark/light/scaled/narrow presentation. No required refactor/blocker/deferral. S41 owns combined final delivery. |
-| S41 - Complete Maintenance adoption and cleanup | ACTIVE | MAINT-14..17 and final DELIVERY | S40 COMPLETE | Native guest4340 donor actions/exact Restore and actual UI196476/a30fee2 full Maintenance workflow pass, including indexed estimates, whole-version removal, cancellable modeless Clean, cards-first/navigation/drain and stable toolbar states. Host read-only timing:18 candidates72ms, indexed sizes about1s, batched consumer query23.5s. Normal1.1.42 passed local package and is published, but independent qualification failed. Resolve search preflight, Office close evidence and final/independent1.1.43 package, publication, installed verification and cleanup. |
+| S41 - Complete Maintenance adoption and cleanup | BLOCKED | MAINT-14..17 and final DELIVERY | S40 COMPLETE | Earlier UI and owned-fixture criteria passed; normal1.1.43 was published and independently verified. Corrected Debug build and owned-fixture test pass. Host read-only preflight: 18 folders, 479 `.exe` paths, 23.217 seconds. Final Release compilation, publication, independent retrieval and installed correction remain. User's 20-second compilation limit bars the known 44.66-second build path. No tracked deferral. |
 | S25 - Summary-card motion | NOT STARTED | MOTION-01..03; affected MONITOR/CORE-03/LIFE/DELIVERY | S18 COMPLETE; after S28 and before S12 | Upward card entry with smooth file-pane squeeze; rotation between Statistics/Performance; reversal/interruption and focus/scroll preservation; reduced-motion support and actual frame/layout/resource qualification. One final independently/installed verified release after implementation authorization. No criteria verified yet. |
 | S12 - Tresorit capability investigation | NOT STARTED | TRES-01..04 | S15 delivered; S16/S18/S25 considered first in the selected execution order | Supported API/client assessment, bounded REA as needed, evidence-backed capability matrix/decision and implementation proposal. Investigation only; no cloud mutation or integration implementation. |
 | S19 - Selected-folder content indexing | NOT STARTED | CONTENT-01..06; affected SEARCH/CORE/LIFE/DELIVERY | After S12 in the selected execution order; qualify extractor APIs, query/location semantics, provider metadata and resource budgets | Toolbar folder opt-in/current magnifier badges; qualified Craft/text extraction; persisted searchable strings and location arrays, periodic incremental refresh and cloud-cache independence. Verify actual search/open/freshness/recovery and one final independently/installed verified release when implementation is authorized. No criteria verified yet. |

@@ -16,7 +16,8 @@ public partial class MainWindow
         try
         {
             await ScoopCleanupVerification.Run(root,check);
-            string uiScoop=Path.Combine(root,"ui-scoop");ScoopCleanupVerification.Package(uiScoop,"owned-ui-package");
+            string uiScoop=Path.Combine(root,"ui-scoop");var uiPackage=ScoopCleanupVerification.Package(uiScoop,"owned-ui-package");
+            File.Copy(Path.Combine(Environment.SystemDirectory,"cmd.exe"),Path.Combine(uiPackage.Old,"owned-cmd.exe"));
             Environment.SetEnvironmentVariable("SCOOP",uiScoop);
             Environment.SetEnvironmentVariable("SCOOP_CACHE",Path.Combine(uiScoop,"cache"));
             await VerifyMaintenanceCore(root,check);
@@ -40,7 +41,7 @@ public partial class MainWindow
         using(var released=new ManualResetEventSlim())
         {
             var cleaningReached=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-            ScoopCleanup.ResourcesRegisteredForVerification=()=>{cleaningReached.TrySetResult();released.Wait();};
+            ScoopCleanup.ResourcesRegisteredForVerification=_=>{cleaningReached.TrySetResult();released.Wait();};
             var cleaning=maintenance.ClickForVerification("Clean reviewed");
             CleanupProgressWindow progress=null;
             try

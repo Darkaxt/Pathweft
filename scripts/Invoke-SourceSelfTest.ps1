@@ -2,7 +2,7 @@
 param([Parameter(Mandatory)][string]$ScratchRoot,[string]$Executable)
 $ErrorActionPreference = 'Stop'
 $scratch = [IO.Path]::GetFullPath($ScratchRoot)
-if ($scratch -notmatch '^D:\\Temp\\pathweft-s[1234]-[^\\]+$' -and $scratch -ne 'D:\Temp\pathweft-rars-native' -and $scratch -ne 'D:\Temp\pathweft-s8-delivery' -and $scratch -ne 'D:\Temp\pathweft-s13-s9-s11\source-selftest') { throw 'Use the registered stage scratch root.' }
+if ($scratch -notmatch '^D:\\Temp\\pathweft-s(?:[1234]|41)-[^\\]+$' -and $scratch -ne 'D:\Temp\pathweft-rars-native' -and $scratch -ne 'D:\Temp\pathweft-s8-delivery' -and $scratch -ne 'D:\Temp\pathweft-s13-s9-s11\source-selftest') { throw 'Use the registered stage scratch root.' }
 $env:TEMP = $env:TMP = Join-Path $scratch 'temp'
 $env:PATHWEFT_PROFILE = Join-Path $scratch 'selftest-profile'
 [void][IO.Directory]::CreateDirectory($env:PATHWEFT_PROFILE)
