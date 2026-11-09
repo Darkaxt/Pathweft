@@ -297,7 +297,13 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
         }
         else if(reviews.Remove(row.Id,out var review))
         {
-            try{var result=await Task.Run(()=>review.Clean(reading.Token,progress.Report));status.Text=$"{result.Deleted:N0} removed · {MainWindow.Fmt(result.Bytes)} · {result.Skipped:N0} skipped"+(result.Cancelled?" · cancelled":"");progress.Finish(status.Text,result.Skipped>0||result.Cancelled,result.Details,result.Cancelled);completed=true;}
+            try
+            {
+                var result=await Task.Run(()=>review.Clean(reading.Token,progress.Report));
+                string size=review.Row.Bytes.HasValue?$" · {MainWindow.Fmt(result.Bytes)}":"";
+                status.Text=$"{result.Deleted:N0} removed{size} · {result.Skipped:N0} skipped"+(result.Cancelled?" · cancelled":"");
+                progress.Finish(status.Text,result.Skipped>0||result.Cancelled,result.Details,result.Cancelled);completed=true;
+            }
             finally{review.Dispose();}
         }
         var original=CleanupReview.Targets.Single(t=>t.Id==row.Id);var reset=new MaintenanceRow(row.Id,row.Name,row.Scope,"Analyze again",original.Description);
@@ -388,7 +394,13 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
     void Summary(string category,IEnumerable<MaintenanceRow> items)
     {
         int index=Array.IndexOf(Categories,category);var rows=items.ToArray();string value,sub;
-        if(index==0){var reviewed=rows.Where(x=>x.Bytes.HasValue).ToArray();value=reviewed.Length>0?MainWindow.Fmt(reviewed.Sum(x=>x.Bytes.Value)):"—";sub=reviewed.Length>0?$"Up to · {reviewed.Length} of {rows.Length} categories reviewed":"Analyze to estimate";}
+        if(index==0)
+        {
+            var sized=rows.Where(x=>x.Bytes.HasValue).ToArray();
+            int reviewed=rows.Count(x=>x.State is not ("Not analyzed" or "Analyzing…"));
+            value=sized.Length>0?MainWindow.Fmt(sized.Sum(x=>x.Bytes.Value)):"—";
+            sub=reviewed>0?$"Up to · {sized.Length} sized · {reviewed} of {rows.Length} reviewed":"Analyze to estimate";
+        }
         else if(index==1){value=rows.Count(x=>x.State=="Enabled").ToString("N0");sub="startup entries enabled";}
         else if(index==2){value=rows.Count(x=>x.StartupMode.StartsWith("Automatic")).ToString("N0");sub=$"automatic · {rows.Length} installed services";}
         else if(index==3){value=rows.Select(x=>MaintenanceGuidance.Describe(category,x)).Count(MaintenanceGuidance.PendingRecommendation).ToString("N0");sub="recommended actions pending";}
@@ -416,7 +428,6 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
         string effect=Category switch
         {
             "Cleanup" when row.Id=="scoop-versions"=>"Clean removes each obsolete version folder and all its contents. Current versions, packages in use and external persistent data are preserved.",
-            "Cleanup" when row.State=="No safe cleanup"=>"This manager has no general cleanup action that preserves its installed packages and shared data. The details explain the boundary.",
             "Cleanup" when row.Id.StartsWith("manager-",StringComparison.Ordinal)=>"Clean asks this package manager to remove only the reviewed cache category. Cached downloads may be fetched again. Installed packages and manager configuration stay in place.",
             "Cleanup"=>"Clean reviewed removes only the reviewed, unchanged files. New, changed and busy files are skipped.",
             "Startup"=>"Disable prevents this entry from running at startup. Restore returns its exact saved original state. Double-click to Disable or Restore.",

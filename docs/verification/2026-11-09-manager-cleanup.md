@@ -1,5 +1,16 @@
 # UniGetUI manager cleanup review (2026-11-09)
 
+Corrective checkpoint: normal v1.1.46 was independently verified, published and
+installed, but its actual Cleanup view displayed seven non-actionable manager
+rows, a NuGet `HTTP cache present` flag without count/size, and false Pip
+unavailability from the app's stale process PATH. The user explicitly rejected
+these placeholders. Specification v1.09 now requires only qualified installed
+actions in the table. The corrective source retains four native actions, adds
+file/byte estimates for the configured Pip, Npm and NuGet caches, resolves
+Scoop Python through its configured current app path, and moves reasons for
+unsupported managers to this review. v1.1.47 source, UI, package and installed
+acceptance are pending; no host cache was removed for this correction.
+
 Installed UniGetUI 2026.3.3 reports twelve enabled, ready managers through its
 read-only `uniget.exe manager list` API: WinGet, Scoop, Chocolatey, Npm, Pip,
 Cargo, vcpkg, .NET Tool, PowerShell 5.x, PowerShell 7.x, Installer packages and

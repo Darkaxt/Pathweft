@@ -31,9 +31,13 @@ sealed partial class PackageProbe
         Check(shield.IsEnabled&&shield.ContextMenu?.Items.OfType<MenuItem>().Any(x=>(string)x.Header=="End administrator session")==true,"Delivered access toggle remains available in Maintenance with an explicit session-end action");
         string[] reviewedCleanup=["error-reports","scoop-cache","scoop-versions","thumbnail-cache","user-temp","windows-temp"];
         var cleanupRows=rows.Items.Cast<object>().ToArray();
-        Check(cleanupRows.Length==reviewedCleanup.Length+11&&
+        string[] actionableManagers=["manager-chocolatey","manager-npm","manager-pip","manager-dotnet-tool"];
+        Check(cleanupRows.Length==reviewedCleanup.Length+actionableManagers.Length&&
             reviewedCleanup.All(id=>cleanupRows.Any(r=>(string)Get(r,"Id")==id&&Get(r,"Bytes")!=null))&&
-            cleanupRows.Count(r=>((string)Get(r,"Id")).StartsWith("manager-",StringComparison.Ordinal))==11&&
+            actionableManagers.All(id=>cleanupRows.Any(r=>(string)Get(r,"Id")==id&&
+                !((string)Get(r,"State")).Equals("No safe cleanup",StringComparison.Ordinal)&&
+                !((string)Get(r,"State")).Equals("HTTP cache present",StringComparison.Ordinal)))&&
+            cleanupRows.Count(r=>((string)Get(r,"Id")).StartsWith("manager-",StringComparison.Ordinal))==actionableManagers.Length&&
             (string)type.GetProperty("State",Flags).GetValue(panel)=="All categories reviewed. Nothing has been removed.","Delivered Maintenance automatically reviews all Cleanup categories without row selection or UAC");
         string[] categories=["Cleanup","Startup","Services","Windows tweaks","Windows apps"];
         for(int i=0;i<categories.Length;i++)

@@ -1,4 +1,4 @@
-# Pathweft 1.1.46
+# Pathweft 1.1.47
 
 The brush beside Performance opens five Maintenance summary cards while the
 file browser remains usable. The cards select

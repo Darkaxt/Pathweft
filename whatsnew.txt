@@ -1,6 +1,11 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.47 | 2026-11-09 | Useful package cleanup previews
+- Cleanup shows only installed package managers with a qualified cache action. Managers without a safe general action no longer occupy rows.
+- NuGet's HTTP cache shows an actual file count and size; Pip and Npm previews include cache sizes. Cleanup results report measured bytes removed when available.
+- Pip recognizes the installed Scoop Python even when Pathweft was started with an older PATH.
+
 ## 1.1.46 | 2026-11-09 | Cleanup and Startup responsiveness
 - Cleanup finishes removing obsolete versions that contain ordinary ReadOnly files, including MSYS2 certificate files. It clears the bit only inside the obsolete version after Windows reports the deletion failure.
 - Current versions and persistent data remain protected; genuine locks and permission failures still show as incomplete.

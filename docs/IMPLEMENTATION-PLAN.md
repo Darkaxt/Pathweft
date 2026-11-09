@@ -1,16 +1,26 @@
 # Implementation and reconciliation
 
-Authority: [SPECIFICATION.md](SPECIFICATION.md), version 1.08, 2026-11-09,
+Authority: [SPECIFICATION.md](SPECIFICATION.md), version 1.09, 2026-11-09,
 including the user-authorized continued comparison requirement TRANSFER-07.
 
-Current2026-11-09: S41 and S42 are BLOCKED only on combined final 1.1.46
-delivery; their Scoop and cached Startup UI criteria passed. S43 is the single
-ACTIVE stage for final package qualification and normal release. The first
-assembled package's independent probe found a stale six-row Cleanup assertion:
-eleven required manager rows make seventeen. The probe now requires the six
-reviewed categories and eleven manager entries. Fresh managed source/probe
-build, package reassembly, independent and installed delivery remain. No
-tracked deferral is open.
+Current2026-11-09: S41 and S42 are COMPLETE after normal v1.1.46 publication
+and installed readback. S43 is the sole ACTIVE stage. The installed 1.1.46
+Cleanup UI exposed seven unusable placeholder rows, a NuGet HTTP cache flag
+without count or size, and a false missing-Python result for the installed
+Scoop Python. The user's correction requires real supported actions without
+placeholder rows. Source now targets four installed native cache actions, counts
+and sizes NuGet HTTP files, sizes the Pip and Npm caches, and resolves Scoop
+Python when the app's PATH is stale. Source integration, managed build, actual
+UI/native read-only checks, independent package verification, normal v1.1.47
+publication and installed readback remain. No tracked deferral is open.
+Source ready for validation: the S43 table, manager discovery, reviewed counts
+and byte estimates, changed-cache rejection, cleanup result reporting, owned
+fixture and delivered-package assertions are wired in source. The seven
+excluded managers remain documented without cleanup rows. No known source
+implementation gap remains. The first compilation will use one Coordinator-owned
+integrated Debug, Release Publish and independent-probe tree against the
+committed v1.1.47 source; actual UI, native read-only inventory, package and
+installed correctness are unverified until those checks complete.
 Integrated ticket `15b17f87457117bfebabbaa3f093ce5b` completed managed
 Debug and Release Publish compilation on attempt 4, workflow
 `b21c49d120a34b2a6e9aa2122d685fcb`, with native exit 0 and verified tree
@@ -1470,9 +1480,9 @@ plan neither authorizes itself nor adds approval checkpoints.
 | S38 - Updater scratch and live analysis disclosure | COMPLETE | STORAGE-01/SPACE-08 | S37 COMPLETE; explicit source-only boundary | Actual source205020/226536 and consumer compilation pass. Legacy cleanup removes26 checksum-verified updater downloads,8,906,892,051 bytes. Preserve relocated profile; no further compilation, version bump or release for this fix. No blocker/deferral/refactor. |
 | S39 - Maintenance guidance and categorized settings | COMPLETE | MAINT-08..11; final DELIVERY | S38 COMPLETE | Source98992/guest4040; published1.1.38/5df239e final235436/independent233852 and installed230000 pass. Pending recommendations/dropdown alignment verified; spent scratch cleaned. No blocker/deferral or required refactor. |
 | S40 - Direct Maintenance actions | COMPLETE | MAINT-12..13 | S39 COMPLETE | Actual UI204416 verifies owned Startup double-click/exact Restore, direct buttons/external-change refusal/Cleanup, selectable exact assessment, ignored header/blank and busy gating, dark/light/scaled/narrow presentation. No required refactor/blocker/deferral. S41 owns combined final delivery. |
-| S41 - Complete Maintenance adoption and cleanup | BLOCKED | MAINT-14..17 and final DELIVERY | S40 COMPLETE | The 1.1.46 ReadOnly-file correction and full owned hidden trial pass, including current/persistent protection. Combined final release and installed acceptance cannot close before S42/S43 acceptance. Resume after S43 delivery. No tracked deferral. |
-| S42 - Fast Maintenance tab navigation | BLOCKED | MAINT-18 and combined final DELIVERY | S41 required UI checks passed; S41 parked on combined delivery | Actual Cleanup-to-Startup transition without a second enumeration, fresh Refresh and action results, selected identity and sorting passed in the full hidden trial. Combined final delivery waits for S43 package qualification and normal release. No tracked deferral. |
-| S43 - UniGetUI manager-aware Cleanup | ACTIVE | MAINT-19 and combined final DELIVERY | S41/S42 UI checks passed and parked on combined delivery | Eleven manager rows, four qualified native actions, seven unavailable reasons, actual installed native preview and owned manager contracts passed in the full hidden trial. The first package probe expected six old Cleanup rows; its corrected seventeen-row assertion requires managed rebuild and independent package check. One independently and installed-verified normal release remains. No tracked deferral. |
+| S41 - Complete Maintenance adoption and cleanup | COMPLETE | MAINT-14..17 and final DELIVERY | S40 COMPLETE | Scoop cleanup checks passed and normal v1.1.46 was independently verified, published and installed with exact member readback. No blocker or tracked deferral. |
+| S42 - Fast Maintenance tab navigation | COMPLETE | MAINT-18 and combined final DELIVERY | S41 required UI checks passed | Actual Cleanup-to-Startup transition, Refresh and action results passed; normal v1.1.46 delivery and installed readback completed. No blocker or tracked deferral. |
+| S43 - UniGetUI manager-aware Cleanup | ACTIVE | MAINT-19 and corrective final DELIVERY | S41/S42 COMPLETE | Installed v1.1.46 exposed placeholder rows, unmeasured NuGet and false Pip unavailability. Corrective source is in progress. Verify four actionable native caches and exclusion of unsupported managers, then release and installed-verify v1.1.47. No tracked deferral. |
 | S25 - Summary-card motion | NOT STARTED | MOTION-01..03; affected MONITOR/CORE-03/LIFE/DELIVERY | S18 COMPLETE; after S28 and before S12 | Upward card entry with smooth file-pane squeeze; rotation between Statistics/Performance; reversal/interruption and focus/scroll preservation; reduced-motion support and actual frame/layout/resource qualification. One final independently/installed verified release after implementation authorization. No criteria verified yet. |
 | S12 - Tresorit capability investigation | NOT STARTED | TRES-01..04 | S15 delivered; S16/S18/S25 considered first in the selected execution order | Supported API/client assessment, bounded REA as needed, evidence-backed capability matrix/decision and implementation proposal. Investigation only; no cloud mutation or integration implementation. |
 | S19 - Selected-folder content indexing | NOT STARTED | CONTENT-01..06; affected SEARCH/CORE/LIFE/DELIVERY | After S12 in the selected execution order; qualify extractor APIs, query/location semantics, provider metadata and resource budgets | Toolbar folder opt-in/current magnifier badges; qualified Craft/text extraction; persisted searchable strings and location arrays, periodic incremental refresh and cloud-cache independence. Verify actual search/open/freshness/recovery and one final independently/installed verified release when implementation is authorized. No criteria verified yet. |

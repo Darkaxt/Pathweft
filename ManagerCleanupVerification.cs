@@ -49,6 +49,22 @@ internal static class ManagerCleanupVerification
             var unsupported=ManagerCleanup.Inspect(new CleanupTarget("manager-winget","WinGet fixture","",""),CancellationToken.None);
             check(!unsupported.Supported&&unsupported.Count==0&&cleanCalls==1,
                 "WinGet user downloads have no generic removal action");
+
+            string nuget=Path.Combine(ownedRoot,"manager-nuget-http");
+            Directory.CreateDirectory(nuget);
+            File.WriteAllText(Path.Combine(nuget,"a.dat"),"1234");
+            File.WriteAllText(Path.Combine(nuget,"b.dat"),"12");
+            ManagerCleanup.RunForVerification=(manager,action,root)=>manager=="dotnet-tool"&&action=="location"
+                ?"http-cache: "+nuget:throw new InvalidDataException("Unexpected NuGet action in fixture");
+            var nugetTarget=new CleanupTarget("manager-dotnet-tool","NuGet HTTP fixture","","");
+            var nugetReview=ManagerCleanup.Inspect(nugetTarget,CancellationToken.None);
+            check(nugetReview.Count==2&&nugetReview.Bytes==6&&nugetReview.Root==nuget,
+                "NuGet HTTP preview reports actual cache file count and bytes");
+            File.AppendAllText(Path.Combine(nuget,"a.dat"),"5");
+            rejected=false;
+            try{ManagerCleanup.Clean(nugetReview,nugetTarget,CancellationToken.None,_=>{});}
+            catch(IOException error){rejected=error.Message.Contains("analyze again",StringComparison.OrdinalIgnoreCase);}
+            check(rejected&&cleanCalls==1,"Changed NuGet HTTP contents prevent an unreviewed clear");
         }
         finally
         {

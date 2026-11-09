@@ -29,7 +29,7 @@ internal sealed class CleanupReview : IDisposable
                 new("scoop-versions","Scoop obsolete versions","Old installed versions; current, persistent data and packages in use are preserved",Path.Combine(scoop.Root,"apps")),
                 new("scoop-cache","Scoop download cache","Completed downloads for older installed versions; current and partial downloads are preserved",scoop.Cache)
             ];
-            return basic.Concat(ManagerCleanup.Managers.Select(m=>new CleanupTarget("manager-"+m.Id,m.Name,m.Description,""))).ToArray();
+            return basic.Concat(ManagerCleanup.AvailableActions().Select(m=>new CleanupTarget("manager-"+m.Id,m.Name,m.Description,""))).ToArray();
         }
     }
     internal string Token {get;}
@@ -55,7 +55,7 @@ internal sealed class CleanupReview : IDisposable
     {
         if(ManagerCleanup.IsManager(Target))
         {
-            managerReview=ManagerCleanup.Inspect(Target,cancel);Count=managerReview.Count;return;
+            managerReview=ManagerCleanup.Inspect(Target,cancel);Count=managerReview.Count;Bytes=managerReview.Bytes??0;return;
         }
         if(Target.Id=="scoop-versions"){AnalyzeVersions(cancel);return;}
         using var stream=new FileStream(manifest,FileMode.CreateNew,FileAccess.Write,FileShare.Read);
@@ -213,7 +213,7 @@ internal sealed class CleanupReview : IDisposable
         finally{guard?.Dispose();}
     }
     internal MaintenanceRow Row=>managerReview is {} manager
-        ?new(Target.Id,Target.Name,"Current user",!manager.Supported?"No safe cleanup":manager.Id=="dotnet-tool"?(Count>0?"HTTP cache present":"HTTP cache empty"):$"{Count:N0} cache entries",manager.Details,null,CanChange:manager.Supported&&Count>0)
+        ?new(Target.Id,Target.Name,"Current user",manager.Id=="dotnet-tool"?$"{Count:N0} reviewed files":$"{Count:N0} cache entries",manager.Details,manager.Bytes,CanChange:manager.Supported&&Count>0)
         :new(Target.Id,Target.Name,"This computer",Target.Id=="scoop-versions"?$"{Count:N0} obsolete versions":$"{Count:N0} reviewed files",Target.Description+(UnknownVersionSizes>0?$" · {UnknownVersionSizes:N0} sizes unavailable in Everything":"")+(Unreadable>0?$" · {Unreadable:N0} unavailable entries":"")+(examples.Count>0?"\n"+string.Join("\n",examples):""),UnknownVersionSizes==groups.Count&&groups.Count>0?null:Bytes);
     public void Dispose(){if(disposed)return;disposed=true;File.Delete(manifest);}
     sealed class ParentHandles:IDisposable

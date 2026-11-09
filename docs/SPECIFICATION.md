@@ -1,6 +1,6 @@
 # Pathweft specification
 
-Version 1.08 - 2026-11-09. Owner: Darkaxt.
+Version 1.09 - 2026-11-09. Owner: Darkaxt.
 
 ### UniGetUI package-manager Cleanup (S43)
 
@@ -11,7 +11,7 @@ regenerable caches where a manager has no safe obsolete-version inventory.
 
 | ID | Required behavior and acceptance |
 | --- | --- |
-| MAINT-19 | Review the configured/installed UniGetUI managers above and add Cleanup coverage for every independently qualified obsolete-version, download or regenerable-cache action. Resolve each manager's actual configured location or supported native cleanup command, not a guessed global path. Show a manager-specific preview, scope and expected loss of cached offline/reuse data; require explicit Clean and recheck the reviewed manager/root/current state before mutation. Preserve installed/current packages, active consumers, shared build dependencies, manager databases/indexes, user downloads and unrelated configuration. Never treat WinGet's configured Downloads folder or a vcpkg/Cargo build tree as a disposable cache. Where no safe generic action exists, report the precise manager and reason in Cleanup instead of inventing deletion rules. Keep UI responsive, allow cancellation at safe boundaries, and report partial failures honestly. Verify owned manager fixtures and actual installed-manager read-only inventory, then one combined normal release with MAINT-17/18. |
+| MAINT-19 | Review the configured/installed UniGetUI managers above and add Cleanup coverage for every independently qualified obsolete-version, download or regenerable-cache action. Resolve each manager's actual configured location or supported native cleanup command, not a guessed global path. Show a manager-specific preview, scope, useful count and size where safely measurable, and expected loss of cached offline/reuse data; require explicit Clean and recheck the reviewed manager/root/current state before mutation. Preserve installed/current packages, active consumers, shared build dependencies, manager databases/indexes, user downloads and unrelated configuration. Never treat WinGet's configured Downloads folder or a vcpkg/Cargo build tree as a disposable cache. The user's 2026-11-09 correction supersedes the placeholder-row presentation: Cleanup must list only installed managers with a real qualified action; document managers without a safe generic action outside the table. Do not show vague states such as `No safe cleanup` or `HTTP cache present`, or a false `Unavailable` for Pip when the configured Scoop Python is installed. Keep UI responsive, allow cancellation at safe boundaries, and report partial failures honestly. Verify owned manager fixtures and actual installed-manager read-only inventory, then deliver and installed-verify a normal corrective release. |
 
 ### Maintenance tab navigation (S42)
 
