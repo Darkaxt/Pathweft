@@ -3,24 +3,20 @@
 Authority: [SPECIFICATION.md](SPECIFICATION.md), version 1.08, 2026-11-09,
 including the user-authorized continued comparison requirement TRANSFER-07.
 
-Current2026-11-09: S41 is ACTIVE for integrated compiled acceptance of the
-completed S41-S43 source. S42 and S43 remain BLOCKED on their assigned
-compiled/UI and combined delivery checks until S41's first required validation
-passes; no other stage is ACTIVE and no tracked deferral is open. The failed
-Release target on integrated ticket `15b17f87457117bfebabbaa3f093ce5b`
-was corrected through the original failure-linked route to a single
-Coordinator-owned `dotnet build` of `scripts/Build-IntegratedMaintenance146.proj`.
-Its first native attempt `17f20316035faa023be1034ae172a197` failed with
-14 WebView2 reference errors in WPF's generated temporary project. The
-package was present in the restored assets; the wrapper's `Restore;Build`
-MSBuild task used one project evaluation, so restored NuGet imports were not
-available to that compile. The project now runs separate sequential child
-`dotnet build` commands for Debug and Release Publish within the same managed
-process tree. A failure-linked correction of attempt 3 on the original ticket
-is required. The cancelled Debug attempt remains
-cancelled; it is not presented as a failure or replayed. The user's 20-second
-limit applies to Scoop deletion only, so the admitted compilation runs to its
-actual result. Normal 1.1.46 release and installed verification remain.
+Current2026-11-09: S41 is ACTIVE for integrated UI acceptance of the completed
+S41-S43 source. S42 and S43 remain BLOCKED on their assigned UI and combined
+delivery checks; no other stage is ACTIVE and no tracked deferral is open.
+Integrated ticket `15b17f87457117bfebabbaa3f093ce5b` completed managed
+Debug and Release Publish compilation on attempt 4, workflow
+`b21c49d120a34b2a6e9aa2122d685fcb`, with native exit 0 and verified tree
+exit. The first actual hidden Maintenance trial passed the new Scoop ReadOnly,
+manager-cache and cached Startup checks, then failed on Startup header reversal.
+The trial raised a click before laying out the newly replaced GridView header;
+the old assertion accepted the default Name sort as proof of its first click.
+The DEBUG fixture now realizes each category before header clicks and requires
+the first click to change direction. This fixture correction requires fresh
+managed compilation and the full UI trial. Normal 1.1.46 release and installed
+verification remain. The user's 20-second limit applies to Scoop deletion only.
 
 Previous2026-11-09: S43 was BLOCKED at compiled acceptance for MAINT-19.
 Coordinator 0.26.1 is active and the integrated S41-S43 build receipt
@@ -1464,9 +1460,9 @@ plan neither authorizes itself nor adds approval checkpoints.
 | S38 - Updater scratch and live analysis disclosure | COMPLETE | STORAGE-01/SPACE-08 | S37 COMPLETE; explicit source-only boundary | Actual source205020/226536 and consumer compilation pass. Legacy cleanup removes26 checksum-verified updater downloads,8,906,892,051 bytes. Preserve relocated profile; no further compilation, version bump or release for this fix. No blocker/deferral/refactor. |
 | S39 - Maintenance guidance and categorized settings | COMPLETE | MAINT-08..11; final DELIVERY | S38 COMPLETE | Source98992/guest4040; published1.1.38/5df239e final235436/independent233852 and installed230000 pass. Pending recommendations/dropdown alignment verified; spent scratch cleaned. No blocker/deferral or required refactor. |
 | S40 - Direct Maintenance actions | COMPLETE | MAINT-12..13 | S39 COMPLETE | Actual UI204416 verifies owned Startup double-click/exact Restore, direct buttons/external-change refusal/Cleanup, selectable exact assessment, ignored header/blank and busy gating, dark/light/scaled/narrow presentation. No required refactor/blocker/deferral. S41 owns combined final delivery. |
-| S41 - Complete Maintenance adoption and cleanup | ACTIVE | MAINT-14..17 and final DELIVERY | S40 COMPLETE | Installed 1.1.45 cleared all 15 reported obsolete folders, including the exact separately removed MSYS2 residual. The 1.1.46 ordinary ReadOnly-file correction and fixture remain uncompiled: the assistant incorrectly stopped integrated Debug attempt 1 at 18.5 seconds. A failed Release target on the same ticket has a supported correction route for sequential Debug fixture and Release publish validation. Owned fixture, release and installed acceptance remain. No tracked deferral. |
-| S42 - Fast Maintenance tab navigation | BLOCKED | MAINT-18 and combined final DELIVERY | S41 source correction present; S41 ACTIVE on integrated validation | Cached Startup navigation and native regression checks are in source. Actual transition timing, freshness and installed release await managed compilation and UI verification. The user's 20-second limit applies to Scoop deletion, not compilation. No tracked deferral. |
-| S43 - UniGetUI manager-aware Cleanup | BLOCKED | MAINT-19 and combined final DELIVERY | S41/S42 source present; S41 ACTIVE on integrated validation | Eleven manager rows, four qualified native actions, seven unavailable reasons and DEBUG owned contract fixture are in source. The integrated Debug workflow was cancelled by the assistant's mistaken limit; the Release check used unsupported `dotnet publish` and failed before launch. Correct the failed Release target on its original receipt to run sequential Debug and Release checks through one managed build, then complete fixture/UI acceptance, packaging and one independently and installed-verified normal release. No tracked deferral. |
+| S41 - Complete Maintenance adoption and cleanup | ACTIVE | MAINT-14..17 and final DELIVERY | S40 COMPLETE | Installed 1.1.45 cleared all 15 reported obsolete folders. The 1.1.46 ReadOnly-file correction passed its actual owned hidden trial after managed Debug/Release compilation. Integrated UI acceptance stopped at a Startup header fixture sequencing failure; correct and rerun the trial before release and installed acceptance. No tracked deferral. |
+| S42 - Fast Maintenance tab navigation | BLOCKED | MAINT-18 and combined final DELIVERY | S41 ACTIVE on integrated UI acceptance | Cached Startup navigation and the no-second-enumeration check passed in the first hidden trial. Actual transition timing, freshness and installed release remain. The user's 20-second limit applies to Scoop deletion, not compilation. No tracked deferral. |
+| S43 - UniGetUI manager-aware Cleanup | BLOCKED | MAINT-19 and combined final DELIVERY | S41 ACTIVE on integrated UI acceptance | Eleven manager rows, four qualified native actions, seven unavailable reasons and the owned manager contract fixture passed in the first hidden trial. The full UI trial, packaging and one independently and installed-verified normal release remain. No tracked deferral. |
 | S25 - Summary-card motion | NOT STARTED | MOTION-01..03; affected MONITOR/CORE-03/LIFE/DELIVERY | S18 COMPLETE; after S28 and before S12 | Upward card entry with smooth file-pane squeeze; rotation between Statistics/Performance; reversal/interruption and focus/scroll preservation; reduced-motion support and actual frame/layout/resource qualification. One final independently/installed verified release after implementation authorization. No criteria verified yet. |
 | S12 - Tresorit capability investigation | NOT STARTED | TRES-01..04 | S15 delivered; S16/S18/S25 considered first in the selected execution order | Supported API/client assessment, bounded REA as needed, evidence-backed capability matrix/decision and implementation proposal. Investigation only; no cloud mutation or integration implementation. |
 | S19 - Selected-folder content indexing | NOT STARTED | CONTENT-01..06; affected SEARCH/CORE/LIFE/DELIVERY | After S12 in the selected execution order; qualify extractor APIs, query/location semantics, provider metadata and resource budgets | Toolbar folder opt-in/current magnifier badges; qualified Craft/text extraction; persisted searchable strings and location arrays, periodic incremental refresh and cloud-cache independence. Verify actual search/open/freshness/recovery and one final independently/installed verified release when implementation is authorized. No criteria verified yet. |

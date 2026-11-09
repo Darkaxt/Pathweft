@@ -48,7 +48,18 @@ recheck/readback, changed-root rejection, Downloads exclusion and unsupported
 WinGet behavior. Its source is present but has not run. No Pathweft build,
 installed UI or release acceptance has run for MAINT-19. The managed .NET gate
 still rejects the previously issued S41 ticket before dispatch.
-Current build checkpoint: installed Coordinator 0.26.1 fixes the environment
+Current trial checkpoint: integrated workflow
+`b21c49d120a34b2a6e9aa2122d685fcb` completed managed Debug and Release
+Publish compilation with native exit 0 and verified tree exit. The first hidden
+Maintenance trial passed owned Scoop ReadOnly deletion, manager cache contracts,
+all eleven manager rows and cached Startup navigation without a second source
+enumeration. It stopped at Startup Name-header reversal: the test switched to a
+new GridView and clicked its header before layout, when the event route was
+not yet established; the old first-click assertion accepted default Name ascending as
+success. The fixture now lays out each category and requires the first click
+to change direction. Full corrected trial and release acceptance remain.
+
+Previous build checkpoint: installed Coordinator 0.26.1 fixes the environment
 binding and admitted integrated ticket `15b17f87457117bfebabbaa3f093ce5b`.
 The assistant erroneously stopped its Debug attempt at 18.5 seconds by applying
 the user's 20-second Scoop-deletion limit to compilation. The user clarified

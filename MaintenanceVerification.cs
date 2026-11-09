@@ -135,6 +135,9 @@ public partial class MainWindow
         {
             await maintenance.CategoryForVerification(category);check(!maintenance.State.Contains("failed",StringComparison.OrdinalIgnoreCase),"Native read-only category opens: "+category);
             check(category=="Windows apps"||maintenance.Rows.Items.Count>0,"Category exposes actual Windows rows: "+category);
+            // Replacing the GridView creates new headers. Real clicks occur only
+            // after they enter the visual tree; realize them before raising one.
+            UpdateLayout();
             var headers=((GridView)maintenance.Rows.View).Columns.Select(x=>System.Windows.Automation.AutomationProperties.GetName((GridViewColumnHeader)x.Header)).ToArray();
             VerifyMaintenanceSorting(maintenance,check);
             if(category=="Startup")check(headers.Contains("Type")&&!headers.Contains("Size")&&maintenance.Rows.Items.Cast<MaintenanceRow>().Any(x=>x.Type=="Registry Run"),"Startup presents source Type and omits the irrelevant Size column");
@@ -250,10 +253,11 @@ public partial class MainWindow
         foreach(var column in columns)
         {
             var header=(GridViewColumnHeader)column.Header;string property=(string)header.Tag;
+            string previous=System.Windows.Automation.AutomationProperties.GetItemStatus(header);
             header.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             string direction=System.Windows.Automation.AutomationProperties.GetItemStatus(header);
             var view=System.Windows.Data.CollectionViewSource.GetDefaultView(table.ItemsSource);
-            check(view.SortDescriptions[0].PropertyName==property&&direction.Length>0,"Actual sortable header selects "+panel.Category+" / "+property);
+            check(view.SortDescriptions[0].PropertyName==property&&direction.Length>0&&direction!=previous,"Actual sortable header selects "+panel.Category+" / "+property);
             var comparison=System.Collections.Comparer.Default;
             var grouped=table.Items.Cast<MaintenanceRow>().GroupBy(x=>panel.Category=="Windows tweaks"?x.Group:"");
             check(grouped.All(group=>{var values=group.Select(x=>typeof(MaintenanceRow).GetProperty(property).GetValue(x)).ToArray();return values.Zip(values.Skip(1),(a,b)=>direction=="Ascending"?comparison.Compare(a,b)<=0:comparison.Compare(a,b)>=0).All(x=>x);}),"Actual rows follow header ordering within setting categories: "+panel.Category+" / "+property);

@@ -6,7 +6,20 @@ their published assets are verified. Retain concise verification results and
 reusable fixtures, not repeated expanded cleanup manifests, retired test profiles
 or superseded captures. Clean exact generated targets through transactional-cleanup.
 
-Current2026-11-09/spec1.08: S41-S43 source is integrated but compiled acceptance
+Current2026-11-09/spec1.08: S41 is ACTIVE for 1.1.46 integrated UI acceptance;
+S42/S43 remain BLOCKED pending their assigned checks and combined delivery.
+Integrated ticket `15b17f87457117bfebabbaa3f093ce5b` completed sequential
+managed Debug and Release Publish compilation on corrected attempt 4,
+workflow `b21c49d120a34b2a6e9aa2122d685fcb`, exit 0 with tree exit verified.
+The first hidden Maintenance trial passed the new Scoop ReadOnly, manager-cache
+and Startup cache checks, then failed at Startup Name-header reversal because
+the fixture raised a click before layout after replacing GridView headers.
+The fixture now updates layout and requires the first click to change direction.
+Rebuild through the supported managed gate, rerun the full trial, then finish
+normal 1.1.46 package, independent and installed acceptance. The 20-second
+limit applies to Scoop deletion only. No other ACTIVE stage or deferral.
+
+Previous2026-11-09/spec1.08: S41-S43 source is integrated but compiled acceptance
 and normal 1.1.46 delivery remain BLOCKED. Coordinator 0.26.1 is installed.
 Integrated ticket `15b17f87457117bfebabbaa3f093ce5b` admitted Debug attempt 1,
 which the assistant mistakenly stopped after 18.5 seconds; its process tree
