@@ -1,6 +1,6 @@
 # Pathweft specification
 
-Version 0.99 - 2026-11-09. Owner: Darkaxt.
+Version 1.00 - 2026-11-09. Owner: Darkaxt.
 
 ### Direct Maintenance actions (S40)
 
@@ -22,6 +22,23 @@ persistent app data, active consumers and manager bookkeeping. No age-based
 folder sweep or Windows Installer-cache purge. Integrate analysis/review/action
 with the existing Cleanup tab/card and verify owned package fixtures and one
 combined normal release after S40 and S41 acceptance.
+
+MAINT-16 (S41 responsiveness correction): automatic Cleanup analysis must not
+lock the browser's navigation or its read-only Maintenance inspection. Keep
+selection, sorting, selected details and already loaded category tabs usable
+while analysis runs; mutation and duplicate analysis remain gated. Back to files
+cancels and drains the original scan without withholding the file view. Observe
+cancellation throughout Scoop consumer-check enumeration and between native
+registration calls; retain active-package protection and release every native
+session/handle on cancellation. Show the category being analyzed in its row.
+The hidden-files eye belongs to file browsing and is absent while Maintenance
+or Performance analysis owns the main pane, returning with its preserved state.
+Verify actual UI actions during an event-held scan, cancellation during native
+Scoop resource registration, original-task drainage and repeat entry. The
+published1.1.39 independent popup-search assertion failed; preserve and
+investigate that result, without weakening the assertion, before independently
+qualifying the corrected release. An unreplicated diagnostic is not evidence of
+a repaired production search defect.
 
 MAINT-14: add Scoop obsolete installed versions and completed obsolete download
 cache entries to the existing automatic Cleanup queue. Resolve the current-user

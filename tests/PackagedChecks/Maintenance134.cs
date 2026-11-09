@@ -18,6 +18,8 @@ sealed partial class PackageProbe
         command.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         var panel=owner.GetType().GetField("maintenance",Flags).GetValue(owner);
         var type=panel.GetType();
+        Check(hidden.Visibility==Visibility.Collapsed&&((ListView)type.GetProperty("Rows",Flags).GetValue(panel)).IsEnabled,
+            "Delivered read-only Maintenance keeps its table interactive and hides the inherited file-visibility command");
         await (Task)owner.GetType().GetField("paneModeWork",Flags).GetValue(owner);
         var cards=(UniformGrid)type.GetProperty("Cards",Flags).GetValue(panel);
         var rows=(ListView)type.GetProperty("Rows",Flags).GetValue(panel);
@@ -89,6 +91,7 @@ sealed partial class PackageProbe
         await (Task)Call(owner.GetType(),owner,"CloseMaintenance");
         Check(cards.Visibility==Visibility.Collapsed&&!(bool)owner.GetType().GetField("maintenanceVisible",Flags).GetValue(owner),
             "Delivered Back to files retires Maintenance and restores browser layout");
+        Check(hidden.Visibility==Visibility.Visible,"Delivered browser restores its original file-visibility command after Maintenance");
         command.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await (Task)owner.GetType().GetField("paneModeWork",Flags).GetValue(owner);
         var performanceCommand=(Button)owner.FindName("PerformanceCommand");performanceCommand.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await (Task)owner.GetType().GetField("paneModeWork",Flags).GetValue(owner);
         Check(!(bool)owner.GetType().GetField("maintenanceVisible",Flags).GetValue(owner)&&Equals(performanceCommand.Tag,"on")&&command.Tag==null,"Delivered Performance and Maintenance toolbar modes are mutually exclusive");

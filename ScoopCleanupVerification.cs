@@ -63,6 +63,30 @@ internal static class ScoopCleanupVerification
             }
             fixture=Fixture("ambiguous");version=Package(fixture,"sample");Directory.Delete(version.Current);
             using(var review=Review(fixture,false)){review.Analyze(default);check(review.Count==0&&review.Clean(default).Deleted==0&&Directory.Exists(version.Old),"Missing current binding preserves ambiguous/no-junction installations");}
+            fixture=Fixture("cancel-registration");version=Package(fixture,"sample");
+            for(int i=0;i<260;i++)File.WriteAllText(Path.Combine(version.Old,$"member-{i}.txt"),"owned");
+            var target=new CleanupTarget("scoop-versions","Owned Scoop","Cancellation fixture",Path.Combine(fixture,"apps"));
+            using(var cancellation=new CancellationTokenSource())
+            {
+                int registered=0;bool cancelled=false;
+                ScoopCleanup.ResourcesRegisteredForVerification=()=>{registered++;cancellation.Cancel();};
+                try
+                {
+                    using var review=Review(fixture,false);
+                    try{review.Analyze(cancellation.Token);}catch(OperationCanceledException){cancelled=true;}
+                    check(cancelled&&registered==1&&File.Exists(Path.Combine(version.Old,"payload.txt")),"Scoop cancellation stops between native registration batches without deleting any package");
+                }
+                finally{ScoopCleanup.ResourcesRegisteredForVerification=null;}
+                string moved=Path.Combine(fixture,"apps-renamed");Directory.Move(target.Root,moved);Directory.Move(moved,target.Root);
+                check(Directory.Exists(version.Old),"Cancelled Scoop registration releases its directory leases before completion");
+            }
+            using(var review=Review(fixture,false))
+            {
+                review.Analyze(default);using var cancellation=new CancellationTokenSource();
+                ScoopCleanup.ResourcesRegisteredForVerification=cancellation.Cancel;
+                try{check(review.Clean(cancellation.Token).Cancelled&&File.Exists(Path.Combine(version.Old,"payload.txt")),"Cancelling consumer recheck during Clean returns a cancelled outcome and preserves the package");}
+                finally{ScoopCleanup.ResourcesRegisteredForVerification=null;}
+            }
         }
         finally{Environment.SetEnvironmentVariable("SCOOP",before);Environment.SetEnvironmentVariable("SCOOP_CACHE",cacheBefore);}
 

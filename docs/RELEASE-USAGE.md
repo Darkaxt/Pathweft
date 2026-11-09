@@ -1,4 +1,4 @@
-# Pathweft 1.1.39
+# Pathweft 1.1.40
 
 The brush beside Performance opens Maintenance. Five bottom summary cards select
 Cleanup, Startup, Services, Windows tweaks and optional Windows apps. Cleanup
@@ -19,6 +19,11 @@ original values for Restore; supported Startup files and tasks retain their exac
 original file/definition and enabled state. Independently changed values or files
 are not overwritten. Maintenance and Performance are mutually exclusive views;
 switching either off returns to files and ordinary statistics.
+Read-only analysis keeps selection, sorting, filtering and already loaded tabs
+available. Back returns to files while cancelling and draining the original
+scan. Mutations and duplicate scans remain gated; Scoop checks cancellation
+between native consumer-registration batches. File-browser visibility controls
+are hidden while an analysis pane owns the view.
 Optional app removal applies only to the current user and does not remove Windows
 provisioning. Reinstall removed apps through Microsoft Store.
 

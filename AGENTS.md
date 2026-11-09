@@ -6,7 +6,17 @@ their published assets are verified. Retain concise verification results and
 reusable fixtures, not repeated expanded cleanup manifests, retired test profiles
 or superseded captures. Clean exact generated targets through transactional-cleanup.
 
-Current2026-11-09/spec0.99: S39 COMPLETE. Normal1.1.38/5df239e is published;
+Current2026-11-09/spec1.00: S41 remains the only ACTIVE stage. MAINT-16 corrects
+read-only inspection/navigation gating during Cleanup and cancellation between
+Scoop resource-registration batches. Hidden is absent from analysis views.
+Actual UI213476 passes held-scan navigation, native cancellation, category-result
+binding, token ownership, repeat entry and the full Maintenance workflow.
+Published1.1.39 final passed but its independent widget assertion failed. The
+unchanged delivered-widget focused recheck226712 passes; preserve the unexplained
+failure and do not claim a search repair. Require full final and independent
+1.1.40 release checks. No host Scoop mutation or concurrent stage.
+
+Previous2026-11-09/spec0.99: S39 COMPLETE. Normal1.1.38/5df239e is published;
 final235436/independent233852 pass actual package/source/native/application checks.
 Installed230000 verifies11,305 members, ready restarted main232036/helper213028,
 22 routes and preserved profile/shortcut. Spent build/retrieval/test scratch and

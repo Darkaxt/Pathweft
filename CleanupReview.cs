@@ -57,7 +57,7 @@ internal sealed class CleanupReview : IDisposable
                 int index=groups.Count;long before=Count,beforeBytes=Bytes,unreadable=Unreadable;groups.Add(group);
                 try
                 {
-                    using var guard=ScoopCleanup.Guard(group);
+                    using var guard=ScoopCleanup.Guard(group,cancel);
                     if(group.Cache){foreach(string file in ScoopCleanup.CacheFiles(group))Record(file,0,index);}
                     else Scan(group.Folder,index);
                     if(Unreadable>unreadable){excludedGroups.Add(index);Count=before;Bytes=beforeBytes;}
@@ -145,7 +145,7 @@ internal sealed class CleanupReview : IDisposable
                     guard?.Dispose();guard=null;guarded=item.Group;allowed=true;
                     groupSkipped=false;metadata.Clear();
                     if(item.Group>=0)
-                        try{if(excludedGroups.Contains(item.Group))throw new IOException("Version contains unavailable members");guard=ScoopCleanup.Guard(groups[item.Group]);}
+                        try{if(excludedGroups.Contains(item.Group))throw new IOException("Version contains unavailable members");guard=ScoopCleanup.Guard(groups[item.Group],cancel);}
                         catch(Exception ex)when(ScoopCleanup.Expected(ex)){allowed=false;}
                 }
                 if(!allowed){skipped++;continue;}
@@ -199,6 +199,7 @@ internal sealed class CleanupReview : IDisposable
         }
         return new(deleted,skipped,bytes,false);
         }
+        catch(OperationCanceledException)when(cancel.IsCancellationRequested){return new(deleted,skipped,bytes,true);}
         finally{guard?.Dispose();}
     }
     internal MaintenanceRow Row=>new(Target.Id,Target.Name,"This computer",$"{Count:N0} reviewed files",Target.Description+(Unreadable>0?$" · {Unreadable:N0} unavailable entries":"")+(examples.Count>0?"\n"+string.Join("\n",examples):""),Bytes);

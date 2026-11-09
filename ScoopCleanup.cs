@@ -98,16 +98,21 @@ internal static class ScoopCleanup
         string destination=new DirectoryInfo(path).ResolveLinkTarget(false)?.FullName;
         return destination!=null&&(Same(destination,persist)||Below(destination,persist));
     }
-    internal static IDisposable Guard(Group group)
+#if DEBUG
+    internal static Action ResourcesRegisteredForVerification;
+#endif
+    internal static IDisposable Guard(Group group,CancellationToken cancel=default)
     {
         var handles=new List<SafeFileHandle>();uint session=0;bool started=false;
         try
         {
+            cancel.ThrowIfCancellationRequested();
             // Hold the binding and all normal ancestors against rename/reparse
             // substitution through the entire reviewed group. Do not lock contents.
             string app=Path.GetDirectoryName(group.Current);
             for(string parent=app;parent!=null;parent=Path.GetDirectoryName(parent))
             {
+                cancel.ThrowIfCancellationRequested();
                 var handle=OpenDirectory(parent);handles.Add(handle);
                 if(Linked(parent))throw new IOException("Scoop installation ancestor is a link");
             }
@@ -121,17 +126,28 @@ internal static class ScoopCleanup
                 var files=new List<string>(128);var folders=new Stack<string>();folders.Push(group.Folder);
                 while(folders.TryPop(out var folder))
                 {
+                    cancel.ThrowIfCancellationRequested();
                     foreach(string file in Directory.EnumerateFiles(folder))
                     {
+                        cancel.ThrowIfCancellationRequested();
                         files.Add(file);
                         if(files.Count==128){Register();files.Clear();}
                     }
-                    foreach(string child in Directory.EnumerateDirectories(folder))if(!Linked(child))folders.Push(child);
+                    foreach(string child in Directory.EnumerateDirectories(folder)){cancel.ThrowIfCancellationRequested();if(!Linked(child))folders.Push(child);}
                 }
                 if(files.Count>0)Register();
+                cancel.ThrowIfCancellationRequested();
                 uint needed=0,count=0,reasons=0;code=RmGetList(session,out needed,ref count,IntPtr.Zero,ref reasons);
                 if(code!=0||needed!=0)throw new IOException("Package is in use; preserved");
-                void Register(){int result=RmRegisterResources(session,(uint)files.Count,files.ToArray(),0,IntPtr.Zero,0,IntPtr.Zero);if(result!=0)throw new IOException("Cannot check package consumers: "+result);}
+                void Register()
+                {
+                    cancel.ThrowIfCancellationRequested();
+                    int result=RmRegisterResources(session,(uint)files.Count,files.ToArray(),0,IntPtr.Zero,0,IntPtr.Zero);if(result!=0)throw new IOException("Cannot check package consumers: "+result);
+#if DEBUG
+                    ResourcesRegisteredForVerification?.Invoke();
+#endif
+                    cancel.ThrowIfCancellationRequested();
+                }
             }
             return new Lease(handles,session,started);
         }

@@ -1,6 +1,6 @@
 # Implementation and reconciliation
 
-Authority: [SPECIFICATION.md](SPECIFICATION.md), version 0.99, 2026-11-09,
+Authority: [SPECIFICATION.md](SPECIFICATION.md), version 1.00, 2026-11-09,
 including the user-authorized continued comparison requirement TRANSFER-07.
 
 Current2026-11-09: S39 COMPLETE: source98992 and guest4040/build26100;
@@ -12,8 +12,16 @@ double-click/exact Restore, selection/Copy, ignored header/blank gestures and bu
 gates with themed layouts. No required refactor. S41 ACTIVE: native guest4340
 checks all24 adopted donor actions and exact Restore; actual UI205736 verifies
 40-action catalog, compact complete details, exact guidance, Scoop cleanup and
-active/current/persistent/changed-member preservation. Combined final release
-and independent delivered checks remain. No external blocker or deferral.
+active/current/persistent/changed-member preservation. MAINT-16 additionally
+corrects read-only inspection/navigation gating, native Scoop cancellation and
+the inherited Hidden command. Current UI213476 passes the full event-held scan,
+native registration cancellation, category-result binding, cancellation ownership
+and repeat-entry workflows. Normal1.1.39
+is published; its final package passed but the independent popup assertion
+failed. Unchanged delivered-widget recheck226712 passes with actual indexed
+README results and its original row style; the first failure remains unexplained,
+not claimed repaired. Corrected1.1.40 must pass full final and independent
+delivery checks. No external blocker or tracked deferral.
 S25 remains NOT STARTED. Native scratch D:/Temp/pathweft-s40 uses D for native/
 small-file I/O; clean each spent output after its last consumer exits.
 
@@ -1289,7 +1297,7 @@ plan neither authorizes itself nor adds approval checkpoints.
 | S38 - Updater scratch and live analysis disclosure | COMPLETE | STORAGE-01/SPACE-08 | S37 COMPLETE; explicit source-only boundary | Actual source205020/226536 and consumer compilation pass. Legacy cleanup removes26 checksum-verified updater downloads,8,906,892,051 bytes. Preserve relocated profile; no further compilation, version bump or release for this fix. No blocker/deferral/refactor. |
 | S39 - Maintenance guidance and categorized settings | COMPLETE | MAINT-08..11; final DELIVERY | S38 COMPLETE | Source98992/guest4040; published1.1.38/5df239e final235436/independent233852 and installed230000 pass. Pending recommendations/dropdown alignment verified; spent scratch cleaned. No blocker/deferral or required refactor. |
 | S40 - Direct Maintenance actions | COMPLETE | MAINT-12..13 | S39 COMPLETE | Actual UI204416 verifies owned Startup double-click/exact Restore, direct buttons/external-change refusal/Cleanup, selectable exact assessment, ignored header/blank and busy gating, dark/light/scaled/narrow presentation. No required refactor/blocker/deferral. S41 owns combined final delivery. |
-| S41 - Complete Maintenance adoption and cleanup | ACTIVE | MAINT-14..15 and final DELIVERY | S40 COMPLETE | Real donor setting actions with guest Apply/readback/exact Restore; expanded exact guidance and consistent selectable details; reviewed Scoop cleanup preserving current/persistent/active versions. Verify integrated owned workflows then one combined normal independently verified release. |
+| S41 - Complete Maintenance adoption and cleanup | ACTIVE | MAINT-14..16 and final DELIVERY | S40 COMPLETE | Real donor actions/exact Restore, guidance/selectable details, reviewed Scoop cleanup with responsive inspection/navigation and native cancellation. Existing source/native evidence passes; require current affected UI and final/independent1.1.40 delivery. Preserve the unexplained1.1.39 independent popup failure. |
 | S25 - Summary-card motion | NOT STARTED | MOTION-01..03; affected MONITOR/CORE-03/LIFE/DELIVERY | S18 COMPLETE; after S28 and before S12 | Upward card entry with smooth file-pane squeeze; rotation between Statistics/Performance; reversal/interruption and focus/scroll preservation; reduced-motion support and actual frame/layout/resource qualification. One final independently/installed verified release after implementation authorization. No criteria verified yet. |
 | S12 - Tresorit capability investigation | NOT STARTED | TRES-01..04 | S15 delivered; S16/S18/S25 considered first in the selected execution order | Supported API/client assessment, bounded REA as needed, evidence-backed capability matrix/decision and implementation proposal. Investigation only; no cloud mutation or integration implementation. |
 | S19 - Selected-folder content indexing | NOT STARTED | CONTENT-01..06; affected SEARCH/CORE/LIFE/DELIVERY | After S12 in the selected execution order; qualify extractor APIs, query/location semantics, provider metadata and resource budgets | Toolbar folder opt-in/current magnifier badges; qualified Craft/text extraction; persisted searchable strings and location arrays, periodic incremental refresh and cloud-cache independence. Verify actual search/open/freshness/recovery and one final independently/installed verified release when implementation is authorized. No criteria verified yet. |

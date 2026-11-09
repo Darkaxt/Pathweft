@@ -1,7 +1,7 @@
 # Complete Maintenance adoption
 
-Authority: specification0.99, MAINT-12..15. S40 source acceptance is included in
-the combined1.1.39 delivery. S41 remains ACTIVE until package/publication and
+Authority: specification1.00, MAINT-12..16. S40 source acceptance is included in
+the combined Maintenance delivery. S41 remains ACTIVE until package/publication and
 independent delivered checks pass.
 
 ## Verified implementation
@@ -38,9 +38,34 @@ e1b5784f-c94e-4d74-9c5b-94d95a43bbd4 ended through its managed workflow; native
 resource exit and release were confirmed. Superseded/failed fixture scratch and
 donor clones were transactionally cleaned after required evidence was retained.
 
+## Responsiveness correction
+
+The scanner already ran on a worker. Its UI nevertheless disabled the table,
+cards and filters, routed Back through a busy-rejecting queue, and held the
+window mode gate through the complete scan. Scoop's native consumer guard also
+had no cancellation checks during traversal/registration. Correct those exact
+boundaries; preserve Restart Manager protection and await the original operation.
+Results for asynchronous category loads must remain bound to their category,
+and cancellation must not be replaced by a new token during Load.
+
+Current actual UI213476 passed selection/details/category navigation while an event held
+the original scan, Back restoring files before scan drainage, cancellation and
+repeat entry. Owned native fixtures passed cancellation during real resource
+registration, no deletion and released directory handles. The current tested
+implementation includes the category-binding and token ownership corrections;
+the full existing Maintenance workflow and themed/scaled/narrow layouts pass.
+
 ## Delivery acceptance
 
-Pending: committed clean-source1.1.39 package, bundled donor notices/source pins,
-packaged native/application checks, normal six-asset publication, independent
-download/hash/signature/source/application verification, and exact spent-output
-cleanup. No unresolved source blocker, required refactor or tracked deferral.
+Normal1.1.39/f7d3aea is published. Its final full consumer191036 passed, but the
+independent consumer221568 failed the existing compact-widget query/style
+assertion. Retained failure evidence is not discarded. The unchanged delivered
+focused consumer226712 passes: query path to the real indexed README, total6,
+visible4, MatchOptions None and original WidgetResultRow style. The first failure
+is unexplained; no production search fix, timeout, retry or weakened assertion
+was introduced. The new focused route records the actual query/notice/count/style
+for diagnosing any recurrence.
+
+Pending: committed clean-source
+1.1.40 package, full final/independent delivered checks, normal publication and
+exact spent-output cleanup. No tracked deferral or external blocker.

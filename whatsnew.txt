@@ -1,6 +1,11 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.40 | 2026-11-09 | Responsive Cleanup analysis
+- Inspect, sort and filter Cleanup results while analysis runs. Loaded Maintenance categories stay accessible, and Back returns to files while the cancelled scan drains.
+- Scoop analysis observes cancellation between native resource-registration batches and releases its directory handles, preserving unprocessed files and packages in use.
+- Maintenance and expanded Performance analysis hide the file-browser hidden-files eye; returning to files restores its existing state.
+
 ## 1.1.39 | 2026-11-09 | Complete Maintenance tools
 - Review 40 individual Windows settings, including 24 adopted Win11Debloat controls for suggestions, Explorer, Start/taskbar, appearance and input. Restore uses your exact saved original values.
 - Core Windows services gain matched Keep enabled guidance. Unknown entries remain unassessed, and each inventory reports its guidance coverage.

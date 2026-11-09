@@ -71,6 +71,7 @@ public partial class MainWindow
         bool show=AnalysisVisible&&!maintenanceVisible;
         performance.Analysis.Visibility=show?Visibility.Visible:Visibility.Collapsed;
         PaneArea.Visibility=show||maintenanceVisible?Visibility.Collapsed:Visibility.Visible;
+        HiddenToggle.Visibility=show||maintenanceVisible?Visibility.Collapsed:Visibility.Visible;
         // File actions must never target a selection hidden behind analysis.
         if(PerformanceCommand.Parent is Panel commands)foreach(var child in commands.Children)
             if(child is Button button&&button!=PerformanceCommand&&button!=TransfersButton&&button!=MaintenanceCommand&&button!=AdministratorCommand)button.IsEnabled=!show&&!maintenanceVisible&&(button!=AnalyzeSpaceCommand||active?.CanAnalyzeSpace==true);
@@ -85,6 +86,7 @@ public partial class MainWindow
     async Task ToggleMaintenance()
     {
         if(changingPaneMode)return;changingPaneMode=true;
+        Task loading=Task.CompletedTask;
         try
         {
         if(maintenanceVisible){await CloseMaintenance();return;}
@@ -92,15 +94,16 @@ public partial class MainWindow
         {
             maintenance=new();Grid.SetRow(maintenance,0);((Grid)StatsRow.Parent).Children.Add(maintenance);
             Grid.SetRow(maintenance.Cards,1);((Grid)StatsRow.Parent).Children.Add(maintenance.Cards);
-            maintenance.Back+=async()=>await CloseMaintenance();
+            maintenance.Back+=()=>Maintenance_Click(this,new RoutedEventArgs());
         }
         if(active!=null)performanceModes[active]=false;
-        performance.Select(-1);maintenanceVisible=true;ArrangeStats();await maintenance.Show();
+        performance.Select(-1);maintenanceVisible=true;ArrangeStats();loading=maintenance.Show();
         }
         finally{changingPaneMode=false;}
+        await loading;
     }
     async Task CloseMaintenance()
     {
-        if(maintenance!=null)await maintenance.Hide();maintenanceVisible=false;ArrangeStats();active?.FocusList();
+        maintenanceVisible=false;var draining=maintenance?.Hide()??Task.CompletedTask;ArrangeStats();active?.FocusList();await draining;
     }
 }
