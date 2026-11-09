@@ -6,7 +6,17 @@ their published assets are verified. Retain concise verification results and
 reusable fixtures, not repeated expanded cleanup manifests, retired test profiles
 or superseded captures. Clean exact generated targets through transactional-cleanup.
 
-Current2026-11-09/spec1.04: S41 is COMPLETE for MAINT-17 direct deletion.
+Current2026-11-09/spec1.05: S41 is ACTIVE for the installed MAINT-17
+ReadOnly-junction regression. The user's live Cleanup removed 3 of 18 reviewed
+obsolete versions but skipped 15 at ReadOnly Scoop persistent-data junctions.
+An owned NTFS fixture and unfixed app trial reproduce the nonrecursive .NET
+access denial. The corrected full Maintenance trial passes junction-name
+deletion, unchanged persistent target, genuine busy/current failures and UI
+integration. Prepare, independently verify, publish and installed-verify normal
+1.1.45, then retry the user's remaining reviewed host versions. No other
+ACTIVE stage or deferral.
+
+Previous2026-11-09/spec1.04: S41 was COMPLETE for MAINT-17 direct deletion.
 The user superseded the executable-only preflight after it took 23.217 seconds
 for 18 host candidates. Clean now starts native obsolete-folder deletion without
 package-member enumeration or Restart Manager registration; Windows lock errors

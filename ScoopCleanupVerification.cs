@@ -25,15 +25,21 @@ internal static class ScoopCleanupVerification
             }
             string fixture=Fixture("normal");var version=Package(fixture,"sample");
             string persistent=Path.Combine(fixture,"persist","sample");Directory.CreateDirectory(persistent);File.WriteAllText(Path.Combine(persistent,"user.txt"),"user data");
-            await Junction(Path.Combine(version.Old,"data"),persistent);
+            string persistentLink=Path.Combine(version.Old,"data");
+            await Junction(persistentLink,persistent);
+            var persistentAttributes=File.GetAttributes(persistent);
+            File.SetAttributes(persistentLink,File.GetAttributes(persistentLink)|FileAttributes.ReadOnly);
+            check((File.GetAttributes(persistentLink)&FileAttributes.ReadOnly)!=0&&File.GetAttributes(persistent)==persistentAttributes,
+                "Owned Scoop fixture has a ReadOnly persistent junction without changing its target");
             Package(fixture,"scoop");string unknown=Path.Combine(fixture,"apps","unknown","1.0");Directory.CreateDirectory(unknown);File.WriteAllText(Path.Combine(unknown,"user.txt"),"not an installed package");
             using(var review=Review(fixture,false))
             {
                 review.Analyze(default);check(review.Count>0&&review.Row.Details.Contains(version.Old),"Scoop review exposes exact old version candidates in its selectable assessment");
                 var outcome=review.Clean(default);
                 check(outcome.Deleted>0&&outcome.Skipped==0&&!Directory.Exists(version.Old)&&File.Exists(Path.Combine(version.Active,"payload.txt"))&&
-                    File.ReadAllText(Path.Combine(persistent,"user.txt"))=="user data"&&Directory.Exists(Path.Combine(fixture,"apps","scoop","1.0"))&&Directory.Exists(unknown),
-                    "Real Scoop cleanup removes reviewed obsolete version and persistent link name, preserving current, persisted data, manager and unknown folders");
+                    File.ReadAllText(Path.Combine(persistent,"user.txt"))=="user data"&&File.GetAttributes(persistent)==persistentAttributes&&
+                    Directory.Exists(Path.Combine(fixture,"apps","scoop","1.0"))&&Directory.Exists(unknown),
+                    "Real Scoop cleanup removes a ReadOnly persistent junction name and obsolete version, preserving current, persisted data, manager and unknown folders");
             }
             string cache=Path.Combine(fixture,"cache");Directory.CreateDirectory(cache);
             foreach(string name in new[]{"sample#1.0#old.zip","sample#2.0#current.zip","sample#3.0#future.zip","sample#1.0#partial.zip.download","unknown#1.0#unowned.zip"})File.WriteAllText(Path.Combine(cache,name),name);

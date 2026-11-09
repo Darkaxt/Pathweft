@@ -132,7 +132,15 @@ internal static class ScoopCleanup
         {
             foreach(string child in Directory.EnumerateDirectories(folder))
             {
-                if(Linked(child))Directory.Delete(child,false);else folders.Push(child);
+                var attributes=File.GetAttributes(child);
+                if((attributes&FileAttributes.ReparsePoint)!=0)
+                {
+                    // Scoop persists user data through junctions whose link names
+                    // can be ReadOnly. Clear only that link's bit, not its target.
+                    if((attributes&FileAttributes.ReadOnly)!=0)File.SetAttributes(child,attributes&~FileAttributes.ReadOnly);
+                    Directory.Delete(child,false);
+                }
+                else folders.Push(child);
             }
         }
         Directory.Delete(group.Folder,true);

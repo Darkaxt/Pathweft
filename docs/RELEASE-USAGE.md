@@ -1,15 +1,17 @@
-# Pathweft 1.1.41
+# Pathweft 1.1.45
 
 The brush beside Performance opens five Maintenance summary cards while the
 file browser remains usable. The cards select
 Cleanup, Startup, Services, Windows tweaks and optional Windows apps. Cleanup
 automatically analyzes six categories, including obsolete Scoop versions and
 completed old downloads. Temporary files and downloads use exact reviewed-file
-removal. Obsolete Scoop versions use Everything size estimates, with native
-metadata enumeration only when an indexed size is unavailable. Clean removes
-each selected obsolete version folder and all its contents. Scoop
-current installations, persistent data, active consumers and ambiguous versions
-are preserved; downloads and installed versions are separate categories. Startup covers Run/RunOnce and policy Run entries, Startup-folder
+removal. Obsolete Scoop versions use Everything size estimates without
+recursively enumerating package members. Clean starts removing each reviewed
+obsolete version folder directly. It unlinks ReadOnly junction names into
+Scoop's persistent data without changing that data. A locked file or other
+access failure leaves an incomplete version and explicit error. Current
+installations and ambiguous versions remain protected; downloads and installed
+versions are separate categories. Startup covers Run/RunOnce and policy Run entries, Startup-folder
 files/shortcuts and scheduled boot/logon tasks, with a Type column identifying the
 source. Windows-owned startup approval is read without rewriting its flags.
 Services lists installed Windows application services with actual startup modes
@@ -26,8 +28,8 @@ switching either off returns to files and ordinary statistics.
 Read-only analysis keeps selection, sorting, filtering and already loaded tabs
 available. Back returns to files and keeps the cards and scan available. Switching
 Maintenance off cancels and drains its original scan without blocking mode
-navigation. Mutations and duplicate scans remain gated. Scoop checks consumers
-only during explicit removal, observing cancellation between registration batches.
+navigation. Mutations and duplicate scans remain gated. Scoop Cleanup does not
+scan package members or query their consumers before deletion.
 The hidden-files eye remains visible without its active square in Maintenance
 and Performance modes; its original state returns with ordinary folder statistics.
 Optional app removal applies only to the current user and does not remove Windows

@@ -1,6 +1,6 @@
 # Pathweft specification
 
-Version 1.04 - 2026-11-09. Owner: Darkaxt.
+Version 1.05 - 2026-11-09. Owner: Darkaxt.
 
 ### Direct Maintenance actions (S40)
 
@@ -82,6 +82,13 @@ make recursive deletion fail after partial work; report the incomplete version
 and retained locked member honestly rather than claim it was cleaned. Verify
 that Clean begins deletion without a consumer-query delay, that a locked member
 is reported, and that no host Scoop package is deleted as a test.
+User-reported installed 1.1.44 regression: 15 reviewed obsolete versions were
+skipped because Scoop's persistent-data junction names have the ReadOnly bit.
+Remove those junction names during the obsolete-version deletion without
+changing their persistent targets or contents. Retain honest failure reporting
+for genuine locks and permissions. Verify the exact ReadOnly-junction behavior
+in an owned fixture and verify the corrected installed release before retrying
+the previously selected host obsolete versions.
 Clean immediately opens a themed, modeless deletion window with phase/current
 folder, completed/total progress and cancellation. Native recursive deletion is
 one operation per version; cancellation stops before the next folder and must

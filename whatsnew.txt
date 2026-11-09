@@ -1,6 +1,10 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.45 | 2026-11-09 | Scoop persistent links
+- Cleanup can remove obsolete Scoop versions containing ReadOnly links to persistent data. It removes the link names and leaves their saved data untouched.
+- Locked files and genuine access failures still leave an incomplete version with an explicit error.
+
 ## 1.1.44 | 2026-11-09 | Faster Scoop cleanup
 - Clean starts removing reviewed obsolete Scoop versions immediately, without scanning their files or waiting for a Windows package-use query.
 - If Windows refuses a locked file, Clean reports that version as incomplete; its remaining files can be reviewed again. Current versions and linked persistent data stay protected.
