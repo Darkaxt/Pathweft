@@ -29,6 +29,8 @@ static class Program
         {Environment.ExitCode=AdministratorSession.Run(args[1],int.Parse(args[2]),long.Parse(args[3]),args[4]).GetAwaiter().GetResult();return;}
         if(args.Length==4&&args[0]=="--maintenance-worker")
         {Environment.ExitCode=MaintenanceWorker.Run(args[1],int.Parse(args[2]),long.Parse(args[3])).GetAwaiter().GetResult();return;}
+        if((args.Length is 3 or 4)&&args[0]=="--manager-clean-worker")
+        {Environment.ExitCode=ManagerCleanup.RunWorker(args[1],args[2],args.Length==4?args[3]:"").GetAwaiter().GetResult();return;}
         if(args.Length==1&&args[0]=="--performance-mcp")
         {Environment.ExitCode=PerformanceMcp.Run().GetAwaiter().GetResult();return;}
         if(args.Length==4&&args[0]=="--performance-io-worker")

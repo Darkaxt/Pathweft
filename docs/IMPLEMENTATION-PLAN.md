@@ -1,9 +1,26 @@
 # Implementation and reconciliation
 
-Authority: [SPECIFICATION.md](SPECIFICATION.md), version 1.07, 2026-11-09,
+Authority: [SPECIFICATION.md](SPECIFICATION.md), version 1.08, 2026-11-09,
 including the user-authorized continued comparison requirement TRANSFER-07.
 
-Current2026-11-09: S42 is ACTIVE for MAINT-18. The Startup transition was
+Current2026-11-09: S43 is BLOCKED at compiled acceptance for MAINT-19.
+UniGetUI enables eleven managers besides Scoop. Its installed 2026.3.3 API exposes no cache-clean action for
+them despite newer upstream documentation. Native manager contracts are now
+integrated in source for Chocolatey expired user HTTP entries, Npm package
+cache, Pip HTTP/wheel cache and .NET Tool's NuGet HTTP cache; seven other
+managers show explicit unavailable reasons. WinGet's installer download
+location is the user's `D:/Downloads`, so it is not a cleanup target. The
+native commands run in an owned process tree, with reviewed cache recheck and
+post-action readback. The DEBUG owned contract fixture is prepared but unrun;
+actual UI/resource behavior and final delivery remain unverified. The source
+diff passes whitespace checks and is ready for compiled validation. The same
+original managed gate ticket rejects before compiler dispatch, so S43 is parked
+with S41/S42. See [manager review](verification/2026-11-09-manager-cleanup.md).
+S42 is parked BLOCKED on the same managed-build admission as S41: its cached Startup
+navigation and native regression checks are committed but uncompiled. No other
+ACTIVE stage or tracked deferral.
+
+Previous2026-11-09: S42 was ACTIVE for MAINT-18. The Startup transition was
 rereading its Windows sources despite Overview having already loaded them for
 the summary cards. Source now presents those cached rows on tab selection and
 shows the selected empty table/loading state if the cache is absent. Refresh
@@ -1402,7 +1419,8 @@ plan neither authorizes itself nor adds approval checkpoints.
 | S39 - Maintenance guidance and categorized settings | COMPLETE | MAINT-08..11; final DELIVERY | S38 COMPLETE | Source98992/guest4040; published1.1.38/5df239e final235436/independent233852 and installed230000 pass. Pending recommendations/dropdown alignment verified; spent scratch cleaned. No blocker/deferral or required refactor. |
 | S40 - Direct Maintenance actions | COMPLETE | MAINT-12..13 | S39 COMPLETE | Actual UI204416 verifies owned Startup double-click/exact Restore, direct buttons/external-change refusal/Cleanup, selectable exact assessment, ignored header/blank and busy gating, dark/light/scaled/narrow presentation. No required refactor/blocker/deferral. S41 owns combined final delivery. |
 | S41 - Complete Maintenance adoption and cleanup | BLOCKED | MAINT-14..17 and final DELIVERY | S40 COMPLETE | Installed 1.1.45 removed 14 versions; the exact MSYS2 ReadOnly-file residual was safely removed separately and all 15 host folders are absent. 1.1.46 source fixes ordinary ReadOnly members, but the issued managed build ticket rejects before dispatch with `BUILD_INPUTS_CHANGED`; compiled fixture/release/installed acceptance await supported gate recovery. No tracked deferral. |
-| S42 - Fast Maintenance tab navigation | ACTIVE | MAINT-18 and combined final DELIVERY | S41 source correction present; S41 parked on external gate admission | Reuse Overview's loaded Startup rows on tab selection; asynchronously load with a visible selected-view state only when uncached. Verify real transition timing and fresh Refresh/post-action state, then deliver both pending corrections in one normal independently and installed-verified release when the gate permits. No tracked deferral. |
+| S42 - Fast Maintenance tab navigation | BLOCKED | MAINT-18 and combined final DELIVERY | S41 source correction present; S41 parked on external gate admission | Source and native regression checks are committed. Actual transition timing, freshness and installed release await managed .NET build admission; no compiler ran. No tracked deferral. |
+| S43 - UniGetUI manager-aware Cleanup | BLOCKED | MAINT-19 and combined final DELIVERY | S41/S42 source present; both parked on external gate admission | Eleven manager rows, four qualified native actions, seven unavailable reasons and DEBUG owned contract fixture are in source. Read-only installed-manager inventory and `git diff --check` pass. The original gate ticket has no workflow and rejects before compiler dispatch, preventing fixture/UI acceptance and one normal independently and installed-verified release. No tracked deferral. |
 | S25 - Summary-card motion | NOT STARTED | MOTION-01..03; affected MONITOR/CORE-03/LIFE/DELIVERY | S18 COMPLETE; after S28 and before S12 | Upward card entry with smooth file-pane squeeze; rotation between Statistics/Performance; reversal/interruption and focus/scroll preservation; reduced-motion support and actual frame/layout/resource qualification. One final independently/installed verified release after implementation authorization. No criteria verified yet. |
 | S12 - Tresorit capability investigation | NOT STARTED | TRES-01..04 | S15 delivered; S16/S18/S25 considered first in the selected execution order | Supported API/client assessment, bounded REA as needed, evidence-backed capability matrix/decision and implementation proposal. Investigation only; no cloud mutation or integration implementation. |
 | S19 - Selected-folder content indexing | NOT STARTED | CONTENT-01..06; affected SEARCH/CORE/LIFE/DELIVERY | After S12 in the selected execution order; qualify extractor APIs, query/location semantics, provider metadata and resource budgets | Toolbar folder opt-in/current magnifier badges; qualified Craft/text extraction; persisted searchable strings and location arrays, periodic incremental refresh and cloud-cache independence. Verify actual search/open/freshness/recovery and one final independently/installed verified release when implementation is authorized. No criteria verified yet. |

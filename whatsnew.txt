@@ -5,6 +5,7 @@
 - Cleanup finishes removing obsolete versions that contain ordinary ReadOnly files, including MSYS2 certificate files. It clears the bit only inside the obsolete version after Windows reports the deletion failure.
 - Current versions and persistent data remain protected; genuine locks and permission failures still show as incomplete.
 - Switching from Cleanup to Startup shows previously loaded entries immediately. Refresh and completed actions still read current Windows state.
+- Cleanup reviews Chocolatey, Npm, Pip and .NET Tool caches through their own commands, and explains why other UniGetUI manager stores are not safe generic cleanup targets.
 
 ## 1.1.45 | 2026-11-09 | Scoop persistent links
 - Cleanup can remove obsolete Scoop versions containing ReadOnly links to persistent data. It removes the link names and leaves their saved data untouched.

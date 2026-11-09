@@ -15,6 +15,7 @@ public partial class MainWindow
         string scoop=Environment.GetEnvironmentVariable("SCOOP"),cache=Environment.GetEnvironmentVariable("SCOOP_CACHE");
         try
         {
+            ManagerCleanupVerification.Run(root,check);
             await ScoopCleanupVerification.Run(root,check);
             string uiScoop=Path.Combine(root,"ui-scoop");ScoopCleanupVerification.Package(uiScoop,"owned-ui-package");
             ScoopCleanupVerification.Package(uiScoop,"owned-ui-second");
@@ -34,7 +35,16 @@ public partial class MainWindow
         string automaticState=maintenance.State;
         await maintenance.CategoryForVerification("Cleanup");UpdateLayout();
         check(maintenance.IsVisible&&!PaneArea.IsVisible&&AnalysisVisible&&!TerminalCommand.IsEnabled,"Cleanup card opens the analysis section and gates hidden file actions");
-        check(maintenance.Rows.Items.Count==CleanupReview.Targets.Length&&maintenance.Rows.Items.Cast<MaintenanceRow>().All(r=>r.Bytes.HasValue||r.Id=="scoop-versions"&&r.State.Contains("obsolete versions"))&&automaticState=="All categories reviewed. Nothing has been removed.","Actual Maintenance button automatically queues every read-only Cleanup estimate without selecting a row or requesting elevation");
+        check(maintenance.Rows.Items.Count==CleanupReview.Targets.Length&&maintenance.Rows.Items.Cast<MaintenanceRow>().All(r=>r.Bytes.HasValue||r.Id=="scoop-versions"&&r.State.Contains("obsolete versions")||r.Id.StartsWith("manager-",StringComparison.Ordinal))&&automaticState=="All categories reviewed. Nothing has been removed.","Actual Maintenance button automatically queues every read-only Cleanup estimate without selecting a row or requesting elevation");
+        var managerRows=maintenance.Rows.Items.Cast<MaintenanceRow>().Where(r=>r.Id.StartsWith("manager-",StringComparison.Ordinal)).ToArray();
+        string[] unsafeStores=["manager-winget","manager-cargo","manager-vcpkg","manager-winps","manager-pwsh","manager-installer","manager-bun"];
+        check(managerRows.Length==ManagerCleanup.Managers.Length&&unsafeStores.All(id=>managerRows.Single(r=>r.Id==id) is{State:"No safe cleanup",CanChange:false})&&managerRows.Where(r=>r.State=="No safe cleanup").All(r=>!r.CanChange),
+            "All UniGetUI managers beyond Scoop appear, and unsupported stores cannot be cleaned");
+        var chocolatey=managerRows.Single(r=>r.Id=="manager-chocolatey");
+        check(managerRows.Where(r=>r.Id is "manager-npm" or "manager-pip" or "manager-dotnet-tool").All(r=>r.State!="Unavailable"&&r.Details.Contains("download",StringComparison.OrdinalIgnoreCase))&&
+            chocolatey.State!="Unavailable"&&
+            (chocolatey.State=="No safe cleanup"?chocolatey.Details.Contains("elevated",StringComparison.OrdinalIgnoreCase):chocolatey.Details.Contains("download",StringComparison.OrdinalIgnoreCase)),
+            "Installed native manager commands produce read-only cache previews and explain redownload cost");
         check(maintenance.Rows.SelectedItem==null,"Automatic analysis does not select a cleanup action on the user's behalf");
         var scoopRow=maintenance.Rows.Items.Cast<MaintenanceRow>().Single(r=>r.Id=="scoop-versions");maintenance.Rows.SelectedItem=scoopRow;
         check(scoopRow.State=="2 obsolete versions"&&maintenance.ExplanationForVerification.Contains("owned-ui-package"),"Automatic Scoop inventory and full candidate path reach the assessment independently of index coverage");

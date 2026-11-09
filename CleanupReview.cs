@@ -21,7 +21,7 @@ internal sealed class CleanupReview : IDisposable
         {
             string windows=Environment.GetFolderPath(Environment.SpecialFolder.Windows),local=Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
             var scoop=ScoopCleanup.Locations();
-            return [
+            CleanupTarget[] basic=[
                 new("user-temp","User temporary files","Unused temporary files; files in use are skipped",Path.GetTempPath()),
                 new("windows-temp","Windows temporary files","Windows temporary files; administrator access required",Path.Combine(windows,"Temp")),
                 new("error-reports","Error reports","Saved Windows Error Reporting files",Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),"Microsoft","Windows","WER")),
@@ -29,6 +29,7 @@ internal sealed class CleanupReview : IDisposable
                 new("scoop-versions","Scoop obsolete versions","Old installed versions; current, persistent data and packages in use are preserved",Path.Combine(scoop.Root,"apps")),
                 new("scoop-cache","Scoop download cache","Completed downloads for older installed versions; current and partial downloads are preserved",scoop.Cache)
             ];
+            return basic.Concat(ManagerCleanup.Managers.Select(m=>new CleanupTarget("manager-"+m.Id,m.Name,m.Description,""))).ToArray();
         }
     }
     internal string Token {get;}
@@ -43,6 +44,7 @@ internal sealed class CleanupReview : IDisposable
     internal int UnknownVersionSizes=>versionBytes.Count(value=>value<0);
     readonly List<string> examples=[];
     readonly HashSet<int> excludedGroups=[];
+    ManagerCleanup.Review managerReview;
     bool disposed;
     internal CleanupReview(CleanupTarget target,string directory=null)
     {
@@ -51,6 +53,10 @@ internal sealed class CleanupReview : IDisposable
     }
     internal void Analyze(CancellationToken cancel)
     {
+        if(ManagerCleanup.IsManager(Target))
+        {
+            managerReview=ManagerCleanup.Inspect(Target,cancel);Count=managerReview.Count;return;
+        }
         if(Target.Id=="scoop-versions"){AnalyzeVersions(cancel);return;}
         using var stream=new FileStream(manifest,FileMode.CreateNew,FileAccess.Write,FileShare.Read);
         using var output=new StreamWriter(stream);
@@ -157,6 +163,7 @@ internal sealed class CleanupReview : IDisposable
     }
     internal CleanupOutcome Clean(CancellationToken cancel,Action<CleanupProgress> progress=null)
     {
+        if(ManagerCleanup.IsManager(Target))return ManagerCleanup.Clean(managerReview??throw new InvalidOperationException("Analyze this manager first"),Target,cancel,progress);
         if(Target.Id=="scoop-versions")return CleanVersions(cancel,progress);
         long deleted=0,skipped=0,bytes=0;
         long completed=0;progress?.Invoke(new("Deleting reviewed files","",0,Count,0,0,0));
@@ -205,7 +212,9 @@ internal sealed class CleanupReview : IDisposable
         catch(OperationCanceledException)when(cancel.IsCancellationRequested){return new(deleted,skipped,bytes,true);}
         finally{guard?.Dispose();}
     }
-    internal MaintenanceRow Row=>new(Target.Id,Target.Name,"This computer",Target.Id=="scoop-versions"?$"{Count:N0} obsolete versions":$"{Count:N0} reviewed files",Target.Description+(UnknownVersionSizes>0?$" · {UnknownVersionSizes:N0} sizes unavailable in Everything":"")+(Unreadable>0?$" · {Unreadable:N0} unavailable entries":"")+(examples.Count>0?"\n"+string.Join("\n",examples):""),UnknownVersionSizes==groups.Count&&groups.Count>0?null:Bytes);
+    internal MaintenanceRow Row=>managerReview is {} manager
+        ?new(Target.Id,Target.Name,"Current user",!manager.Supported?"No safe cleanup":manager.Id=="dotnet-tool"?(Count>0?"HTTP cache present":"HTTP cache empty"):$"{Count:N0} cache entries",manager.Details,null,CanChange:manager.Supported&&Count>0)
+        :new(Target.Id,Target.Name,"This computer",Target.Id=="scoop-versions"?$"{Count:N0} obsolete versions":$"{Count:N0} reviewed files",Target.Description+(UnknownVersionSizes>0?$" · {UnknownVersionSizes:N0} sizes unavailable in Everything":"")+(Unreadable>0?$" · {Unreadable:N0} unavailable entries":"")+(examples.Count>0?"\n"+string.Join("\n",examples):""),UnknownVersionSizes==groups.Count&&groups.Count>0?null:Bytes);
     public void Dispose(){if(disposed)return;disposed=true;File.Delete(manifest);}
     sealed class ParentHandles:IDisposable
     {readonly List<SafeFileHandle> handles=[];internal void Add(SafeFileHandle h)=>handles.Add(h);public void Dispose(){foreach(var h in handles)h.Dispose();}}

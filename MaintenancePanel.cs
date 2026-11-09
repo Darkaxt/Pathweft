@@ -229,7 +229,7 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
 #endif
             reading.Token.ThrowIfCancellationRequested();
             try{await AnalyzeRow(rows[i],AdministratorSession.Available);}
-            catch(Exception error)when(error is IOException or UnauthorizedAccessException or System.ComponentModel.Win32Exception)
+            catch(Exception error)when(error is IOException or InvalidDataException or UnauthorizedAccessException or System.ComponentModel.Win32Exception)
             {PublishReview(rows[i] with{State="Unavailable",Details=error.Message,Bytes=null,CanChange=false});}
         }
         status.Text="All categories reviewed. Nothing has been removed.";
@@ -416,6 +416,8 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
         string effect=Category switch
         {
             "Cleanup" when row.Id=="scoop-versions"=>"Clean removes each obsolete version folder and all its contents. Current versions, packages in use and external persistent data are preserved.",
+            "Cleanup" when row.State=="No safe cleanup"=>"This manager has no general cleanup action that preserves its installed packages and shared data. The details explain the boundary.",
+            "Cleanup" when row.Id.StartsWith("manager-",StringComparison.Ordinal)=>"Clean asks this package manager to remove only the reviewed cache category. Cached downloads may be fetched again. Installed packages and manager configuration stay in place.",
             "Cleanup"=>"Clean reviewed removes only the reviewed, unchanged files. New, changed and busy files are skipped.",
             "Startup"=>"Disable prevents this entry from running at startup. Restore returns its exact saved original state. Double-click to Disable or Restore.",
             "Services"=>"Stop and disable stops this service and disables automatic startup. Restore returns its saved startup configuration without starting the service.",

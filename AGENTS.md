@@ -6,7 +6,16 @@ their published assets are verified. Retain concise verification results and
 reusable fixtures, not repeated expanded cleanup manifests, retired test profiles
 or superseded captures. Clean exact generated targets through transactional-cleanup.
 
-Current2026-11-09/spec1.07: S42 is ACTIVE for MAINT-18. Startup tab selection
+Current2026-11-09/spec1.08: S43 is BLOCKED at compiled acceptance for MAINT-19.
+The eleven UniGetUI managers besides Scoop have source coverage: four qualified
+native cache actions, seven explicit unsafe/unavailable reasons, and an owned
+contract fixture. WinGet's configured installer directory is user Downloads.
+The integrated source is uncompiled. S41 and S42 remain parked on original
+Coordinator ticket `194fa54cbc569b5cb29534bbe68aeec1`, which rejects before
+dispatch; no compiler ran. One combined normal release follows all three stages'
+acceptance. No ACTIVE stage or tracked deferral.
+
+Previous2026-11-09/spec1.07: S42 was ACTIVE for MAINT-18. Startup tab selection
 now presents rows loaded for the Maintenance summary rather than repeating
 Task Scheduler and registry enumeration; absent rows show a loading state.
 Actual UI timing/freshness and combined 1.1.46 delivery remain. S41 is parked

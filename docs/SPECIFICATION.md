@@ -1,6 +1,17 @@
 # Pathweft specification
 
-Version 1.07 - 2026-11-09. Owner: Darkaxt.
+Version 1.08 - 2026-11-09. Owner: Darkaxt.
+
+### UniGetUI package-manager Cleanup (S43)
+
+The user's UniGetUI configuration lists WinGet, Scoop, Chocolatey, Npm, Pip,
+Cargo, vcpkg, .NET Tool, PowerShell, PowerShell7, Installer and Bun as enabled.
+Scoop remains governed by MAINT-14..17. User2026-11-09 selected reviewed
+regenerable caches where a manager has no safe obsolete-version inventory.
+
+| ID | Required behavior and acceptance |
+| --- | --- |
+| MAINT-19 | Review the configured/installed UniGetUI managers above and add Cleanup coverage for every independently qualified obsolete-version, download or regenerable-cache action. Resolve each manager's actual configured location or supported native cleanup command, not a guessed global path. Show a manager-specific preview, scope and expected loss of cached offline/reuse data; require explicit Clean and recheck the reviewed manager/root/current state before mutation. Preserve installed/current packages, active consumers, shared build dependencies, manager databases/indexes, user downloads and unrelated configuration. Never treat WinGet's configured Downloads folder or a vcpkg/Cargo build tree as a disposable cache. Where no safe generic action exists, report the precise manager and reason in Cleanup instead of inventing deletion rules. Keep UI responsive, allow cancellation at safe boundaries, and report partial failures honestly. Verify owned manager fixtures and actual installed-manager read-only inventory, then one combined normal release with MAINT-17/18. |
 
 ### Maintenance tab navigation (S42)
 
