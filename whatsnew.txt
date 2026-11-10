@@ -1,6 +1,10 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.49 | 2026-11-10 | Npm cleanup works
+- Npm Cleanup reviews the actual package cache. Npm's own logs and separate npx tools no longer make an unchanged cache fail the safety recheck.
+- The cleanup popup animates while the package manager works and labels a rejected review as a failure. The final result reports what was actually removed.
+
 ## 1.1.48 | 2026-11-10 | Maintenance updates itself
 - Maintenance no longer has Refresh or generic Analyze buttons. Its cards show cached results immediately and update the selected category automatically; completed cleanup is reviewed again.
 - Cleanup Details stay short in the table. Exact cache paths and partial-access diagnostics remain in the selected assessment.

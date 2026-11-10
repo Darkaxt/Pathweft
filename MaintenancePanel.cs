@@ -324,7 +324,7 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
                 var result=await Task.Run(()=>review.Clean(reading.Token,progress.Report));
                 string size=review.Row.Bytes.HasValue?$" · {MainWindow.Fmt(result.Bytes)}":"";
                 status.Text=$"{result.Deleted:N0} removed{size} · {result.Skipped:N0} skipped"+(result.Cancelled?" · cancelled":"");
-                progress.Finish(status.Text,result.Skipped>0||result.Cancelled,result.Details,result.Cancelled);completed=true;
+                progress.Finish(status.Text,result.Skipped>0||result.Cancelled||result.Failed,result.Details,result.Cancelled,result.Failed);completed=true;
             }
             finally{review.Dispose();}
         }
@@ -336,7 +336,7 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
         catch(Exception error)when(error is IOException or InvalidDataException or UnauthorizedAccessException or System.ComponentModel.Win32Exception)
         {PublishReview(reset with{State="Unavailable",Details="Could not review this category.\n"+error.Message,Bytes=null,CanChange=false});status.Text=outcome;}
         }
-        catch(Exception error){refreshPending=true;bool cancelled=error is OperationCanceledException;progress.Finish(cancelled?"Cleanup cancelled.":error.Message,true,"",cancelled);completed=true;throw;}
+        catch(Exception error){refreshPending=true;bool cancelled=error is OperationCanceledException;progress.Finish(cancelled?"Cleanup cancelled.":error.Message,true,"",cancelled,failed:!cancelled);completed=true;throw;}
         finally{cleaning=false;if(!completed)progress.Finish("Cleanup ended.",false);}
     }
     async Task Apply(string action)

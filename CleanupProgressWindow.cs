@@ -14,6 +14,8 @@ internal sealed class CleanupProgressWindow : Window
 #if DEBUG
     internal Button CancelButtonForVerification=>cancel;
     internal string PhaseForVerification=>phase.Text;
+    internal bool IndeterminateForVerification=>bar.IsIndeterminate;
+    internal string CountsForVerification=>completed.Text+" | "+total.Text;
 #endif
     readonly TextBlock phase=new(){FontSize=20,FontWeight=FontWeights.SemiBold,Text="Preparing cleanup…"};
     readonly TextBlock path=new(){TextWrapping=TextWrapping.Wrap,Margin=new(0,10,0,16)};
@@ -59,17 +61,20 @@ internal sealed class CleanupProgressWindow : Window
             CleanupProgress value;lock(sync){value=latest;scheduled=false;if(finished)return;}
             if(!cancelling)phase.Text=value.Phase;
             if(!string.IsNullOrEmpty(value.Path))path.Text=value.Path;
-            completed.Text=$"{value.Completed:N0} completed";total.Text=$"{value.Total:N0} total";
-            bool checking=value.Phase.StartsWith("Checking");bar.IsIndeterminate=checking;BusyAnimation(checking);bar.Maximum=Math.Max(1,value.Total);bar.Value=value.Completed;
+            bool managerRunning=value.Phase=="Cleaning package cache"&&value.Completed<value.Total;
+            completed.Text=managerRunning?"Manager command running":$"{value.Completed:N0} completed";
+            total.Text=managerRunning?"":$"{value.Total:N0} total";
+            bool checking=value.Phase.StartsWith("Checking")||managerRunning;bar.IsIndeterminate=checking;BusyAnimation(checking);bar.Maximum=Math.Max(1,value.Total);bar.Value=value.Completed;
             if(!cancelling)result.Text=$"{value.Removed:N0} removed"+(value.Skipped>0?$" · {value.Skipped:N0} skipped":"");
         }));
     }
-    internal void Finish(string message,bool attention,string failureDetails="",bool wasCancelled=false)
+    internal void Finish(string message,bool attention,string failureDetails="",bool wasCancelled=false,bool failed=false)
     {
         lock(sync)finished=true;
         BusyAnimation(false);
         if(!attention||wasCancelled&&(closeRequested||!cancelling)){Close();return;}
-        phase.Text=wasCancelled?"Cleanup cancelled":"Cleanup finished";bar.IsIndeterminate=false;
+        phase.Text=wasCancelled?"Cleanup cancelled":failed?"Cleanup failed":"Cleanup finished";bar.IsIndeterminate=false;
+        if(failed){completed.Text="";total.Text="";}
         result.Text=message;cancel.Content="Close";cancel.IsEnabled=true;
         if(!string.IsNullOrEmpty(failureDetails)){details.Text=failureDetails;details.Visibility=Visibility.Visible;}
     }

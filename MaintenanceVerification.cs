@@ -36,6 +36,15 @@ public partial class MainWindow
         await maintenance.CategoryForVerification("Cleanup");UpdateLayout();
         check(maintenance.IsVisible&&!PaneArea.IsVisible&&AnalysisVisible&&!TerminalCommand.IsEnabled,"Cleanup card opens the analysis section and gates hidden file actions");
         check(!maintenance.ActionLabelsForVerification.Contains("Refresh")&&!maintenance.ActionLabelsForVerification.Contains("Analyze"),"Maintenance has no manual Refresh or generic Analyze action");
+        var managerProgress=new CleanupProgressWindow(this,"Npm fixture",()=>{});
+        managerProgress.Show();
+        managerProgress.Report(new("Cleaning package cache","fixture-npm-cache",0,1347,0,0,0));
+        await Dispatcher.InvokeAsync(()=>{},System.Windows.Threading.DispatcherPriority.ContextIdle);
+        check(managerProgress.IndeterminateForVerification&&managerProgress.CountsForVerification.Contains("Manager command running"),
+            "Manager-driven cleanup shows active indeterminate progress without a false per-entry count");
+        managerProgress.Finish("Package-manager cache changed",true,"",failed:true);
+        check(managerProgress.PhaseForVerification=="Cleanup failed","A rejected cache recheck is visibly a failure, not a finished cleanup");
+        managerProgress.Close();
         check(maintenance.Rows.Items.Count==CleanupReview.Targets.Length&&maintenance.Rows.Items.Cast<MaintenanceRow>().All(r=>r.Bytes.HasValue||r.Id=="scoop-versions"&&r.State.Contains("obsolete versions")||r.Id.StartsWith("manager-",StringComparison.Ordinal))&&automaticState=="All categories reviewed. Nothing has been removed.","Actual Maintenance button automatically queues every read-only Cleanup estimate without selecting a row or requesting elevation");
         var managerRows=maintenance.Rows.Items.Cast<MaintenanceRow>().Where(r=>r.Id.StartsWith("manager-",StringComparison.Ordinal)).ToArray();
         string[] supportedStores=["manager-chocolatey","manager-npm","manager-pip","manager-dotnet-tool"];

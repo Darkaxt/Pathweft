@@ -1,10 +1,10 @@
 # Implementation and reconciliation
 
-Authority: [SPECIFICATION.md](SPECIFICATION.md), version 1.11, 2026-11-10,
+Authority: [SPECIFICATION.md](SPECIFICATION.md), version 1.12, 2026-11-10,
 including the user-authorized continued comparison requirement TRANSFER-07.
 
 Current2026-11-10/S44: S41-S43 remain COMPLETE. S44 is the sole ACTIVE stage
-for MAINT-20..23 and one normal final release. Remove manual Refresh and
+for MAINT-20..24 and one normal corrective final release. Remove manual Refresh and
 generic Analyze, refresh cached categories on activation without delaying the
 tab, re-review Cleanup after actions, and keep technical details out of its
 table summaries. Show Recommendation only in Windows tweaks, where its catalog
@@ -13,7 +13,12 @@ in selected assessments. Subordinate inactive Performance, disable the Explorer-
 administrator shield in Maintenance and route protected reviews/actions through
 Maintenance's independent elevated session. Acceptance requires the owned external-change/cleanup/UI
 workflow, delivered-package verification, independent published-asset readback
-and installed 1.1.48 verification. No blocker or tracked deferral is open.
+and installed 1.1.49 verification. Normal 1.1.48 was published and its six
+assets independently downloaded with matching hashes; installed ProductVersion
+is 1.1.48, but its Npm cache Clean ends at zero because the manager's own logs
+invalidate the whole-root comparison. MAINT-24 requires exact `_cacache` review,
+truthful manager-command progress and a verified corrective delivery. No
+tracked deferral is open.
 The bundled guidance has 40 reviewed tweak rules, but no general Startup rule;
 the sole installed Startup advice is Pathweft's exact-command match. The pinned
 Win11Debloat and SysOptimizer imports do not qualify arbitrary Run entries,
@@ -1514,7 +1519,7 @@ plan neither authorizes itself nor adds approval checkpoints.
 | S41 - Complete Maintenance adoption and cleanup | COMPLETE | MAINT-14..17 and final DELIVERY | S40 COMPLETE | Scoop cleanup checks passed and normal v1.1.46 was independently verified, published and installed with exact member readback. No blocker or tracked deferral. |
 | S42 - Fast Maintenance tab navigation | COMPLETE | MAINT-18 and combined final DELIVERY | S41 required UI checks passed | Actual Cleanup-to-Startup transition, Refresh and action results passed; normal v1.1.46 delivery and installed readback completed. No blocker or tracked deferral. |
 | S43 - UniGetUI manager-aware Cleanup | COMPLETE | MAINT-19 and corrective final DELIVERY | S41/S42 COMPLETE | Four actionable native caches and exclusion of unsupported managers passed actual UI, package and installed checks. Normal v1.1.47 was published, independently downloaded and installed with exact member readback. No blocker or tracked deferral. |
-| S44 - Maintenance clarity and automatic freshness | ACTIVE | MAINT-20..23 and final DELIVERY | S43 COMPLETE | Remove manual refresh/re-analysis controls, update tabs and actions automatically without blocking, simplify Cleanup details, show Recommendations only for reviewed Windows tweaks, keep the Explorer shield disabled in Maintenance and use independent elevated review/actions, verify owned UI and package workflows, then publish and installed-verify one normal 1.1.48 release. No blocker or tracked deferral. |
+| S44 - Maintenance clarity and automatic freshness | ACTIVE | MAINT-20..24 and final DELIVERY | S43 COMPLETE | The 1.1.48 source/UI/package and published assets passed, but installed Npm cleanup fails its own log-sensitive preflight. Correct Npm's exact `_cacache` review and truthful popup progress, verify owned UI and package workflows, then publish and installed-verify normal corrective 1.1.49. No tracked deferral. |
 | S25 - Summary-card motion | NOT STARTED | MOTION-01..03; affected MONITOR/CORE-03/LIFE/DELIVERY | S18 COMPLETE; after S28 and before S12 | Upward card entry with smooth file-pane squeeze; rotation between Statistics/Performance; reversal/interruption and focus/scroll preservation; reduced-motion support and actual frame/layout/resource qualification. One final independently/installed verified release after implementation authorization. No criteria verified yet. |
 | S12 - Tresorit capability investigation | NOT STARTED | TRES-01..04 | S15 delivered; S16/S18/S25 considered first in the selected execution order | Supported API/client assessment, bounded REA as needed, evidence-backed capability matrix/decision and implementation proposal. Investigation only; no cloud mutation or integration implementation. |
 | S19 - Selected-folder content indexing | NOT STARTED | CONTENT-01..06; affected SEARCH/CORE/LIFE/DELIVERY | After S12 in the selected execution order; qualify extractor APIs, query/location semantics, provider metadata and resource budgets | Toolbar folder opt-in/current magnifier badges; qualified Craft/text extraction; persisted searchable strings and location arrays, periodic incremental refresh and cloud-cache independence. Verify actual search/open/freshness/recovery and one final independently/installed verified release when implementation is authorized. No criteria verified yet. |

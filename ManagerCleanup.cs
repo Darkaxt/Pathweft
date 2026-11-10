@@ -232,7 +232,10 @@ internal static class ManagerCleanup
         string node=Find("node.exe");
         string cli=NpmCli(node);
         string npmRoot=Root(Run(id,"location",cancel));
-        var npmCache=CacheFiles(npmRoot,cancel);
+        // Npm's flat cache option and `cache clean --force` target _cacache.
+        // Its own read commands write sibling _logs, and _npx is a separate
+        // store. Neither belongs in this review's size or change comparison.
+        var npmCache=CacheFiles(Path.Combine(npmRoot,"_cacache"),cancel);
         int entries=Run(id,"list",cancel).Split('\n',StringSplitOptions.RemoveEmptyEntries).Length;
         return new(id,node,npmRoot,[cli],entries,"Cached packages; future installs may download again.\n"+npmRoot,true,npmCache.Bytes);
     }
@@ -250,7 +253,7 @@ internal static class ManagerCleanup
             string result;
             try{result=Run(reviewed.Id,"clean",cancel,reviewed.Root is "user HTTP cache"?"":reviewed.Root);}
             catch(Exception error)when(error is IOException or InvalidDataException or UnauthorizedAccessException or System.ComponentModel.Win32Exception)
-            {return new(0,reviewed.Count,0,false,"The manager command failed and the cache may be partially cleared. Cleanup will review it again. "+error.Message);}
+            {return new(0,reviewed.Count,0,false,"The manager command failed and the cache may be partially cleared. Cleanup will review it again. "+error.Message,true);}
             try
             {
                 var remaining=Inspect(target,cancel);
@@ -261,7 +264,7 @@ internal static class ManagerCleanup
             }
             catch(Exception error)when(error is IOException or InvalidDataException or UnauthorizedAccessException or System.ComponentModel.Win32Exception)
             {
-                return new(0,reviewed.Count,0,false,"The manager command completed, but cache readback failed: "+error.Message+"\n"+result);
+                return new(0,reviewed.Count,0,false,"The manager command completed, but cache readback failed: "+error.Message+"\n"+result,true);
             }
         }
         catch(OperationCanceledException)when(cancel.IsCancellationRequested)

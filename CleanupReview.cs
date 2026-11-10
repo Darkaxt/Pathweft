@@ -7,7 +7,7 @@ namespace FileExplorer;
 
 internal sealed record CleanupTarget(string Id,string Name,string Description,string Root,string Pattern="*");
 internal sealed record CleanupMember(string Relative,long Size,long Modified,uint Volume,ulong Identity,int Group=-1);
-internal sealed record CleanupOutcome(long Deleted,long Skipped,long Bytes,bool Cancelled,string Details="");
+internal sealed record CleanupOutcome(long Deleted,long Skipped,long Bytes,bool Cancelled,string Details="",bool Failed=false);
 internal sealed record CleanupProgress(string Phase,string Path,long Completed,long Total,long Removed,long Skipped,long Bytes);
 
 // Curated targets and analyze-first flow from SysOptimizer CleanupService (MIT).

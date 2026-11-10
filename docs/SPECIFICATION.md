@@ -1,6 +1,16 @@
 # Pathweft specification
 
-Version 1.11 - 2026-11-10. Owner: Darkaxt.
+Version 1.12 - 2026-11-10. Owner: Darkaxt.
+
+### Npm cache cleanup correction (S44)
+
+The installed 1.1.48 Cleanup review reports Npm's package cache, but Clean ends
+at zero completed because Npm creates a diagnostic log under its cache root
+during Pathweft's own recheck. The reviewed package cache has not changed.
+
+| ID | Required behavior and acceptance |
+| --- | --- |
+| MAINT-24 | Measure and compare only Npm's configured `_cacache` package store, which its installed `cache clean --force` command removes. Npm logs, `_npx`, prebuilds and other siblings must not inflate the preview or cause a false changed-cache rejection; a changed configured root or changed `_cacache` still prevents an unreviewed removal. While the native manager command runs without per-entry progress, show an active indeterminate progress bar and truthful status rather than a frozen zero counter. A preflight failure must be identified as a failure, not a completed cleanup. Verify an owned cache fixture where Npm writes logs between review and Clean, the changed-store rejection, the actual popup and delivered package, then publish and installed-verify a normal corrective 1.1.49 release. |
 
 ### Automatic Maintenance freshness and concise Cleanup details (S44)
 

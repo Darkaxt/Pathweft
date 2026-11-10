@@ -65,6 +65,42 @@ internal static class ManagerCleanupVerification
             try{ManagerCleanup.Clean(nugetReview,nugetTarget,CancellationToken.None,_=>{});}
             catch(IOException error){rejected=error.Message.Contains("cache changed",StringComparison.OrdinalIgnoreCase);}
             check(rejected&&cleanCalls==1,"Changed NuGet HTTP contents prevent an unreviewed clear");
+
+            string npmRoot=Path.Combine(ownedRoot,"manager-npm"),npmStore=Path.Combine(npmRoot,"_cacache"),npmLogs=Path.Combine(npmRoot,"_logs"),npmNpx=Path.Combine(npmRoot,"_npx");
+            Directory.CreateDirectory(npmStore);Directory.CreateDirectory(npmLogs);Directory.CreateDirectory(npmNpx);
+            string npmFile=Path.Combine(npmStore,"package.bin"),npxFile=Path.Combine(npmNpx,"tool.bin");
+            File.WriteAllText(npmFile,"reviewed package bytes");File.WriteAllText(npxFile,"installed npx tool");
+            string node=Path.Combine(ownedRoot,"node","node.exe"),cli=Path.Combine(ownedRoot,"node","node_modules","npm","bin","npm-cli.js");
+            Directory.CreateDirectory(Path.GetDirectoryName(cli)!);File.WriteAllText(cli,"");
+            ManagerCleanup.FindForVerification=name=>name=="node.exe"?node:"fixture-"+name;
+            int npmLogsWritten=0,npmCleanCalls=0;bool npmCleared=false;
+            ManagerCleanup.RunForVerification=(manager,action,root)=>
+            {
+                if(manager!="npm")throw new InvalidDataException("Unexpected Npm fixture command");
+                if(action is "location" or "list")
+                {
+                    File.WriteAllText(Path.Combine(npmLogs,$"{++npmLogsWritten}.log"),"Npm wrote this log while reviewing");
+                    return action=="location"?npmRoot:npmCleared?"":"fixture:package";
+                }
+                if(action=="clean"&&root==npmRoot)
+                {
+                    npmCleanCalls++;File.Delete(npmFile);npmCleared=true;return "Cache cleared";
+                }
+                throw new InvalidDataException("Unreviewed Npm fixture command");
+            };
+            var npmTarget=new CleanupTarget("manager-npm","Npm fixture","","");
+            var npmReview=ManagerCleanup.Inspect(npmTarget,CancellationToken.None);
+            check(npmReview.Count==1&&npmReview.Bytes=="reviewed package bytes".Length&&npmReview.Root==npmRoot,
+                "Npm preview sizes only the package store, excluding logs and npx tools");
+            var npmOutcome=ManagerCleanup.Clean(npmReview,npmTarget,CancellationToken.None,_=>{});
+            check(npmCleanCalls==1&&npmOutcome.Deleted==1&&npmOutcome.Bytes==npmReview.Bytes&&File.Exists(npxFile)&&npmLogsWritten>=4,
+                "Npm logs created during recheck do not block the reviewed package-cache cleanup");
+            File.WriteAllText(npmFile,"reviewed again");npmCleared=false;
+            npmReview=ManagerCleanup.Inspect(npmTarget,CancellationToken.None);
+            File.AppendAllText(npmFile," changed");rejected=false;
+            try{ManagerCleanup.Clean(npmReview,npmTarget,CancellationToken.None,_=>{});}
+            catch(IOException error){rejected=error.Message.Contains("cache changed",StringComparison.OrdinalIgnoreCase);}
+            check(rejected&&npmCleanCalls==1,"Changed Npm package-store bytes still prevent an unreviewed clear");
         }
         finally
         {

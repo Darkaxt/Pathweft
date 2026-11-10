@@ -31,6 +31,20 @@ sealed partial class PackageProbe
         var actions=(WrapPanel)type.GetField("actions",Flags).GetValue(panel);
         Check(actions.Children.OfType<Button>().All(button=>!Equals(button.Content,"Refresh")&&!Equals(button.Content,"Analyze")),
             "Delivered Maintenance has no manual Refresh or generic Analyze button");
+        var progressType=Product.GetType("FileExplorer.CleanupProgressWindow",true);
+        var progressTypeValue=Product.GetType("FileExplorer.CleanupProgress",true);
+        var popup=(Window)Activator.CreateInstance(progressType,Flags,null,[owner,"Npm fixture",(Action)(()=>{})],null);
+        var managerProgress=Activator.CreateInstance(progressTypeValue,Flags,null,["Cleaning package cache","fixture-npm-cache",0L,1347L,0L,0L,0L],null);
+        progressType.GetMethod("Report",Flags).Invoke(popup,[managerProgress]);
+        await owner.Dispatcher.InvokeAsync(()=>{},System.Windows.Threading.DispatcherPriority.ContextIdle);
+        Check(((ProgressBar)progressType.GetField("bar",Flags).GetValue(popup)).IsIndeterminate&&
+            ((TextBlock)progressType.GetField("completed",Flags).GetValue(popup)).Text=="Manager command running",
+            "Delivered native package-manager cleanup shows activity without pretending to count completed entries");
+        progressType.GetMethod("Finish",Flags).Invoke(popup,["Package-manager cache changed",true,"",false,true]);
+        Check(((TextBlock)progressType.GetField("phase",Flags).GetValue(popup)).Text=="Cleanup failed"&&
+            ((TextBlock)progressType.GetField("total",Flags).GetValue(popup)).Text=="",
+            "Delivered popup labels rejected cache cleanup as a failure without a false total");
+        popup.Close();
         var performanceButton=(Button)owner.FindName("PerformanceCommand");
         Check(performanceButton.IsEnabled&&!shield.IsEnabled&&performanceButton.Opacity<1&&shield.Opacity==0.4&&
             AutomationProperties.GetItemStatus(performanceButton)=="Off"&&AutomationProperties.GetItemStatus(shield)=="Explorer only",

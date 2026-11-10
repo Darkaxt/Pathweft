@@ -1,4 +1,4 @@
-# Pathweft 1.1.48
+# Pathweft 1.1.49
 
 Maintenance refreshes its cards and Cleanup review automatically. Selecting a
 category shows cached rows immediately and updates them in the background on
@@ -10,6 +10,9 @@ advice column. Cleaning or changing Windows state still requires the explicit
 action button. The administrator shield is for Explorer browsing and is disabled
 in Maintenance; protected Cleanup review and elevated actions use Maintenance's
 own administrator session.
+Npm Cleanup previews and clears its `_cacache` package store; Npm logs and the
+separate `_npx` tool cache remain outside that action. The popup animates while
+the native manager command runs and reports its final result after readback.
 
 The brush beside Performance opens five Maintenance summary cards while the
 file browser remains usable. The cards select
