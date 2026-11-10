@@ -40,7 +40,7 @@ public partial class MainWindow
             if(changingAccess)return;
             if(!AdministratorSession.Available)
             {await performance.EndAdministratorIo();if(maintenance!=null)await maintenance.EndAdministratorReviews();}
-            else performance.AdministratorReady();
+            else {performance.AdministratorReady();maintenance?.AdministratorReady();}
             if(!changingAccess&&lastAdministratorMode!=AdministratorSession.Browsing)await RefreshAdministratorPanes();
             }
             catch(Exception error)when(error is System.IO.IOException or OperationCanceledException or InvalidOperationException or System.ComponentModel.Win32Exception){Status.Text=error.Message;}
@@ -65,7 +65,7 @@ public partial class MainWindow
         }
         catch(Exception error)when(error is System.IO.IOException or System.ComponentModel.Win32Exception or OperationCanceledException or InvalidOperationException)
         {Status.Text=error.Message;}
-        finally{changingAccess=false;UpdateAdministrator();if(AdministratorSession.Available)performance.AdministratorReady();}
+        finally{changingAccess=false;UpdateAdministrator();if(AdministratorSession.Available){performance.AdministratorReady();maintenance?.AdministratorReady();}}
     }
     async Task EndAdministrator()
     {

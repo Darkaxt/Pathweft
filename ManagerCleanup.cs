@@ -208,7 +208,7 @@ internal static class ManagerCleanup
             var match=Regex.Match(output,@"where\s+(\d+)\s+items\s+have\s+expired",RegexOptions.IgnoreCase|RegexOptions.CultureInvariant);
             if(!match.Success)throw new InvalidDataException("Chocolatey did not report an expired-cache count");
             int count=int.Parse(match.Groups[1].Value,System.Globalization.CultureInfo.InvariantCulture);
-            return new(id,exe,"user HTTP cache",[],count,$"{count:N0} expired user HTTP-cache entries; Chocolatey controls their exact location. Removed entries may need downloading again.",true);
+            return new(id,exe,"user HTTP cache",[],count,"Expired downloads; installed packages stay.\nChocolatey selects the expired user-cache entries; future installs may download again.",true);
         }
         if(id=="pip")
         {
@@ -219,7 +219,7 @@ internal static class ManagerCleanup
             var wheels=Regex.Match(info,@"Number of locally built wheels:\s*(\d+)",RegexOptions.CultureInvariant);
             if(!http.Success||!wheels.Success)throw new InvalidDataException("Pip did not report cache entry counts");
             int count=checked(int.Parse(http.Groups[1].Value,System.Globalization.CultureInfo.InvariantCulture)+int.Parse(wheels.Groups[1].Value,System.Globalization.CultureInfo.InvariantCulture));
-            return new(id,exe,root,["-m","pip"],count,root+" · HTTP responses and wheels; future installs may download again",true,cache.Bytes);
+            return new(id,exe,root,["-m","pip"],count,"Cached downloads and wheels; future installs may download again.\n"+root,true,cache.Bytes);
         }
         if(id=="dotnet-tool")
         {
@@ -227,14 +227,14 @@ internal static class ManagerCleanup
             var match=Regex.Match(output,@"(?m)^http-cache:\s*(.+)$",RegexOptions.CultureInvariant);
             if(!match.Success)throw new InvalidDataException("NuGet did not report its HTTP-cache location");
             string root=Root(match.Groups[1].Value);var cache=CacheFiles(root,cancel);
-            return new(id,exe,root,[],cache.Files,root+" · HTTP responses only; global packages retained; future installs may download again",true,cache.Bytes);
+            return new(id,exe,root,[],cache.Files,"Cached HTTP responses; installed tools and packages stay.\n"+root,true,cache.Bytes);
         }
         string node=Find("node.exe");
         string cli=NpmCli(node);
         string npmRoot=Root(Run(id,"location",cancel));
         var npmCache=CacheFiles(npmRoot,cancel);
         int entries=Run(id,"list",cancel).Split('\n',StringSplitOptions.RemoveEmptyEntries).Length;
-        return new(id,node,npmRoot,[cli],entries,npmRoot+" · regenerable package cache entries; future installs may download again",true,npmCache.Bytes);
+        return new(id,node,npmRoot,[cli],entries,"Cached packages; future installs may download again.\n"+npmRoot,true,npmCache.Bytes);
     }
     internal static CleanupOutcome Clean(Review reviewed,CleanupTarget target,CancellationToken cancel,Action<CleanupProgress> progress)
     {
@@ -244,20 +244,20 @@ internal static class ManagerCleanup
         try
         {
             var current=Inspect(target,cancel);
-            if(!Same(current,reviewed))throw new IOException("Package-manager cache changed; analyze again");
+            if(!Same(current,reviewed))throw new IOException("Package-manager cache changed; Cleanup will review it again");
             progress?.Invoke(new("Cleaning package cache",reviewed.Root,0,reviewed.Count,0,0,0));
             started=true;
             string result;
             try{result=Run(reviewed.Id,"clean",cancel,reviewed.Root is "user HTTP cache"?"":reviewed.Root);}
             catch(Exception error)when(error is IOException or InvalidDataException or UnauthorizedAccessException or System.ComponentModel.Win32Exception)
-            {return new(0,reviewed.Count,0,false,"The manager command failed and the cache may be partially cleared; analyze again. "+error.Message);}
+            {return new(0,reviewed.Count,0,false,"The manager command failed and the cache may be partially cleared. Cleanup will review it again. "+error.Message);}
             try
             {
                 var remaining=Inspect(target,cancel);
                 int removed=Math.Max(0,reviewed.Count-remaining.Count),skipped=remaining.Count;
                 long bytes=Math.Max(0,reviewed.Bytes.GetValueOrDefault()-remaining.Bytes.GetValueOrDefault());
                 progress?.Invoke(new("Cleaning package cache",reviewed.Root,reviewed.Count,reviewed.Count,removed,skipped,bytes));
-                return new(removed,skipped,bytes,false,result+(skipped>0?"\nCache entries remain; analyze again.":""));
+                return new(removed,skipped,bytes,false,result+(skipped>0?"\nCache entries remain; Cleanup will review them again.":""));
             }
             catch(Exception error)when(error is IOException or InvalidDataException or UnauthorizedAccessException or System.ComponentModel.Win32Exception)
             {
@@ -265,7 +265,7 @@ internal static class ManagerCleanup
             }
         }
         catch(OperationCanceledException)when(cancel.IsCancellationRequested)
-        {return new(0,0,0,true,started?"The manager cache may be partially cleared; analyze again.":"");}
+        {return new(0,0,0,true,started?"The manager cache may be partially cleared; Cleanup will review it when reopened.":"");}
     }
     static bool Same(Review a,Review b)=>a.Id==b.Id&&a.Executable==b.Executable&&a.Root==b.Root&&a.Count==b.Count&&a.Bytes==b.Bytes&&a.Supported==b.Supported&&a.Prefix.SequenceEqual(b.Prefix);
 }

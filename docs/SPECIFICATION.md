@@ -1,6 +1,19 @@
 # Pathweft specification
 
-Version 1.09 - 2026-11-09. Owner: Darkaxt.
+Version 1.10 - 2026-11-10. Owner: Darkaxt.
+
+### Automatic Maintenance freshness and concise Cleanup details (S44)
+
+The user's 2026-11-10 instruction supersedes the manual Refresh and generic
+Analyze/re-analysis controls in MAINT-06 and MAINT-18. MAINT-06's automatic
+initial review and protected-data boundaries remain; MAINT-18's fast cached
+navigation remains. No refresh control is required for prior acceptance.
+
+| ID | Required behavior and acceptance |
+| --- | --- |
+| MAINT-20 | Remove the shared Refresh and generic Analyze buttons from every Maintenance category. Entering Maintenance automatically reads all category summaries and reviews Cleanup. Activating a category immediately shows cached rows, then refreshes its Windows state asynchronously when needed; returning to Cleanup automatically updates its review without deleting data or prompting for elevation. Completed actions automatically update their affected rows and summary. An already approved administrator session may refresh protected reviews; standard entry must not request new elevation. Preserve cancellation, exact cleanup review safety, selected identity, filters, sorting, and the quick Cleanup-to-Startup transition. No polling timer or blocking tab switch. Verify an owned external Startup change appears after tab activation without a button, refreshed Cleanup after an action, button absence across all five categories, and a normal independently and installed-verified release. |
+| MAINT-21 | Cleanup's Details column uses brief, consistent descriptions of the action and its consequence. Move cache paths, unavailable-entry counts, scan examples, and similar diagnostics out of the table summary while retaining them in the selected assessment or operation result when needed to explain scope, partial access or failure. Preserve counts, size, truthful state, and useful failure reporting. Verify manager and built-in Cleanup rows in the actual UI and delivered package. |
+| MAINT-22 | Show the Recommendation column only in Windows tweaks, where the reviewed catalog covers the displayed settings. Remove it from Startup, Services, and Windows apps, whose current installed inventories have sparse or no qualified matching rules. Do not infer advice for arbitrary startup entries, services, or apps from a donor preset or a name resemblance. Retain exact matched guidance and source in the selected assessment; keep actual State, identity, sort, filters, and explicit actions. Verify all four non-Cleanup headers and selected detail behavior in the actual UI and delivered package. |
 
 ### UniGetUI package-manager Cleanup (S43)
 

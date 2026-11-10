@@ -24,13 +24,15 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
     readonly ListView table=new(){SelectionMode=SelectionMode.Single,Background=Brushes.Transparent,BorderThickness=new(0)};
     readonly TextBlock title=new(){Text="Maintenance",FontSize=18,FontWeight=FontWeights.SemiBold,TextTrimming=TextTrimming.CharacterEllipsis},status=new(){TextWrapping=TextWrapping.Wrap,Margin=new(0,8,0,0)},description=new(){TextWrapping=TextWrapping.Wrap,Margin=new(0,8,0,12)};
     readonly WrapPanel actions=new();
-    readonly Button refresh,analyze,change,restore,restorePoint,export,import,cancel;
+    readonly Button change,restore,restorePoint,export,import,cancel;
     readonly Dictionary<string,CleanupReview> reviews=new();
     readonly Dictionary<string,MaintenanceClient> elevatedReviews=new();
     readonly Dictionary<string,MaintenanceRow> analyzedRows=new();
     readonly Dictionary<string,MaintenanceRow[]> loadedRows=new();
     readonly Dictionary<string,(string Property,ListSortDirection Direction)> sorts=new();
     readonly Dictionary<string,string> selections=new();
+    readonly Dictionary<string,(string Search,string Group)> filterStates=new();
+    readonly HashSet<string> visitedCategories=[];
     readonly Dictionary<string,(GridViewColumnHeader Header,TextBlock Arrow)> headers=new();
     readonly WrapPanel filters=new(){Margin=new(0,0,0,8)};
     readonly ComboBox groups=new(){MinWidth=170,MaxWidth=240,Margin=new(0,0,8,6)};
@@ -41,17 +43,23 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
     readonly TextBlock sourceText=new(){Margin=new(0,6,0,0),TextWrapping=TextWrapping.Wrap};
     bool updatingFilters;
     MaintenanceRow[] overviewSelection;
-    CancellationTokenSource reading=new();Task work=Task.CompletedTask,hiding;bool busy,inspecting,cleaning,disposed;
+    CancellationTokenSource reading=new();Task work=Task.CompletedTask,hiding;bool busy,inspecting,cleaning,disposed,refreshPending;
     internal Task Ready=>work;
     internal string Category=>Categories[selectedCategory];
     internal ListView Rows=>table;
     internal string State=>status.Text;
 #if DEBUG
     internal Func<int,Task> AnalyzeStepForVerification;
-    internal bool AnalyzeEnabledForVerification=>analyze.IsEnabled;
+    internal bool CleanEnabledForVerification=>change.IsEnabled;
+    internal string[] ActionLabelsForVerification=>actions.Children.OfType<Button>().Select(button=>button.Content as string).Where(label=>label!=null).ToArray();
     internal void SelectCategoryForVerification(string category)=>cardButtons[Array.IndexOf(Categories,category)].RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent));
     internal void CancelForVerification()=>cancel.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent));
-    internal async Task CategoryForVerification(string category){cardButtons[Array.IndexOf(Categories,category)].RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent));await work;}
+    internal async Task CategoryForVerification(string category)
+    {
+        cardButtons[Array.IndexOf(Categories,category)].RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent));
+        Task observed;
+        do{observed=work;await observed;}while(work!=observed);
+    }
     internal async Task ClickForVerification(string label)
     {
         Button button=Buttons(this).Single(b=>Equals(b.Content,label));
@@ -101,7 +109,7 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
             SortRows();
         }));
         actions.Margin=new Thickness(0,12,0,0);Grid.SetRow(actions,3);body.Children.Add(actions);
-        refresh=Button("Refresh",async()=>{await Overview();await Load();if(Category=="Cleanup")await AnalyzeAll();},true);analyze=Button("Analyze",Analyze,true);change=Button("Apply",Change);restore=Button("Restore",()=>Apply("restore"));
+        change=Button("Apply",Change);restore=Button("Restore",()=>Apply("restore"));
         restorePoint=Button("Create restore point",()=>Apply("restore-point"));export=Button("Export selection…",Export);import=Button("Import selection…",Import);
         restorePoint.ToolTip="Create a Windows restore point. Administrator permission is required.";
         table.MouseDoubleClick+=(_,e)=>
@@ -114,7 +122,7 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
         };
         cancel=new Button{Content="Cancel",MinHeight=32,Margin=new(0,0,8,6)};cancel.SetResourceReference(StyleProperty,"AuxiliaryAction");
         cancel.Click+=(_,_)=>{reading.Cancel();status.Text="Cancelling…";};
-        foreach(var button in new[]{refresh,analyze,change,restore,restorePoint,export,import,cancel})actions.Children.Add(button);
+        foreach(var button in new[]{change,restore,restorePoint,export,import,cancel})actions.Children.Add(button);
         status.SetResourceReference(TextBlock.ForegroundProperty,"Muted");Grid.SetRow(status,4);body.Children.Add(status);
         Child=grid;table.SelectionChanged+=(_,_)=>{if(table.SelectedItem is MaintenanceRow row)selections[Category]=row.Id;Explain();UpdateActions();};
         var groupCaption=new FrameworkElementFactory(typeof(TextBlock));groupCaption.SetBinding(TextBlock.TextProperty,new Binding("Name"));groupCaption.SetValue(TextBlock.FontWeightProperty,FontWeights.SemiBold);groupCaption.SetValue(MarginProperty,new Thickness(8,12,0,6));groupCaption.SetResourceReference(TextBlock.ForegroundProperty,"Muted");
@@ -123,16 +131,19 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
         {
             int index=i;var stack=new StackPanel();var label=cardLabels[i]=new TextBlock{Text=Categories[i],FontSize=11,TextTrimming=TextTrimming.CharacterEllipsis};label.SetResourceReference(TextBlock.ForegroundProperty,"Muted");
             cardValues[i]=new TextBlock{Text="—",FontSize=20,FontWeight=FontWeights.SemiBold,TextTrimming=TextTrimming.CharacterEllipsis,MinHeight=27};
-            cardSubtitles[i]=new TextBlock{Text=i==0?"Analyze to estimate":"Not checked",FontSize=11,TextTrimming=TextTrimming.CharacterEllipsis};cardSubtitles[i].SetResourceReference(TextBlock.ForegroundProperty,"Muted");
+            cardSubtitles[i]=new TextBlock{Text=i==0?"Review pending":"Not checked",FontSize=11,TextTrimming=TextTrimming.CharacterEllipsis};cardSubtitles[i].SetResourceReference(TextBlock.ForegroundProperty,"Muted");
             stack.Children.Add(label);stack.Children.Add(cardValues[i]);stack.Children.Add(cardSubtitles[i]);
             var button=cardButtons[i]=new Button{Content=stack,MinHeight=84,Padding=new Thickness(12,9,14,9),Margin=new Thickness(0,0,i==4?0:10,0),HorizontalContentAlignment=HorizontalAlignment.Stretch,VerticalContentAlignment=VerticalAlignment.Stretch};button.SetResourceReference(StyleProperty,"PerformanceCard");AutomationProperties.SetName(button,Categories[i]+" maintenance");
             button.Click+=(_,_)=>
             {
                 if(disposed||busy&&(!(inspecting||cleaning)||!loadedRows.ContainsKey(Categories[index])))return;
+                if(Expanded)filterStates[Category]=(search.Text,groups.SelectedItem as string);
                 selectedCategory=index;Expanded=true;Visibility=Visibility.Visible;AnalysisChanged?.Invoke();
+                bool revisiting=!visitedCategories.Add(Category);
                 if(loadedRows.TryGetValue(Category,out var cached))
                 {
-                    Present(cached);if(!busy)ShowRowCount(Category,cached);UpdateActions();
+                    Present(cached);if(!busy){ShowRowCount(Category,cached);if(revisiting)Queue(RefreshVisible,true);}else if(revisiting)refreshPending=true;
+                    UpdateActions();
                 }
                 else
                 {
@@ -168,8 +179,18 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
             catch(OperationCanceledException){status.Text="Cancelled. Completed actions remain listed; unprocessed files are unchanged.";}
             catch(Exception ex)when(ex is IOException or InvalidDataException or UnauthorizedAccessException or InvalidOperationException or ArgumentException or System.ComponentModel.Win32Exception or System.Security.SecurityException or JsonException)
             {status.Text=ex.Message;}
-            finally{busy=false;inspecting=false;UpdateActions();}
+            finally
+            {
+                busy=false;inspecting=false;UpdateActions();
+                if(refreshPending){refreshPending=false;if(!disposed&&Expanded&&!reading.IsCancellationRequested)Queue(RefreshVisible,true);}
+            }
         }
+    }
+    async Task RefreshVisible()
+    {
+        string category=Category;
+        await Load();
+        if(category=="Cleanup")await AnalyzeAll();
     }
     async Task Load()
     {
@@ -192,16 +213,16 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
     void ShowRowCount(string category,MaintenanceRow[] rows)
     {
         int assessed=rows.Count(r=>MaintenanceGuidance.Describe(category,r).Recommendation!="Not assessed");
-        status.Text=rows.Length==0?"No items found.":$"{rows.Length:N0} items · no changes made"+(category=="Cleanup"?"":$" · {assessed:N0} with guidance");
+        status.Text=rows.Length==0?"No items found.":$"{rows.Length:N0} items · no changes made"+(category=="Windows tweaks"?$" · {assessed:N0} with guidance":"");
     }
     void Present(MaintenanceRow[] rows,bool updateSummary=true)
     {
         string category=Category;
-        updatingFilters=true;search.Clear();groups.SelectedIndex=0;updatingFilters=false;
+        updatingFilters=true;search.Text=filterStates.GetValueOrDefault(category).Search??"";updatingFilters=false;
         Columns();
         fullDescription=category switch
         {
-            "Cleanup"=>"Categories are analyzed automatically. Select a result to clean temporary files or remove obsolete package versions. Packages in use are preserved. Analyze refreshes the selection, or all categories with nothing selected.",
+            "Cleanup"=>"Categories are reviewed automatically. Select a result to clean temporary files or remove obsolete package versions. Packages in use are preserved.",
             "Startup"=>"Run and RunOnce keys, policy Run entries, startup folders and tasks triggered at startup or logon. Type identifies the source. Disable saves the exact original state for Restore.",
             "Services"=>"Review each service before changing it. Stop and disable saves the actual startup configuration. Restore returns that configuration without starting the service.",
             "Windows tweaks"=>"Apply individual Windows settings. Restore uses the exact saved original values. Some changes take effect after sign-out or restart.",
@@ -210,12 +231,6 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
         Presentation();
         if(category=="Cleanup")rows=rows.Select(r=>analyzedRows.GetValueOrDefault(r.Id,r)).ToArray();
         SetRows(rows);if(updateSummary)Summary(category,rows);
-    }
-    async Task Analyze()
-    {
-        if(table.SelectedItem is not MaintenanceRow row){await AnalyzeAll();return;}
-        await AnalyzeRow(row,true);
-        status.Text="Review ready. Nothing has been removed.";
     }
     async Task AnalyzeAll()
     {
@@ -230,7 +245,7 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
             reading.Token.ThrowIfCancellationRequested();
             try{await AnalyzeRow(rows[i],AdministratorSession.Available);}
             catch(Exception error)when(error is IOException or InvalidDataException or UnauthorizedAccessException or System.ComponentModel.Win32Exception)
-            {PublishReview(rows[i] with{State="Unavailable",Details=error.Message,Bytes=null,CanChange=false});}
+            {PublishReview(rows[i] with{State="Unavailable",Details="Could not review this category.\n"+error.Message,Bytes=null,CanChange=false});}
         }
         status.Text="All categories reviewed. Nothing has been removed.";
     }
@@ -306,11 +321,15 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
             }
             finally{review.Dispose();}
         }
-        var original=CleanupReview.Targets.Single(t=>t.Id==row.Id);var reset=new MaintenanceRow(row.Id,row.Name,row.Scope,"Analyze again",original.Description);
+        var original=CleanupReview.Targets.Single(t=>t.Id==row.Id);var reset=new MaintenanceRow(row.Id,row.Name,row.Scope,"Updating…",original.Description);
         var rows=loadedRows[category].Select(r=>analyzedRows.GetValueOrDefault(r.Id,r)).Select(r=>r.Id==row.Id?reset:r).ToArray();
         loadedRows[category]=rows;if(Category==category)SetRows(rows);Summary(category,rows);
+        string outcome=status.Text;
+        try{await AnalyzeRow(reset,AdministratorSession.Available);status.Text=outcome;}
+        catch(Exception error)when(error is IOException or InvalidDataException or UnauthorizedAccessException or System.ComponentModel.Win32Exception)
+        {PublishReview(reset with{State="Unavailable",Details="Could not review this category.\n"+error.Message,Bytes=null,CanChange=false});status.Text=outcome;}
         }
-        catch(Exception error){bool cancelled=error is OperationCanceledException;progress.Finish(cancelled?"Cleanup cancelled.":error.Message,true,"",cancelled);completed=true;throw;}
+        catch(Exception error){refreshPending=true;bool cancelled=error is OperationCanceledException;progress.Finish(cancelled?"Cleanup cancelled.":error.Message,true,"",cancelled);completed=true;throw;}
         finally{cleaning=false;if(!completed)progress.Finish("Cleanup ended.",false);}
     }
     async Task Apply(string action)
@@ -351,12 +370,12 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
     }
     void UpdateActions()
     {
-        if(refresh==null)return;bool cleanup=Category=="Cleanup",tweaks=Category=="Windows tweaks";var row=table.SelectedItem as MaintenanceRow;
+        if(change==null)return;bool cleanup=Category=="Cleanup",tweaks=Category=="Windows tweaks";var row=table.SelectedItem as MaintenanceRow;
         bool idle=!busy;
         bool inspectable=idle||inspecting||cleaning;filters.IsEnabled=inspectable;
-        foreach(var button in new[]{refresh,analyze,change,restore,restorePoint,export,import})button.IsEnabled=idle;
+        foreach(var button in new[]{change,restore,restorePoint,export,import})button.IsEnabled=idle;
         for(int i=0;i<5;i++)if(cardButtons[i]!=null){cardButtons[i].IsEnabled=idle||inspectable&&loadedRows.ContainsKey(Categories[i]);cardButtons[i].Tag=Expanded&&i==selectedCategory?"on":null;AutomationProperties.SetItemStatus(cardButtons[i],Expanded&&i==selectedCategory?"Selected":"");}
-        table.IsEnabled=inspectable;analyze.Visibility=cleanup?Visibility.Visible:Visibility.Collapsed;analyze.IsEnabled=idle;
+        table.IsEnabled=inspectable;
         change.Content=Category switch{"Cleanup"=>"Clean reviewed","Startup"=>"Disable","Services"=>"Stop and disable","Windows apps"=>"Remove",_=>"Apply"};
         change.IsEnabled=idle&&row?.CanChange==true&&(!cleanup||reviews.ContainsKey(row.Id)||elevatedReviews.ContainsKey(row.Id));
         restore.Visibility=Category is "Startup" or "Services" or "Windows tweaks"?Visibility.Visible:Visibility.Collapsed;
@@ -370,7 +389,7 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
         Collapse();cards.Visibility=Visibility.Collapsed;reading.Cancel();await work;
         foreach(var review in reviews.Values)review.Dispose();reviews.Clear();
         foreach(var client in elevatedReviews.Values)await client.DisposeAsync();elevatedReviews.Clear();
-        analyzedRows.Clear();loadedRows.Clear();
+        analyzedRows.Clear();loadedRows.Clear();filterStates.Clear();visitedCategories.Clear();refreshPending=false;
     }
     internal void Collapse()
     {
@@ -381,7 +400,12 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
         await work;
         foreach(var pair in elevatedReviews.ToArray())
         {await pair.Value.DisposeAsync();elevatedReviews.Remove(pair.Key);analyzedRows.Remove(pair.Key);}
-        if(Visibility==Visibility.Visible)Queue(Load);
+        if(Visibility==Visibility.Visible)Queue(RefreshVisible,true);
+    }
+    internal void AdministratorReady()
+    {
+        if(disposed||!Expanded||Category!="Cleanup")return;
+        if(busy)refreshPending=true;else Queue(RefreshVisible,true);
     }
     async Task Overview()
     {
@@ -399,7 +423,7 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
             var sized=rows.Where(x=>x.Bytes.HasValue).ToArray();
             int reviewed=rows.Count(x=>x.State is not ("Not analyzed" or "Analyzing…"));
             value=sized.Length>0?MainWindow.Fmt(sized.Sum(x=>x.Bytes.Value)):"—";
-            sub=reviewed>0?$"Up to · {sized.Length} sized · {reviewed} of {rows.Length} reviewed":"Analyze to estimate";
+            sub=reviewed>0?$"Up to · {sized.Length} sized · {reviewed} of {rows.Length} reviewed":"Review pending";
         }
         else if(index==1){value=rows.Count(x=>x.State=="Enabled").ToString("N0");sub="startup entries enabled";}
         else if(index==2){value=rows.Count(x=>x.StartupMode.StartsWith("Automatic")).ToString("N0");sub=$"automatic · {rows.Length} installed services";}
@@ -407,12 +431,12 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
         else{value=rows.Length.ToString("N0");sub="optional preinstalled apps";}
         cardValues[index].Text=value;cardSubtitles[index].Text=sub;cardButtons[index].ToolTip=category+" · "+value+" · "+sub;
     }
-    internal Task Show(){hiding=null;Collapse();cards.Visibility=Visibility.Visible;Queue(async()=>{await Overview();await Load();await AnalyzeAll();},true);return work;}
+    internal Task Show(){hiding=null;Collapse();visitedCategories.Clear();cards.Visibility=Visibility.Visible;Queue(async()=>{await Overview();await Load();await AnalyzeAll();},true);return work;}
     void SetRows(MaintenanceRow[] rows)
     {
         string selected=selections.GetValueOrDefault(Category);
         rows=Category=="Cleanup"?rows:rows.Select(r=>MaintenanceGuidance.Describe(Category,r)).ToArray();
-        updatingFilters=true;string previous=groups.SelectedItem as string;
+        updatingFilters=true;string previous=filterStates.GetValueOrDefault(Category).Group;
         groups.ItemsSource=new[]{"All categories"}.Concat(rows.Select(r=>r.Group).Distinct().Order(StringComparer.CurrentCultureIgnoreCase)).ToArray();
         groups.SelectedItem=groups.Items.Cast<string>().Contains(previous)?previous:"All categories";updatingFilters=false;
         filters.Visibility=Category=="Cleanup"?Visibility.Collapsed:Visibility.Visible;
@@ -420,11 +444,11 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
     }
     bool Matches(MaintenanceRow row)=>(groups.SelectedIndex<=0||row.Group==groups.SelectedItem as string)&&
         (string.IsNullOrWhiteSpace(search.Text)||string.Join(" ",row.Name,row.Type,row.State,row.Group,row.Recommendation,row.Details,row.Guidance).Contains(search.Text.Trim(),StringComparison.CurrentCultureIgnoreCase));
-    void FilterRows(){if(updatingFilters||table.ItemsSource==null)return;CollectionViewSource.GetDefaultView(table.ItemsSource).Refresh();Explain();}
+    void FilterRows(){if(updatingFilters||table.ItemsSource==null)return;filterStates[Category]=(search.Text,groups.SelectedItem as string);CollectionViewSource.GetDefaultView(table.ItemsSource).Refresh();Explain();}
     void Explain()
     {
         if(table.SelectedItem is not MaintenanceRow row){explanation.Visibility=Visibility.Collapsed;return;}
-        explanation.Visibility=Visibility.Visible;explanationTitle.Text=Category=="Cleanup"?row.Name:row.RecommendationLabel+" · "+row.Name;
+        explanation.Visibility=Visibility.Visible;explanationTitle.Text=Category=="Windows tweaks"?row.RecommendationLabel+" · "+row.Name:row.Name;
         string effect=Category switch
         {
             "Cleanup" when row.Id=="scoop-versions"=>"Clean removes each obsolete version folder and all its contents. Current versions, packages in use and external persistent data are preserved.",
@@ -473,7 +497,7 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
         if(Category=="Startup")columns.Add(("Type","Type",150));
         if(Category=="Services")columns.Add(("Service name","Type",180));else columns.Add(("Scope","Scope",110));
         columns.Add(("State","State",130));
-        if(Category!="Cleanup")columns.Add(("Recommendation","RecommendationLabel",145));
+        if(Category=="Windows tweaks")columns.Add(("Recommendation","RecommendationLabel",145));
         if(Category=="Services")columns.Add(("Startup type","StartupMode",160));else if(Category=="Cleanup")columns.Add(("Size","Size",95));
         columns.Add(("Details","Details",600));
         foreach(var column in columns)

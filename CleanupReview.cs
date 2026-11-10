@@ -214,7 +214,7 @@ internal sealed class CleanupReview : IDisposable
     }
     internal MaintenanceRow Row=>managerReview is {} manager
         ?new(Target.Id,Target.Name,"Current user",manager.Id=="dotnet-tool"?$"{Count:N0} reviewed files":$"{Count:N0} cache entries",manager.Details,manager.Bytes,CanChange:manager.Supported&&Count>0)
-        :new(Target.Id,Target.Name,"This computer",Target.Id=="scoop-versions"?$"{Count:N0} obsolete versions":$"{Count:N0} reviewed files",Target.Description+(UnknownVersionSizes>0?$" · {UnknownVersionSizes:N0} sizes unavailable in Everything":"")+(Unreadable>0?$" · {Unreadable:N0} unavailable entries":"")+(examples.Count>0?"\n"+string.Join("\n",examples):""),UnknownVersionSizes==groups.Count&&groups.Count>0?null:Bytes);
+        :new(Target.Id,Target.Name,"This computer",Target.Id=="scoop-versions"?$"{Count:N0} obsolete versions":$"{Count:N0} reviewed files",Target.Description+(UnknownVersionSizes>0?$"\n{UnknownVersionSizes:N0} sizes could not be measured.":"")+(Unreadable>0?$"\n{Unreadable:N0} entries could not be reviewed.":"")+(examples.Count>0?"\n"+string.Join("\n",examples):""),UnknownVersionSizes==groups.Count&&groups.Count>0?null:Bytes);
     public void Dispose(){if(disposed)return;disposed=true;File.Delete(manifest);}
     sealed class ParentHandles:IDisposable
     {readonly List<SafeFileHandle> handles=[];internal void Add(SafeFileHandle h)=>handles.Add(h);public void Dispose(){foreach(var h in handles)h.Dispose();}}

@@ -28,6 +28,9 @@ sealed partial class PackageProbe
         // the delivered layout state and real navigation/readers.
         Check(cards.Columns==5&&cards.Children.Count==5&&cards.Visibility==Visibility.Visible,
             "Delivered brush opens five bottom Maintenance summary tabs");
+        var actions=(WrapPanel)type.GetField("actions",Flags).GetValue(panel);
+        Check(actions.Children.OfType<Button>().All(button=>!Equals(button.Content,"Refresh")&&!Equals(button.Content,"Analyze")),
+            "Delivered Maintenance has no manual Refresh or generic Analyze button");
         Check(shield.IsEnabled&&shield.ContextMenu?.Items.OfType<MenuItem>().Any(x=>(string)x.Header=="End administrator session")==true,"Delivered access toggle remains available in Maintenance with an explicit session-end action");
         string[] reviewedCleanup=["error-reports","scoop-cache","scoop-versions","thumbnail-cache","user-temp","windows-temp"];
         var cleanupRows=rows.Items.Cast<object>().ToArray();
@@ -39,6 +42,11 @@ sealed partial class PackageProbe
                 !((string)Get(r,"State")).Equals("HTTP cache present",StringComparison.Ordinal)))&&
             cleanupRows.Count(r=>((string)Get(r,"Id")).StartsWith("manager-",StringComparison.Ordinal))==actionableManagers.Length&&
             (string)type.GetProperty("State",Flags).GetValue(panel)=="All categories reviewed. Nothing has been removed.","Delivered Maintenance automatically reviews all Cleanup categories without row selection or UAC");
+        Check(cleanupRows.All(row=>!((string)Get(row,"Summary")).Contains(":\\",StringComparison.Ordinal)&&
+                !((string)Get(row,"Summary")).Contains("unavailable entries",StringComparison.OrdinalIgnoreCase))&&
+            cleanupRows.Where(row=>new[]{"manager-npm","manager-pip","manager-dotnet-tool"}.Contains((string)Get(row,"Id")))
+                .All(row=>((string)Get(row,"Details")).Contains(":\\",StringComparison.Ordinal)),
+            "Delivered Cleanup table uses concise summaries while exact cache paths remain in selected details");
         string[] categories=["Cleanup","Startup","Services","Windows tweaks","Windows apps"];
         for(int i=0;i<categories.Length;i++)
         {
@@ -72,7 +80,9 @@ sealed partial class PackageProbe
             if(categories[i]=="Services")Check(headers.Contains("Startup type")&&rows.Items.Count>10,"Delivered Services reads the complete installed Win32 inventory");
             if(categories[i]=="Services")Check(rows.Items.Cast<object>().Any(row=>(string)Get(row,"Type")=="AppXSvc"&&(string)Get(row,"Recommendation")=="Keep enabled")&&
                 rows.Items.Cast<object>().All(row=>((string)Get(row,"Summary")).IndexOfAny(['\r','\n'])<0),"Delivered Services includes matched guidance and compact details");
-            if(i>0)Check(headers.Contains("Recommendation")&&rows.Items.Cast<object>().All(row=>!string.IsNullOrEmpty((string)Get(row,"Guidance"))),"Delivered entries separate actual state from guidance: "+categories[i]);
+            if(i>0)Check(headers.Contains("Recommendation")== (categories[i]=="Windows tweaks")&&
+                rows.Items.Cast<object>().All(row=>!string.IsNullOrEmpty((string)Get(row,"Guidance"))),
+                "Delivered Recommendation column appears only with full reviewed tweak coverage: "+categories[i]);
             if(categories[i]=="Windows tweaks")
             {
                 Check(rows.Items.Count==40&&rows.Items.Cast<object>().Count(row=>((string)Get(row,"RuleId")).StartsWith("donor."))==24&&

@@ -1,4 +1,13 @@
-# Pathweft 1.1.47
+# Pathweft 1.1.48
+
+Maintenance refreshes its cards and Cleanup review automatically. Selecting a
+category shows cached rows immediately and updates them in the background on
+return. There is no Refresh or generic Analyze button. Cleanup Details are brief;
+select a row for exact cache paths or partial-access diagnostics. Recommendation
+is shown for the fully reviewed Windows tweaks catalog; Startup, Services and
+Windows apps show their actual state and selected details without a mostly empty
+advice column. Cleaning or changing Windows state still requires the explicit
+action button.
 
 The brush beside Performance opens five Maintenance summary cards while the
 file browser remains usable. The cards select

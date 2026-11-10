@@ -35,15 +35,20 @@ public partial class MainWindow
         string automaticState=maintenance.State;
         await maintenance.CategoryForVerification("Cleanup");UpdateLayout();
         check(maintenance.IsVisible&&!PaneArea.IsVisible&&AnalysisVisible&&!TerminalCommand.IsEnabled,"Cleanup card opens the analysis section and gates hidden file actions");
+        check(!maintenance.ActionLabelsForVerification.Contains("Refresh")&&!maintenance.ActionLabelsForVerification.Contains("Analyze"),"Maintenance has no manual Refresh or generic Analyze action");
         check(maintenance.Rows.Items.Count==CleanupReview.Targets.Length&&maintenance.Rows.Items.Cast<MaintenanceRow>().All(r=>r.Bytes.HasValue||r.Id=="scoop-versions"&&r.State.Contains("obsolete versions")||r.Id.StartsWith("manager-",StringComparison.Ordinal))&&automaticState=="All categories reviewed. Nothing has been removed.","Actual Maintenance button automatically queues every read-only Cleanup estimate without selecting a row or requesting elevation");
         var managerRows=maintenance.Rows.Items.Cast<MaintenanceRow>().Where(r=>r.Id.StartsWith("manager-",StringComparison.Ordinal)).ToArray();
         string[] supportedStores=["manager-chocolatey","manager-npm","manager-pip","manager-dotnet-tool"];
         check(managerRows.Length==supportedStores.Length&&supportedStores.All(id=>managerRows.Any(r=>r.Id==id))&&
             managerRows.All(r=>r.State is not ("No safe cleanup" or "HTTP cache present")),
             "Cleanup lists only installed managers with a qualified native cache action");
+        check(maintenance.Rows.Items.Cast<MaintenanceRow>().All(r=>!r.Summary.Contains("unavailable entries",StringComparison.OrdinalIgnoreCase)&&
+            !r.Summary.Contains(":\\",StringComparison.Ordinal)&&!r.Summary.Contains("sizes unavailable",StringComparison.OrdinalIgnoreCase))&&
+            managerRows.Where(r=>r.Id is "manager-npm" or "manager-pip" or "manager-dotnet-tool").All(r=>r.Details.Contains(":\\",StringComparison.Ordinal)),
+            "Cleanup table shows concise action details while selected assessments retain exact cache paths and diagnostics");
         var chocolatey=managerRows.Single(r=>r.Id=="manager-chocolatey");
         check(managerRows.Where(r=>r.Id is "manager-npm" or "manager-pip" or "manager-dotnet-tool")
-                .All(r=>r.State!="Unavailable"&&r.Bytes.HasValue&&r.Details.Contains("download",StringComparison.OrdinalIgnoreCase))&&
+                .All(r=>r.State!="Unavailable"&&r.Bytes.HasValue&&r.Summary.StartsWith("Cached",StringComparison.Ordinal))&&
             managerRows.Single(r=>r.Id=="manager-dotnet-tool") is{Bytes:>0,CanChange:true}&&
             chocolatey.State!="Unavailable"&&chocolatey.Details.Contains("download",StringComparison.OrdinalIgnoreCase),
             "Installed native manager commands produce useful read-only counts and sizes where measurable");
@@ -54,7 +59,7 @@ public partial class MainWindow
         maintenance.SelectCategoryForVerification("Startup");
         check(maintenance.Rows.Items.Count>0&&MaintenanceStartup.ReadCountForVerification==startupReads,
             "Cleanup-to-Startup displays cached Windows rows without a second startup enumeration");
-        maintenance.SelectCategoryForVerification("Cleanup");
+        await maintenance.CategoryForVerification("Cleanup");
         using(var released=new ManualResetEventSlim())
         {
             var cleaningReached=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -65,7 +70,7 @@ public partial class MainWindow
             {
                 await cleaningReached.Task;await Dispatcher.InvokeAsync(()=>UpdateLayout(),System.Windows.Threading.DispatcherPriority.Background);
                 progress=Application.Current.Windows.OfType<CleanupProgressWindow>().Single();
-                check(progress.IsVisible&&maintenance.Rows.IsEnabled&&!maintenance.AnalyzeEnabledForVerification,"Clean immediately shows its modeless progress window and leaves inspection usable while preventing duplicate actions");
+                check(progress.IsVisible&&maintenance.Rows.IsEnabled&&!maintenance.CleanEnabledForVerification,"Clean immediately shows its modeless progress window and leaves inspection usable while preventing duplicate actions");
                 maintenance.SelectCategoryForVerification("Services");
                 check(maintenance.Category=="Services"&&maintenance.Rows.IsEnabled&&maintenance.Rows.Items.Count>10&&!cleaning.IsCompleted,"Loaded categories remain navigable during the original native Clean operation");
                 foreach(string theme in new[]{"dark","light"})foreach(double scale in new[]{1d,1.5})
@@ -82,7 +87,6 @@ public partial class MainWindow
         }
         Settings.TextScale=1;Settings.NativeMode="dark";ApplyAppearance();
         await maintenance.CategoryForVerification("Cleanup");maintenance.Rows.SelectedItem=maintenance.Rows.Items.Cast<MaintenanceRow>().Single(r=>r.Id=="scoop-versions");
-        await maintenance.ClickForVerification("Analyze");
         await maintenance.ClickForVerification("Clean reviewed");
         string uiScoop=Environment.GetEnvironmentVariable("SCOOP");
         check(!Directory.Exists(Path.Combine(uiScoop,"apps","owned-ui-package","1.0"))&&Directory.Exists(Path.Combine(uiScoop,"apps","owned-ui-package","2.0")),"Actual Cleanup action removes the reviewed owned obsolete package and preserves its current version");
@@ -91,7 +95,7 @@ public partial class MainWindow
         maintenance.AnalyzeStepForVerification=async index=>{if(index==1){reached.TrySetResult();await resume.Task;}};
         var originalWork=maintenance.Show();await reached.Task;maintenance.SelectCategoryForVerification("Cleanup");
         check(maintenance.State.Contains("2 of "+CleanupReview.Targets.Length)&&maintenance.Rows.Items.Cast<MaintenanceRow>().Single(x=>x.Id=="user-temp").Bytes.HasValue,"Automatic Cleanup publishes completed category estimates before the queue finishes");
-        check(maintenance.Rows.IsEnabled&&!maintenance.AnalyzeEnabledForVerification,"Cleanup leaves inspection enabled while gating duplicate analysis and mutations");
+        check(maintenance.Rows.IsEnabled&&!maintenance.CleanEnabledForVerification,"Cleanup leaves inspection enabled while gating duplicate analysis and mutations");
         maintenance.Rows.SelectedItem=maintenance.Rows.Items.Cast<MaintenanceRow>().First();
         check(!string.IsNullOrEmpty(maintenance.ExplanationForVerification),"Selecting an actual result during analysis exposes its full details");
         maintenance.SelectCategoryForVerification("Services");
@@ -99,8 +103,8 @@ public partial class MainWindow
         maintenance.SelectCategoryForVerification("Cleanup");
         maintenance.CancelForVerification();resume.SetResult();await originalWork;maintenance.AnalyzeStepForVerification=null;
         check(maintenance.State.StartsWith("Cancelled")&&maintenance.Rows.Items.Cast<MaintenanceRow>().Single(x=>x.Id=="user-temp").Bytes.HasValue,"Actual Cancel drains the original analysis queue and retains completed reviews");
-        maintenance.Rows.SelectedItem=null;await maintenance.ClickForVerification("Analyze");
-        check(maintenance.State=="All categories reviewed. Nothing has been removed.","Analyze can run the complete queue without selecting a row");
+        maintenance.Rows.SelectedItem=null;await maintenance.CategoryForVerification("Cleanup");
+        check(maintenance.State=="All categories reviewed. Nothing has been removed.","Returning to Cleanup automatically reruns the complete review after cancellation");
         reached=new(TaskCreationOptions.RunContinuationsAsynchronously);resume=new(TaskCreationOptions.RunContinuationsAsynchronously);
         maintenance.AnalyzeStepForVerification=async index=>{if(index==4){reached.TrySetResult();await resume.Task;}};
         originalWork=maintenance.Show();await reached.Task;maintenance.SelectCategoryForVerification("Cleanup");
@@ -141,6 +145,7 @@ public partial class MainWindow
             // after they enter the visual tree; realize them before raising one.
             UpdateLayout();
             var headers=((GridView)maintenance.Rows.View).Columns.Select(x=>System.Windows.Automation.AutomationProperties.GetName((GridViewColumnHeader)x.Header)).ToArray();
+            check(headers.Contains("Recommendation")== (category=="Windows tweaks"),"Recommendation column appears only for the reviewed Windows-tweak catalog: "+category);
             VerifyMaintenanceSorting(maintenance,check);
             if(category=="Startup")check(headers.Contains("Type")&&!headers.Contains("Size")&&maintenance.Rows.Items.Cast<MaintenanceRow>().Any(x=>x.Type=="Registry Run"),"Startup presents source Type and omits the irrelevant Size column");
             if(category=="Services")check(maintenance.Rows.Items.Count>10&&headers.Contains("Startup type")&&maintenance.Rows.Items.Cast<MaintenanceRow>().All(x=>x.State!="Not installed"),"Services enumerates installed SCM entries beyond the donor shortlist and exposes actual startup modes");
@@ -174,9 +179,9 @@ public partial class MainWindow
         try
         {
             startupReads=MaintenanceStartup.ReadCountForVerification;
-            await maintenance.ClickForVerification("Refresh");
-            check(MaintenanceStartup.ReadCountForVerification>startupReads,"Refresh rereads current Windows startup sources");
-            await maintenance.CategoryForVerification("Startup");maintenance.Rows.SelectedItem=maintenance.Rows.Items.Cast<MaintenanceRow>().Single(x=>x.Id==id);
+            await maintenance.CategoryForVerification("Startup");
+            check(MaintenanceStartup.ReadCountForVerification>startupReads,"Opening Startup rereads changed Windows startup sources without a Refresh button");
+            maintenance.Rows.SelectedItem=maintenance.Rows.Items.Cast<MaintenanceRow>().Single(x=>x.Id==id);
             maintenance.Rows.ScrollIntoView(maintenance.Rows.SelectedItem);UpdateLayout();
             var container=(ListViewItem)maintenance.Rows.ItemContainerGenerator.ContainerFromItem(maintenance.Rows.SelectedItem);
             check(container!=null&&maintenance.ExplanationForVerification.Contains("Disable prevents")&&maintenance.ExplanationForVerification.Contains("%TEMP%"),"Selecting a startup entry exposes its effect and full raw command before acting");
@@ -202,7 +207,7 @@ public partial class MainWindow
             await maintenance.ClickForVerification("Restore");
             using(var key=Registry.CurrentUser.OpenSubKey(Maintenance.RunPath))check((string)key.GetValue(name)=="external-fixture"&&maintenance.State.Contains("outside"),"Actual Restore refuses to overwrite a newer independently changed value");
             using(var key=Registry.CurrentUser.OpenSubKey(Maintenance.RunPath,true))key.DeleteValue(name);
-            await maintenance.ClickForVerification("Refresh");maintenance.Rows.SelectedItem=maintenance.Rows.Items.Cast<MaintenanceRow>().Single(x=>x.Id==id);
+            await maintenance.CategoryForVerification("Startup");maintenance.Rows.SelectedItem=maintenance.Rows.Items.Cast<MaintenanceRow>().Single(x=>x.Id==id);
             await maintenance.ClickForVerification("Restore");
             using(var key=Registry.CurrentUser.OpenSubKey(Maintenance.RunPath))check(key.GetValueKind(name)==RegistryValueKind.ExpandString&&(string)key.GetValue(name,null,RegistryValueOptions.DoNotExpandEnvironmentNames)=="%TEMP%\\Pathweft-missing-fixture.exe"&&!Maintenance.Undo().ContainsKey(id),"Native restore preserves the raw expandable value, hive and view, and removes its completed journal record");
         }
@@ -214,12 +219,12 @@ public partial class MainWindow
         File.WriteAllText(linked,"preserve reviewed links");File.WriteAllText(laterLinked,"preserve links created after review");
         if(!MaintenanceFixtureLink(linkedAlias,linked,IntPtr.Zero))throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error());
         await maintenance.CategoryForVerification("Cleanup");maintenance.Rows.SelectedItem=maintenance.Rows.Items.Cast<MaintenanceRow>().Single(x=>x.Id=="user-temp");
-        await maintenance.ClickForVerification("Analyze");
         long? reviewed=maintenance.Rows.Items.Cast<MaintenanceRow>().Single(x=>x.Id=="user-temp").Bytes;
         var sizeHeader=(GridViewColumnHeader)((GridView)maintenance.Rows.View).Columns.Single(x=>((GridViewColumnHeader)x.Header).Tag as string=="Bytes").Header;
         sizeHeader.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-        await maintenance.ClickForVerification("Analyze");
-        check((maintenance.Rows.SelectedItem as MaintenanceRow)?.Id=="user-temp"&&System.Windows.Automation.AutomationProperties.GetItemStatus(sizeHeader)=="Ascending", "Analysis replaces rows without losing selection or numeric sort");
+        await maintenance.CategoryForVerification("Cleanup");
+        sizeHeader=(GridViewColumnHeader)((GridView)maintenance.Rows.View).Columns.Single(x=>((GridViewColumnHeader)x.Header).Tag as string=="Bytes").Header;
+        check((maintenance.Rows.SelectedItem as MaintenanceRow)?.Id=="user-temp"&&System.Windows.Automation.AutomationProperties.GetItemStatus(sizeHeader)=="Ascending", "Automatic review replaces rows without losing selection or numeric sort");
         await maintenance.CategoryForVerification("Startup");await maintenance.CategoryForVerification("Cleanup");
         check(reviewed.HasValue&&maintenance.Rows.Items.Cast<MaintenanceRow>().Single(x=>x.Id=="user-temp").Bytes==reviewed,"Cleanup summary and exact review survive switching bottom tabs");
         check((maintenance.Rows.SelectedItem as MaintenanceRow)?.Id=="user-temp"&&System.Windows.Data.CollectionViewSource.GetDefaultView(maintenance.Rows.ItemsSource).SortDescriptions[0].PropertyName=="Bytes","Category navigation preserves the selected identity and category's sort");

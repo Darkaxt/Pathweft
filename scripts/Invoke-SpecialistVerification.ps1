@@ -13,7 +13,7 @@ $ErrorActionPreference='Stop'
 # Source-built renderer libraries run in Pathweft's own supervised worker. They
 # are not registered Craft CLI/MCP application workloads or gate dependencies.
 $scratch=[IO.Path]::GetFullPath($ScratchRoot)
-if($scratch -notin @('D:\Temp\pathweft-s13-s9-s11','D:\Temp\pathweft-s16','D:\Temp\pathweft-transfer-progress','D:\Temp\pathweft-s18','D:\Temp\pathweft-s39','D:\Temp\pathweft-s40','D:\Temp\pathweft-s41-junction-fix')){throw 'Exact registered task root required.'}
+if($scratch -notin @('D:\Temp\pathweft-s13-s9-s11','D:\Temp\pathweft-s16','D:\Temp\pathweft-transfer-progress','D:\Temp\pathweft-s18','D:\Temp\pathweft-s39','D:\Temp\pathweft-s40','D:\Temp\pathweft-s41-junction-fix','D:\Temp\pathweft-s44-maintenance')){throw 'Exact registered task root required.'}
 $run=Join-Path $scratch ('specialists-'+[guid]::NewGuid().ToString('N'))
 $cleanup='C:/Users/darka/.agents/skills/transactional-cleanup/scripts/invoke_transactional_cleanup.py'
 $registration=& python $cleanup begin --workspace (Split-Path -Parent $PSScriptRoot) --scan-root $run

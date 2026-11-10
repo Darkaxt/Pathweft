@@ -1,6 +1,11 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.48 | 2026-11-10 | Maintenance updates itself
+- Maintenance no longer has Refresh or generic Analyze buttons. Its cards show cached results immediately and update the selected category automatically; completed cleanup is reviewed again.
+- Cleanup Details stay short in the table. Exact cache paths and partial-access diagnostics remain in the selected assessment.
+- Recommendation appears only for Windows tweaks, whose reviewed catalog covers the displayed settings. Startup, Services and Windows apps retain their actual state and selected details without a mostly empty advice column.
+
 ## 1.1.47 | 2026-11-09 | Useful package cleanup previews
 - Cleanup shows only installed package managers with a qualified cache action. Managers without a safe general action no longer occupy rows.
 - NuGet's HTTP cache shows an actual file count and size; Pip and Npm previews include cache sizes. Cleanup results report measured bytes removed when available.
