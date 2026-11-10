@@ -79,13 +79,13 @@ static class Program
 #endif
         if(args.Contains("--desktop-launch"))
         {
-            try{Environment.ExitCode=DesktopLaunch.FromSetup(args.Contains("--resume-agent"));}
+            try{Environment.ExitCode=DesktopLaunch.FromSetup(args.Contains("--resume-agent"),args.Contains("--set-default"));}
             catch(Exception error)when(error is System.Runtime.InteropServices.COMException or IOException or UnauthorizedAccessException){Environment.ExitCode=1;}
             return;
         }
         if(args.FirstOrDefault(a=>a.StartsWith("--desktop-result=")) is { } desktopResult)
         {
-            if(!args.Contains("--resume-agent")){Environment.ExitCode=1;return;}
+            if(!args.Contains("--resume-agent")&&!args.Contains("--set-default")){Environment.ExitCode=1;return;}
             Environment.ExitCode=1;
             try{var application=new App();application.InitializeComponent();Environment.ExitCode=application.Run();}
             finally{DesktopLaunch.Report(desktopResult["--desktop-result=".Length..],Environment.ExitCode);}
@@ -215,7 +215,7 @@ public partial class App : Application
                 if(e.Args.Contains("--resume-agent"))
                 {
                     WindowsIntegration.UpgradeOwnedRegistration();
-                    if(Settings.TakeWinE&&Agent.OwnsStartup)Agent.EnableAsync(Environment.ProcessPath).GetAwaiter().GetResult();
+                    if(Settings.TakeWinE)Agent.EnableAsync(Environment.ProcessPath).GetAwaiter().GetResult();
                 }
                 else
                 {

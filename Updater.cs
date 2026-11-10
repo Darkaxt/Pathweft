@@ -15,7 +15,7 @@ namespace FileExplorer;
 //   • "Later" silences that one version for this session only, and the manual check in Settings
 //     ignores it, because asking explicitly deserves an answer;
 //   • updating verifies the installer size and published SHA-256, then starts
-//     the per-user installer with this process's identity and installation path.
+//     the protected installer with this process's identity and installation path.
 //     Setup waits for actual exit, stops only the owned helper, and restarts it.
 public static class Updater
 {
@@ -123,13 +123,19 @@ public static class Updater
         finally{if(!complete)UpdateDownloads.Discard(path);}
     }
 
-    /// Start the per-user update. Setup observes this exact process's exit;
+    /// Start the protected update. Setup observes this exact process's exit;
     /// manual installs do not force-close other windows or active transfers.
-    public static bool InstallAndRestart(string installer)
+    public static bool InstallAndRestart(string installer,string expectedSha256)
     {
         try
         {
-            var launch=new ProcessStartInfo(installer){UseShellExecute=false,CreateNoWindow=true,WindowStyle=ProcessWindowStyle.Hidden};
+            if(string.IsNullOrWhiteSpace(expectedSha256))throw new IOException("Protected updates require a published SHA-256 checksum.");
+            // Keep the checked file non-writable from hashing through elevated
+            // process creation, when Windows maps the installer image.
+            using var held=new FileStream(installer,FileMode.Open,FileAccess.Read,FileShare.Read);
+            string actual=Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(held));
+            if(!actual.Equals(expectedSha256,StringComparison.OrdinalIgnoreCase))throw new IOException("The installer changed after download verification.");
+            var launch=new ProcessStartInfo(installer){UseShellExecute=true,Verb="runas",WindowStyle=ProcessWindowStyle.Hidden};
             using var caller=Process.GetCurrentProcess();
             foreach(var argument in InstallationArguments(caller.Id,caller.StartTime.ToUniversalTime().ToFileTimeUtc(),AppContext.BaseDirectory))launch.ArgumentList.Add(argument);
             using var process=Process.Start(launch)??throw new IOException("The installer did not start.");

@@ -99,7 +99,7 @@ public partial class UpdateDialog : Window
             }
             Status.Text = "Installing — Pathweft will restart.";
             LaterButton.IsEnabled=false;
-            if (!Updater.InstallAndRestart(installer))
+            if (!Updater.InstallAndRestart(installer,release.Sha256))
             {
                 Progress.Visibility = Visibility.Collapsed;
                 Status.Text = "Update not installed: Windows asked for permission and it wasn't given. Try again whenever you like.";

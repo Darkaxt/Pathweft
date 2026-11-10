@@ -1,9 +1,19 @@
 # Implementation and reconciliation
 
-Authority: [SPECIFICATION.md](SPECIFICATION.md), version 1.12, 2026-11-10,
+Authority: [SPECIFICATION.md](SPECIFICATION.md), version 1.13, 2026-11-10,
 including the user-authorized continued comparison requirement TRANSFER-07.
 
-Current2026-11-10/S44: S41-S43 remain COMPLETE. S44 covers MAINT-20..24 and
+Current 2026-11-10/S45: S44 is COMPLETE. S45 is ACTIVE for SHELL-04 and
+DELIVERY-04. Source work covers protected Program Files installation, machine
+COM ownership, migration of the existing opted-in route, and the elevated
+updater/uninstaller lifecycle. Integrated validation then checks protected ACLs,
+package-visible COM, real Codex and browser folder actions, update and rollback.
+Final delivery is one normal release with independent retrieval and installed
+readback. The unsafe diagnostic HKLM registration was removed; HKCU routes and
+the existing 1.1.49 installation remain intact. No tracked deferral is open.
+
+Historical 2026-11-10/S44 checkpoint (superseded by the verified 1.1.49
+installation above): S41-S43 remain COMPLETE. S44 covers MAINT-20..24 and
 the normal corrective release. It is BLOCKED on its installed-update criterion;
 no stage is ACTIVE. It resumes when the user chooses Quit from the installed
 Pathweft tray menu. Remove manual Refresh and
@@ -1528,6 +1538,7 @@ plan neither authorizes itself nor adds approval checkpoints.
 | S42 - Fast Maintenance tab navigation | COMPLETE | MAINT-18 and combined final DELIVERY | S41 required UI checks passed | Actual Cleanup-to-Startup transition, Refresh and action results passed; normal v1.1.46 delivery and installed readback completed. No blocker or tracked deferral. |
 | S43 - UniGetUI manager-aware Cleanup | COMPLETE | MAINT-19 and corrective final DELIVERY | S41/S42 COMPLETE | Four actionable native caches and exclusion of unsupported managers passed actual UI, package and installed checks. Normal v1.1.47 was published, independently downloaded and installed with exact member readback. No blocker or tracked deferral. |
 | S44 - Maintenance clarity and automatic freshness | COMPLETE | MAINT-20..24 and final DELIVERY | S43 COMPLETE | Npm correction, owned UI, delivered package and published 1.1.49 passed. Installed D:/Tools/Pathweft executable reports 1.1.49+2b2adf6f and its SHA-256 matches the release manifest; the running front and agent use that installation. No blocker or tracked deferral. |
+| S45 - Protected shell installation and packaged callers | ACTIVE | SHELL-04, DELIVERY-04 | S44 COMPLETE | Source, integrated runtime, protected migration, Codex/browser action, update/uninstall and one final release remain. No tracked deferral. |
 | S25 - Summary-card motion | NOT STARTED | MOTION-01..03; affected MONITOR/CORE-03/LIFE/DELIVERY | S18 COMPLETE; after S28 and before S12 | Upward card entry with smooth file-pane squeeze; rotation between Statistics/Performance; reversal/interruption and focus/scroll preservation; reduced-motion support and actual frame/layout/resource qualification. One final independently/installed verified release after implementation authorization. No criteria verified yet. |
 | S12 - Tresorit capability investigation | NOT STARTED | TRES-01..04 | S15 delivered; S16/S18/S25 considered first in the selected execution order | Supported API/client assessment, bounded REA as needed, evidence-backed capability matrix/decision and implementation proposal. Investigation only; no cloud mutation or integration implementation. |
 | S19 - Selected-folder content indexing | NOT STARTED | CONTENT-01..06; affected SEARCH/CORE/LIFE/DELIVERY | After S12 in the selected execution order; qualify extractor APIs, query/location semantics, provider metadata and resource budgets | Toolbar folder opt-in/current magnifier badges; qualified Craft/text extraction; persisted searchable strings and location arrays, periodic incremental refresh and cloud-cache independence. Verify actual search/open/freshness/recovery and one final independently/installed verified release when implementation is authorized. No criteria verified yet. |

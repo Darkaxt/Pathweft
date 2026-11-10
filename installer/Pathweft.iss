@@ -1,4 +1,4 @@
-; One per-user installation. Build via build.ps1; all paths are explicit inputs.
+; Protected machine installation. Build via build.ps1; all paths are explicit inputs.
 #define AppName "Pathweft"
 #define AppExe "Pathweft.exe"
 #ifndef AppIdGuid
@@ -21,8 +21,15 @@ AppVersion={#AppVersion}
 AppVerName={#AppName} {#AppVersion}
 AppPublisher=Darkaxt
 VersionInfoVersion={#AppVersion}
+#ifdef ProgressVerification
+; The isolated progress fixture never registers a machine-wide shell class.
 PrivilegesRequired=lowest
 DefaultDirName={localappdata}\Programs\Pathweft
+#else
+PrivilegesRequired=admin
+DefaultDirName={autopf}\Pathweft
+#endif
+UsePreviousAppDir=no
 DefaultGroupName=Pathweft
 DisableProgramGroupPage=yes
 DisableDirPage=auto
@@ -53,6 +60,18 @@ Source: "{#PublishRoot}\*"; DestDir: "{app}"; Excludes: "PathweftShell-*.dll"; F
 ; Shell caller. Uninstall never force-closes that caller to remove its DLL.
 Source: "{#PublishRoot}\PathweftShell-*.dll"; DestDir: "{app}"; Flags: ignoreversion uninsrestartdelete
 
+[Registry]
+#ifndef ProgressVerification
+; Packaged desktop callers cannot see the per-user CLSID but can see the
+; machine class. The DLL and adjacent executable live under protected {app}.
+Root: HKLM64; Subkey: "Software\Classes\CLSID\{{CF5ABF8B-73EA-4DF9-A991-C163D76FE2A2}"
+Root: HKLM64; Subkey: "Software\Classes\CLSID\{{CF5ABF8B-73EA-4DF9-A991-C163D76FE2A2}\InprocServer32"; ValueType: string; ValueName: ""; ValueData: "{app}\PathweftShell-{#AppVersion}-x64.dll"
+Root: HKLM64; Subkey: "Software\Classes\CLSID\{{CF5ABF8B-73EA-4DF9-A991-C163D76FE2A2}\InprocServer32"; ValueType: string; ValueName: "ThreadingModel"; ValueData: "Apartment"
+Root: HKLM32; Subkey: "Software\Classes\CLSID\{{CF5ABF8B-73EA-4DF9-A991-C163D76FE2A2}"
+Root: HKLM32; Subkey: "Software\Classes\CLSID\{{CF5ABF8B-73EA-4DF9-A991-C163D76FE2A2}\InprocServer32"; ValueType: string; ValueName: ""; ValueData: "{app}\PathweftShell-{#AppVersion}-x86.dll"
+Root: HKLM32; Subkey: "Software\Classes\CLSID\{{CF5ABF8B-73EA-4DF9-A991-C163D76FE2A2}\InprocServer32"; ValueType: string; ValueName: "ThreadingModel"; ValueData: "Apartment"
+#endif
+
 [Icons]
 Name: "{group}\Pathweft"; Filename: "{app}\{#AppExe}"; AppUserModelID: "Darkaxt.Pathweft"
 Name: "{autodesktop}\Pathweft"; Filename: "{app}\{#AppExe}"; AppUserModelID: "Darkaxt.Pathweft"; Tasks: desktopicon
@@ -77,6 +96,41 @@ function GetProcessTimes(Handle: THandle; var Created, Exited, Kernel, User: TCr
 function RestartRequested(): Boolean;
 begin
   Result := ExpandConstant('{param:RESTARTAPP|0}') = '1';
+end;
+
+function MigrationRequested(): Boolean;
+begin
+  Result := ExpandConstant('{param:MIGRATE|0}') = '1';
+end;
+
+function MachineClassKey(): String;
+begin
+  Result := 'Software\Classes\CLSID\{CF5ABF8B-73EA-4DF9-A991-C163D76FE2A2}';
+end;
+
+function MachineClassOwned(Root: Integer; const Architecture: String; const Directory: String): Boolean;
+var
+  Existing: String;
+begin
+  Result := not RegQueryStringValue(Root, MachineClassKey() + '\InprocServer32', '', Existing);
+  if not Result then
+    Result := (Pos(Uppercase(Directory + '\PathweftShell-'), Uppercase(Existing)) = 1) and
+      (Pos(Uppercase('-' + Architecture + '.dll'), Uppercase(Existing)) = Length(Existing) - Length(Architecture) - 4);
+end;
+
+procedure RemoveOwnedMachineClass(Root: Integer; const Architecture: String);
+var
+  Key, Existing: String;
+begin
+  Key := MachineClassKey() + '\InprocServer32';
+  if RegQueryStringValue(Root, Key, '', Existing) and
+     (CompareText(Existing, ExpandConstant('{app}\PathweftShell-{#AppVersion}-' + Architecture + '.dll')) = 0) then begin
+    RegDeleteValue(Root, Key, '');
+    if RegQueryStringValue(Root, Key, 'ThreadingModel', Existing) and (CompareText(Existing, 'Apartment') = 0) then
+      RegDeleteValue(Root, Key, 'ThreadingModel');
+    RegDeleteKeyIfEmpty(Root, Key);
+    RegDeleteKeyIfEmpty(Root, MachineClassKey());
+  end;
 end;
 
 #include "UpdateProgress.iss"
@@ -113,6 +167,17 @@ var
   Expected: String;
 begin
   Result := '';
+#ifndef ProgressVerification
+  if CompareText(ExpandConstant('{app}'), ExpandConstant('{autopf}\Pathweft')) <> 0 then begin
+    Result := 'Pathweft shell integration requires its protected Program Files installation path.';
+    Exit;
+  end;
+  if (not MachineClassOwned(HKLM64, 'x64', ExpandConstant('{app}'))) or
+     (not MachineClassOwned(HKLM32, 'x86', ExpandConstant('{app}'))) then begin
+    Result := 'Another application owns the shell class. No registration has been replaced.';
+    Exit;
+  end;
+#endif
   DeploymentPhase('Closing Pathweft', 'Waiting for the current window to finish closing.');
   DeploymentFailure := 'The updating process could not finish preparing its installation.';
   Pid := StrToIntDef(ExpandConstant('{param:WAITPID|0}'), 0);
@@ -156,18 +221,23 @@ var
   Code: Integer;
 begin
   if CurStep = ssPostInstall then begin
-    DeploymentPhase('Restoring integration', 'Restoring your enabled folder routes and keyboard helper.');
-    DeploymentFailure := 'Files were installed, but Windows integration could not be restored. Reopen Pathweft to review its status.';
+    if MigrationRequested() then begin
+      DeploymentPhase('Installing protected files', 'The account migration will restore your enabled routes after the old installation is retired.');
+      DeploymentFailure := 'Protected files were installed, but account migration has not completed.';
+    end else begin
+      DeploymentPhase('Restoring integration', 'Restoring your enabled folder routes and keyboard helper.');
+      DeploymentFailure := 'Files were installed, but Windows integration could not be restored. Reopen Pathweft to review its status.';
+    end;
   end;
-  if (CurStep = ssPostInstall) and WizardIsTaskSelected('defaultfm') then begin
-    if not Exec(ExpandConstant('{app}\{#AppExe}'), '--set-default', '', SW_HIDE, ewWaitUntilTerminated, Code) or (Code <> 0) then
+  if (CurStep = ssPostInstall) and (not MigrationRequested()) and WizardIsTaskSelected('defaultfm') then begin
+    if not Exec(ExpandConstant('{app}\{#AppExe}'), '--desktop-launch --set-default', '', SW_HIDE, ewWaitUntilTerminated, Code) or (Code <> 0) then
       RaiseException('Pathweft was installed, but folder integration was not enabled. Use Settings > Windows integration to inspect or restore it.');
   end;
-  if CurStep = ssPostInstall then begin
+  if (CurStep = ssPostInstall) and (not MigrationRequested()) then begin
     if not Exec(ExpandConstant('{app}\{#AppExe}'), '--desktop-launch --resume-agent', '', SW_HIDE, ewWaitUntilTerminated, Code) or (Code <> 0) then
       RaiseException('Pathweft was installed, but its Win+E helper could not restart. Open Settings > Windows integration to inspect its status.');
   end;
-  if (CurStep = ssPostInstall) and RestartRequested() then begin
+  if (CurStep = ssPostInstall) and (not MigrationRequested()) and RestartRequested() then begin
     DeploymentPhase('Opening Pathweft', 'Launching the updated version in your desktop session.');
     DeploymentFailure := 'The update was installed, but Pathweft could not reopen. Open it from Start.';
     if not Exec(ExpandConstant('{app}\{#AppExe}'), '--desktop-launch', '', SW_HIDE, ewWaitUntilTerminated, Code) or (Code <> 0) then
@@ -176,7 +246,10 @@ begin
   if CurStep = ssInstall then DeploymentFailure := 'The update could not replace its application files. Close any app using them, then try the update again.';
   if CurStep = ssDone then begin
     DeploymentFailure := '';
-    DeploymentPhase('Update installed', 'Pathweft has been launched.');
+    if MigrationRequested() then
+      DeploymentPhase('Protected files installed', 'Account migration is ready to retire the old installation and restore its routes.')
+    else
+      DeploymentPhase('Update installed', 'Pathweft has been launched.');
   end;
 end;
 
@@ -192,4 +265,14 @@ begin
   Error := PrepareExisting('--prepare-uninstall');
   Result := Error = '';
   if not Result then MsgBox(Error, mbError, MB_OK);
+end;
+
+procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
+begin
+#ifndef ProgressVerification
+  if CurUninstallStep = usUninstall then begin
+    RemoveOwnedMachineClass(HKLM64, 'x64');
+    RemoveOwnedMachineClass(HKLM32, 'x86');
+  end;
+#endif
 end;

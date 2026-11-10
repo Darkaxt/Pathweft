@@ -1,6 +1,21 @@
 # Pathweft specification
 
-Version 1.12 - 2026-11-10. Owner: Darkaxt.
+Version 1.13 - 2026-11-10. Owner: Darkaxt.
+
+### Protected installation and packaged folder callers (S45)
+
+The user's 2026-11-10 instruction to move the program to Program Files supersedes
+the earlier per-user installation-location requirement for this correction. A
+Codex packaged process sees the opted-in Folder/open DelegateExecute value but
+cannot see Pathweft's per-user COM class; its Open in Explorer action fails with
+"Class not registered". A diagnostic machine COM registration made that same
+action open Playground in Pathweft, but was removed immediately when its target
+DLL was found writable by Authenticated Users. The machine class is absent again.
+
+| ID | Required behavior and acceptance |
+| --- | --- |
+| SHELL-04 | Install the executable and native shell DLLs under an administrator-protected Program Files location, with no writable-user machine COM server path. Register the x64 and x86 native class for packaged callers only through the protected installation, while preserving opt-in per-user Folder/Directory/Drive verbs and exact prior-owner restoration. Migrate the currently enabled route from D:/Tools/Pathweft without losing profile, tabs, settings, Win+E ownership or selected-file reveal. Codex's actual Playground Open in Explorer action and the browser's actual Show in folder request must open the requested folder in Pathweft, with selection preserved where supplied. Disable/uninstall restores prior per-user verbs and removes only Pathweft-owned machine COM entries. Verify protected ACLs, packaged class visibility, normal-user and packaged caller behavior, update/restart and rollback. |
+| DELIVERY-04 | The normal updater must elevate the protected installer through Windows consent, retain its original caller/update identity and progress, and never acknowledge a partial replacement as success. Deliver one normal release containing the protected installer and native router, independently retrieve its assets, then install and verify the real Program Files version and both live shell workflows. Keep the previous installation until the protected package, machine class and unchanged data location are verified; then retire it through its own uninstaller, restore the opted-in routes and helper with the new executable, and retain the published prior installer as rollback through that transition. No intermediate release. |
 
 ### Npm cache cleanup correction (S44)
 

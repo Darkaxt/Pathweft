@@ -6,7 +6,17 @@ their published assets are verified. Retain concise verification results and
 reusable fixtures, not repeated expanded cleanup manifests, retired test profiles
 or superseded captures. Clean exact generated targets through transactional-cleanup.
 
-Current2026-11-10/spec1.12: S41-S43 are COMPLETE. S44 covers
+Current 2026-11-10/spec1.13: S44 is COMPLETE. S45 is the sole ACTIVE stage
+for protected Program Files installation and packaged folder callers. The
+Codex package cannot see Pathweft's per-user COM class; its actual folder
+action failed before Explorer or Pathweft launched. A diagnostic machine class
+made that action open Playground in Pathweft, but pointed to a user-writable
+DLL and was removed. Preserve the opted-in HKCU routes, prior-owner recovery,
+profile and installed 1.1.49 until protected migration and live acceptance pass.
+SHELL-04 and DELIVERY-04 own source, real caller/update/uninstall checks and
+one final normal release; no tracked deferral. Historical current entry follows.
+
+Previous2026-11-10/spec1.12: S41-S43 are COMPLETE. S44 covers
 automatic Maintenance freshness, concise Cleanup Details and relevant
 Recommendations. Remove manual
 Refresh and generic Analyze controls, preserve instant cached tab display and

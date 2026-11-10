@@ -18,15 +18,15 @@ static class DesktopLaunch
         try{Marshal.ThrowExceptionForHR(Marshal.GetDelegateForFunctionPointer<Launch>(NativeLibrary.GetExport(library,"PathweftLaunchDesktop"))(Environment.ProcessPath,arguments,AppContext.BaseDirectory,show));}
         finally{NativeLibrary.Free(library);}
     }
-    internal static int FromSetup(bool resume)
+    internal static int FromSetup(bool resume,bool setDefault=false)
     {
-        if(!resume){Start("--front");return 0;}
+        if(!resume&&!setDefault){Start("--front");return 0;}
         // Setup must receive the real resume result, not just COM acceptance.
         string name=Prefix+Guid.NewGuid().ToString("N");
         using var server=new NamedPipeServerStream(name,PipeDirection.In,1,PipeTransmissionMode.Byte,PipeOptions.CurrentUserOnly);
-        string arguments="--resume-agent --desktop-result="+name;
+        string arguments=(setDefault?"--set-default":"--resume-agent")+" --desktop-result="+name;
 #if DEBUG
-        if(Environment.GetEnvironmentVariable("PATHWEFT_DESKTOP_TEST_PROFILE") is {Length:>0} profile)
+        if(resume&&Environment.GetEnvironmentVariable("PATHWEFT_DESKTOP_TEST_PROFILE") is {Length:>0} profile)
         {
             if(!Path.GetFullPath(profile).StartsWith(@"D:\Temp\pathweft-s8-delivery\appearance-",StringComparison.OrdinalIgnoreCase)||profile.Contains('"'))throw new ArgumentException("Owned desktop fixture required.");
             arguments+=" \"--desktop-test-profile="+profile+"\"";
