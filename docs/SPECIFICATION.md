@@ -1252,6 +1252,15 @@ integration criterion; shipping a Folder/explore mapping or editable JSON alone
 does not satisfy it. Preserve the requested file selection where the native
 request supplies it. This clarification supersedes the earlier exclusion of
 that action from this correction; it does not declare that API implemented.
+Live correction 2026-11-10: an earlier failed COM trial left this user's
+Folder/open route disabled in the saved opt-in configuration even after the
+native selection handler shipped. The installed executable matched the 1.1.49
+release and the handler registration pointed to its 1.1.49 native DLL. Applying
+the existing Folder/open route through Pathweft's owned registration restored
+the real Helium Show in folder action. The user
+confirmed that Pathweft opened and highlighted the requested PDF. Preserve the
+route's opt-in ownership and exact recovery record; this configuration repair
+does not change the default route selection for other users.
 Retain the separate Open downloads folder criterion and prior Explorer/virtual
 folder protections. The user permits controlled tests while away; preserve
 unrelated running applications, browser state and other workflow ownership.

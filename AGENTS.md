@@ -18,10 +18,13 @@ v1.1.48 has an installed Npm cache Clean regression:
 Npm writes logs during Pathweft's whole-root recheck, so Clean stops at zero.
 MAINT-24 narrows review to `_cacache` and requires truthful native-command
 progress. The 1.1.49 source, UI, delivered package and published six-asset
-release passed. S44 is BLOCKED only on installed-update verification, with no
-ACTIVE stage: the installed 1.1.48 front is configured to close to tray and
-remains running after a normal close. Resume when the user chooses Quit from
-the Pathweft tray menu. No tracked deferral.
+release passed. Installed 1.1.49 now runs from D:/Tools/Pathweft; its executable
+version, source commit and SHA-256 match the independently qualified release
+manifest. S44 is COMPLETE, with no ACTIVE stage or tracked deferral. A separate
+live Shell route correction enabled the already implemented Folder/open handler
+through Pathweft's owned registration; the user confirmed Helium's actual Show
+in folder button opens Pathweft and highlights the requested PDF. No source
+change or new release was needed for that saved-route correction.
 
 Previous2026-11-10/spec1.09: S41-S43 are COMPLETE. Normal v1.1.47 was published
 from c275de26 and independently downloaded; all six release assets matched
