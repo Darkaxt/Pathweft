@@ -24,7 +24,7 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
     readonly ListView table=new(){SelectionMode=SelectionMode.Single,Background=Brushes.Transparent,BorderThickness=new(0)};
     readonly TextBlock title=new(){Text="Maintenance",FontSize=18,FontWeight=FontWeights.SemiBold,TextTrimming=TextTrimming.CharacterEllipsis},status=new(){TextWrapping=TextWrapping.Wrap,Margin=new(0,8,0,0)},description=new(){TextWrapping=TextWrapping.Wrap,Margin=new(0,8,0,12)};
     readonly WrapPanel actions=new();
-    readonly Button change,restore,restorePoint,export,import,cancel;
+    readonly Button change,protectedReview,restore,restorePoint,export,import,cancel;
     readonly Dictionary<string,CleanupReview> reviews=new();
     readonly Dictionary<string,MaintenanceClient> elevatedReviews=new();
     readonly Dictionary<string,MaintenanceRow> analyzedRows=new();
@@ -109,7 +109,7 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
             SortRows();
         }));
         actions.Margin=new Thickness(0,12,0,0);Grid.SetRow(actions,3);body.Children.Add(actions);
-        change=Button("Apply",Change);restore=Button("Restore",()=>Apply("restore"));
+        change=Button("Apply",Change);protectedReview=Button("Use administrator access",ReviewProtected);restore=Button("Restore",()=>Apply("restore"));
         restorePoint=Button("Create restore point",()=>Apply("restore-point"));export=Button("Export selection…",Export);import=Button("Import selection…",Import);
         restorePoint.ToolTip="Create a Windows restore point. Administrator permission is required.";
         table.MouseDoubleClick+=(_,e)=>
@@ -122,7 +122,7 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
         };
         cancel=new Button{Content="Cancel",MinHeight=32,Margin=new(0,0,8,6)};cancel.SetResourceReference(StyleProperty,"AuxiliaryAction");
         cancel.Click+=(_,_)=>{reading.Cancel();status.Text="Cancelling…";};
-        foreach(var button in new[]{change,restore,restorePoint,export,import,cancel})actions.Children.Add(button);
+        foreach(var button in new[]{change,protectedReview,restore,restorePoint,export,import,cancel})actions.Children.Add(button);
         status.SetResourceReference(TextBlock.ForegroundProperty,"Muted");Grid.SetRow(status,4);body.Children.Add(status);
         Child=grid;table.SelectionChanged+=(_,_)=>{if(table.SelectedItem is MaintenanceRow row)selections[Category]=row.Id;Explain();UpdateActions();};
         var groupCaption=new FrameworkElementFactory(typeof(TextBlock));groupCaption.SetBinding(TextBlock.TextProperty,new Binding("Name"));groupCaption.SetValue(TextBlock.FontWeightProperty,FontWeights.SemiBold);groupCaption.SetValue(MarginProperty,new Thickness(8,12,0,6));groupCaption.SetResourceReference(TextBlock.ForegroundProperty,"Muted");
@@ -243,7 +243,7 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
             if(AnalyzeStepForVerification!=null)await AnalyzeStepForVerification(i);
 #endif
             reading.Token.ThrowIfCancellationRequested();
-            try{await AnalyzeRow(rows[i],AdministratorSession.Available);}
+            try{await AnalyzeRow(rows[i],false);}
             catch(Exception error)when(error is IOException or InvalidDataException or UnauthorizedAccessException or System.ComponentModel.Win32Exception)
             {PublishReview(rows[i] with{State="Unavailable",Details="Could not review this category.\n"+error.Message,Bytes=null,CanChange=false});}
         }
@@ -259,14 +259,14 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
         MaintenanceRow result;
         if(allowElevation&&row.Id is ("windows-temp" or "error-reports"))
         {
-            var client=new MaintenanceClient();
+            var client=new MaintenanceClient(maintenanceScope:true);
             try
             {
                 var reply=await client.Start(new("analyze",row.Id,Maintenance.Journal,Path.Combine(DataFolder.Cache,"Maintenance")),true,reading.Token);
                 if(!reply.Ok)throw new InvalidOperationException(reply.Message);
                 elevatedReviews.Add(row.Id,client);result=reply.Row;
             }
-            catch{await client.DisposeAsync();throw;}
+            catch{await client.DisposeAsync();PublishReview(row with{State="Administrator review unavailable",CanChange=false});throw;}
         }
         else
         {
@@ -297,6 +297,12 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
         };
     }
     Task Change()=>Category=="Cleanup"?Clean():Apply(Category=="Windows apps"?"remove-app":"apply");
+    async Task ReviewProtected()
+    {
+        if(Category!="Cleanup"||table.SelectedItem is not MaintenanceRow row||row.Id is not ("windows-temp" or "error-reports"))return;
+        await AnalyzeRow(row,true);
+        status.Text="Administrator review ready. Select Clean reviewed to remove unchanged files.";
+    }
     async Task Clean()
     {
         if(table.SelectedItem is not MaintenanceRow row)return;
@@ -325,7 +331,7 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
         var rows=loadedRows[category].Select(r=>analyzedRows.GetValueOrDefault(r.Id,r)).Select(r=>r.Id==row.Id?reset:r).ToArray();
         loadedRows[category]=rows;if(Category==category)SetRows(rows);Summary(category,rows);
         string outcome=status.Text;
-        try{await AnalyzeRow(reset,AdministratorSession.Available);status.Text=outcome;}
+        try{await AnalyzeRow(reset,false);status.Text=outcome;}
         catch(Exception error)when(error is IOException or InvalidDataException or UnauthorizedAccessException or System.ComponentModel.Win32Exception)
         {PublishReview(reset with{State="Unavailable",Details="Could not review this category.\n"+error.Message,Bytes=null,CanChange=false});status.Text=outcome;}
         }
@@ -337,7 +343,7 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
         var row=table.SelectedItem as MaintenanceRow;if(row==null&&action!="restore-point")return;
         string id=row?.Id??"";bool elevated=action=="restore-point"||id.StartsWith("service:")||row?.Scope=="All users";
         if(id.StartsWith("tweak:"))elevated=Maintenance.TweakEdits(id).Any(e=>e.Hive=="HKEY_LOCAL_MACHINE");
-        await using var client=new MaintenanceClient();status.Text="Waiting for Windows…";
+        await using var client=new MaintenanceClient(maintenanceScope:true);status.Text="Waiting for Windows…";
         var result=await client.Start(new(action,id,Maintenance.Journal,null),elevated,reading.Token);string message=result.Message;
         await Load();status.Text=message;
     }
@@ -373,11 +379,15 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
         if(change==null)return;bool cleanup=Category=="Cleanup",tweaks=Category=="Windows tweaks";var row=table.SelectedItem as MaintenanceRow;
         bool idle=!busy;
         bool inspectable=idle||inspecting||cleaning;filters.IsEnabled=inspectable;
-        foreach(var button in new[]{change,restore,restorePoint,export,import})button.IsEnabled=idle;
+        foreach(var button in new[]{change,protectedReview,restore,restorePoint,export,import})button.IsEnabled=idle;
         for(int i=0;i<5;i++)if(cardButtons[i]!=null){cardButtons[i].IsEnabled=idle||inspectable&&loadedRows.ContainsKey(Categories[i]);cardButtons[i].Tag=Expanded&&i==selectedCategory?"on":null;AutomationProperties.SetItemStatus(cardButtons[i],Expanded&&i==selectedCategory?"Selected":"");}
         table.IsEnabled=inspectable;
         change.Content=Category switch{"Cleanup"=>"Clean reviewed","Startup"=>"Disable","Services"=>"Stop and disable","Windows apps"=>"Remove",_=>"Apply"};
-        change.IsEnabled=idle&&row?.CanChange==true&&(!cleanup||reviews.ContainsKey(row.Id)||elevatedReviews.ContainsKey(row.Id));
+        bool protectedCategory=cleanup&&row?.Id is ("windows-temp" or "error-reports");
+        bool reviewed=row!=null&&(protectedCategory?elevatedReviews.ContainsKey(row.Id):reviews.ContainsKey(row.Id)||elevatedReviews.ContainsKey(row.Id));
+        change.IsEnabled=idle&&row?.CanChange==true&&(!cleanup||reviewed);
+        protectedReview.Visibility=protectedCategory&&!elevatedReviews.ContainsKey(row.Id)?Visibility.Visible:Visibility.Collapsed;
+        protectedReview.IsEnabled=idle&&protectedCategory;
         restore.Visibility=Category is "Startup" or "Services" or "Windows tweaks"?Visibility.Visible:Visibility.Collapsed;
         try{restore.IsEnabled=idle&&row!=null&&Maintenance.Undo().ContainsKey(row.Id);}catch(Exception error)when(error is IOException or JsonException or UnauthorizedAccessException){restore.IsEnabled=false;status.Text="Saved maintenance state unavailable: "+error.Message;}
         restorePoint.Visibility=export.Visibility=import.Visibility=tweaks?Visibility.Visible:Visibility.Collapsed;
@@ -389,23 +399,12 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
         Collapse();cards.Visibility=Visibility.Collapsed;reading.Cancel();await work;
         foreach(var review in reviews.Values)review.Dispose();reviews.Clear();
         foreach(var client in elevatedReviews.Values)await client.DisposeAsync();elevatedReviews.Clear();
+        await AdministratorSession.EndMaintenance();
         analyzedRows.Clear();loadedRows.Clear();filterStates.Clear();visitedCategories.Clear();refreshPending=false;
     }
     internal void Collapse()
     {
         Expanded=false;Visibility=Visibility.Collapsed;UpdateActions();AnalysisChanged?.Invoke();
-    }
-    internal async Task EndAdministratorReviews()
-    {
-        await work;
-        foreach(var pair in elevatedReviews.ToArray())
-        {await pair.Value.DisposeAsync();elevatedReviews.Remove(pair.Key);analyzedRows.Remove(pair.Key);}
-        if(Visibility==Visibility.Visible)Queue(RefreshVisible,true);
-    }
-    internal void AdministratorReady()
-    {
-        if(disposed||!Expanded||Category!="Cleanup")return;
-        if(busy)refreshPending=true;else Queue(RefreshVisible,true);
     }
     async Task Overview()
     {
@@ -453,6 +452,7 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
         {
             "Cleanup" when row.Id=="scoop-versions"=>"Clean removes each obsolete version folder and all its contents. Current versions, packages in use and external persistent data are preserved.",
             "Cleanup" when row.Id.StartsWith("manager-",StringComparison.Ordinal)=>"Clean asks this package manager to remove only the reviewed cache category. Cached downloads may be fetched again. Installed packages and manager configuration stay in place.",
+            "Cleanup" when row.Id is "windows-temp" or "error-reports"=>"Use administrator access to review protected files through Maintenance's own backend. Review does not remove anything; Clean reviewed then removes only unchanged files in that review.",
             "Cleanup"=>"Clean reviewed removes only the reviewed, unchanged files. New, changed and busy files are skipped.",
             "Startup"=>"Disable prevents this entry from running at startup. Restore returns its exact saved original state. Double-click to Disable or Restore.",
             "Services"=>"Stop and disable stops this service and disables automatic startup. Restore returns its saved startup configuration without starting the service.",

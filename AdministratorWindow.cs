@@ -22,12 +22,12 @@ public partial class MainWindow
     void UpdateAdministrator()
     {
         bool admin=AdministratorSession.Browsing,ready=AdministratorSession.Available;
-        AdministratorCommand.Tag=admin?"on":null;
-        string caption=admin?"Administrator access — switch to standard":ready?"Standard access — administrator session ready":"Standard access — switch to administrator";
+        AdministratorCommand.Tag=admin&&!maintenanceVisible?"on":null;
+        string caption=maintenanceVisible?"Explorer administrator access is available in file mode":admin?"Administrator access — switch to standard":ready?"Standard access — administrator session ready":"Standard access — switch to administrator";
         AdministratorCommand.ToolTip=caption;AutomationProperties.SetName(AdministratorCommand,caption);
-        AutomationProperties.SetItemStatus(AdministratorCommand,admin?"Administrator":ready?"Standard; administrator session ready":"Standard");
-        AdministratorCommand.IsEnabled=!changingAccess;
-        AdministratorCommand.Opacity=changingAccess?0.4:maintenanceVisible&&!admin?0.55:1;
+        AutomationProperties.SetItemStatus(AdministratorCommand,maintenanceVisible?"Explorer only":admin?"Administrator":ready?"Standard; administrator session ready":"Standard");
+        AdministratorCommand.IsEnabled=!changingAccess&&!maintenanceVisible;
+        AdministratorCommand.Opacity=changingAccess||maintenanceVisible?0.4:1;
         Left.UpdateFolderAccessAction(!changingAccess);Right.UpdateFolderAccessAction(!changingAccess);
     }
     void AdministratorChanged()
@@ -39,9 +39,8 @@ public partial class MainWindow
             {
             UpdateAdministrator();
             if(changingAccess)return;
-            if(!AdministratorSession.Available)
-            {await performance.EndAdministratorIo();if(maintenance!=null)await maintenance.EndAdministratorReviews();}
-            else {performance.AdministratorReady();maintenance?.AdministratorReady();}
+            if(!AdministratorSession.Available)await performance.EndAdministratorIo();
+            else performance.AdministratorReady();
             if(!changingAccess&&lastAdministratorMode!=AdministratorSession.Browsing)await RefreshAdministratorPanes();
             }
             catch(Exception error)when(error is System.IO.IOException or OperationCanceledException or InvalidOperationException or System.ComponentModel.Win32Exception){Status.Text=error.Message;}
@@ -53,9 +52,9 @@ public partial class MainWindow
         await Left.RefreshAccessMode();await Right.RefreshAccessMode();
     }
     async void Administrator_Click(object sender,RoutedEventArgs e)
-    {if(changingAccess)return;accessWork=ToggleAdministrator();await accessWork;}
+    {if(changingAccess||maintenanceVisible)return;accessWork=ToggleAdministrator();await accessWork;}
     async void RequestAdministrator()
-    {if(changingAccess||AdministratorSession.Browsing)return;accessWork=ToggleAdministrator();await accessWork;}
+    {if(changingAccess||maintenanceVisible||AdministratorSession.Browsing)return;accessWork=ToggleAdministrator();await accessWork;}
     async Task ToggleAdministrator()
     {
         changingAccess=true;UpdateAdministrator();
@@ -66,12 +65,12 @@ public partial class MainWindow
         }
         catch(Exception error)when(error is System.IO.IOException or System.ComponentModel.Win32Exception or OperationCanceledException or InvalidOperationException)
         {Status.Text=error.Message;}
-        finally{changingAccess=false;UpdateAdministrator();if(AdministratorSession.Available){performance.AdministratorReady();maintenance?.AdministratorReady();}}
+        finally{changingAccess=false;UpdateAdministrator();if(AdministratorSession.Available)performance.AdministratorReady();}
     }
     async Task EndAdministrator()
     {
         if(changingAccess)return;changingAccess=true;UpdateAdministrator();
-        try{await AdministratorSession.End();await performance.EndAdministratorIo();if(maintenance!=null)await maintenance.EndAdministratorReviews();await RefreshAdministratorPanes();Status.Text="Administrator session ended";}
+        try{await AdministratorSession.End();await performance.EndAdministratorIo();await RefreshAdministratorPanes();Status.Text="Administrator session ended";}
         catch(Exception error)when(error is System.IO.IOException or OperationCanceledException or InvalidOperationException or System.ComponentModel.Win32Exception){Status.Text=error.Message;}
         finally{changingAccess=false;UpdateAdministrator();}
     }

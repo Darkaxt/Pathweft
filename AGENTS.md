@@ -11,7 +11,8 @@ for automatic Maintenance freshness, concise Cleanup Details and relevant
 Recommendations. Remove manual
 Refresh and generic Analyze controls, preserve instant cached tab display and
 exact review safety; keep Recommendation only in Windows tweaks. Subordinate
-inactive Performance and standard-access icons without disabling their actions. Verify owned
+inactive Performance while disabling the Explorer-only administrator shield;
+Maintenance uses its own elevated session for protected reviews and actions. Verify owned
 UI/package behavior, then publish and
 installed-verify one normal v1.1.48 release. No tracked deferral.
 

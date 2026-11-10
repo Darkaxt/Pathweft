@@ -7,7 +7,9 @@ select a row for exact cache paths or partial-access diagnostics. Recommendation
 is shown for the fully reviewed Windows tweaks catalog; Startup, Services and
 Windows apps show their actual state and selected details without a mostly empty
 advice column. Cleaning or changing Windows state still requires the explicit
-action button.
+action button. The administrator shield is for Explorer browsing and is disabled
+in Maintenance; protected Cleanup review and elevated actions use Maintenance's
+own administrator session.
 
 The brush beside Performance opens five Maintenance summary cards while the
 file browser remains usable. The cards select

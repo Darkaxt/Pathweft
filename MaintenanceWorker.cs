@@ -14,6 +14,8 @@ internal sealed record MaintenanceReply(bool Ok,string Message,MaintenanceRow Ro
 // existing owner/pipe contract. No listener/service, arbitrary shell or driver.
 internal sealed class MaintenanceClient : IAsyncDisposable
 {
+    readonly bool maintenanceScope;
+    internal MaintenanceClient(bool maintenanceScope=false)=>this.maintenanceScope=maintenanceScope;
     NamedPipeServerStream pipe;Process process;StreamReader reader;StreamWriter writer;
     AdministratorSession.Operation session;CancellationTokenRegistration sessionStop;
     Task disposal;
@@ -29,7 +31,7 @@ internal sealed class MaintenanceClient : IAsyncDisposable
         {
             if(elevated)
             {
-                session=await AdministratorSession.Open(name,"maintenance",cancel,enable:request.Action is not ("list" or "space" or "disk-health")).ConfigureAwait(false);
+                session=await AdministratorSession.Open(name,"maintenance",cancel,enable:request.Action is not ("list" or "space" or "disk-health"),maintenanceScope:maintenanceScope).ConfigureAwait(false);
                 sessionStop=session.Stopped.Register(()=>{stopped.Cancel();pipe.Dispose();});
             }
             else

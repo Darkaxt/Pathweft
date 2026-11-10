@@ -32,10 +32,10 @@ sealed partial class PackageProbe
         Check(actions.Children.OfType<Button>().All(button=>!Equals(button.Content,"Refresh")&&!Equals(button.Content,"Analyze")),
             "Delivered Maintenance has no manual Refresh or generic Analyze button");
         var performanceButton=(Button)owner.FindName("PerformanceCommand");
-        Check(performanceButton.IsEnabled&&shield.IsEnabled&&performanceButton.Opacity<1&&shield.Opacity<1&&
-            AutomationProperties.GetItemStatus(performanceButton)=="Off"&&AutomationProperties.GetItemStatus(shield).StartsWith("Standard"),
-            "Delivered Maintenance subordinates inactive toolbar icons while preserving Performance and administrator actions");
-        Check(shield.IsEnabled&&shield.ContextMenu?.Items.OfType<MenuItem>().Any(x=>(string)x.Header=="End administrator session")==true,"Delivered access toggle remains available in Maintenance with an explicit session-end action");
+        Check(performanceButton.IsEnabled&&!shield.IsEnabled&&performanceButton.Opacity<1&&shield.Opacity==0.4&&
+            AutomationProperties.GetItemStatus(performanceButton)=="Off"&&AutomationProperties.GetItemStatus(shield)=="Explorer only",
+            "Delivered Maintenance keeps Performance switching available but disables the Explorer-only administrator shield");
+        Check(shield.ContextMenu?.Items.OfType<MenuItem>().Any(x=>(string)x.Header=="End administrator session")==true,"Delivered Explorer administrator control retains its own session-end action");
         string[] reviewedCleanup=["error-reports","scoop-cache","scoop-versions","thumbnail-cache","user-temp","windows-temp"];
         var cleanupRows=rows.Items.Cast<object>().ToArray();
         string[] actionableManagers=["manager-chocolatey","manager-npm","manager-pip","manager-dotnet-tool"];
@@ -51,6 +51,12 @@ sealed partial class PackageProbe
             cleanupRows.Where(row=>new[]{"manager-npm","manager-pip","manager-dotnet-tool"}.Contains((string)Get(row,"Id")))
                 .All(row=>((string)Get(row,"Details")).Contains(":\\",StringComparison.Ordinal)),
             "Delivered Cleanup table uses concise summaries while exact cache paths remain in selected details");
+        rows.SelectedItem=rows.Items.Cast<object>().Single(row=>(string)Get(row,"Id")=="windows-temp");
+        var protectedAction=(Button)type.GetField("protectedReview",Flags).GetValue(panel);
+        var cleanAction=(Button)type.GetField("change",Flags).GetValue(panel);
+        Check(protectedAction.Visibility==Visibility.Visible&&protectedAction.IsEnabled&&!cleanAction.IsEnabled&&!shield.IsEnabled,
+            "Delivered protected Cleanup requires its own review before Clean and does not depend on the Explorer shield");
+        rows.SelectedItem=null;
         string[] categories=["Cleanup","Startup","Services","Windows tweaks","Windows apps"];
         for(int i=0;i<categories.Length;i++)
         {

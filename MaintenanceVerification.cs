@@ -54,6 +54,11 @@ public partial class MainWindow
             chocolatey.State!="Unavailable"&&chocolatey.Details.Contains("download",StringComparison.OrdinalIgnoreCase),
             "Installed native manager commands produce useful read-only counts and sizes where measurable");
         check(maintenance.Rows.SelectedItem==null,"Automatic analysis does not select a cleanup action on the user's behalf");
+        maintenance.Rows.SelectedItem=maintenance.Rows.Items.Cast<MaintenanceRow>().Single(r=>r.Id=="windows-temp");
+        check(!maintenance.CleanEnabledForVerification&&maintenance.ActionLabelsForVerification.Contains("Use administrator access")&&
+            !AdministratorCommand.IsEnabled&&!AdministratorSession.MaintenanceAvailable,
+            "Protected Cleanup requires its own explicit administrator review; Explorer's shield stays disabled and no elevation starts on entry");
+        maintenance.Rows.SelectedItem=null;
         var scoopRow=maintenance.Rows.Items.Cast<MaintenanceRow>().Single(r=>r.Id=="scoop-versions");maintenance.Rows.SelectedItem=scoopRow;
         check(scoopRow.State=="2 obsolete versions"&&maintenance.ExplanationForVerification.Contains("owned-ui-package"),"Automatic Scoop inventory and full candidate path reach the assessment independently of index coverage");
         int startupReads=MaintenanceStartup.ReadCountForVerification;
@@ -127,11 +132,12 @@ public partial class MainWindow
         check(!maintenance.IsVisible&&PaneArea.IsVisible&&maintenance.State=="All categories reviewed. Nothing has been removed.","Maintenance reopens cards-first after the original analysis and review disposal finish");
         check(maintenance.Cards.IsVisible&&!StatsRow.IsVisible&&!performance.IsVisible&&((System.Windows.Controls.Primitives.UniformGrid)maintenance.Cards).Children.Count==5,"Brush replaces the bottom statistics with exactly five maintenance summary tabs");
         check(!PerformanceMode&&PerformanceCommand.Tag==null&&System.Windows.Automation.AutomationProperties.GetItemStatus(PerformanceCommand)=="Off"&&
-            PerformanceCommand.IsEnabled&&AdministratorCommand.IsEnabled&&PerformanceCommand.Opacity<1&&AdministratorCommand.Opacity<1,
-            "Maintenance owns the visual emphasis while Performance switching and administrator access remain available");
+            PerformanceCommand.IsEnabled&&!AdministratorCommand.IsEnabled&&PerformanceCommand.Opacity<1&&AdministratorCommand.Opacity==0.4&&
+            System.Windows.Automation.AutomationProperties.GetItemStatus(AdministratorCommand)=="Explorer only"&&!AdministratorSession.MaintenanceAvailable,
+            "Maintenance subordinates Performance and disables the Explorer-only administrator shield without starting its own elevated backend");
         PerformanceCommand.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await paneModeWork;UpdateLayout();
         check(!maintenanceVisible&&!maintenance.IsVisible&&PerformanceMode&&MaintenanceCommand.Tag==null&&Equals(PerformanceCommand.Tag,"on")&&
-            PerformanceCommand.Opacity==1&&AdministratorCommand.Opacity==1,"Performance toolbar atomically replaces Maintenance and restores normal toolbar emphasis");
+            PerformanceCommand.Opacity==1&&AdministratorCommand.IsEnabled&&AdministratorCommand.Opacity==1,"Performance toolbar atomically replaces Maintenance and restores Explorer access controls");
         PerformanceCommand.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await paneModeWork;UpdateLayout();
         check(!PerformanceMode&&PerformanceCommand.Tag==null&&StatsRow.IsVisible&&PaneArea.IsVisible,"Performance toolbar switches off to the standard file view");
         PerformanceCommand.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await paneModeWork;performance.Select(PerformancePanel.Cpu);UpdateLayout();
@@ -224,6 +230,7 @@ public partial class MainWindow
         if(!MaintenanceFixtureLink(linkedAlias,linked,IntPtr.Zero))throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error());
         await maintenance.CategoryForVerification("Cleanup");maintenance.Rows.SelectedItem=maintenance.Rows.Items.Cast<MaintenanceRow>().Single(x=>x.Id=="user-temp");
         long? reviewed=maintenance.Rows.Items.Cast<MaintenanceRow>().Single(x=>x.Id=="user-temp").Bytes;
+        UpdateLayout();
         var sizeHeader=(GridViewColumnHeader)((GridView)maintenance.Rows.View).Columns.Single(x=>((GridViewColumnHeader)x.Header).Tag as string=="Bytes").Header;
         sizeHeader.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         await maintenance.CategoryForVerification("Cleanup");

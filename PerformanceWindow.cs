@@ -82,7 +82,7 @@ public partial class MainWindow
         UpdateSpaceCommandState();
         MaintenanceCommand.Tag=maintenanceVisible?"on":null;
         PerformanceCommand.Opacity=maintenanceVisible?0.55:1;
-        AdministratorCommand.Opacity=changingAccess?0.4:maintenanceVisible&&!AdministratorSession.Browsing?0.55:1;
+        UpdateAdministrator();
         AutomationProperties.SetItemStatus(MaintenanceCommand,maintenanceVisible?"On":"Off");
         MaintenanceCommand.ToolTip=maintenanceVisible?"Show folder statistics":"Show maintenance";
     }
