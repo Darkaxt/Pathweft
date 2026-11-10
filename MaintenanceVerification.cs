@@ -49,7 +49,8 @@ public partial class MainWindow
         var chocolatey=managerRows.Single(r=>r.Id=="manager-chocolatey");
         check(managerRows.Where(r=>r.Id is "manager-npm" or "manager-pip" or "manager-dotnet-tool")
                 .All(r=>r.State!="Unavailable"&&r.Bytes.HasValue&&r.Summary.StartsWith("Cached",StringComparison.Ordinal))&&
-            managerRows.Single(r=>r.Id=="manager-dotnet-tool") is{Bytes:>0,CanChange:true}&&
+            managerRows.Single(r=>r.Id=="manager-dotnet-tool") is{Bytes:>=0} dotnetCache&&
+            dotnetCache.CanChange==!dotnetCache.State.StartsWith("0 ",StringComparison.Ordinal)&&
             chocolatey.State!="Unavailable"&&chocolatey.Details.Contains("download",StringComparison.OrdinalIgnoreCase),
             "Installed native manager commands produce useful read-only counts and sizes where measurable");
         check(maintenance.Rows.SelectedItem==null,"Automatic analysis does not select a cleanup action on the user's behalf");
