@@ -1,6 +1,13 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.51 | 2026-11-10 | Protected migration correction
+
+- Complete migration from the previous per-user installation on Windows systems that do not translate App Package ACL names into SIDs.
+- Preserve the existing folder and Win+E routes and profile when moving to Program Files.
+- Open and highlight browser downloads when Windows supplies a full shell item ID or a distinct known-folder ID.
+- Finish protected updates when the desktop app reports its integration result to the installer.
+
 ## 1.1.50 | 2026-11-10 | Protected folder integration
 
 - Install Pathweft under Program Files with protected native folder routing for packaged apps.

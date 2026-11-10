@@ -6,15 +6,32 @@ their published assets are verified. Retain concise verification results and
 reusable fixtures, not repeated expanded cleanup manifests, retired test profiles
 or superseded captures. Clean exact generated targets through transactional-cleanup.
 
-Current 2026-11-10/spec1.13: S44 is COMPLETE. S45 is the sole ACTIVE stage
+Current 2026-11-10/spec1.13: S44 is COMPLETE. S45 is ACTIVE
 for protected Program Files installation and packaged folder callers. The
 Codex package cannot see Pathweft's per-user COM class; its actual folder
 action failed before Explorer or Pathweft launched. A diagnostic machine class
 made that action open Playground in Pathweft, but pointed to a user-writable
 DLL and was removed. Preserve the opted-in HKCU routes, prior-owner recovery,
-profile and installed 1.1.49 until protected migration and live acceptance pass.
+profile and installed state until protected migration and live acceptance pass.
 SHELL-04 and DELIVERY-04 own source, real caller/update/uninstall checks and
-one final normal release; no tracked deferral. Historical current entry follows.
+one final normal release; no tracked deferral. Protected 1.1.50 is the
+previous published recovery release; its Codex folder activation worked.
+Helium previously sent Show in folder without opening Pathweft. The user
+restored the desktop and a managed native trace captured the
+browser click: Helium queries the PDF without launching Pathweft. Chromium's
+exact parser and absolute item returned E_ABORT; FolderView joined that full
+item ID to its folder. The first 1.1.51 candidate exposed a second mismatch:
+Chromium's desktop parser gives Downloads a distinct known-folder PIDL. The
+native registration now covers both identities. That candidate's elevated
+update also hung because the medium-integrity desktop child could not report
+to a high-integrity named pipe; the desktop child now owns the result pipe.
+A second candidate exposed .NET's elevation-sensitive CurrentUserOnly owner
+check; the correction compares the pipe owner to the signed-in user SID.
+The protected update returned zero and restarted Pathweft, and the installed
+Chromium-form shell probe returned S_OK. The user confirmed the real Helium
+Show in folder action opened Downloads with the PDF selected. Commit, final
+1.1.51 publication, independent retrieval and installed release readback remain
+S45 acceptance. Historical current entry follows.
 
 Previous2026-11-10/spec1.12: S41-S43 are COMPLETE. S44 covers
 automatic Maintenance freshness, concise Cleanup Details and relevant

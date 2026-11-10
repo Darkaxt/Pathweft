@@ -135,6 +135,14 @@ end;
 
 #include "UpdateProgress.iss"
 
+var
+  IntegrationExitCode: Integer;
+
+function GetCustomSetupExitCode(): Integer;
+begin
+  Result := IntegrationExitCode;
+end;
+
 procedure InitializeWizard;
 begin
   InitializeDeployment;
@@ -231,20 +239,35 @@ begin
   end;
   if (CurStep = ssPostInstall) and (not MigrationRequested()) and WizardIsTaskSelected('defaultfm') then begin
     if not Exec(ExpandConstant('{app}\{#AppExe}'), '--desktop-launch --set-default', '', SW_HIDE, ewWaitUntilTerminated, Code) or (Code <> 0) then
-      RaiseException('Pathweft was installed, but folder integration was not enabled. Use Settings > Windows integration to inspect or restore it.');
+    begin
+      IntegrationExitCode := 9;
+      DeploymentFailure := 'Pathweft was installed, but folder integration was not enabled. Use Settings > Windows integration to inspect or restore it.';
+      RaiseException(DeploymentFailure);
+    end;
   end;
   if (CurStep = ssPostInstall) and (not MigrationRequested()) then begin
     if not Exec(ExpandConstant('{app}\{#AppExe}'), '--desktop-launch --resume-agent', '', SW_HIDE, ewWaitUntilTerminated, Code) or (Code <> 0) then
-      RaiseException('Pathweft was installed, but its Win+E helper could not restart. Open Settings > Windows integration to inspect its status.');
+    begin
+      IntegrationExitCode := 9;
+      DeploymentFailure := 'Pathweft was installed, but its Win+E helper could not restart. Open Settings > Windows integration to inspect its status.';
+      RaiseException(DeploymentFailure);
+    end;
   end;
   if (CurStep = ssPostInstall) and (not MigrationRequested()) and RestartRequested() then begin
     DeploymentPhase('Opening Pathweft', 'Launching the updated version in your desktop session.');
     DeploymentFailure := 'The update was installed, but Pathweft could not reopen. Open it from Start.';
     if not Exec(ExpandConstant('{app}\{#AppExe}'), '--desktop-launch', '', SW_HIDE, ewWaitUntilTerminated, Code) or (Code <> 0) then
+    begin
+      IntegrationExitCode := 9;
       RaiseException(DeploymentFailure);
+    end;
   end;
   if CurStep = ssInstall then DeploymentFailure := 'The update could not replace its application files. Close any app using them, then try the update again.';
   if CurStep = ssDone then begin
+    if IntegrationExitCode <> 0 then begin
+      DeploymentPhase('Update incomplete', DeploymentFailure);
+      Exit;
+    end;
     DeploymentFailure := '';
     if MigrationRequested() then
       DeploymentPhase('Protected files installed', 'Account migration is ready to retire the old installation and restore its routes.')

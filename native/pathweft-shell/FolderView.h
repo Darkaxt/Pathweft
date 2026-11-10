@@ -5,6 +5,8 @@
 #include <exdisp.h>
 #include <servprov.h>
 #include <wrl/client.h>
+#include <string>
+#include <vector>
 
 using SelectionCallback=HRESULT(__stdcall*)(PCWSTR,UINT);
 class FolderView final:public IWebBrowserApp,public IServiceProvider,public IShellView {
@@ -36,6 +38,28 @@ public:
     HRESULT STDMETHODCALLTYPE SelectItem(PCUITEMID_CHILD item,SVSIF flags) override{
         if(!select)return E_ABORT;
         if(!item)return select(nullptr,flags);
+        // Chromium supplies an absolute item ID here, despite the child-ID
+        // signature. Resolve it only when it belongs to this registered folder.
+        PWSTR absolutePath=nullptr;
+        HRESULT absoluteResult=SHGetNameFromIDList(item,SIGDN_FILESYSPATH,&absolutePath);
+        if(SUCCEEDED(absoluteResult)&&absolutePath){
+            PWSTR folderPath=nullptr;
+            HRESULT folderResult=SHGetNameFromIDList(folder,SIGDN_FILESYSPATH,&folderPath);
+            if(SUCCEEDED(folderResult)&&folderPath){
+                std::wstring parent=absolutePath;
+                size_t separator=parent.find_last_of(L"\\/");
+                if(separator!=std::wstring::npos){
+                    parent.resize(separator);
+                    if(_wcsicmp(parent.c_str(),folderPath)==0){
+                        HRESULT selected=select(absolutePath,flags);
+                        CoTaskMemFree(folderPath);CoTaskMemFree(absolutePath);
+                        return selected;
+                    }
+                }
+            }
+            CoTaskMemFree(folderPath);
+        }
+        CoTaskMemFree(absolutePath);
         auto combined=ILCombine(folder,item);if(!combined)return E_OUTOFMEMORY;
         PWSTR path=nullptr;HRESULT hr=SHGetNameFromIDList(combined,SIGDN_FILESYSPATH,&path);CoTaskMemFree(combined);
         if(SUCCEEDED(hr))hr=select(path,flags);CoTaskMemFree(path);return hr;
@@ -96,28 +120,55 @@ public:
 };
 
 struct FolderRegistration {
-    Microsoft::WRL::ComPtr<IShellWindows> windows;FolderView* view=nullptr;long cookie=0;
-    ~FolderRegistration(){if(view)view->select=nullptr;if(cookie)windows->Revoke(cookie);if(view)view->Release();}
+    struct Entry {FolderView* view;long cookie;};
+    Microsoft::WRL::ComPtr<IShellWindows> windows;std::vector<Entry> entries;
+    ~FolderRegistration(){
+        for(auto& entry:entries)entry.view->select=nullptr;
+        for(auto& entry:entries){if(entry.cookie)windows->Revoke(entry.cookie);entry.view->Release();}
+    }
 };
 
 extern "C" HRESULT __stdcall PathweftRegisterFolder(HWND window,PCWSTR path,SelectionCallback callback,FolderRegistration** out){
     if(!out)return E_POINTER;*out=nullptr;if(!window||!path||!callback)return E_INVALIDARG;
     auto registration=std::make_unique<FolderRegistration>();
     HRESULT hr=CoCreateInstance(CLSID_ShellWindows,nullptr,CLSCTX_LOCAL_SERVER,IID_PPV_ARGS(&registration->windows));if(FAILED(hr))return hr;
-    PIDLIST_ABSOLUTE pidl=nullptr;hr=SHParseDisplayName(path,nullptr,&pidl,0,nullptr);if(FAILED(hr))return hr;
-    registration->view=new FolderView(window,pidl,callback);
-    VARIANT location{},empty{};location.vt=VT_ARRAY|VT_UI1;location.parray=SafeArrayCreateVector(VT_UI1,0,ILGetSize(pidl));
-    if(!location.parray)return E_OUTOFMEMORY;
-    void* bytes=nullptr;hr=SafeArrayAccessData(location.parray,&bytes);
-    if(SUCCEEDED(hr)){memcpy(bytes,pidl,ILGetSize(pidl));SafeArrayUnaccessData(location.parray);
-        // Both calls are required for SHOpenFolderAndSelectItems, including a
-        // newly launched manager. Windows links them by the owning STA thread.
-        hr=registration->windows->RegisterPending(GetCurrentThreadId(),&location,&empty,SWC_BROWSER,&registration->cookie);
+    auto add=[&](PIDLIST_ABSOLUTE pidl)->HRESULT{
+        auto view=new(std::nothrow) FolderView(window,pidl,callback);
+        if(!view){CoTaskMemFree(pidl);return E_OUTOFMEMORY;}
+        registration->entries.push_back({view,0});
+        auto& entry=registration->entries.back();
+        VARIANT location{},empty{};location.vt=VT_ARRAY|VT_UI1;
+        location.parray=SafeArrayCreateVector(VT_UI1,0,ILGetSize(pidl));
+        if(!location.parray)return E_OUTOFMEMORY;
+        void* bytes=nullptr;HRESULT result=SafeArrayAccessData(location.parray,&bytes);
+        if(SUCCEEDED(result)){
+            memcpy(bytes,pidl,ILGetSize(pidl));SafeArrayUnaccessData(location.parray);
+            // Both calls must run on the owning STA thread.
+            result=registration->windows->RegisterPending(GetCurrentThreadId(),&location,&empty,SWC_BROWSER,&entry.cookie);
+            if(SUCCEEDED(result)){
+                long cookie=0;result=registration->windows->Register(view,HandleToLong(window),SWC_BROWSER,&cookie);
+                if(SUCCEEDED(result)&&cookie!=entry.cookie){registration->windows->Revoke(cookie);result=E_UNEXPECTED;}
+            }
+        }
+        VariantClear(&location);return result;
+    };
+    PIDLIST_ABSOLUTE canonical=nullptr;hr=SHParseDisplayName(path,nullptr,&canonical,0,nullptr);
+    if(FAILED(hr))return hr;
+    hr=add(canonical);if(FAILED(hr))return hr;
+    // Chromium parses the folder through the desktop with a trailing separator.
+    // A known folder can have a distinct PIDL for the same filesystem path.
+    Microsoft::WRL::ComPtr<IShellFolder> desktop;hr=SHGetDesktopFolder(&desktop);
+    if(SUCCEEDED(hr)){
+        std::wstring ending=path;
+        if(!ending.empty()&&ending.back()!=L'\\')ending+=L'\\';
+        PIDLIST_ABSOLUTE chromium=nullptr;
+        hr=desktop->ParseDisplayName(nullptr,nullptr,ending.data(),nullptr,&chromium,nullptr);
         if(SUCCEEDED(hr)){
-            long cookie=0;hr=registration->windows->Register(registration->view,HandleToLong(window),SWC_BROWSER,&cookie);
-            if(SUCCEEDED(hr)&&cookie!=registration->cookie){registration->windows->Revoke(cookie);hr=E_UNEXPECTED;}
+            if(!ILIsEqual(canonical,chromium))hr=add(chromium);
+            else CoTaskMemFree(chromium);
+            if(FAILED(hr))return hr;
         }
     }
-    VariantClear(&location);if(FAILED(hr))return hr;*out=registration.release();return S_OK;
+    *out=registration.release();return S_OK;
 }
 extern "C" void __stdcall PathweftRevokeFolder(FolderRegistration* registration){delete registration;}

@@ -86,9 +86,10 @@ static class Program
         if(args.FirstOrDefault(a=>a.StartsWith("--desktop-result=")) is { } desktopResult)
         {
             if(!args.Contains("--resume-agent")&&!args.Contains("--set-default")){Environment.ExitCode=1;return;}
-            Environment.ExitCode=1;
-            try{var application=new App();application.InitializeComponent();Environment.ExitCode=application.Run();}
-            finally{DesktopLaunch.Report(desktopResult["--desktop-result=".Length..],Environment.ExitCode);}
+            Environment.ExitCode=DesktopLaunch.RunAndReport(desktopResult["--desktop-result=".Length..],()=>
+            {
+                var application=new App();application.InitializeComponent();return application.Run();
+            });
             return;
         }
 #if DEBUG

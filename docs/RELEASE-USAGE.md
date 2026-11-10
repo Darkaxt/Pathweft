@@ -1,4 +1,11 @@
-# Pathweft 1.1.49
+# Pathweft 1.1.51
+
+Pathweft installs under Program Files through a Windows administrator-consent
+prompt. The desktop app keeps its profile and opt-in folder routes. Packaged
+applications can open registered filesystem folders through the protected
+native shell class. Helium's Show in folder opens the Downloads folder and
+selects the requested file. The updater reports failure if post-install
+integration or desktop restart does not finish.
 
 Maintenance refreshes its cards and Cleanup review automatically. Selecting a
 category shows cached rows immediately and updates them in the background on

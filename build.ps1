@@ -27,12 +27,13 @@ $run=if($ResumeCandidateRun){[IO.Path]::GetFullPath($ResumeCandidateRun)}else{Jo
 if($ResumeCandidateRun -and (!$Candidate -or $run -notmatch ('^'+[regex]::Escape($scratch)+'\\package-[a-f0-9]{32}$'))){throw 'Resume is limited to an exact owned qualification-candidate run, never a final release.'}
 $publish=if($PrebuiltPublishRoot){[IO.Path]::GetFullPath($PrebuiltPublishRoot)}else{Join-Path $run 'app'}
 if($PrebuiltPublishRoot){
-    if($Candidate -or $ResumeCandidateRun -or !$publish.StartsWith($scratch+'\',[StringComparison]::OrdinalIgnoreCase)){
-        throw 'A prebuilt final publish must belong to the exact delivery scratch root.'
+    if($ResumeCandidateRun -or !$publish.StartsWith($scratch+'\',[StringComparison]::OrdinalIgnoreCase)){
+        throw 'A prebuilt publish must belong to the exact delivery scratch root.'
     }
-    if(!(Test-Path -LiteralPath (Join-Path $publish 'Pathweft.exe')) -or
-        ![Diagnostics.FileVersionInfo]::GetVersionInfo((Join-Path $publish 'Pathweft.exe')).ProductVersion.StartsWith($version+'+'+$commit)){
-        throw 'The prebuilt application does not identify the verified final source commit.'
+    $prebuiltExe=Join-Path $publish 'Pathweft.exe'
+    if(!(Test-Path -LiteralPath $prebuiltExe) -or
+        ![Diagnostics.FileVersionInfo]::GetVersionInfo($prebuiltExe).ProductVersion.StartsWith($version+'+'+$(if($Candidate){''}else{$commit}))){
+        throw 'The prebuilt application does not identify the expected version and source state.'
     }
 }
 $deliveryName=if($ResumeCandidateRun){'delivery-'+[guid]::NewGuid().ToString('N')}else{'delivery'}

@@ -43,7 +43,7 @@ foreach($arch in @('x64','x86')){
 # Check the exact executable and COM DLL, including ownership. A machine COM
 # server must not be replaceable by a non-administrator before old state moves.
 $currentSid=[Security.Principal.WindowsIdentity]::GetCurrent().User.Value
-$weak=@('S-1-1-0','S-1-5-11','S-1-5-32-545',$currentSid)
+$weak=@('S-1-1-0','S-1-5-11','S-1-5-32-545','S-1-15-2-1','S-1-15-2-2',$currentSid)
 $write=0
 foreach($right in @('WriteData','AppendData','WriteExtendedAttributes','WriteAttributes','DeleteSubdirectoriesAndFiles','Delete','ChangePermissions','TakeOwnership')){
     $write=$write -bor [int][Enum]::Parse([Security.AccessControl.FileSystemRights],$right)
@@ -54,7 +54,14 @@ foreach($path in @($new,$newExe)+$routerFiles){
     if($owner -eq $currentSid){throw "Protected installation is owned by the current user: $path"}
     foreach($rule in $acl.Access){
         if($rule.AccessControlType -ne [Security.AccessControl.AccessControlType]::Allow){continue}
-        $sid=$rule.IdentityReference.Translate([Security.Principal.SecurityIdentifier]).Value
+        $sid=try{$rule.IdentityReference.Translate([Security.Principal.SecurityIdentifier]).Value}
+             catch [Security.Principal.IdentityNotMappedException]{
+                switch($rule.IdentityReference.Value){
+                    'APPLICATION PACKAGE AUTHORITY\ALL APPLICATION PACKAGES' {'S-1-15-2-1'}
+                    'APPLICATION PACKAGE AUTHORITY\ALL RESTRICTED APPLICATION PACKAGES' {'S-1-15-2-2'}
+                    default {throw "Protected ACL contains an unrecognized principal: $($rule.IdentityReference.Value)"}
+                }
+             }
         if($sid -in $weak -and (([int]$rule.FileSystemRights -band $write) -ne 0)){throw "A non-admin principal can write the machine COM target: $path ($sid)"}
     }
 }
@@ -63,8 +70,8 @@ $user=[Microsoft.Win32.RegistryKey]::OpenBaseKey([Microsoft.Win32.RegistryHive]:
 try{
     $run=$user.OpenSubKey('Software\Microsoft\Windows\CurrentVersion\Run')
     try{
-        $priorTray=$run?.GetValue('Pathweft')
-        $priorAgent=$run?.GetValue('Pathweft Agent')
+        $priorTray=if($null -ne $run){$run.GetValue('Pathweft')}
+        $priorAgent=if($null -ne $run){$run.GetValue('Pathweft Agent')}
     }finally{if($null -ne $run){$run.Dispose()}}
     if($null -ne $priorTray -and $priorTray -cne "`"$oldExe`" --tray"){throw 'Another startup owner is present.'}
     if($null -ne $priorAgent -and $priorAgent -cne "`"$oldExe`" --agent"){throw 'Another Win+E owner is present.'}
@@ -113,7 +120,7 @@ try{
     }finally{if($null -ne $folder){$folder.Dispose()}}
     if($state.Agent){
         $run=$user.OpenSubKey('Software\Microsoft\Windows\CurrentVersion\Run')
-        try{if($run?.GetValue('Pathweft Agent') -cne "`"$newExe`" --agent"){throw 'The new Win+E owner did not read back.'}}
+        try{if($null -eq $run -or $run.GetValue('Pathweft Agent') -cne "`"$newExe`" --agent"){throw 'The new Win+E owner did not read back.'}}
         finally{if($null -ne $run){$run.Dispose()}}
     }
 }finally{$user.Dispose()}

@@ -8,9 +8,61 @@ DELIVERY-04. Source work covers protected Program Files installation, machine
 COM ownership, migration of the existing opted-in route, and the elevated
 updater/uninstaller lifecycle. Integrated validation then checks protected ACLs,
 package-visible COM, real Codex and browser folder actions, update and rollback.
-Final delivery is one normal release with independent retrieval and installed
-readback. The unsafe diagnostic HKLM registration was removed; HKCU routes and
-the existing 1.1.49 installation remain intact. No tracked deferral is open.
+Final corrected delivery is normal 1.1.51 with independent retrieval and installed
+readback. The unsafe diagnostic HKLM registration was removed; the 1.1.49
+installation has since been retired through the verified migration. No tracked
+deferral is open.
+
+S45 resolved browser blocker: after the protected 1.1.50 migration and a fresh Helium
+restart, the exact completed PDF exists and the enabled Show in folder control
+dispatches its native Show request for download 858, but Pathweft remains hidden
+with no new tab. The same Windows API from an independent process opens and
+selects that PDF when given canonical shell IDs.
+The user restored the desktop and the managed administrator gate completed the
+Process Monitor trace. At the click, Helium successfully queries the PDF, but
+the trace contains no Pathweft launch. Chromium's exact desktop parser and
+absolute item sequence returns E_ABORT against installed 1.1.50. Pathweft's
+FolderView joined that absolute item to its folder again. The native correction
+accepts an absolute item only when it resolves inside the registered folder;
+relative and Chromium forms now pass the private x64/x86 shell test. The installed
+Chromium-form probe now returns S_OK, and the user confirmed the real Helium
+Show in folder action opened Downloads with the PDF selected. The protected
+update returned zero and restarted the desktop app. Commit and publish/verify
+the complete 1.1.51 release; no 1.1.51 release has occurred.
+
+The first 1.1.51 candidate installed its files but hung while restoring the
+desktop Win+E helper: the medium-integrity child completed the helper work and
+then crashed with UnauthorizedAccessException writing to an elevated named
+pipe. The exact waiting pipe received a failure result through the managed
+administrator broker, allowing Setup to exit without terminating either process.
+Setup nevertheless returned zero after a post-install exception. The correction
+puts the result pipe in the desktop child and makes Setup return a nonzero custom
+exit code if integration or restart fails. This candidate does not pass S45.
+The installed native probe also exposed a second browser identity mismatch:
+Chromium's desktop parser gives the Downloads known folder a distinct PIDL from
+the canonical shell parser. A private test against the actual Downloads folder
+shows that registering both identities lets the Chromium call select the PDF.
+  The next protected installer correctly returned exit 9 rather than falsely
+  acknowledging success, but its medium-integrity result child found the pipe
+  disconnected. The elevated broker and medium child have the same user SID;
+  elevation changes the token owner to Administrators. .NET's
+  `PipeOptions.CurrentUserOnly` client compares token and pipe owners, so it
+  rejects this legitimate connection. The correction checks the pipe's owner
+  against the actual signed-in user SID, then reads the child result. Its managed
+  build and protected installer passed; Setup logged integration restoration and
+  desktop restart, and returned exit 0. The installed browser action passed.
+
+S45 migration checkpoint: normal 1.1.50 was published with six downloaded and
+hash-verified assets at 46096fa. Its protected installer and machine class
+passed Program Files ACL and Codex package-context readback. The first migration
+preflight exposed two PowerShell script defects (untranslated built-in App
+Package ACL identities and ambiguous null-conditional parsing) before any old
+installation change. The corrected script then retired the old copy, restored
+the opted-in routes and agent, and verified preserved profile file hashes.
+The correction is source work for normal 1.1.51. Codex's actual Playground
+action passed in protected 1.1.50, and the protected update and live browser
+action now pass with the 1.1.51 candidate. Final publication and installed
+release readback remain S45 acceptance. No tracked deferral is open.
 
 Historical 2026-11-10/S44 checkpoint (superseded by the verified 1.1.49
 installation above): S41-S43 remain COMPLETE. S44 covers MAINT-20..24 and

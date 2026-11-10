@@ -1,6 +1,7 @@
 using System.IO;
 using System.IO.Pipes;
 using System.Runtime.InteropServices;
+using System.Security.Principal;
 
 namespace FileExplorer;
 
@@ -23,7 +24,12 @@ static class DesktopLaunch
         if(!resume&&!setDefault){Start("--front");return 0;}
         // Setup must receive the real resume result, not just COM acceptance.
         string name=Prefix+Guid.NewGuid().ToString("N");
-        using var server=new NamedPipeServerStream(name,PipeDirection.In,1,PipeTransmissionMode.Byte,PipeOptions.CurrentUserOnly);
+        // The desktop child runs at medium integrity. It owns the pipe so the
+        // elevated Setup client can read its result without a high-integrity
+        // pipe rejecting the child's write.
+        // CurrentUserOnly compares the token owner, which becomes Administrators
+        // after UAC even when the desktop child belongs to the same signed-in user.
+        using var client=new NamedPipeClientStream(".",name,PipeDirection.In);
         string arguments=(setDefault?"--set-default":"--resume-agent")+" --desktop-result="+name;
 #if DEBUG
         if(resume&&Environment.GetEnvironmentVariable("PATHWEFT_DESKTOP_TEST_PROFILE") is {Length:>0} profile)
@@ -33,14 +39,26 @@ static class DesktopLaunch
         }
 #endif
         Start(arguments,0);
-        server.WaitForConnection();
-        using var reader=new StreamReader(server);
+        client.Connect();
+        using(var identity=WindowsIdentity.GetCurrent())
+        {
+            var owner=client.GetAccessControl().GetOwner(typeof(SecurityIdentifier));
+            if(!identity.User.Equals(owner))throw new UnauthorizedAccessException("Desktop result channel belongs to another user.");
+        }
+        using var reader=new StreamReader(client);
         return int.TryParse(reader.ReadLine(),out var result)?result:1;
     }
-    internal static void Report(string name,int result)
+    internal static int RunAndReport(string name,Func<int> run)
     {
         if(!name.StartsWith(Prefix,StringComparison.Ordinal)||!Guid.TryParseExact(name[Prefix.Length..],"N",out _))throw new ArgumentException("Invalid Setup result channel.");
-        using var pipe=new NamedPipeClientStream(".",name,PipeDirection.Out,PipeOptions.CurrentUserOnly);
-        pipe.Connect();using var writer=new StreamWriter(pipe){AutoFlush=true};writer.WriteLine(result);
+        using var server=new NamedPipeServerStream(name,PipeDirection.Out,1,PipeTransmissionMode.Byte,PipeOptions.CurrentUserOnly);
+        server.WaitForConnection();
+        int result=1;
+        try{result=run();return result;}
+        finally
+        {
+            try{using var writer=new StreamWriter(server){AutoFlush=true};writer.WriteLine(result);}
+            catch(IOException){/* Setup closed its result channel; it already reports failure. */}
+        }
     }
 }
