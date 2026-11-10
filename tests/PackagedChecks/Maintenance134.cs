@@ -31,6 +31,10 @@ sealed partial class PackageProbe
         var actions=(WrapPanel)type.GetField("actions",Flags).GetValue(panel);
         Check(actions.Children.OfType<Button>().All(button=>!Equals(button.Content,"Refresh")&&!Equals(button.Content,"Analyze")),
             "Delivered Maintenance has no manual Refresh or generic Analyze button");
+        var performanceButton=(Button)owner.FindName("PerformanceCommand");
+        Check(performanceButton.IsEnabled&&shield.IsEnabled&&performanceButton.Opacity<1&&shield.Opacity<1&&
+            AutomationProperties.GetItemStatus(performanceButton)=="Off"&&AutomationProperties.GetItemStatus(shield).StartsWith("Standard"),
+            "Delivered Maintenance subordinates inactive toolbar icons while preserving Performance and administrator actions");
         Check(shield.IsEnabled&&shield.ContextMenu?.Items.OfType<MenuItem>().Any(x=>(string)x.Header=="End administrator session")==true,"Delivered access toggle remains available in Maintenance with an explicit session-end action");
         string[] reviewedCleanup=["error-reports","scoop-cache","scoop-versions","thumbnail-cache","user-temp","windows-temp"];
         var cleanupRows=rows.Items.Cast<object>().ToArray();

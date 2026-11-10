@@ -6,11 +6,12 @@ their published assets are verified. Retain concise verification results and
 reusable fixtures, not repeated expanded cleanup manifests, retired test profiles
 or superseded captures. Clean exact generated targets through transactional-cleanup.
 
-Current2026-11-10/spec1.10: S41-S43 are COMPLETE and S44 is sole ACTIVE stage
+Current2026-11-10/spec1.11: S41-S43 are COMPLETE and S44 is sole ACTIVE stage
 for automatic Maintenance freshness, concise Cleanup Details and relevant
 Recommendations. Remove manual
 Refresh and generic Analyze controls, preserve instant cached tab display and
-exact review safety; keep Recommendation only in Windows tweaks. Verify owned
+exact review safety; keep Recommendation only in Windows tweaks. Subordinate
+inactive Performance and standard-access icons without disabling their actions. Verify owned
 UI/package behavior, then publish and
 installed-verify one normal v1.1.48 release. No tracked deferral.
 

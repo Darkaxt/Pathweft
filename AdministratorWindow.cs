@@ -27,6 +27,7 @@ public partial class MainWindow
         AdministratorCommand.ToolTip=caption;AutomationProperties.SetName(AdministratorCommand,caption);
         AutomationProperties.SetItemStatus(AdministratorCommand,admin?"Administrator":ready?"Standard; administrator session ready":"Standard");
         AdministratorCommand.IsEnabled=!changingAccess;
+        AdministratorCommand.Opacity=changingAccess?0.4:maintenanceVisible&&!admin?0.55:1;
         Left.UpdateFolderAccessAction(!changingAccess);Right.UpdateFolderAccessAction(!changingAccess);
     }
     void AdministratorChanged()

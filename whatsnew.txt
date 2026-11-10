@@ -5,6 +5,7 @@
 - Maintenance no longer has Refresh or generic Analyze buttons. Its cards show cached results immediately and update the selected category automatically; completed cleanup is reviewed again.
 - Cleanup Details stay short in the table. Exact cache paths and partial-access diagnostics remain in the selected assessment.
 - Recommendation appears only for Windows tweaks, whose reviewed catalog covers the displayed settings. Startup, Services and Windows apps retain their actual state and selected details without a mostly empty advice column.
+- In Maintenance, inactive Performance and standard-access icons are quieter while both controls remain usable; active administrator access still shows its status.
 
 ## 1.1.47 | 2026-11-09 | Useful package cleanup previews
 - Cleanup shows only installed package managers with a qualified cache action. Managers without a safe general action no longer occupy rows.

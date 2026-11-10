@@ -81,6 +81,8 @@ public partial class MainWindow
             if(child is Button button&&button!=PerformanceCommand&&button!=TransfersButton&&button!=MaintenanceCommand&&button!=AdministratorCommand&&button!=AnalyzeSpaceCommand)button.IsEnabled=!AnalysisVisible;
         UpdateSpaceCommandState();
         MaintenanceCommand.Tag=maintenanceVisible?"on":null;
+        PerformanceCommand.Opacity=maintenanceVisible?0.55:1;
+        AdministratorCommand.Opacity=changingAccess?0.4:maintenanceVisible&&!AdministratorSession.Browsing?0.55:1;
         AutomationProperties.SetItemStatus(MaintenanceCommand,maintenanceVisible?"On":"Off");
         MaintenanceCommand.ToolTip=maintenanceVisible?"Show folder statistics":"Show maintenance";
     }

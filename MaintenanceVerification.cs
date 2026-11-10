@@ -126,9 +126,12 @@ public partial class MainWindow
         MaintenanceCommand.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await paneModeWork;UpdateLayout();
         check(!maintenance.IsVisible&&PaneArea.IsVisible&&maintenance.State=="All categories reviewed. Nothing has been removed.","Maintenance reopens cards-first after the original analysis and review disposal finish");
         check(maintenance.Cards.IsVisible&&!StatsRow.IsVisible&&!performance.IsVisible&&((System.Windows.Controls.Primitives.UniformGrid)maintenance.Cards).Children.Count==5,"Brush replaces the bottom statistics with exactly five maintenance summary tabs");
-        check(!PerformanceMode&&PerformanceCommand.Tag==null&&System.Windows.Automation.AutomationProperties.GetItemStatus(PerformanceCommand)=="Off","Maintenance exclusively owns the pane and Performance is off");
+        check(!PerformanceMode&&PerformanceCommand.Tag==null&&System.Windows.Automation.AutomationProperties.GetItemStatus(PerformanceCommand)=="Off"&&
+            PerformanceCommand.IsEnabled&&AdministratorCommand.IsEnabled&&PerformanceCommand.Opacity<1&&AdministratorCommand.Opacity<1,
+            "Maintenance owns the visual emphasis while Performance switching and administrator access remain available");
         PerformanceCommand.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await paneModeWork;UpdateLayout();
-        check(!maintenanceVisible&&!maintenance.IsVisible&&PerformanceMode&&MaintenanceCommand.Tag==null&&Equals(PerformanceCommand.Tag,"on"),"Performance toolbar atomically replaces Maintenance and owns its selected state");
+        check(!maintenanceVisible&&!maintenance.IsVisible&&PerformanceMode&&MaintenanceCommand.Tag==null&&Equals(PerformanceCommand.Tag,"on")&&
+            PerformanceCommand.Opacity==1&&AdministratorCommand.Opacity==1,"Performance toolbar atomically replaces Maintenance and restores normal toolbar emphasis");
         PerformanceCommand.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await paneModeWork;UpdateLayout();
         check(!PerformanceMode&&PerformanceCommand.Tag==null&&StatsRow.IsVisible&&PaneArea.IsVisible,"Performance toolbar switches off to the standard file view");
         PerformanceCommand.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await paneModeWork;performance.Select(PerformancePanel.Cpu);UpdateLayout();

@@ -41,7 +41,11 @@ public partial class MainWindow
         var serviceContainer=(ListViewItem)maintenance.Rows.ItemContainerGenerator.ContainerFromItem(service);
         check(service.Summary.IndexOfAny(['\r','\n'])<0&&serviceContainer.ActualHeight<40&&maintenance.ExplanationForVerification.Contains(service.Details)&&
             FindMaintenanceAssessment(maintenance).IsReadOnly,"Services uses compact single-line rows and the same complete selectable detail well as Startup");
-        check(maintenance.Rows.Items.Cast<MaintenanceRow>().Any(r=>r.Type=="AppXSvc"&&r.Recommendation=="Keep enabled")&&maintenance.State.Contains("with guidance"),"Real installed service receives documented guidance and visible coverage");
+        var guided=maintenance.Rows.Items.Cast<MaintenanceRow>().First(r=>r.Type=="AppXSvc"&&r.Recommendation=="Keep enabled");
+        maintenance.Rows.SelectedItem=guided;
+        check(!string.IsNullOrWhiteSpace(guided.Guidance)&&maintenance.ExplanationForVerification.Contains(guided.Guidance)&&
+            !((GridView)maintenance.Rows.View).Columns.Cast<GridViewColumn>().Any(column=>System.Windows.Automation.AutomationProperties.GetName((GridViewColumnHeader)column.Header)=="Recommendation"),
+            "Exact service advice remains in the selected assessment without a sparse Recommendation column");
         await S1Verification.Snapshot(this,root,"services-compact");
         await maintenance.CategoryForVerification("Windows tweaks");int all=maintenance.Rows.Items.Count;
         check(all==40&&maintenance.Rows.Items.Cast<MaintenanceRow>().Count(r=>r.RuleId.StartsWith("donor."))==24,"Actual searchable grouped table contains all newly adopted donor actions");
