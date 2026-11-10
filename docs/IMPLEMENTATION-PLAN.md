@@ -3,17 +3,18 @@
 Authority: [SPECIFICATION.md](SPECIFICATION.md), version 1.13, 2026-11-10,
 including the user-authorized continued comparison requirement TRANSFER-07.
 
-Current 2026-11-10/S45: S44 is COMPLETE. S45 is ACTIVE for SHELL-04 and
-DELIVERY-04. Source work covers protected Program Files installation, machine
-COM ownership, migration of the existing opted-in route, and the elevated
-updater/uninstaller lifecycle. Integrated validation then checks protected ACLs,
-package-visible COM, real Codex and browser folder actions, update and rollback.
-Final corrected delivery is normal 1.1.51 with independent retrieval and installed
-readback. The unsafe diagnostic HKLM registration was removed; the 1.1.49
-installation has since been retired through the verified migration. No tracked
-deferral is open.
+Current 2026-11-10/S45: S44 and S45 are COMPLETE. SHELL-04 and DELIVERY-04
+passed protected Program Files installation and ACL checks, x64/x86 machine COM
+ownership, opted-in route and profile migration, normal and packaged callers,
+the actual Codex and Helium actions, protected update/restart, uninstall and
+restoration, rollback by reinstalling the published package, and independent
+normal v1.1.51 release/installed readback. The 1.1.49 installation was retired
+through its own uninstaller during migration; the published v1.1.50 installer
+remains available as the prior-version recovery package. See
+[2026-11-10-s45-delivery.md](verification/2026-11-10-s45-delivery.md). No blocker
+or tracked deferral remains.
 
-S45 resolved browser blocker: after the protected 1.1.50 migration and a fresh Helium
+Historical S45 investigation: after the protected 1.1.50 migration and a fresh Helium
 restart, the exact completed PDF exists and the enabled Show in folder control
 dispatches its native Show request for download 858, but Pathweft remains hidden
 with no new tab. The same Windows API from an independent process opens and
@@ -27,8 +28,8 @@ accepts an absolute item only when it resolves inside the registered folder;
 relative and Chromium forms now pass the private x64/x86 shell test. The installed
 Chromium-form probe now returns S_OK, and the user confirmed the real Helium
 Show in folder action opened Downloads with the PDF selected. The protected
-update returned zero and restarted the desktop app. Commit and publish/verify
-the complete 1.1.51 release; no 1.1.51 release has occurred.
+update returned zero and restarted the desktop app. Final delivery is recorded
+above.
 
 The first 1.1.51 candidate installed its files but hung while restoring the
 desktop Win+E helper: the medium-integrity child completed the helper work and
@@ -59,10 +60,9 @@ preflight exposed two PowerShell script defects (untranslated built-in App
 Package ACL identities and ambiguous null-conditional parsing) before any old
 installation change. The corrected script then retired the old copy, restored
 the opted-in routes and agent, and verified preserved profile file hashes.
-The correction is source work for normal 1.1.51. Codex's actual Playground
-action passed in protected 1.1.50, and the protected update and live browser
-action now pass with the 1.1.51 candidate. Final publication and installed
-release readback remain S45 acceptance. No tracked deferral is open.
+The correction shipped in normal 1.1.51. Codex's actual Playground action passed
+in protected 1.1.50; the final published 1.1.51 installation passed both live
+Codex and Helium actions. Final release evidence is recorded above.
 
 Historical 2026-11-10/S44 checkpoint (superseded by the verified 1.1.49
 installation above): S41-S43 remain COMPLETE. S44 covers MAINT-20..24 and
@@ -1590,7 +1590,7 @@ plan neither authorizes itself nor adds approval checkpoints.
 | S42 - Fast Maintenance tab navigation | COMPLETE | MAINT-18 and combined final DELIVERY | S41 required UI checks passed | Actual Cleanup-to-Startup transition, Refresh and action results passed; normal v1.1.46 delivery and installed readback completed. No blocker or tracked deferral. |
 | S43 - UniGetUI manager-aware Cleanup | COMPLETE | MAINT-19 and corrective final DELIVERY | S41/S42 COMPLETE | Four actionable native caches and exclusion of unsupported managers passed actual UI, package and installed checks. Normal v1.1.47 was published, independently downloaded and installed with exact member readback. No blocker or tracked deferral. |
 | S44 - Maintenance clarity and automatic freshness | COMPLETE | MAINT-20..24 and final DELIVERY | S43 COMPLETE | Npm correction, owned UI, delivered package and published 1.1.49 passed. Installed D:/Tools/Pathweft executable reports 1.1.49+2b2adf6f and its SHA-256 matches the release manifest; the running front and agent use that installation. No blocker or tracked deferral. |
-| S45 - Protected shell installation and packaged callers | ACTIVE | SHELL-04, DELIVERY-04 | S44 COMPLETE | Source, integrated runtime, protected migration, Codex/browser action, update/uninstall and one final release remain. No tracked deferral. |
+| S45 - Protected shell installation and packaged callers | COMPLETE | SHELL-04, DELIVERY-04 | S44 COMPLETE | Protected migration, actual Codex/browser action, update/restart, uninstall/restoration and published-package reinstall passed. Normal v1.1.51/5a6aadd was independently retrieved, installed and read back. Prior v1.1.50 installer remains published for recovery. No blocker or tracked deferral. |
 | S25 - Summary-card motion | NOT STARTED | MOTION-01..03; affected MONITOR/CORE-03/LIFE/DELIVERY | S18 COMPLETE; after S28 and before S12 | Upward card entry with smooth file-pane squeeze; rotation between Statistics/Performance; reversal/interruption and focus/scroll preservation; reduced-motion support and actual frame/layout/resource qualification. One final independently/installed verified release after implementation authorization. No criteria verified yet. |
 | S12 - Tresorit capability investigation | NOT STARTED | TRES-01..04 | S15 delivered; S16/S18/S25 considered first in the selected execution order | Supported API/client assessment, bounded REA as needed, evidence-backed capability matrix/decision and implementation proposal. Investigation only; no cloud mutation or integration implementation. |
 | S19 - Selected-folder content indexing | NOT STARTED | CONTENT-01..06; affected SEARCH/CORE/LIFE/DELIVERY | After S12 in the selected execution order; qualify extractor APIs, query/location semantics, provider metadata and resource budgets | Toolbar folder opt-in/current magnifier badges; qualified Craft/text extraction; persisted searchable strings and location arrays, periodic incremental refresh and cloud-cache independence. Verify actual search/open/freshness/recovery and one final independently/installed verified release when implementation is authorized. No criteria verified yet. |

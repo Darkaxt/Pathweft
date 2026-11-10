@@ -6,8 +6,13 @@ their published assets are verified. Retain concise verification results and
 reusable fixtures, not repeated expanded cleanup manifests, retired test profiles
 or superseded captures. Clean exact generated targets through transactional-cleanup.
 
-Current 2026-11-10/spec1.13: S44 is COMPLETE. S45 is ACTIVE
-for protected Program Files installation and packaged folder callers. The
+Current 2026-11-10/spec1.13: S44 and S45 are COMPLETE. Protected Program Files
+installation, the published v1.1.51 release and its actual installed Codex and
+Helium actions passed. The protected uninstall restored prior per-user shell
+values and removed the owned machine class; reinstalling the independently
+retrieved v1.1.51 package restored both class views, opted-in routes, profile,
+Win+E and startup ownership. See docs/verification/2026-11-10-s45-delivery.md.
+The following is historical investigation context. The
 Codex package cannot see Pathweft's per-user COM class; its actual folder
 action failed before Explorer or Pathweft launched. A diagnostic machine class
 made that action open Playground in Pathweft, but pointed to a user-writable
@@ -29,9 +34,8 @@ A second candidate exposed .NET's elevation-sensitive CurrentUserOnly owner
 check; the correction compares the pipe owner to the signed-in user SID.
 The protected update returned zero and restarted Pathweft, and the installed
 Chromium-form shell probe returned S_OK. The user confirmed the real Helium
-Show in folder action opened Downloads with the PDF selected. Commit, final
-1.1.51 publication, independent retrieval and installed release readback remain
-S45 acceptance. Historical current entry follows.
+Show in folder action opened Downloads with the PDF selected. Final delivery
+and installed readback passed as recorded above. Historical current entry follows.
 
 Previous2026-11-10/spec1.12: S41-S43 are COMPLETE. S44 covers
 automatic Maintenance freshness, concise Cleanup Details and relevant
