@@ -39,7 +39,7 @@ internal static class ManagerCleanupVerification
             reviewed=ManagerCleanup.Inspect(target,CancellationToken.None);
             location=second;bool rejected=false;
             try{ManagerCleanup.Clean(reviewed,target,CancellationToken.None,_=>{});}
-            catch(IOException error){rejected=error.Message.Contains("analyze again",StringComparison.OrdinalIgnoreCase);}
+            catch(IOException error){rejected=error.Message.Contains("cache changed",StringComparison.OrdinalIgnoreCase);}
             check(rejected&&cleanCalls==1,"A changed configured cache root prevents the native removal command");
             location=Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),"Downloads","fixture-cache");
             rejected=false;
@@ -63,7 +63,7 @@ internal static class ManagerCleanupVerification
             File.AppendAllText(Path.Combine(nuget,"a.dat"),"5");
             rejected=false;
             try{ManagerCleanup.Clean(nugetReview,nugetTarget,CancellationToken.None,_=>{});}
-            catch(IOException error){rejected=error.Message.Contains("analyze again",StringComparison.OrdinalIgnoreCase);}
+            catch(IOException error){rejected=error.Message.Contains("cache changed",StringComparison.OrdinalIgnoreCase);}
             check(rejected&&cleanCalls==1,"Changed NuGet HTTP contents prevent an unreviewed clear");
         }
         finally
