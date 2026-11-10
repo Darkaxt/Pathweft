@@ -49,6 +49,7 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
     internal ListView Rows=>table;
     internal string State=>status.Text;
 #if DEBUG
+    internal string CleanupSummaryForVerification=>cardValues[0].Text;
     internal Func<int,Task> AnalyzeStepForVerification;
     internal bool CleanEnabledForVerification=>change.IsEnabled;
     internal string[] ActionLabelsForVerification=>actions.Children.OfType<Button>().Select(button=>button.Content as string).Where(label=>label!=null).ToArray();

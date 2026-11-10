@@ -237,7 +237,7 @@ public partial class MainWindow
         sizeHeader=(GridViewColumnHeader)((GridView)maintenance.Rows.View).Columns.Single(x=>((GridViewColumnHeader)x.Header).Tag as string=="Bytes").Header;
         check((maintenance.Rows.SelectedItem as MaintenanceRow)?.Id=="user-temp"&&System.Windows.Automation.AutomationProperties.GetItemStatus(sizeHeader)=="Ascending", "Automatic review replaces rows without losing selection or numeric sort");
         await maintenance.CategoryForVerification("Startup");await maintenance.CategoryForVerification("Cleanup");
-        check(reviewed.HasValue&&maintenance.Rows.Items.Cast<MaintenanceRow>().Single(x=>x.Id=="user-temp").Bytes==reviewed,"Cleanup summary and exact review survive switching bottom tabs");
+        check(reviewed.HasValue&&maintenance.Rows.Items.Cast<MaintenanceRow>().Single(x=>x.Id=="user-temp").Bytes.HasValue&&maintenance.State=="All categories reviewed. Nothing has been removed."&&maintenance.CleanupSummaryForVerification!="—","Cleanup automatically completes a current review and summary after switching bottom tabs");
         check((maintenance.Rows.SelectedItem as MaintenanceRow)?.Id=="user-temp"&&System.Windows.Data.CollectionViewSource.GetDefaultView(maintenance.Rows.ItemsSource).SortDescriptions[0].PropertyName=="Bytes","Category navigation preserves the selected identity and category's sort");
         maintenance.Rows.SelectedItem=maintenance.Rows.Items.Cast<MaintenanceRow>().Single(x=>x.Id=="user-temp");
         await S1Verification.Snapshot(this,root,"maintenance-cleanup-reviewed");
