@@ -63,7 +63,10 @@ public partial class MainWindow : Window
             foreach(var pane in new[]{Left,Right})pane.CloseView();
             taskbarSearch?.Dispose();tray?.Dispose();
         };
-        SourceInitialized += (_, _) => { ApplyAcrylic(this); WatchShellChanges(); taskbarSearch = new(this); taskbarSearch.ApplySettings(); shellFolderViews=new(this); };
+        SourceInitialized += (_, _) => { ApplyAcrylic(this); WatchShellChanges(); taskbarSearch = new(this); taskbarSearch.ApplySettings();
+            // Shell folder views are optional: a missing or mismatched handler DLL (an interrupted
+            // Setup) must never stop the window from opening.
+            try { shellFolderViews=new(this); } catch(Exception error)when(error is DllNotFoundException or EntryPointNotFoundException or BadImageFormatException) { } };
         InitializePreviews();
         if (Settings.Profile == null) StartUpdateChecks();
 

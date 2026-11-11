@@ -176,7 +176,7 @@ public partial class SettingsWindow : Window
     internal static readonly string[] NotReset =
     {
         "wine", "tray", "adminatstart", "taskbarsearch", "taskbarsearchbox", "preview", "previewwidth", "lastseen", "recent", "destinations", "sidebar", "sidebarorder", "sidebarcollapsed", "split", "maximized", "window", "quicklist",
-        "performance.days",
+        "performance.days", "crcfolders", "crcarchives", // chosen from a Details column header, like the other remembered view state
     };
 
     void ResetAll_Click(object s, RoutedEventArgs e) =>

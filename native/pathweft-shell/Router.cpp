@@ -60,6 +60,16 @@ static std::wstring Quoted(PCWSTR value){
     result.append(slashes*2,L'\\');return result+L'"';
 }
 
+// Setup holds this mutex (SetupMutex in Pathweft.iss) while it replaces files.
+// A Pathweft started meanwhile would run a half-installed copy and hold files
+// Setup still has to replace, so folders open in Windows instead. Setup creates
+// it elevated; access denied still means it exists.
+static bool SetupRunning(){
+    HANDLE setup=OpenMutexW(SYNCHRONIZE,FALSE,L"Global\\PathweftSetup");
+    if(setup){CloseHandle(setup);return true;}
+    return GetLastError()==ERROR_ACCESS_DENIED;
+}
+
 class Router final: public IExecuteCommand, public IObjectWithSelection, public IObjectWithSite {
     std::atomic<ULONG> refs{1};
     IShellItemArray* selection=nullptr;
@@ -139,6 +149,7 @@ public:
             if(SUCCEEDED(hr)){hr=browser->BrowseObject(pidl,SBSP_SAMEBROWSER|SBSP_ABSOLUTE);CoTaskMemFree(pidl);}
             browser->Release();return hr;
         }
+        if(SetupRunning())return WindowsOpen();
         for(DWORD i=0;i<count;++i){
             IShellItem* item=nullptr;hr=selection->GetItemAt(i,&item);
             if(FAILED(hr))return hr;

@@ -83,9 +83,9 @@ public partial class MainWindow
                 await job.Completion;
                 check(job.Errors.IsEmpty && job.DoneFiles + job.SkippedFiles == 6, "Actual resolution accounts for every planned file: " + choice);
                 string matched = File.ReadAllText(Path.Combine(existing,"metadata match.txt"));
-                check(matched == (choice == Choice.Overwrite ? "left" : "rght"), "Hidden metadata match with different bytes obeys complete resolution choice: " + choice);
+                check(matched == (choice is Choice.Overwrite or Choice.Rename ? "left" : "rght"), "Hidden metadata match with different bytes obeys complete resolution choice: " + choice);
                 if (choice == Choice.Newer) check(job.DoneFiles == 2 && job.SkippedFiles == 4 && File.ReadAllText(Path.Combine(existing,"newer existing.txt")) == "rght", "Replace if newer uses the same timestamp comparison as review warnings");
-                if (choice == Choice.Rename) check(job.DoneFiles == 6 && Directory.GetFiles(existing).Length == 12, "Keep both also retains all filtered metadata matches");
+                if (choice == Choice.Rename) check(job.DoneFiles == 6 && Directory.GetFiles(existing).Length == 12 && File.ReadAllText(Path.Combine(existing,"metadata match.old.txt")) == "rght", "Keep both also retains all filtered metadata matches, the existing ones as name.old.ext");
                 DismissJob(job);
             }
             finally { Ferry.VerificationBoundary = null; if(job?.Active==true){job.Cancel();await job.Completion;} }

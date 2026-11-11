@@ -1,5 +1,5 @@
 [CmdletBinding()]
-param([string]$Executable='D:\Temp\pathweft-s8-delivery\artifacts\bin\FileExplorer\debug\Pathweft.exe',[switch]$CloseOnly,[switch]$SidebarOnly,[switch]$SettingsActionOnly,[switch]$WidgetOnly,[switch]$WidgetDismissOnly,[switch]$ArchiveDragOnly,[switch]$PreviewOnly,[switch]$DrivesOnly,[switch]$StatsOnly,[switch]$CloudOnly,[switch]$Round118,[switch]$OrbitOnly,[string]$Model,[string]$Archive)
+param([string]$Executable='D:\Temp\pathweft-s8-delivery\artifacts\bin\FileExplorer\debug\Pathweft.exe',[switch]$CloseOnly,[switch]$SidebarOnly,[switch]$SettingsActionOnly,[switch]$WidgetOnly,[switch]$WidgetDismissOnly,[switch]$ArchiveDragOnly,[switch]$PreviewOnly,[switch]$DrivesOnly,[switch]$StatsOnly,[switch]$CloudOnly,[switch]$CrcOnly,[switch]$Round118,[switch]$OrbitOnly,[string]$Model,[string]$Archive)
 $ErrorActionPreference='Stop'
 $run=Join-Path 'D:\Temp\pathweft-s8-delivery' ('appearance-'+[guid]::NewGuid().ToString('N'))
 $profile=Join-Path $run 'profile'
@@ -20,6 +20,7 @@ if($PreviewOnly){$start.Environment['PATHWEFT_VERIFY_PREVIEW_ONLY']='1'}
 if($DrivesOnly){$start.Environment['PATHWEFT_VERIFY_DRIVES_ONLY']='1'}
 if($StatsOnly){$start.Environment['PATHWEFT_VERIFY_STATS_ONLY']='1'}
 if($CloudOnly){$start.Environment['PATHWEFT_VERIFY_CLOUD_ONLY']='1'}
+if($CrcOnly){$start.Environment['PATHWEFT_VERIFY_CRC_ONLY']='1'}
 if($Round118){$start.Environment['PATHWEFT_VERIFY_ROUND118']='1'}
 if($OrbitOnly){$start.Environment['PATHWEFT_VERIFY_ORBIT']='1'}
 if($env:PATHWEFT_VERIFY_S25 -eq '1'){$start.Environment['PATHWEFT_VERIFY_S25']='1'}

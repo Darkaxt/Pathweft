@@ -1,7 +1,8 @@
-# Pathweft 1.1.55
+# Pathweft 1.1.56
 
-Pathweft 1.1.55 fixes Settings closing the app and the app not reopening after an
-update, both from 1.1.54's sign-in task lookup. 1.1.54 started through a
+Pathweft 1.1.56 keeps an interrupted update from leaving Pathweft unable to
+start, which stopped every folder from opening. 1.1.55 fixed Settings closing the
+app and the missing reopen after an update. 1.1.54 started through a
 normal-priority sign-in task, asks for administrator access once when it starts,
 and can record app activity for its performance history and MCP tools.
 

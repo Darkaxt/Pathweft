@@ -64,7 +64,7 @@ public partial class MainWindow
     }
 
     /// A journal Ferry wrote while a transfer ran: "move|copy  destination", then "moved|came  from  to  stamp" per item
-    /// that arrived and "dir  path" per folder it made.
+    /// that arrived, "kept  old  original  stamp" per existing file Keep both set aside, and "dir  path" per folder it made.
     internal static UndoEntry ReadJournal(string file)
     {
         try
@@ -76,9 +76,10 @@ public partial class MainWindow
             foreach (var parts in lines.Skip(1).Select(l => l.Split('\t')))
                 if (parts is ["dir", var dir]) steps.Add(new("rmdir", dir));
                 else if (parts is ["removeddir", var removed]) steps.Add(new("mkdir", removed));
+                else if (parts is ["kept", var old, var original, var keptStamp] && long.TryParse(keptStamp, out var ks)) steps.Add(new("unkeep", old, original, ks));
                 else if (parts is [var how, var from, var to, var stamp] && long.TryParse(stamp, out var st))
                     steps.Add(how == "moved" || move && !Exists(from) ? new("move", to, from, st) : new("recycle", to, null, st));
-            int items = steps.Count(s => s.Kind != "rmdir");
+            int items = steps.Count(s => s.Kind is not ("rmdir" or "unkeep"));
             return steps.Count == 0 ? null : new($"{(move ? "move" : "copy")} of {items:N0} items (interrupted)", File.GetCreationTime(file), steps, Path.GetFileName(file));
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return null; }
@@ -168,7 +169,7 @@ public partial class MainWindow
         {
             var kept = new List<UndoStep>();
             foreach (var s in entry.Steps)
-                if (s.Kind is "recycle" or "move" or "rename" && Exists(s.Path) && (s.Stamp == 0 || Ferry.Stamp(s.Path) != s.Stamp)) changed++;
+                if (s.Kind is "recycle" or "move" or "rename" or "unkeep" && Exists(s.Path) && (s.Stamp == 0 || Ferry.Stamp(s.Path) != s.Stamp)) changed++;
                 else kept.Add(s);
             foreach (var s in kept.Where(s => s.Kind == "mkdir").OrderBy(s => s.Path.Length))
                 try { TransferFile.RequirePlainDestination(s.Path); Directory.CreateDirectory(s.Path); }
@@ -191,6 +192,10 @@ public partial class MainWindow
         {
             var rest = await Task.Run(() =>
             {
+                // Keep both: once the arrival has gone, the file it set aside gets its name back (never over anything)
+                foreach (var s in ready.Where(s => s.Kind == "unkeep" && File.Exists(s.Path)))
+                    try { if (Exists(s.To)) throw new IOException(Path.GetFileName(s.To) + " already exists"); File.Move(s.Path, s.To); }
+                    catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { left.Add(s); error ??= ex.Message; }
                 foreach (var s in ready.Where(s => s.Kind == "rmdir").OrderByDescending(s => s.Path.Length))
                     try { if (Directory.Exists(s.Path) && !Directory.EnumerateFileSystemEntries(s.Path).Any()) Directory.Delete(s.Path); }
                     catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
@@ -246,10 +251,11 @@ public partial class MainWindow
             lock (job.CreatedDirs) dirs = job.CreatedDirs.ToList();
             lock (job.RemovedDirs) removed = job.RemovedDirs.ToList();
             return job.Completed.Select(c => c.Moved || job.IsMove && !Exists(c.From) ? new UndoStep("move", c.To, c.From, c.Stamp) : new UndoStep("recycle", c.To, null, c.Stamp))
+                                .Concat(job.Kept.Where(k => File.Exists(k.Old)).Select(k => new UndoStep("unkeep", k.Old, k.Original, k.Stamp)))
                                 .Concat(removed.Select(d => new UndoStep("mkdir", d)))
                                 .Concat(dirs.Select(d => new UndoStep("rmdir", d))).ToList();
         });
-        int items = steps.Count(s => s.Kind != "rmdir");
+        int items = steps.Count(s => s.Kind is not ("rmdir" or "unkeep"));
         if (steps.Count == 0)
         {
             if (job.Journal != null) _ = Task.Run(() => { try { File.Delete(job.Journal); } catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { } });

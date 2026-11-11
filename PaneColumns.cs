@@ -25,6 +25,11 @@ public partial class PaneView
             descriptor.AddValueChanged(column,(_,_)=>{Settings.ColumnWidths["Drive."+name]=column.Width;if(!ResizingColumn&&List.View is GridView)FitName();});
             return column;
         }
+        var crcItem=new MenuItem{Header="CRC32",IsCheckable=true,ToolTip="Stored CRC32 inside archives; in folders, hashed in the background"};
+        var headerMenu=new ContextMenu();headerMenu.Items.Add(crcItem);
+        headerMenu.Opened+=(_,_)=>crcItem.IsChecked=ArchiveRoot!=null?Settings.ArchiveCrc:Settings.FolderCrc;
+        crcItem.Click+=(_,_)=>ShowCrc(crcItem.IsChecked);
+        ((GridView)details).ColumnHeaderContextMenu=headerMenu;
         driveColumns=new[]{NameColumn,Column("Capacity",nameof(Entry.TotalText),115),Column("Free space",nameof(Entry.FreeText),115),Column("Filesystem",nameof(Entry.DriveFormat),90),Column("Connection",nameof(Entry.DriveConnection),160),Column("Location",nameof(Entry.DriveLocation),220)};
     }
     void TrackColumns()
@@ -77,7 +82,7 @@ public partial class PaneView
         {
             "Name"=>true,"Version"=>data.Any(e=>e.Version.Length>0),"Type"=>data.Any(e=>e.Ext.Length>0),
             "Size"=>data.Any(e=>e.DisplaySize>=0),"Modified"=>data.Any(e=>e.Modified!=default),
-            "Message"=>data.Any(e=>e.Message.Length>0),
+            "Message"=>data.Any(e=>e.Message.Length>0),"CRC32"=>CrcShown,
             "Capacity" or "Free space"=>data.Any(e=>e.HasDriveCapacity),"Filesystem"=>data.Any(e=>e.DriveFormat.Length>0),
             "Connection"=>data.Any(e=>e.DriveConnection.Length>0),"Location"=>data.Any(e=>e.DriveLocation.Length>0),_=>false
         };
@@ -91,6 +96,43 @@ public partial class PaneView
             ShowSortArrow();
             if(List.View is GridView)FitName();
         }
+    }
+    // CRC32: an archive's stored values, or (opt-in) a folder's files hashed lazily, visible rows first.
+    bool CrcShown=>!InSearch&&!IsWidget&&(ArchiveRoot!=null?Settings.ArchiveCrc:Settings.FolderCrc&&!IsVirtual(Dir)&&!IsServer(Dir));
+    CancellationTokenSource crcWork;
+    internal Task CrcCompletion=Task.CompletedTask;
+    internal void ShowCrc(bool show)
+    {
+        if(ArchiveRoot!=null)Settings.ArchiveCrc=show;else Settings.FolderCrc=show;
+        Settings.Save();ReconcileColumns();StartCrc();
+    }
+    void StartCrc()
+    {
+        crcWork?.Cancel();crcWork=null;
+        if(ArchiveRoot!=null||!CrcShown||indexedSearch||SpaceAnalyzing||view==null)return;
+        var all=view.Cast<Entry>().Where(e=>!e.IsDir&&!e.IsUp&&e.Crc==null).ToList();
+        if(all.Count==0)return;
+        var shown=all.Where(e=>List.ItemContainerGenerator.ContainerFromItem(e) is FrameworkElement{IsVisible:true}).ToHashSet();
+        var todo=all.Where(shown.Contains).Concat(all.Where(e=>!shown.Contains(e))).ToList();
+        var cts=crcWork=new CancellationTokenSource();var done=new TaskCompletionSource();CrcCompletion=done.Task;
+        new Thread(()=>
+        {
+            var ui=new UiBatch(Dispatcher);
+            try
+            {
+                FileCrc.LowPriority(()=>
+                {
+                    foreach(var e in todo)
+                    {
+                        if(cts.IsCancellationRequested)return;
+                        if(e.Size>4<<20)ui.Flush(); // a long read must not hold back finished rows
+                        if(FileCrc.Get(e.Path,cts.Token) is {} crc)ui.Add(()=>{if(crcWork==cts&&!cts.IsCancellationRequested)e.Crc=crc;});
+                    }
+                });
+            }
+            catch(OperationCanceledException){}
+            finally{ui.Flush();done.TrySetResult();}
+        }){IsBackground=true,Priority=ThreadPriority.BelowNormal,Name="Pathweft CRC32"}.Start();
     }
     void StopColumns()
     {

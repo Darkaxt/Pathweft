@@ -46,7 +46,7 @@ public class Job : INotifyPropertyChanged
     public string Description { get; init; }
     public int SkippedFiles { get; internal set; }
     public int ExcludedItems { get; internal set; }
-    public int CopiedFiles, VerifiedFiles, RenamedFiles;
+    public int CopiedFiles, VerifiedFiles, RenamedFiles, KeptFiles;
     public long VerificationBytes;
     public List<string> Arrivals { get; internal set; }
     readonly TaskCompletionSource completed = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -106,6 +106,9 @@ public class Job : INotifyPropertyChanged
     public readonly System.Collections.Concurrent.ConcurrentQueue<(string From, string To, bool Moved, long Stamp)> Completed = new();
     public readonly List<string> CreatedDirs = new();
     public readonly List<string> RemovedDirs = new();
+    // Keep both: each existing file set aside as "name.old.ext" so the incoming one takes its name. Undo (after the
+    // arrival is taken back) and a failed or cancelled arrival give it its name again.
+    public readonly System.Collections.Concurrent.ConcurrentQueue<(string Old, string Original, long Stamp)> Kept = new();
 
     // ---- the journal: one line per arrival, flushed a few times a second by the worker, never by the UI ----
     StreamWriter journal;
@@ -115,6 +118,12 @@ public class Job : INotifyPropertyChanged
         var item = (from, to, moved, Ferry.Stamp(to));
         Completed.Enqueue(item);
         Write($"{(moved ? "moved" : "came")}\t{from}\t{to}\t{item.Item4}");
+    }
+    internal void KeptOld(string old, string original)
+    {
+        var item = (old, original, Ferry.Stamp(old));
+        Kept.Enqueue(item); Interlocked.Increment(ref KeptFiles);
+        Write($"kept	{old}	{original}	{item.Item3}");
     }
     internal void MadeDir(string dir) { lock (CreatedDirs) CreatedDirs.Add(dir); Write($"dir\t{dir}"); }
     internal void RemovedDir(string dir) { lock (RemovedDirs) RemovedDirs.Add(dir); Write($"removeddir\t{dir}"); }
@@ -216,6 +225,7 @@ public class Job : INotifyPropertyChanged
             var parts = new List<string>();
             if (Finished) parts.Add(MainWindow.Fmt(DoneBytes));
             if (RenamedFiles > 0) parts.Add($"{RenamedFiles:N0} renamed");
+            if (KeptFiles > 0) parts.Add($"{KeptFiles:N0} existing kept as .old");
             if (SkippedFiles > 0) parts.Add($"{SkippedFiles:N0} skipped");
             if (ExcludedItems > 0) parts.Add($"{ExcludedItems:N0} unsupported");
             return string.Join(" · ", parts);
@@ -450,31 +460,34 @@ public static class Ferry
             if (!Directory.Exists(target)) { Directory.CreateDirectory(target); job.MadeDir(target); Arrived(directory.Relative); }
         }
 
-        var work = new List<(FileEntry File, string Target, bool Overwrite)>();
+        var work = new List<(FileEntry File, string Target, bool Overwrite, string Old)>();
         var reserved = plan.Files.Select(file => Path.Combine(job.Destination, file.Relative)).ToHashSet(StringComparer.OrdinalIgnoreCase);
         for (int i = 0; i < plan.Files.Count; i++)
         {
             var e = plan.Files[i];
             var target = Path.Combine(job.Destination, e.Relative);
-            bool overwrite = false;
+            bool overwrite = false; string old = null;
             if (conflicts.TryGetValue(i, out var c))
             {
                 var ch = choice == Choice.Newer && !c.IncomingNewer ? Choice.Skip : choice;
                 if (ch == Choice.Skip) { job.SkippedFiles++; continue; }
-                if (ch == Choice.Rename) target = UniqueName(target, reserved);
+                // Keep both: the file already there steps aside as "name.old.ext" and the incoming one takes the name.
+                // Two incoming files of one name (nothing there yet) keep "name (2).ext" for the later one.
+                if (ch == Choice.Rename && string.Equals(c.TargetPath, target, StringComparison.OrdinalIgnoreCase)) old = OldName(target, reserved);
+                else if (ch == Choice.Rename) target = UniqueName(target, reserved);
                 else overwrite = true;
             }
-            work.Add((e, target, overwrite));
+            work.Add((e, target, overwrite, old));
         }
         bool together = job.Parallel && !plan.InBatch && Fast(job.Destination) && job.Sources.All(Fast);
         var small = together ? work.Where(w => w.File.Size < ParallelBelow).ToList() : new();
         job.Concurrent = small.Count > 1;
 
-        void One((FileEntry File, string Target, bool Overwrite) w)
+        void One((FileEntry File, string Target, bool Overwrite, string Old) w)
         {
             var e = w.File;
             TransferFile.Stamp? copiedOutput = null;
-            bool succeeded = false, acceptedOutput = false, countedCopy = false, renamed = false;
+            bool succeeded = false, acceptedOutput = false, countedCopy = false, renamed = false, kept = false;
             Interlocked.Increment(ref job.ParallelWorkers);
             try
             {
@@ -482,6 +495,13 @@ public static class Ferry
                 Boundary("before-source-open", job, e.Source, w.Target);
                 if (e.Streams.Any(stream => stream.Name != "::$DATA") && !TransferFile.NamedStreams(job.Destination))
                     throw new IOException("The destination filesystem cannot preserve alternate streams: " + e.Relative);
+                if (w.Old != null && File.Exists(w.Target))
+                {
+                    Boundary("before-keep-old", job, e.Source, w.Target); Check(job);
+                    TransferFile.RequirePlainDestination(w.Old);
+                    File.Move(w.Target, w.Old, overwrite: false);
+                    kept = true; job.KeptOld(w.Old, w.Target);
+                }
                 CheckTarget(w.Target, w.Overwrite);
                 job.Current = job.Concurrent ? $"{job.ParallelWorkers} active files" : e.Relative;
                 if (!job.Concurrent) { job.CurrentSize = e.Size; job.CurrentDone = 0; }
@@ -557,7 +577,8 @@ public static class Ferry
             { job.Errors.Enqueue($"{e.Relative}: {ex.Message}"); }
             finally
             {
-                if (job.IsCancelled && !acceptedOutput && copiedOutput is { } output)
+                // a failed Keep both arrival also goes, so the existing file can get its name back
+                if ((job.IsCancelled || kept) && !acceptedOutput && copiedOutput is { } output)
                 {
                     try
                     {
@@ -567,6 +588,16 @@ public static class Ferry
                     catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
                     { job.Errors.Enqueue("Incomplete copy could not be removed at " + w.Target + ": " + ex.Message); }
                 }
+                // the incoming file did not arrive: the existing one gets its name back (it is never deleted)
+                if (kept && !succeeded && !acceptedOutput)
+                    try
+                    {
+                        if (File.Exists(w.Target) || Directory.Exists(w.Target)) throw new IOException("its name is occupied");
+                        File.Move(w.Old, w.Target, overwrite: false);
+                        Interlocked.Decrement(ref job.KeptFiles);
+                    }
+                    catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                    { job.Errors.Enqueue($"The existing {Path.GetFileName(w.Target)} stays as {Path.GetFileName(w.Old)}: {ex.Message}"); }
                 Interlocked.Decrement(ref job.ParallelWorkers);
                 if (job.Concurrent) job.Current = $"{job.ParallelWorkers} active files";
                 else if (!job.IsCancelled) job.Phase = Phase.Copying;
@@ -703,6 +734,21 @@ public static class Ferry
             return hasher.GetCurrentHashAsUInt64();
         }
         finally { System.Buffers.ArrayPool<byte>.Shared.Return(buffer); }
+    }
+
+    /// Keep both: "report.pdf" steps aside as "report.old.pdf" ("notes" → "notes.old"), then "report.old (2).pdf"…,
+    /// clear of existing items and of the names this transfer plans.
+    static string OldName(string target, HashSet<string> reserved)
+    {
+        string dir = Path.GetDirectoryName(target), stem = Path.GetFileNameWithoutExtension(target), ext = Path.GetExtension(target);
+        if (stem.Length == 0) { stem = ext; ext = ""; } // ".gitignore" → ".gitignore.old", not ".old.gitignore"
+        stem += ".old";
+        for (int n = 1; n < 10000; n++)
+        {
+            var candidate = Path.Combine(dir, n == 1 ? stem + ext : $"{stem} ({n}){ext}");
+            if (!File.Exists(candidate) && !Directory.Exists(candidate) && reserved.Add(candidate)) return candidate;
+        }
+        throw new IOException("No unoccupied name is available to keep the existing file: " + target);
     }
 
     static string UniqueName(string target, HashSet<string> reserved)

@@ -1621,6 +1621,16 @@ navigation. A drive-only sort resets to Name when entering file search.
 Use drive-specific capacity/free/filesystem/connection columns in This PC and
 normal file metadata elsewhere. Verify empty/mixed folders, async version/size,
 search streaming, drive-to-folder transitions and resize without empty columns.
+CORE-10 CRC32 column (user request, 1.1.56): the Details header context menu
+offers a CRC32 column (8 uppercase hex digits, sortable, blank for folders and
+entries without a value). Inside archives it shows the container's stored CRC32
+without extraction and is visible by default; folders hide it by default. When
+turned on for folders, files are hashed lazily on a background low-I/O-priority
+thread, visible rows first, cancelled on navigation, hiding or close, never
+blocking the UI. Values are cached in memory by path, size and last write; cloud
+or offline placeholders stay blank and are never hydrated. TAR/GZip, RAR5 entries
+hashed with BLAKE2 and other formats without stored CRC32 stay blank. Each
+choice persists separately for archives and folders.
 
 Post-v1.1.3 user additions (2026-10-31), owned by S8: replace the About
 Diagnostics expander/telemetry with an Open settings folder button (CORE-03).

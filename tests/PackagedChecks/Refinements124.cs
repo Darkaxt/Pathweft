@@ -65,8 +65,8 @@ sealed partial class PackageProbe
             Check(job.Errors.IsEmpty&&job.Conflicts.Count==2&&job.ConflictRows.Count==1&&job.ConflictRows[0].ExistingNewer&&job.ConflictRows[0].IncomingSize==""&&job.ConflictRows[0].IncomingTime!=job.ConflictRows[0].ExistingTime,"Delivered metadata review filters matches, orders newer destination and retains timestamp precision: "+choice);
             job.ShowMatchingConflicts=true;
             Check(job.ConflictRows.Count==2&&job.ConflictScope.Contains("all 2")&&job.DoneFiles+job.SkippedFiles==2,"Delivered choices account for the complete conflict set: "+choice);
-            Check(File.ReadAllText(Path.Combine(target,"matched.txt"))==(choice==Choice.Overwrite?"left":"rght"),"Delivered hidden metadata match still obeys the actual choice: "+choice);
-            if(choice==Choice.Rename)Check(Directory.GetFiles(target).Length==4,"Delivered Keep both copies metadata matches too");
+            Check(File.ReadAllText(Path.Combine(target,"matched.txt"))==(choice is Choice.Overwrite or Choice.Rename?"left":"rght"),"Delivered hidden metadata match still obeys the actual choice: "+choice);
+            if(choice==Choice.Rename)Check(Directory.GetFiles(target).Length==4&&File.ReadAllText(Path.Combine(target,"matched.old.txt"))=="rght"&&File.ReadAllText(Path.Combine(target,"newer existing.old.txt"))=="rght","Delivered Keep both copies metadata matches too, keeping the existing files as name.old.ext");
         }
     }
 }

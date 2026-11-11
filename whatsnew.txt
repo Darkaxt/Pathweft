@@ -1,6 +1,13 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.56 | 2026-11-11 | Safer updates
+
+- Opening a folder while an update is installing no longer breaks the update; the folder opens in File Explorer until it finishes.
+- If an update is still interrupted, Pathweft now starts anyway instead of closing at once, so folders keep opening.
+- **Keep both** now keeps the file that was already there as `report.old.pdf` and gives the incoming file the real name `report.pdf`. If the transfer fails or is cancelled the old file gets its name back, and Undo puts everything back as it was.
+- New **CRC32** column (right-click a column header): shown inside zip, 7z and rar archives from their stored checksums, and available in normal folders too, where files are checksummed in the background without slowing browsing.
+
 ## 1.1.55 | 2026-11-11 | Fixes for Settings and updating
 
 - Opening Settings no longer closes Pathweft.

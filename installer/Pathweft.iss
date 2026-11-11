@@ -28,6 +28,9 @@ DefaultDirName={localappdata}\Programs\Pathweft
 #else
 PrivilegesRequired=admin
 DefaultDirName={autopf}\Pathweft
+; Held while Setup runs: the shell router opens folders in Windows instead of
+; starting a half-installed Pathweft that would lock files still to be replaced.
+SetupMutex=Global\PathweftSetup
 #endif
 UsePreviousAppDir=no
 DefaultGroupName=Pathweft
@@ -55,10 +58,12 @@ Name: "defaultfm"; Description: "Open filesystem folders and drives in Pathweft"
 Name: "desktopicon"; Description: "Create a desktop shortcut"; GroupDescription: "Shortcuts:"; Flags: unchecked
 
 [Files]
-Source: "{#PublishRoot}\*"; DestDir: "{app}"; Excludes: "PathweftShell-*.dll"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; Versioned native handlers can coexist with a prior version still loaded in a
 ; Shell caller. Uninstall never force-closes that caller to remove its DLL.
+; They are copied first: the new Pathweft.exe loads the handler named for its
+; own version, so it must never exist without it, even if Setup stops early.
 Source: "{#PublishRoot}\PathweftShell-*.dll"; DestDir: "{app}"; Flags: ignoreversion uninsrestartdelete
+Source: "{#PublishRoot}\*"; DestDir: "{app}"; Excludes: "PathweftShell-*.dll"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Registry]
 #ifndef ProgressVerification

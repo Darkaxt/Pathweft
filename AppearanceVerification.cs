@@ -52,6 +52,8 @@ public partial class MainWindow
             {await VerifyS25(root,Check);result=0;return;}
             if(Environment.GetEnvironmentVariable("PATHWEFT_VERIFY_RENDER_PERF")=="1")
             {await VerifyRenderPerf1110(root,Check);result=0;return;}
+            if(Environment.GetEnvironmentVariable("PATHWEFT_VERIFY_CRC_ONLY")=="1")
+            {await VerifyCrcColumn(root,Check);result=0;return;}
             if(Environment.GetEnvironmentVariable("PATHWEFT_VERIFY_CLOUD_ONLY")=="1")
             {await VerifyCloudQuota(root,Check);result=0;return;}
             if(Environment.GetEnvironmentVariable("PATHWEFT_VERIFY_STATS_ONLY")=="1")

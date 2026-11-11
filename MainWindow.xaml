@@ -207,7 +207,7 @@
             </ListView>
             <TextBlock Text="No size or date differences. You can show matching files above." Visibility="{Binding NoConflictDifferences, Converter={StaticResource Vis}}" Foreground="{DynamicResource Muted}" TextWrapping="Wrap" FontSize="11" Margin="0,0,0,8"/>
             <UniformGrid Rows="1" Margin="0,0,-6,0">
-              <Button Style="{StaticResource JobChoice}" Tag="on" Click="JobResolve_Click" CommandParameter="Rename" Content="Keep both"/>
+              <Button Style="{StaticResource JobChoice}" Tag="on" Click="JobResolve_Click" CommandParameter="Rename" Content="Keep both" ToolTip="The existing file stays as name.old.ext and the incoming one takes its name"/>
               <Button Style="{StaticResource JobChoice}" Click="JobResolve_Click" CommandParameter="Newer"><TextBlock Text="Replace if newer" TextWrapping="Wrap" TextAlignment="Center"/></Button>
               <Button Style="{StaticResource JobChoice}" Click="JobResolve_Click" CommandParameter="Overwrite" Content="Replace"/>
               <Button Style="{StaticResource JobChoice}" Click="JobResolve_Click" CommandParameter="Skip" Content="Skip"/>

@@ -430,12 +430,25 @@ public partial class App : Application
             Check(File.ReadAllText(Path.Combine(dst, "tree", "a.txt")) == "hello", "copied content");
             Check(new FileInfo(Path.Combine(dst, "tree", "sub", "b.bin")).Length == 3_000_000, "copied size");
 
-            // same copy again → conflicts; "keep both" renames
+            // same copy again → conflicts; "keep both" sets the existing file aside as name.old.ext
+            File.WriteAllText(Path.Combine(dst, "tree", "a.txt"), "existing");
+            File.WriteAllText(Path.Combine(dst, "tree", "a.old.txt"), "taken");
             j = Ferry.Submit(new[] { Path.Combine(src, "tree") }, dst, move: false);
             j.Resolve(Choice.Rename);
             Run(j);
             Check(j.Conflicts.Count == 2, "two conflicts found in one pass");
-            Check(File.Exists(Path.Combine(dst, "tree", "a (2).txt")), "keep both → a (2).txt");
+            Check(File.ReadAllText(Path.Combine(dst, "tree", "a.txt")) == "hello" && File.ReadAllText(Path.Combine(dst, "tree", "a.old (2).txt")) == "existing" && File.ReadAllText(Path.Combine(dst, "tree", "a.old.txt")) == "taken", "keep both → existing a.txt kept as a.old (2).txt, incoming as a.txt");
+            Check(File.Exists(Path.Combine(dst, "tree", "sub", "b.old.bin")) && j.Kept.Count == 2 && j.KeptFiles == 2, "keep both records each file set aside for Undo");
+#if DEBUG
+            // a Keep both arrival that does not complete gives the existing file its name back
+            var keepDir = Directory.CreateDirectory(Path.Combine(root, "keep-cancel")).FullName;
+            var keepSource = Path.Combine(root, "keep-cancel-incoming.txt"); File.WriteAllText(keepSource, "incoming");
+            File.WriteAllText(Path.Combine(keepDir, "keep-cancel-incoming.txt"), "existing");
+            Ferry.VerificationBoundary = (phase, job, _, _) => { if (phase == "copy-written") job.Cancel(); };
+            try { j = Ferry.Submit(new[] { keepSource }, keepDir, move: false); j.Resolve(Choice.Rename); Run(j); }
+            finally { Ferry.VerificationBoundary = null; }
+            Check(j.IsCancelled && Directory.GetFiles(keepDir).Length == 1 && File.ReadAllText(Path.Combine(keepDir, "keep-cancel-incoming.txt")) == "existing" && j.KeptFiles == 0, "cancelled keep both puts the existing file back under its name");
+#endif
 
             // move within the same volume is a rename; source is gone afterwards
             var mv = Directory.CreateDirectory(Path.Combine(root, "moved")).FullName;

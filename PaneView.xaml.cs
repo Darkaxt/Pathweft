@@ -102,6 +102,9 @@ public class Entry : INotifyPropertyChanged
     public bool IsCut { get => isCut; set { if (isCut != value) { isCut = value; Changed(nameof(IsCut)); } } }
     bool dropHover;
     public bool DropHover { get => dropHover; set { if (dropHover != value) { dropHover = value; Changed(nameof(DropHover)); } } } // a drag is over it and would land inside
+    uint? crc; // CRC32: stored by an archive, or hashed lazily for a folder's files (null: none/not yet)
+    public uint? Crc { get => crc; set { crc = value; Changed(nameof(Crc)); Changed(nameof(CrcText)); } }
+    public string CrcText => crc is { } c ? c.ToString("X8") : "";
     string version = "";
     public string Version { get => version; set { version = value; Changed(nameof(Version)); } }
     public string Ext => IsDir ? "" : System.IO.Path.GetExtension(Name).TrimStart('.').ToLowerInvariant();
@@ -240,6 +243,7 @@ class EntrySort(string key, bool desc) : IComparer
             "Message"=>ExplorerOrder.Instance.Compare(x.Message,y.Message),
             "Type" => ExplorerOrder.Instance.Compare(x.Ext, y.Ext) is var t && t != 0 ? t : ExplorerOrder.Instance.Compare(x.Name, y.Name),
             "Modified" => x.Modified.CompareTo(y.Modified),
+            "CRC32" => (x.Crc ?? -1L).CompareTo(y.Crc ?? -1L) is var c && c != 0 ? c : ExplorerOrder.Instance.Compare(x.Name, y.Name),
             "Version" => ExplorerOrder.Instance.Compare(x.Version, y.Version) is var v && v != 0 ? v : ExplorerOrder.Instance.Compare(x.Name, y.Name),
             _ => ExplorerOrder.Instance.Compare(x.Name, y.Name),
         };
@@ -677,6 +681,7 @@ public partial class PaneView : UserControl
         StartVersions();
         StartThumbs();
         StartIcons();
+        StartCrc();
     }
 
     // ---- the folder cache: what makes tab switching and re-opening a folder instant ----
@@ -802,6 +807,7 @@ public partial class PaneView : UserControl
         if (record && tabs[tab] != "" && !tabs[tab].Equals(path, StringComparison.OrdinalIgnoreCase)) { back.Push(tabs[tab]); fwd.Clear(); }
         tabs[tab] = path;
         ArchiveRoot = null; // NavigateArchive sets it again right after
+        crcWork?.Cancel(); // folder CRC32 hashing belongs to the folder being left
         ReadOnlyWatermark.Visibility = Visibility.Collapsed;
         ClearFolderFailure();
         Visited?.Invoke(path);
@@ -1110,7 +1116,7 @@ public partial class PaneView : UserControl
                 Listed = true; Error?.Invoke("Archive unavailable · " + error); StatsChanged?.Invoke(); return;
             }
             string changeReason = Archive.ChangeReason(at.Archive);
-            ShowItems(items.Where(i => FileVisibility.Visible(i.Name, i.Attributes, ShowHidden)).Select(i => new Entry { Name = i.Name, Path = dir + "\\" + i.Name, IsDir = i.IsDir, Size = i.Size, Modified = i.Modified,
+            ShowItems(items.Where(i => FileVisibility.Visible(i.Name, i.Attributes, ShowHidden)).Select(i => new Entry { Name = i.Name, Path = dir + "\\" + i.Name, IsDir = i.IsDir, Size = i.Size, Modified = i.Modified, Crc = i.Crc,
                 ReadOnlyReason = changeReason.Length > 0 ? "Archive contents are read-only: " + changeReason : ReadOnlyIcons.AttributeReason(i.IsDir, i.Attributes), RestrictionChecked = true }).ToList(), select);
             if (pendingSelect != null) ApplyPendingSelect();
             ReadOnlyWatermark.Visibility = changeReason.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
@@ -1485,7 +1491,7 @@ public partial class PaneView : UserControl
         StopFolderWatch();
         indexedSearch=false;
         StopColumns();
-        indexedCancellation?.Cancel();sizing?.Cancel();prefetching?.Cancel();icons?.Cancel();thumbs?.Cancel();
+        indexedCancellation?.Cancel();sizing?.Cancel();crcWork?.Cancel();prefetching?.Cancel();icons?.Cancel();thumbs?.Cancel();
         accessReading?.Cancel();
         renameTimer.Stop();zoomTimer?.Stop();overlayTimer?.Stop();
     }
