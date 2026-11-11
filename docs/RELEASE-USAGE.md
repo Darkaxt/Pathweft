@@ -1,9 +1,8 @@
-# Pathweft 1.1.52
+# Pathweft 1.1.53
 
-Pathweft 1.1.52 is a reliability release. Scoop cleanup preserves a version
-whose program is running and names it; other versions are removed as before.
-Expected Windows errors in Maintenance, transfers, updates, Settings, drive
-health, archives and previews are reported instead of closing the app.
+Pathweft 1.1.53 is a UI refinement release. Large folders stay responsive while
+folder sizes arrive, views change with short soft transitions that follow the
+animation settings, colours are calmer, and empty folders and searches say so.
 
 Pathweft installs under Program Files through a Windows administrator-consent
 prompt. The desktop app keeps its profile and opt-in folder routes. Packaged

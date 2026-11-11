@@ -644,7 +644,7 @@ ownership, measure the additional idle costs and distinguish observation gaps
 from zero. No live collector or configuration change is started by this update.
 
 S25 - UI quality review, refinement and motion (formerly Summary-card motion)
-is ACTIVE from 2026-11-11; see its section for UIQA-01..03 and MOTION-01..04.
+is COMPLETE (release 1.1.53); see its section for UIQA-01..03 and MOTION-01..04.
 Cards should enter upward while the upper file pane smoothly yields space; the
 Statistics/Performance swap should rotate the card region into view. Keep
 ordinary browsing snappy and honor disabled/reduced system animation settings.
@@ -2135,7 +2135,7 @@ The user's 2026-11-11 instruction widens S25 from summary-card motion into a
 full UI QA review with a performance and design focus, an improvement round and
 an animation enrichment round. The direction is elegant, not saturated: soft
 transitions between views where they help orientation, never decoration for its
-own sake. S25 is ACTIVE. Existing behavior, layouts, keyboard paths and the
+own sake. S25 is COMPLETE in release 1.1.53 (docs/verification/2026-11-11-s25-ui-review.md). Existing behavior, layouts, keyboard paths and the
 Settings → Animations / Windows animation-effects switches stay authoritative.
 
 | ID | Requirement and acceptance |

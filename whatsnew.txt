@@ -1,6 +1,15 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.53 | 2026-11-11 | Smoother browsing and a refined look
+
+- Very large folders stay responsive while folder sizes come in: opening C:\Windows\WinSxS no longer freezes the window for seconds.
+- Opening and revisiting big folders such as System32 is about twice as quick to respond.
+- Summary cards, Statistics and Performance, Maintenance, Settings categories and the preview panel change with a short, soft fade and rise. Nothing waits for it, and it follows Settings → Animations and Windows' animation effects.
+- Folders use a soft Windows folder yellow in the summary cards; file-type, age and transfer colours are slightly calmer.
+- An empty folder, an empty search or a filter that matches nothing now says so.
+- Buttons show keyboard focus, pressed and disabled states; light-theme cards are lighter than the page; custom accent choices look inactive while the Windows accent is used.
+
 ## 1.1.52 | 2026-11-11 | Reliability and safety fixes
 
 - Scoop cleanup keeps a version whose program is running instead of partly deleting it, and says which program is in use.
