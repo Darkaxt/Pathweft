@@ -1,9 +1,9 @@
-# Pathweft 1.1.54
+# Pathweft 1.1.55
 
-Pathweft 1.1.54 starts through a normal-priority sign-in task instead of a
-registry Run entry, asks for administrator access once when it starts, and can
-record app activity (programs run, workloads and their CPU, I/O and memory) for
-its performance history and read-only MCP tools.
+Pathweft 1.1.55 fixes Settings closing the app and the app not reopening after an
+update, both from 1.1.54's sign-in task lookup. 1.1.54 started through a
+normal-priority sign-in task, asks for administrator access once when it starts,
+and can record app activity for its performance history and MCP tools.
 
 Pathweft installs under Program Files through a Windows administrator-consent
 prompt. The desktop app keeps its profile and opt-in folder routes. Packaged

@@ -99,9 +99,9 @@ internal static class StartupTasks
     }
     internal static void ResumeRecorder()
     {
-        if(RecorderRegistered!=true)return;
-        try{using var session=new MaintenanceStartup.TaskSession();dynamic task=session.Own(session.Root.GetTask(RecorderName));if((int)task.State!=4)session.Own(task.Run(null));}
-        catch(Exception error)when(error is COMException or UnauthorizedAccessException){} // starts at the next sign-in
+        // Never fails Setup's helper restoration: a recorder that cannot start now starts at the next sign-in.
+        try{if(RecorderRegistered!=true)return;using var session=new MaintenanceStartup.TaskSession();dynamic task=session.Own(session.Root.GetTask(RecorderName));if((int)task.State!=4)session.Own(task.Run(null));}
+        catch(Exception error)when(error is COMException or UnauthorizedAccessException or IOException){}
     }
 
     // ---- Task Scheduler ----
@@ -115,7 +115,8 @@ internal static class StartupTasks
             if((int)actions.Count!=1)return null;dynamic action=session.Own(actions[1]);
             return (int)action.Type==0&&string.Equals((string)action.Path,Program.Executable,StringComparison.OrdinalIgnoreCase)&&(string)action.Arguments==arguments?true:null;
         }
-        catch(COMException error)when(error.HResult==unchecked((int)0x80070002)){return false;}
+        // A missing task arrives as FileNotFoundException through the COM binder (0x80070002).
+        catch(Exception error)when(error is FileNotFoundException or DirectoryNotFoundException||error.HResult==unchecked((int)0x80070002)){return false;}
         catch(UnauthorizedAccessException){return null;}
         catch(COMException){return null;} // access denied or Task Scheduler unavailable: unknown, never assumed ours
     }

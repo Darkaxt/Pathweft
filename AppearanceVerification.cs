@@ -416,6 +416,10 @@ public partial class MainWindow
                 await EditorWindow.CloseForVerification();
             }
             finally{Settings.InternalEditor=internalEditor;Left.ExternalOpenForVerification=null;ArchiveConsumerForVerification=null;}
+            // 1.1.54 regression: the real Task Scheduler reports a missing task as FileNotFoundException,
+            // which crashed Settings and failed Setup's helper restoration before the app could reopen.
+            bool? missing=null;try{missing=StartupTasks.Owned("Pathweft missing "+Guid.NewGuid().ToString("N"),StartupTasks.RecorderArguments);}catch(Exception){}
+            Check(missing==false,"A missing startup or recorder task reads as absent from the real Task Scheduler, never an exception");
             Check(HiddenTrialPresentation.ForegroundViolations==0,"Focused appearance checks caused zero foreground activation");
             result=0;
         }

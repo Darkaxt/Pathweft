@@ -1,6 +1,11 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.55 | 2026-11-11 | Fixes for Settings and updating
+
+- Opening Settings no longer closes Pathweft.
+- Pathweft reopens by itself after an update again.
+
 ## 1.1.54 | 2026-11-11 | Faster start and app activity history
 
 - Start with Windows now uses a sign-in task at normal priority, so Pathweft is ready sooner than with a registry Run entry.
