@@ -60,26 +60,11 @@ public static class Settings
     public static bool AutoscrollSideways = true; // ... sideways too; off: up and down only
     public static int QuickList;                // which Quick access list the sidebar shows (MainWindow.QuickLists)
 
-    // Started at sign-in, hidden in the notification area (needs CloseToTray). The Run value is the truth; a test
-    // copy (PATHWEFT_PROFILE) never writes it.
-    const string RunKey = @"Software\Microsoft\Windows\CurrentVersion\Run", RunValue = "Pathweft";
-    public static bool StartWithWindows
-    {
-        get { using var k = Registry.CurrentUser.OpenSubKey(RunKey); return k?.GetValue(RunValue) is string; }
-        set
-        {
-            if (Profile != null) return;
-            using var k = Registry.CurrentUser.CreateSubKey(RunKey);
-            if (value) k.SetValue(RunValue, $"\"{Environment.ProcessPath}\" --tray");
-            else k.DeleteValue(RunValue, throwOnMissingValue: false);
-        }
-    }
-    internal static void RemoveOwnedStartup()
-    {
-        if(Profile!=null)return;
-        using var key=Registry.CurrentUser.OpenSubKey(RunKey,true);
-        if(key?.GetValue(RunValue) as string==$"\"{Environment.ProcessPath}\" --tray")key.DeleteValue(RunValue,false);
-    }
+    // Started at sign-in, hidden in the notification area (needs CloseToTray). The logon task (installed copy) or the
+    // Run value (other copies) is the truth; a test copy (PATHWEFT_PROFILE) never writes either.
+    public static bool StartWithWindows { get => StartupTasks.StartWithWindows; set => StartupTasks.StartWithWindows = value; }
+    internal static void RemoveOwnedStartup()=>StartupTasks.RemoveOwned();
+    public static bool AdminAtStart = true;     // ACCESS-04: an interactive start asks once for the shared administrator session
     public static List<string> RecentFolders = new();      // newest first, for the history menu
     public static List<string> RecentDestinations = new(); // where copies and moves went, newest first, for Copy to / Move to
     public static double SidebarWidth = 270;
@@ -170,6 +155,7 @@ public static class Settings
                 case "wine": TakeWinE = v != "0"; break;
                 case "lastseen": LastSeenVersion = v; break;
                 case "tray": CloseToTray = v == "1"; break;
+                case "adminatstart": AdminAtStart = v != "0"; break;
                 case "closeemptypane": CloseEmptyPane = v == "1"; break;
                 case "tipdelay" when int.TryParse(v, out var td): TipDelay = Math.Clamp(td, 0, 3000); break;
                 case "autoscroll": Autoscroll = v == "1"; break;
@@ -251,6 +237,7 @@ public static class Settings
             $"wine={(TakeWinE ? 1 : 0)}",
             $"lastseen={LastSeenVersion}",
             $"tray={(CloseToTray ? 1 : 0)}",
+            $"adminatstart={(AdminAtStart ? 1 : 0)}",
             $"closeemptypane={(CloseEmptyPane ? 1 : 0)}",
             $"tipdelay={TipDelay}",
             $"autoscroll={(Autoscroll ? 1 : 0)}",

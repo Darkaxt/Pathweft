@@ -73,9 +73,9 @@ sealed partial class PackageProbe
         Check(init.GetProperty("result").GetProperty("protocolVersion").GetString()=="2025-06-18","Delivered stdio MCP negotiates its actual supported protocol");
         await process.StandardInput.WriteLineAsync("{\"jsonrpc\":\"2.0\",\"method\":\"notifications/initialized\"}");await process.StandardInput.FlushAsync();
         var tools=(await Send("tools/list",new{})).GetProperty("result").GetProperty("tools");
-        Check(tools.GetArrayLength()==6&&tools.EnumerateArray().All(x=>x.GetProperty("annotations").GetProperty("readOnlyHint").GetBoolean()),
-            "Delivered MCP advertises only six read-only performance/history tools");
-        foreach(string tool in new[]{"get_current_usage","get_usage_summary","get_top_processes","find_spikes","get_app_history","get_events"})
+        Check(tools.GetArrayLength()==11&&tools.EnumerateArray().All(x=>x.GetProperty("annotations").GetProperty("readOnlyHint").GetBoolean()),
+            "Delivered MCP advertises only eleven read-only performance, history and app activity tools");
+        foreach(string tool in new[]{"get_current_usage","get_usage_summary","get_top_processes","find_spikes","get_app_history","get_events","get_run_history","get_workloads","get_top_consumers","get_app_usage","get_activity_intervals"})
         {
             var response=(await Send("tools/call",new{name=tool,arguments=new{name="Pathweft"}})).GetProperty("result");
             Check(!response.GetProperty("isError").GetBoolean(),"Delivered real MCP query succeeds: "+tool);

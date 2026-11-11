@@ -300,6 +300,7 @@ public partial class MainWindow
         if (WindowState == WindowState.Minimized) WindowState = WindowState.Normal;
         Activate();
         active.FocusList();
+        RequestStartupAdministrator(); // a sign-in start asks when the window is first shown
     }
 
     public void Quit()

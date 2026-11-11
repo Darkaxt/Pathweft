@@ -1,6 +1,13 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.54 | 2026-11-11 | Faster start and app activity history
+
+- Start with Windows now uses a sign-in task at normal priority, so Pathweft is ready sooner than with a registry Run entry.
+- Pathweft asks for administrator access once, right after its window appears; browsing never waits for it. You can turn this off in Settings → Startup.
+- New in Settings → Startup: Record app activity. A small recorder notes which programs ran, how they were launched and their CPU, disk and memory use, grouped into workloads such as one build. It is off until you turn it on.
+- Pathweft's performance MCP can now answer what ran, when, and what used the most.
+
 ## 1.1.53 | 2026-11-11 | Smoother browsing and a refined look
 
 - Very large folders stay responsive while folder sizes come in: opening C:\Windows\WinSxS no longer freezes the window for seconds.

@@ -174,6 +174,7 @@ public partial class MainWindow : Window
             if (!HiddenTrialPresentation.Enabled)
 #endif
             { if (Environment.GetCommandLineArgs().Contains("--front")) TakeForeground(); Topmost = true; Topmost = false; Activate(); active.FocusList(); }
+            RequestStartupAdministrator();
         };
     }
 

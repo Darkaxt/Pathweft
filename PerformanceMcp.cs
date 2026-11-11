@@ -37,18 +37,18 @@ internal static class PerformanceMcp
                     if(initialized)throw new ArgumentException("Already initialized");
                     string proposed=request.GetProperty("params").GetProperty("protocolVersion").GetString();
                     string selected=proposed is "2025-06-18" or "2024-11-05"?proposed:"2025-06-18";
-                    result=new{protocolVersion=selected,capabilities=new{tools=new{listChanged=false}},serverInfo=new{name="Pathweft performance",version=typeof(PerformanceMcp).Assembly.GetName().Version?.ToString()},instructions="Read-only saved local performance observations. Pathweft collects and saves automatically while running. This endpoint does not start collection. Missing or stale observations are not live usage."};initialized=true;
+                    result=new{protocolVersion=selected,capabilities=new{tools=new{listChanged=false}},serverInfo=new{name="Pathweft performance",version=typeof(PerformanceMcp).Assembly.GetName().Version?.ToString()},instructions="Read-only saved local performance observations. Pathweft collects and saves automatically while running; the optional app activity recorder adds program runs, workloads and per-executable usage. This endpoint does not start collection. Missing or stale observations are not live usage."};initialized=true;
                 }
                 else if(method=="ping")result=new{};
                 else if(!ready){response=Error(id,-32002,"Initialize and send notifications/initialized first");await output.WriteLineAsync(response.ToJsonString());continue;}
-                else if(method=="tools/list")result=new{tools=Definitions()};
+                else if(method=="tools/list")result=new{tools=Definitions().Concat(ActivityQuery.Tools.Select(ActivityQuery.Definition)).ToArray()};
                 else if(method=="tools/call")
                 {
                     var parameters=request.GetProperty("params");string name=parameters.GetProperty("name").GetString();
                     try
                     {
                         var arguments=parameters.TryGetProperty("arguments",out var supplied)?supplied:JsonSerializer.SerializeToElement(new{});
-                        var query=Parse(name,arguments);var data=PerformanceHistory.Query(query);
+                        object data=ActivityQuery.Tools.Contains(name)?ActivityQuery.Query(ActivityQuery.Parse(name,arguments)):PerformanceHistory.Query(Parse(name,arguments));
                         result=new{content=new[]{new{type="text",text=JsonSerializer.Serialize(data)}},isError=false};
                     }
                     catch(Exception ex)when(ex is ArgumentException or FormatException or InvalidOperationException or KeyNotFoundException or IOException or UnauthorizedAccessException or Microsoft.Data.Sqlite.SqliteException)

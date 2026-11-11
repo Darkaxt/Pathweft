@@ -211,9 +211,10 @@ internal static class MaintenanceStartup
         for(int i=1;i<=(int)actions.Count;i++){dynamic action=com.Own(actions[i]);values.Add((int)action.Type==0?(string)action.Path+" "+(string)action.Arguments:"Windows task action "+action.Type);}
         return string.Join("; ",values);
     }
-    sealed class TaskSession : IDisposable
+    internal sealed class TaskSession : IDisposable
     {
         readonly List<object> owned=new();readonly dynamic scheduler;
+        internal dynamic Root=>Own(scheduler.GetFolder("\\"));
         internal TaskSession(){scheduler=Own(Activator.CreateInstance(System.Type.GetTypeFromProgID("Schedule.Service",true)));try{scheduler.Connect();}catch{Dispose();throw;}}
         internal dynamic Own(object value){if(value!=null)owned.Add(value);return value;}
         internal void Each(Action<dynamic,TaskSession> visit,CancellationToken cancel,Action<string,Exception> unavailable=null)

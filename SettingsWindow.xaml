@@ -284,7 +284,13 @@
             <CheckBox x:Name="TrayBox" Content="Close to the notification area" Click="Tray_Click"/>
             <TextBlock Style="{StaticResource Hint}" Text="Closing the window hides Pathweft next to the clock instead of quitting, so it opens again at once. Click its icon to bring it back; right-click the icon → Quit to really close."/>
             <CheckBox x:Name="StartupBox" Content="Start with Windows, hidden next to the clock" Click="Startup_Click" Style="{StaticResource ChildToggle}"/>
-            <TextBlock Style="{StaticResource Hint}" Margin="22,2,0,10" Text="Off unless you turn it on. Pathweft starts when you sign in and waits by the clock, so even the first window of the day opens at once; this also turns on Close to the notification area. It uses some memory while it waits."/>
+            <TextBlock Style="{StaticResource Hint}" Margin="22,2,0,4" Text="Off unless you turn it on. Pathweft starts as soon as you sign in, ahead of ordinary startup apps, and waits by the clock, so even the first window of the day opens at once; this also turns on Close to the notification area. It uses some memory while it waits."/>
+            <TextBlock x:Name="StartupStatus" Style="{StaticResource Hint}" Margin="22,0,0,10"/>
+            <CheckBox x:Name="AdminAtStartBox" Content="Ask for administrator access when Pathweft starts" Click="AdminAtStart_Click"/>
+            <TextBlock Style="{StaticResource Hint}" Text="One Windows prompt after the window appears. Approving lets folder I/O, drive health and administrator browsing work without asking again; cancelling keeps standard access."/>
+            <CheckBox x:Name="ActivityBox" Content="Record app activity" Click="Activity_Click" Margin="0,8,0,0"/>
+            <TextBlock Style="{StaticResource Hint}" Text="Records which programs run, from sign-in to sign-out, with their CPU, memory and disk use, for performance history and its MCP tools. Runs as an elevated sign-in task, approved with administrator access. Program paths only: no file contents, command lines or network."/>
+            <TextBlock x:Name="ActivityStatus" Style="{StaticResource Hint}" AutomationProperties.LiveSetting="Polite"/>
           </StackPanel>
         </Border>
 

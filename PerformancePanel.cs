@@ -223,7 +223,9 @@ internal sealed partial class PerformancePanel : StackPanel,IAsyncDisposable
     void SetDetailKind()=>monitor.DetailKind=Showing&&!Historical?selected switch{Cpu=>1,Gpu=>2,Ram=>3,_=>0}:0;
     async void MaybeEnableIo()
     {
-        if(!AutomaticIo||permissionAttempted||!Showing||traceFolder==null||disposed)return;
+        // ACCESS-04: the view never asks for permission itself. It reuses the session approved at start
+        // (or by an explicit action) and AdministratorReady starts tracing when approval arrives.
+        if(!AutomaticIo||permissionAttempted||!Showing||traceFolder==null||disposed||!AdministratorSession.Available)return;
         permissionAttempted=true;await EnableIo();
     }
     async Task EnableIo()

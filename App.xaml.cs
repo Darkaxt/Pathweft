@@ -31,6 +31,8 @@ static class Program
         {Environment.ExitCode=MaintenanceWorker.Run(args[1],int.Parse(args[2]),long.Parse(args[3])).GetAwaiter().GetResult();return;}
         if((args.Length is 3 or 4)&&args[0]=="--manager-clean-worker")
         {Environment.ExitCode=ManagerCleanup.RunWorker(args[1],args[2],args.Length==4?args[3]:"").GetAwaiter().GetResult();return;}
+        if(args.Length==1&&args[0]=="--activity-recorder")
+        {Environment.ExitCode=ActivityRecorder.Run();return;}
         if(args.Length==1&&args[0]=="--performance-mcp")
         {Environment.ExitCode=PerformanceMcp.Run().GetAwaiter().GetResult();return;}
         if(args.Length==4&&args[0]=="--performance-io-worker")
@@ -223,6 +225,7 @@ public partial class App : Application
                 {
                     WindowsIntegration.UpgradeOwnedRegistration();
                     if(Settings.TakeWinE)Agent.EnableAsync(Environment.ProcessPath).GetAwaiter().GetResult();
+                    StartupTasks.ResumeRecorder();
                 }
                 else
                 {
@@ -231,6 +234,7 @@ public partial class App : Application
                     // manual installers report that the window must be closed.
                     if(Program.Running){Shutdown(2);return;}
                     Agent.StopForUpdate();
+                    StartupTasks.StopRecorder(); // Setup is elevated; the recorder releases the executable
                     if(e.Args.Contains("--prepare-uninstall"))
                     {
                         Settings.SetDefaultFileManager(false);
@@ -288,6 +292,8 @@ public partial class App : Application
             string runtimeTemp=Directory.CreateDirectory(Path.Combine(DataFolder.Bulk,"Temp")).FullName;
             Environment.SetEnvironmentVariable("TEMP",runtimeTemp);Environment.SetEnvironmentVariable("TMP",runtimeTemp);
         }
+        // LAUNCH-01: an installed copy started by the earlier Run value moves to the logon task.
+        _ = Task.Run(()=>{try{StartupTasks.MigrateRunValue();}catch(Exception error)when(error is IOException or UnauthorizedAccessException or System.Runtime.InteropServices.COMException or System.Security.SecurityException){}});
         string folderUpgradeIssue=null;
         try{WindowsIntegration.UpgradeOwnedRegistration();}
         catch(Exception error)when(error is IOException or UnauthorizedAccessException or InvalidOperationException or System.Security.SecurityException)

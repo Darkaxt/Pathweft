@@ -1,8 +1,9 @@
-# Pathweft 1.1.53
+# Pathweft 1.1.54
 
-Pathweft 1.1.53 is a UI refinement release. Large folders stay responsive while
-folder sizes arrive, views change with short soft transitions that follow the
-animation settings, colours are calmer, and empty folders and searches say so.
+Pathweft 1.1.54 starts through a normal-priority sign-in task instead of a
+registry Run entry, asks for administrator access once when it starts, and can
+record app activity (programs run, workloads and their CPU, I/O and memory) for
+its performance history and read-only MCP tools.
 
 Pathweft installs under Program Files through a Windows administrator-consent
 prompt. The desktop app keeps its profile and opt-in folder routes. Packaged

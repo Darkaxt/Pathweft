@@ -122,6 +122,12 @@ public partial class SettingsWindow : Window
         catch(Exception ex)when(ex is System.IO.IOException or System.IO.InvalidDataException or InvalidOperationException or System.ComponentModel.Win32Exception){WinEStatus.Text=ex.Message;}
         TrayBox.IsChecked = Settings.CloseToTray;
         StartupBox.IsChecked = Settings.StartWithWindows; // off unless the user turns it on: nothing else writes it
+        StartupStatus.Text = Settings.Profile == null && !StartupTasks.ProtectedInstall ? StartupTasks.UnprotectedLaunch : "";
+        StartupStatus.Visibility = StartupStatus.Text == "" ? Visibility.Collapsed : Visibility.Visible;
+        AdminAtStartBox.IsChecked = Settings.AdminAtStart;
+        ActivityBox.IsEnabled = StartupTasks.ProtectedInstall;
+        ActivityBox.IsChecked = StartupTasks.RecorderRegistered != false;
+        if (!StartupTasks.ProtectedInstall) ActivityStatus.Text = StartupTasks.UnprotectedRecorder;
         AnimationsBox.IsChecked = Settings.Animations;
         SmoothScrollBox.IsChecked = Settings.SmoothScroll;
         SinglePaneBox.IsChecked = Settings.SinglePane;
@@ -169,7 +175,7 @@ public partial class SettingsWindow : Window
     /// history retention in System analysis, and remembered state.
     internal static readonly string[] NotReset =
     {
-        "wine", "tray", "taskbarsearch", "taskbarsearchbox", "preview", "previewwidth", "lastseen", "recent", "destinations", "sidebar", "sidebarorder", "sidebarcollapsed", "split", "maximized", "window", "quicklist",
+        "wine", "tray", "adminatstart", "taskbarsearch", "taskbarsearchbox", "preview", "previewwidth", "lastseen", "recent", "destinations", "sidebar", "sidebarorder", "sidebarcollapsed", "split", "maximized", "window", "quicklist",
         "performance.days",
     };
 
@@ -598,6 +604,21 @@ public partial class SettingsWindow : Window
         if (StartupBox.IsChecked == true && !Settings.CloseToTray) { TrayBox.IsChecked = true; Settings.CloseToTray = true; Settings.Save(); main.ApplyTray(); }
         try { Settings.StartWithWindows = StartupBox.IsChecked == true; }
         catch (Exception ex) when (ex is UnauthorizedAccessException or System.Security.SecurityException or System.IO.IOException) { StartupBox.IsChecked = Settings.StartWithWindows; }
+    }
+    void AdminAtStart_Click(object s, RoutedEventArgs e) { Settings.AdminAtStart = AdminAtStartBox.IsChecked == true; Settings.Save(); }
+    async void Activity_Click(object s, RoutedEventArgs e)
+    {
+        bool on = ActivityBox.IsChecked == true;
+        ActivityBox.IsEnabled = false;
+        ActivityStatus.Text = on ? "Starting the recorder…" : "Stopping the recorder…";
+        try
+        {
+            await AdministratorSession.SetActivityRecorder(on);
+            ActivityStatus.Text = on ? "Recording. It starts by itself at each sign-in." : "Off. Recorded activity is kept for the history retention period.";
+        }
+        catch (Exception ex) when (ex is System.IO.IOException or System.ComponentModel.Win32Exception or InvalidOperationException or OperationCanceledException)
+        { ActivityStatus.Text = ex.Message; }
+        finally { ActivityBox.IsChecked = StartupTasks.RecorderRegistered != false; ActivityBox.IsEnabled = StartupTasks.ProtectedInstall; }
     }
     void WhatsNew_Click(object s, RoutedEventArgs e) => main.OpenWhatsNew();
 

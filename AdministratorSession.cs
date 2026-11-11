@@ -136,6 +136,12 @@ internal sealed class AdministratorSession : IAsyncDisposable
         try{await session.Call(kind,name,cancel).ConfigureAwait(false);return new(session,name);}
         catch{session.operations.Release();throw;}
     }
+    internal static async Task SetActivityRecorder(bool on,CancellationToken cancel=default)
+    {
+        if(!await Enable(cancel).ConfigureAwait(false))throw new Win32Exception(1223,"Administrator permission cancelled. Nothing changed.");
+        var session=current??throw new IOException("Administrator session ended");
+        await session.Call(on?"activity-on":"activity-off","",cancel).ConfigureAwait(false);
+    }
     internal static async Task End()
     {
         await admission.WaitAsync().ConfigureAwait(false);
@@ -196,6 +202,12 @@ internal sealed class AdministratorSession : IAsyncDisposable
                     }
                 }
                 else if(request.Kind=="wait"&&ValidPipe(request.Pipe,"Pathweft-Maintenance-",ownerPid)||request.Kind=="wait"&&ValidPipe(request.Pipe,"Pathweft-Io-",ownerPid))reply=new(true,"Operation already retired");
+                else if(request.Kind is "activity-on" or "activity-off"&&request.Pipe=="")
+                {
+                    // ACTIVITY-01: the approved session registers or removes the elevated recorder task; no second prompt.
+                    try{StartupTasks.SetRecorder(request.Kind=="activity-on");reply=new(true,request.Kind=="activity-on"?"App activity recording is on":"App activity recording is off");}
+                    catch(Exception error)when(error is IOException or UnauthorizedAccessException or InvalidOperationException or COMException or System.Security.SecurityException or ArgumentException){reply=new(false,error.Message);}
+                }
                 else reply=new(false,"Unsupported administrator request");
                 await write.WriteLineAsync(JsonSerializer.Serialize(reply)).ConfigureAwait(false);
             }

@@ -67,6 +67,23 @@ public partial class MainWindow
         {Status.Text=error.Message;}
         finally{changingAccess=false;UpdateAdministrator();if(AdministratorSession.Available)performance.AdministratorReady();}
     }
+    // ACCESS-04: once per run, after the first frame of an interactive window. Browsing never waits
+    // for it; cancelling leaves Standard access with the explicit shield and I/O actions as retries.
+    bool startupAccessAsked;
+    static readonly bool automatedStart=Environment.GetCommandLineArgs().Skip(1).Any(a=>a.StartsWith("--verify")||a.StartsWith("--selftest")||a.StartsWith("--s8"));
+    void RequestStartupAdministrator()
+    {
+        if(startupAccessAsked)return;startupAccessAsked=true;
+        if(!Settings.AdminAtStart||Settings.Profile!=null||automatedStart||AdministratorSession.Available)return;
+#if DEBUG
+        if(HiddenTrialPresentation.Enabled)return;
+#endif
+        Dispatcher.BeginInvoke(async()=>
+        {
+            try{await AdministratorSession.Enable();}
+            catch(Exception error)when(error is System.IO.IOException or System.ComponentModel.Win32Exception or OperationCanceledException or InvalidOperationException){Status.Text=error.Message;}
+        },System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+    }
     async Task EndAdministrator()
     {
         if(changingAccess)return;changingAccess=true;UpdateAdministrator();

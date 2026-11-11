@@ -63,6 +63,9 @@ internal static class MaintenanceGuidance
         if(category=="Startup"&&row.Type=="Registry Run"&&row.Details is {} command&&
            new[]{"--tray","--agent"}.Any(arg=>command.Equals("HKEY_CURRENT_USER\\"+Maintenance.RunPath+" · Registry64 · \""+Program.Executable+"\" "+arg,StringComparison.OrdinalIgnoreCase)))
         {advice="Keep enabled";explanation="This exact command starts Pathweft's tray or background agent at sign-in. Disabling it prevents that component from starting automatically; manual launch remains available.";}
+        else if(category=="Startup"&&row.Type=="Scheduled task"&&row.Details is {} task&&
+           new[]{(StartupTasks.LaunchName,StartupTasks.LaunchArguments),(StartupTasks.RecorderName,StartupTasks.RecorderArguments)}.Any(x=>task.Equals("\\"+x.Item1+" · At logon · "+Program.Executable+" "+x.Item2,StringComparison.OrdinalIgnoreCase)))
+        {advice="Keep enabled";explanation="This exact Pathweft task starts its notification-area window or its app activity recorder at sign-in. Turn it off in Pathweft Settings instead, which removes the task; manual launch remains available.";}
         return row with{Group=group,Recommendation=advice,Guidance=explanation,Source=rule?.Source??"",RuleId=rule?.Id??"",
             CanChange=row.CanChange&&(category!="Windows tweaks"||supported)};
     }

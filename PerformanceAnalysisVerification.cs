@@ -70,7 +70,7 @@ public partial class MainWindow
         check(initialized.GetProperty("result").GetProperty("protocolVersion").GetString()=="2025-06-18","MCP negotiates a supported finite version");
         await child.StandardInput.WriteLineAsync("{\"jsonrpc\":\"2.0\",\"method\":\"notifications/initialized\"}");await child.StandardInput.FlushAsync();
         var listed=(await Call("tools/list")).GetProperty("result").GetProperty("tools");
-        check(listed.GetArrayLength()==6&&listed.EnumerateArray().All(x=>x.GetProperty("annotations").GetProperty("readOnlyHint").GetBoolean()),"MCP exposes exactly six read-only tools");
+        check(listed.GetArrayLength()==11&&listed.EnumerateArray().All(x=>x.GetProperty("annotations").GetProperty("readOnlyHint").GetBoolean()),"MCP exposes exactly eleven read-only tools (six history, five app activity)");
         var reply=(await Call("tools/call",new{name="get_current_usage",arguments=new{}})).GetProperty("result");
         var result=JsonSerializer.Deserialize<PerformanceResult>(reply.GetProperty("content")[0].GetProperty("text").GetString());
         var persisted=PerformanceHistory.Query(new("get_current_usage"),source:snapshot);
