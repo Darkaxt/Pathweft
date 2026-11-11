@@ -1,6 +1,33 @@
 # Pathweft specification
 
-Version 1.14 - 2026-11-11. Owner: Darkaxt.
+Version 1.15 - 2026-11-11. Owner: Darkaxt.
+
+### Startup administrator access and process activity recording (S46)
+
+User direction 2026-11-11: request the shared administrator session when
+Pathweft starts instead of when the Performance widgets load, and extend
+performance data collection so Pathweft's MCP can replace the third-party
+AppControl service for app execution history and associated resource usage.
+The purpose is performance monitoring, not security: no hashes, signatures,
+publishers, alerts or blocking. Program identity is the executable path only;
+agentic build activity (thousands of short compiler processes) must stay cheap to
+record and readable. Starting after sign-in is acceptable provided Pathweft
+starts with priority, not through a registry Run value that Windows starts among
+the last items. The user chose an elevated recorder started by Task Scheduler at
+sign-in, approved once in Settings, so that no UAC prompt appears at sign-in.
+This narrowly supersedes ACCESS-02's "no scheduled task" for that recorder task
+only, and supersedes the S26 Performance view's own first permission request.
+
+| ID | Required behavior and acceptance |
+| --- | --- |
+| ACCESS-04 | An interactive start requests the shared administrator session once, after the main window's first frame; browsing and navigation never wait for it. A notification-area sign-in start defers the request until the window is first shown. The Performance view never requests permission itself: it reuses an approved session and starts folder tracing when approval arrives. Cancelling leaves Standard browsing and no further automatic request in that run; the explicit Enable detailed I/O, drive-health and shield actions remain the retry paths. Settings → "Ask for administrator access when Pathweft starts" (default on) disables the request. Maintenance keeps its separate approval; explicit verification profiles never request it. |
+| LAUNCH-01 | "Start with Windows" uses a current-user Task Scheduler logon task with no delay and normal process priority (not the Task Scheduler default below-normal 7) that starts `Pathweft --tray` with standard rights, replacing the HKCU Run value; an existing Run value is migrated and removed. Task actions reference only the protected Program Files executable; other installations keep the Run value and say why. Disabling or uninstalling removes Pathweft's tasks exactly; Startup in Maintenance identifies them as Pathweft's own. |
+| ACTIVITY-01 | Settings → Performance "Record app activity" registers, once through UAC, a hidden elevated logon task (highest privileges, no delay, normal priority) for a windowless recorder in the protected executable. It consumes Windows kernel process start/stop events (no polling) and records executable path, PID, parent PID and start/exit time; at exit it reads lifetime CPU time, peak working set and I/O read/write bytes from a limited-query handle opened at start. Inaccessible values stay explicit. No hashing, signature or publisher lookup, blocking, alerts or network. It runs from sign-in to sign-out independently of the browser window and stops and is unregistered when turned off. The browser stays unelevated. |
+| ACTIVITY-02 | Roll process trees up into launching workloads (for example one build command) with process count, CPU time, peak memory, I/O and duration. Processes shorter than one second and below small resource thresholds are counted in their workload but not stored individually. Per-executable totals and time ranges aggregate all observations. Lost or dropped events are counted and reported, never silently omitted. |
+| ACTIVITY-03 | The recorder owns a separate transactional activity store under DataFolder.Bulk, read (never written) by Pathweft and MCP; batched writes at most every 30 seconds; retention follows the existing 1/7/30-day setting. On, off and idle intervals come from recording gaps and Windows session lock/idle notifications. Without the recorder, the existing ten-second heavy-app snapshots remain and are labelled incomplete. |
+| ACTIVITY-04 | Impact budget: recorder at most 1% normalized CPU and 32 MiB private memory averaged over a qualified burst of at least 2,000 process starts per minute (a real parallel build), with lossless start/stop counts at that rate or explicit loss reporting. Idle cost stays within the existing recording off-mode budgets. |
+| ACTIVITY-05 | Extend the existing read-only stdio `--performance-mcp` with run history, workload totals, per-application usage, top consumers over a range and on/idle intervals, under MONITOR-12's constraints (no WPF, elevation, sampler, listener or client configuration; validated input, bounded output with truncation, structured errors). |
+| ACTIVITY-06 | Qualify real event recording, aggregation, store, retention, task registration/removal and priority, sign-in start order relative to Run entries, UAC approval/cancel, burst budget and MCP protocol. Compare MCP history with AppControl over at least three days of normal agentic work before recommending AppControl's removal. One normal independently verified release. |
 
 ### Protected installation and packaged folder callers (S45)
 
