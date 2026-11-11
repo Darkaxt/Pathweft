@@ -1,6 +1,6 @@
 # Pathweft specification
 
-Version 1.13 - 2026-11-10. Owner: Darkaxt.
+Version 1.14 - 2026-11-11. Owner: Darkaxt.
 
 ### Protected installation and packaged folder callers (S45)
 
@@ -643,12 +643,12 @@ Keep detailed process/file tracing demand-driven. Reuse existing process/helper
 ownership, measure the additional idle costs and distinguish observation gaps
 from zero. No live collector or configuration change is started by this update.
 
-S25 - Summary-card motion is a separate NOT STARTED stage after S18 and before
-S12. Cards should enter upward while the upper file pane smoothly yields space;
-the Statistics/Performance swap should rotate the card region into view. Keep
+S25 - UI quality review, refinement and motion (formerly Summary-card motion)
+is ACTIVE from 2026-11-11; see its section for UIQA-01..03 and MOTION-01..04.
+Cards should enter upward while the upper file pane smoothly yields space; the
+Statistics/Performance swap should rotate the card region into view. Keep
 ordinary browsing snappy and honor disabled/reduced system animation settings.
-Motion is not an S18 acceptance criterion; S25 owns its full verification and
-subsequent release. No stage is ACTIVE. Remaining order:
+S25 owns its full verification and subsequent release. Remaining order:
 S18 -> S25 -> S12 -> S19 -> S20 -> S21 -> S22 -> S6 -> S7.
 
 Next-release refinement2026-11-07: CORE-25 records twelve distinct ImageGen
@@ -2129,16 +2129,24 @@ Before implementation activation, resolve collector feasibility, privilege handl
 measurement definitions and numerical resource budgets within this existing scope.
 No extra monitoring categories or system-management actions are implied.
 
-### Summary-card motion (S25)
+### UI quality review, refinement and motion (S25)
 
-NOT STARTED after S18 and before S12. This stage owns the requested later motion
-work independently of S18's functional performance widgets.
+The user's 2026-11-11 instruction widens S25 from summary-card motion into a
+full UI QA review with a performance and design focus, an improvement round and
+an animation enrichment round. The direction is elegant, not saturated: soft
+transitions between views where they help orientation, never decoration for its
+own sake. S25 is ACTIVE. Existing behavior, layouts, keyboard paths and the
+Settings → Animations / Windows animation-effects switches stay authoritative.
 
 | ID | Requirement and acceptance |
 | --- | --- |
+| UIQA-01 | Review the actual rendered UI (main window, panes, sidebar, command bar, summary cards, Performance, Maintenance, Settings, dialogs, Quick View, widget) in dark/light themes, 100/150% scale and narrow/two-pane layouts. Record concrete findings with evidence: inconsistent spacing, alignment, typography, color/contrast, iconography, empty/loading/error states, focus visuals and leftover compromises. Each finding is fixed, or explicitly rejected with a reason. |
+| UIQA-02 | Review UI-thread performance on ordinary browsing paths: first window frame, folder open and large listings, tab/pane switching, view changes, search, summary/Performance/Maintenance switching and resize. Measure before/after frame and layout/CPU costs on the same machine. Fix measured stalls and avoidable layout/render work; no regressions on any measured path. |
+| UIQA-03 | Apply the accepted design improvements through the existing shared theme, palette, icon and layout owners, not per-control overrides. Preserve accessible names, keyboard navigation, high contrast, hit targets and existing user settings. |
 | MOTION-01 | Animate summary cards appearing upward as the upper file pane smoothly shrinks to make room, with the reverse transition when cards collapse. Preserve pane scroll, selection, path drafts, keyboard focus, minimum usable dimensions and existing auto-collapse rules. Do not animate routine metric samples or restart layout transitions for every background refresh. |
 | MOTION-02 | Rotate the existing summary-card region between Statistics and Performance, preserving each view's state and the same occupied space. Keep focus-only folder collection tied to actual active widget focus, not a temporarily visible transition surface. Handle rapid reversal, resize, pane switching and interruption using actual animation completion/cancellation; no input-blocking delay, duplicate collectors or overlapping interactive faces. |
-| MOTION-03 | Honor Windows disabled/reduced animation settings with an immediate, fully functional state change. Qualify actual expansion/collapse/rotation and interrupted transitions at representative refresh rates, dark/light themes, display scales and narrow/two-pane layouts. Measure frame pacing and layout/CPU costs, retain before/after visual evidence and verify ordinary browsing remains responsive. S25 owns one normal final release with independent retrieval and applicable installed acceptance after implementation authorization; no motion work is required to close S18. |
+| MOTION-04 | Add soft transitions between views where they aid orientation: view/tab/page switches (for example Maintenance and Performance tabs, Settings categories, preview content changes and panel show/hide). Use short eased fades or small slides (about 120-220 ms) through the shared Motion owner; no bounce, no continuous or attention-seeking animation, no animation of routine data refresh. Folder navigation must never wait on an animation. |
+| MOTION-03 | Honor Windows disabled/reduced animation settings and Settings → Animations with an immediate, fully functional state change. Qualify actual expansion/collapse/rotation, view transitions and interrupted transitions at representative refresh rates, dark/light themes, display scales and narrow/two-pane layouts. Measure frame pacing and layout/CPU costs, retain before/after visual evidence and verify ordinary browsing remains responsive. S25 owns one normal final release with independent retrieval and applicable installed acceptance. |
 
 ### Tresorit capability investigation (S12)
 
