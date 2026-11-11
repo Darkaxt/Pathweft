@@ -311,6 +311,11 @@ public static class Ferry
             job.Errors.Enqueue(ex.Message);
             job.Phase = Phase.Failed;
         }
+        catch (Exception ex) // e.g. InvalidDataException from a corrupt archive, AggregateException from parallel workers: never leave the card running
+        {
+            job.Errors.Enqueue(ex.Message);
+            job.Phase = job.IsCancelled ? Phase.Cancelled : Phase.Failed;
+        }
         finally
         {
             job.Current = ""; job.CurrentSize = job.CurrentDone = 0;

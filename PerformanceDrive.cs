@@ -69,7 +69,7 @@ internal sealed partial class PerformancePanel
         });healthWork=work;
         DriveHealth health;
         try{health=await work;}
-        catch(Exception error)when(error is IOException or UnauthorizedAccessException or System.ComponentModel.Win32Exception or System.Runtime.InteropServices.COMException or TypeLoadException)
+        catch(Exception error)when(error is IOException or UnauthorizedAccessException or System.ComponentModel.Win32Exception or System.Runtime.InteropServices.COMException or TypeLoadException or OperationCanceledException or InvalidDataException or System.Text.Json.JsonException)
         {health=new(number,$"Physical drive {number}",DateTimeOffset.UtcNow,Issue:error.Message,PermissionRequired:error is UnauthorizedAccessException);}
         finally{healthReading=false;}
         if(disposed)return;

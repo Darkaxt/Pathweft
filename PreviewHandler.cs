@@ -44,6 +44,7 @@ public class PreviewHost : HwndHost
 
     void Start()
     {
+        if (window == IntPtr.Zero) return; // destroyed before the deferred start ran
         try
         {
             // Most handlers run out of process (prevhost.exe), which keeps a crashing one away from us.
@@ -92,7 +93,7 @@ public class PreviewHost : HwndHost
     protected override void OnRenderSizeChanged(SizeChangedInfo info)
     {
         base.OnRenderSizeChanged(info);
-        if (handler is IPreviewHandler h) { var r = DeviceRect(); h.SetRect(ref r); }
+        if (handler is IPreviewHandler h) { var r = DeviceRect(); try { h.SetRect(ref r); } catch (COMException) { } } // out-of-process handler may have died
     }
 
     void Unload()
@@ -106,6 +107,7 @@ public class PreviewHost : HwndHost
     protected override void DestroyWindowCore(HandleRef hwnd)
     {
         Unload();
+        window = IntPtr.Zero;
         DestroyWindow(hwnd.Handle);
     }
 

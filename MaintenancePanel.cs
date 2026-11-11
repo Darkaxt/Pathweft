@@ -336,7 +336,7 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
         catch(Exception error)when(error is IOException or InvalidDataException or UnauthorizedAccessException or System.ComponentModel.Win32Exception)
         {PublishReview(reset with{State="Unavailable",Details="Could not review this category.\n"+error.Message,Bytes=null,CanChange=false});status.Text=outcome;}
         }
-        catch(Exception error){refreshPending=true;bool cancelled=error is OperationCanceledException;progress.Finish(cancelled?"Cleanup cancelled.":error.Message,true,"",cancelled,failed:!cancelled);completed=true;throw;}
+        catch(Exception error){refreshPending=true;if(completed)throw;bool cancelled=error is OperationCanceledException;progress.Finish(cancelled?"Cleanup cancelled.":error.Message,true,"",cancelled,failed:!cancelled);completed=true;throw;}
         finally{cleaning=false;if(!completed)progress.Finish("Cleanup ended.",false);}
     }
     async Task Apply(string action)

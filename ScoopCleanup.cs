@@ -115,12 +115,32 @@ internal static class ScoopCleanup
         string destination=new DirectoryInfo(path).ResolveLinkTarget(false)?.FullName;
         return destination!=null&&(Same(destination,persist)||Below(destination,persist));
     }
+    internal sealed class VersionInUseException(string message):IOException(message);
     internal static void DeleteVersion(Group group,CancellationToken cancel)
     {
         cancel.ThrowIfCancellationRequested();
 #if DEBUG
         VersionDeleteStartedForVerification?.Invoke(group.Folder);
 #endif
+        // A running program keeps its .exe open, so recursive removal would
+        // stop midway through the package. Check only the executables, before
+        // changing anything. A mapped image still admits exclusive reads, but
+        // Windows refuses write access with a sharing violation while it runs.
+        // The probe neither truncates nor writes. A ReadOnly .exe denies write
+        // access regardless of use; removal below handles that attribute.
+        var pending=new Stack<string>();pending.Push(group.Folder);
+        while(pending.TryPop(out string folder))
+        {
+            foreach(string file in Directory.EnumerateFiles(folder,"*.exe"))
+            {
+                try{using var probe=new FileStream(file,FileMode.Open,FileAccess.Write,FileShare.ReadWrite|FileShare.Delete);}
+                catch(IOException error)when((error.HResult&0xFFFF) is 32 or 33)
+                {throw new VersionInUseException("In use: "+Path.GetFileName(file)+" is running. This version was preserved.");}
+                catch(UnauthorizedAccessException){}
+            }
+            foreach(string child in Directory.EnumerateDirectories(folder))
+                if((File.GetAttributes(child)&FileAttributes.ReparsePoint)==0)pending.Push(child);
+        }
         // Unlink directory junction names before recursive removal. .NET's
         // recursive path calls DeleteVolumeMountPoint for junctions, requiring
         // volume-management access even for an ordinary user-owned Scoop link.

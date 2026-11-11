@@ -86,6 +86,7 @@ public partial class MultiRenameDialog : Window
 
             string bad = name == "" ? "a name would be empty"
                 : name.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0 ? $"“{name}” has characters Windows doesn't allow"
+                : name.EndsWith('.') ? $"“{name}” ends with a dot, which Windows drops"
                 : !taken.Add(Path.Combine(Path.GetDirectoryName(e.Path), name)) ? $"two files would be named “{name}”"
                 : ExistsElsewhere(Path.Combine(Path.GetDirectoryName(e.Path), name), ours) ? $"“{name}” already exists"
                 : null;

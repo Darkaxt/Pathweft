@@ -191,7 +191,7 @@ internal sealed class AdministratorSession : IAsyncDisposable
                         operations.Add(request.Pipe,Task.Run(async()=>
                         {
                             try{if(request.Kind=="io")await PerformanceIoWorker.Run(request.Pipe,ownerPid,ownerStarted,stop.Token).ConfigureAwait(false);else await MaintenanceWorker.Run(request.Pipe,ownerPid,ownerStarted,stop.Token).ConfigureAwait(false);}
-                            catch(Exception error)when(error is IOException or OperationCanceledException or ObjectDisposedException or Win32Exception or InvalidOperationException or UnauthorizedAccessException){}
+                            catch(Exception error)when(error is IOException or OperationCanceledException or ObjectDisposedException or Win32Exception or InvalidOperationException or UnauthorizedAccessException or InvalidDataException or JsonException or ArgumentException or System.Security.SecurityException){}
                         }));reply=new(true,"Operation admitted",Environment.ProcessId);
                     }
                 }

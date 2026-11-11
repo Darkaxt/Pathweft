@@ -118,7 +118,7 @@ public partial class SettingsWindow : Window
         RefreshFolderIntegration();
         WinEBox.IsChecked = Settings.TakeWinE;
         try{WinEStatus.Text=Agent.IsReady?"Win+E is enabled.":Settings.TakeWinE?"Win+E is unavailable. Switch it off and on to start it.":"Win+E integration is off.";}
-        catch(Exception ex)when(ex is System.IO.IOException or InvalidOperationException or System.ComponentModel.Win32Exception){WinEStatus.Text=ex.Message;}
+        catch(Exception ex)when(ex is System.IO.IOException or System.IO.InvalidDataException or InvalidOperationException or System.ComponentModel.Win32Exception){WinEStatus.Text=ex.Message;}
         TrayBox.IsChecked = Settings.CloseToTray;
         StartupBox.IsChecked = Settings.StartWithWindows; // off unless the user turns it on: nothing else writes it
         AnimationsBox.IsChecked = Settings.Animations;

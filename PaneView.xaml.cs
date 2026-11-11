@@ -751,7 +751,7 @@ public partial class PaneView : UserControl
             }).ToList(),null);
         }
         catch(OperationCanceledException error)when(cancel.IsCancellationRequested){return(new(),error);}
-        catch(Exception error)when(error is IOException or UnauthorizedAccessException or InvalidOperationException or System.ComponentModel.Win32Exception){return(new(),error);}
+        catch(Exception error)when(error is IOException or UnauthorizedAccessException or InvalidOperationException or System.ComponentModel.Win32Exception or OperationCanceledException or InvalidDataException or System.Text.Json.JsonException){return(new(),error);}
     }
 
     /// Reads folders into the cache in the background, so opening one of them costs nothing: the other
@@ -1102,7 +1102,7 @@ public partial class PaneView : UserControl
         {
             if (v != navVersion) return;
             ListingLoaded(v);
-            var (items, error) = t.Result;
+            var (items, error) = t.IsFaulted ? (null, t.Exception.GetBaseException().Message) : t.Result; // an unexpected archive failure must not escape on the dispatcher
             if (error != null)
             {
                 ShowItems(new List<Entry>(), null);

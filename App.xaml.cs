@@ -377,9 +377,14 @@ public partial class App : Application
             while (!listenCancellation.IsCancellationRequested)
             {
                 using var server = new NamedPipeServerStream(Program.PipeName, PipeDirection.In, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
-                await server.WaitForConnectionAsync(listenCancellation.Token).ConfigureAwait(false);
                 string path;
-                try { path = await new StreamReader(server).ReadLineAsync(listenCancellation.Token).ConfigureAwait(false); }
+                // A client that drops between connecting and writing must not end the listener: later launches
+                // wait for it in HandOff's untimed Connect.
+                try
+                {
+                    await server.WaitForConnectionAsync(listenCancellation.Token).ConfigureAwait(false);
+                    path = await new StreamReader(server).ReadLineAsync(listenCancellation.Token).ConfigureAwait(false);
+                }
                 catch (IOException) { continue; }
                 _ = Dispatcher.BeginInvoke(() => { if (MainWindow is MainWindow w) w.OpenFromOutside(path); });
             }

@@ -75,21 +75,27 @@ internal sealed class PerformanceMonitor : IDisposable
         DateTimeOffset lastApps=default;
         while(!stopped.IsCancellationRequested)
         {
-            var sample=source.Read();
-            // The UI may switch cards during a native read. One selection
-            // owns this entire tick, including the array that is published.
-            int kind=DetailKind;
-            bool recordApps=sample.Time-lastApps>=ProcessCadence;
-            var apps=kind is 1 or 3||recordApps?processMetrics.Read():null;
-            var gpuApps=kind==2||recordApps?source.GpuProcesses():null;
-            Details=kind is 1 or 3?apps:kind==2?gpuApps:Array.Empty<ProcessMetric>();
-            if(recordApps)RecordProcesses(sample.Time,apps,gpuApps);
-            var changes=pendingChanges.ToArray();
-            if(persisted.Record(sample,recordApps?apps:null,recordApps?gpuApps:null,changes.SelectMany(x=>x.Facts).ToArray()))
-                foreach(var change in changes){pendingChanges.TryDequeue(out _);change.Saved.TrySetResult();}
-            else if(persisted.Issue!=null)foreach(var change in changes){pendingChanges.TryDequeue(out _);change.Saved.TrySetException(new System.IO.IOException(persisted.Issue));}
-            if(recordApps)lastApps=sample.Time;
-            Record(sample);
+            // One failed native or history read skips this sample; it must not end
+            // collection for the rest of the session or rethrow at shutdown.
+            try
+            {
+                var sample=source.Read();
+                // The UI may switch cards during a native read. One selection
+                // owns this entire tick, including the array that is published.
+                int kind=DetailKind;
+                bool recordApps=sample.Time-lastApps>=ProcessCadence;
+                var apps=kind is 1 or 3||recordApps?processMetrics.Read():null;
+                var gpuApps=kind==2||recordApps?source.GpuProcesses():null;
+                Details=kind is 1 or 3?apps:kind==2?gpuApps:Array.Empty<ProcessMetric>();
+                if(recordApps)RecordProcesses(sample.Time,apps,gpuApps);
+                var changes=pendingChanges.ToArray();
+                if(persisted.Record(sample,recordApps?apps:null,recordApps?gpuApps:null,changes.SelectMany(x=>x.Facts).ToArray()))
+                    foreach(var change in changes){pendingChanges.TryDequeue(out _);change.Saved.TrySetResult();}
+                else if(persisted.Issue!=null)foreach(var change in changes){pendingChanges.TryDequeue(out _);change.Saved.TrySetException(new System.IO.IOException(persisted.Issue));}
+                if(recordApps)lastApps=sample.Time;
+                Record(sample);
+            }
+            catch(Exception error)when(error is System.ComponentModel.Win32Exception or System.IO.IOException or UnauthorizedAccessException or InvalidOperationException or System.Runtime.InteropServices.COMException){}
             try{if(!await clock.WaitForNextTickAsync(stopped.Token))break;}
             catch(OperationCanceledException)when(stopped.IsCancellationRequested){break;}
         }

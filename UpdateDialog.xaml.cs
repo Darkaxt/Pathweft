@@ -109,7 +109,7 @@ public partial class UpdateDialog : Window
             handedOff=true;
             Application.Current.Shutdown(); // the installer replaces our files; nothing of ours may stay
         }
-        catch (Exception ex) when (ex is HttpRequestException or IOException or TaskCanceledException or System.ComponentModel.Win32Exception)
+        catch (Exception ex) when (ex is HttpRequestException or IOException or OperationCanceledException or UnauthorizedAccessException or System.ComponentModel.Win32Exception)
         {
             Progress.Visibility = Visibility.Collapsed;
             Status.Text = ex.Message;

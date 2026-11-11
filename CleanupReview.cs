@@ -153,7 +153,7 @@ internal sealed class CleanupReview : IDisposable
 #endif
                     skipped++;
                     if(failures.Count<50)failures.Add(groups[i].Folder+"\n"+error.Message+
-                        (Directory.Exists(groups[i].Folder)?"\nRemoval was incomplete; this obsolete version may be partially removed.":""));
+                        (error is not ScoopCleanup.VersionInUseException&&Directory.Exists(groups[i].Folder)?"\nRemoval was incomplete; this obsolete version may be partially removed.":""));
                 }
                 progress?.Invoke(new("Deleting obsolete versions",groups[i].Folder,i+1,groups.Count,deleted,skipped,bytes));
             }

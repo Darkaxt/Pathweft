@@ -114,7 +114,7 @@ public partial class MainWindow
                         if (record.Files.Any(f => EditorWindow.OwnsArchiveCopy(Path.Combine(directory, f)))) throw new IOException("Close the editor tab before releasing this copy.");
                         ArchiveContent.Release(record); RefreshCopies();
                     }
-                    catch (IOException ex) { label.Text = ex.Message; }
+                    catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { label.Text = ex.Message; }
                 };
                 row.Children.Add(label); row.Children.Add(release); list.Children.Add(row);
             }

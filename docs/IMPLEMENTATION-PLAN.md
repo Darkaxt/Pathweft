@@ -14,6 +14,14 @@ remains available as the prior-version recovery package. See
 [2026-11-10-s45-delivery.md](verification/2026-11-10-s45-delivery.md). No blocker
 or tracked deferral remains.
 
+QA review 2026-11-11 (Claude session, source-only): a deep review of the implemented source fixed
+unhandled-exception paths in the administrator session, Maintenance clean, Ferry jobs, archive release,
+update cancel, Settings, drive health, administrator and archive listing, the preview host and the
+performance sampler; the single-instance listener now survives a dropped client; MultiRename rejects
+trailing-dot names; Scoop cleanup now preserves a version whose .exe is running (write-access probe)
+instead of partially deleting it. Debug/Release builds and --selftest passed before the final Scoop probe
+correction, which remains compile-unverified. No version bump, release or installed change. No stage is ACTIVE.
+
 Historical S45 investigation: after the protected 1.1.50 migration and a fresh Helium
 restart, the exact completed PDF exists and the enabled Show in folder control
 dispatches its native Show request for download 858, but Pathweft remains hidden
@@ -1678,6 +1686,7 @@ owns its complete release/delivery gate; S12 delivers research documents only.
 | PREVIEW-12..14 | S8 | Continuous raw frames, native-equivalent orbit and no per-input redraws; final1.1.10 delivery |
 | CORE-09 | S8 | This PC capacity/network/connection details and final delivery |
 | CORE-10 | S8 | Dynamic populated detail columns and final delivery |
+| CORE-06..08 | S8 | Editor fallback, transparent folder icon and sidebar edge fade delivered in1.1.1 (95f4e81, c57d135); no dedicated verification record. CORE-07 artwork superseded by CORE-22 (S17) |
 | CORE-16/17 | S8 | General Windows Open/row errors, desktop-context startup, non-system bulk storage and failed drag disposal; final1.1.11 delivery |
 | CORE-11, PREVIEW-08..11 | S8 | Capacity/provider refinements, icon/themed previews, executable details, shared folder trees, empty-selection collapse and final1.1.5 delivery |
 | CORE-12/13 | S8 | Automatic useful statistics and mapped Google cloud-account quota; source/package/publication/retrieval and actual installed1.1.7 verification pass |
@@ -1697,7 +1706,7 @@ required current-stage wiring or real behavior.
 
 ## S13 execution and reconciliation contract
 
-Status: **NOT STARTED**. No acceptance criterion has been implemented or verified
+Status: **COMPLETE** (see the stage map). The following paragraph is the original pre-start contract. No acceptance criterion has been implemented or verified
 for S13. All PREVIEW-21..36 remain; there is no ACTIVE stage or tracked deferral.
 The next action on future implementation authorization is source/dependency and
 format qualification, followed by the first complete specialist preview workflow.
