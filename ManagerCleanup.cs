@@ -57,6 +57,16 @@ internal static class ManagerCleanup
     internal static Func<string,string,string,string> RunForVerification;
     internal static string OwnedRootForVerification;
 #endif
+    // A manager's reported entry count beyond int range is unusable output,
+    // reported like any other unparseable answer rather than as an overflow.
+    static int ReportedCount(params string[] values)
+    {
+        long total=0;
+        foreach(string value in values)
+            if(!long.TryParse(value,System.Globalization.NumberStyles.None,System.Globalization.CultureInfo.InvariantCulture,out long count)||(total+=count)>int.MaxValue)
+                throw new InvalidDataException("The package manager reported an unusable cache entry count");
+        return (int)total;
+    }
     static string Find(string name)
     {
 #if DEBUG
@@ -207,7 +217,7 @@ internal static class ManagerCleanup
             string exe=Find("choco.exe"),output=Run(id,"list",cancel);
             var match=Regex.Match(output,@"where\s+(\d+)\s+items\s+have\s+expired",RegexOptions.IgnoreCase|RegexOptions.CultureInvariant);
             if(!match.Success)throw new InvalidDataException("Chocolatey did not report an expired-cache count");
-            int count=int.Parse(match.Groups[1].Value,System.Globalization.CultureInfo.InvariantCulture);
+            int count=ReportedCount(match.Groups[1].Value);
             return new(id,exe,"user HTTP cache",[],count,"Expired downloads; installed packages stay.\nChocolatey selects the expired user-cache entries; future installs may download again.",true);
         }
         if(id=="pip")
@@ -218,7 +228,7 @@ internal static class ManagerCleanup
             var http=Regex.Match(info,@"Number of HTTP files:\s*(\d+)",RegexOptions.CultureInvariant);
             var wheels=Regex.Match(info,@"Number of locally built wheels:\s*(\d+)",RegexOptions.CultureInvariant);
             if(!http.Success||!wheels.Success)throw new InvalidDataException("Pip did not report cache entry counts");
-            int count=checked(int.Parse(http.Groups[1].Value,System.Globalization.CultureInfo.InvariantCulture)+int.Parse(wheels.Groups[1].Value,System.Globalization.CultureInfo.InvariantCulture));
+            int count=ReportedCount(http.Groups[1].Value,wheels.Groups[1].Value);
             return new(id,exe,root,["-m","pip"],count,"Cached downloads and wheels; future installs may download again.\n"+root,true,cache.Bytes);
         }
         if(id=="dotnet-tool")

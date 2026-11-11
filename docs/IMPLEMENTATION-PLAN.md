@@ -19,8 +19,17 @@ unhandled-exception paths in the administrator session, Maintenance clean, Ferry
 update cancel, Settings, drive health, administrator and archive listing, the preview host and the
 performance sampler; the single-instance listener now survives a dropped client; MultiRename rejects
 trailing-dot names; Scoop cleanup now preserves a version whose .exe is running (write-access probe)
-instead of partially deleting it. Debug/Release builds and --selftest passed before the final Scoop probe
-correction, which remains compile-unverified. No version bump, release or installed change. No stage is ACTIVE.
+instead of partially deleting it. A follow-up bounds package-manager cache counts, rejects CONIN$/CONOUT$
+archive entry names and guards This PC breadcrumb drive enumeration. Gated Debug and Release builds, Release --selftest and a
+focused running-.exe Scoop test (version preserved while running, removed after exit) passed.
+No version bump, release or installed change. No stage is ACTIVE.
+Accepted by the user: Ferry Overwrite replaces the existing target directly; a cancelled or failed
+overwrite does not restore the original (no hidden temporary copy, which would double disk use and work).
+Open QA findings needing a design decision (not fixed): DesktopLaunch's untimed pipe Connect
+can hang Setup if the desktop child exits early; the single-instance pipe has no current-user ACL
+(CurrentUserOnly breaks across elevation); StorageLocation writes are not atomic; Maintenance's Global\
+mutex is shared across integrity levels; MaintenanceWorker does not bound request Cache/Journal paths to
+DataFolder; EditorWindow's File.Replace replaces a symlink with a file.
 
 Historical S45 investigation: after the protected 1.1.50 migration and a fresh Helium
 restart, the exact completed PDF exists and the enabled Show in folder control

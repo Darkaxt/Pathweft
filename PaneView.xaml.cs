@@ -1606,9 +1606,12 @@ public partial class PaneView : UserControl
         var opts = new EnumerationOptions { IgnoreInaccessible = true, AttributesToSkip = hidden ? 0 : FileAttributes.Hidden };
         var dirs = await Task.Run(() =>
         {
-            if (folder == ThisPC) return DriveInfo.GetDrives().Select(d => d.Name).ToList();
-            if (IsServer(folder)) return NetShares(folder)?.Select(s => $@"{folder}\{s}").ToList() ?? new();
-            try { return Directory.EnumerateDirectories(folder, "*", opts).Where(d => FileVisibility.Visible(System.IO.Path.GetFileName(d), 0, hidden)).Take(500).ToList(); }
+            try
+            {
+                if (folder == ThisPC) return DriveInfo.GetDrives().Select(d => d.Name).ToList();
+                if (IsServer(folder)) return NetShares(folder)?.Select(s => $@"{folder}\{s}").ToList() ?? new();
+                return Directory.EnumerateDirectories(folder, "*", opts).Where(d => FileVisibility.Visible(System.IO.Path.GetFileName(d), 0, hidden)).Take(500).ToList();
+            }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return new List<string>(); }
         });
         if (hidden != ShowHidden || dirs.Count == 0) return;
