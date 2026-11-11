@@ -74,7 +74,7 @@ public partial class MainWindow
         await S1Verification.Navigate(Left, big); await Idle();
         await Time("select-200-rows", async () =>
         {
-            for (int i = 0; i < 200 && i < Left.Items.Count; i++) { Left.List.SelectedIndex = i; await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Background); }
+            for (int i = 0; i < 200 && i < Left.List.Items.Count; i++) { Left.List.SelectedIndex = i; await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Background); }
         });
         await Time("view-modes", async () =>
         {
