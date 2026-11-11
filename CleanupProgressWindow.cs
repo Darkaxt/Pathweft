@@ -82,6 +82,6 @@ internal sealed class CleanupProgressWindow : Window
     void BusyAnimation(bool busy)
     {
         if(animating==busy)return;animating=busy;
-        bar.BeginAnimation(OpacityProperty,busy?new DoubleAnimation(.35,1,TimeSpan.FromSeconds(.7)){AutoReverse=true,RepeatBehavior=RepeatBehavior.Forever}:null);
+        bar.BeginAnimation(OpacityProperty,busy&&Motion.On?new DoubleAnimation(.35,1,TimeSpan.FromSeconds(.7)){AutoReverse=true,RepeatBehavior=RepeatBehavior.Forever}:null);
     }
 }

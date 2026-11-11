@@ -60,7 +60,9 @@ public partial class MainWindow
     void SetPreviewVisible(bool visible)
     {
         bool column=visible&&previewMode==PreviewMode.Sidebar;
+        bool appearing=visible&&PreviewPane.Visibility!=Visibility.Visible;
         PreviewPane.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
+        if(appearing)Motion.Enter(PreviewPane,ms:160); // a fade only: hosted viewers draw in their own windows
         if(previewWindow is {} window)
         {
             if(!visible)window.Hide();

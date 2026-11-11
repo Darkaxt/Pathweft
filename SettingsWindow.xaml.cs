@@ -21,6 +21,7 @@ public partial class SettingsWindow : Window
             var selected=(SettingsCategories.SelectedItem as System.Windows.Controls.ListBoxItem)?.Tag;
             foreach(System.Windows.UIElement card in SettingsCards.Children)card.Visibility=ReferenceEquals(card,selected)?Visibility.Visible:Visibility.Collapsed;
             CategoryScroll.ScrollToTop();
+            if(IsLoaded&&selected is System.Windows.UIElement shown)Motion.Swap(shown);
         };
         SettingsCategories.SelectedIndex=0;
 #if DEBUG
@@ -426,6 +427,8 @@ public partial class SettingsWindow : Window
         NativeOptions.Visibility = Settings.NativeTheme ? Visibility.Visible : Visibility.Collapsed;
         GlassOptions.Visibility = Settings.NativeTheme ? Visibility.Collapsed : Visibility.Visible;
         WindowsAccentBox.IsChecked = Settings.WindowsAccent;
+        // still usable (choosing one switches to a custom accent), but visibly not the active source
+        CustomAccentRow.Opacity = CustomAccentPicker.Opacity = Settings.WindowsAccent ? 0.5 : 1;
         BdAcrylic.Tag = Settings.Backdrop == 3 ? "on" : null;
         BdMica.Tag = Settings.Backdrop == 2 ? "on" : null;
         BdSolid.Tag = Settings.Backdrop == 1 ? "on" : null;

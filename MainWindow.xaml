@@ -250,7 +250,7 @@
         <Button x:Name="SettingsButton" Style="{StaticResource IconButton}" Width="28" Height="28" Content="&#xE713;" Click="Settings_Click" ToolTip="Settings (Ctrl+,)" AutomationProperties.Name="Settings"/>
         </StackPanel>
       </Grid>
-      <DockPanel x:Name="SidebarFooter" DockPanel.Dock="Bottom" Margin="8,4,8,8">
+      <DockPanel x:Name="SidebarFooter" DockPanel.Dock="Bottom" Margin="8,4,8,3">
         <!-- the Drop bin: a click shows it, and files dropped on the button go in -->
         <Button x:Name="BinButton" DockPanel.Dock="Left" Style="{StaticResource IconButton}" Width="Auto" HorizontalAlignment="Left"
                 Click="BinButton_Click" AutomationProperties.Name="Drop bin" AllowDrop="True" DragOver="Bin_DragOver" Drop="Bin_Drop"
@@ -366,7 +366,7 @@
 
         <Border x:Name="FolderCard" Grid.Column="2" Style="{StaticResource StatCard}">
           <DockPanel>
-            <TextBlock x:Name="FolderIcon" Text="&#xE8B7;" Style="{StaticResource StatIcon}" Foreground="{DynamicResource Palette.60A5FA}" VerticalAlignment="Center" Margin="0,0,12,0"/>
+            <TextBlock x:Name="FolderIcon" Text="&#xE8B7;" Style="{StaticResource StatIcon}" Foreground="{DynamicResource Palette.EBCB7A}" VerticalAlignment="Center" Margin="0,0,12,0"/>
             <StackPanel VerticalAlignment="Center">
               <TextBlock Text="This folder" Style="{StaticResource StatSub}"/>
               <TextBlock x:Name="StatFolder" Style="{StaticResource StatValue}"/>

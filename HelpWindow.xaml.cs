@@ -113,7 +113,7 @@ public partial class HelpWindow : Window
         }),
         ("Tools", new[]
         {
-            ("F4", "Edit in the built-in code editor: tabs, syntax colouring, a status bar for encoding, line endings, indentation and language, Markdown preview (Ctrl+Shift+V). It reopens what you had open"),
+            ("F4", "Edit in the built-in code editor: tabs, syntax coloring, a status bar for encoding, line endings, indentation and language, Markdown preview (Ctrl+Shift+V). It reopens what you had open"),
             ("Right-click → Compare in editor", "Two selected files side by side in the editor"),
             ("Shift+F2", "Compare the two panes: on each side, what the other lacks or has older (or of another size) is selected"),
             ("Right-click → Find duplicates…", "Files that are exactly alike in this folder, and in its subfolders if you tick that, plus shortcuts that open the same thing. Select extra copies keeps the oldest of each; send the rest to the Recycle Bin or move them. It works in the background, with progress and Stop"),
@@ -135,7 +135,7 @@ public partial class HelpWindow : Window
             ("Right-click empty space → View", "The same five views, from the menu"),
             ("Click a column header", "Sort; the selected file stays in sight. Each folder remembers its own order"),
             ("Drag a column's edge", "Widen it; once you size Name yourself it stays, and a wide list scrolls sideways. Double-click Name's edge to let it fill the pane again"),
-            ("Colours by age", "The bar at the left of each row and the age badge go from red (minutes ago) through orange and yellow to blue-grey (a year): what changed lately stands out"),
+            ("Colors by age", "The bar at the left of each row and the age badge go from red (minutes ago) through orange and yellow to blue-grey (a year): what changed lately stands out"),
             ("Sync badges", "Google Drive, Nextcloud and other apps' status icons, on the file icons as in Explorer, updated live"),
             ("Ctrl+H", "Show hidden files"),
             ("F5 / Ctrl+R", "Refresh and measure folder sizes again"),
@@ -162,7 +162,7 @@ public partial class HelpWindow : Window
         }),
         ("Settings and updates", new[]
         {
-            ("Ctrl+,", "Settings: appearance (backdrop, opacity, background picture, accent colour, row height, text size per area, summary cards, animations), files, the right-click menu, transfers, Windows integration, about"),
+            ("Ctrl+,", "Settings: appearance (backdrop, opacity, background picture, accent color, row height, text size per area, summary cards, animations), files, the right-click menu, transfers, Windows integration, about"),
             ("Updates", "Pathweft checks every hour and asks before updating; the update downloads, is checked against GitHub's published SHA-256, installs and restarts in about ten seconds"),
             ("What's new", "Every release's notes, by month, from the button beside Pathweft's name in the sidebar. It opens by itself after an update"),
             ("Settings → Reset to defaults", "Every setting back to how Pathweft comes, after asking; each card has its own Reset. Windows integration, tabs and Quick access stay. A double-click on a slider's handle resets just that slider"),

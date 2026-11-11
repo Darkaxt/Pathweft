@@ -21,7 +21,7 @@ public partial class RecycleBinWindow : Window
         public string DeletedText => Deleted.ToString("yyyy-MM-dd  HH:mm");
         public string SizeText => MainWindow.Fmt(Size);
         public string Glyph => IsDir ? "\uE8B7" : "\uE7C3";
-        public Brush GlyphBrush => MainWindow.Hex(IsDir ? "#60A5FA" : "#9CA3AF");
+        public Brush GlyphBrush => MainWindow.Hex(IsDir ? "#EBCB7A" : "#9CA3AF");
     }
 
     readonly Action changed; // panes refresh when something comes back

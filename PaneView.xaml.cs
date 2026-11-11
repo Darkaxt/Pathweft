@@ -130,17 +130,17 @@ public class Entry : INotifyPropertyChanged
 
     static readonly Dictionary<string, (string, string)> Kinds = new(StringComparer.OrdinalIgnoreCase)
     {
-        [".jpg"] = ("", "#F472B6"), [".jpeg"] = ("", "#F472B6"), [".png"] = ("", "#F472B6"),
-        [".gif"] = ("", "#F472B6"), [".webp"] = ("", "#F472B6"), [".svg"] = ("", "#F472B6"),
-        [".mp4"] = ("", "#FB923C"), [".mkv"] = ("", "#FB923C"), [".avi"] = ("", "#FB923C"), [".mov"] = ("", "#FB923C"),
-        [".mp3"] = ("", "#A78BFA"), [".flac"] = ("", "#A78BFA"), [".wav"] = ("", "#A78BFA"),
-        [".zip"] = ("", "#FACC15"), [".rar"] = ("", "#FACC15"), [".7z"] = ("", "#FACC15"), [".iso"] = ("", "#FACC15"),
-        [".exe"] = ("", "#34D399"), [".msi"] = ("", "#34D399"), [".bat"] = ("", "#34D399"), [".ps1"] = ("", "#34D399"),
-        [".cs"] = ("", "#38BDF8"), [".js"] = ("", "#38BDF8"), [".ts"] = ("", "#38BDF8"), [".py"] = ("", "#38BDF8"),
-        [".json"] = ("", "#38BDF8"), [".xml"] = ("", "#38BDF8"), [".html"] = ("", "#38BDF8"), [".xaml"] = ("", "#38BDF8"),
-        [".pdf"] = ("", "#F87171"),
+        [".jpg"] = ("", "#EB78B4"), [".jpeg"] = ("", "#EB78B4"), [".png"] = ("", "#EB78B4"),
+        [".gif"] = ("", "#EB78B4"), [".webp"] = ("", "#EB78B4"), [".svg"] = ("", "#EB78B4"),
+        [".mp4"] = ("", "#EF9348"), [".mkv"] = ("", "#EF9348"), [".avi"] = ("", "#EF9348"), [".mov"] = ("", "#EF9348"),
+        [".mp3"] = ("", "#A78DF2"), [".flac"] = ("", "#A78DF2"), [".wav"] = ("", "#A78DF2"),
+        [".zip"] = ("", "#E6BE2A"), [".rar"] = ("", "#E6BE2A"), [".7z"] = ("", "#E6BE2A"), [".iso"] = ("", "#E6BE2A"),
+        [".exe"] = ("", "#3EC996"), [".msi"] = ("", "#3EC996"), [".bat"] = ("", "#3EC996"), [".ps1"] = ("", "#3EC996"),
+        [".cs"] = ("", "#44B8EC"), [".js"] = ("", "#44B8EC"), [".ts"] = ("", "#44B8EC"), [".py"] = ("", "#44B8EC"),
+        [".json"] = ("", "#44B8EC"), [".xml"] = ("", "#44B8EC"), [".html"] = ("", "#44B8EC"), [".xaml"] = ("", "#44B8EC"),
+        [".pdf"] = ("", "#EF7777"),
     };
-    (string icon, string color) Kind => IsUp ? ("", "#9CA3AF") : IsDir ? ("", "#60A5FA")
+    (string icon, string color) Kind => IsUp ? ("", "#9CA3AF") : IsDir ? ("", "#EBCB7A")
         : Kinds.TryGetValue(System.IO.Path.GetExtension(Name), out var k) ? k : ("", "#9CA3AF");
     public string Icon => Kind.icon;
     public string KindColor => Kind.color;
@@ -150,9 +150,9 @@ public class Entry : INotifyPropertyChanged
     // orange/yellow/teal to neutral grey as the item gets older (log time scale).
     static readonly (double hours, Color c)[] Stops =
     {
-        (0, Color.FromRgb(0xFF, 0x4D, 0x5E)), (1, Color.FromRgb(0xFF, 0x8A, 0x3D)),
-        (24, Color.FromRgb(0xFF, 0xD2, 0x3F)), (24 * 7, Color.FromRgb(0x3D, 0xDC, 0xC8)),
-        (24 * 30, Color.FromRgb(0x5B, 0x8D, 0xB8)), (24 * 365, Color.FromRgb(0x4A, 0x4A, 0x4A)),
+        (0, Color.FromRgb(0xF3, 0x57, 0x66)), (1, Color.FromRgb(0xF2, 0x8D, 0x4A)),
+        (24, Color.FromRgb(0xF3, 0xCB, 0x4B)), (24 * 7, Color.FromRgb(0x47, 0xD2, 0xC0)),
+        (24 * 30, Color.FromRgb(0x61, 0x8D, 0xB2)), (24 * 365, Color.FromRgb(0x4A, 0x4A, 0x4A)),
     };
     Color AgeColor
     {
@@ -170,7 +170,8 @@ public class Entry : INotifyPropertyChanged
             return Stops[^1].c;
         }
     }
-    public Brush AgeBrush { get { if (NoDate) return Brushes.Transparent; if(Appearance.Native)return (Brush)Application.Current.Resources["AgeBackground"]; var b = new SolidColorBrush(AgeColor); b.Freeze(); return b; } }
+    public Brush AgeBrush { get { if (NoDate) return Brushes.Transparent; if(Appearance.Native)return (Brush)Application.Current.Resources["AgeBackground"]; return AgeBrushes.GetOrAdd(AgeColor, c => { var b = new SolidColorBrush(c); b.Freeze(); return b; }); } }
+    static readonly ConcurrentDictionary<Color, Brush> AgeBrushes = new();
     public Brush AgeTextBrush
     {
         get { if(Appearance.Native)return (Brush)Application.Current.Resources["AgeForeground"]; var c = AgeColor; return 0.299 * c.R + 0.587 * c.G + 0.114 * c.B > 140 ? MainWindow.Hex("#E6111111") : MainWindow.Hex("#E6FFFFFF"); }
@@ -335,7 +336,7 @@ public partial class PaneView : UserControl
         // FindRow, not "OriginalSource is FrameworkElement": a double-click on the name lands on a Run.
         // In the rename box a double-click selects a word, it doesn't open the file.
         List.MouseDoubleClick += (_, e) => { if (!InTextBox(e.OriginalSource) && FindRow(e.OriginalSource as DependencyObject) != null) OpenSelected(); };
-        List.SelectionChanged += (_, _) => { if (bulkSelect) return; UpdateFooter(); StatsChanged?.Invoke(); };
+        List.SelectionChanged += (_, _) => { if (bulkSelect) return; UpdateFooter(); StatsChanged?.Invoke(); }; // immediate: deferring it measured slower (S25)
         // Ctrl+wheel steps through the view modes, smallest to largest, the way Explorer resizes icons.
         PreviewMouseWheel += (_, e) =>
         {
@@ -1407,7 +1408,7 @@ public partial class PaneView : UserControl
                     {
                         if(cts.IsCancellationRequested||sizing!=cts||!items.Contains(e)||publication.Invalid)return;
                         e.SizeSource=fromIndex?"Everything index · excluded files may be omitted":"Filesystem measurement";
-                        e.Size=total;UpdateFooter();StatsChanged?.Invoke();
+                        e.Size=total;StatsSoon(sizeArrival:true);
                     }).Task.GetAwaiter().GetResult();
                 }),cts.Token);
             }
@@ -1540,8 +1541,26 @@ public partial class PaneView : UserControl
         });
     }
 
+    // One footer/summary pass for a burst of changes. Each folder size used to rerun every full-folder
+    // aggregate (O(N) per arrival, O(N^2) per listing: WinSxS stalled the UI for 19 s); selection runs
+    // after the input that caused it, size arrivals at most every 100 ms.
+    System.Windows.Threading.DispatcherOperation statsPass;
+    System.Windows.Threading.DispatcherTimer statsTimer;
+    void StatsSoon(bool sizeArrival=false)
+    {
+        if(sizeArrival)
+        {
+            if(statsTimer==null){statsTimer=new(DispatcherPriority.Normal,Dispatcher){Interval=TimeSpan.FromMilliseconds(100)};statsTimer.Tick+=(_,_)=>{statsTimer.Stop();StatsSoon();};}
+            if(!statsTimer.IsEnabled)statsTimer.Start();
+            return;
+        }
+        if(statsPass is {Status:DispatcherOperationStatus.Pending})return;
+        statsPass=Dispatcher.BeginInvoke(()=>{statsPass=null;UpdateFooter();StatsChanged?.Invoke();},DispatcherPriority.Background);
+    }
+
     void UpdateFooter()
     {
+        EmptyState.Visibility=Visibility.Collapsed;
         if(SpaceAnalyzing){UpdateSpaceFooter();return;}
         if(Dir==ThisPC&&!InSearch)
         {
@@ -1553,22 +1572,30 @@ public partial class PaneView : UserControl
             return;
         }
         var sel = Selected;
-        int folders = Items.Count(e => e.IsDir), files = Items.Count() - folders;
+        int folders=0,files=0,left=0,cached=0;long total=0;bool indexed=false;
+        foreach(var e in items)
+        {
+            if(e.IsUp)continue;
+            if(e.IsDir)folders++;else files++;
+            long size=e.DisplaySize;
+            if(size==-1)left++;else if(e.IsDir&&size>=0)cached++;
+            total+=Math.Max(0,size);
+            indexed|=e.SizeSource.StartsWith("Everything",StringComparison.Ordinal);
+        }
         Footer.Text = sel.Count > 0
             ? $"{sel.Count} selected  ·  {(sel.Any(e=>e.DisplaySize<0)?sel.Count==1?"measuring…":MainWindow.Fmt(sel.Sum(e=>Math.Max(0,e.DisplaySize)))+"+":MainWindow.Fmt(sel.Sum(e=>e.DisplaySize)))}"
             : searchQuery != null
                 ? $"{items.Count} found for “{searchQuery}”{(searching ? "  ·  searching…" : items.Count >= MaxResults ? $"  ·  stopped at {MaxResults}" : "")}  ·  Esc goes back"
             : view?.Filter != null
                 ? $"{view.Cast<Entry>().Count(e => !e.IsUp):N0} of {folders + files:N0} match “{FilterBox.Text.Trim()}”"
-            : $"{folders} folders  ·  {files} files  ·  {MainWindow.Fmt(FolderTotal)}{Pending()}";
-        if(Items.Any(entry=>entry.SizeSource.StartsWith("Everything",StringComparison.Ordinal)))Footer.Text+=" · indexed sizes";
-
-        string Pending()
+            : $"{folders} folders  ·  {files} files  ·  {MainWindow.Fmt(total)}{(left==0?"":cached>0?$"  ·  measuring {left} folders ({cached} cached)":$"  ·  measuring {left} folders")}";
+        if(indexed)Footer.Text+=" · indexed sizes";
+        bool filtered=view?.Filter!=null;
+        if(Listed&&loadingListing<0&&!searching&&FolderFailurePanel.Visibility!=Visibility.Visible
+           &&(filtered?!view.Cast<Entry>().Any(e=>!e.IsUp):folders+files==0))
         {
-            int left = Items.Count(e => e.DisplaySize == -1);
-            if (left == 0) return "";
-            int cached = Items.Count(e => e.IsDir && e.DisplaySize >= 0);
-            return cached > 0 ? $"  ·  measuring {left} folders ({cached} cached)" : $"  ·  measuring {left} folders";
+            EmptyState.Text=searchQuery!=null?"No results":filtered?"Nothing matches the filter":"This folder is empty";
+            EmptyState.Visibility=Visibility.Visible;
         }
     }
 
@@ -2633,13 +2660,17 @@ public partial class PaneView : UserControl
         var todo = AssetEntries().Where(e => !e.IsUp).Take(5000).ToList();
         var t = new Thread(() =>
         {
+            var ui = new UiBatch(Dispatcher);
+            try { Fetch(); } finally { ui.Flush(); }
+            void Fetch()
+            {
             foreach (var e in todo)
             {
                 if (cts.IsCancellationRequested) return;
                 if (!e.RestrictionChecked)
                 {
                     string reason = ReadOnlyIcons.Reason(e);
-                    Dispatcher.BeginInvoke(() => { if (!cts.IsCancellationRequested) { e.ReadOnlyReason = reason; e.RestrictionChecked = true; } });
+                    ui.Add(() => { if (!cts.IsCancellationRequested) { e.ReadOnlyReason = reason; e.RestrictionChecked = true; } });
                 }
                 if (e.SmallIcon != null && stale?.Contains(e) != true) continue; // kept from the last time this folder was shown
                 var ext = System.IO.Path.GetExtension(e.Name);
@@ -2648,9 +2679,11 @@ public partial class PaneView : UserControl
                 ImageSource img = shared && IconByExt.TryGetValue(ext, out var cached) ? cached : Thumbnails.Get(e.Path, 32, iconOnly: true, stamp: shared ? 0 : e.Modified.Ticks);
                 if (img == null) continue;
                 if (shared) IconByExt.TryAdd(ext, img);
-                Dispatcher.BeginInvoke(() => e.SmallIcon = img);
+                ui.Add(() => e.SmallIcon = img);
             }
-            FetchOverlays(todo, cts.Token); // after all the icons: badges are per file, so slower
+            ui.Flush();
+            FetchOverlays(todo, cts.Token, ui); // after all the icons: badges are per file, so slower
+            }
         }) { IsBackground = true };
         t.SetApartmentState(ApartmentState.STA);
         t.Start();
@@ -2662,13 +2695,38 @@ public partial class PaneView : UserControl
 
     // Sync badges. The shell asks every overlay handler about every file (~4 ms each), so this runs
     // last, on the icon thread, and sets only what changed.
-    void FetchOverlays(IEnumerable<Entry> todo, CancellationToken token)
+    void FetchOverlays(IEnumerable<Entry> todo, CancellationToken token, UiBatch ui = null)
     {
-        foreach (var e in todo)
+        var own = ui == null ? ui = new UiBatch(Dispatcher) : null;
+        try
         {
-            if (token.IsCancellationRequested) return;
-            var badge = Thumbnails.Overlay(e.Path);
-            if (badge != e.Overlay) Dispatcher.BeginInvoke(() => e.Overlay = badge);
+            foreach (var e in todo)
+            {
+                if (token.IsCancellationRequested) return;
+                var badge = Thumbnails.Overlay(e.Path);
+                if (badge != e.Overlay) ui.Add(() => e.Overlay = badge);
+            }
+        }
+        finally { own?.Flush(); }
+    }
+
+    // Results from a pane's icon/thumbnail/overlay thread reach the UI in small batches below input
+    // priority, not one dispatcher operation per row at Normal priority (which outranks input).
+    internal sealed class UiBatch(Dispatcher dispatcher, int size = 64)
+    {
+        readonly List<Action> pending = new();
+        long last = Environment.TickCount64;
+        public void Add(Action a)
+        {
+            pending.Add(a);
+            if (pending.Count >= size || Environment.TickCount64 - last >= 40) Flush();
+        }
+        public void Flush()
+        {
+            last = Environment.TickCount64;
+            if (pending.Count == 0) return;
+            var batch = pending.ToArray(); pending.Clear();
+            dispatcher.BeginInvoke(() => { foreach (var a in batch) a(); }, DispatcherPriority.Background);
         }
     }
 
@@ -2714,13 +2772,18 @@ public partial class PaneView : UserControl
         var todo = AssetEntries().Where(e => !e.IsUp).Take(3000).ToList();
         var t = new Thread(() =>
         {
-            foreach (var e in todo)
+            var ui = new UiBatch(Dispatcher, 8); // a thumbnail costs more to show than an icon
+            try
             {
-                if (cts.IsCancellationRequested) return;
-                if (e.Thumb != null && e.ThumbSize >= size) continue; // the one we have is big enough
-                var img = Thumbnails.Get(e.Path, size, stamp: e.Modified.Ticks);
-                if (img != null) Dispatcher.BeginInvoke(() => { e.ThumbSize = size; e.Thumb = img; });
+                foreach (var e in todo)
+                {
+                    if (cts.IsCancellationRequested) return;
+                    if (e.Thumb != null && e.ThumbSize >= size) continue; // the one we have is big enough
+                    var img = Thumbnails.Get(e.Path, size, stamp: e.Modified.Ticks);
+                    if (img != null) ui.Add(() => { e.ThumbSize = size; e.Thumb = img; });
+                }
             }
+            finally { ui.Flush(); }
         }) { IsBackground = true };
         t.SetApartmentState(ApartmentState.STA);
         t.Start();

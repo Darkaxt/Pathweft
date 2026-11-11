@@ -22,6 +22,9 @@ static class Motion
     public static void Enter(UIElement e, double scale = 1, double rise = 0, int ms = 180, double from = 0, Window window = null)
     {
         if (!On) return;
+        // A newer entrance of the same element supersedes one still waiting for its first frames.
+        var generation = generations.GetOrCreateValue(e);
+        int mine = ++generation.Value;
         ScaleTransform s = null; TranslateTransform t = null;
         // ours, or none yet: an element's own transform is left alone and it only fades
         if (scale != 1 || rise != 0)
@@ -49,12 +52,64 @@ static class Motion
         start = (_, a) =>
         {
             var now = ((RenderingEventArgs)a).RenderingTime;
+            if (generation.Value != mine) { CompositionTarget.Rendering -= start; return; }
             if (now == last || ++frames < 2) { last = now; return; } // raised twice for one frame at times
             CompositionTarget.Rendering -= start;
             Run(true);
         };
         if (window == null) CompositionTarget.Rendering += start;
         else window.ContentRendered += (_, _) => CompositionTarget.Rendering += start;
+    }
+
+    static readonly System.Runtime.CompilerServices.ConditionalWeakTable<UIElement, System.Runtime.CompilerServices.StrongBox<int>> generations = new();
+
+    /// Shows or hides a region of the window. The state changes at once (layout, focus, collectors and
+    /// automation see the final state immediately); only the picture moves: an entering region fades in
+    /// risen from below, a leaving one is replaced by a click-through snapshot that fades and sinks away.
+    /// Nothing happens when the visibility is already what was asked, so routine refreshes never animate.
+    public static void SetShown(FrameworkElement e, bool show, double rise = 8, int ms = 200)
+    {
+        var target = show ? Visibility.Visible : Visibility.Collapsed;
+        if (e.Visibility == target) return;
+        bool animate = On && Window.GetWindow(e) is { IsVisible: true, WindowState: not WindowState.Minimized };
+        if (!show && animate) Leave(e, rise, (int)(ms * 0.8));
+        e.Visibility = target;
+        if (show && animate) Enter(e, rise: rise, ms: ms);
+    }
+
+    /// A short fade with a slight rise for content that replaced other content in place (a tab or category).
+    public static void Swap(UIElement e, double rise = 6, int ms = 160) => Enter(e, rise: rise, ms: ms);
+
+    static void Leave(FrameworkElement e, double drop, int ms)
+    {
+        // Adorned by the parent: an adorner placed on the region itself would vanish with it.
+        if (!e.IsVisible || e.ActualWidth < 1 || e.ActualHeight < 1 || VisualTreeHelper.GetParent(e) is not UIElement parent
+            || System.Windows.Documents.AdornerLayer.GetAdornerLayer(parent) is not { } layer) return;
+        var dpi = VisualTreeHelper.GetDpi(e);
+        var bitmap = new System.Windows.Media.Imaging.RenderTargetBitmap((int)Math.Ceiling(e.ActualWidth * dpi.DpiScaleX), (int)Math.Ceiling(e.ActualHeight * dpi.DpiScaleY), dpi.PixelsPerInchX, dpi.PixelsPerInchY, PixelFormats.Pbgra32);
+        bitmap.Render(e); bitmap.Freeze();
+        var ghost = new Ghost(parent, bitmap, new Rect(e.TranslatePoint(default, parent), new Size(e.ActualWidth, e.ActualHeight)));
+        layer.Add(ghost);
+        var d = new Duration(TimeSpan.FromMilliseconds(ms));
+        var fade = new DoubleAnimation(1, 0, d) { EasingFunction = Out };
+        fade.Completed += (_, _) => layer.Remove(ghost);
+        ghost.Shift.BeginAnimation(TranslateTransform.YProperty, new DoubleAnimation(0, drop, d) { EasingFunction = Out });
+        ghost.BeginAnimation(UIElement.OpacityProperty, fade);
+    }
+
+    // The leaving region's last picture, drawn where it was, never hit-testable or focusable.
+    sealed class Ghost : System.Windows.Documents.Adorner
+    {
+        readonly ImageSource picture; readonly Rect at;
+        internal readonly TranslateTransform Shift = new();
+        internal Ghost(UIElement parent, ImageSource picture, Rect at) : base(parent)
+        {
+            this.picture = picture; this.at = at;
+            IsHitTestVisible = false; Focusable = false;
+            // clipped to where it was: it sinks out of its own place rather than over its neighbours
+            Clip = new RectangleGeometry(at);
+        }
+        protected override void OnRender(DrawingContext dc) { dc.PushTransform(Shift); dc.DrawImage(picture, at); dc.Pop(); }
     }
 
     /// Called once, before any window: every window but the main one grows in when it first appears, and every window

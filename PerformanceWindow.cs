@@ -60,7 +60,7 @@ public partial class MainWindow
     {
         if(performance==null)return;
         performance.SetFolder(active?.Dir);
-        performance.Visibility=!maintenanceVisible&&PerformanceMode&&IsVisible&&WindowState!=WindowState.Minimized?Visibility.Visible:Visibility.Collapsed;
+        Motion.SetShown(performance,!maintenanceVisible&&PerformanceMode&&IsVisible&&WindowState!=WindowState.Minimized);
         ShowAnalysis();
         PerformanceCommand.Tag=PerformanceMode?"on":null;
         AutomationProperties.SetItemStatus(PerformanceCommand,PerformanceMode?"On":"Off");

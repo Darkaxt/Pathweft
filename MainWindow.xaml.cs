@@ -898,7 +898,7 @@ public partial class MainWindow : Window
     public static FrameworkElement ShellIcon(string path, string fallbackGlyph, double size, Thickness margin)
     {
         var box = new Grid { Width = size, Height = size, Margin = margin, VerticalAlignment = VerticalAlignment.Center };
-        var glyph = new TextBlock { Text = fallbackGlyph, FontFamily = new FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"), Foreground = Hex("#F5C451"), FontSize = size * 0.9, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+        var glyph = new TextBlock { Text = fallbackGlyph, FontFamily = new FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"), Foreground = Hex("#EBCB7A"), FontSize = size * 0.9, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
         box.Children.Add(glyph);
 
         void Show(ImageSource img)
@@ -1019,17 +1019,18 @@ public partial class MainWindow : Window
         StatsRow.ColumnDefinitions[2].Width=folder?new GridLength(1,GridUnitType.Star):new GridLength(0);
         StatsRow.ColumnDefinitions[3].Width=new GridLength(folder&&selection?10:0);
         StatsRow.ColumnDefinitions[4].Width=selection?new GridLength(1,GridUnitType.Star):new GridLength(0);
-        StatsRow.Visibility=!maintenanceVisible&&!PerformanceMode&&Settings.Stats!=0&&(drive||folder||selection)?Visibility.Visible:Visibility.Collapsed;
+        Motion.SetShown(StatsRow,!maintenanceVisible&&!PerformanceMode&&Settings.Stats!=0&&(drive||folder||selection));
     }
 
-    readonly System.Windows.Media.Effects.DropShadowEffect FullGlow = new() { Color = Color.FromRgb(0xFF, 0x33, 0x47), BlurRadius = 7, ShadowDepth = 0, Opacity = 0.75 };
+    readonly System.Windows.Media.Effects.DropShadowEffect FullGlow = Frozen(new() { Color = Color.FromRgb(0xF2, 0x40, 0x52), BlurRadius = 6, ShadowDepth = 0, Opacity = 0.5 });
+    static System.Windows.Media.Effects.DropShadowEffect Frozen(System.Windows.Media.Effects.DropShadowEffect e) { e.Freeze(); return e; }
 
     // The folder: its size, what it holds, and a bar of what that is by kind — the same colours as the
     // file icons in the list. Rebuilt only when the mix changes, not at every selection change.
     static readonly Dictionary<string, string> KindNames = new(StringComparer.OrdinalIgnoreCase)
     {
-        ["#60A5FA"] = "Folders", ["#F472B6"] = "Images", ["#FB923C"] = "Video", ["#A78BFA"] = "Audio", ["#FACC15"] = "Archives",
-        ["#34D399"] = "Programs", ["#38BDF8"] = "Code", ["#F87171"] = "PDF", ["#9CA3AF"] = "Other",
+        ["#EBCB7A"] = "Folders", ["#EB78B4"] = "Images", ["#EF9348"] = "Video", ["#A78DF2"] = "Audio", ["#E6BE2A"] = "Archives",
+        ["#3EC996"] = "Programs", ["#44B8EC"] = "Code", ["#EF7777"] = "PDF", ["#9CA3AF"] = "Other",
     };
     string kindsShown;
 
@@ -1148,7 +1149,7 @@ public partial class MainWindow : Window
     System.Windows.Data.ListCollectionView jobView;
     readonly Dictionary<Job, int> shownState = new();
     int jobSeq;
-    static readonly string[] JobHues = { "#4C8DFF", "#5DCAA5", "#F0997B", "#ED93B1", "#AFA9EC", "#FAC775" };
+    static readonly string[] JobHues = { "#4C8DFF", "#64C3A3", "#E89A7F", "#E694B0", "#ADA8E6", "#F1C37A" };
 
     void ShowTransfers(bool activate)
     {

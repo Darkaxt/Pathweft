@@ -277,11 +277,14 @@
       <Setter Property="Template">
         <Setter.Value>
           <ControlTemplate TargetType="Button">
-            <Border x:Name="Bd" Background="Transparent" CornerRadius="5" Padding="7,4">
+            <Border x:Name="Bd" Background="Transparent" CornerRadius="5" Padding="6,3" BorderThickness="1" BorderBrush="Transparent">
               <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"/>
             </Border>
             <ControlTemplate.Triggers>
               <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Bd" Property="Background" Value="{DynamicResource Palette.14FFFFFF}"/></Trigger>
+              <Trigger Property="IsPressed" Value="True"><Setter TargetName="Bd" Property="Background" Value="{DynamicResource Palette.0DFFFFFF}"/></Trigger>
+              <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource Accent}"/></Trigger>
+              <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.45"/></Trigger>
             </ControlTemplate.Triggers>
           </ControlTemplate>
         </Setter.Value>
@@ -356,11 +359,14 @@
       <Setter Property="Template">
         <Setter.Value>
           <ControlTemplate TargetType="Button">
-            <Border x:Name="Bd" Background="Transparent" CornerRadius="5" Padding="9,3" Margin="0,0,2,0">
+            <Border x:Name="Bd" Background="Transparent" CornerRadius="5" Padding="8,2" Margin="0,0,2,0" BorderThickness="1" BorderBrush="Transparent">
               <ContentPresenter/>
             </Border>
             <ControlTemplate.Triggers>
               <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Bd" Property="Background" Value="{DynamicResource Palette.10FFFFFF}"/></Trigger>
+              <Trigger Property="IsPressed" Value="True"><Setter TargetName="Bd" Property="Background" Value="{DynamicResource Palette.0AFFFFFF}"/></Trigger>
+              <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource Accent}"/></Trigger>
+              <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.45"/></Trigger>
               <Trigger Property="Tag" Value="on">
                 <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Palette.1AFFFFFF}"/>
                 <Setter Property="Foreground" Value="{DynamicResource Palette.F0FFFFFF}"/>
@@ -380,8 +386,8 @@
       <Setter Property="Background" Value="Transparent"/>
     </Style>
     <Style x:Key="AuxiliaryCard" TargetType="Border">
-      <Setter Property="Background" Value="{DynamicResource Palette.0AFFFFFF}"/>
-      <Setter Property="BorderBrush" Value="{DynamicResource Palette.16FFFFFF}"/>
+      <Setter Property="Background" Value="{DynamicResource CardBackground}"/>
+      <Setter Property="BorderBrush" Value="{DynamicResource CardBorder}"/>
       <Setter Property="BorderThickness" Value="1"/>
       <Setter Property="CornerRadius" Value="12"/>
       <Setter Property="Padding" Value="16,12"/>

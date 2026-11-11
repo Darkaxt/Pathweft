@@ -139,7 +139,9 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
             {
                 if(disposed||busy&&(!(inspecting||cleaning)||!loadedRows.ContainsKey(Categories[index])))return;
                 if(Expanded)filterStates[Category]=(search.Text,groups.SelectedItem as string);
+                bool switched=!Expanded||selectedCategory!=index;
                 selectedCategory=index;Expanded=true;Visibility=Visibility.Visible;AnalysisChanged?.Invoke();
+                if(switched)Motion.Swap(this);
                 bool revisiting=!visitedCategories.Add(Category);
                 if(loadedRows.TryGetValue(Category,out var cached))
                 {
@@ -397,7 +399,7 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
     internal Task Hide()=>hiding??=Retire();
     async Task Retire()
     {
-        Collapse();cards.Visibility=Visibility.Collapsed;reading.Cancel();await work;
+        Collapse();Motion.SetShown(cards,false);reading.Cancel();await work;
         foreach(var review in reviews.Values)review.Dispose();reviews.Clear();
         foreach(var client in elevatedReviews.Values)await client.DisposeAsync();elevatedReviews.Clear();
         await AdministratorSession.EndMaintenance();
@@ -431,7 +433,7 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
         else{value=rows.Length.ToString("N0");sub="optional preinstalled apps";}
         cardValues[index].Text=value;cardSubtitles[index].Text=sub;cardButtons[index].ToolTip=category+" · "+value+" · "+sub;
     }
-    internal Task Show(){hiding=null;Collapse();visitedCategories.Clear();cards.Visibility=Visibility.Visible;Queue(async()=>{await Overview();await Load();await AnalyzeAll();},true);return work;}
+    internal Task Show(){hiding=null;Collapse();visitedCategories.Clear();Motion.SetShown(cards,true);Queue(async()=>{await Overview();await Load();await AnalyzeAll();},true);return work;}
     void SetRows(MaintenanceRow[] rows)
     {
         string selected=selections.GetValueOrDefault(Category);

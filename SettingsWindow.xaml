@@ -60,7 +60,7 @@
               <Button x:Name="BdMica" Content="Tint" Style="{StaticResource Tab}" Click="Backdrop_Click"/>
               <Button x:Name="BdSolid" Content="Solid" Style="{StaticResource Tab}" Click="Backdrop_Click"/>
             </StackPanel>
-            <TextBlock Style="{StaticResource Hint}" Text="Blur: frosted acrylic of whatever is behind the window. Tint: the wallpaper's colour, no blur. Solid: no transparency. Blur strength is set by Windows."/>
+            <TextBlock Style="{StaticResource Hint}" Text="Blur: frosted acrylic of whatever is behind the window. Tint: the wallpaper's color, no blur. Solid: no transparency. Blur strength is set by Windows."/>
             <DockPanel>
               <TextBlock x:Name="OpacityText" DockPanel.Dock="Right" Width="40" TextAlignment="Right" Foreground="{DynamicResource Palette.8A97AA}" Typography.NumeralAlignment="Tabular"/>
               <TextBlock Text="Opacity" Width="70" VerticalAlignment="Center"/>
@@ -91,15 +91,15 @@
             <TextBlock Style="{StaticResource Hint}" Text="A picture behind the panes, cropped to fill the window. Strength is how much of it shows, Blur softens it, Brightness darkens or lightens it. A darker, softer picture keeps the lists readable."/>
 
             </StackPanel>
-            <TextBlock Text="Accent colour"/>
-            <DockPanel Margin="0,6,0,2">
+            <TextBlock Text="Accent color"/>
+            <DockPanel x:Name="CustomAccentRow" Margin="0,6,0,2">
               <Border DockPanel.Dock="Right" Background="{DynamicResource Palette.12FFFFFF}" CornerRadius="5" Padding="8,4" BorderBrush="{DynamicResource Palette.2EFFFFFF}" BorderThickness="1" Margin="8,0,0,0">
-                <TextBox x:Name="AccentHex" Style="{StaticResource Bare}" Width="72" KeyDown="AccentHex_KeyDown" ToolTip="Any colour as #RRGGBB, then Enter"/>
+                <TextBox x:Name="AccentHex" Style="{StaticResource Bare}" Width="72" KeyDown="AccentHex_KeyDown" ToolTip="Any color as #RRGGBB, then Enter"/>
               </Border>
               <WrapPanel x:Name="Swatches"/>
             </DockPanel>
             <!-- any colour: hue around the wheel, saturation from the centre out, brightness beside it -->
-            <StackPanel Orientation="Horizontal" Margin="0,12,0,4">
+            <StackPanel x:Name="CustomAccentPicker" Orientation="Horizontal" Margin="0,12,0,4">
               <Grid Width="132" Height="132" Cursor="Cross" Background="Transparent"
                     MouseLeftButtonDown="Wheel_Down" MouseMove="Wheel_Move" MouseLeftButtonUp="Wheel_Up">
                 <Image x:Name="Wheel"/>

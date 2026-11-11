@@ -56,6 +56,7 @@ internal static class PaletteColors
         "#E6FFFFFF",
         "#E8E8E8",
         "#E8EEF6",
+        "#EBCB7A",
         "#F0FFFFFF",
         "#F2151A22",
         "#F2161B24",

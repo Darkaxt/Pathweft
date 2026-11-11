@@ -99,9 +99,10 @@ public class TileVirtualizer : VirtualizingPanel, IScrollInfo
     protected override Size ArrangeOverride(Size size)
     {
         var generator = ItemContainerGenerator;
-        foreach (UIElement child in InternalChildren)
+        for (int i = 0; i < InternalChildren.Count; i++)
         {
-            int item = generator.IndexFromGeneratorPosition(new GeneratorPosition(InternalChildren.IndexOf(child), 0));
+            var child = InternalChildren[i];
+            int item = generator.IndexFromGeneratorPosition(new GeneratorPosition(i, 0));
             if (item < 0) continue;
             int strip = item / lanes, lane = item % lanes;
             var at = Wraps ? new Point(lane * TileWidth - offset.X, strip * TileHeight - offset.Y)

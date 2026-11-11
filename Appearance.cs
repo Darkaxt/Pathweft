@@ -209,6 +209,9 @@ internal static class Appearance
         }
         SetBrush("Muted",Resolve("#8CFFFFFF"));
         SetBrush("TabStripBg",Resolve("#2E000000"));
+        // Windows 11 cards sit lighter than the page in the light theme, not darker (S25 R1).
+        SetBrush("CardBackground",SystemParameters.HighContrast?SystemColors.WindowColor:Light?Color.FromArgb(0xB3,0xFF,0xFF,0xFF):Resolve("#0AFFFFFF"));
+        SetBrush("CardBorder",SystemParameters.HighContrast?SystemColors.WindowTextColor:Light?Color.FromArgb(0x14,0,0,0):Resolve("#16FFFFFF"));
         SetBrush("AgeBackground",SystemParameters.HighContrast?SystemColors.WindowColor:Light?Color.FromRgb(232,232,232):Color.FromRgb(55,55,55));
         SetBrush("AgeForeground",SystemParameters.HighContrast?SystemColors.WindowTextColor:Light?Color.FromRgb(64,64,64):Color.FromRgb(232,232,232));
         SetBrush("PreviewWarning",SystemParameters.HighContrast?SystemColors.WindowTextColor:Light?Color.FromRgb(155,69,0):Color.FromRgb(255,180,84));

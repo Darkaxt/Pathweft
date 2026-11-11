@@ -68,6 +68,8 @@ public partial class MainWindow
         await S1Verification.Navigate(Left, home); await S1Verification.Navigate(Right, big); SetActive(Left); await Idle();
 
         // ---- timings (dark native theme, two panes, as configured by the launcher) ----
+        // control: the same heartbeat with nothing asked of the window shows the host's own noise
+        await Time("idle-control-1s", async () => await Task.Delay(1000));
         await Time("navigate-big-first", async () => await S1Verification.Navigate(Left, big), runs: 1);
         await Time("navigate-big-revisit", async () => { await S1Verification.Navigate(Left, home); await S1Verification.Navigate(Left, big); });
         await Time("navigate-many-subfolders", async () => { await S1Verification.Navigate(Left, many); await Task.Delay(1500); }, runs: 1);
@@ -75,15 +77,55 @@ public partial class MainWindow
         await Time("select-200-rows", async () =>
         {
             for (int i = 0; i < 200 && i < Left.List.Items.Count; i++) { Left.List.SelectedIndex = i; await Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Background); }
-        });
+        }, runs: 5);
         await Time("view-modes", async () =>
         {
             foreach (var m in new[] { PaneView.ViewMode.IconsL, PaneView.ViewMode.List, PaneView.ViewMode.Details }) { Left.SetView(m); await Idle(); }
-        });
+        }, runs: 5);
         await Time("performance-toggle", async () => { await TogglePerformance(); await Idle(); await TogglePerformance(); });
         await Time("maintenance-toggle", async () => { await ToggleMaintenance(); await Idle(); await ToggleMaintenance(); });
         await Time("resize-20", async () => { for (int i = 0; i < 20; i++) { Width = 1400 - i * 20; await Idle(); } Width = 1400; });
         check(true, "Timings recorded");
+
+        // ---- motion (MOTION-03): frame pacing through real transitions with animations on, and mid-transition frames ----
+        bool animations = Settings.Animations; Settings.Animations = true;
+        try
+        {
+            // frame intervals inside each transition's own window (its duration plus the two held frames);
+            // outside a transition WPF draws nothing, and those idle gaps are not frames
+            var gapsAll = new List<double>();
+            async Task Transition(Func<Task> act, int window)
+            {
+                var clock = Stopwatch.StartNew(); var stamps = new List<double>();
+                EventHandler tick = (_, _) => { if (clock.Elapsed.TotalMilliseconds <= window) stamps.Add(clock.Elapsed.TotalMilliseconds); };
+                CompositionTarget.Rendering += tick;
+                await act(); await Task.Delay(window + 50);
+                CompositionTarget.Rendering -= tick;
+                gapsAll.AddRange(stamps.Zip(stamps.Skip(1), (x, y) => y - x).Where(g => g > 0.5));
+            }
+            for (int i = 0; i < 3; i++)
+            {
+                await Transition(TogglePerformance, 260); await Transition(TogglePerformance, 260);
+                await Transition(ToggleMaintenance, 260); await Task.Delay(400); await Transition(ToggleMaintenance, 260);
+            }
+            // rapid reversal: the state must end where the last command left it
+            await TogglePerformance(); await TogglePerformance(); await TogglePerformance(); await TogglePerformance(); await Task.Delay(350);
+            var gaps = gapsAll.OrderBy(g => g).ToArray();
+            timings["motion"] = new
+            {
+                on = Motion.On, intervals = gaps.Length,
+                p50Ms = gaps.Length > 0 ? Math.Round(gaps[gaps.Length / 2], 1) : 0,
+                p95Ms = gaps.Length > 0 ? Math.Round(gaps[(int)(gaps.Length * 0.95)], 1) : 0,
+                maxMs = gaps.Length > 0 ? Math.Round(gaps[^1], 1) : 0,
+                over33 = gaps.Count(g => g > 33.4),
+            };
+            File.WriteAllText(Path.Combine(root, "timings.json"), JsonSerializer.Serialize(timings, new JsonSerializerOptions { WriteIndented = true }));
+            check(!PerformanceMode && StatsRow.Visibility == Visibility.Visible && performance.Visibility != Visibility.Visible, "Rapid Statistics/Performance reversal ends on Statistics with one face");
+            await TogglePerformance(); await Task.Delay(90); Shot(this, "motion-mid-performance");
+            await Task.Delay(300); await TogglePerformance(); await Task.Delay(70); Shot(this, "motion-mid-statistics");
+            await Task.Delay(300); await Idle();
+        }
+        finally { Settings.Animations = animations; }
 
         // ---- captures ----
         var themes = new (string name, bool native, string mode)[] { ("dark", true, "dark"), ("light", true, "light"), ("original", false, "dark") };

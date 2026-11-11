@@ -385,6 +385,9 @@
         <TextBlock x:Name="FolderFailureDetails" TextWrapping="Wrap" Margin="0,8,0,16" Foreground="{DynamicResource Muted}"/>
         <Button x:Name="FolderAccessAction" Style="{StaticResource AuxiliaryAction}" HorizontalAlignment="Left" Click="FolderAccess_Click"/>
       </StackPanel>
+      <!-- an empty folder, search or filter says so instead of showing a blank list; clicks reach the list -->
+      <TextBlock x:Name="EmptyState" Visibility="Collapsed" IsHitTestVisible="False" Panel.ZIndex="1"
+                 HorizontalAlignment="Center" VerticalAlignment="Top" Margin="24,72,24,24" FontSize="13" Foreground="{DynamicResource Muted}"/>
       </Grid>
     </DockPanel>
       <!-- The visible diagonal segment meets the right/bottom pane edges, including the footer.

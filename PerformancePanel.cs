@@ -65,9 +65,12 @@ internal sealed partial class PerformancePanel : StackPanel,IAsyncDisposable
         }
         Children.Add(cards);
         BuildAnalysis();
+        int density=-1;
         SizeChanged+=(_,_)=>
         {
-            for(int i=0;i<5;i++)
+            // the card layout changes only at the two width thresholds, not at every resize step
+            int now=ActualWidth<600?2:ActualWidth<900?1:0;
+            if(now!=density)for(int i=0;i<5;i++)
             {
                 bool compact=ActualWidth<900,tight=ActualWidth<600;
                 var header=(Grid)values[i].Parent;header.MinHeight=compact?42:27;
@@ -77,6 +80,7 @@ internal sealed partial class PerformancePanel : StackPanel,IAsyncDisposable
                 buttons[i].Padding=tight?new Thickness(6,9,6,9):new Thickness(12,9,14,9);
                 buttons[i].Margin=new Thickness(0,0,i==4?0:tight?4:10,0);
             }
+            density=now;
             Refresh();
         };
         IsVisibleChanged+=async(_,_)=>{presented=Showing;SetDetailKind();Refresh();await UpdateScope();MaybeEnableIo();};
@@ -119,6 +123,7 @@ internal sealed partial class PerformancePanel : StackPanel,IAsyncDisposable
         AnalysisChanged?.Invoke();
         if(index>=0&&Historical)_ = LoadHistory();
         if(index<0)historyCancel?.Cancel();
+        if(index>=0&&index!=previous)Motion.Swap(details);
         if(hadFocus){if(index>=0)table.Focus();else if(previous>=0)buttons[previous].Focus();}
     }
     void ConfigureTable()
