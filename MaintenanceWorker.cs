@@ -190,6 +190,7 @@ internal static class MaintenanceWorker
             {
                 var target=CleanupReview.Targets.SingleOrDefault(t=>t.Id==request.Id)??throw new ArgumentException("Unknown cleanup category");
                 // Keep the exact review with its owner until Clean or disconnect.
+                RequireOwnedPaths(request);
                 using var review=new CleanupReview(target,request.Cache);
                 var next=Read();
                 _=next.ContinueWith(t=>{if(!t.IsCompletedSuccessfully)lost.Cancel();},TaskScheduler.Default);
@@ -245,6 +246,7 @@ internal static class MaintenanceWorker
         }
         if(request.Action is not ("apply" or "restore"))throw new ArgumentException("Unknown maintenance action");
         bool restore=request.Action=="restore";
+        RequireOwnedPaths(request);
         if(request.Id.StartsWith("service:"))return MaintenanceServices.Change(request.Id[8..],restore,request.Journal);
         if(request.Id.StartsWith("startup-file:"))return MaintenanceStartup.ChangeFile(request.Id,restore,request.Journal);
         if(request.Id.StartsWith("startup-task:"))
@@ -252,6 +254,16 @@ internal static class MaintenanceWorker
         if(restore)Maintenance.RestoreRegistry(request.Id,request.Journal);
         else Maintenance.ApplyRegistry(request.Id,request.Id.StartsWith("startup:")?Maintenance.StartupEdits(request.Id):Maintenance.TweakEdits(request.Id),request.Journal);
         return restore?"Original settings restored.":"Change verified. Original settings saved for Restore.";
+    }
+    // The elevated worker writes journals and review manifests only to this
+    // profile's Maintenance locations (DEBUG verification uses owned fixture roots).
+    static void RequireOwnedPaths(MaintenanceRequest request)
+    {
+#if !DEBUG
+        static bool Same(string a,string b)=>string.Equals(Path.GetFullPath(a),Path.GetFullPath(b),StringComparison.OrdinalIgnoreCase);
+        if(request.Journal!=null&&!Same(request.Journal,Maintenance.Journal))throw new ArgumentException("Maintenance journal is outside this profile");
+        if(request.Cache!=null&&!Same(request.Cache,Path.Combine(DataFolder.Cache,"Maintenance")))throw new ArgumentException("Maintenance review folder is outside this profile");
+#endif
     }
     static string SaveEditor(MaintenanceRequest request,CancellationToken cancel)
     {

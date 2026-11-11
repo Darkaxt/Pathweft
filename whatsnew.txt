@@ -1,6 +1,17 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.52 | 2026-11-11 | Reliability and safety fixes
+
+- Scoop cleanup keeps a version whose program is running instead of partly deleting it, and says which program is in use.
+- Maintenance, transfers, updates, Settings, drive health, archives and previews no longer close Pathweft when an expected Windows error occurs.
+- A file transfer job always finishes, so the queue never stays on a stuck running job.
+- Opening Pathweft again while it is starting no longer stops later launches from reaching the open window.
+- Multi-rename refuses names ending in a dot, which Windows cannot keep.
+- Saving a symbolically linked file in the editor writes its target and keeps the link.
+- Setup no longer waits forever if the desktop helper exits before reporting its result.
+- Maintenance accepts journals and review folders only from this profile and shares its change lock correctly between normal and administrator windows.
+
 ## 1.1.51 | 2026-11-10 | Protected migration correction
 
 - Complete migration from the previous per-user installation on Windows systems that do not translate App Package ACL names into SIDs.

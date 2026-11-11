@@ -18,6 +18,8 @@ static class StorageLocation
         ? "Portable and test copies keep their data beside the application."
         : window.UpdateInstallationBlocker ?? (ArchiveContent.Retained().Any() ? "Close and release archive working copies before moving their location." : null);
 
+    static void WriteResult(string folder,Result result)=>Settings.WriteAllLines(Path.Combine(folder,"storage-result.json"),[JsonSerializer.Serialize(result)]);
+
     internal static void Validate(string settings, string bulk, string destination)
     {
         destination=Path.GetFullPath(destination).TrimEnd('\\');
@@ -79,7 +81,7 @@ static class StorageLocation
         catch(Exception error)when(error is IOException or UnauthorizedAccessException or System.ComponentModel.Win32Exception or System.Runtime.InteropServices.COMException or JsonException)
         {
             string current=Settings.Profile!=null||Settings.Portable!=null?Settings.Dir:DataFolder.Current;
-            Directory.CreateDirectory(current);File.WriteAllText(Path.Combine(current,"storage-result.json"),JsonSerializer.Serialize(new Result(false,error.Message)));
+            Directory.CreateDirectory(current);WriteResult(current,new(false,error.Message));
             if(trial)return 1;
             try{_ = DesktopLaunch.FromSetup(true);DesktopLaunch.Start("--front --storage-result");}catch(Exception restart)when(restart is IOException or System.Runtime.InteropServices.COMException or System.ComponentModel.Win32Exception){ }
             return 1;
@@ -154,7 +156,7 @@ static class StorageLocation
                 foreach(string directory in Directory.GetDirectories(root,"*",SearchOption.AllDirectories).OrderByDescending(p=>p.Length).Append(root))
                     try{if(!Directory.EnumerateFileSystemEntries(directory).Any())Directory.Delete(directory);}catch(Exception error)when(error is IOException or UnauthorizedAccessException){residuals++;}
             }
-            File.WriteAllText(Path.Combine(target,"storage-result.json"),JsonSerializer.Serialize(new Result(true,residuals==0?"Data moved successfully.":"Data moved. Some old files are still in use and were preserved.")));
+            WriteResult(target,new(true,residuals==0?"Data moved successfully.":"Data moved. Some old files are still in use and were preserved."));
         }
         catch
         {

@@ -406,6 +406,9 @@ public sealed class EditorWindow : Window
     // (hosts, anything under Program Files) uses the approved helper's atomic save.
     async Task<bool> Write(string path, byte[] bytes)
     {
+        // Swapping in a new file would replace a symbolic link itself; save its final target.
+        try { if (new FileInfo(path) is { LinkTarget: not null } link && link.ResolveLinkTarget(true) is { } target) path = target.FullName; }
+        catch (IOException) { }
         var temp = path + ".pathweft-"+Guid.NewGuid().ToString("N")+".tmp";
         try
         {

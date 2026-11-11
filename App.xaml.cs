@@ -180,11 +180,17 @@ static class Program
         {
             using var pipe = new NamedPipeClientStream(".", PipeName, PipeDirection.Out);
             pipe.Connect(); // wait for the owning listener, without a timeout-driven second instance
+            // The pipe name is predictable; never hand a path to a listener another
+            // account created first. An elevated window of this user is owned by
+            // Administrators (UAC changes the token owner, not the user).
+            if (pipe.GetAccessControl().GetOwner(typeof(System.Security.Principal.SecurityIdentifier)) is not System.Security.Principal.SecurityIdentifier owner) return false;
+            using (var identity = System.Security.Principal.WindowsIdentity.GetCurrent())
+                if (!identity.User.Equals(owner) && !owner.IsWellKnown(System.Security.Principal.WellKnownSidType.BuiltinAdministratorsSid)) return false;
             using var w = new StreamWriter(pipe);
             w.WriteLine(path);
             return true;
         }
-        catch (IOException) { return false; }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return false; }
     }
 
     [System.Runtime.InteropServices.DllImport("user32.dll")] internal static extern bool AllowSetForegroundWindow(int pid);

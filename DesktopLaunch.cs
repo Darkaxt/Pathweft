@@ -10,6 +10,7 @@ namespace FileExplorer;
 static class DesktopLaunch
 {
     const string Prefix="Pathweft-Setup-";
+    static readonly TimeSpan ResultChannelStart=TimeSpan.FromMinutes(2);
     [UnmanagedFunctionPointer(CallingConvention.StdCall,CharSet=CharSet.Unicode)]
     delegate int Launch([MarshalAs(UnmanagedType.LPWStr)]string file,[MarshalAs(UnmanagedType.LPWStr)]string arguments,[MarshalAs(UnmanagedType.LPWStr)]string directory,int show);
     internal static void Start(string arguments,int show=1)
@@ -39,7 +40,11 @@ static class DesktopLaunch
         }
 #endif
         Start(arguments,0);
-        client.Connect();
+        // The child opens its result channel right after starting; one that
+        // exits first must not leave Setup waiting forever. The result itself
+        // stays untimed: a child that dies later breaks the connected pipe.
+        try{client.Connect(ResultChannelStart);}
+        catch(TimeoutException){throw new IOException("Pathweft did not start its desktop result channel.");}
         using(var identity=WindowsIdentity.GetCurrent())
         {
             var owner=client.GetAccessControl().GetOwner(typeof(SecurityIdentifier));
@@ -51,8 +56,10 @@ static class DesktopLaunch
     internal static int RunAndReport(string name,Func<int> run)
     {
         if(!name.StartsWith(Prefix,StringComparison.Ordinal)||!Guid.TryParseExact(name[Prefix.Length..],"N",out _))throw new ArgumentException("Invalid Setup result channel.");
-        using var server=new NamedPipeServerStream(name,PipeDirection.Out,1,PipeTransmissionMode.Byte,PipeOptions.CurrentUserOnly);
-        server.WaitForConnection();
+        using var server=new NamedPipeServerStream(name,PipeDirection.Out,1,PipeTransmissionMode.Byte,PipeOptions.CurrentUserOnly|PipeOptions.Asynchronous);
+        // Setup connects right after launching this child; if it is gone, exit
+        // instead of waiting forever. Disposing the server ends the pending wait.
+        if(!server.WaitForConnectionAsync().Wait(ResultChannelStart))return 1;
         int result=1;
         try{result=run();return result;}
         finally

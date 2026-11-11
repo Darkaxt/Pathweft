@@ -54,7 +54,14 @@ internal static class Maintenance
         readonly Mutex mutex;
         internal JournalLease(string file)
         {
-            mutex=new Mutex(false,@"Global\Pathweft-Maintenance-"+Id("journal",Path.GetFullPath(file??Journal).ToUpperInvariant()));
+            // An elevated creator's default DACL would lock the normal window out
+            // (and any account could open the Global name); grant this user,
+            // unchanged by UAC, and SYSTEM only.
+            var security=new System.Security.AccessControl.MutexSecurity();
+            using(var identity=System.Security.Principal.WindowsIdentity.GetCurrent())
+                security.AddAccessRule(new(identity.User,System.Security.AccessControl.MutexRights.FullControl,System.Security.AccessControl.AccessControlType.Allow));
+            security.AddAccessRule(new(new System.Security.Principal.SecurityIdentifier(System.Security.Principal.WellKnownSidType.LocalSystemSid,null),System.Security.AccessControl.MutexRights.FullControl,System.Security.AccessControl.AccessControlType.Allow));
+            mutex=MutexAcl.Create(false,@"Global\Pathweft-Maintenance-"+Id("journal",Path.GetFullPath(file??Journal).ToUpperInvariant()),out _,security);
             try{mutex.WaitOne();}catch(AbandonedMutexException){/* Prepared entries remain recoverable. */}
         }
         public void Dispose(){mutex.ReleaseMutex();mutex.Dispose();}
