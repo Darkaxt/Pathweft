@@ -22,6 +22,7 @@ if($StatsOnly){$start.Environment['PATHWEFT_VERIFY_STATS_ONLY']='1'}
 if($CloudOnly){$start.Environment['PATHWEFT_VERIFY_CLOUD_ONLY']='1'}
 if($Round118){$start.Environment['PATHWEFT_VERIFY_ROUND118']='1'}
 if($OrbitOnly){$start.Environment['PATHWEFT_VERIFY_ORBIT']='1'}
+if($env:PATHWEFT_VERIFY_S25 -eq '1'){$start.Environment['PATHWEFT_VERIFY_S25']='1'}
 if($env:PATHWEFT_VERIFY_RENDER_PERF -eq '1'){$start.Environment['PATHWEFT_VERIFY_RENDER_PERF']='1'}
 if($env:PATHWEFT_VERIFY_OPEN1111 -eq '1'){$start.Environment['PATHWEFT_VERIFY_OPEN1111']='1'}
 if($env:PATHWEFT_VERIFY_FOLDER112 -eq '1'){$start.Environment['PATHWEFT_VERIFY_FOLDER112']='1'}

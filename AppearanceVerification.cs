@@ -48,6 +48,8 @@ public partial class MainWindow
             {await VerifyRound118(root,Check);result=0;return;}
             if(Environment.GetEnvironmentVariable("PATHWEFT_VERIFY_ORBIT")=="1")
             {await VerifyOrbit119(root,Check);result=0;return;}
+            if(Environment.GetEnvironmentVariable("PATHWEFT_VERIFY_S25")=="1")
+            {await VerifyS25(root,Check);result=0;return;}
             if(Environment.GetEnvironmentVariable("PATHWEFT_VERIFY_RENDER_PERF")=="1")
             {await VerifyRenderPerf1110(root,Check);result=0;return;}
             if(Environment.GetEnvironmentVariable("PATHWEFT_VERIFY_CLOUD_ONLY")=="1")

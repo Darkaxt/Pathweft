@@ -38,6 +38,10 @@ Current 2026-11-11/spec1.14: S25 is ACTIVE, widened at the user's request into a
 MOTION-01..04). Plan: (1) rendered and source review with measured baselines; (2) findings list,
 each fixed or rejected with a reason; (3) design and performance fixes through the shared owners;
 (4) motion through Motion.cs; (5) rendered/measured acceptance, then one normal release.
+Build stages: `s25-baseline` (Debug review harness S25Verification.cs: renders of every main surface per
+theme/layout and in-process timings of ordinary browsing paths, run before any fix), `s25-refinement`
+(design, performance and motion source changes, re-run of the same harness for before/after) and
+`s25-release` (normal 1.1.53 package, checks and publication).
 
 Historical S45 investigation: after the protected 1.1.50 migration and a fresh Helium
 restart, the exact completed PDF exists and the enabled Show in folder control
