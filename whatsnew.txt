@@ -1,6 +1,13 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.59 | 2026-11-12 | Starts on every PC, quoted paths
+
+- Pathweft now starts on PCs without a D: drive. Before, a fresh install on a single-drive PC closed straight away. Its caches and working files go to the first extra internal drive, or to your local app data when Windows' drive is the only one, and stay there. If a drive you chose is missing, Pathweft says so instead of closing.
+- Copy path (Ctrl+Shift+C) puts each path in double quotes, like Explorer's Copy as path, so a path with spaces pastes into a terminal as one argument.
+- Pasting a quoted path into the address bar opens it; for a file, its folder opens with the file selected.
+- With hidden files concealed, the footer shows how many items in the folder are hidden.
+
 ## 1.1.58 | 2026-11-12 | One rule for the command bar
 
 - The command bar now follows what is on screen. While your folders show, including with the Performance or Maintenance cards at the bottom, every button works as usual, the administrator shield included.

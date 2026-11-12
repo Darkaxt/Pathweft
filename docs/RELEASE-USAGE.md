@@ -1,6 +1,8 @@
-# Pathweft 1.1.58
+# Pathweft 1.1.59
 
-Pathweft 1.1.58 gives the command bar one consistent rule: everything works while
+Pathweft 1.1.59 starts on PCs without a D: drive (bulk data takes the first local
+data drive, or local app data when Windows' drive is the only one), quotes Copy path
+like Explorer and counts hidden items in the footer. 1.1.58 gives the command bar one consistent rule: everything works while
 the file panes show, and a Performance panel or Maintenance category that replaces
 them leaves only its own button to lead back. 1.1.57 limits the administrator shield to file browsing: it is disabled
 in the Performance panels, and Performance uses the access granted at launch.
