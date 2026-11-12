@@ -83,9 +83,9 @@ internal static class ScoopCleanupVerification
                     while(await process.StandardOutput.ReadLineAsync() is {} line)if(line.TrimEnd().EndsWith("PATHWEFT_READY",StringComparison.Ordinal))break;
                     using var review=Review(fixture,false);review.Analyze(default);var outcome=review.Clean(default);
                     check(!process.HasExited&&review.Count==1&&outcome.Deleted==0&&outcome.Skipped==1&&
-                        Directory.Exists(version.Old)&&File.Exists(executable)&&File.Exists(Path.Combine(version.Active,"payload.txt"))&&
-                        outcome.Details.Contains("may be partially removed"),
-                        "Native deletion reports the locked running executable as an incomplete obsolete version while preserving the current version");
+                        Directory.Exists(version.Old)&&File.Exists(executable)&&File.Exists(Path.Combine(version.Old,"payload.txt"))&&File.Exists(Path.Combine(version.Active,"payload.txt"))&&
+                        outcome.Details.Contains("This version was preserved")&&!outcome.Details.Contains("may be partially removed"),
+                        "A running executable preserves its whole obsolete version, untouched, along with the current version");
                 }
                 finally{if(!process.HasExited){await process.StandardInput.WriteLineAsync("exit");process.StandardInput.Close();await process.WaitForExitAsync();}}
             }
