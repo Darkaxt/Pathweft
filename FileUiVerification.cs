@@ -119,8 +119,12 @@ public partial class MainWindow
                 FileVisibility.PathVisible(Path.Combine(folder, ".dot-dir", "pwfui_hit_descendant.txt"), Path.Combine(folder, ".dot-dir"), new Dictionary<string, bool>()), "Indexed visibility prunes hidden ancestors but respects an explicitly selected hidden root");
             await S1Verification.Navigate(Left, folder); await S1Verification.Navigate(Right, other);
             Check(!Settings.ShowHidden && Left.Items.Any(e => e.Name == "ordinary.file.txt") && !Left.Items.Any(e => e.Name.StartsWith('.') || e.Name.StartsWith("windows-hidden")), "Default browse hides Windows-hidden and dot files/directories; normal extensions remain visible");
+            int concealedOnDisk = new DirectoryInfo(folder).EnumerateFileSystemInfos().Count(i => !FileVisibility.Visible(i.Name, i.Attributes, false));
+            Left.ListForVerification.SelectedItems.Clear();
+            Check(concealedOnDisk > 0 && Left.Footer.Text.Contains($"  ·  {concealedOnDisk:N0} hidden"), "The footer counts the entries hidden files leaves out: " + Left.Footer.Text);
             await S1Verification.Navigate(Left, other); await S1Verification.Navigate(Left, folder);
             Left.ListForVerification.SelectedItems.Clear();
+            Check(Left.Footer.Text.Contains($"  ·  {concealedOnDisk:N0} hidden"), "A cached revisit keeps the hidden count: " + Left.Footer.Text);
             foreach (var entry in Left.Items.Where(e => e.Name.StartsWith("ordinary."))) Left.ListForVerification.SelectedItems.Add(entry);
             var treeNode = TreeNode(folder, "Visibility fixture"); folderTree.Items.Add(treeNode); treeNode.IsExpanded = true;
             await folderTreeVisibilityWork;
@@ -140,6 +144,8 @@ public partial class MainWindow
             await S1Verification.Navigate(Left, folder); filter.Text = "";
             await Changed(Left, () => ((Button)FindName("HiddenToggle")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
             Check(Settings.ShowHidden && Left.Items.Any(e => e.Name == ".dot-dir"), "Existing Hidden button shares the persisted setting");
+            Left.ListForVerification.SelectedItems.Clear();
+            Check(!Left.Footer.Text.Contains(" hidden"), "With hidden files shown the footer has no hidden count: " + Left.Footer.Text);
             await Hidden(Left.ListForVerification);
             Left.Search("pwfui_hit_"); // Everything subtree, real selected index
             await Left.SearchCompletion;
@@ -159,7 +165,7 @@ public partial class MainWindow
             await S1Verification.Navigate(widget.Pane, folder);
             widget.Pane.VerificationSearchScope=0;
             widget.Pane.Search("pwfui_hit_"); await widget.Pane.SearchCompletion;
-            Check(!widget.Pane.Items.Any(), "Search widget shares hidden filtering before toggle");
+            Check(widget.Pane.Items.All(e => e.Name.StartsWith("pwfui_hit_visible")), "Search widget shares hidden filtering before toggle (it pages on past hidden hits by itself): " + widget.Pane.Items.Count());
             await Hidden(filter);
             await widget.Pane.SearchCompletion;
             Check(widget.Pane.Items.Count() == 200, "Global toggle refreshes the actual widget query without a second setting");

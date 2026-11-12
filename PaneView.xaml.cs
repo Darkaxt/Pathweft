@@ -615,7 +615,7 @@ public partial class PaneView : UserControl
         // A refresh of the folder on screen: its rows are the cached ones, and showing them again would
         // rebuild the list, drop the selection and jump the scroll — every 400 ms in a busy folder.
         bool onScreen = cached != null && cached.Items == items;
-        if (cached != null && !onScreen) { ShowItems(cached.Items, select, animate: false); StartPasses(); }
+        if (cached != null && !onScreen) { ShowItems(cached.Items, select, animate: false, concealed: cached.Concealed); StartPasses(); }
 
         // Reading the folder can block — on a network share for
         // the best part of a second — so they happen off the UI thread and the list is handed over
@@ -628,7 +628,7 @@ public partial class PaneView : UserControl
             // Always read: a folder's timestamp moves when a child is added, removed or renamed, but not
             // when a file inside is rewritten — a growing download or log kept its old size forever.
             long stamp = Stamp(di.FullName);
-            var (list,error)=await ReadFolderAsync(di,hidden,administrator,accessToken);
+            var (list,error,concealed)=await ReadFolderAsync(di,hidden,administrator,accessToken);
 
             Dispatcher.BeginInvoke(() =>
             {
@@ -649,7 +649,8 @@ public partial class PaneView : UserControl
                 bool shown = cached != null && cached.Items == items||refresh&&itemsFolder==di.FullName;
                 if (shown && Patch(list))
                 {
-                    Remember(di.FullName, items as List<Entry>??items.ToList(), stamp, hidden);
+                    concealedCount = concealed;
+                    Remember(di.FullName, items as List<Entry>??items.ToList(), stamp, hidden, concealed);
                     if (select != null && items.FirstOrDefault(e => e.Name.Equals(select, StringComparison.OrdinalIgnoreCase)) is { } row)
                     {
                         List.SelectedItem = row;
@@ -660,8 +661,8 @@ public partial class PaneView : UserControl
                 }
                 else
                 {
-                    Remember(di.FullName, list, stamp, hidden);
-                    ShowItems(list, select, animate: cached == null, keep: shown);
+                    Remember(di.FullName, list, stamp, hidden, concealed);
+                    ShowItems(list, select, animate: cached == null, keep: shown, concealed: concealed);
                     StartPasses();
                 }
                 if (pendingSelect != null) ApplyPendingSelect();
@@ -685,7 +686,7 @@ public partial class PaneView : UserControl
     }
 
     // ---- the folder cache: what makes tab switching and re-opening a folder instant ----
-    sealed class Listing { public List<Entry> Items; public long Stamp; public long UsedAt; public bool Hidden; public bool Administrator; }
+    sealed class Listing { public List<Entry> Items; public long Stamp; public long UsedAt; public bool Hidden; public bool Administrator; public int Concealed; }
 
     // Per pane, so a rename in one pane can't dim rows in the other. 200 folders is a few MB.
     readonly Dictionary<string, Listing> listCache = new(StringComparer.OrdinalIgnoreCase);
@@ -707,12 +708,12 @@ public partial class PaneView : UserControl
         }
     }
 
-    void Remember(string path, List<Entry> list, long stamp, bool hidden)
+    void Remember(string path, List<Entry> list, long stamp, bool hidden, int concealed)
     {
         lock (listCache)
         {
             if (hidden != ShowHidden) return;
-            listCache[path] = new Listing { Items = list, Stamp = stamp, UsedAt = DateTime.UtcNow.Ticks, Hidden = hidden,Administrator=AdministratorSession.Browsing };
+            listCache[path] = new Listing { Items = list, Stamp = stamp, UsedAt = DateTime.UtcNow.Ticks, Hidden = hidden,Administrator=AdministratorSession.Browsing, Concealed = concealed };
             while (listCache.Count > MaxFolders || listCache.Values.Sum(l => l.Items.Count) > MaxEntries)
             {
                 var oldest = listCache.OrderBy(kv => kv.Value.UsedAt).First().Key;
@@ -722,15 +723,16 @@ public partial class PaneView : UserControl
         }
     }
 
-    static List<Entry> ReadFolder(DirectoryInfo di, bool hidden, out Exception error)
+    // `concealed`: the entries the hidden-files setting left out, for the footer.
+    static List<Entry> ReadFolder(DirectoryInfo di, bool hidden, out Exception error, out int concealed)
     {
         var list = new List<Entry>();
-        error = null;
+        error = null; concealed = 0;
         try
         {
             foreach (var fsi in di.EnumerateFileSystemInfos())
             {
-                if (!FileVisibility.Visible(fsi.Name, fsi.Attributes, hidden)) continue;
+                if (!FileVisibility.Visible(fsi.Name, fsi.Attributes, hidden)) { concealed++; continue; }
                 bool isDir = fsi is DirectoryInfo;
                 var e = new Entry { Name = fsi.Name, Path = fsi.FullName, IsDir = isDir, Modified = fsi.LastWriteTime, IsCut = CutPaths.Contains(fsi.FullName), Attributes = fsi.Attributes, ReadOnlyReason = ReadOnlyIcons.AttributeReason(isDir, fsi.Attributes) };
                 e.Size = isDir ? SizeCache.Peek(fsi.FullName, fsi.LastWriteTimeUtc) : ((FileInfo)fsi).Length; // never waits for the cache
@@ -743,21 +745,22 @@ public partial class PaneView : UserControl
         }
         return list;
     }
-    static async Task<(List<Entry> Items,Exception Error)> ReadFolderAsync(DirectoryInfo folder,bool hidden,bool administrator,CancellationToken cancel)
+    static async Task<(List<Entry> Items,Exception Error,int Concealed)> ReadFolderAsync(DirectoryInfo folder,bool hidden,bool administrator,CancellationToken cancel)
     {
-        if(!administrator){var ordinary=ReadFolder(folder,hidden,out var failure);return(ordinary,failure);}
+        if(!administrator){var ordinary=ReadFolder(folder,hidden,out var failure,out int skipped);return(ordinary,failure,skipped);}
         try
         {
             var rows=await MaintenanceClient.ReadFolder(folder.FullName,cancel).ConfigureAwait(false);
+            int concealed=rows.Count(row=>!FileVisibility.Visible(row.Name,row.Attributes,hidden));
             return(rows.Where(row=>FileVisibility.Visible(row.Name,row.Attributes,hidden)).Select(row=>new Entry
             {
                 Name=row.Name,Path=row.Path,IsDir=(row.Attributes&FileAttributes.Directory)!=0,Attributes=row.Attributes,
                 Modified=row.Modified,Size=(row.Attributes&FileAttributes.Directory)!=0?SizeCache.Peek(row.Path,row.Modified.ToUniversalTime()):row.Bytes,
                 IsCut=CutPaths.Contains(row.Path),ReadOnlyReason=ReadOnlyIcons.AttributeReason((row.Attributes&FileAttributes.Directory)!=0,row.Attributes)
-            }).ToList(),null);
+            }).ToList(),null,concealed);
         }
-        catch(OperationCanceledException error)when(cancel.IsCancellationRequested){return(new(),error);}
-        catch(Exception error)when(error is IOException or UnauthorizedAccessException or InvalidOperationException or System.ComponentModel.Win32Exception or OperationCanceledException or InvalidDataException or System.Text.Json.JsonException){return(new(),error);}
+        catch(OperationCanceledException error)when(cancel.IsCancellationRequested){return(new(),error,0);}
+        catch(Exception error)when(error is IOException or UnauthorizedAccessException or InvalidOperationException or System.ComponentModel.Win32Exception or OperationCanceledException or InvalidDataException or System.Text.Json.JsonException){return(new(),error,0);}
     }
 
     /// Reads folders into the cache in the background, so opening one of them costs nothing: the other
@@ -784,8 +787,8 @@ public partial class PaneView : UserControl
                 // Do not issue privileged reads speculatively. The explicit
                 // foreground navigation owns each administrator enumeration.
                 if(administrator)continue;
-                var list = ReadFolder(new DirectoryInfo(path), hidden, out var error);
-                if (error == null && !cts.IsCancellationRequested) Dispatcher.BeginInvoke(() => {if(!cts.IsCancellationRequested&&!AdministratorSession.Browsing)Remember(path, list, stamp, hidden);});
+                var list = ReadFolder(new DirectoryInfo(path), hidden, out var error, out int concealed);
+                if (error == null && !cts.IsCancellationRequested) Dispatcher.BeginInvoke(() => {if(!cts.IsCancellationRequested&&!AdministratorSession.Browsing)Remember(path, list, stamp, hidden, concealed);});
             }
         }, cts.Token);
     }
@@ -835,8 +838,11 @@ public partial class PaneView : UserControl
 
     /// `keep`: the same folder, read again — the selection (by name) and the scroll position survive,
     /// unless `select` names a row to show instead (a rename, a new folder).
-    void ShowItems(IList<Entry> list, string select, bool animate = true, bool keep = false)
+    /// `concealed`: how many entries of this listing the hidden-files setting left out (the footer says so).
+    int concealedCount;
+    void ShowItems(IList<Entry> list, string select, bool animate = true, bool keep = false, int concealed = 0)
     {
+        concealedCount = concealed;
         bool focused = List.IsKeyboardFocusWithin;
         var scroller = keep ? FindScroller(List) : null;
         double offset = scroller?.VerticalOffset ?? 0, across = scroller?.HorizontalOffset ?? 0;
@@ -1116,8 +1122,9 @@ public partial class PaneView : UserControl
                 Listed = true; Error?.Invoke("Archive unavailable · " + error); StatsChanged?.Invoke(); return;
             }
             string changeReason = Archive.ChangeReason(at.Archive);
-            ShowItems(items.Where(i => FileVisibility.Visible(i.Name, i.Attributes, ShowHidden)).Select(i => new Entry { Name = i.Name, Path = dir + "\\" + i.Name, IsDir = i.IsDir, Size = i.Size, Modified = i.Modified, Crc = i.Crc,
-                ReadOnlyReason = changeReason.Length > 0 ? "Archive contents are read-only: " + changeReason : ReadOnlyIcons.AttributeReason(i.IsDir, i.Attributes), RestrictionChecked = true }).ToList(), select);
+            var shownMembers = items.Where(i => FileVisibility.Visible(i.Name, i.Attributes, ShowHidden)).ToList();
+            ShowItems(shownMembers.Select(i => new Entry { Name = i.Name, Path = dir + "\\" + i.Name, IsDir = i.IsDir, Size = i.Size, Modified = i.Modified, Crc = i.Crc,
+                ReadOnlyReason = changeReason.Length > 0 ? "Archive contents are read-only: " + changeReason : ReadOnlyIcons.AttributeReason(i.IsDir, i.Attributes), RestrictionChecked = true }).ToList(), select, concealed: items.Count - shownMembers.Count);
             if (pendingSelect != null) ApplyPendingSelect();
             ReadOnlyWatermark.Visibility = changeReason.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
             StartIcons();
@@ -1594,7 +1601,7 @@ public partial class PaneView : UserControl
                 ? $"{items.Count} found for “{searchQuery}”{(searching ? "  ·  searching…" : items.Count >= MaxResults ? $"  ·  stopped at {MaxResults}" : "")}  ·  Esc goes back"
             : view?.Filter != null
                 ? $"{view.Cast<Entry>().Count(e => !e.IsUp):N0} of {folders + files:N0} match “{FilterBox.Text.Trim()}”"
-            : $"{folders} folders  ·  {files} files  ·  {MainWindow.Fmt(total)}{(left==0?"":cached>0?$"  ·  measuring {left} folders ({cached} cached)":$"  ·  measuring {left} folders")}";
+            : $"{folders} folders  ·  {files} files  ·  {MainWindow.Fmt(total)}{(concealedCount>0&&!ShowHidden?$"  ·  {concealedCount:N0} hidden":"")}{(left==0?"":cached>0?$"  ·  measuring {left} folders ({cached} cached)":$"  ·  measuring {left} folders")}";
         if(indexed)Footer.Text+=" · indexed sizes";
         bool filtered=view?.Filter!=null;
         if(Listed&&loadingListing<0&&!searching&&FolderFailurePanel.Visibility!=Visibility.Visible
