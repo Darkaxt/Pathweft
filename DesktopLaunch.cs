@@ -45,14 +45,29 @@ static class DesktopLaunch
         // stays untimed: a child that dies later breaks the connected pipe.
         try{client.Connect(ResultChannelStart);}
         catch(TimeoutException){throw new IOException("Pathweft did not start its desktop result channel.");}
+        // The channel's process must run as this user. Its token owner is not enough: with UAC turned
+        // off (Windows Sandbox, some managed PCs) every process's owner is Administrators.
         using(var identity=WindowsIdentity.GetCurrent())
         {
-            var owner=client.GetAccessControl().GetOwner(typeof(SecurityIdentifier));
-            if(!identity.User.Equals(owner))throw new UnauthorizedAccessException("Desktop result channel belongs to another user.");
+            if(!AdministratorSession.ServerPid(client,out uint pid)||!identity.User.Equals(ProcessUser(pid)))
+                throw new UnauthorizedAccessException("Desktop result channel belongs to another user.");
         }
         using var reader=new StreamReader(client);
         return int.TryParse(reader.ReadLine(),out var result)?result:1;
     }
+    static SecurityIdentifier ProcessUser(uint pid)
+    {
+        try
+        {
+            using var process=System.Diagnostics.Process.GetProcessById((int)pid);
+            if(!OpenProcessToken(process.Handle,0x0008,out var token))return null; // TOKEN_QUERY
+            try{using var user=new WindowsIdentity(token);return user.User;}
+            finally{CloseHandle(token);}
+        }
+        catch(Exception error)when(error is ArgumentException or InvalidOperationException or System.ComponentModel.Win32Exception){return null;}
+    }
+    [DllImport("advapi32.dll",SetLastError=true)]static extern bool OpenProcessToken(IntPtr process,uint access,out IntPtr token);
+    [DllImport("kernel32.dll")]static extern bool CloseHandle(IntPtr handle);
     internal static int RunAndReport(string name,Func<int> run)
     {
         if(!name.StartsWith(Prefix,StringComparison.Ordinal)||!Guid.TryParseExact(name[Prefix.Length..],"N",out _))throw new ArgumentException("Invalid Setup result channel.");
