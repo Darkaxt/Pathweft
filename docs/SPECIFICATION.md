@@ -1,6 +1,26 @@
 # Pathweft specification
 
-Version 1.16 - 2026-11-11. Owner: Darkaxt.
+Version 1.17 - 2026-11-13. Owner: Darkaxt.
+
+### Maintenance tweaks by goal with risk colours (S47a)
+
+User direction 2026-11-12/13: expand Maintenance before S12, drawing on the
+owner-listed open-source tweak projects, with dangerous settings colour coded.
+S47 has three separately released parts: S47a tweaks by goal (this section),
+S47b the Windows apps tab with Bulk Crap Uninstaller capabilities, and S47c a
+read-only security check with opt-in hardening. Donor inventory, licences and the
+proposed selection: [research/2026-11-13-s47-donor-inventory.md](research/2026-11-13-s47-donor-inventory.md).
+MAINT-08..11 and MAINT-20..23 remain in force; nothing is applied automatically.
+
+| ID | Required behavior and acceptance |
+| --- | --- |
+| MAINT-25 | Every Windows tweak rule carries one goal: Debloat, Privacy, Performance, Security or Personalize (appearance, Explorer, Start and taskbar preferences). The existing wrapping filter row gains a goal filter beside the category filter; both filter locally over the same table. Categories stay as group headers. No sidebar, preset or "apply all for this goal" action. |
+| MAINT-26 | Every rule carries a risk level separate from its recommendation. Low: reversible preference with no protection or stability cost (no accent). Caution: reduces a Windows feature, recovery path or update behavior the user may not notice (warning colour). High: weakens a security protection or can stop Windows, devices or sign-in working (critical colour). The Windows tweaks table shows the level as a small coloured marker with its word in the Recommendation cell; the explanation shows the level, what is at risk and how to restore. Colours come from theme resources with readable contrast in dark, light and high-contrast modes; symbol and word keep it understandable without colour. A High rule is never Optional (recommended), and Caution/High rules are excluded from the pending-recommendation count. Applying a selection that contains Caution or High rules names those rules in the confirmation. Existing rules are assessed and labelled too. |
+| MAINT-27 | Tweak actions stay typed and journaled: registry values (current user or machine, including policy keys) and, new, scheduled-task enabled state by exact task path. The journal records the exact original value or task state and Restore returns exactly that. Catalog data cannot add commands, services, packages or arbitrary write targets. Actions that need administrator rights use the existing administrator session and are unavailable, not silently skipped, without it. |
+| MAINT-28 | Adopt individual rules from the selection in the research document: AI (Copilot, Recall, Click to Do, agent features, Notepad/Paint/Edge AI, AI service autostart), Privacy (telemetry scheduled tasks, app permissions, input and speech personalisation, cloud clipboard, activity tracking, feedback, cloud search), Debloat (consumer features, Edge promotions, Widgets, auto-installed apps, Store app archiving), Explorer (navigation-pane items, title-bar path, checkboxes, separate process, empty drives, folder-type discovery, context-menu entries, shortcut arrow and suffix, long paths), Start and taskbar, Performance (Delivery Optimization peers, visual effects, last-access updates, Game Mode and GPU scheduling, hibernation, reserved storage) and Updates (drivers, restart while signed in, active hours). Each rule follows MAINT-08: primary Microsoft source where one exists, donor source, exact targets, build range, feature loss, goal and risk. Definitions come only from MIT/Apache donors or Microsoft documentation, pinned in a vendor source manifest with file hashes and shipped notices; copyleft, source-available and unlicensed donors are pointers only. |
+| MAINT-29 | Detect settings locked by other tools: policy values under the machine and user Policies keys that match a catalog target and have no Pathweft journal entry are shown as "Set outside Pathweft" with their current value, what Windows does by default and the rule's risk. Restoring the Windows default is an explicit, journaled action. Unknown policies are listed read-only, never removed. |
+| MAINT-30 | Excluded: anything that disables or weakens Defender, SmartScreen, Mark-of-the-Web, UAC or its secure desktop, VBS/HVCI, Smart App Control, exploit mitigations, BitLocker or Windows Update; debugger-hijack app blocking; forced Edge removal; downloaded host lists or remote scripts; install-image changes. Rules that weaken protection may appear only in S47c's read-only check, never as actions here. |
+| MAINT-31 | Verify catalog completeness and integrity (every rule has goal, risk, source, targets and build range; manifest hashes match), goal/category/search filtering, the pending count, the confirmation naming Caution/High rules, and scheduled-task journaling. Qualify every new action in a disposable Windows Sandbox guest with apply, readback and exact restore; no tweak changes on the host. Capture the risk markers in dark and light at 100 and 150 percent and narrow width. Ship as a normal release with independent asset verification and clean spent scratch. |
 
 ### Startup administrator access and process activity recording (S46)
 
