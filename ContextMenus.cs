@@ -265,7 +265,7 @@ public partial class MainWindow
         m.Items.Add(Item("Group into new folder…", "\uE8F4", "", () => GroupIntoFolder(p, sel)));
         m.Items.Add(Item("Add to Drop bin", "\uE7B8", "Ctrl+B", () => AddToBin(sel.Select(x => x.Path))));
         m.Items.Add(new Separator());
-        m.Items.Add(Item("Copy path", "", "Ctrl+Shift+C", () => Clipboard.SetText(string.Join(Environment.NewLine, sel.Select(x => x.Path)))));
+        m.Items.Add(Item("Copy path", "", "Ctrl+Shift+C", () => Clipboard.SetText(Entry.QuotedPaths(sel))));
         m.Items.Add(Item("Copy name", "", "", () => Clipboard.SetText(string.Join(Environment.NewLine, sel.Select(x => x.Name)))));
         m.Items.Add(one ? Item("Rename", "", "F2", Rename) : Item("Rename all…", "", "F2", RenameMany));
         m.Items.Add(Item("Delete", "", "Del", () => Delete()));

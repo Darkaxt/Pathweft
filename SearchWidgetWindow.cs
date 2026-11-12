@@ -156,7 +156,7 @@ internal sealed class SearchWidgetWindow : Window
         menu.Items.Add(MainWindow.Item("Preview","\uE8B7","Space",Preview,one));
         menu.Items.Add(MainWindow.Item("Open containing folder","\uE838","Ctrl+Shift+Enter",RevealSelection,one&&physical&&Path.GetDirectoryName(paths[0].TrimEnd('\\'))!=null));
         menu.Items.Add(new Separator());
-        menu.Items.Add(MainWindow.Item("Copy path","\uE8C8","Ctrl+Shift+C",()=>System.Windows.Forms.Clipboard.SetText(string.Join(Environment.NewLine,Pane.Selected.Select(entry=>entry.Path))),selected.Count>0));
+        menu.Items.Add(MainWindow.Item("Copy path","\uE8C8","Ctrl+Shift+C",()=>System.Windows.Forms.Clipboard.SetText(Entry.QuotedPaths(Pane.Selected)),selected.Count>0));
         var windows=MainWindow.Item("Windows menu…","\uE712","",()=>ShellMenu.Show(this,Path.GetDirectoryName(paths[0]),paths,rename:false),shell);
         if(physical&&!shell){windows.ToolTip="Select results from one containing folder for the Windows menu.";ToolTipService.SetShowOnDisabled(windows,true);}menu.Items.Add(windows);
         var properties=MainWindow.Item("Properties","\uE946","Alt+Enter",PropertiesSelection,physical&&MainWindow.SupportsProperties(paths));
@@ -196,7 +196,7 @@ internal sealed class SearchWidgetWindow : Window
         if(key==Key.Enter&&modifiers==(ModifierKeys.Control|ModifierKeys.Shift)){RevealSelection();return true;}
         if(key==Key.C&&modifiers==(ModifierKeys.Control|ModifierKeys.Shift)&&source is not TextBox)
         {
-            if(Pane.Selected.Count>0)System.Windows.Forms.Clipboard.SetText(string.Join(Environment.NewLine,Pane.Selected.Select(entry=>entry.Path)));
+            if(Pane.Selected.Count>0)System.Windows.Forms.Clipboard.SetText(Entry.QuotedPaths(Pane.Selected));
             return true;
         }
         return false;

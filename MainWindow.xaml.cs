@@ -1758,7 +1758,7 @@ public partial class MainWindow : Window
             // F5 refreshes, as in other file managers; Ctrl+F5 copies to the other pane (below)
             case Key.R when ctrl: case Key.F5 when !ctrl: SizeCache.Clear(); active.Refresh(force: true); break;
             case Key.C when ctrl && shift:
-                Clipboard.SetText(string.Join(Environment.NewLine, active.Selected.Select(x => x.Path)));
+                Clipboard.SetText(Entry.QuotedPaths(active.Selected));
                 Status.Text = "Path copied"; break;
             case Key.Oem3 when ctrl: OpenTerminal(); break;
             case Key.Left when alt: active.Back(); break;

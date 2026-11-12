@@ -304,7 +304,11 @@ public partial class MainWindow
             Check(Left.Dir==folder&&!Left.InSearch,"The real address Enter route resolves a quoted Unicode folder path before search");
             await Located("sample file.txt",folder,"sample file.txt");
             Check(Left.Selected.Single().Name=="sample file.txt","A relative existing file resolves as a path and is revealed instead of executed or searched");
+            string copied=Entry.QuotedPaths(Left.Selected);
+            Check(copied=='"'+Path.Combine(folder,"sample file.txt")+'"',"Copy path quotes a path with spaces, as Explorer's Copy as path does: "+copied);
             await Located("%USERPROFILE%",Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
+            await Located("  "+copied+"  ",folder,"sample file.txt");
+            Check(Left.Selected.Single().Name=="sample file.txt","A pasted quoted file path opens its folder with the file selected");
             await Located(@"D:\Projects\Pathweft",@"D:\Projects\Pathweft");
             Left.EditPath();address.Text=folder;var superseded=Left.SubmitAddressAsync();
             address.Text=@"D:\Projects\Pathweft";var latest=Left.SubmitAddressAsync();

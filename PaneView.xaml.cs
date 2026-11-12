@@ -17,6 +17,8 @@ public class Entry : INotifyPropertyChanged
     public string Name { get; init; }
     public string Path { get; init; }
     public bool IsDir { get; init; }
+    // Copy path quotes every path, as Explorer's Copy as path does, so a pasted path with spaces stays one argument.
+    internal static string QuotedPaths(IEnumerable<Entry> entries)=>string.Join(Environment.NewLine,entries.Select(entry=>"\""+entry.Path+"\""));
     string message="";
     public string Message { get=>message; set { message=value??"";Changed(nameof(Message));Changed(nameof(Tip)); } }
     DateTime modified;
