@@ -244,15 +244,24 @@ internal static class MaintenanceWorker
             if(!Maintenance.Apps.Any(a=>a.Package==request.Id))throw new ArgumentException("Unknown built-in app");
             return await WindowsAction("RemoveApp",request.Id,cancel);
         }
-        if(request.Action is not ("apply" or "restore"))throw new ArgumentException("Unknown maintenance action");
+        if(request.Action is not ("apply" or "restore" or "reset-default"))throw new ArgumentException("Unknown maintenance action");
         bool restore=request.Action=="restore";
         RequireOwnedPaths(request);
+        if(request.Action=="reset-default")
+        {
+            if(!request.Id.StartsWith("tweak:",StringComparison.Ordinal))throw new ArgumentException("Only Windows tweaks can return to the Windows default");
+            Maintenance.ResetPolicies(request.Id,request.Journal);return "Windows default restored. Previous policy values saved for Restore.";
+        }
         if(request.Id.StartsWith("service:"))return MaintenanceServices.Change(request.Id[8..],restore,request.Journal);
         if(request.Id.StartsWith("startup-file:"))return MaintenanceStartup.ChangeFile(request.Id,restore,request.Journal);
         if(request.Id.StartsWith("startup-task:"))
         {try{return MaintenanceStartup.ChangeTask(request.Id,restore,request.Journal);}catch(COMException error){throw new IOException("Windows Task Scheduler: "+error.Message,error);}}
-        if(restore)Maintenance.RestoreRegistry(request.Id,request.Journal);
-        else Maintenance.ApplyRegistry(request.Id,request.Id.StartsWith("startup:")?Maintenance.StartupEdits(request.Id):Maintenance.TweakEdits(request.Id),request.Journal);
+        try
+        {
+            if(restore)Maintenance.RestoreRegistry(request.Id,request.Journal);
+            else Maintenance.ApplyRegistry(request.Id,request.Id.StartsWith("startup:")?Maintenance.StartupEdits(request.Id):Maintenance.TweakEdits(request.Id),request.Journal);
+        }
+        catch(COMException error){throw new IOException("Windows Task Scheduler: "+error.Message,error);}
         return restore?"Original settings restored.":"Change verified. Original settings saved for Restore.";
     }
     // The elevated worker writes journals and review manifests only to this

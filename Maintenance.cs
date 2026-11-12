@@ -7,8 +7,9 @@ using Microsoft.Win32;
 namespace FileExplorer;
 
 internal sealed record MaintenanceRow(string Id,string Name,string Scope,string State,string Details,long? Bytes=null,string Type="",string StartupMode="",bool CanChange=true,
-    string Group="",string Recommendation="Not assessed",string Guidance="",string Source="",string RuleId="")
+    string Group="",string Recommendation="Not assessed",string Guidance="",string Source="",string RuleId="",string Goal="",string Risk="")
 {
+    public string RiskLabel=>Risk switch{"Caution"=>"▲ Caution","High"=>"◆ High",_=>""};
     public string Size=>Bytes is {} size?MainWindow.Fmt(size):"";
     public string Summary=>Details?.Split(['\r','\n'],2)[0]??"";
     public string RecommendationLabel=>(Recommendation switch{"Keep enabled"=>"● ","Optional"=>"◇ ","Advanced"=>"△ ",_=>"○ "})+Recommendation;
@@ -37,7 +38,7 @@ internal sealed record RegistryEdit(string Hive,string Path,string Name,Registry
     }
     internal bool Same(RegistryEdit other)=>Exists==other.Exists&&(!Exists||Kind==other.Kind&&Value.GetRawText()==other.Value.GetRawText());
 }
-internal sealed record MaintenanceUndo(string Id,RegistryEdit[] Before,RegistryEdit[] After,string Service=null,uint ServiceStart=0,bool ServiceDelayed=false,string Phase="prepared",StartupFileState StartupFile=null,StartupTaskState StartupTask=null);
+internal sealed record MaintenanceUndo(string Id,RegistryEdit[] Before,RegistryEdit[] After,string Service=null,uint ServiceStart=0,bool ServiceDelayed=false,string Phase="prepared",StartupFileState StartupFile=null,StartupTaskState StartupTask=null,StartupTaskState[] Tasks=null);
 
 // Catalogue/Run enumeration adapted from SysOptimizer StartupService, ServiceManager
 // and TweakService (6ddd104, MIT). No donor automatic optimization is imported.
@@ -112,13 +113,38 @@ internal static class Maintenance
             cancel.ThrowIfCancellationRequested();string id="tweak:"+Id("tweak",t.Name);
             try
             {
-                var edits=TweakEdits(id);string scope=edits.All(x=>x.Hive=="HKEY_CURRENT_USER")?"Current user":edits.All(x=>x.Hive=="HKEY_LOCAL_MACHINE")?"This computer":"User and computer";
+                var edits=TweakEdits(id);bool machine=edits.Any(x=>x.Hive=="HKEY_LOCAL_MACHINE")||t.TaskPaths.Length>0;
+                string scope=!machine?"Current user":edits.All(x=>x.Hive=="HKEY_LOCAL_MACHINE")?"This computer":"User and computer";
                 string effect=MaintenanceGuidance.Find("tweak",t.Name)?.FeatureLoss??t.Description;
-                return new MaintenanceRow(id,t.Name,scope,edits.All(x=>x.Same(x.Read()))?"Applied":"Not applied",effect+(undo.ContainsKey(id)?" · original settings saved":""));
+                var tasks=MaintenanceTweakTasks.ReadAll(t.TaskPaths);
+                bool applied=edits.All(x=>x.Same(x.Read()))&&(t.TaskPaths.Length==0||tasks.Length>0&&tasks.All(task=>!task.Enabled));
+                bool saved=undo.ContainsKey(id);
+                string state=!saved&&SetOutside(edits)?OutsideState:applied?"Applied":"Not applied";
+                if(t.TaskPaths.Length>0&&tasks.Length==0&&!saved)state="Unavailable";
+                return new MaintenanceRow(id,t.Name,scope,state,effect+(saved?" · original settings saved":"")+OtherPolicies(edits),CanChange:state!="Unavailable");
             }
             catch(UnauthorizedAccessException ex){return new MaintenanceRow(id,t.Name,"Windows","Access denied",ex.Message);}
         }).ToArray();
         throw new ArgumentException("Unknown maintenance category");
+    }
+    internal const string OutsideState="Set outside Pathweft";
+    // Policy values have no Windows default other than "absent" (MAINT-29).
+    internal static bool IsPolicy(RegistryEdit edit)=>edit.Path.StartsWith(@"SOFTWARE\Policies\",StringComparison.OrdinalIgnoreCase)||
+        edit.Path.Contains(@"\CurrentVersion\Policies\",StringComparison.OrdinalIgnoreCase);
+    internal static bool PolicyOnly(RegistryEdit[] edits)=>edits.Length>0&&edits.All(IsPolicy);
+    // A managed policy present without a Pathweft journal was set by another tool or Group Policy.
+    static bool SetOutside(RegistryEdit[] edits)=>PolicyOnly(edits)&&edits.Any(x=>x.Read().Exists);
+    // Other values under the same policy keys are context only; Pathweft never removes them.
+    static string OtherPolicies(RegistryEdit[] edits)
+    {
+        var known=edits.Select(x=>x.Identity).ToHashSet(StringComparer.OrdinalIgnoreCase);var found=new List<string>();
+        foreach(var key in edits.Where(IsPolicy).DistinctBy(x=>(x.Hive,x.Path,x.View)))
+        {
+            using var root=key.Root();using var open=root.OpenSubKey(key.Path);if(open==null)continue;
+            foreach(string name in open.GetValueNames())
+                if(!known.Contains((key with{Name=name}).Identity))found.Add((name.Length==0?"(Default)":name)+"="+open.GetValue(name,null,RegistryValueOptions.DoNotExpandEnvironmentNames));
+        }
+        return found.Count==0?"":"\nOther policies at this key, not managed by this rule (read-only): "+string.Join(", ",found.Take(8))+(found.Count>8?$" and {found.Count-8} more":"");
     }
     internal static RegistryEdit[] StartupEdits(string id)
     {
@@ -132,22 +158,34 @@ internal static class Maintenance
         }
         throw new IOException("The startup entry changed or was removed; refresh before changing it");
     }
+    internal static MaintenanceTweak Tweak(string id)=>Tweaks.SingleOrDefault(t=>id=="tweak:"+Id("tweak",t.Name))??throw new ArgumentException("Unknown Windows tweak");
     internal static RegistryEdit[] TweakEdits(string id)
     {
-        var tweak=Tweaks.SingleOrDefault(t=>id=="tweak:"+Id("tweak",t.Name))??throw new ArgumentException("Unknown Windows tweak");
-        var edits=new List<RegistryEdit>();tweak.Apply(edits);return edits.ToArray();
+        var edits=new List<RegistryEdit>();Tweak(id).Apply(edits);return edits.ToArray();
     }
-    internal static void ApplyRegistry(string id,RegistryEdit[] after,string journal=null)
+    internal static void ApplyRegistry(string id,RegistryEdit[] after,string journal=null,bool resetDefault=false)
     {
-        if(id.StartsWith("tweak:",StringComparison.Ordinal))MaintenanceGuidance.RequireSupported(id);
+        bool tweak=id.StartsWith("tweak:",StringComparison.Ordinal);
+        if(tweak&&!resetDefault)MaintenanceGuidance.RequireSupported(id);
         using var lease=new JournalLease(journal);
         var records=Undo(journal);
         if(records.ContainsKey(id))throw new IOException("An earlier change is saved for this item. Restore or review it before applying again.");
-        var before=after.Select(x=>x.Read()).ToArray();var record=new MaintenanceUndo(id,before,after);
+        string[] paths=tweak&&!resetDefault?Tweak(id).TaskPaths:[];
+        var tasks=paths.Length==0?null:MaintenanceTweakTasks.ReadAll(paths);
+        if(tasks?.Length==0)throw new IOException("None of this setting's scheduled tasks exist on this PC");
+        var before=after.Select(x=>x.Read()).ToArray();var record=new MaintenanceUndo(id,before,after,Tasks:tasks);
         records.Add(id,record);Save(records,journal);
         foreach(var edit in after)edit.Write();
+        foreach(var task in tasks??[])MaintenanceTweakTasks.Set(task,false);
         if(after.Any(x=>!x.Same(x.Read())))throw new IOException("Windows did not retain the requested settings; the original state remains saved");
         records[id]=record with{Phase="applied"};Save(records,journal);
+    }
+    // MAINT-29: remove the policy values a rule manages so Windows uses its default; journaled like any change.
+    internal static void ResetPolicies(string id,string journal=null)
+    {
+        var edits=TweakEdits(id);
+        if(!PolicyOnly(edits))throw new InvalidOperationException("Only policy settings can be returned to the Windows default");
+        ApplyRegistry(id,edits.Select(x=>x with{Exists=false,Value=default}).ToArray(),journal,resetDefault:true);
     }
     internal static void RestoreRegistry(string id,string journal=null)
     {
@@ -159,6 +197,7 @@ internal static class Maintenance
             var current=saved.After[i].Read();if(!current.Same(saved.After[i])&&!current.Same(saved.Before[i]))
                 throw new IOException("A setting changed outside Pathweft. Restore stopped to preserve the newer value.");
         }
+        foreach(var task in saved.Tasks??[])MaintenanceTweakTasks.Set(task,task.Enabled,missingAllowed:true);
         foreach(var before in saved.Before)before.Write();
         if(saved.Before.Any(x=>!x.Same(x.Read())))throw new IOException("Windows did not restore all original values; the saved state is retained");
         records.Remove(id);Save(records,journal);
@@ -171,7 +210,11 @@ internal static class Maintenance
             var item=saved.Before[0];if(!MaintenanceStartup.RegistryPaths.Contains(item.Path)||saved.Id!=MaintenanceStartup.RegistryId(item.Hive,item.View,item.Path,item.Name)||!StartupRoots.Any(s=>s.Hive.ToString()==(item.Hive=="HKEY_CURRENT_USER"?"CurrentUser":item.Hive=="HKEY_LOCAL_MACHINE"?"LocalMachine":"")&&s.View==item.View))throw new InvalidDataException("Invalid startup restore target");
             allowed=[item];
         }
-        else allowed=TweakEdits(saved.Id);
+        else
+        {
+            allowed=TweakEdits(saved.Id);var paths=Tweak(saved.Id).TaskPaths;
+            if(saved.Tasks?.Any(t=>!paths.Contains(t.Path,StringComparer.OrdinalIgnoreCase))==true)throw new InvalidDataException("Saved tasks differ from this maintenance action");
+        }
         if(saved.Before.Length!=allowed.Length||saved.After.Length!=allowed.Length||allowed.Where((x,i)=>x.Identity!=saved.Before[i].Identity||x.Identity!=saved.After[i].Identity).Any())throw new InvalidDataException("Saved targets differ from this maintenance action");
     }
 }

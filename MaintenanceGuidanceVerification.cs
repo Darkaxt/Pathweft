@@ -19,7 +19,7 @@ public partial class MainWindow
         string ownCommand="HKEY_CURRENT_USER\\"+Maintenance.RunPath+" · Registry64 · \""+Program.Executable+"\" --agent";
         check(MaintenanceGuidance.Describe("Startup",new("own","Pathweft Agent","Current user","Enabled",ownCommand,Type:"Registry Run"),26100).Recommendation=="Keep enabled"&&
             MaintenanceGuidance.Describe("Startup",new("fake","Pathweft Agent","Current user","Enabled",ownCommand+"-fake",Type:"Registry Run"),26100).Recommendation=="Not assessed","Complete source/view/raw command matches app-owned startup without accepting a similar suffix");
-        check(MaintenanceDonorTweaks.All().Length==24&&Maintenance.Tweaks.Count()==40&&rules.Count(r=>r.Kind=="service"&&r.ReadOnlyEvidence)>=24,"Expanded catalog contains real typed donor actions and documented native service dependencies");
+        check(MaintenanceDonorTweaks.All().Length==24&&Maintenance.Tweaks.Count()==121&&MaintenanceS47Tweaks.All().Length==81&&rules.Count(r=>r.Kind=="service"&&r.ReadOnlyEvidence)>=24,"Expanded catalog contains real typed donor actions and documented native service dependencies");
         check(rules.All(r=>r.MinBuild<=r.MaxBuild&&r.Source.StartsWith("https://")&&!string.IsNullOrWhiteSpace(r.FeatureLoss)),"Every bundled rule has bounded applicability, effect and source");
         check(rules.All(r=>r.Qualified.Length==0||DateOnly.TryParseExact(r.Qualified,"yyyy-MM-dd",out _)&&r.Supports(r.QualifiedBuild)),"Configuration qualification has an explicit date and actual guest build");
         var unqualified=rules.First(r=>r.Qualified.Length==0&&r.Kind=="app");
@@ -33,6 +33,21 @@ public partial class MainWindow
             !MaintenanceGuidance.PendingRecommendation(optional with{Recommendation="Advanced"})&&!MaintenanceGuidance.PendingRecommendation(optional with{Recommendation="Not assessed"})&&
             !MaintenanceGuidance.PendingRecommendation(optional with{CanChange=false}),"Pending recommendations exclude applied, advanced, unassessed and unavailable actions");
         check(MaintenanceGuidance.PendingRecommendation(optional with{Recommendation="Keep enabled",State="Applied"}),"A disabled keep-enabled setting remains a pending restore recommendation");
+        // S47a: goal and risk (MAINT-25, MAINT-26) and outside-set policies (MAINT-29).
+        check(rules.Where(r=>r.Kind=="tweak").All(r=>r.Goal is "Debloat" or "Privacy" or "Performance" or "Security" or "Personalize"&&r.Risk is "Low" or "Caution" or "High")&&
+            !rules.Any(r=>r.Risk=="High"&&r.Recommendation=="Optional"),"Every tweak rule states one goal and one risk level, and no high-risk rule is merely optional");
+        check(!MaintenanceGuidance.PendingRecommendation(optional with{Risk="Caution"})&&!MaintenanceGuidance.PendingRecommendation(optional with{Risk="High"})&&
+            !MaintenanceGuidance.PendingRecommendation(optional with{State=Maintenance.OutsideState})&&
+            MaintenanceGuidance.PendingRecommendation(optional with{Recommendation="Keep enabled",State="Applied",Risk="High"}),"Applying caution, high-risk and outside-set rules is never a pending suggestion; undoing advised-against changes still is");
+        check(new MaintenanceRow("r","R","","","",Risk:"High").RiskLabel=="◆ High"&&new MaintenanceRow("r","R","","","",Risk:"Caution").RiskLabel=="▲ Caution"&&
+            new MaintenanceRow("r","R","","","",Risk:"Low").RiskLabel=="","Risk markers carry a symbol and word, so the level reads without colour");
+        var risky=rules.First(r=>r.Kind=="tweak"&&r.Risk!="Low");var riskyTweak=Maintenance.Tweaks.Single(t=>t.Name.Equals(risky.Target,StringComparison.OrdinalIgnoreCase));
+        var described=MaintenanceGuidance.Describe("Windows tweaks",new("tweak:"+Maintenance.Id("tweak",riskyTweak.Name),riskyTweak.Name,"","Not applied",""),risky.MinBuild);
+        check(described.Goal==risky.Goal&&described.Risk==risky.Risk&&described.Guidance.Contains(MaintenanceGuidance.RiskText(risky.Risk)),"Assessment shows the rule's goal, risk and its cost");
+        RegistryEdit policy=new("HKEY_LOCAL_MACHINE",@"SOFTWARE\Policies\Microsoft\Windows\Fixture","Value",Microsoft.Win32.RegistryValueKind.DWord,default,true),
+            preference=policy with{Path=@"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced"},legacy=policy with{Path=@"SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer"};
+        check(Maintenance.PolicyOnly([policy,legacy])&&!Maintenance.PolicyOnly([policy,preference])&&!Maintenance.PolicyOnly([]),"Only rules made entirely of policy values can return to the Windows default");
+        check(Maintenance.Tweaks.Where(t=>t.TaskPaths.Length>0).All(t=>t.TaskPaths.All(p=>p.StartsWith('\\')&&!p.EndsWith('\\'))),"Task-backed tweaks name exact absolute scheduled-task paths");
     }
     internal async Task VerifyMaintenanceGuidanceUi(string root,Action<bool,string> check)
     {
@@ -48,7 +63,7 @@ public partial class MainWindow
             "Exact service advice remains in the selected assessment without a sparse Recommendation column");
         await S1Verification.Snapshot(this,root,"services-compact");
         await maintenance.CategoryForVerification("Windows tweaks");int all=maintenance.Rows.Items.Count;
-        check(all==40&&maintenance.Rows.Items.Cast<MaintenanceRow>().Count(r=>r.RuleId.StartsWith("donor."))==24,"Actual searchable grouped table contains all newly adopted donor actions");
+        check(all==121&&maintenance.Rows.Items.Cast<MaintenanceRow>().Count(r=>r.RuleId.StartsWith("donor."))==24,"Actual searchable grouped table contains all newly adopted donor actions");
         check(maintenance.Rows.Items.Cast<MaintenanceRow>().Where(r=>r.RuleId.StartsWith("donor.")).All(r=>r.Recommendation!="Not assessed"&&r.Guidance.Contains("configuration and Restore checked")),"Adopted donor settings expose their actual qualified guidance rather than empty recommendation scaffolding");
         string expected=maintenance.Rows.Items.Cast<MaintenanceRow>().Count(MaintenanceGuidance.PendingRecommendation).ToString("N0");
         var card=(Button)((System.Windows.Controls.Primitives.UniformGrid)maintenance.Cards).Children[3];

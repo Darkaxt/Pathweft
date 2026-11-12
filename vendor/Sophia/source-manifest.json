@@ -1,0 +1,12 @@
+{
+  "repository": "https://github.com/farag2/Sophia-Script-for-Windows",
+  "revision": "b9010fced373be52f0ac0618edb2c55e3dd255e6",
+  "license": "MIT",
+  "adaptation": "Selected registry values and scheduled-task paths reimplemented as individually journaled typed actions (MaintenanceS47Tweaks.cs). Source files are provenance only, never executed. Undo defaults and presets are not used.",
+  "files": [
+    {
+      "path": "src/Sophia_Script_for_Windows_11/Module/Sophia.psm1",
+      "sha256": "4338dd3834d0414bf6a1e1ac151613fe2d652014dc1b7977fcdd06a852acb086"
+    }
+  ]
+}

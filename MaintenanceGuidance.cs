@@ -7,7 +7,7 @@ namespace FileExplorer;
 // Descriptive data only. Typed Maintenance actions remain the sole write allowlist.
 internal sealed record MaintenanceRule(string Id,string Kind,string Target,string Category,string Recommendation,
     string Action,string Reason,string FeatureLoss,string Source,int MinBuild,int MaxBuild,string Reviewed,
-    string Qualified="",int QualifiedBuild=0,bool ReadOnlyEvidence=false)
+    string Qualified="",int QualifiedBuild=0,bool ReadOnlyEvidence=false,string Goal="",string Risk="")
 {
     internal bool Supports(int build)=>build>=MinBuild&&build<=MaxBuild;
     internal string Applicability=>$"Windows builds {MinBuild}–{MaxBuild}";
@@ -30,6 +30,8 @@ internal static class MaintenanceGuidance
                string.IsNullOrWhiteSpace(r.Target)||string.IsNullOrWhiteSpace(r.Category)||string.IsNullOrWhiteSpace(r.Reason)||
                string.IsNullOrWhiteSpace(r.FeatureLoss)||!Uri.TryCreate(r.Source,UriKind.Absolute,out var uri)||uri.Scheme!="https"||
                r.MinBuild>r.MaxBuild||r.ReadOnlyEvidence&&(r.Kind!="service"||r.Recommendation!="Keep enabled")||!DateOnly.TryParseExact(r.Reviewed,"yyyy-MM-dd",out _)||
+               r.Kind=="tweak"&&(r.Goal is not ("Debloat" or "Privacy" or "Performance" or "Security" or "Personalize")||r.Risk is not ("Low" or "Caution" or "High"))||
+               r.Risk=="High"&&r.Recommendation=="Optional"||
                (r.Qualified.Length>0&&(!DateOnly.TryParseExact(r.Qualified,"yyyy-MM-dd",out _)||!r.Supports(r.QualifiedBuild))))
                 throw new InvalidDataException("Invalid maintenance rule: "+r.Id);
         return catalog;
@@ -39,8 +41,16 @@ internal static class MaintenanceGuidance
     {
         "Windows tweaks"=>Find("tweak",row.Name),"Services"=>Find("service",row.Type),"Windows apps"=>Find("app",row.Id),_=>null
     };
+    // Applying a Caution or High rule is never counted as a pending suggestion; the user opts in (MAINT-26).
+    // Undoing a change the catalog advises against still is.
     internal static bool PendingRecommendation(MaintenanceRow row)=>row.CanChange&&
-        (row.Recommendation=="Optional"&&row.State=="Not applied"||row.Recommendation=="Keep enabled"&&row.State=="Applied");
+        (row.Recommendation=="Optional"&&row.State=="Not applied"&&row.Risk is not ("Caution" or "High")||row.Recommendation=="Keep enabled"&&row.State=="Applied");
+    internal static string RiskText(string risk)=>risk switch
+    {
+        "Caution"=>"Caution: reduces a feature, recovery path or update behaviour you may not notice straight away.",
+        "High"=>"High risk: weakens a protection or can break Windows, devices or sign-in. Apply only if you understand the cost.",
+        _=>""
+    };
     internal static void RequireSupported(string id,int? build=null)
     {
         var tweak=Maintenance.Tweaks.SingleOrDefault(t=>"tweak:"+Maintenance.Id("tweak",t.Name)==id)
@@ -57,6 +67,7 @@ internal static class MaintenanceGuidance
         string advice=supported&&(rule.Qualified.Length>0||rule.ReadOnlyEvidence)?rule.Recommendation:"Not assessed";
         string explanation=rule==null?"No reviewed rule matches this exact entry. Its current state or recent resource use does not establish whether it can be disabled.":
             (supported?"":$"Not assessed for the current build/access state ({rule.Applicability}). ")+rule.Reason+"\nEffect: "+rule.FeatureLoss+"\nSuggested action: "+rule.Action+
+            (rule.Risk is "Caution" or "High"?"\n"+RiskText(rule.Risk)+" Restore returns the exact saved original settings.":"")+
             "\n"+rule.Applicability+" · reviewed "+rule.Reviewed+
             (rule.ReadOnlyEvidence?" · documented feature dependency; read-only native inventory check":rule.Qualified.Length>0?$" · configuration and Restore checked {rule.Qualified}, build {rule.QualifiedBuild}":" · configuration check pending");
         // Match the complete app-owned command; a familiar display name is not identity.
@@ -66,7 +77,7 @@ internal static class MaintenanceGuidance
         else if(category=="Startup"&&row.Type=="Scheduled task"&&row.Details is {} task&&
            new[]{(StartupTasks.LaunchName,StartupTasks.LaunchArguments),(StartupTasks.RecorderName,StartupTasks.RecorderArguments)}.Any(x=>task.Equals("\\"+x.Item1+" · At logon · "+Program.Executable+" "+x.Item2,StringComparison.OrdinalIgnoreCase)))
         {advice="Keep enabled";explanation="This exact Pathweft task starts its notification-area window or its app activity recorder at sign-in. Turn it off in Pathweft Settings instead, which removes the task; manual launch remains available.";}
-        return row with{Group=group,Recommendation=advice,Guidance=explanation,Source=rule?.Source??"",RuleId=rule?.Id??"",
+        return row with{Group=group,Recommendation=advice,Guidance=explanation,Source=rule?.Source??"",RuleId=rule?.Id??"",Goal=rule?.Goal??"",Risk=rule?.Risk??"",
             CanChange=row.CanChange&&(category!="Windows tweaks"||supported)};
     }
 }

@@ -15,12 +15,15 @@ internal sealed class MaintenanceTweak
     public Func<bool> IsApplied {get;init;}
     public Action<List<RegistryEdit>> Apply {get;init;}
     public Action<List<RegistryEdit>> Revert {get;init;}
+    // Exact scheduled task paths this tweak disables (MAINT-27); empty for registry-only tweaks.
+    public string[] TaskPaths {get;init;}=[];
 }
 internal static class MaintenanceTweaks
 {
     internal static List<MaintenanceTweak> All() =>
     [
         .. MaintenanceDonorTweaks.All(),
+        .. MaintenanceS47Tweaks.All(),
         new MaintenanceTweak
         {
             Name = "Windows telemetry",

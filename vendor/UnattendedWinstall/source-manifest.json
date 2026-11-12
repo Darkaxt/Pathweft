@@ -1,0 +1,12 @@
+{
+  "repository": "https://github.com/memstechtips/UnattendedWinstall",
+  "revision": "3414845e1a99716b3aa0cfc0f01ad5bf9c413899",
+  "license": "MIT",
+  "adaptation": "Selected registry values and scheduled-task paths reimplemented as individually journaled typed actions (MaintenanceS47Tweaks.cs). Source files are provenance only, never executed. Undo defaults and presets are not used.",
+  "files": [
+    {
+      "path": "autounattend.xml",
+      "sha256": "05384c72395808aff8ee21e981c2b0b23a802342e79589726c665649fdcee85b"
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "repository": "https://github.com/builtbybel/Bloatynosy",
+  "revision": "489a9de326be39aea641cfce3a7686ec24834014",
+  "license": "MIT",
+  "adaptation": "Selected registry values and scheduled-task paths reimplemented as individually journaled typed actions (MaintenanceS47Tweaks.cs). Source files are provenance only, never executed. Undo defaults and presets are not used.",
+  "files": [
+    {
+      "path": "Data/WinRules.ini",
+      "sha256": "158d65c36f3bf98440051862aa1c5222494b704d5caeeee443dfdfa80e139baf"
+    },
+    {
+      "path": "Plugins/Packs/Privacy.ini",
+      "sha256": "c00db4491c37d5edb3838cefb90a4d83afebbe6b91bde50739a8b713c53c4778"
+    }
+  ]
+}

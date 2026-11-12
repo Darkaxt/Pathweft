@@ -1,0 +1,92 @@
+{
+  "repository": "https://github.com/Raphire/Win11Debloat",
+  "revision": "516fe42d47a57ef3f12e505b2bf260f215677ed9",
+  "license": "MIT",
+  "adaptation": "Selected registry values and scheduled-task paths reimplemented as individually journaled typed actions (MaintenanceS47Tweaks.cs). Source files are provenance only, never executed. Undo defaults and presets are not used.",
+  "files": [
+    {
+      "path": "Regfiles/Disable_AI_Recall.reg",
+      "sha256": "7f5c62a6394a75d4b7c881535e94f7e61d3391cdde0db87b45c11e6cfe9676af"
+    },
+    {
+      "path": "Regfiles/Disable_Bing_Cortana_In_Search.reg",
+      "sha256": "d247168a918bf379bedcbb7fd2e7e42b2a6877875e107e68562ca2c7cc54ac84"
+    },
+    {
+      "path": "Regfiles/Disable_Chat_Taskbar.reg",
+      "sha256": "1de8b10b81c5c5b6191ec949d93c47a35168cacc340c90db8fa521c4dfbe6a8a"
+    },
+    {
+      "path": "Regfiles/Disable_Click_to_Do.reg",
+      "sha256": "f5d5dcfd9c55d0fb50c1c9cf964c044bd95ea468e31b23be37e2694ed02e411c"
+    },
+    {
+      "path": "Regfiles/Disable_Copilot.reg",
+      "sha256": "dc742a4f908907b2206408cde3c46ede2fc02ab5662bc62b91d8da0ecfe3f88d"
+    },
+    {
+      "path": "Regfiles/Disable_Device_Auto_App_Download.reg",
+      "sha256": "5a7a105241ae0b2137a9365e51d3f63786c7f6ac1ce0b01fc990b51a9a750947"
+    },
+    {
+      "path": "Regfiles/Disable_Driver_Updates.reg",
+      "sha256": "52603d0d8877c740cdf0b71cc025df76b6f6f3e588addb854b314f51f0efd325"
+    },
+    {
+      "path": "Regfiles/Disable_Edge_AI_Features.reg",
+      "sha256": "964d4856a47a70eca8d03d57bbb4bb92f00782f8bc79d7f1dcfaf86aad5c3501"
+    },
+    {
+      "path": "Regfiles/Disable_Edge_Ads_And_Suggestions.reg",
+      "sha256": "300f6e240addb7430ceeaa5417fd94dc7d3c8c94604564e7741d6384eb2d1c54"
+    },
+    {
+      "path": "Regfiles/Disable_Find_My_Device.reg",
+      "sha256": "b100f8876be8efec490891c90ec04d10a3f0d677da102fdfc917ccf575383fbb"
+    },
+    {
+      "path": "Regfiles/Disable_Notepad_AI_Features.reg",
+      "sha256": "fcfe2894c9f9624044fadfe9752e2d4f05146407b32e876f78507d3e6d800c4d"
+    },
+    {
+      "path": "Regfiles/Disable_Paint_AI_Features.reg",
+      "sha256": "3d70eff5a7c977227978f48deaade6c49fa40342ebc10cd942af18edef6b7eef"
+    },
+    {
+      "path": "Regfiles/Disable_Phone_Link_In_Start.reg",
+      "sha256": "d3d310ef3ec9aa1adfdd96b9ffebe51ab423215f99a6e5edc13494185bc87dbf"
+    },
+    {
+      "path": "Regfiles/Disable_Settings_365_Ads.reg",
+      "sha256": "aeef35cb4b9f71e8e1e8276c620ba37585be191d9d0726448e82eaf349a77546"
+    },
+    {
+      "path": "Regfiles/Disable_Start_Recommended.reg",
+      "sha256": "80e8b57e63707297e24cc75a0dab2707bd1ccd5425100d9636407d8f1fdb903f"
+    },
+    {
+      "path": "Regfiles/Disable_Telemetry.reg",
+      "sha256": "94586cb6d8125a6d7d52639b8d6a5dc5d5865b31ffd76cd841841b6554404ece"
+    },
+    {
+      "path": "Regfiles/Hide_Gallery_from_Explorer.reg",
+      "sha256": "2c9f7af6f724590297f1d68e6b36f206ce9f17e08fbedb2d10459bb6c3dcc332"
+    },
+    {
+      "path": "Regfiles/Hide_Home_from_Explorer.reg",
+      "sha256": "6b35bd3a2c6846e8f4928acd96206b9a73385dfbd60fe7e1dba422e1615aa511"
+    },
+    {
+      "path": "Regfiles/Hide_Onedrive_Folder.reg",
+      "sha256": "e2b9c5044c0ca77acae9e3c9cf69a9cefb5e8e5af50687b5b7d67eb75ad742ab"
+    },
+    {
+      "path": "Regfiles/MMTaskbarMode_Active.reg",
+      "sha256": "b013e81e26d1a1d909bdf464f89af928aff88e477ba7ebcdc35017058ae391f8"
+    },
+    {
+      "path": "Regfiles/Prevent_Auto_Reboot.reg",
+      "sha256": "db8f561112903346d624dbd1ddba4edca256f06f80ae1a697ba01fabc51ae557"
+    }
+  ]
+}

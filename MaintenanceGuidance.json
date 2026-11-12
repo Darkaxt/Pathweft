@@ -15,7 +15,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-08",
       "qualified": "2026-11-08",
-      "qualifiedBuild": 26100
+      "qualifiedBuild": 26100,
+      "goal": "Privacy",
+      "risk": "Caution"
     },
     {
       "id": "tweak.start-search",
@@ -29,7 +31,9 @@
       "source": "https://learn.microsoft.com/windows/client-management/mdm/policy-csp-search",
       "minBuild": 19045,
       "maxBuild": 19045,
-      "reviewed": "2026-11-08"
+      "reviewed": "2026-11-08",
+      "goal": "Privacy",
+      "risk": "Low"
     },
     {
       "id": "tweak.game-dvr",
@@ -45,7 +49,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-08",
       "qualified": "2026-11-08",
-      "qualifiedBuild": 26100
+      "qualifiedBuild": 26100,
+      "goal": "Performance",
+      "risk": "Low"
     },
     {
       "id": "tweak.effects",
@@ -61,7 +67,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-08",
       "qualified": "2026-11-08",
-      "qualifiedBuild": 26100
+      "qualifiedBuild": 26100,
+      "goal": "Performance",
+      "risk": "Low"
     },
     {
       "id": "tweak.suggestions",
@@ -77,7 +85,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-08",
       "qualified": "2026-11-08",
-      "qualifiedBuild": 26100
+      "qualifiedBuild": 26100,
+      "goal": "Debloat",
+      "risk": "Low"
     },
     {
       "id": "tweak.activity",
@@ -93,7 +103,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-08",
       "qualified": "2026-11-08",
-      "qualifiedBuild": 26100
+      "qualifiedBuild": 26100,
+      "goal": "Privacy",
+      "risk": "Low"
     },
     {
       "id": "tweak.location",
@@ -109,7 +121,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-08",
       "qualified": "2026-11-08",
-      "qualifiedBuild": 26100
+      "qualifiedBuild": 26100,
+      "goal": "Privacy",
+      "risk": "Caution"
     },
     {
       "id": "tweak.storage-sense",
@@ -125,7 +139,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-08",
       "qualified": "2026-11-08",
-      "qualifiedBuild": 26100
+      "qualifiedBuild": 26100,
+      "goal": "Performance",
+      "risk": "Caution"
     },
     {
       "id": "tweak.background-apps",
@@ -141,7 +157,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-08",
       "qualified": "2026-11-08",
-      "qualifiedBuild": 26100
+      "qualifiedBuild": 26100,
+      "goal": "Performance",
+      "risk": "Caution"
     },
     {
       "id": "tweak.toasts",
@@ -157,7 +175,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-08",
       "qualified": "2026-11-08",
-      "qualifiedBuild": 26100
+      "qualifiedBuild": 26100,
+      "goal": "Personalize",
+      "risk": "Caution"
     },
     {
       "id": "tweak.power-throttling",
@@ -173,7 +193,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-08",
       "qualified": "2026-11-08",
-      "qualifiedBuild": 26100
+      "qualifiedBuild": 26100,
+      "goal": "Performance",
+      "risk": "Low"
     },
     {
       "id": "tweak.explorer-visibility",
@@ -189,7 +211,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-08",
       "qualified": "2026-11-08",
-      "qualifiedBuild": 26100
+      "qualifiedBuild": 26100,
+      "goal": "Personalize",
+      "risk": "Low"
     },
     {
       "id": "tweak.end-task",
@@ -205,7 +229,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-08",
       "qualified": "2026-11-08",
-      "qualifiedBuild": 26100
+      "qualifiedBuild": 26100,
+      "goal": "Personalize",
+      "risk": "Low"
     },
     {
       "id": "tweak.classic-menu",
@@ -221,7 +247,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-08",
       "qualified": "2026-11-08",
-      "qualifiedBuild": 26100
+      "qualifiedBuild": 26100,
+      "goal": "Personalize",
+      "risk": "Low"
     },
     {
       "id": "tweak.start-delay",
@@ -237,7 +265,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-08",
       "qualified": "2026-11-08",
-      "qualifiedBuild": 26100
+      "qualifiedBuild": 26100,
+      "goal": "Performance",
+      "risk": "Low"
     },
     {
       "id": "tweak.recall",
@@ -253,7 +283,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-08",
       "qualified": "2026-11-08",
-      "qualifiedBuild": 26100
+      "qualifiedBuild": 26100,
+      "goal": "Privacy",
+      "risk": "Low"
     },
     {
       "id": "service.search",
@@ -269,7 +301,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-08",
       "qualified": "2026-11-08",
-      "qualifiedBuild": 26100
+      "qualifiedBuild": 26100,
+      "goal": "Performance",
+      "risk": "Caution"
     },
     {
       "id": "service.sysmain",
@@ -285,7 +319,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-08",
       "qualified": "2026-11-08",
-      "qualifiedBuild": 26100
+      "qualifiedBuild": 26100,
+      "goal": "Performance",
+      "risk": "Caution"
     },
     {
       "id": "service.wer",
@@ -301,7 +337,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-08",
       "qualified": "2026-11-08",
-      "qualifiedBuild": 26100
+      "qualifiedBuild": 26100,
+      "goal": "Privacy",
+      "risk": "Caution"
     },
     {
       "id": "service.fax",
@@ -315,7 +353,9 @@
       "source": "https://learn.microsoft.com/windows-server/security/windows-services/security-guidelines-for-disabling-system-services-in-windows-server",
       "minBuild": 19045,
       "maxBuild": 26200,
-      "reviewed": "2026-11-08"
+      "reviewed": "2026-11-08",
+      "goal": "Debloat",
+      "risk": "Low"
     },
     {
       "id": "service.maps",
@@ -331,7 +371,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-08",
       "qualified": "2026-11-08",
-      "qualifiedBuild": 26100
+      "qualifiedBuild": 26100,
+      "goal": "Debloat",
+      "risk": "Low"
     },
     {
       "id": "service.retail",
@@ -347,7 +389,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-08",
       "qualified": "2026-11-08",
-      "qualifiedBuild": 26100
+      "qualifiedBuild": 26100,
+      "goal": "Debloat",
+      "risk": "Low"
     },
     {
       "id": "service.remote-registry",
@@ -363,7 +407,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-08",
       "qualified": "2026-11-08",
-      "qualifiedBuild": 26100
+      "qualifiedBuild": 26100,
+      "goal": "Security",
+      "risk": "Low"
     },
     {
       "id": "service.diagtrack",
@@ -379,7 +425,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-08",
       "qualified": "2026-11-08",
-      "qualifiedBuild": 26100
+      "qualifiedBuild": 26100,
+      "goal": "Privacy",
+      "risk": "Caution"
     },
     {
       "id": "service.push",
@@ -395,7 +443,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-08",
       "qualified": "2026-11-08",
-      "qualifiedBuild": 26100
+      "qualifiedBuild": 26100,
+      "goal": "Privacy",
+      "risk": "Caution"
     },
     {
       "id": "service.print",
@@ -411,7 +461,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-08",
       "qualified": "2026-11-08",
-      "qualifiedBuild": 26100
+      "qualifiedBuild": 26100,
+      "goal": "Debloat",
+      "risk": "Caution"
     },
     {
       "id": "app.solitaire",
@@ -425,7 +477,9 @@
       "source": "https://github.com/Raphire/Win11Debloat/tree/eef5c592fb078a1f4ab0a5dc2c1a4e4d98ea0a44",
       "minBuild": 19045,
       "maxBuild": 26200,
-      "reviewed": "2026-11-08"
+      "reviewed": "2026-11-08",
+      "goal": "Debloat",
+      "risk": "Low"
     },
     {
       "id": "app.xbox-identity",
@@ -439,7 +493,9 @@
       "source": "https://github.com/Raphire/Win11Debloat/tree/eef5c592fb078a1f4ab0a5dc2c1a4e4d98ea0a44",
       "minBuild": 19045,
       "maxBuild": 26200,
-      "reviewed": "2026-11-08"
+      "reviewed": "2026-11-08",
+      "goal": "Debloat",
+      "risk": "Caution"
     },
     {
       "id": "app.clipchamp",
@@ -453,7 +509,9 @@
       "source": "https://github.com/Raphire/Win11Debloat/tree/eef5c592fb078a1f4ab0a5dc2c1a4e4d98ea0a44",
       "minBuild": 22000,
       "maxBuild": 26200,
-      "reviewed": "2026-11-08"
+      "reviewed": "2026-11-08",
+      "goal": "Debloat",
+      "risk": "Low"
     },
     {
       "id": "donor.advertising-id",
@@ -469,7 +527,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-09",
       "qualified": "2026-11-09",
-      "qualifiedBuild": 26100
+      "qualifiedBuild": 26100,
+      "goal": "Privacy",
+      "risk": "Low"
     },
     {
       "id": "donor.tailored",
@@ -485,7 +545,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-09",
       "qualified": "2026-11-09",
-      "qualifiedBuild": 26100
+      "qualifiedBuild": 26100,
+      "goal": "Privacy",
+      "risk": "Low"
     },
     {
       "id": "donor.welcome",
@@ -501,7 +563,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-09",
       "qualified": "2026-11-09",
-      "qualifiedBuild": 26100
+      "qualifiedBuild": 26100,
+      "goal": "Debloat",
+      "risk": "Low"
     },
     {
       "id": "donor.tips",
@@ -517,7 +581,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-09",
       "qualified": "2026-11-09",
-      "qualifiedBuild": 26100
+      "qualifiedBuild": 26100,
+      "goal": "Debloat",
+      "risk": "Low"
     },
     {
       "id": "donor.lock-tips",
@@ -533,7 +599,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-09",
       "qualified": "2026-11-09",
-      "qualifiedBuild": 26100
+      "qualifiedBuild": 26100,
+      "goal": "Debloat",
+      "risk": "Low"
     },
     {
       "id": "donor.settings-suggestions",
@@ -549,7 +617,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-09",
       "qualified": "2026-11-09",
-      "qualifiedBuild": 26100
+      "qualifiedBuild": 26100,
+      "goal": "Debloat",
+      "risk": "Low"
     },
     {
       "id": "donor.setup-reminders",
@@ -565,7 +635,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-09",
       "qualified": "2026-11-09",
-      "qualifiedBuild": 26100
+      "qualifiedBuild": 26100,
+      "goal": "Debloat",
+      "risk": "Low"
     },
     {
       "id": "donor.settings-account",
@@ -581,7 +653,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-09",
       "qualified": "2026-11-09",
-      "qualifiedBuild": 26100
+      "qualifiedBuild": 26100,
+      "goal": "Debloat",
+      "risk": "Low"
     },
     {
       "id": "donor.explorer-provider",
@@ -597,7 +671,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-09",
       "qualified": "2026-11-09",
-      "qualifiedBuild": 26100
+      "qualifiedBuild": 26100,
+      "goal": "Debloat",
+      "risk": "Low"
     },
     {
       "id": "donor.start-tips",
@@ -613,7 +689,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-09",
       "qualified": "2026-11-09",
-      "qualifiedBuild": 26100
+      "qualifiedBuild": 26100,
+      "goal": "Debloat",
+      "risk": "Low"
     },
     {
       "id": "donor.start-account",
@@ -629,7 +707,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-09",
       "qualified": "2026-11-09",
-      "qualifiedBuild": 26100
+      "qualifiedBuild": 26100,
+      "goal": "Debloat",
+      "risk": "Low"
     },
     {
       "id": "donor.taskbar-left",
@@ -645,7 +725,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-09",
       "qualified": "2026-11-09",
-      "qualifiedBuild": 26100
+      "qualifiedBuild": 26100,
+      "goal": "Personalize",
+      "risk": "Low"
     },
     {
       "id": "donor.taskbar-search",
@@ -661,7 +743,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-09",
       "qualified": "2026-11-09",
-      "qualifiedBuild": 26100
+      "qualifiedBuild": 26100,
+      "goal": "Personalize",
+      "risk": "Low"
     },
     {
       "id": "donor.task-view",
@@ -677,7 +761,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-09",
       "qualified": "2026-11-09",
-      "qualifiedBuild": 26100
+      "qualifiedBuild": 26100,
+      "goal": "Personalize",
+      "risk": "Low"
     },
     {
       "id": "donor.last-active",
@@ -693,7 +779,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-09",
       "qualified": "2026-11-09",
-      "qualifiedBuild": 26100
+      "qualifiedBuild": 26100,
+      "goal": "Personalize",
+      "risk": "Low"
     },
     {
       "id": "donor.taskbar-combine",
@@ -709,7 +797,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-09",
       "qualified": "2026-11-09",
-      "qualifiedBuild": 26100
+      "qualifiedBuild": 26100,
+      "goal": "Personalize",
+      "risk": "Low"
     },
     {
       "id": "donor.explorer-start",
@@ -725,7 +815,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-09",
       "qualified": "2026-11-09",
-      "qualifiedBuild": 26100
+      "qualifiedBuild": 26100,
+      "goal": "Personalize",
+      "risk": "Low"
     },
     {
       "id": "donor.drive-letters",
@@ -741,7 +833,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-09",
       "qualified": "2026-11-09",
-      "qualifiedBuild": 26100
+      "qualifiedBuild": 26100,
+      "goal": "Personalize",
+      "risk": "Low"
     },
     {
       "id": "donor.dark",
@@ -757,7 +851,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-09",
       "qualified": "2026-11-09",
-      "qualifiedBuild": 26100
+      "qualifiedBuild": 26100,
+      "goal": "Personalize",
+      "risk": "Low"
     },
     {
       "id": "donor.alt-tab",
@@ -773,7 +869,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-09",
       "qualified": "2026-11-09",
-      "qualifiedBuild": 26100
+      "qualifiedBuild": 26100,
+      "goal": "Personalize",
+      "risk": "Low"
     },
     {
       "id": "donor.snap",
@@ -789,7 +887,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-09",
       "qualified": "2026-11-09",
-      "qualifiedBuild": 26100
+      "qualifiedBuild": 26100,
+      "goal": "Personalize",
+      "risk": "Low"
     },
     {
       "id": "donor.mouse",
@@ -805,7 +905,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-09",
       "qualified": "2026-11-09",
-      "qualifiedBuild": 26100
+      "qualifiedBuild": 26100,
+      "goal": "Personalize",
+      "risk": "Low"
     },
     {
       "id": "donor.sticky",
@@ -821,7 +923,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-09",
       "qualified": "2026-11-09",
-      "qualifiedBuild": 26100
+      "qualifiedBuild": 26100,
+      "goal": "Personalize",
+      "risk": "Low"
     },
     {
       "id": "donor.fast-start",
@@ -837,7 +941,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-09",
       "qualified": "2026-11-09",
-      "qualifiedBuild": 26100
+      "qualifiedBuild": 26100,
+      "goal": "Performance",
+      "risk": "Low"
     },
     {
       "id": "service.keep.appreadiness",
@@ -852,7 +958,9 @@
       "minBuild": 19045,
       "maxBuild": 26200,
       "reviewed": "2026-11-09",
-      "readOnlyEvidence": true
+      "readOnlyEvidence": true,
+      "goal": "Performance",
+      "risk": "High"
     },
     {
       "id": "service.keep.appinfo",
@@ -867,7 +975,9 @@
       "minBuild": 19045,
       "maxBuild": 26200,
       "reviewed": "2026-11-09",
-      "readOnlyEvidence": true
+      "readOnlyEvidence": true,
+      "goal": "Performance",
+      "risk": "High"
     },
     {
       "id": "service.keep.appxsvc",
@@ -882,7 +992,9 @@
       "minBuild": 19045,
       "maxBuild": 26200,
       "reviewed": "2026-11-09",
-      "readOnlyEvidence": true
+      "readOnlyEvidence": true,
+      "goal": "Performance",
+      "risk": "High"
     },
     {
       "id": "service.keep.clipsvc",
@@ -897,7 +1009,9 @@
       "minBuild": 19045,
       "maxBuild": 26200,
       "reviewed": "2026-11-09",
-      "readOnlyEvidence": true
+      "readOnlyEvidence": true,
+      "goal": "Performance",
+      "risk": "High"
     },
     {
       "id": "service.keep.brokerinfrastructure",
@@ -912,7 +1026,9 @@
       "minBuild": 19045,
       "maxBuild": 26200,
       "reviewed": "2026-11-09",
-      "readOnlyEvidence": true
+      "readOnlyEvidence": true,
+      "goal": "Performance",
+      "risk": "High"
     },
     {
       "id": "service.keep.dcomlaunch",
@@ -927,7 +1043,9 @@
       "minBuild": 19045,
       "maxBuild": 26200,
       "reviewed": "2026-11-09",
-      "readOnlyEvidence": true
+      "readOnlyEvidence": true,
+      "goal": "Performance",
+      "risk": "High"
     },
     {
       "id": "service.keep.rpcss",
@@ -942,7 +1060,9 @@
       "minBuild": 19045,
       "maxBuild": 26200,
       "reviewed": "2026-11-09",
-      "readOnlyEvidence": true
+      "readOnlyEvidence": true,
+      "goal": "Performance",
+      "risk": "High"
     },
     {
       "id": "service.keep.rpceptmapper",
@@ -957,7 +1077,9 @@
       "minBuild": 19045,
       "maxBuild": 26200,
       "reviewed": "2026-11-09",
-      "readOnlyEvidence": true
+      "readOnlyEvidence": true,
+      "goal": "Performance",
+      "risk": "High"
     },
     {
       "id": "service.keep.schedule",
@@ -972,7 +1094,9 @@
       "minBuild": 19045,
       "maxBuild": 26200,
       "reviewed": "2026-11-09",
-      "readOnlyEvidence": true
+      "readOnlyEvidence": true,
+      "goal": "Performance",
+      "risk": "High"
     },
     {
       "id": "service.keep.profsvc",
@@ -987,7 +1111,9 @@
       "minBuild": 19045,
       "maxBuild": 26200,
       "reviewed": "2026-11-09",
-      "readOnlyEvidence": true
+      "readOnlyEvidence": true,
+      "goal": "Performance",
+      "risk": "High"
     },
     {
       "id": "service.keep.usermanager",
@@ -1002,7 +1128,9 @@
       "minBuild": 19045,
       "maxBuild": 26200,
       "reviewed": "2026-11-09",
-      "readOnlyEvidence": true
+      "readOnlyEvidence": true,
+      "goal": "Performance",
+      "risk": "High"
     },
     {
       "id": "service.keep.eventlog",
@@ -1017,7 +1145,9 @@
       "minBuild": 19045,
       "maxBuild": 26200,
       "reviewed": "2026-11-09",
-      "readOnlyEvidence": true
+      "readOnlyEvidence": true,
+      "goal": "Performance",
+      "risk": "High"
     },
     {
       "id": "service.keep.plugplay",
@@ -1032,7 +1162,9 @@
       "minBuild": 19045,
       "maxBuild": 26200,
       "reviewed": "2026-11-09",
-      "readOnlyEvidence": true
+      "readOnlyEvidence": true,
+      "goal": "Performance",
+      "risk": "High"
     },
     {
       "id": "service.keep.power",
@@ -1047,7 +1179,9 @@
       "minBuild": 19045,
       "maxBuild": 26200,
       "reviewed": "2026-11-09",
-      "readOnlyEvidence": true
+      "readOnlyEvidence": true,
+      "goal": "Performance",
+      "risk": "High"
     },
     {
       "id": "service.keep.winmgmt",
@@ -1062,7 +1196,9 @@
       "minBuild": 19045,
       "maxBuild": 26200,
       "reviewed": "2026-11-09",
-      "readOnlyEvidence": true
+      "readOnlyEvidence": true,
+      "goal": "Performance",
+      "risk": "High"
     },
     {
       "id": "service.keep.samss",
@@ -1077,7 +1213,9 @@
       "minBuild": 19045,
       "maxBuild": 26200,
       "reviewed": "2026-11-09",
-      "readOnlyEvidence": true
+      "readOnlyEvidence": true,
+      "goal": "Performance",
+      "risk": "High"
     },
     {
       "id": "service.keep.lsm",
@@ -1092,7 +1230,9 @@
       "minBuild": 19045,
       "maxBuild": 26200,
       "reviewed": "2026-11-09",
-      "readOnlyEvidence": true
+      "readOnlyEvidence": true,
+      "goal": "Performance",
+      "risk": "High"
     },
     {
       "id": "service.keep.staterepository",
@@ -1107,7 +1247,9 @@
       "minBuild": 19045,
       "maxBuild": 26200,
       "reviewed": "2026-11-09",
-      "readOnlyEvidence": true
+      "readOnlyEvidence": true,
+      "goal": "Performance",
+      "risk": "High"
     },
     {
       "id": "service.keep.audiosrv",
@@ -1122,7 +1264,9 @@
       "minBuild": 19045,
       "maxBuild": 26200,
       "reviewed": "2026-11-09",
-      "readOnlyEvidence": true
+      "readOnlyEvidence": true,
+      "goal": "Performance",
+      "risk": "High"
     },
     {
       "id": "service.keep.audioendpointbuilder",
@@ -1137,7 +1281,9 @@
       "minBuild": 19045,
       "maxBuild": 26200,
       "reviewed": "2026-11-09",
-      "readOnlyEvidence": true
+      "readOnlyEvidence": true,
+      "goal": "Performance",
+      "risk": "High"
     },
     {
       "id": "service.keep.themes",
@@ -1152,7 +1298,9 @@
       "minBuild": 19045,
       "maxBuild": 26200,
       "reviewed": "2026-11-09",
-      "readOnlyEvidence": true
+      "readOnlyEvidence": true,
+      "goal": "Performance",
+      "risk": "High"
     },
     {
       "id": "service.keep.fontcache",
@@ -1167,7 +1315,9 @@
       "minBuild": 19045,
       "maxBuild": 26200,
       "reviewed": "2026-11-09",
-      "readOnlyEvidence": true
+      "readOnlyEvidence": true,
+      "goal": "Performance",
+      "risk": "High"
     },
     {
       "id": "service.keep.eventsystem",
@@ -1182,7 +1332,9 @@
       "minBuild": 19045,
       "maxBuild": 26200,
       "reviewed": "2026-11-09",
-      "readOnlyEvidence": true
+      "readOnlyEvidence": true,
+      "goal": "Performance",
+      "risk": "High"
     },
     {
       "id": "service.keep.comsysapp",
@@ -1197,7 +1349,1305 @@
       "minBuild": 19045,
       "maxBuild": 26200,
       "reviewed": "2026-11-09",
-      "readOnlyEvidence": true
+      "readOnlyEvidence": true,
+      "goal": "Performance",
+      "risk": "High"
+    },
+    {
+      "id": "s47.copilot-policy",
+      "kind": "tweak",
+      "target": "Windows Copilot (policy)",
+      "category": "AI",
+      "recommendation": "Optional",
+      "action": "Turn off Windows Copilot by policy",
+      "reason": "Sets the Turn off Windows Copilot policy for this user and the machine so the built-in Copilot sidebar cannot start.",
+      "featureLoss": "The Windows Copilot sidebar and its shortcut stop working. The separate Copilot app from the Store is not removed and may ignore this older policy.",
+      "source": "https://learn.microsoft.com/en-us/windows/client-management/mdm/policy-csp-windowsai#turnoffwindowscopilot",
+      "minBuild": 22621,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Debloat",
+      "risk": "Low"
+    },
+    {
+      "id": "s47.copilot-button",
+      "kind": "tweak",
+      "target": "Copilot button on the taskbar",
+      "category": "Start and taskbar",
+      "recommendation": "Optional",
+      "action": "Hide the Copilot taskbar button",
+      "reason": "Removes the Copilot button from the taskbar for this user.",
+      "featureLoss": "Copilot is no longer one click away on the taskbar; it can still be opened from Start.",
+      "source": "https://github.com/Raphire/Win11Debloat/blob/516fe42d47a57ef3f12e505b2bf260f215677ed9/Regfiles/Disable_Copilot.reg#L4-L5",
+      "minBuild": 22621,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Debloat",
+      "risk": "Low"
+    },
+    {
+      "id": "s47.recall-enablement",
+      "kind": "tweak",
+      "target": "Recall availability",
+      "category": "AI",
+      "recommendation": "Optional",
+      "action": "Do not allow Recall to be enabled",
+      "reason": "Sets the Allow Recall to be enabled policy to off, so Recall cannot be turned on and stays unavailable on this PC.",
+      "featureLoss": "Recall and its snapshot timeline cannot be used. Restoring the default lets you enable Recall again from Settings (the component may need to be re-added by Windows).",
+      "source": "https://learn.microsoft.com/en-us/windows/client-management/mdm/policy-csp-windowsai#allowrecallenablement",
+      "minBuild": 26100,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Privacy",
+      "risk": "Low"
+    },
+    {
+      "id": "s47.click-to-do",
+      "kind": "tweak",
+      "target": "Click to Do",
+      "category": "AI",
+      "recommendation": "Optional",
+      "action": "Turn off Click to Do",
+      "reason": "Sets the Disable Click to Do policy so the screen-analysing Click to Do overlay is not available.",
+      "featureLoss": "The Win+mouse Click to Do overlay and its AI actions on screen content are unavailable.",
+      "source": "https://learn.microsoft.com/en-us/windows/client-management/mdm/policy-csp-windowsai#disableclicktodo",
+      "minBuild": 26100,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Debloat",
+      "risk": "Low"
+    },
+    {
+      "id": "s47.settings-agent",
+      "kind": "tweak",
+      "target": "AI agent in Settings",
+      "category": "AI",
+      "recommendation": "Optional",
+      "action": "Turn off the Settings agent",
+      "reason": "Stops the AI agent in the Settings search box from answering requests or changing settings for you.",
+      "featureLoss": "Settings search no longer offers natural-language AI actions; ordinary search still works.",
+      "source": "https://github.com/KalebGreek/RemoveWindowsAI/blob/793e458f13b9162032f76a3d8a644184333d9780/RemoveWindowsAi.ps1#L885-L894",
+      "minBuild": 26100,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Debloat",
+      "risk": "Low"
+    },
+    {
+      "id": "s47.agent-connectors",
+      "kind": "tweak",
+      "target": "AI agent connectors",
+      "category": "AI",
+      "recommendation": "Optional",
+      "action": "Turn off local and remote agent connectors",
+      "reason": "Prevents AI agents from connecting to apps and services on this PC through agent connectors, including remote ones.",
+      "featureLoss": "AI agents (for example Copilot) cannot use Windows agent connectors to act in apps or read app data.",
+      "source": "https://github.com/KalebGreek/RemoveWindowsAI/blob/793e458f13b9162032f76a3d8a644184333d9780/RemoveWindowsAi.ps1#L886-L894",
+      "minBuild": 26100,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Privacy",
+      "risk": "Low"
+    },
+    {
+      "id": "s47.agent-workspaces",
+      "kind": "tweak",
+      "target": "AI agent workspaces",
+      "category": "AI",
+      "recommendation": "Optional",
+      "action": "Turn off agent workspaces",
+      "reason": "Prevents AI agents from running in their own separate Windows workspace on this PC.",
+      "featureLoss": "Agentic features that operate in a background agent workspace are unavailable.",
+      "source": "https://github.com/KalebGreek/RemoveWindowsAI/blob/793e458f13b9162032f76a3d8a644184333d9780/RemoveWindowsAi.ps1#L887-L894",
+      "minBuild": 26100,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Privacy",
+      "risk": "Low"
+    },
+    {
+      "id": "s47.app-ai-access",
+      "kind": "tweak",
+      "target": "App access to Windows AI models",
+      "category": "AI",
+      "recommendation": "Optional",
+      "action": "Deny apps access to generative AI and system AI models",
+      "reason": "Forces the app-permission policies for text and image generation and for on-device Windows AI models to deny for every app.",
+      "featureLoss": "Apps that use Windows generative AI or on-device AI models lose those features; the per-app switches in Settings are greyed out.",
+      "source": "https://learn.microsoft.com/en-us/windows/client-management/mdm/policy-csp-privacy#letappsaccessgenerativeai",
+      "minBuild": 26100,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Privacy",
+      "risk": "Low"
+    },
+    {
+      "id": "s47.notepad-ai",
+      "kind": "tweak",
+      "target": "AI features in Notepad",
+      "category": "AI",
+      "recommendation": "Optional",
+      "action": "Turn off Notepad AI features",
+      "reason": "Sets the Notepad policy that hides Copilot rewrite, summarise and write features.",
+      "featureLoss": "Notepad no longer offers AI rewrite, summarise or write.",
+      "source": "https://github.com/Raphire/Win11Debloat/blob/516fe42d47a57ef3f12e505b2bf260f215677ed9/Regfiles/Disable_Notepad_AI_Features.reg#L3-L4",
+      "minBuild": 22000,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Debloat",
+      "risk": "Low"
+    },
+    {
+      "id": "s47.paint-ai",
+      "kind": "tweak",
+      "target": "AI features in Paint",
+      "category": "AI",
+      "recommendation": "Optional",
+      "action": "Turn off Paint AI features",
+      "reason": "Sets the Paint policies that disable Cocreator, Image Creator, generative fill and erase, and background removal.",
+      "featureLoss": "Paint no longer offers Cocreator, Image Creator, generative fill, generative erase or background removal.",
+      "source": "https://learn.microsoft.com/en-us/windows/client-management/mdm/policy-csp-windowsai",
+      "minBuild": 22000,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Debloat",
+      "risk": "Low"
+    },
+    {
+      "id": "s47.edge-copilot-page-context",
+      "kind": "tweak",
+      "target": "Copilot reading pages in Edge",
+      "category": "AI",
+      "recommendation": "Optional",
+      "action": "Stop Copilot in Edge reading page content",
+      "reason": "Stops Copilot in Edge from using the content of open pages and PDFs as context, for consumer and work accounts.",
+      "featureLoss": "Copilot in Edge cannot summarise or answer questions about the current page. Edge shows \"Your browser is managed by your organization\" while any Edge policy is set.",
+      "source": "https://learn.microsoft.com/en-us/deployedge/microsoft-edge-browser-policies/copilotpagecontext",
+      "minBuild": 19045,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Privacy",
+      "risk": "Low"
+    },
+    {
+      "id": "s47.edge-m365-copilot-icon",
+      "kind": "tweak",
+      "target": "Microsoft 365 Copilot icon in Edge",
+      "category": "AI",
+      "recommendation": "Optional",
+      "action": "Hide the Microsoft 365 Copilot Chat icon in the Edge toolbar",
+      "reason": "Removes the Copilot Chat button from the Edge toolbar.",
+      "featureLoss": "The Copilot Chat toolbar button disappears from Edge. Edge shows \"Your browser is managed by your organization\" while any Edge policy is set.",
+      "source": "https://learn.microsoft.com/en-us/deployedge/microsoft-edge-browser-policies/microsoft365copilotchaticonenabled",
+      "minBuild": 19045,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Debloat",
+      "risk": "Low"
+    },
+    {
+      "id": "s47.edge-compose",
+      "kind": "tweak",
+      "target": "Copilot writing help in Edge",
+      "category": "AI",
+      "recommendation": "Optional",
+      "action": "Turn off inline Compose in Edge",
+      "reason": "Stops Edge offering AI writing suggestions inside text boxes on web pages.",
+      "featureLoss": "Edge no longer offers to draft or rewrite text in web forms. Edge shows \"Your browser is managed by your organization\" while any Edge policy is set.",
+      "source": "https://learn.microsoft.com/en-us/deployedge/microsoft-edge-browser-policies/composeinlineenabled",
+      "minBuild": 19045,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Debloat",
+      "risk": "Low"
+    },
+    {
+      "id": "s47.edge-history-ai-search",
+      "kind": "tweak",
+      "target": "AI search of Edge history",
+      "category": "AI",
+      "recommendation": "Optional",
+      "action": "Turn off AI-powered history search in Edge",
+      "reason": "Stops Edge using AI to search your browsing history by meaning.",
+      "featureLoss": "History search in Edge matches words only. Edge shows \"Your browser is managed by your organization\" while any Edge policy is set.",
+      "source": "https://learn.microsoft.com/en-us/deployedge/microsoft-edge-browser-policies/edgehistoryaisearchenabled",
+      "minBuild": 19045,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Privacy",
+      "risk": "Low"
+    },
+    {
+      "id": "s47.edge-local-ai-model",
+      "kind": "tweak",
+      "target": "On-device AI model in Edge",
+      "category": "AI",
+      "recommendation": "Optional",
+      "action": "Do not download the Edge on-device AI model",
+      "reason": "Prevents Edge from downloading its local foundational AI model, saving disk space and bandwidth.",
+      "featureLoss": "Edge features that rely on the local AI model are unavailable. Edge shows \"Your browser is managed by your organization\" while any Edge policy is set.",
+      "source": "https://learn.microsoft.com/en-us/deployedge/microsoft-edge-browser-policies/genailocalfoundationalmodelsettings",
+      "minBuild": 19045,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Performance",
+      "risk": "Low"
+    },
+    {
+      "id": "s47.edge-ntp-copilot",
+      "kind": "tweak",
+      "target": "Copilot on the Edge new tab page",
+      "category": "AI",
+      "recommendation": "Optional",
+      "action": "Hide Copilot on the Edge new tab page",
+      "reason": "Removes the Copilot (Bing Chat) entry from the Edge new tab page.",
+      "featureLoss": "Copilot is no longer offered from the new tab page. Edge shows \"Your browser is managed by your organization\" while any Edge policy is set.",
+      "source": "https://learn.microsoft.com/en-us/deployedge/microsoft-edge-browser-policies/newtabpagebingchatenabled",
+      "minBuild": 19045,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Debloat",
+      "risk": "Low"
+    },
+    {
+      "id": "s47.tasks-ceip",
+      "kind": "tweak",
+      "target": "Customer Experience Improvement Program tasks",
+      "category": "Privacy and suggestions",
+      "recommendation": "Optional",
+      "action": "Disable the CEIP data collection scheduled tasks",
+      "reason": "Disables the scheduled tasks that collect and upload Customer Experience Improvement Program, USB, autochk and disk diagnostic data.",
+      "featureLoss": "Microsoft receives less usage and disk diagnostic data from this PC. Disk checking itself (autochk) still runs at boot.",
+      "source": "https://github.com/Sophia-Community/SophiApp/blob/a774d3ade4fe291852b008ad47f6cefdfa329a7e/src/Customizations/Mutators.cs#L175-L183",
+      "minBuild": 19045,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Privacy",
+      "risk": "Low"
+    },
+    {
+      "id": "s47.tasks-appraiser",
+      "kind": "tweak",
+      "target": "Compatibility Appraiser tasks",
+      "category": "Privacy and suggestions",
+      "recommendation": "Advanced",
+      "action": "Disable the Compatibility Appraiser scheduled tasks",
+      "reason": "Disables the tasks that inventory installed programs and send compatibility telemetry to Microsoft.",
+      "featureLoss": "Windows has less up-to-date compatibility data when it decides whether to offer a feature update, so upgrade blocks for incompatible apps may be detected later.",
+      "source": "https://github.com/Sophia-Community/SophiApp/blob/a774d3ade4fe291852b008ad47f6cefdfa329a7e/src/Customizations/Mutators.cs#L167-L173",
+      "minBuild": 19045,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Privacy",
+      "risk": "Caution"
+    },
+    {
+      "id": "s47.task-marebackup",
+      "kind": "tweak",
+      "target": "App backup data task (MareBackup)",
+      "category": "Privacy and suggestions",
+      "recommendation": "Advanced",
+      "action": "Disable the MareBackup scheduled task",
+      "reason": "Disables the task that gathers data about installed desktop apps for the Windows app backup and restore scenario.",
+      "featureLoss": "Windows Backup may not be able to restore your list of desktop apps on a new PC.",
+      "source": "https://github.com/Sophia-Community/SophiApp/blob/a774d3ade4fe291852b008ad47f6cefdfa329a7e/src/Customizations/Mutators.cs#L165-L165",
+      "minBuild": 19045,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Privacy",
+      "risk": "Caution"
+    },
+    {
+      "id": "s47.task-startup-app",
+      "kind": "tweak",
+      "target": "Startup apps notification task",
+      "category": "Privacy and suggestions",
+      "recommendation": "Optional",
+      "action": "Disable the StartupAppTask scheduled task",
+      "reason": "Disables the task that scans startup entries and notifies you when there are many.",
+      "featureLoss": "No notification about new or numerous startup apps; Task Manager still lists them.",
+      "source": "https://github.com/Sophia-Community/SophiApp/blob/a774d3ade4fe291852b008ad47f6cefdfa329a7e/src/Customizations/Mutators.cs#L171-L171",
+      "minBuild": 19045,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Debloat",
+      "risk": "Low"
+    },
+    {
+      "id": "s47.tasks-maps",
+      "kind": "tweak",
+      "target": "Maps scheduled tasks",
+      "category": "Privacy and suggestions",
+      "recommendation": "Optional",
+      "action": "Disable the Maps toast and update tasks",
+      "reason": "Disables the tasks that show Maps notifications and check for updates to downloaded offline maps.",
+      "featureLoss": "Offline maps are no longer updated automatically and Maps notifications stop.",
+      "source": "https://github.com/Sophia-Community/SophiApp/blob/a774d3ade4fe291852b008ad47f6cefdfa329a7e/src/Customizations/Mutators.cs#L185-L187",
+      "minBuild": 19045,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Debloat",
+      "risk": "Low"
+    },
+    {
+      "id": "s47.tasks-feedback",
+      "kind": "tweak",
+      "target": "Feedback data tasks",
+      "category": "Privacy and suggestions",
+      "recommendation": "Optional",
+      "action": "Disable the Feedback (SIUF) scheduled tasks",
+      "reason": "Disables the tasks that collect feedback data and download feedback scenarios from Microsoft.",
+      "featureLoss": "Feedback scenarios are not downloaded in the background; Feedback Hub still works when opened.",
+      "source": "https://github.com/memstechtips/UnattendedWinstall/blob/3414845e1a99716b3aa0cfc0f01ad5bf9c413899/autounattend.xml#L2445-L2446",
+      "minBuild": 19045,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Privacy",
+      "risk": "Low"
+    },
+    {
+      "id": "s47.online-speech",
+      "kind": "tweak",
+      "target": "Online speech recognition",
+      "category": "Input and accessibility",
+      "recommendation": "Optional",
+      "action": "Turn off online speech recognition",
+      "reason": "Stops sending your voice to Microsoft cloud speech services.",
+      "featureLoss": "Voice typing and apps that use online speech recognition stop working or fall back to offline recognition.",
+      "source": "https://github.com/Raphire/Win11Debloat/blob/516fe42d47a57ef3f12e505b2bf260f215677ed9/Regfiles/Disable_Telemetry.reg#L12-L13",
+      "minBuild": 19045,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Privacy",
+      "risk": "Low"
+    },
+    {
+      "id": "s47.inking-typing-personalization",
+      "kind": "tweak",
+      "target": "Inking and typing personalisation",
+      "category": "Input and accessibility",
+      "recommendation": "Optional",
+      "action": "Turn off the personal inking and typing dictionary",
+      "reason": "Stops Windows building a personal dictionary from what you type and handwrite and from your contacts.",
+      "featureLoss": "Text prediction and handwriting recognition no longer learn your words; autocorrect keeps working.",
+      "source": "https://github.com/Raphire/Win11Debloat/blob/516fe42d47a57ef3f12e505b2bf260f215677ed9/Regfiles/Disable_Telemetry.reg#L20-L28",
+      "minBuild": 19045,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Privacy",
+      "risk": "Low"
+    },
+    {
+      "id": "s47.inking-typing-diagnostics",
+      "kind": "tweak",
+      "target": "Inking and typing diagnostics",
+      "category": "Input and accessibility",
+      "recommendation": "Optional",
+      "action": "Stop sending inking and typing data to Microsoft",
+      "reason": "Turns off the setting that sends optional inking and typing data to improve Microsoft language recognition.",
+      "featureLoss": "None for you; Microsoft stops receiving these samples.",
+      "source": "https://github.com/Raphire/Win11Debloat/blob/516fe42d47a57ef3f12e505b2bf260f215677ed9/Regfiles/Disable_Telemetry.reg#L16-L17",
+      "minBuild": 19045,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Privacy",
+      "risk": "Low"
+    },
+    {
+      "id": "s47.handwriting-sharing",
+      "kind": "tweak",
+      "target": "Handwriting error reports",
+      "category": "Input and accessibility",
+      "recommendation": "Optional",
+      "action": "Turn off handwriting data sharing",
+      "reason": "Sets the policy that stops handwriting recognition error reports going to Microsoft.",
+      "featureLoss": "None for you; only matters on PCs with a pen.",
+      "source": "https://github.com/builtbybel/Bloatynosy/blob/489a9de326be39aea641cfce3a7686ec24834014/Plugins/Packs/Privacy.ini#L45-L51",
+      "minBuild": 19045,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Privacy",
+      "risk": "Low"
+    },
+    {
+      "id": "s47.app-launch-tracking",
+      "kind": "tweak",
+      "target": "App launch tracking",
+      "category": "Privacy and suggestions",
+      "recommendation": "Optional",
+      "action": "Stop Windows tracking app launches",
+      "reason": "Stops Windows recording which apps you start, which it uses to personalise Start and search.",
+      "featureLoss": "Start no longer shows a Most used list and search results are not ranked by your app use.",
+      "source": "https://github.com/Raphire/Win11Debloat/blob/516fe42d47a57ef3f12e505b2bf260f215677ed9/Regfiles/Disable_Telemetry.reg#L35-L36",
+      "minBuild": 19045,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Privacy",
+      "risk": "Low"
+    },
+    {
+      "id": "s47.recent-docs-tracking",
+      "kind": "tweak",
+      "target": "Recent files in Start and jump lists",
+      "category": "Privacy and suggestions",
+      "recommendation": "Advanced",
+      "action": "Stop showing recently opened items in Start and jump lists",
+      "reason": "Stops Windows keeping recently opened files for Start, jump lists and File Explorer.",
+      "featureLoss": "Jump lists and Start no longer show recent files, which many people use to reopen work.",
+      "source": "https://github.com/memstechtips/UnattendedWinstall/blob/3414845e1a99716b3aa0cfc0f01ad5bf9c413899/autounattend.xml#L3033-L3033",
+      "minBuild": 19045,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Privacy",
+      "risk": "Low"
+    },
+    {
+      "id": "s47.feedback-frequency",
+      "kind": "tweak",
+      "target": "Feedback requests",
+      "category": "Privacy and suggestions",
+      "recommendation": "Optional",
+      "action": "Never ask for feedback",
+      "reason": "Sets feedback frequency to never and turns on the policy that hides feedback notifications.",
+      "featureLoss": "Windows no longer prompts for feedback; Feedback Hub still works when opened.",
+      "source": "https://learn.microsoft.com/en-us/windows/client-management/mdm/policy-csp-experience#donotshowfeedbacknotifications",
+      "minBuild": 19045,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Privacy",
+      "risk": "Low"
+    },
+    {
+      "id": "s47.cloud-clipboard",
+      "kind": "tweak",
+      "target": "Clipboard sync across devices",
+      "category": "Privacy and suggestions",
+      "recommendation": "Optional",
+      "action": "Turn off cloud clipboard sync",
+      "reason": "Sets the policy that stops clipboard items being synced through your Microsoft account to other devices.",
+      "featureLoss": "Copied items no longer appear on your other devices; local clipboard history keeps working.",
+      "source": "https://learn.microsoft.com/en-us/windows/client-management/mdm/policy-csp-privacy#allowcrossdeviceclipboard",
+      "minBuild": 19045,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Privacy",
+      "risk": "Low"
+    },
+    {
+      "id": "s47.cloud-search",
+      "kind": "tweak",
+      "target": "Cloud content in Windows search",
+      "category": "Privacy and suggestions",
+      "recommendation": "Optional",
+      "action": "Turn off cloud content search for Microsoft and work accounts",
+      "reason": "Stops Windows search showing results from your OneDrive, Outlook and other Microsoft or work and school account content.",
+      "featureLoss": "Windows search shows only local results; open OneDrive or Outlook to search cloud content.",
+      "source": "https://github.com/memstechtips/UnattendedWinstall/blob/3414845e1a99716b3aa0cfc0f01ad5bf9c413899/autounattend.xml#L2904-L2905",
+      "minBuild": 19045,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Privacy",
+      "risk": "Low"
+    },
+    {
+      "id": "s47.search-history",
+      "kind": "tweak",
+      "target": "Search history on this device",
+      "category": "Privacy and suggestions",
+      "recommendation": "Optional",
+      "action": "Turn off search history on this device",
+      "reason": "Stops Windows search keeping your search history on this PC to improve results.",
+      "featureLoss": "Recent searches are not suggested in the search box.",
+      "source": "https://github.com/memstechtips/UnattendedWinstall/blob/3414845e1a99716b3aa0cfc0f01ad5bf9c413899/autounattend.xml#L2902-L2902",
+      "minBuild": 19045,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Privacy",
+      "risk": "Low"
+    },
+    {
+      "id": "s47.search-box-web-suggestions",
+      "kind": "tweak",
+      "target": "Web suggestions in the search box",
+      "category": "Privacy and suggestions",
+      "recommendation": "Optional",
+      "action": "Turn off web suggestions in search",
+      "reason": "Sets the user policy that stops the Start and taskbar search box sending what you type to Bing for web suggestions.",
+      "featureLoss": "No Bing web results or suggestions in Start and taskbar search. File Explorer search may also stop suggesting recent search entries.",
+      "source": "https://learn.microsoft.com/en-us/windows/client-management/mdm/policy-csp-admx-windowsexplorer#disablesearchboxsuggestions",
+      "minBuild": 19045,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Privacy",
+      "risk": "Low"
+    },
+    {
+      "id": "s47.app-diagnostics-access",
+      "kind": "tweak",
+      "target": "App access to diagnostic info",
+      "category": "Privacy and suggestions",
+      "recommendation": "Optional",
+      "action": "Deny apps access to diagnostic information about other apps",
+      "reason": "Turns off the device-wide App diagnostics permission so apps cannot read information about your other running apps.",
+      "featureLoss": "Apps that show running-app or diagnostic information (for example some support tools) lose that data.",
+      "source": "https://github.com/memstechtips/UnattendedWinstall/blob/3414845e1a99716b3aa0cfc0f01ad5bf9c413899/autounattend.xml#L2512-L2512",
+      "minBuild": 19045,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Privacy",
+      "risk": "Low"
+    },
+    {
+      "id": "s47.account-info-access",
+      "kind": "tweak",
+      "target": "App access to account info",
+      "category": "Privacy and suggestions",
+      "recommendation": "Optional",
+      "action": "Deny apps access to your account info",
+      "reason": "Turns off the device-wide Account info permission so apps cannot read your name, picture and other account details.",
+      "featureLoss": "Apps cannot show your account name or picture or prefill your details.",
+      "source": "https://github.com/memstechtips/UnattendedWinstall/blob/3414845e1a99716b3aa0cfc0f01ad5bf9c413899/autounattend.xml#L2511-L2511",
+      "minBuild": 19045,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Privacy",
+      "risk": "Low"
+    },
+    {
+      "id": "s47.advertising-id-policy",
+      "kind": "tweak",
+      "target": "Advertising ID for all accounts",
+      "category": "Privacy and suggestions",
+      "recommendation": "Optional",
+      "action": "Turn off the advertising ID by policy",
+      "reason": "Sets the machine policy that turns off the advertising ID for every account on this PC.",
+      "featureLoss": "Apps cannot use the advertising ID for personalised ads; the Settings switch is greyed out.",
+      "source": "https://learn.microsoft.com/en-us/windows/client-management/mdm/policy-csp-privacy#disableadvertisingid",
+      "minBuild": 19045,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Privacy",
+      "risk": "Low"
+    },
+    {
+      "id": "s47.quick-access-recent",
+      "kind": "tweak",
+      "target": "Recent files in Quick access",
+      "category": "File Explorer",
+      "recommendation": "Optional",
+      "action": "Hide recently used files in File Explorer",
+      "reason": "Stops File Explorer Home and Quick access listing files you opened recently.",
+      "featureLoss": "Recent files no longer appear in File Explorer Home or Quick access.",
+      "source": "https://github.com/farag2/Sophia-Script-for-Windows/blob/b9010fced373be52f0ac0618edb2c55e3dd255e6/src/Sophia_Script_for_Windows_11/Module/Sophia.psm1#L1812-L1812",
+      "minBuild": 19045,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Privacy",
+      "risk": "Low"
+    },
+    {
+      "id": "s47.quick-access-frequent",
+      "kind": "tweak",
+      "target": "Frequent folders in Quick access",
+      "category": "File Explorer",
+      "recommendation": "Optional",
+      "action": "Hide frequently used folders in File Explorer",
+      "reason": "Stops File Explorer adding folders you use often to Quick access.",
+      "featureLoss": "Only folders you pin appear in Quick access.",
+      "source": "https://github.com/farag2/Sophia-Script-for-Windows/blob/b9010fced373be52f0ac0618edb2c55e3dd255e6/src/Sophia_Script_for_Windows_11/Module/Sophia.psm1#L1863-L1863",
+      "minBuild": 19045,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Privacy",
+      "risk": "Low"
+    },
+    {
+      "id": "s47.quick-access-cloud-files",
+      "kind": "tweak",
+      "target": "Cloud files in File Explorer Home",
+      "category": "File Explorer",
+      "recommendation": "Optional",
+      "action": "Hide files from Office.com in File Explorer",
+      "reason": "Stops File Explorer Home showing recent files from your Microsoft account in the cloud.",
+      "featureLoss": "Cloud documents from Office.com no longer appear in File Explorer Home.",
+      "source": "https://github.com/memstechtips/UnattendedWinstall/blob/3414845e1a99716b3aa0cfc0f01ad5bf9c413899/autounattend.xml#L2946-L2946",
+      "minBuild": 22621,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Privacy",
+      "risk": "Low"
+    },
+    {
+      "id": "s47.find-my-device",
+      "kind": "tweak",
+      "target": "Find My Device",
+      "category": "Privacy and suggestions",
+      "recommendation": "Advanced",
+      "action": "Turn off Find My Device by policy",
+      "reason": "Stops Windows periodically reporting this device location for Find My Device.",
+      "featureLoss": "You cannot locate or lock a lost or stolen PC from your Microsoft account.",
+      "source": "https://learn.microsoft.com/en-us/windows/client-management/mdm/policy-csp-experience#allowfindmydevice",
+      "minBuild": 19045,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Privacy",
+      "risk": "Caution"
+    },
+    {
+      "id": "s47.edge-diagnostic-data",
+      "kind": "tweak",
+      "target": "Edge diagnostic data",
+      "category": "Microsoft Edge",
+      "recommendation": "Optional",
+      "action": "Send no optional diagnostic data from Edge",
+      "reason": "Limits Edge diagnostic data to the required minimum and stops browsing data being used to personalise Microsoft services.",
+      "featureLoss": "Microsoft receives less Edge usage data; personalised ads and news based on browsing stop. Edge shows \"Your browser is managed by your organization\" while any Edge policy is set.",
+      "source": "https://learn.microsoft.com/en-us/deployedge/microsoft-edge-browser-policies/diagnosticdata",
+      "minBuild": 19045,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Privacy",
+      "risk": "Low"
+    },
+    {
+      "id": "s47.edge-feedback",
+      "kind": "tweak",
+      "target": "Edge feedback",
+      "category": "Microsoft Edge",
+      "recommendation": "Optional",
+      "action": "Turn off the Edge feedback feature",
+      "reason": "Removes the Send feedback command from Edge.",
+      "featureLoss": "You cannot send feedback to Microsoft from Edge. Edge shows \"Your browser is managed by your organization\" while any Edge policy is set.",
+      "source": "https://learn.microsoft.com/en-us/deployedge/microsoft-edge-browser-policies/userfeedbackallowed",
+      "minBuild": 19045,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Privacy",
+      "risk": "Low"
+    },
+    {
+      "id": "s47.edge-error-page-suggestions",
+      "kind": "tweak",
+      "target": "Edge suggestions for unreachable pages",
+      "category": "Microsoft Edge",
+      "recommendation": "Optional",
+      "action": "Turn off similar-page suggestions when a page is not found",
+      "reason": "Stops Edge sending failed web addresses to a Microsoft service to suggest similar pages.",
+      "featureLoss": "Edge shows a plain error page without suggestions. Edge shows \"Your browser is managed by your organization\" while any Edge policy is set.",
+      "source": "https://learn.microsoft.com/en-us/deployedge/microsoft-edge-browser-policies/alternateerrorpagesenabled",
+      "minBuild": 19045,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Privacy",
+      "risk": "Low"
+    },
+    {
+      "id": "s47.consumer-features",
+      "kind": "tweak",
+      "target": "Microsoft consumer experiences",
+      "category": "Privacy and suggestions",
+      "recommendation": "Optional",
+      "action": "Turn off Microsoft consumer experiences",
+      "reason": "Sets the policy that stops Windows installing suggested third-party apps and showing consumer promotions.",
+      "featureLoss": "No automatically installed promoted apps or consumer suggestions. Microsoft documents that this policy is honoured only on Enterprise and Education editions.",
+      "source": "https://learn.microsoft.com/en-us/windows/client-management/mdm/policy-csp-experience#allowwindowsconsumerfeatures",
+      "minBuild": 19045,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Debloat",
+      "risk": "Low"
+    },
+    {
+      "id": "s47.cloud-optimized-content",
+      "kind": "tweak",
+      "target": "Cloud optimised content",
+      "category": "Privacy and suggestions",
+      "recommendation": "Optional",
+      "action": "Turn off cloud optimised content",
+      "reason": "Sets the policy that stops Windows showing cloud-delivered content such as promoted Start and taskbar items.",
+      "featureLoss": "Windows experiences that depend on cloud-delivered content show defaults instead.",
+      "source": "https://learn.microsoft.com/en-us/windows/client-management/mdm/policy-csp-experience#disablecloudoptimizedcontent",
+      "minBuild": 19045,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Debloat",
+      "risk": "Low"
+    },
+    {
+      "id": "s47.account-state-content",
+      "kind": "tweak",
+      "target": "Microsoft account notices in Settings and Start",
+      "category": "Privacy and suggestions",
+      "recommendation": "Optional",
+      "action": "Turn off account-state content",
+      "reason": "Sets the policy that hides Microsoft account and Microsoft 365 promotion cards in Settings and Start.",
+      "featureLoss": "Account status cards and subscription offers no longer appear in Settings or the Start account menu.",
+      "source": "https://learn.microsoft.com/en-us/windows/client-management/mdm/policy-csp-experience#disableconsumeraccountstatecontent",
+      "minBuild": 22000,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Debloat",
+      "risk": "Low"
+    },
+    {
+      "id": "s47.widgets",
+      "kind": "tweak",
+      "target": "Widgets",
+      "category": "Start and taskbar",
+      "recommendation": "Optional",
+      "action": "Turn off Widgets by policy",
+      "reason": "Sets the Allow widgets policy to off, removing the Widgets board and its taskbar button.",
+      "featureLoss": "The Widgets board with news, weather and feeds is unavailable.",
+      "source": "https://learn.microsoft.com/en-us/windows/client-management/mdm/policy-csp-newsandinterests#allownewsandinterests",
+      "minBuild": 22000,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Debloat",
+      "risk": "Low"
+    },
+    {
+      "id": "s47.news-interests",
+      "kind": "tweak",
+      "target": "News and interests (Windows 10)",
+      "category": "Start and taskbar",
+      "recommendation": "Optional",
+      "action": "Turn off news and interests on the taskbar",
+      "reason": "Sets the policy that removes the Windows 10 news and interests taskbar feed.",
+      "featureLoss": "The weather and news feed on the Windows 10 taskbar is removed.",
+      "source": "https://learn.microsoft.com/en-us/windows/client-management/mdm/policy-csp-admx-feeds",
+      "minBuild": 19045,
+      "maxBuild": 19045,
+      "reviewed": "2026-11-13",
+      "goal": "Debloat",
+      "risk": "Low"
+    },
+    {
+      "id": "s47.chat-taskbar",
+      "kind": "tweak",
+      "target": "Chat (Teams) on the taskbar",
+      "category": "Start and taskbar",
+      "recommendation": "Optional",
+      "action": "Hide the Chat button",
+      "reason": "Removes the Chat (Microsoft Teams personal) button from the Windows 11 taskbar.",
+      "featureLoss": "No Chat button on the taskbar; Teams can still be opened if installed.",
+      "source": "https://github.com/Raphire/Win11Debloat/blob/516fe42d47a57ef3f12e505b2bf260f215677ed9/Regfiles/Disable_Chat_Taskbar.reg#L4-L5",
+      "minBuild": 22000,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Debloat",
+      "risk": "Low"
+    },
+    {
+      "id": "s47.meet-now",
+      "kind": "tweak",
+      "target": "Meet Now (Windows 10)",
+      "category": "Start and taskbar",
+      "recommendation": "Optional",
+      "action": "Hide the Meet Now icon",
+      "reason": "Sets the user policy that removes the Skype Meet Now icon from the Windows 10 notification area.",
+      "featureLoss": "No Meet Now shortcut in the notification area.",
+      "source": "https://github.com/Raphire/Win11Debloat/blob/516fe42d47a57ef3f12e505b2bf260f215677ed9/Regfiles/Disable_Chat_Taskbar.reg#L8-L9",
+      "minBuild": 19045,
+      "maxBuild": 19045,
+      "reviewed": "2026-11-13",
+      "goal": "Debloat",
+      "risk": "Low"
+    },
+    {
+      "id": "s47.push-to-install",
+      "kind": "tweak",
+      "target": "Remote app installs from the Store website",
+      "category": "Privacy and suggestions",
+      "recommendation": "Optional",
+      "action": "Turn off Push to Install",
+      "reason": "Sets the policy that stops apps chosen on the Microsoft Store website or another device being installed on this PC automatically.",
+      "featureLoss": "Apps you pick on the Store website or another device are not pushed to this PC; install them here instead.",
+      "source": "https://github.com/ChrisTitusTech/winutil/blob/2ef5e5dc7852634bc40ad789a3d1115ee3913c41/functions/private/Invoke-WinUtilISOScript.ps1#L578-L578",
+      "minBuild": 19045,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Debloat",
+      "risk": "Low"
+    },
+    {
+      "id": "s47.device-metadata",
+      "kind": "tweak",
+      "target": "Device apps and icons from the internet",
+      "category": "System",
+      "recommendation": "Advanced",
+      "action": "Stop downloading device metadata",
+      "reason": "Sets the policy that stops Windows downloading manufacturer apps, icons and information for devices you connect.",
+      "featureLoss": "New devices may show generic icons and their manufacturer companion apps are not installed automatically; drivers are unaffected.",
+      "source": "https://github.com/Raphire/Win11Debloat/blob/516fe42d47a57ef3f12e505b2bf260f215677ed9/Regfiles/Disable_Device_Auto_App_Download.reg#L4-L5",
+      "minBuild": 19045,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Debloat",
+      "risk": "Caution"
+    },
+    {
+      "id": "s47.edge-sidebar",
+      "kind": "tweak",
+      "target": "Edge sidebar",
+      "category": "Microsoft Edge",
+      "recommendation": "Optional",
+      "action": "Turn off the Edge sidebar",
+      "reason": "Removes the Edge sidebar with its apps and Copilot entry point.",
+      "featureLoss": "The Edge sidebar and its apps are unavailable. Edge shows \"Your browser is managed by your organization\" while any Edge policy is set.",
+      "source": "https://learn.microsoft.com/en-us/deployedge/microsoft-edge-browser-policies/hubssidebarenabled",
+      "minBuild": 19045,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Debloat",
+      "risk": "Low"
+    },
+    {
+      "id": "s47.edge-shopping",
+      "kind": "tweak",
+      "target": "Shopping in Edge",
+      "category": "Microsoft Edge",
+      "recommendation": "Optional",
+      "action": "Turn off Edge shopping features",
+      "reason": "Stops Edge offering coupons, price comparison and cashback on shopping sites.",
+      "featureLoss": "No price comparison, coupons or cashback offers in Edge. Edge shows \"Your browser is managed by your organization\" while any Edge policy is set.",
+      "source": "https://learn.microsoft.com/en-us/deployedge/microsoft-edge-browser-policies/edgeshoppingassistantenabled",
+      "minBuild": 19045,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Debloat",
+      "risk": "Low"
+    },
+    {
+      "id": "s47.edge-first-run",
+      "kind": "tweak",
+      "target": "Edge first-run experience",
+      "category": "Microsoft Edge",
+      "recommendation": "Optional",
+      "action": "Skip the Edge first-run pages",
+      "reason": "Hides the welcome and sign-in pages Edge shows the first time it runs.",
+      "featureLoss": "Edge does not walk you through import and sign-in on first launch. Edge shows \"Your browser is managed by your organization\" while any Edge policy is set.",
+      "source": "https://learn.microsoft.com/en-us/deployedge/microsoft-edge-browser-policies/hidefirstrunexperience",
+      "minBuild": 19045,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Debloat",
+      "risk": "Low"
+    },
+    {
+      "id": "s47.edge-default-browser-prompt",
+      "kind": "tweak",
+      "target": "Edge default browser prompts",
+      "category": "Microsoft Edge",
+      "recommendation": "Optional",
+      "action": "Stop Edge asking to be the default browser",
+      "reason": "Stops Edge checking and prompting to become the default browser.",
+      "featureLoss": "Edge never offers to make itself default; set defaults in Settings if you want Edge. Edge shows \"Your browser is managed by your organization\" while any Edge policy is set.",
+      "source": "https://learn.microsoft.com/en-us/deployedge/microsoft-edge-browser-policies/defaultbrowsersettingenabled",
+      "minBuild": 19045,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Debloat",
+      "risk": "Low"
+    },
+    {
+      "id": "s47.edge-recommendations",
+      "kind": "tweak",
+      "target": "Edge recommendations and notifications",
+      "category": "Microsoft Edge",
+      "recommendation": "Optional",
+      "action": "Turn off Edge feature recommendations",
+      "reason": "Stops Edge showing recommendations and promotional notifications for its features.",
+      "featureLoss": "Edge no longer suggests features or shows promotional pop-ups. Edge shows \"Your browser is managed by your organization\" while any Edge policy is set.",
+      "source": "https://learn.microsoft.com/en-us/deployedge/microsoft-edge-browser-policies/showrecommendationsenabled",
+      "minBuild": 19045,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Debloat",
+      "risk": "Low"
+    },
+    {
+      "id": "s47.edge-rewards",
+      "kind": "tweak",
+      "target": "Microsoft Rewards in Edge",
+      "category": "Microsoft Edge",
+      "recommendation": "Optional",
+      "action": "Hide Microsoft Rewards in Edge",
+      "reason": "Hides Microsoft Rewards offers and the Rewards entry in Edge.",
+      "featureLoss": "Rewards points offers are not shown in Edge. Edge shows \"Your browser is managed by your organization\" while any Edge policy is set.",
+      "source": "https://learn.microsoft.com/en-us/deployedge/microsoft-edge-browser-policies/showmicrosoftrewards",
+      "minBuild": 19045,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Debloat",
+      "risk": "Low"
+    },
+    {
+      "id": "s47.edge-ntp-content",
+      "kind": "tweak",
+      "target": "News on the Edge new tab page",
+      "category": "Microsoft Edge",
+      "recommendation": "Optional",
+      "action": "Turn off Microsoft content on the Edge new tab page",
+      "reason": "Removes the Microsoft Start news feed and ads from the Edge new tab page.",
+      "featureLoss": "The Edge new tab page shows no news feed. Edge shows \"Your browser is managed by your organization\" while any Edge policy is set.",
+      "source": "https://learn.microsoft.com/en-us/deployedge/microsoft-edge-browser-policies/newtabpagecontentenabled",
+      "minBuild": 19045,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Debloat",
+      "risk": "Low"
+    },
+    {
+      "id": "s47.nav-home",
+      "kind": "tweak",
+      "target": "Home in the navigation pane",
+      "category": "File Explorer",
+      "recommendation": "Optional",
+      "action": "Hide Home in the navigation pane",
+      "reason": "Unpins Home from the File Explorer navigation pane for this user.",
+      "featureLoss": "Home is no longer shown in the navigation pane; its content stays available by other routes.",
+      "source": "https://github.com/Raphire/Win11Debloat/blob/516fe42d47a57ef3f12e505b2bf260f215677ed9/Regfiles/Hide_Home_from_Explorer.reg#L4-L6",
+      "minBuild": 22621,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Personalize",
+      "risk": "Low"
+    },
+    {
+      "id": "s47.nav-gallery",
+      "kind": "tweak",
+      "target": "Gallery in the navigation pane",
+      "category": "File Explorer",
+      "recommendation": "Optional",
+      "action": "Hide Gallery in the navigation pane",
+      "reason": "Unpins Gallery from the File Explorer navigation pane for this user.",
+      "featureLoss": "Gallery is no longer shown in the navigation pane; its content stays available by other routes.",
+      "source": "https://github.com/Raphire/Win11Debloat/blob/516fe42d47a57ef3f12e505b2bf260f215677ed9/Regfiles/Hide_Gallery_from_Explorer.reg#L4-L5",
+      "minBuild": 22621,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Personalize",
+      "risk": "Low"
+    },
+    {
+      "id": "s47.nav-onedrive",
+      "kind": "tweak",
+      "target": "OneDrive in the navigation pane",
+      "category": "File Explorer",
+      "recommendation": "Optional",
+      "action": "Hide OneDrive in the navigation pane",
+      "reason": "Unpins OneDrive from the File Explorer navigation pane for this user.",
+      "featureLoss": "OneDrive is no longer shown in the navigation pane; its content stays available by other routes.",
+      "source": "https://github.com/Raphire/Win11Debloat/blob/516fe42d47a57ef3f12e505b2bf260f215677ed9/Regfiles/Hide_Onedrive_Folder.reg#L4-L5",
+      "minBuild": 19045,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Personalize",
+      "risk": "Low"
+    },
+    {
+      "id": "s47.title-full-path",
+      "kind": "tweak",
+      "target": "Full path in the title bar",
+      "category": "File Explorer",
+      "recommendation": "Optional",
+      "action": "Show the full folder path in the title bar",
+      "reason": "Shows the complete path of the current folder in the File Explorer window and taskbar title.",
+      "featureLoss": "None; titles become longer.",
+      "source": "https://github.com/memstechtips/UnattendedWinstall/blob/3414845e1a99716b3aa0cfc0f01ad5bf9c413899/autounattend.xml#L2952-L2952",
+      "minBuild": 19045,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Personalize",
+      "risk": "Low"
+    },
+    {
+      "id": "s47.checkboxes",
+      "kind": "tweak",
+      "target": "Item check boxes",
+      "category": "File Explorer",
+      "recommendation": "Optional",
+      "action": "Use check boxes to select items",
+      "reason": "Shows a check box beside files and folders in File Explorer to make multiple selection easier.",
+      "featureLoss": "None; check boxes appear on hover and selection.",
+      "source": "https://github.com/farag2/Sophia-Script-for-Windows/blob/b9010fced373be52f0ac0618edb2c55e3dd255e6/src/Sophia_Script_for_Windows_11/Module/Sophia.psm1#L1280-L1280",
+      "minBuild": 19045,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Personalize",
+      "risk": "Low"
+    },
+    {
+      "id": "s47.separate-process",
+      "kind": "tweak",
+      "target": "Folder windows in a separate process",
+      "category": "File Explorer",
+      "recommendation": "Advanced",
+      "action": "Launch folder windows in a separate process",
+      "reason": "Runs File Explorer windows in a process separate from the desktop and taskbar, so a crashing folder window does not take the taskbar with it.",
+      "featureLoss": "Uses somewhat more memory.",
+      "source": "https://github.com/memstechtips/UnattendedWinstall/blob/3414845e1a99716b3aa0cfc0f01ad5bf9c413899/autounattend.xml#L3007-L3007",
+      "minBuild": 19045,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Personalize",
+      "risk": "Low"
+    },
+    {
+      "id": "s47.folder-type-discovery",
+      "kind": "tweak",
+      "target": "Automatic folder type discovery",
+      "category": "File Explorer",
+      "recommendation": "Advanced",
+      "action": "Treat all folders as general items",
+      "reason": "Stops File Explorer inspecting folder contents to pick a Pictures, Music or Documents layout, which can slow large folders.",
+      "featureLoss": "Folders no longer get type-specific columns and views automatically. Views already remembered for a folder are kept until you reset them.",
+      "source": "https://github.com/ChrisTitusTech/winutil/blob/2ef5e5dc7852634bc40ad789a3d1115ee3913c41/config/tweaks.json#L1326-L1334",
+      "minBuild": 19045,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Performance",
+      "risk": "Low"
+    },
+    {
+      "id": "s47.shortcut-suffix",
+      "kind": "tweak",
+      "target": "\"- Shortcut\" suffix on new shortcuts",
+      "category": "File Explorer",
+      "recommendation": "Optional",
+      "action": "Name new shortcuts without the \"- Shortcut\" suffix",
+      "reason": "Makes new shortcuts take the plain name of their target instead of adding \"- Shortcut\".",
+      "featureLoss": "None; existing shortcuts keep their names.",
+      "source": "https://github.com/farag2/Sophia-Script-for-Windows/blob/b9010fced373be52f0ac0618edb2c55e3dd255e6/src/Sophia_Script_for_Windows_11/Module/Sophia.psm1#L2937-L2937",
+      "minBuild": 19045,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Personalize",
+      "risk": "Low"
+    },
+    {
+      "id": "s47.long-paths",
+      "kind": "tweak",
+      "target": "Long file paths",
+      "category": "System",
+      "recommendation": "Optional",
+      "action": "Enable Win32 long path support",
+      "reason": "Lets applications that opt in use file paths longer than 260 characters.",
+      "featureLoss": "None for apps that do not opt in; File Explorer itself still has some limits.",
+      "source": "https://learn.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation",
+      "minBuild": 19045,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Personalize",
+      "risk": "Low"
+    },
+    {
+      "id": "s47.start-recommended",
+      "kind": "tweak",
+      "target": "Recommended section in Start",
+      "category": "Start and taskbar",
+      "recommendation": "Optional",
+      "action": "Hide the Recommended section in Start",
+      "reason": "Sets the user policy that removes the Recommended section of the Start menu.",
+      "featureLoss": "Start no longer lists recent files and recommended apps. Some Windows 11 builds and editions only partly honour this policy.",
+      "source": "https://learn.microsoft.com/en-us/windows/client-management/mdm/policy-csp-start#hiderecommendedsection",
+      "minBuild": 22000,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Debloat",
+      "risk": "Low"
+    },
+    {
+      "id": "s47.start-recent-apps",
+      "kind": "tweak",
+      "target": "Recently added apps in Start",
+      "category": "Start and taskbar",
+      "recommendation": "Optional",
+      "action": "Hide recently added apps in Start",
+      "reason": "Stops Start listing apps you installed recently.",
+      "featureLoss": "Newly installed apps are not highlighted in Start.",
+      "source": "https://github.com/farag2/Sophia-Script-for-Windows/blob/b9010fced373be52f0ac0618edb2c55e3dd255e6/src/Sophia_Script_for_Windows_11/Module/Sophia.psm1#L3509-L3509",
+      "minBuild": 22000,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Personalize",
+      "risk": "Low"
+    },
+    {
+      "id": "s47.start-frequent-apps",
+      "kind": "tweak",
+      "target": "Most used apps in Start",
+      "category": "Start and taskbar",
+      "recommendation": "Optional",
+      "action": "Hide most used apps in Start",
+      "reason": "Stops Start listing the apps you use most.",
+      "featureLoss": "No Most used list in Start.",
+      "source": "https://github.com/farag2/Sophia-Script-for-Windows/blob/b9010fced373be52f0ac0618edb2c55e3dd255e6/src/Sophia_Script_for_Windows_11/Module/Sophia.psm1#L3713-L3713",
+      "minBuild": 22000,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Personalize",
+      "risk": "Low"
+    },
+    {
+      "id": "s47.start-more-pins",
+      "kind": "tweak",
+      "target": "More pins in Start",
+      "category": "Start and taskbar",
+      "recommendation": "Optional",
+      "action": "Use the More pins Start layout",
+      "reason": "Gives pinned apps more room in Start by shrinking the Recommended area.",
+      "featureLoss": "Fewer recommendations are shown.",
+      "source": "https://github.com/memstechtips/UnattendedWinstall/blob/3414845e1a99716b3aa0cfc0f01ad5bf9c413899/autounattend.xml#L3027-L3027",
+      "minBuild": 22621,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Personalize",
+      "risk": "Low"
+    },
+    {
+      "id": "s47.phone-link-start",
+      "kind": "tweak",
+      "target": "Phone Link pane in Start",
+      "category": "Start and taskbar",
+      "recommendation": "Optional",
+      "action": "Hide the mobile device pane in Start",
+      "reason": "Removes the Phone Link companion pane beside the Start menu.",
+      "featureLoss": "Your phone is not shown in Start; the Phone Link app still works.",
+      "source": "https://github.com/Raphire/Win11Debloat/blob/516fe42d47a57ef3f12e505b2bf260f215677ed9/Regfiles/Disable_Phone_Link_In_Start.reg#L4-L5",
+      "minBuild": 26100,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Debloat",
+      "risk": "Low"
+    },
+    {
+      "id": "s47.clock-seconds",
+      "kind": "tweak",
+      "target": "Seconds in the taskbar clock",
+      "category": "Start and taskbar",
+      "recommendation": "Optional",
+      "action": "Show seconds in the taskbar clock",
+      "reason": "Adds seconds to the clock in the notification area.",
+      "featureLoss": "Slightly more power use on battery.",
+      "source": "https://github.com/farag2/Sophia-Script-for-Windows/blob/b9010fced373be52f0ac0618edb2c55e3dd255e6/src/Sophia_Script_for_Windows_11/Module/Sophia.psm1#L2346-L2346",
+      "minBuild": 22621,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Personalize",
+      "risk": "Low"
+    },
+    {
+      "id": "s47.multi-monitor-taskbar",
+      "kind": "tweak",
+      "target": "Taskbar buttons on multiple displays",
+      "category": "Start and taskbar",
+      "recommendation": "Optional",
+      "action": "Show taskbar buttons only on the display where the window is open",
+      "reason": "With several displays, each taskbar shows only the windows on its own display.",
+      "featureLoss": "The main taskbar no longer lists windows that are on other displays.",
+      "source": "https://github.com/Raphire/Win11Debloat/blob/516fe42d47a57ef3f12e505b2bf260f215677ed9/Regfiles/MMTaskbarMode_Active.reg#L3-L4",
+      "minBuild": 19045,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Personalize",
+      "risk": "Low"
+    },
+    {
+      "id": "s47.delivery-optimization-peers",
+      "kind": "tweak",
+      "target": "Update sharing with other PCs",
+      "category": "Updates",
+      "recommendation": "Optional",
+      "action": "Download updates over HTTP only, without peers",
+      "reason": "Sets the Delivery Optimization download mode policy to HTTP only, so this PC neither downloads updates from nor uploads them to other PCs.",
+      "featureLoss": "Updates come only from Microsoft servers, which can use more internet bandwidth on networks with several PCs. Updates themselves keep working.",
+      "source": "https://learn.microsoft.com/en-us/windows/client-management/mdm/policy-csp-deliveryoptimization#dodownloadmode",
+      "minBuild": 19045,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Performance",
+      "risk": "Low"
+    },
+    {
+      "id": "s47.gpu-scheduling",
+      "kind": "tweak",
+      "target": "Hardware-accelerated GPU scheduling",
+      "category": "System",
+      "recommendation": "Advanced",
+      "action": "Turn on hardware-accelerated GPU scheduling",
+      "reason": "Lets a supported graphics card manage its own memory scheduling, which can reduce latency in games.",
+      "featureLoss": "Needs a restart and a supporting driver; with some drivers it causes stutter, black screens or app problems.",
+      "source": "https://github.com/farag2/Sophia-Script-for-Windows/blob/b9010fced373be52f0ac0618edb2c55e3dd255e6/src/Sophia_Script_for_Windows_11/Module/Sophia.psm1#L8296-L8296",
+      "minBuild": 19045,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Performance",
+      "risk": "Caution"
+    },
+    {
+      "id": "s47.edge-startup-boost",
+      "kind": "tweak",
+      "target": "Edge Startup Boost",
+      "category": "Microsoft Edge",
+      "recommendation": "Optional",
+      "action": "Turn off Edge Startup Boost",
+      "reason": "Stops Edge starting at sign-in and staying in the background after you close it.",
+      "featureLoss": "Edge opens a little more slowly the first time. Edge shows \"Your browser is managed by your organization\" while any Edge policy is set.",
+      "source": "https://learn.microsoft.com/en-us/deployedge/microsoft-edge-browser-policies/startupboostenabled",
+      "minBuild": 19045,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Performance",
+      "risk": "Low"
+    },
+    {
+      "id": "s47.exclude-driver-updates",
+      "kind": "tweak",
+      "target": "Drivers in Windows Update",
+      "category": "Updates",
+      "recommendation": "Advanced",
+      "action": "Exclude drivers from quality updates",
+      "reason": "Sets the policy that stops Windows Update installing driver updates together with quality updates.",
+      "featureLoss": "You must update device drivers yourself; fixes for hardware problems and some security fixes in drivers arrive only when you install them.",
+      "source": "https://learn.microsoft.com/en-us/windows/client-management/mdm/policy-csp-update#excludewudriversinqualityupdate",
+      "minBuild": 19045,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Performance",
+      "risk": "Caution"
+    },
+    {
+      "id": "s47.no-auto-restart",
+      "kind": "tweak",
+      "target": "Automatic restart while signed in",
+      "category": "Updates",
+      "recommendation": "Advanced",
+      "action": "Do not restart automatically while someone is signed in",
+      "reason": "Sets the policy that stops Windows Update restarting the PC on its own while a user is signed in.",
+      "featureLoss": "Installed updates, including security fixes, stay pending until you restart. Microsoft documents that this applies when automatic updates are configured to schedule installs.",
+      "source": "https://learn.microsoft.com/en-us/windows/deployment/update/waas-restart",
+      "minBuild": 19045,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Personalize",
+      "risk": "Caution"
+    },
+    {
+      "id": "s47.smart-active-hours",
+      "kind": "tweak",
+      "target": "Automatic active hours",
+      "category": "Updates",
+      "recommendation": "Optional",
+      "action": "Adjust active hours automatically",
+      "reason": "Lets Windows set active hours from when you actually use the PC, so update restarts avoid those times.",
+      "featureLoss": "Manually chosen active hours are replaced by learned ones.",
+      "source": "https://github.com/farag2/Sophia-Script-for-Windows/blob/b9010fced373be52f0ac0618edb2c55e3dd255e6/src/Sophia_Script_for_Windows_11/Module/Sophia.psm1#L5258-L5258",
+      "minBuild": 19045,
+      "maxBuild": 26200,
+      "reviewed": "2026-11-13",
+      "goal": "Personalize",
+      "risk": "Low"
     }
   ]
 }

@@ -216,6 +216,9 @@ internal static class Appearance
         SetBrush("AgeForeground",SystemParameters.HighContrast?SystemColors.WindowTextColor:Light?Color.FromRgb(64,64,64):Color.FromRgb(232,232,232));
         SetBrush("PreviewWarning",SystemParameters.HighContrast?SystemColors.WindowTextColor:Light?Color.FromRgb(155,69,0):Color.FromRgb(255,180,84));
         SetBrush("TransferError",SystemParameters.HighContrast?SystemColors.WindowTextColor:Light?Color.FromRgb(180,35,24):Color.FromRgb(248,113,113));
+        // Maintenance risk markers (MAINT-26) reuse the warning and error hues; the marker symbol carries the level in high contrast.
+        SetBrush("RiskCaution",SystemParameters.HighContrast?SystemColors.WindowTextColor:Light?Color.FromRgb(155,69,0):Color.FromRgb(255,180,84));
+        SetBrush("RiskHigh",SystemParameters.HighContrast?SystemColors.WindowTextColor:Light?Color.FromRgb(180,35,24):Color.FromRgb(248,113,113));
         ExplorerIcons.Apply();
         foreach(Window current in Application.Current.Windows)
         {

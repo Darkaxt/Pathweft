@@ -1,0 +1,12 @@
+{
+  "repository": "https://github.com/Sophia-Community/SophiApp",
+  "revision": "a774d3ade4fe291852b008ad47f6cefdfa329a7e",
+  "license": "MIT",
+  "adaptation": "Selected registry values and scheduled-task paths reimplemented as individually journaled typed actions (MaintenanceS47Tweaks.cs). Source files are provenance only, never executed. Undo defaults and presets are not used.",
+  "files": [
+    {
+      "path": "src/Customizations/Mutators.cs",
+      "sha256": "fefa0a8b06ef14778eed66ba15bb99358e758eeb82a4c60fe7fb805aaa9809e2"
+    }
+  ]
+}

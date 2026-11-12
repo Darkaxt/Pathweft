@@ -193,7 +193,7 @@ internal static class MaintenanceStartup
         if(restore)records.Remove(id);else records[id]=records[id] with{Phase="applied"};Maintenance.Save(records,journal);
         return restore?"Original task state restored.":"Startup task disabled. Its definition and triggers are unchanged.";
     }
-    static string TaskDefinition(dynamic task)
+    internal static string TaskDefinition(dynamic task)
     {
         var xml=XDocument.Parse((string)task.Xml);XNamespace ns=xml.Root.Name.Namespace;
         xml.Root.Element(ns+"Settings")?.Element(ns+"Enabled")?.Remove();

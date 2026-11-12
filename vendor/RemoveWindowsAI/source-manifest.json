@@ -1,0 +1,13 @@
+{
+  "repository": "https://github.com/KalebGreek/RemoveWindowsAI",
+  "revision": "793e458f13b9162032f76a3d8a644184333d9780",
+  "license": "MIT",
+  "adaptation": "Selected registry values and scheduled-task paths reimplemented as individually journaled typed actions (MaintenanceS47Tweaks.cs). Source files are provenance only, never executed. Undo defaults and presets are not used.",
+  "files": [
+    {
+      "path": "RemoveWindowsAi.ps1",
+      "sha256": "ca3b1a36277bfcee0824031846c4abf13f1d352356c7f9201b4288ba25624a70"
+    }
+  ],
+  "note": "Pinned to the KalebGreek mirror; the original zoicware repository is no longer available, so identity with it is unproven."
+}

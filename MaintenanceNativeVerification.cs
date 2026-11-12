@@ -19,20 +19,26 @@ internal static class MaintenanceNativeVerification
                 string id="tweak:"+Maintenance.Id("tweak",tweak.Name);var rule=MaintenanceGuidance.Find("tweak",tweak.Name);
                 if(!rule.Supports(MaintenanceGuidance.Build)){checks.Add(new{criterion=rule.Id,notApplicable=true,build=MaintenanceGuidance.Build});continue;}
                 var edits=Maintenance.TweakEdits(id);var before=edits.Select(x=>x.Read()).ToArray();string journal=Path.Combine(root,rule.Id+".json");
+                var tasksBefore=MaintenanceTweakTasks.ReadAll(tweak.TaskPaths);
+                if(tweak.TaskPaths.Length>0&&tasksBefore.Length==0){checks.Add(new{criterion=rule.Id,tasksAbsent=true,build=MaintenanceGuidance.Build});continue;}
                 try
                 {
                     await using(var client=new MaintenanceClient())Check((await client.Start(new("apply",id,journal,null),false)).Ok,"Native worker Apply "+rule.Id);
                     Check(edits.All(x=>x.Same(x.Read())),"Every documented target has the requested kind/value: "+rule.Id);
                     Check(Maintenance.Undo(journal)[id].Before.Zip(before,(a,b)=>a.Same(b)).All(x=>x),"Saved original values are exact: "+rule.Id);
+                    Check(MaintenanceTweakTasks.ReadAll(tweak.TaskPaths).All(t=>!t.Enabled)&&(Maintenance.Undo(journal)[id].Tasks?.Length??0)==tasksBefore.Length,"Named scheduled tasks are disabled and their original states saved: "+rule.Id);
                 }
                 finally
                 {
                     if(Maintenance.Undo(journal).ContainsKey(id))
                         await using(var client=new MaintenanceClient())Check((await client.Start(new("restore",id,journal,null),false)).Ok,"Native worker Restore "+rule.Id);
                     Check(before.All(x=>x.Same(x.Read())),"Dependent feature configuration returned exactly to prior state: "+rule.Id);
+                    var tasksAfter=MaintenanceTweakTasks.ReadAll(tweak.TaskPaths);
+                    Check(tasksAfter.Length==tasksBefore.Length&&tasksAfter.Zip(tasksBefore,(a,b)=>a.Enabled==b.Enabled&&a.Definition==b.Definition).All(x=>x),"Scheduled tasks returned exactly to their prior state: "+rule.Id);
                 }
                 qualified.Add(rule.Id);
             }
+            await PolicyReset(root,Check,qualified);
             var services=MaintenanceServices.List([],default);
             foreach(var rule in MaintenanceGuidance.Data.Rules.Where(r=>r.Kind=="service"&&r.Supports(MaintenanceGuidance.Build)))
             {
@@ -58,6 +64,32 @@ internal static class MaintenanceNativeVerification
         }
         catch(Exception ex){checks.Add(new{failure=ex.ToString()});result=1;}
         File.WriteAllText(Path.Combine(root,"guidance-results.json"),JsonSerializer.Serialize(new{pid=Environment.ProcessId,build=MaintenanceGuidance.Build,result,qualified,checks},new JsonSerializerOptions{WriteIndented=true}));return result;
+    }
+    // MAINT-29: a policy set outside Pathweft is recognised, reset to the Windows default with a journal,
+    // and Restore returns the outside value; unknown neighbouring policy values are never touched.
+    static async Task PolicyReset(string root,Action<bool,string> check,List<string> qualified)
+    {
+        var tweak=Maintenance.Tweaks.First(t=>Maintenance.PolicyOnly(Maintenance.TweakEdits("tweak:"+Maintenance.Id("tweak",t.Name)))&&
+            MaintenanceGuidance.Find("tweak",t.Name).Supports(MaintenanceGuidance.Build)&&t.TaskPaths.Length==0);
+        string id="tweak:"+Maintenance.Id("tweak",tweak.Name),journal=Path.Combine(root,"policy-reset.json");
+        var edits=Maintenance.TweakEdits(id);var before=edits.Select(x=>x.Read()).ToArray();
+        var neighbour=edits[0] with{Name="PathweftVerificationNeighbour",Kind=RegistryValueKind.DWord,Value=JsonSerializer.SerializeToElement(7),Exists=true};
+        try
+        {
+            foreach(var edit in edits)edit.Write();neighbour.Write();
+            var row=Maintenance.Read("Windows tweaks",default).Single(r=>r.Id==id);
+            check(row.State==Maintenance.OutsideState&&row.Details.Contains("PathweftVerificationNeighbour=7"),"A managed policy present without a journal reads as set outside Pathweft and shows unknown neighbours read-only");
+            await using(var client=new MaintenanceClient())check((await client.Start(new("reset-default",id,journal,null),false)).Ok,"Native worker returns an outside policy to the Windows default");
+            check(edits.All(x=>!x.Read().Exists)&&neighbour.Same(neighbour.Read()),"Reset removes only the rule's own policy values");
+            await using(var client=new MaintenanceClient())check((await client.Start(new("restore",id,journal,null),false)).Ok,"Native worker Restore after Windows-default reset");
+            check(edits.All(x=>x.Same(x.Read())),"Restore returns the outside policy values exactly");
+            qualified.Add("policy-reset:"+MaintenanceGuidance.Find("tweak",tweak.Name).Id);
+        }
+        finally
+        {
+            foreach(var original in before)original.Write();
+            (neighbour with{Exists=false,Value=default}).Write();
+        }
     }
     internal static async Task<int> Run(string root)
     {
