@@ -1358,7 +1358,13 @@ CORE-17 (S8, user-authorized storage correction): initially keep small settings 
 place installed bulk archive working copies, folder-size caches, editor WebView2
 data, child-process runtime scratch and preview caches on D: under a per-user Pathweft data directory. A small
 data-root.txt setting may select another non-system data drive; never silently
-fall back to C:. Preserve isolated test/explicit portable profiles. Preserve
+fall back to C:. The user's 2026-11-12 decision, after a clean-install crash on a
+PC without a D: drive. With no data-root.txt, the first start uses an existing
+D:\AppData\Pathweft\<SID>, else the first ready fixed non-system drive, else
+%LOCALAPPDATA%\Pathweft only when the Windows drive is the sole local drive, and
+records that choice in data-root.txt so a later drive change never moves it. A
+recorded drive that is missing is reported in a message, never replaced or crashed
+on. Preserve isolated test/explicit portable profiles. Preserve
 existing folder-size cache data and legacy working-copy path bindings until
 their consumers finish. The user identifies the historical VLC extraction as
 abandoned failed-drag output: release that exact copy with reviewed cleanup.

@@ -76,9 +76,12 @@ public partial class MainWindow
                     string path=Path.Combine(folder,basename+extension);File.WriteAllText(path,"Synthetic association receiver fixture");
                 }
                 await S1Verification.Navigate(Left,folder);
-                foreach(var entry in Left.Items.Where(e=>Path.GetExtension(e.Path)==extension).ToArray())
+                foreach(string target in Left.Items.Where(e=>Path.GetExtension(e.Path)==extension).Select(e=>e.Path).ToArray())
                 {
+                    // The previous receipt refreshes the live listing; select the current row for this path, not a replaced one.
+                    var entry=Left.Items.First(e=>e.Path==target);
                     Left.List.SelectedItem=entry;
+                    check(Left.Selected.Count==1&&Left.Selected[0].Path==target,"The receiver trial selects "+entry.Name);
                     Process receiver=null;
                     Left.ExternalOpenForVerification=start=>receiver=Process.Start(start)??throw new InvalidOperationException("Shell returned no receiver process");
                     Left.OpenSelected();
@@ -135,6 +138,18 @@ public partial class MainWindow
             File.WriteAllText(Path.Combine(configured,"data-root.txt"),Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData));
             bool systemRefused=false;try{_ = DataFolder.ResolveBulk(configured,false);}catch(IOException){systemRefused=true;}
             check(systemRefused,"Unavailable/invalid bulk configuration never silently falls back to system storage");
+            string sid=System.Security.Principal.WindowsIdentity.GetCurrent().User.Value;
+            check(DataFolder.DefaultBulk(@"C:\",[new DriveInfo("C")])==DataFolder.SystemFallback
+                &&DataFolder.DefaultBulk(@"C:\",[new DriveInfo("D"),new DriveInfo("C")])==Path.Combine(@"D:\AppData\Pathweft",sid),"A first start uses the first local data drive, and local application data only when Windows' drive is the only one");
+            File.WriteAllText(Path.Combine(configured,"data-root.txt"),DataFolder.SystemFallback);
+            check(DataFolder.ResolveBulk(configured,false)==DataFolder.SystemFallback,"The recorded single-drive fallback is accepted on later starts");
+            char missing=Enumerable.Range('E',22).Select(c=>(char)c).First(c=>!Directory.Exists(c+@":\"));
+            File.WriteAllText(Path.Combine(configured,"data-root.txt"),missing+@":\Pathweft-data");
+            bool missingRefused=false;try{_ = DataFolder.ResolveBulk(configured,false);}catch(IOException){missingRefused=true;}
+            check(missingRefused,"A recorded data drive that is missing is reported rather than replaced");
+            string fresh=Path.Combine(root,"storage-fresh");
+            string first=DataFolder.ResolveBulk(fresh,false);
+            check(first==Path.Combine(@"D:\AppData\Pathweft",sid)&&File.ReadAllText(Path.Combine(fresh,"data-root.txt"))==first&&DataFolder.ResolveBulk(fresh,false)==first,"A first start records its choice, so later starts cannot drift: "+first);
             var cacheFolder=Directory.CreateDirectory(Path.Combine(root,"cached-folder"));
             SizeCache.Set(cacheFolder.FullName,cacheFolder.LastWriteTimeUtc,12345);SizeCache.Save();
             check(SizeCache.Get(cacheFolder.FullName,cacheFolder.LastWriteTimeUtc)==12345&&File.Exists(SizeCache.FilePath)&&SizeCache.FilePath.StartsWith(DataFolder.Cache+"\\",StringComparison.OrdinalIgnoreCase),"Folder-size persistence writes actual data under the bulk cache root");

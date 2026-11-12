@@ -289,14 +289,42 @@ static class DataFolder
     {
         if (isolated) return Path.Combine(settings, "Runtime");
         string choice = Path.Combine(settings, "data-root.txt");
-        string root = File.Exists(choice) ? File.ReadAllText(choice).Trim() :
-            Path.Combine(@"D:\AppData\Pathweft", System.Security.Principal.WindowsIdentity.GetCurrent().User.Value);
+        if (!File.Exists(choice))
+        {
+            // First start (CORE-17, 2026-11-12): the first local data drive, or the user's local
+            // application data only when the PC has no drive besides Windows'. Recorded, so a
+            // drive added or removed later never silently moves the data elsewhere.
+            string legacy = Path.Combine(@"D:\AppData\Pathweft", System.Security.Principal.WindowsIdentity.GetCurrent().User.Value);
+            string chosen = Directory.Exists(legacy) ? legacy // installs before this rule already keep their data here
+                : DefaultBulk(Path.GetPathRoot(Environment.SystemDirectory), DriveInfo.GetDrives());
+            try { Directory.CreateDirectory(settings); File.WriteAllText(choice, chosen); }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException) { }
+            return chosen;
+        }
+        string root = File.ReadAllText(choice).Trim();
         if (!Path.IsPathFullyQualified(root)) throw new IOException("Pathweft's data-root.txt must name an absolute folder on a data drive.");
         root = Path.GetFullPath(root);
-        if (Path.GetPathRoot(root).Equals(Path.GetPathRoot(Environment.SystemDirectory), StringComparison.OrdinalIgnoreCase))
+        if (Path.GetPathRoot(root).Equals(Path.GetPathRoot(Environment.SystemDirectory), StringComparison.OrdinalIgnoreCase)
+            && !root.TrimEnd('\\').Equals(SystemFallback, StringComparison.OrdinalIgnoreCase))
             throw new IOException("Pathweft bulk storage must use a data drive, not the Windows system drive. Set data-root.txt in the settings folder.");
         if (!Directory.Exists(Path.GetPathRoot(root))) throw new IOException("Pathweft's data drive is unavailable: " + Path.GetPathRoot(root));
         return root;
+    }
+    // Only for a PC whose sole local drive is the Windows drive.
+    internal static string SystemFallback => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Pathweft");
+    internal static string DefaultBulk(string systemRoot, IEnumerable<DriveInfo> drives)
+    {
+        string sid = System.Security.Principal.WindowsIdentity.GetCurrent().User.Value;
+        foreach (var drive in drives.OrderBy(d => d.Name, StringComparer.OrdinalIgnoreCase))
+        {
+            try
+            {
+                if (drive.DriveType == DriveType.Fixed && drive.IsReady && !drive.Name.Equals(systemRoot, StringComparison.OrdinalIgnoreCase))
+                    return Path.Combine(drive.Name, "AppData", "Pathweft", sid);
+            }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException) { }
+        }
+        return SystemFallback;
     }
     internal static string Cache => Path.Combine(Bulk, "Cache");
     internal static string WebView2 => Path.Combine(Bulk, "WebView2");

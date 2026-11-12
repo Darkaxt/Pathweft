@@ -289,7 +289,14 @@ public partial class App : Application
         {
             // This app and its children own their runtime scratch on the data drive.
             // Explicit verification profiles keep their caller's isolated scratch.
-            string runtimeTemp=Directory.CreateDirectory(Path.Combine(DataFolder.Bulk,"Temp")).FullName;
+            string runtimeTemp;
+            try{runtimeTemp=Directory.CreateDirectory(Path.Combine(DataFolder.Bulk,"Temp")).FullName;}
+            catch(Exception error)when(error is IOException or UnauthorizedAccessException)
+            {
+                // A chosen data drive that is missing (an unplugged external disk): say so instead of crashing.
+                if(!hidden)MessageBox.Show(error.Message+"\n\nReconnect the drive, or edit data-root.txt in "+Settings.Dir+".","Pathweft",MessageBoxButton.OK,MessageBoxImage.Error);
+                Shutdown(1);return;
+            }
             Environment.SetEnvironmentVariable("TEMP",runtimeTemp);Environment.SetEnvironmentVariable("TMP",runtimeTemp);
         }
         // LAUNCH-01: an installed copy started by the earlier Run value moves to the logon task.
