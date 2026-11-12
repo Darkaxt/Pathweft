@@ -151,6 +151,7 @@ public partial class MainWindow
         check(!PerformanceMode&&PerformanceCommand.Tag==null&&StatsRow.IsVisible&&PaneArea.IsVisible,"Performance toolbar switches off to the standard file view");
         PerformanceCommand.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await paneModeWork;performance.Select(PerformancePanel.Cpu);UpdateLayout();
         check(PerformanceMode&&performance.Analysis.IsVisible&&Equals(PerformanceCommand.Tag,"on"),"Performance owns the pane before switching to Maintenance");
+        check(!AdministratorCommand.IsEnabled&&AdministratorCommand.Opacity==0.4&&AdministratorCommand.Tag==null&&System.Windows.Automation.AutomationProperties.GetItemStatus(AdministratorCommand)=="Explorer only","Performance panels disable the file-browsing-only administrator shield");
         MaintenanceCommand.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await paneModeWork;UpdateLayout();
         check(!PerformanceMode&&!performance.IsVisible&&!performance.Analysis.IsVisible&&performance.Selected==-1&&PerformanceCommand.Tag==null,"Entering Maintenance exits the prior Performance cards and analysis");
         await CloseMaintenance();UpdateLayout();check(!PerformanceMode&&StatsRow.IsVisible&&PaneArea.IsVisible,"Leaving Maintenance returns to files rather than reviving hidden Performance");

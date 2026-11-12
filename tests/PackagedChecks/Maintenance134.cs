@@ -49,7 +49,7 @@ sealed partial class PackageProbe
         Check(performanceButton.IsEnabled&&!shield.IsEnabled&&performanceButton.Opacity<1&&shield.Opacity==0.4&&
             AutomationProperties.GetItemStatus(performanceButton)=="Off"&&AutomationProperties.GetItemStatus(shield)=="Explorer only",
             "Delivered Maintenance keeps Performance switching available but disables the Explorer-only administrator shield");
-        Check(shield.ContextMenu?.Items.OfType<MenuItem>().Any(x=>(string)x.Header=="End administrator session")==true,"Delivered Explorer administrator control retains its own session-end action");
+        Check(shield.ContextMenu==null,"Delivered shield manages file browsing only, with no session-end action that would also end Performance's elevated work");
         string[] reviewedCleanup=["error-reports","scoop-cache","scoop-versions","thumbnail-cache","user-temp","windows-temp"];
         var cleanupRows=rows.Items.Cast<object>().ToArray();
         string[] actionableManagers=["manager-chocolatey","manager-npm","manager-pip","manager-dotnet-tool"];

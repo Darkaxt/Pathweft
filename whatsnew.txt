@@ -1,6 +1,11 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.57 | 2026-11-12 | Administrator shield for files only
+
+- The administrator shield now only switches file browsing between standard and administrator access. It is greyed out in the Performance panels, which use the administrator access granted when Pathweft starts.
+- The shield no longer has an "End administrator session" menu, which also stopped Performance's detailed disk activity.
+
 ## 1.1.56 | 2026-11-11 | Safer updates
 
 - Opening a folder while an update is installing no longer breaks the update; the folder opens in File Explorer until it finishes.

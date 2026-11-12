@@ -10,24 +10,22 @@ public partial class MainWindow
     Task accessWork=Task.CompletedTask;
     void InitializeAdministrator()
     {
-        var menu=new ContextMenu();var end=new MenuItem{Header="End administrator session"};
-        end.Click+=async(_,_)=>{accessWork=EndAdministrator();await accessWork;};menu.Items.Add(end);
-        menu.Opened+=(_,_)=>end.IsEnabled=AdministratorSession.Available&&!changingAccess;
-        AdministratorCommand.ContextMenu=menu;
         Left.AdministratorRequested+=RequestAdministrator;Right.AdministratorRequested+=RequestAdministrator;
         AdministratorSession.Changed+=AdministratorChanged;
         Closed+=(_,_)=>AdministratorSession.Changed-=AdministratorChanged;
         UpdateAdministrator();
     }
+    // The shield manages file-browsing authority only. Performance and Maintenance views hide the
+    // file panes, so it is disabled there; their elevated work uses the launch-time session.
     void UpdateAdministrator()
     {
-        bool admin=AdministratorSession.Browsing,ready=AdministratorSession.Available;
-        AdministratorCommand.Tag=admin&&!maintenanceVisible?"on":null;
-        string caption=maintenanceVisible?"Explorer administrator access is available in file mode":admin?"Administrator access — switch to standard":ready?"Standard access — administrator session ready":"Standard access — switch to administrator";
+        bool admin=AdministratorSession.Browsing,ready=AdministratorSession.Available,away=maintenanceVisible||AnalysisVisible;
+        AdministratorCommand.Tag=admin&&!away?"on":null;
+        string caption=away?"Explorer administrator access is available in file mode":admin?"Administrator access — switch to standard":ready?"Standard access — administrator session ready":"Standard access — switch to administrator";
         AdministratorCommand.ToolTip=caption;AutomationProperties.SetName(AdministratorCommand,caption);
-        AutomationProperties.SetItemStatus(AdministratorCommand,maintenanceVisible?"Explorer only":admin?"Administrator":ready?"Standard; administrator session ready":"Standard");
-        AdministratorCommand.IsEnabled=!changingAccess&&!maintenanceVisible;
-        AdministratorCommand.Opacity=changingAccess||maintenanceVisible?0.4:1;
+        AutomationProperties.SetItemStatus(AdministratorCommand,away?"Explorer only":admin?"Administrator":ready?"Standard; administrator session ready":"Standard");
+        AdministratorCommand.IsEnabled=!changingAccess&&!away;
+        AdministratorCommand.Opacity=changingAccess||away?0.4:1;
         Left.UpdateFolderAccessAction(!changingAccess);Right.UpdateFolderAccessAction(!changingAccess);
     }
     void AdministratorChanged()
@@ -52,7 +50,7 @@ public partial class MainWindow
         await Left.RefreshAccessMode();await Right.RefreshAccessMode();
     }
     async void Administrator_Click(object sender,RoutedEventArgs e)
-    {if(changingAccess||maintenanceVisible)return;accessWork=ToggleAdministrator();await accessWork;}
+    {if(changingAccess||maintenanceVisible||AnalysisVisible)return;accessWork=ToggleAdministrator();await accessWork;}
     async void RequestAdministrator()
     {if(changingAccess||maintenanceVisible||AdministratorSession.Browsing)return;accessWork=ToggleAdministrator();await accessWork;}
     async Task ToggleAdministrator()
@@ -65,7 +63,7 @@ public partial class MainWindow
         }
         catch(Exception error)when(error is System.IO.IOException or System.ComponentModel.Win32Exception or OperationCanceledException or InvalidOperationException)
         {Status.Text=error.Message;}
-        finally{changingAccess=false;UpdateAdministrator();if(AdministratorSession.Available)performance.AdministratorReady();}
+        finally{changingAccess=false;UpdateAdministrator();}
     }
     // ACCESS-04: once per run, after the first frame of an interactive window. Browsing never waits
     // for it; cancelling leaves Standard access with the explicit shield and I/O actions as retries.

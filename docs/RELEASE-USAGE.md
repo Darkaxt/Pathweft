@@ -1,6 +1,8 @@
-# Pathweft 1.1.56
+# Pathweft 1.1.57
 
-Pathweft 1.1.56 keeps an interrupted update from leaving Pathweft unable to
+Pathweft 1.1.57 limits the administrator shield to file browsing: it is disabled
+in the Performance panels, and Performance uses the access granted at launch.
+1.1.56 keeps an interrupted update from leaving Pathweft unable to
 start, which stopped every folder from opening. 1.1.55 fixed Settings closing the
 app and the missing reopen after an update. 1.1.54 started through a
 normal-priority sign-in task, asks for administrator access once when it starts,
