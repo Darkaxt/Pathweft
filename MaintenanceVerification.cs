@@ -34,7 +34,8 @@ public partial class MainWindow
         check(!maintenance.IsVisible&&PaneArea.IsVisible&&!AnalysisVisible&&TerminalCommand.IsEnabled&&Equals(MaintenanceCommand.Tag,"on")&&maintenance.Cards.IsVisible,"Brush first opens only the five Maintenance cards, preserving the usable file browser");
         string automaticState=maintenance.State;
         await maintenance.CategoryForVerification("Cleanup");UpdateLayout();
-        check(maintenance.IsVisible&&!PaneArea.IsVisible&&AnalysisVisible&&!TerminalCommand.IsEnabled,"Cleanup card opens the analysis section and gates hidden file actions");
+        check(maintenance.IsVisible&&!PaneArea.IsVisible&&AnalysisVisible&&!TerminalCommand.IsEnabled&&MaintenanceCommand.IsEnabled&&!PerformanceCommand.IsEnabled&&!AdministratorCommand.IsEnabled&&!HiddenToggle.IsEnabled,
+            "Cleanup card opens the analysis section and disables every command except Maintenance itself, including Performance and the shield");
         check(!maintenance.ActionLabelsForVerification.Contains("Refresh")&&!maintenance.ActionLabelsForVerification.Contains("Analyze"),"Maintenance has no manual Refresh or generic Analyze action");
         var managerProgress=new CleanupProgressWindow(this,"Npm fixture",()=>{});
         managerProgress.Show();
@@ -65,8 +66,8 @@ public partial class MainWindow
         check(maintenance.Rows.SelectedItem==null,"Automatic analysis does not select a cleanup action on the user's behalf");
         maintenance.Rows.SelectedItem=maintenance.Rows.Items.Cast<MaintenanceRow>().Single(r=>r.Id=="windows-temp");
         check(!maintenance.CleanEnabledForVerification&&maintenance.ActionLabelsForVerification.Contains("Use administrator access")&&
-            !AdministratorCommand.IsEnabled&&!AdministratorSession.MaintenanceAvailable,
-            "Protected Cleanup requires its own explicit administrator review; Explorer's shield stays disabled and no elevation starts on entry");
+            !AdministratorSession.MaintenanceAvailable,
+            "Protected Cleanup requires its own explicit administrator review and no elevation starts on entry");
         maintenance.Rows.SelectedItem=null;
         var scoopRow=maintenance.Rows.Items.Cast<MaintenanceRow>().Single(r=>r.Id=="scoop-versions");maintenance.Rows.SelectedItem=scoopRow;
         check(scoopRow.State=="2 obsolete versions"&&maintenance.ExplanationForVerification.Contains("owned-ui-package"),"Automatic Scoop inventory and full candidate path reach the assessment independently of index coverage");
@@ -123,7 +124,7 @@ public partial class MainWindow
         reached=new(TaskCreationOptions.RunContinuationsAsynchronously);resume=new(TaskCreationOptions.RunContinuationsAsynchronously);
         maintenance.AnalyzeStepForVerification=async index=>{if(index==4){reached.TrySetResult();await resume.Task;}};
         originalWork=maintenance.Show();await reached.Task;maintenance.SelectCategoryForVerification("Cleanup");
-        check(HiddenToggle.Visibility==Visibility.Visible&&HiddenToggle.Tag==null,"Hidden-files eye remains visible with no inherited active square in Maintenance");
+        check(HiddenToggle.Visibility==Visibility.Visible&&Equals(HiddenToggle.Tag,"on")==Settings.ShowHidden,"Hidden-files eye stays visible and keeps showing its own setting in Maintenance");
         int diskTransitions=0;var diskEnabled=System.ComponentModel.DependencyPropertyDescriptor.FromProperty(IsEnabledProperty,typeof(Button));
         EventHandler diskStateChanged=(_,_)=>diskTransitions++;diskEnabled.AddValueChanged(AnalyzeSpaceCommand,diskStateChanged);
         try{for(int i=0;i<12;i++){UpdateStats();UpdateCommandStates();}}
@@ -141,17 +142,20 @@ public partial class MainWindow
         check(!maintenance.IsVisible&&PaneArea.IsVisible&&maintenance.State=="All categories reviewed. Nothing has been removed.","Maintenance reopens cards-first after the original analysis and review disposal finish");
         check(maintenance.Cards.IsVisible&&!StatsRow.IsVisible&&!performance.IsVisible&&((System.Windows.Controls.Primitives.UniformGrid)maintenance.Cards).Children.Count==5,"Brush replaces the bottom statistics with exactly five maintenance summary tabs");
         check(!PerformanceMode&&PerformanceCommand.Tag==null&&System.Windows.Automation.AutomationProperties.GetItemStatus(PerformanceCommand)=="Off"&&
-            PerformanceCommand.IsEnabled&&!AdministratorCommand.IsEnabled&&PerformanceCommand.Opacity<1&&AdministratorCommand.Opacity==0.4&&
-            System.Windows.Automation.AutomationProperties.GetItemStatus(AdministratorCommand)=="Explorer only"&&!AdministratorSession.MaintenanceAvailable,
-            "Maintenance subordinates Performance and disables the Explorer-only administrator shield without starting its own elevated backend");
+            PerformanceCommand.IsEnabled&&AdministratorCommand.IsEnabled&&TerminalCommand.IsEnabled&&HiddenToggle.IsEnabled&&PerformanceCommand.Opacity==1&&
+            System.Windows.Automation.AutomationProperties.GetItemStatus(AdministratorCommand)!="Explorer only"&&!AdministratorSession.MaintenanceAvailable,
+            "Maintenance cards leave the file panes and every toolbar command, including Performance and the shield, usable without starting the Maintenance backend");
         PerformanceCommand.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await paneModeWork;UpdateLayout();
         check(!maintenanceVisible&&!maintenance.IsVisible&&PerformanceMode&&MaintenanceCommand.Tag==null&&Equals(PerformanceCommand.Tag,"on")&&
-            PerformanceCommand.Opacity==1&&AdministratorCommand.IsEnabled&&AdministratorCommand.Opacity==1,"Performance toolbar atomically replaces Maintenance and restores Explorer access controls");
+            PerformanceCommand.Opacity==1&&AdministratorCommand.IsEnabled&&AdministratorCommand.Opacity==1&&MaintenanceCommand.IsEnabled&&HiddenToggle.IsEnabled&&TerminalCommand.IsEnabled,
+            "Performance cards replace Maintenance's and leave the file panes and every toolbar command usable");
         PerformanceCommand.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await paneModeWork;UpdateLayout();
         check(!PerformanceMode&&PerformanceCommand.Tag==null&&StatsRow.IsVisible&&PaneArea.IsVisible,"Performance toolbar switches off to the standard file view");
         PerformanceCommand.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await paneModeWork;performance.Select(PerformancePanel.Cpu);UpdateLayout();
         check(PerformanceMode&&performance.Analysis.IsVisible&&Equals(PerformanceCommand.Tag,"on"),"Performance owns the pane before switching to Maintenance");
-        check(!AdministratorCommand.IsEnabled&&AdministratorCommand.Opacity==0.4&&AdministratorCommand.Tag==null&&System.Windows.Automation.AutomationProperties.GetItemStatus(AdministratorCommand)=="Explorer only","Performance panels disable the file-browsing-only administrator shield");
+        check(!AdministratorCommand.IsEnabled&&AdministratorCommand.Opacity==0.4&&System.Windows.Automation.AutomationProperties.GetItemStatus(AdministratorCommand)=="Explorer only"&&
+            PerformanceCommand.IsEnabled&&!MaintenanceCommand.IsEnabled&&!HiddenToggle.IsEnabled&&!PanesCommand.IsEnabled&&!TerminalCommand.IsEnabled,
+            "A Performance panel replacing the files disables every command except Performance itself, including Maintenance and the shield");
         MaintenanceCommand.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await paneModeWork;UpdateLayout();
         check(!PerformanceMode&&!performance.IsVisible&&!performance.Analysis.IsVisible&&performance.Selected==-1&&PerformanceCommand.Tag==null,"Entering Maintenance exits the prior Performance cards and analysis");
         await CloseMaintenance();UpdateLayout();check(!PerformanceMode&&StatsRow.IsVisible&&PaneArea.IsVisible,"Leaving Maintenance returns to files rather than reviving hidden Performance");

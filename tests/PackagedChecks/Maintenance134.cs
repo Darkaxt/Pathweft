@@ -18,8 +18,8 @@ sealed partial class PackageProbe
         command.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         var panel=owner.GetType().GetField("maintenance",Flags).GetValue(owner);
         var type=panel.GetType();
-        Check(hidden.Visibility==Visibility.Visible&&hidden.Tag==null&&((Border)panel).Visibility==Visibility.Collapsed&&((FrameworkElement)owner.FindName("PaneArea")).Visibility==Visibility.Visible,
-            "Delivered Maintenance starts with cards and browser; Hidden stays visible without an active square");
+        Check(hidden.Visibility==Visibility.Visible&&(hidden.Tag as string=="on")==(AutomationProperties.GetItemStatus(hidden)=="On")&&((Border)panel).Visibility==Visibility.Collapsed&&((FrameworkElement)owner.FindName("PaneArea")).Visibility==Visibility.Visible,
+            "Delivered Maintenance starts with cards and browser; Hidden stays visible with its own setting");
         await (Task)owner.GetType().GetField("paneModeWork",Flags).GetValue(owner);
         var cards=(UniformGrid)type.GetProperty("Cards",Flags).GetValue(panel);
         var rows=(ListView)type.GetProperty("Rows",Flags).GetValue(panel);
@@ -46,9 +46,10 @@ sealed partial class PackageProbe
             "Delivered popup labels rejected cache cleanup as a failure without a false total");
         popup.Close();
         var performanceButton=(Button)owner.FindName("PerformanceCommand");
-        Check(performanceButton.IsEnabled&&!shield.IsEnabled&&performanceButton.Opacity<1&&shield.Opacity==0.4&&
-            AutomationProperties.GetItemStatus(performanceButton)=="Off"&&AutomationProperties.GetItemStatus(shield)=="Explorer only",
-            "Delivered Maintenance keeps Performance switching available but disables the Explorer-only administrator shield");
+        bool panesShown=((FrameworkElement)owner.FindName("PaneArea")).Visibility==Visibility.Visible;
+        Check(performanceButton.IsEnabled==panesShown&&shield.IsEnabled==panesShown&&command.IsEnabled&&
+            AutomationProperties.GetItemStatus(performanceButton)=="Off"&&(AutomationProperties.GetItemStatus(shield)=="Explorer only")==!panesShown,
+            "Delivered Maintenance toolbar follows the file panes: usable with the cards, only the Maintenance button with a category open");
         Check(shield.ContextMenu==null,"Delivered shield manages file browsing only, with no session-end action that would also end Performance's elevated work");
         string[] reviewedCleanup=["error-reports","scoop-cache","scoop-versions","thumbnail-cache","user-temp","windows-temp"];
         var cleanupRows=rows.Items.Cast<object>().ToArray();
@@ -68,7 +69,7 @@ sealed partial class PackageProbe
         rows.SelectedItem=rows.Items.Cast<object>().Single(row=>(string)Get(row,"Id")=="windows-temp");
         var protectedAction=(Button)type.GetField("protectedReview",Flags).GetValue(panel);
         var cleanAction=(Button)type.GetField("change",Flags).GetValue(panel);
-        Check(protectedAction.Visibility==Visibility.Visible&&protectedAction.IsEnabled&&!cleanAction.IsEnabled&&!shield.IsEnabled,
+        Check(protectedAction.Visibility==Visibility.Visible&&protectedAction.IsEnabled&&!cleanAction.IsEnabled,
             "Delivered protected Cleanup requires its own review before Clean and does not depend on the Explorer shield");
         rows.SelectedItem=null;
         string[] categories=["Cleanup","Startup","Services","Windows tweaks","Windows apps"];

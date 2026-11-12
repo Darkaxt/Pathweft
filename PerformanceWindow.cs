@@ -75,13 +75,18 @@ public partial class MainWindow
         performance.Analysis.Visibility=show?Visibility.Visible:Visibility.Collapsed;
         PaneArea.Visibility=AnalysisVisible?Visibility.Collapsed:Visibility.Visible;
         HiddenToggle.Visibility=Visibility.Visible;
-        HiddenToggle.Tag=!maintenanceVisible&&!PerformanceMode&&Settings.ShowHidden?"on":null;
-        // File actions must never target a selection hidden behind analysis.
-        if(PerformanceCommand.Parent is Panel commands)foreach(var child in commands.Children)
-            if(child is Button button&&button!=PerformanceCommand&&button!=TransfersButton&&button!=MaintenanceCommand&&button!=AdministratorCommand&&button!=AnalyzeSpaceCommand)button.IsEnabled=!AnalysisVisible;
+        HiddenToggle.Tag=Settings.ShowHidden?"on":null;
+        // One rule for the whole bar: it follows what is on screen. While the file panes show
+        // (the Performance or Maintenance cards only replace the bottom statistics) every
+        // command works as usual. A Performance panel or Maintenance category that replaces
+        // the panes disables everything except its own button, which leads back; Transfers is
+        // global. File actions thereby never target a selection hidden behind the view.
+        bool files=!AnalysisVisible;
+        var owner=files?null:maintenanceVisible?MaintenanceCommand:PerformanceCommand;
+        foreach(var button in CommandButtons.Children.OfType<Button>())
+            if(button!=TransfersButton&&button!=AdministratorCommand&&button!=AnalyzeSpaceCommand)button.IsEnabled=files||button==owner;
         UpdateSpaceCommandState();
         MaintenanceCommand.Tag=maintenanceVisible?"on":null;
-        PerformanceCommand.Opacity=maintenanceVisible?0.55:1;
         UpdateAdministrator();
         AutomationProperties.SetItemStatus(MaintenanceCommand,maintenanceVisible?"On":"Off");
         MaintenanceCommand.ToolTip=maintenanceVisible?"Show folder statistics":"Show maintenance";

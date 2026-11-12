@@ -27,7 +27,7 @@ public partial class MainWindow
         if(AnalyzeSpaceCommand!=null)
         {
             AnalyzeSpaceCommand.IsEnabled=!AnalysisVisible&&active?.CanAnalyzeSpace==true;
-            AnalyzeSpaceCommand.Tag=!AnalysisVisible&&active?.SpaceAnalyzing==true?"on":null;
+            AnalyzeSpaceCommand.Tag=active?.SpaceAnalyzing==true?"on":null;
             AnalyzeSpaceCommand.ToolTip=active?.SpaceAnalyzing==true?"Restore the previous view":"Analyze space in this folder";
             System.Windows.Automation.AutomationProperties.SetItemStatus(AnalyzeSpaceCommand,active?.SpaceAnalyzing==true?"On":"Off");
         }

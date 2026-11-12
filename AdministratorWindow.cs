@@ -15,17 +15,17 @@ public partial class MainWindow
         Closed+=(_,_)=>AdministratorSession.Changed-=AdministratorChanged;
         UpdateAdministrator();
     }
-    // The shield manages file-browsing authority only. Performance and Maintenance views hide the
-    // file panes, so it is disabled there; their elevated work uses the launch-time session.
+    // The shield manages file-browsing authority only: usable whenever the file panes show,
+    // disabled while a Performance panel or Maintenance category replaces them (see ShowAnalysis).
+    // Performance and Maintenance elevated work uses the launch-time and Maintenance sessions.
     void UpdateAdministrator()
     {
-        bool admin=AdministratorSession.Browsing,ready=AdministratorSession.Available,away=maintenanceVisible||AnalysisVisible;
-        AdministratorCommand.Tag=admin&&!away?"on":null;
+        bool admin=AdministratorSession.Browsing,ready=AdministratorSession.Available,away=AnalysisVisible;
+        AdministratorCommand.Tag=admin?"on":null;
         string caption=away?"Explorer administrator access is available in file mode":admin?"Administrator access — switch to standard":ready?"Standard access — administrator session ready":"Standard access — switch to administrator";
         AdministratorCommand.ToolTip=caption;AutomationProperties.SetName(AdministratorCommand,caption);
         AutomationProperties.SetItemStatus(AdministratorCommand,away?"Explorer only":admin?"Administrator":ready?"Standard; administrator session ready":"Standard");
         AdministratorCommand.IsEnabled=!changingAccess&&!away;
-        AdministratorCommand.Opacity=changingAccess||away?0.4:1;
         Left.UpdateFolderAccessAction(!changingAccess);Right.UpdateFolderAccessAction(!changingAccess);
     }
     void AdministratorChanged()
@@ -50,9 +50,9 @@ public partial class MainWindow
         await Left.RefreshAccessMode();await Right.RefreshAccessMode();
     }
     async void Administrator_Click(object sender,RoutedEventArgs e)
-    {if(changingAccess||maintenanceVisible||AnalysisVisible)return;accessWork=ToggleAdministrator();await accessWork;}
+    {if(changingAccess||AnalysisVisible)return;accessWork=ToggleAdministrator();await accessWork;}
     async void RequestAdministrator()
-    {if(changingAccess||maintenanceVisible||AdministratorSession.Browsing)return;accessWork=ToggleAdministrator();await accessWork;}
+    {if(changingAccess||AnalysisVisible||AdministratorSession.Browsing)return;accessWork=ToggleAdministrator();await accessWork;}
     async Task ToggleAdministrator()
     {
         changingAccess=true;UpdateAdministrator();

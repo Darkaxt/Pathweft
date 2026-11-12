@@ -1,6 +1,12 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.58 | 2026-11-12 | One rule for the command bar
+
+- The command bar now follows what is on screen. While your folders show, including with the Performance or Maintenance cards at the bottom, every button works as usual, the administrator shield included.
+- When a Performance panel or a Maintenance category takes the place of your folders, every button is greyed out except the one that opened it, which takes you back. Transfers stays available.
+- The hidden-files button keeps showing whether hidden files are on in every mode.
+
 ## 1.1.57 | 2026-11-12 | Administrator shield for files only
 
 - The administrator shield now only switches file browsing between standard and administrator access. It is greyed out in the Performance panels, which use the administrator access granted when Pathweft starts.

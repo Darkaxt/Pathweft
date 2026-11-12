@@ -1,6 +1,8 @@
-# Pathweft 1.1.57
+# Pathweft 1.1.58
 
-Pathweft 1.1.57 limits the administrator shield to file browsing: it is disabled
+Pathweft 1.1.58 gives the command bar one consistent rule: everything works while
+the file panes show, and a Performance panel or Maintenance category that replaces
+them leaves only its own button to lead back. 1.1.57 limits the administrator shield to file browsing: it is disabled
 in the Performance panels, and Performance uses the access granted at launch.
 1.1.56 keeps an interrupted update from leaving Pathweft unable to
 start, which stopped every folder from opening. 1.1.55 fixed Settings closing the
