@@ -72,6 +72,11 @@ public partial class MainWindow
         maintenance.SearchForVerification("Storage Sense");
         check(maintenance.Rows.Items.Count==1&&maintenance.Rows.Items.Cast<MaintenanceRow>().Single().Name=="Storage Sense","Actual search filters settings by name/effect");
         maintenance.Rows.SelectedIndex=0;check(maintenance.ExplanationForVerification.Contains("Automatic Storage Sense")&&maintenance.ExplanationForVerification.Contains("reviewed"),"Selected setting explains feature loss and review scope");
+        maintenance.CloseExplanationForVerification();var kept=maintenance.Rows.SelectedItem;
+        check(!maintenance.ExplanationShownForVerification&&kept!=null,"Close hides the details well and keeps the selection and its actions");
+        maintenance.Rows.SelectedIndex=-1;maintenance.Rows.SelectedItem=kept;check(maintenance.ExplanationShownForVerification,"Selecting a row again shows its details");
+        check(VirtualizingPanel.GetIsVirtualizingWhenGrouping(maintenance.Rows)&&VirtualizingPanel.GetScrollUnit(maintenance.Rows)==ScrollUnit.Pixel&&
+            VirtualizingPanel.GetVirtualizationMode(maintenance.Rows)==VirtualizationMode.Recycling,"Grouped tweak rows stay virtualized with smooth pixel scrolling");
         maintenance.SearchForVerification("");maintenance.GroupForVerification("File Explorer");
         check(maintenance.Rows.Items.Count>0&&maintenance.Rows.Items.Cast<MaintenanceRow>().All(r=>r.Group=="File Explorer"),"Category selector filters existing settings without changing Windows");
         maintenance.GroupForVerification("All categories");check(maintenance.Rows.Items.Count==all,"Clearing category restores the complete typed setting list");

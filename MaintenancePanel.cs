@@ -43,6 +43,8 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
     readonly TextBlock explanationTitle=new(){FontWeight=FontWeights.SemiBold,TextWrapping=TextWrapping.Wrap};
     readonly TextBox explanationText=new(){IsReadOnly=true,TextWrapping=TextWrapping.Wrap,Margin=new(0,6,0,0),Background=Brushes.Transparent,BorderThickness=new(0),Padding=new(0),IsReadOnlyCaretVisible=true};
     readonly TextBlock sourceText=new(){Margin=new(0,6,0,0),TextWrapping=TextWrapping.Wrap};
+    readonly Button closeExplanation=new(){Content="\uE711",Width=28,Height=28,ToolTip="Close details (Esc)",VerticalAlignment=VerticalAlignment.Top,Margin=new(8,-6,-6,0)};
+    string dismissedExplanation;
     bool updatingFilters;
     MaintenanceRow[] overviewSelection;
     CancellationTokenSource reading=new();Task work=Task.CompletedTask,hiding;bool busy,inspecting,cleaning,disposed,refreshPending;
@@ -73,6 +75,8 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
     internal void SearchForVerification(string text)=>search.Text=text;
     internal void GroupForVerification(string text)=>groups.SelectedItem=text;
     internal string ExplanationForVerification=>explanationText.Text;
+    internal bool ExplanationShownForVerification=>explanation.Visibility==Visibility.Visible;
+    internal void CloseExplanationForVerification()=>closeExplanation.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent));
     internal Task DoubleClickForVerification(DependencyObject source)
     {
         table.RaiseEvent(new MouseButtonEventArgs(InputManager.Current.PrimaryMouseDevice,0,MouseButton.Left){RoutedEvent=Control.MouseDoubleClickEvent,Source=source});
@@ -100,10 +104,16 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
         filters.Children.Add(groups);filters.Children.Add(goals);filters.Children.Add(search);var clear=new Button{Content="Clear",MinHeight=32};clear.SetResourceReference(StyleProperty,"AuxiliaryAction");clear.Click+=(_,_)=>{search.Clear();groups.SelectedIndex=0;goals.SelectedIndex=0;};filters.Children.Add(clear);intro.Children.Add(filters);
         search.TextChanged+=(_,_)=>FilterRows();groups.SelectionChanged+=(_,_)=>FilterRows();goals.SelectionChanged+=(_,_)=>FilterRows();
         explanation.SetResourceReference(BackgroundProperty,"Palette.0AFFFFFF");explanation.CornerRadius=new(8);
-        var detail=new StackPanel();detail.Children.Add(explanationTitle);detail.Children.Add(explanationText);detail.Children.Add(sourceText);
+        var detail=new StackPanel();var titleRow=new DockPanel();DockPanel.SetDock(closeExplanation,Dock.Right);titleRow.Children.Add(closeExplanation);titleRow.Children.Add(explanationTitle);
+        detail.Children.Add(titleRow);detail.Children.Add(explanationText);detail.Children.Add(sourceText);
+        closeExplanation.SetResourceReference(StyleProperty,"IconButton");AutomationProperties.SetName(closeExplanation,"Close details");
+        // Dismissing hides only the details; the selection and its actions stay. Selecting another row shows them again.
+        closeExplanation.Click+=(_,_)=>{dismissedExplanation=(table.SelectedItem as MaintenanceRow)?.Id;Explain();table.Focus();};
+        table.PreviewKeyDown+=(_,e)=>{if(e.Key==Key.Escape&&explanation.Visibility==Visibility.Visible){closeExplanation.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent));e.Handled=true;}};
         explanationText.SetResourceReference(Control.ForegroundProperty,"Muted");AutomationProperties.SetName(explanationText,"Selected maintenance assessment");
         explanation.Child=new ScrollViewer{Content=detail,MaxHeight=150,VerticalScrollBarVisibility=ScrollBarVisibility.Auto};Grid.SetRow(explanation,2);body.Children.Add(explanation);
         table.SetResourceReference(Control.ForegroundProperty,"Palette.E8EEF6");VirtualizingPanel.SetIsVirtualizing(table,true);VirtualizingPanel.SetIsVirtualizingWhenGrouping(table,true);VirtualizingPanel.SetVirtualizationMode(table,VirtualizationMode.Recycling);ScrollViewer.SetCanContentScroll(table,true);
+        VirtualizingPanel.SetScrollUnit(table,ScrollUnit.Pixel);VirtualizingPanel.SetCacheLengthUnit(table,VirtualizationCacheLengthUnit.Page);VirtualizingPanel.SetCacheLength(table,new VirtualizationCacheLength(1));
         Columns();Grid.SetRow(table,1);body.Children.Add(table);AutomationProperties.SetName(table,"Maintenance items");
         table.AddHandler(GridViewColumnHeader.ClickEvent,new RoutedEventHandler((_,e)=>
         {
@@ -464,7 +474,9 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
     void FilterRows(){if(updatingFilters||table.ItemsSource==null)return;filterStates[Category]=(search.Text,groups.SelectedItem as string);CollectionViewSource.GetDefaultView(table.ItemsSource).Refresh();Explain();}
     void Explain()
     {
-        if(table.SelectedItem is not MaintenanceRow row){explanation.Visibility=Visibility.Collapsed;return;}
+        if(table.SelectedItem is not MaintenanceRow row){dismissedExplanation=null;explanation.Visibility=Visibility.Collapsed;return;}
+        if(row.Id==dismissedExplanation){explanation.Visibility=Visibility.Collapsed;return;}
+        dismissedExplanation=null;
         explanation.Visibility=Visibility.Visible;explanationTitle.Text=Category=="Windows tweaks"?string.Join(" · ",new[]{row.RecommendationLabel,row.RiskLabel,row.Goal,row.Name}.Where(x=>x.Length>0)):row.Name;
         string effect=Category switch
         {
