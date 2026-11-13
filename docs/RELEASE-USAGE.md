@@ -1,6 +1,7 @@
-# Pathweft 1.1.64
+# Pathweft 1.1.65
 
-Pathweft 1.1.64 adds Maintenance › Security check, a read-only comparison with the
+Pathweft 1.1.65 runs PowerShell scripts from the context menu
+(Run with PowerShell, and Run as administrator under Tools). 1.1.64 adds Maintenance › Security check, a read-only comparison with the
 HardeningKitty machine list, eight opt-in hardening tweaks with Restore, and a
 Memory growth event in System analysis, and shortcut details in preview. 1.1.62 uses the administrator approval given at launch for Maintenance
 and uninstallers too, so no further UAC prompt follows it. 1.1.61 turns Maintenance › Windows apps into an uninstaller for desktop

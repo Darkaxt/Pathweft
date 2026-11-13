@@ -1,6 +1,12 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.65 | 2026-11-14 | Run PowerShell scripts
+
+**Context menu**
+- A PowerShell script (.ps1) now has Run with PowerShell, which runs it in its own console from its folder, and Run as administrator under Tools. PowerShell 7 is used when installed, otherwise Windows PowerShell.
+- Double-clicking a script still opens it for editing, as in Windows, so nothing runs by accident.
+
 ## 1.1.64 | 2026-11-14 | Security check, memory growth and shortcut details
 
 **Maintenance › Security check**
