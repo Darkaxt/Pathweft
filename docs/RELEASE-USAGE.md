@@ -1,6 +1,7 @@
-# Pathweft 1.1.61
+# Pathweft 1.1.62
 
-Pathweft 1.1.61 turns Maintenance › Windows apps into an uninstaller for desktop
+Pathweft 1.1.62 uses the administrator approval given at launch for Maintenance
+and uninstallers too, so no further UAC prompt follows it. 1.1.61 turns Maintenance › Windows apps into an uninstaller for desktop
 programs, Store apps, Scoop and Chocolatey packages, with bulk uninstall in Bulk
 Crap Uninstaller's order and leftover cleanup with Restore. 1.1.60 organises Maintenance › Windows tweaks by goal (Debloat, Privacy,
 Performance, Security, Personalize), adds 81 individually journaled settings from
@@ -32,8 +33,9 @@ is shown for the fully reviewed Windows tweaks catalog; Startup, Services and
 Windows apps show their actual state and selected details without a mostly empty
 advice column. Cleaning or changing Windows state still requires the explicit
 action button. The administrator shield is for Explorer browsing and is disabled
-in Maintenance; protected Cleanup review and elevated actions use Maintenance's
-own administrator session.
+in Maintenance; protected Cleanup review, elevated actions and desktop uninstallers
+use the administrator session approved at launch, so they do not prompt again.
+Windows asks only when that launch request was declined or turned off.
 Npm Cleanup previews and clears its `_cacache` package store; Npm logs and the
 separate `_npx` tool cache remain outside that action. The popup animates while
 the native manager command runs and reports its final result after readback.

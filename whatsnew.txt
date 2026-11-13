@@ -1,6 +1,13 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.62 | 2026-11-13 | One administrator approval
+
+- Approving administrator access when Pathweft starts now covers Maintenance too: elevated tweaks, services, startup items for all users, protected Cleanup and restore points no longer ask Windows again, and leaving Maintenance keeps the approval until Pathweft closes.
+- Uninstalling desktop programs and Chocolatey packages uses the same approval, so their uninstallers no longer show a second Windows prompt. Store apps and Scoop packages are removed for your account as before.
+- Windows asks only if you declined or turned off the request at launch, and then once until Pathweft closes.
+- The Maintenance details panel keeps its title and × in place while the text scrolls.
+
 ## 1.1.61 | 2026-11-13 | Windows apps: uninstall and leftovers
 
 - Maintenance › Windows apps now lists every installed app: desktop programs, Store apps, Scoop and Chocolatey packages, with publisher, version, size and install date, grouped by source.
