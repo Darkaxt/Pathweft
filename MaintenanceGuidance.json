@@ -1367,7 +1367,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Debloat",
-      "risk": "Low"
+      "risk": "Low",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.copilot-button",
@@ -1383,7 +1385,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Debloat",
-      "risk": "Low"
+      "risk": "Low",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.recall-enablement",
@@ -1399,7 +1403,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Privacy",
-      "risk": "Low"
+      "risk": "Low",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.click-to-do",
@@ -1415,7 +1421,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Debloat",
-      "risk": "Low"
+      "risk": "Low",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.settings-agent",
@@ -1431,7 +1439,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Debloat",
-      "risk": "Low"
+      "risk": "Low",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.agent-connectors",
@@ -1447,7 +1457,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Privacy",
-      "risk": "Low"
+      "risk": "Low",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.agent-workspaces",
@@ -1463,7 +1475,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Privacy",
-      "risk": "Low"
+      "risk": "Low",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.app-ai-access",
@@ -1479,7 +1493,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Privacy",
-      "risk": "Low"
+      "risk": "Low",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.notepad-ai",
@@ -1495,7 +1511,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Debloat",
-      "risk": "Low"
+      "risk": "Low",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.paint-ai",
@@ -1511,7 +1529,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Debloat",
-      "risk": "Low"
+      "risk": "Low",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.edge-copilot-page-context",
@@ -1527,7 +1547,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Privacy",
-      "risk": "Low"
+      "risk": "Low",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.edge-m365-copilot-icon",
@@ -1543,7 +1565,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Debloat",
-      "risk": "Low"
+      "risk": "Low",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.edge-compose",
@@ -1559,7 +1583,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Debloat",
-      "risk": "Low"
+      "risk": "Low",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.edge-history-ai-search",
@@ -1575,7 +1601,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Privacy",
-      "risk": "Low"
+      "risk": "Low",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.edge-local-ai-model",
@@ -1591,7 +1619,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Performance",
-      "risk": "Low"
+      "risk": "Low",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.edge-ntp-copilot",
@@ -1607,7 +1637,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Debloat",
-      "risk": "Low"
+      "risk": "Low",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.tasks-ceip",
@@ -1623,7 +1655,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Privacy",
-      "risk": "Low"
+      "risk": "Low",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.tasks-appraiser",
@@ -1639,7 +1673,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Privacy",
-      "risk": "Caution"
+      "risk": "Caution",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.task-marebackup",
@@ -1655,7 +1691,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Privacy",
-      "risk": "Caution"
+      "risk": "Caution",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.task-startup-app",
@@ -1671,7 +1709,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Debloat",
-      "risk": "Low"
+      "risk": "Low",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.tasks-maps",
@@ -1687,7 +1727,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Debloat",
-      "risk": "Low"
+      "risk": "Low",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.tasks-feedback",
@@ -1703,7 +1745,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Privacy",
-      "risk": "Low"
+      "risk": "Low",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.online-speech",
@@ -1719,7 +1763,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Privacy",
-      "risk": "Low"
+      "risk": "Low",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.inking-typing-personalization",
@@ -1735,7 +1781,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Privacy",
-      "risk": "Low"
+      "risk": "Low",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.inking-typing-diagnostics",
@@ -1751,7 +1799,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Privacy",
-      "risk": "Low"
+      "risk": "Low",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.handwriting-sharing",
@@ -1767,7 +1817,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Privacy",
-      "risk": "Low"
+      "risk": "Low",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.app-launch-tracking",
@@ -1783,7 +1835,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Privacy",
-      "risk": "Low"
+      "risk": "Low",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.recent-docs-tracking",
@@ -1799,7 +1853,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Privacy",
-      "risk": "Low"
+      "risk": "Low",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.feedback-frequency",
@@ -1815,7 +1871,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Privacy",
-      "risk": "Low"
+      "risk": "Low",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.cloud-clipboard",
@@ -1831,7 +1889,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Privacy",
-      "risk": "Low"
+      "risk": "Low",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.cloud-search",
@@ -1847,7 +1907,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Privacy",
-      "risk": "Low"
+      "risk": "Low",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.search-history",
@@ -1863,7 +1925,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Privacy",
-      "risk": "Low"
+      "risk": "Low",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.search-box-web-suggestions",
@@ -1879,7 +1943,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Privacy",
-      "risk": "Low"
+      "risk": "Low",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.app-diagnostics-access",
@@ -1895,7 +1961,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Privacy",
-      "risk": "Low"
+      "risk": "Low",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.account-info-access",
@@ -1911,7 +1979,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Privacy",
-      "risk": "Low"
+      "risk": "Low",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.advertising-id-policy",
@@ -1927,7 +1997,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Privacy",
-      "risk": "Low"
+      "risk": "Low",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.quick-access-recent",
@@ -1943,7 +2015,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Privacy",
-      "risk": "Low"
+      "risk": "Low",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.quick-access-frequent",
@@ -1959,7 +2033,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Privacy",
-      "risk": "Low"
+      "risk": "Low",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.quick-access-cloud-files",
@@ -1975,7 +2051,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Privacy",
-      "risk": "Low"
+      "risk": "Low",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.find-my-device",
@@ -1991,7 +2069,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Privacy",
-      "risk": "Caution"
+      "risk": "Caution",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.edge-diagnostic-data",
@@ -2007,7 +2087,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Privacy",
-      "risk": "Low"
+      "risk": "Low",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.edge-feedback",
@@ -2023,7 +2105,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Privacy",
-      "risk": "Low"
+      "risk": "Low",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.edge-error-page-suggestions",
@@ -2039,7 +2123,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Privacy",
-      "risk": "Low"
+      "risk": "Low",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.consumer-features",
@@ -2055,7 +2141,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Debloat",
-      "risk": "Low"
+      "risk": "Low",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.cloud-optimized-content",
@@ -2071,7 +2159,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Debloat",
-      "risk": "Low"
+      "risk": "Low",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.account-state-content",
@@ -2087,7 +2177,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Debloat",
-      "risk": "Low"
+      "risk": "Low",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.widgets",
@@ -2103,7 +2195,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Debloat",
-      "risk": "Low"
+      "risk": "Low",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.news-interests",
@@ -2135,7 +2229,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Debloat",
-      "risk": "Low"
+      "risk": "Low",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.meet-now",
@@ -2167,7 +2263,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Debloat",
-      "risk": "Low"
+      "risk": "Low",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.device-metadata",
@@ -2183,7 +2281,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Debloat",
-      "risk": "Caution"
+      "risk": "Caution",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.edge-sidebar",
@@ -2199,7 +2299,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Debloat",
-      "risk": "Low"
+      "risk": "Low",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.edge-shopping",
@@ -2215,7 +2317,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Debloat",
-      "risk": "Low"
+      "risk": "Low",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.edge-first-run",
@@ -2231,7 +2335,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Debloat",
-      "risk": "Low"
+      "risk": "Low",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.edge-default-browser-prompt",
@@ -2247,7 +2353,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Debloat",
-      "risk": "Low"
+      "risk": "Low",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.edge-recommendations",
@@ -2263,7 +2371,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Debloat",
-      "risk": "Low"
+      "risk": "Low",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.edge-rewards",
@@ -2279,7 +2389,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Debloat",
-      "risk": "Low"
+      "risk": "Low",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.edge-ntp-content",
@@ -2295,7 +2407,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Debloat",
-      "risk": "Low"
+      "risk": "Low",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.nav-home",
@@ -2311,7 +2425,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Personalize",
-      "risk": "Low"
+      "risk": "Low",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.nav-gallery",
@@ -2327,7 +2443,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Personalize",
-      "risk": "Low"
+      "risk": "Low",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.nav-onedrive",
@@ -2343,7 +2461,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Personalize",
-      "risk": "Low"
+      "risk": "Low",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.title-full-path",
@@ -2359,7 +2479,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Personalize",
-      "risk": "Low"
+      "risk": "Low",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.checkboxes",
@@ -2375,7 +2497,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Personalize",
-      "risk": "Low"
+      "risk": "Low",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.separate-process",
@@ -2391,7 +2515,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Personalize",
-      "risk": "Low"
+      "risk": "Low",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.folder-type-discovery",
@@ -2407,7 +2533,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Performance",
-      "risk": "Low"
+      "risk": "Low",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.shortcut-suffix",
@@ -2423,7 +2551,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Personalize",
-      "risk": "Low"
+      "risk": "Low",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.long-paths",
@@ -2439,7 +2569,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Personalize",
-      "risk": "Low"
+      "risk": "Low",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.start-recommended",
@@ -2455,7 +2587,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Debloat",
-      "risk": "Low"
+      "risk": "Low",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.start-recent-apps",
@@ -2471,7 +2605,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Personalize",
-      "risk": "Low"
+      "risk": "Low",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.start-frequent-apps",
@@ -2487,7 +2623,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Personalize",
-      "risk": "Low"
+      "risk": "Low",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.start-more-pins",
@@ -2503,7 +2641,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Personalize",
-      "risk": "Low"
+      "risk": "Low",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.phone-link-start",
@@ -2519,7 +2659,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Debloat",
-      "risk": "Low"
+      "risk": "Low",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.clock-seconds",
@@ -2535,7 +2677,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Personalize",
-      "risk": "Low"
+      "risk": "Low",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.multi-monitor-taskbar",
@@ -2551,7 +2695,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Personalize",
-      "risk": "Low"
+      "risk": "Low",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.delivery-optimization-peers",
@@ -2567,7 +2713,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Performance",
-      "risk": "Low"
+      "risk": "Low",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.gpu-scheduling",
@@ -2583,7 +2731,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Performance",
-      "risk": "Caution"
+      "risk": "Caution",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.edge-startup-boost",
@@ -2599,7 +2749,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Performance",
-      "risk": "Low"
+      "risk": "Low",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.exclude-driver-updates",
@@ -2615,7 +2767,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Performance",
-      "risk": "Caution"
+      "risk": "Caution",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.no-auto-restart",
@@ -2631,7 +2785,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Personalize",
-      "risk": "Caution"
+      "risk": "Caution",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     },
     {
       "id": "s47.smart-active-hours",
@@ -2647,7 +2803,9 @@
       "maxBuild": 26200,
       "reviewed": "2026-11-13",
       "goal": "Personalize",
-      "risk": "Low"
+      "risk": "Low",
+      "qualified": "2026-11-13",
+      "qualifiedBuild": 26100
     }
   ]
 }

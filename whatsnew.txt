@@ -1,6 +1,13 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.60 | 2026-11-13 | Windows tweaks by goal, risks marked
+
+- Maintenance › Windows tweaks has 81 more settings, 121 in all: Copilot, Recall and other AI features, Edge clutter, privacy and data-collection scheduled tasks, File Explorer, Start and taskbar, and update behaviour. Each setting is applied on its own and Restore puts back exactly what was there before.
+- A new filter picks settings by goal: Debloat, Privacy, Performance, Security or Personalize.
+- Settings with a cost are marked ▲ Caution or ◆ High in colour, and the symbol and word show the level without colour too. Applying one asks first, and No is the default. They are never counted as suggestions.
+- If another tool or Group Policy already set one of these policies, the setting shows "Set outside Pathweft". Restore Windows default removes just that rule's values and keeps them for Restore. Other policies at the same place are listed but never touched.
+
 ## 1.1.59 | 2026-11-12 | Starts on every PC, quoted paths
 
 - Pathweft now starts on PCs without a D: drive. Before, a fresh install on a single-drive PC closed straight away. Its caches and working files go to the first extra internal drive, or to your local app data when Windows' drive is the only one, and stay there. If a drive you chose is missing, Pathweft says so instead of closing.

@@ -1,6 +1,9 @@
-# Pathweft 1.1.59
+# Pathweft 1.1.60
 
-Pathweft 1.1.59 starts on PCs without a D: drive (bulk data takes the first local
+Pathweft 1.1.60 organises Maintenance › Windows tweaks by goal (Debloat, Privacy,
+Performance, Security, Personalize), adds 81 individually journaled settings from
+MIT donors, marks settings with a cost ▲ Caution or ◆ High with a confirmation, and
+can return policies set outside Pathweft to the Windows default. 1.1.59 starts on PCs without a D: drive (bulk data takes the first local
 data drive, or local app data when Windows' drive is the only one), quotes Copy path
 like Explorer and counts hidden items in the footer. 1.1.58 gives the command bar one consistent rule: everything works while
 the file panes show, and a Performance panel or Maintenance category that replaces
@@ -51,11 +54,13 @@ files/shortcuts and scheduled boot/logon tasks, with a Type column identifying t
 source. Windows-owned startup approval is read without rewriting its flags.
 Services lists installed Windows application services with actual startup modes
 and descriptions. All categories use compact single-line summaries with a
-complete selectable detail well. Forty individual tweaks include24 definitions
-adapted from Win11Debloat, grouped by category. Guidance distinguishes reviewed
+complete selectable detail well. 121 individual tweaks, adapted per setting from
+MIT donors (Win11Debloat, Sophia Script, SophiApp, WinUtil, Bloatynosy, RemoveWindowsAI,
+UnattendedWinstall), are grouped by category and filterable by goal; each shows
+its risk, with ▲ Caution and ◆ High marked in colour. Guidance distinguishes reviewed
 Keep enabled, Optional and Advanced advice from unknown identities. Selecting
-an entry shows its effects before acting. Explicit actions run directly without
-an extra app confirmation; double-click toggles supported Startup entries. Supported registry/service changes save exact
+an entry shows its effects before acting. Applying a Caution or High setting asks first (No is
+the default); other explicit actions run directly without an extra app confirmation; double-click toggles supported Startup entries. Supported registry/service changes save exact
 original values for Restore; supported Startup files and tasks retain their exact
 original file/definition and enabled state. Independently changed values or files
 are not overwritten. Maintenance and Performance are mutually exclusive views;
