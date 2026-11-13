@@ -241,7 +241,12 @@ public partial class MainWindow
             m.Items.Add(Item("Open with…", "", "", () => OpenWith(first.Path)));
         if (one && !dir)
         {
-            if (Runnable.Contains(ext)) m.Items.Add(Item("Run as administrator", "", "", () => RunAsAdmin(first.Path)));
+            if (ext.Equals(".ps1", StringComparison.OrdinalIgnoreCase) && File.Exists(first.Path))
+            {
+                m.Items.Add(Item("Run with PowerShell", "", "", () => RunScript(first.Path, false)));
+                m.Items.Add(Item("Run as administrator", "", "", () => RunScript(first.Path, true)));
+            }
+            else if (Runnable.Contains(ext)) m.Items.Add(Item("Run as administrator", "", "", () => RunAsAdmin(first.Path)));
         }
         if (p.InSearch && one)
             m.Items.Add(Item("Open file location", "", "", () => { p.Navigate(Path.GetDirectoryName(first.Path), first.Name); p.FocusList(); }));
@@ -316,7 +321,7 @@ public partial class MainWindow
         void Take(ItemsControl target,Func<MenuItem,bool> predicate){foreach(var item in remaining.Where(predicate).ToArray()){remaining.Remove(item);target.Items.Add(item);}}
         void Group(string name,string glyph,Func<MenuItem,bool> predicate){var group=Item(name,glyph,"",()=>{});Take(group,predicate);if(group.Items.Count>0)menu.Items.Add(group);}
         static bool Named(MenuItem item,params string[] labels)=>labels.Contains(item.Header as string);
-        Take(menu,item=>Named(item,"Open","Open with…","Open in new tab","Open in other pane","Open file location","Edit","Quick View")||item.Tag as string=="shell:openwith"||(item.Header as string)?.StartsWith("Open in ")==true&&item.Header as string!="Open in File Explorer");
+        Take(menu,item=>Named(item,"Open","Run with PowerShell","Open with…","Open in new tab","Open in other pane","Open file location","Edit","Quick View")||item.Tag as string=="shell:openwith"||(item.Header as string)?.StartsWith("Open in ")==true&&item.Header as string!="Open in File Explorer");
         menu.Items.Add(new Separator());
         Take(menu,item=>Named(item,"Cut","Copy","Paste","Paste into folder","Rename","Rename all…","Delete","Delete permanently"));
         menu.Items.Add(new Separator());

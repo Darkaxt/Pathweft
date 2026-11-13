@@ -588,6 +588,27 @@ public partial class MainWindow
     // ---- Run as administrator ----
     internal static readonly HashSet<string> Runnable = Set(".exe", ".bat", ".cmd", ".msi", ".com");
 
+    // A PowerShell script runs in its own console from its folder, as `pwsh -NoProfile -File` does; Windows
+    // PowerShell is used when PowerShell 7 is not installed. Opening a .ps1 still edits it, as in Windows.
+    internal static ProcessStartInfo ScriptStart(string script, bool administrator)
+    {
+        string pwsh = new[] { Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "PowerShell", "7", "pwsh.exe") }
+            .Concat((Environment.GetEnvironmentVariable("PATH") ?? "").Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(d => { try { return Path.Combine(d, "pwsh.exe"); } catch (ArgumentException) { return null; } }))
+            .FirstOrDefault(File.Exists);
+        string host = pwsh ?? Path.Combine(Environment.SystemDirectory, "WindowsPowerShell", "v1.0", "powershell.exe");
+        // Windows PowerShell on a client defaults to Restricted; RemoteSigned for this process is pwsh's own default
+        string arguments = (pwsh == null ? "-NoProfile -ExecutionPolicy RemoteSigned -File " : "-NoProfile -File ") + "\"" + script + "\"";
+        return new(host, arguments) { WorkingDirectory = Path.GetDirectoryName(script), UseShellExecute = true, Verb = administrator ? "runas" : "" };
+    }
+
+    void RunScript(string script, bool administrator)
+    {
+        try { Process.Start(ScriptStart(script, administrator)); }
+        catch (System.ComponentModel.Win32Exception ex) when (ex.NativeErrorCode == 1223) { } // the UAC prompt was declined
+        catch (System.ComponentModel.Win32Exception ex) { Status.Text = ex.Message; }
+    }
+
     void RunAsAdmin(string path)
     {
         try { Process.Start(new ProcessStartInfo(path) { UseShellExecute = true, Verb = "runas", WorkingDirectory = Path.GetDirectoryName(path) }); }

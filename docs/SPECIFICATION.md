@@ -1,6 +1,6 @@
 # Pathweft specification
 
-Version 1.21 - 2026-11-14. Owner: Darkaxt.
+Version 1.22 - 2026-11-14. Owner: Darkaxt.
 
 ### Maintenance tweaks by goal with risk colours (S47a)
 
@@ -2206,6 +2206,7 @@ authorize redesigning Windows' native third-party menu or starting S6/S7.
 | MENU-01 | Inventory current commands and their eligibility for files, folders, mixed/multiple selections, empty space and archive entries. Reorganize related commands into clear groups/submenus, prioritize common file operations and remove duplicate presentation while preserving supported actions, keyboard access and existing shortcuts. Define the final grouping when S9 becomes ACTIVE using the existing Native/Original design contract. |
 | MENU-02 | Preserve the selectable native Windows context-menu path, Shell extension behavior and capability-aware unsupported/read-only states. Verify real open/copy/cut/paste/rename/delete and archive operations through the reorganized menu, keyboard navigation, narrow/small-display placement and both themes at 100%/150%. Publish and verify the completed S9 change through the existing release channel. |
 | MENU-03 | Replace bottom command text with familiar Explorer-style icons, keeping names and shortcuts in hover tooltips and accessible names. Recover exact toolbar and View-menu SVG artwork where available; use verified Fluent glyphs for structural controls. Preserve supported actions, state/eligibility, shortcuts and Native/Original styling. Verify recognizable active/disabled states, keyboard/focus access, narrow layouts and 100%/150% rendering in both themes. Native icon recovery is research until S9 becomes ACTIVE; source provenance and distribution/runtime-use decisions must be explicit. Shared final delivery belongs to S11. |
+| MENU-04 | PowerShell scripts: a single .ps1 file's menu offers Run with PowerShell at the root and Run as administrator under Tools. Both run `pwsh -NoProfile -File <script>` (PowerShell 7 from its install folder or PATH; otherwise Windows PowerShell with `-ExecutionPolicy RemoteSigned` for that process) in its own console, starting in the script's folder; Run as administrator asks for UAC. Opening the script still edits it, as in Windows. Owner request 2026-11-14: .ps1 files could not be launched from Pathweft, and this PC has no Run with PowerShell verb registered. |
 
 ### Native Jump Lists (S11)
 
