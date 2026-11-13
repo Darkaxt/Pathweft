@@ -24,7 +24,9 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
     readonly ListView table=new(){SelectionMode=SelectionMode.Single,Background=Brushes.Transparent,BorderThickness=new(0)};
     readonly TextBlock title=new(){Text="Maintenance",FontSize=18,FontWeight=FontWeights.SemiBold,TextTrimming=TextTrimming.CharacterEllipsis},status=new(){TextWrapping=TextWrapping.Wrap,Margin=new(0,8,0,0)},description=new(){TextWrapping=TextWrapping.Wrap,Margin=new(0,8,0,12)};
     readonly WrapPanel actions=new();
-    readonly Button change,protectedReview,restore,resetDefault,restorePoint,export,import,cancel;
+    readonly Button change,protectedReview,restore,resetDefault,restorePoint,export,import,findLeftovers,cancel;
+    // Windows apps (MAINT-32..36): the current inventory by identity, apps removed in this session (for leftovers) and uninstaller signatures.
+    readonly Dictionary<string,InstalledApp> apps=new();readonly Dictionary<string,(InstalledApp App,string State)> removedApps=new();readonly Dictionary<string,string> signatures=new();
     readonly Dictionary<string,CleanupReview> reviews=new();
     readonly Dictionary<string,MaintenanceClient> elevatedReviews=new();
     readonly Dictionary<string,MaintenanceRow> analyzedRows=new();
@@ -77,6 +79,8 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
     internal string ExplanationForVerification=>explanationText.Text;
     internal bool ExplanationShownForVerification=>explanation.Visibility==Visibility.Visible;
     internal void CloseExplanationForVerification()=>closeExplanation.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent));
+    internal string[] UninstallResultsForVerification;
+    internal static Func<string,bool> ContinueWithoutRestorePointForVerification;
     internal Task DoubleClickForVerification(DependencyObject source)
     {
         table.RaiseEvent(new MouseButtonEventArgs(InputManager.Current.PrimaryMouseDevice,0,MouseButton.Left){RoutedEvent=Control.MouseDoubleClickEvent,Source=source});
@@ -128,6 +132,7 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
         resetDefault.ToolTip="Remove the policy values this rule manages so Windows uses its default. The previous values are saved for Restore.";
         restorePoint=Button("Create restore point",()=>Apply("restore-point"));export=Button("Export selection…",Export);import=Button("Import selection…",Import);
         restorePoint.ToolTip="Create a Windows restore point. Administrator permission is required.";
+        findLeftovers=Button("Find leftovers…",FindLeftovers);findLeftovers.ToolTip="Look for folders, shortcuts and registry entries a removed app left behind";
         table.MouseDoubleClick+=(_,e)=>
         {
             if(busy||disposed||Category!="Startup"||e.ChangedButton!=MouseButton.Left||
@@ -138,7 +143,7 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
         };
         cancel=new Button{Content="Cancel",MinHeight=32,Margin=new(0,0,8,6)};cancel.SetResourceReference(StyleProperty,"AuxiliaryAction");
         cancel.Click+=(_,_)=>{reading.Cancel();status.Text="Cancelling…";};
-        foreach(var button in new[]{change,protectedReview,restore,resetDefault,restorePoint,export,import,cancel})actions.Children.Add(button);
+        foreach(var button in new[]{change,protectedReview,restore,resetDefault,restorePoint,export,import,findLeftovers,cancel})actions.Children.Add(button);
         status.SetResourceReference(TextBlock.ForegroundProperty,"Muted");Grid.SetRow(status,4);body.Children.Add(status);
         Child=grid;table.SelectionChanged+=(_,_)=>{if(table.SelectedItem is MaintenanceRow row)selections[Category]=row.Id;Explain();UpdateActions();};
         var groupCaption=new FrameworkElementFactory(typeof(TextBlock));groupCaption.SetBinding(TextBlock.TextProperty,new Binding("Name"));groupCaption.SetValue(TextBlock.FontWeightProperty,FontWeights.SemiBold);groupCaption.SetValue(MarginProperty,new Thickness(8,12,0,6));groupCaption.SetResourceReference(TextBlock.ForegroundProperty,"Muted");
@@ -216,17 +221,20 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
         status.Text="Reading Windows state…";
         MaintenanceRow[] rows=overviewSelection;overviewSelection=null;
         if(rows!=null){}
-        else if(category=="Windows apps")
-        {
-            var packages=JsonSerializer.Deserialize<string[]>(await MaintenanceWorker.WindowsAction("ListApps",cancel:reading.Token))?.ToHashSet(StringComparer.OrdinalIgnoreCase)??[];
-            rows=Maintenance.Apps.Where(a=>packages.Contains(a.Package)).Select(a=>new MaintenanceRow(a.Package,a.Name,"Current user","Installed",a.Package)).ToArray();
-        }
+        else if(category=="Windows apps")rows=await ReadApps();
         else rows=await Task.Run(()=>Maintenance.Read(category,reading.Token),reading.Token);
         if(disposed)return;
         loadedRows[category]=rows;
         if(category!=Category)return;
         Present(rows);
         ShowRowCount(category,rows);
+    }
+    async Task<MaintenanceRow[]> ReadApps()
+    {
+        var found=await Task.Run(()=>MaintenanceApps.Read(reading.Token),reading.Token);
+        apps.Clear();foreach(var app in found)apps[app.Id]=app;
+        foreach(string id in removedApps.Keys.Where(apps.ContainsKey).ToArray())removedApps.Remove(id);
+        return found.Select(a=>a.Row()).Concat(removedApps.Values.Select(r=>r.App.Row(r.State))).ToArray();
     }
     void ShowRowCount(string category,MaintenanceRow[] rows)
     {
@@ -244,7 +252,7 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
             "Startup"=>"Run and RunOnce keys, policy Run entries, startup folders and tasks triggered at startup or logon. Type identifies the source. Disable saves the exact original state for Restore.",
             "Services"=>"Review each service before changing it. Stop and disable saves the actual startup configuration. Restore returns that configuration without starting the service.",
             "Windows tweaks"=>"Apply individual Windows settings. Restore uses the exact saved original values. Some changes take effect after sign-out or restart.",
-            _=>"Installed built-in apps for the current user. Removal leaves other users and Windows provisioning unchanged. Reinstall through Microsoft Store if needed."
+            _=>"Programs, Store apps and package-manager apps installed on this PC. Uninstall runs each app's own uninstaller; select several to uninstall them one after another. Find leftovers checks what a removed app left behind."
         };
         Presentation();
         if(category=="Cleanup")rows=rows.Select(r=>analyzedRows.GetValueOrDefault(r.Id,r)).ToArray();
@@ -311,10 +319,60 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
             "Startup"=>"Windows startup entries by source. Disable saves their original state for Restore.",
             "Services"=>"Stop and disable a reviewed service; Restore returns its startup settings.",
             "Windows tweaks"=>"Review each setting before applying. Restore returns saved values.",
-            _=>"Optional Windows apps for this user. Reinstall through Microsoft Store."
+            _=>"Installed apps. Uninstall runs each app's own uninstaller."
         };
     }
-    Task Change()=>Category=="Cleanup"?Clean():Apply(Category=="Windows apps"?"remove-app":"apply");
+    Task Change()=>Category switch{"Cleanup"=>Clean(),"Windows apps"=>UninstallApps(),_=>Apply("apply")};
+    // MAINT-34/35: confirmation names every app; one uninstaller at a time in BCU order; Cancel stops between apps.
+    async Task UninstallApps()
+    {
+        var chosen=table.SelectedItems.Cast<MaintenanceRow>().Where(r=>r.CanChange&&apps.ContainsKey(r.Id)).Select(r=>apps[r.Id]).ToArray();if(chosen.Length==0)return;
+        var answer=UninstallConfirmWindow.Ask(Window.GetWindow(this),MaintenanceApps.Order(chosen,true));if(!answer.Accept)return;
+        var ordered=MaintenanceApps.Order(chosen,answer.Quiet);
+        bool verifying=false;
+#if DEBUG
+        verifying=UninstallConfirmWindow.AnswerForVerification!=null;
+#endif
+        if(answer.RestorePoint)
+        {
+            status.Text="Creating a Windows restore point…";MaintenanceReply point;
+            await using(var client=new MaintenanceClient(maintenanceScope:true))point=await client.Start(new("restore-point","",Maintenance.Journal,null),true,reading.Token);
+            bool proceed=point.Ok;
+#if DEBUG
+            if(!proceed&&ContinueWithoutRestorePointForVerification!=null)proceed=ContinueWithoutRestorePointForVerification(point.Message);else
+#endif
+            if(!proceed)proceed=MessageBox.Show(Window.GetWindow(this),"The restore point was not created:\n"+point.Message+"\n\nUninstall anyway?","Restore point",MessageBoxButton.YesNo,MessageBoxImage.Warning,MessageBoxResult.No)==MessageBoxResult.Yes;
+            if(!proceed){status.Text="Uninstall not started. "+point.Message;return;}
+        }
+        var results=new List<string>();int removed=0;
+        foreach(var app in ordered)
+        {
+            if(reading.IsCancellationRequested){results.Add(app.Name+": Not started (cancelled)");continue;}
+            status.Text=$"Uninstalling {results.Count+1} of {ordered.Length} · {app.Name}…";
+            MaintenanceApps.Outcome outcome;
+            try{outcome=await MaintenanceApps.Uninstall(app.Id,answer.Quiet,reading.Token);}
+            catch(Exception error)when(error is IOException or InvalidOperationException or UnauthorizedAccessException or System.ComponentModel.Win32Exception or System.Runtime.InteropServices.COMException)
+            {outcome=new("Failed",error.Message);}
+            if(outcome.State=="Removed"){removed++;removedApps[app.Id]=(app,"Removed");}
+            results.Add(app.Name+": "+outcome.State+(outcome.Message.Length>0?" — "+outcome.Message:""));status.Text=results[^1];
+        }
+        if(reading.IsCancellationRequested){reading.Dispose();reading=new();}
+        await Load();
+        status.Text=ordered.Length==1?results[0]:$"{removed:N0} of {ordered.Length:N0} apps uninstalled. Select a removed app to find its leftovers.";
+#if DEBUG
+        UninstallResultsForVerification=results.ToArray();
+#endif
+        if(ordered.Length>1&&!verifying)MessageBox.Show(Window.GetWindow(this),string.Join("\n",results),"Uninstall results",MessageBoxButton.OK,MessageBoxImage.Information);
+    }
+    async Task FindLeftovers()
+    {
+        if(table.SelectedItem is not MaintenanceRow row||!removedApps.TryGetValue(row.Id,out var entry))return;
+        status.Text="Looking for what "+entry.App.Name+" left behind…";
+        var found=await Task.Run(()=>MaintenanceLeftovers.Scan(entry.App,reading.Token),reading.Token);
+        string result=await LeftoversWindow.Show(Window.GetWindow(this),entry.App,found);
+        if(result!=null)removedApps[row.Id]=(entry.App,"Removed · leftovers cleaned");
+        await Load();status.Text=result??(found.Length==0?"No leftovers found for "+entry.App.Name+".":"Leftovers kept.");
+    }
     async Task ReviewProtected()
     {
         if(Category!="Cleanup"||table.SelectedItem is not MaintenanceRow row||row.Id is not ("windows-temp" or "error-reports"))return;
@@ -401,13 +459,16 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
         if(change==null)return;bool cleanup=Category=="Cleanup",tweaks=Category=="Windows tweaks";var row=table.SelectedItem as MaintenanceRow;
         bool idle=!busy;
         bool inspectable=idle||inspecting||cleaning;filters.IsEnabled=inspectable;
-        foreach(var button in new[]{change,protectedReview,restore,resetDefault,restorePoint,export,import})button.IsEnabled=idle;
+        foreach(var button in new[]{change,protectedReview,restore,resetDefault,restorePoint,export,import,findLeftovers})button.IsEnabled=idle;
         for(int i=0;i<5;i++)if(cardButtons[i]!=null){cardButtons[i].IsEnabled=idle||inspectable&&loadedRows.ContainsKey(Categories[i]);cardButtons[i].Tag=Expanded&&i==selectedCategory?"on":null;AutomationProperties.SetItemStatus(cardButtons[i],Expanded&&i==selectedCategory?"Selected":"");}
         table.IsEnabled=inspectable;
-        change.Content=Category switch{"Cleanup"=>"Clean reviewed","Startup"=>"Disable","Services"=>"Stop and disable","Windows apps"=>"Remove",_=>"Apply"};
+        bool appsCategory=Category=="Windows apps";var chosen=appsCategory?table.SelectedItems.Cast<MaintenanceRow>().ToArray():[];
+        change.Content=Category switch{"Cleanup"=>"Clean reviewed","Startup"=>"Disable","Services"=>"Stop and disable","Windows apps"=>chosen.Length>1?"Uninstall selected…":"Uninstall…",_=>"Apply"};
         bool protectedCategory=cleanup&&row?.Id is ("windows-temp" or "error-reports");
         bool reviewed=row!=null&&(protectedCategory?elevatedReviews.ContainsKey(row.Id):reviews.ContainsKey(row.Id)||elevatedReviews.ContainsKey(row.Id));
-        change.IsEnabled=idle&&row?.CanChange==true&&(!cleanup||reviewed);
+        change.IsEnabled=appsCategory?idle&&chosen.Length>0&&chosen.All(r=>r.CanChange):idle&&row?.CanChange==true&&(!cleanup||reviewed);
+        findLeftovers.Visibility=appsCategory?Visibility.Visible:Visibility.Collapsed;
+        findLeftovers.IsEnabled=idle&&chosen.Length==1&&removedApps.ContainsKey(chosen[0].Id);
         protectedReview.Visibility=protectedCategory&&!elevatedReviews.ContainsKey(row.Id)?Visibility.Visible:Visibility.Collapsed;
         protectedReview.IsEnabled=idle&&protectedCategory;
         restore.Visibility=Category is "Startup" or "Services" or "Windows tweaks"?Visibility.Visible:Visibility.Collapsed;
@@ -434,8 +495,7 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
         var rows=await Task.Run(()=>new[]{"Cleanup","Startup","Services","Windows tweaks"}.Select(category=>(category,rows:Maintenance.Read(category,reading.Token))).ToArray(),reading.Token);
         foreach(var item in rows){loadedRows[item.category]=item.rows;Summary(item.category,item.category=="Cleanup"?item.rows.Select(r=>analyzedRows.GetValueOrDefault(r.Id,r)):item.rows);}
         UpdateActions();
-        var packages=JsonSerializer.Deserialize<string[]>(await MaintenanceWorker.WindowsAction("ListApps",cancel:reading.Token))?.ToHashSet(StringComparer.OrdinalIgnoreCase)??[];
-        var apps=Maintenance.Apps.Where(a=>packages.Contains(a.Package)).Select(a=>new MaintenanceRow(a.Package,a.Name,"Current user","Installed",a.Package)).ToArray();loadedRows["Windows apps"]=apps;Summary("Windows apps",apps);overviewSelection=loadedRows[Category];
+        var appRows=await ReadApps();loadedRows["Windows apps"]=appRows;Summary("Windows apps",appRows);overviewSelection=loadedRows[Category];
     }
     void Summary(string category,IEnumerable<MaintenanceRow> items)
     {
@@ -450,7 +510,7 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
         else if(index==1){value=rows.Count(x=>x.State=="Enabled").ToString("N0");sub="startup entries enabled";}
         else if(index==2){value=rows.Count(x=>x.StartupMode.StartsWith("Automatic")).ToString("N0");sub=$"automatic · {rows.Length} installed services";}
         else if(index==3){value=rows.Select(x=>MaintenanceGuidance.Describe(category,x)).Count(MaintenanceGuidance.PendingRecommendation).ToString("N0");sub="recommended actions pending";}
-        else{value=rows.Length.ToString("N0");sub="optional preinstalled apps";}
+        else{value=rows.Select(x=>MaintenanceGuidance.Describe(category,x)).Count(x=>x.Recommendation=="Optional"&&x.CanChange).ToString("N0");sub=$"optional · {rows.Count(x=>x.State=="Installed"):N0} installed apps";}
         cardValues[index].Text=value;cardSubtitles[index].Text=sub;cardButtons[index].ToolTip=category+" · "+value+" · "+sub;
     }
     internal Task Show(){hiding=null;Collapse();visitedCategories.Clear();Motion.SetShown(cards,true);Queue(async()=>{await Overview();await Load();await AnalyzeAll();},true);return work;}
@@ -466,18 +526,21 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
         goals.SelectedItem=goals.Items.Cast<string>().Contains(previousGoal)?previousGoal:"All goals";
         goals.Visibility=Category=="Windows tweaks"?Visibility.Visible:Visibility.Collapsed;updatingFilters=false;
         filters.Visibility=Category=="Cleanup"?Visibility.Collapsed:Visibility.Visible;
+        table.SelectionMode=Category=="Windows apps"?SelectionMode.Extended:SelectionMode.Single;
+        search.Tag=Category=="Windows apps"?"Search apps and publishers":"Search settings and effects";
         table.ItemsSource=rows;SortRows();table.SelectedItem=rows.FirstOrDefault(r=>r.Id==selected&&Matches(r));Explain();
     }
     bool Matches(MaintenanceRow row)=>(groups.SelectedIndex<=0||row.Group==groups.SelectedItem as string)&&
         (Category!="Windows tweaks"||goals.SelectedIndex<=0||row.Goal==goals.SelectedItem as string)&&
-        (string.IsNullOrWhiteSpace(search.Text)||string.Join(" ",row.Name,row.Type,row.State,row.Group,row.Goal,row.Risk,row.Recommendation,row.Details,row.Guidance).Contains(search.Text.Trim(),StringComparison.CurrentCultureIgnoreCase));
+        (string.IsNullOrWhiteSpace(search.Text)||string.Join(" ",row.Name,row.Type,row.State,row.Group,row.Goal,row.Risk,row.Recommendation,row.Details,row.Guidance,row.Publisher).Contains(search.Text.Trim(),StringComparison.CurrentCultureIgnoreCase));
     void FilterRows(){if(updatingFilters||table.ItemsSource==null)return;filterStates[Category]=(search.Text,groups.SelectedItem as string);CollectionViewSource.GetDefaultView(table.ItemsSource).Refresh();Explain();}
     void Explain()
     {
         if(table.SelectedItem is not MaintenanceRow row){dismissedExplanation=null;explanation.Visibility=Visibility.Collapsed;return;}
         if(row.Id==dismissedExplanation){explanation.Visibility=Visibility.Collapsed;return;}
         dismissedExplanation=null;
-        explanation.Visibility=Visibility.Visible;explanationTitle.Text=Category=="Windows tweaks"?string.Join(" · ",new[]{row.RecommendationLabel,row.RiskLabel,row.Goal,row.Name}.Where(x=>x.Length>0)):row.Name;
+        explanation.Visibility=Visibility.Visible;explanationTitle.Text=Category=="Windows tweaks"?string.Join(" · ",new[]{row.RecommendationLabel,row.RiskLabel,row.Goal,row.Name}.Where(x=>x.Length>0)):
+            Category=="Windows apps"?string.Join(" · ",new[]{row.Name,row.Publisher,row.Version}.Where(x=>x.Length>0)):row.Name;
         string effect=Category switch
         {
             "Cleanup" when row.Id=="scoop-versions"=>"Clean removes each obsolete version folder and all its contents. Current versions, packages in use and external persistent data are preserved.",
@@ -487,9 +550,15 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
             "Startup"=>"Disable prevents this entry from running at startup. Restore returns its exact saved original state. Double-click to Disable or Restore.",
             "Services"=>"Stop and disable stops this service and disables automatic startup. Restore returns its saved startup configuration without starting the service.",
             "Windows tweaks"=>"Apply changes this Windows setting. Restore returns its exact saved original values.",
-            _=>"Remove uninstalls this app for the current user. Reinstall through Microsoft Store if needed."
+            _ when row.State!="Installed"=>"Removed in this session. Find leftovers looks for folders, shortcuts and registry entries it left behind.",
+            _ when row.Type==MaintenanceApps.Store=>"Uninstall removes this Store app for the current user only. Reinstall it from Microsoft Store.",
+            _ when row.Type==MaintenanceApps.Scoop=>"Uninstall runs Scoop's own uninstall for this app.",
+            _ when row.Type==MaintenanceApps.Chocolatey=>"Uninstall runs Chocolatey's uninstall with administrator permission.",
+            _=>"Uninstall runs this program's own uninstaller, which may ask for administrator permission. Pathweft cannot undo an uninstall."
         };
-        explanationText.Text=effect+"\n"+(Category=="Cleanup"?"":row.Guidance+"\n")+row.Details;sourceText.Inlines.Clear();
+        string signature="";
+        if(Category=="Windows apps"&&apps.TryGetValue(row.Id,out var app)&&!signatures.TryGetValue(row.Id,out signature)){signature=signatures[row.Id]="Checking the uninstaller's signature…";_=Sign(app);}
+        explanationText.Text=effect+"\n"+(Category=="Cleanup"?"":row.Guidance+"\n")+row.Details+(signature is {Length:>0}?"\n"+signature:"");sourceText.Inlines.Clear();
         if(!string.IsNullOrEmpty(row.Source))
         {
             var uri=new Uri(row.Source);var link=new System.Windows.Documents.Hyperlink(new System.Windows.Documents.Run("Source · "+uri.Host)){NavigateUri=uri};
@@ -497,6 +566,14 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
             link.RequestNavigate+=(_,e)=>{System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(e.Uri.AbsoluteUri){UseShellExecute=true});e.Handled=true;};
             sourceText.Inlines.Add(link);
         }
+    }
+    async Task Sign(InstalledApp app)
+    {
+        string result;
+        try{result=await Task.Run(()=>MaintenanceApps.Signature(app));}
+        catch(Exception error)when(error is IOException or UnauthorizedAccessException or ArgumentException or System.Security.Cryptography.CryptographicException){result="The uninstaller's signature could not be checked: "+error.Message;}
+        signatures[app.Id]=result;
+        if(!disposed&&Category=="Windows apps"&&(table.SelectedItem as MaintenanceRow)?.Id==app.Id)Explain();
     }
     void SortRows()
     {
@@ -507,7 +584,7 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
             using(view.DeferRefresh())
             {
                 view.Filter=item=>Category=="Cleanup"||item is MaintenanceRow row&&Matches(row);
-                view.GroupDescriptions.Clear();if(Category=="Windows tweaks")view.GroupDescriptions.Add(new PropertyGroupDescription("Group"));
+                view.GroupDescriptions.Clear();if(Category is "Windows tweaks" or "Windows apps")view.GroupDescriptions.Add(new PropertyGroupDescription("Group"));
                 view.SortDescriptions.Clear();view.SortDescriptions.Add(new(sort.Property,sort.Direction));
                 if(sort.Property!="Name")view.SortDescriptions.Add(new("Name",ListSortDirection.Ascending));
                 view.SortDescriptions.Add(new("Id",ListSortDirection.Ascending));
@@ -524,11 +601,15 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
     {
         headers.Clear();
         var view=new GridView();var columns=new List<(string Header,string Property,double Width)>{("Name","Name",230)};
-        if(Category=="Startup")columns.Add(("Type","Type",150));
-        if(Category=="Services")columns.Add(("Service name","Type",180));else columns.Add(("Scope","Scope",110));
-        columns.Add(("State","State",130));
-        if(Category=="Windows tweaks")columns.Add(("Recommendation","RecommendationLabel",210));
-        if(Category=="Services")columns.Add(("Startup type","StartupMode",160));else if(Category=="Cleanup")columns.Add(("Size","Size",95));
+        if(Category=="Windows apps")columns.AddRange([("Publisher","Publisher",170),("Version","Version",110),("Source","Type",130),("State","State",100),("Size","Size",90),("Installed","Installed",100)]);
+        else
+        {
+            if(Category=="Startup")columns.Add(("Type","Type",150));
+            if(Category=="Services")columns.Add(("Service name","Type",180));else columns.Add(("Scope","Scope",110));
+            columns.Add(("State","State",130));
+            if(Category=="Windows tweaks")columns.Add(("Recommendation","RecommendationLabel",210));
+            if(Category=="Services")columns.Add(("Startup type","StartupMode",160));else if(Category=="Cleanup")columns.Add(("Size","Size",95));
+        }
         columns.Add(("Details","Details",600));
         foreach(var column in columns)
         {

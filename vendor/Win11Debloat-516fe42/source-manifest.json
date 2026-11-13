@@ -2,7 +2,7 @@
   "repository": "https://github.com/Raphire/Win11Debloat",
   "revision": "516fe42d47a57ef3f12e505b2bf260f215677ed9",
   "license": "MIT",
-  "adaptation": "Selected registry values and scheduled-task paths reimplemented as individually journaled typed actions (MaintenanceS47Tweaks.cs). Source files are provenance only, never executed. Undo defaults and presets are not used.",
+  "adaptation": "Selected registry values and scheduled-task paths reimplemented as individually journaled typed actions (MaintenanceS47Tweaks.cs). Source files are provenance only, never executed. Undo defaults and presets are not used. Store app ratings (Config/Apps.json) are reviewed descriptive guidance in MaintenanceGuidance.json; the lists are never executed.",
   "files": [
     {
       "path": "Regfiles/Disable_AI_Recall.reg",
@@ -87,6 +87,10 @@
     {
       "path": "Regfiles/Prevent_Auto_Reboot.reg",
       "sha256": "db8f561112903346d624dbd1ddba4edca256f06f80ae1a697ba01fabc51ae557"
+    },
+    {
+      "path": "Config/Apps.json",
+      "sha256": "428c5b110adcd42f0419daa0441cdae42f7fd60dba4a54e6d2d11b3521d5ccaa"
     }
   ]
 }

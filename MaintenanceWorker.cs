@@ -239,11 +239,14 @@ internal static class MaintenanceWorker
     {
         if(request.Action=="save-editor")return SaveEditor(request,cancel);
         if(request.Action=="restore-point")return await WindowsAction("RestorePoint",cancel:cancel);
-        if(request.Action=="remove-app")
+        // Administrator leftovers of a removed app (MAINT-36): the worker re-scans with the same identity and
+        // removes only requested items it finds again, after its own .reg backup inside the profile's folder.
+        if(request.Action=="remove-leftovers")
         {
-            if(!Maintenance.Apps.Any(a=>a.Package==request.Id))throw new ArgumentException("Unknown built-in app");
-            return await WindowsAction("RemoveApp",request.Id,cancel);
+            var data=JsonSerializer.Deserialize<MaintenanceLeftovers.Request>(request.Id)??throw new InvalidDataException("Missing leftovers request");
+            return JsonSerializer.Serialize(await Task.Run(()=>MaintenanceLeftovers.Remove(data.App,data.Items,true,request.Journal,cancel),cancel));
         }
+        if(request.Action=="restore-leftovers"){await MaintenanceLeftovers.Restore(request.Journal,cancel);return "Registry backup restored.";}
         if(request.Action is not ("apply" or "restore" or "reset-default"))throw new ArgumentException("Unknown maintenance action");
         bool restore=request.Action=="restore";
         RequireOwnedPaths(request);
@@ -304,7 +307,7 @@ internal static class MaintenanceWorker
         if(package!=null){launch.ArgumentList.Add("-Package");launch.ArgumentList.Add(package);}
         var result=await MaintenanceProcess.Run(launch,cancel);string text=result.Output,errors=result.Error;
         if(result.ExitCode!=0)throw new IOException(errors.Trim().Length>0?errors.Trim():"Windows maintenance failed");
-        return action=="ListApps"?text:JsonDocument.Parse(text).RootElement.GetProperty("message").GetString();
+        return JsonDocument.Parse(text).RootElement.GetProperty("message").GetString();
     }
     [DllImport("kernel32.dll",SetLastError=true)]static extern bool GetNamedPipeServerProcessId(IntPtr pipe,out uint pid);
 }

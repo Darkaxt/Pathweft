@@ -1,6 +1,14 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.61 | 2026-11-13 | Windows apps: uninstall and leftovers
+
+- Maintenance › Windows apps now lists every installed app: desktop programs, Store apps, Scoop and Chocolatey packages, with publisher, version, size and install date, grouped by source.
+- Select one or several apps and Uninstall. Each app's own uninstaller runs, one at a time, quietly where the app supports it. A restore point is offered first, and the result is checked afterwards: Removed, Still installed or Cancelled.
+- After an uninstall, Find leftovers shows the folders, shortcuts and registry keys the app left behind, rated Likely, Possible or Unlikely. Files go to the Recycle Bin and registry keys are backed up, so Restore brings them back.
+- Store apps carry advice on what is safe to remove. Windows parts, frameworks and Pathweft itself are protected.
+- The Maintenance details panel can be closed (× or Esc) and long lists scroll smoothly.
+
 ## 1.1.60 | 2026-11-13 | Windows tweaks by goal, risks marked
 
 - Maintenance › Windows tweaks has 81 more settings, 121 in all: Copilot, Recall and other AI features, Edge clutter, privacy and data-collection scheduled tasks, File Explorer, Start and taskbar, and update behaviour. Each setting is applied on its own and Restore puts back exactly what was there before.

@@ -7,7 +7,8 @@ using Microsoft.Win32;
 namespace FileExplorer;
 
 internal sealed record MaintenanceRow(string Id,string Name,string Scope,string State,string Details,long? Bytes=null,string Type="",string StartupMode="",bool CanChange=true,
-    string Group="",string Recommendation="Not assessed",string Guidance="",string Source="",string RuleId="",string Goal="",string Risk="")
+    string Group="",string Recommendation="Not assessed",string Guidance="",string Source="",string RuleId="",string Goal="",string Risk="",
+    string Publisher="",string Version="",string Installed="",string Package="")
 {
     public string RiskLabel=>Risk switch{"Caution"=>"▲ Caution","High"=>"◆ High",_=>""};
     public string Size=>Bytes is {} size?MainWindow.Fmt(size):"";
@@ -75,17 +76,6 @@ internal static class Maintenance
         ("Fax","Fax","Fax support"),("RemoteRegistry","Remote Registry","Remote registry access"),
         ("MapsBroker","Downloaded Maps Manager","Offline map updates"),("PrintNotify","Printer notifications","Printer extension notifications"),
         ("RetailDemo","Retail Demo","Retail demonstration mode"),("WerSvc","Windows Error Reporting","Windows crash reports")
-    ];
-    internal static readonly (string Name,string Package)[] Apps=
-    [
-        ("3D Builder","Microsoft.3DBuilder"),("Weather","Microsoft.BingWeather"),("News","Microsoft.BingNews"),
-        ("Get Help","Microsoft.GetHelp"),("Tips","Microsoft.Getstarted"),("Office Hub","Microsoft.MicrosoftOfficeHub"),
-        ("Solitaire Collection","Microsoft.MicrosoftSolitaireCollection"),("Mixed Reality Portal","Microsoft.MixedReality.Portal"),
-        ("People","Microsoft.People"),("Skype","Microsoft.SkypeApp"),("Feedback Hub","Microsoft.WindowsFeedbackHub"),
-        ("Xbox App","Microsoft.XboxApp"),("Xbox Game Overlay","Microsoft.XboxGameOverlay"),("Xbox Gaming Overlay","Microsoft.XboxGamingOverlay"),
-        ("Xbox Identity Provider","Microsoft.XboxIdentityProvider"),("Xbox Speech To Text Overlay","Microsoft.XboxSpeechToTextOverlay"),
-        ("Phone Link","Microsoft.YourPhone"),("Groove Music","Microsoft.ZuneMusic"),("Movies & TV","Microsoft.ZuneVideo"),
-        ("To Do","Microsoft.Todos"),("Teams (classic)","MicrosoftTeams"),("Teams","MSTeams"),("Clipchamp","Clipchamp.Clipchamp"),("Cortana","Microsoft.549981C3F5F10")
     ];
     internal static MaintenanceTweak[] Tweaks=>MaintenanceTweaks.All().Where(t=>t.Name!="Hibernation").ToArray();
     internal static string Id(string scope,string name)=>Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(scope+"\0"+name)));

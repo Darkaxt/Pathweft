@@ -39,7 +39,8 @@ internal static class MaintenanceGuidance
     internal static MaintenanceRule Find(string kind,string target)=>Data.Rules.SingleOrDefault(r=>r.Kind==kind&&r.Target.Equals(target,StringComparison.OrdinalIgnoreCase));
     internal static MaintenanceRule For(string category,MaintenanceRow row)=>category switch
     {
-        "Windows tweaks"=>Find("tweak",row.Name),"Services"=>Find("service",row.Type),"Windows apps"=>Find("app",row.Id),_=>null
+        // Store apps match by exact package name; desktop programs have no rating (MAINT-33).
+        "Windows tweaks"=>Find("tweak",row.Name),"Services"=>Find("service",row.Type),"Windows apps"=>row.Package.Length>0?Find("app",row.Package):null,_=>null
     };
     // Applying a Caution or High rule is never counted as a pending suggestion; the user opts in (MAINT-26).
     // Undoing a change the catalog advises against still is.
@@ -58,9 +59,21 @@ internal static class MaintenanceGuidance
         var rule=Find("tweak",tweak.Name);
         if(rule==null||!rule.Supports(build??Build))throw new InvalidOperationException("This setting has not been qualified for this Windows build. Saved original settings can still be restored.");
     }
+    // Store ratings are donor guidance for an explicit, confirmed uninstall; they need no configuration qualification.
+    static MaintenanceRow App(MaintenanceRow row,MaintenanceRule rule,int? build)
+    {
+        bool supported=rule?.Supports(build??Build)==true;string explanation;
+        if(!row.CanChange&&row.State=="Installed")explanation=row.Summary.Replace("Protected · ","Protected: ")+". It cannot be selected for removal.";
+        else if(rule==null)explanation=row.Type==MaintenanceApps.Store?"No reviewed rating matches this Store package. Decide from whether you use it.":
+            "Programs you installed are not rated. Decide from whether you still use it.";
+        else explanation=(supported?"":$"Not assessed for this Windows build ({rule.Applicability}). ")+rule.Reason+"\nEffect: "+rule.FeatureLoss+"\nSuggested action: "+rule.Action+
+            "\nRating: "+rule.Recommendation+" · "+new Uri(rule.Source).Host+" · reviewed "+rule.Reviewed;
+        return row with{Group=row.Type,Recommendation=supported&&row.CanChange?rule.Recommendation:"Not assessed",Guidance=explanation,Source=rule?.Source??"",RuleId=rule?.Id??"",Goal="",Risk=rule?.Risk??""};
+    }
     internal static MaintenanceRow Describe(string category,MaintenanceRow row,int? build=null)
     {
         var rule=For(category,row);
+        if(category=="Windows apps")return App(row,rule,build);
         string group=rule?.Category??(category=="Startup"?row.Type:category=="Services"?"Other services":"Other apps");
         bool supported=rule?.Supports(build??Build)==true;
         if(row.State is "Access denied" or "Unavailable" or "Approval unknown")supported=false;

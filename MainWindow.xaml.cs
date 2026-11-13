@@ -1517,7 +1517,7 @@ public partial class MainWindow : Window
 
     // Shift+Delete with the sound on: the shell's delete with its progress window and error prompts, but not
     // its own confirmation (FOF_NOCONFIRMATION) — Pathweft has just asked. Without FOF_ALLOWUNDO it's permanent.
-    static string ShellDelete(IntPtr owner, List<string> paths, ushort flags)
+    internal static string ShellDelete(IntPtr owner, List<string> paths, ushort flags)
     {
         var op = new SHFILEOPSTRUCT { hwnd = owner, wFunc = FO_DELETE, pFrom = string.Join("\0", paths) + "\0", fFlags = flags };
         int r = SHFileOperation(ref op);

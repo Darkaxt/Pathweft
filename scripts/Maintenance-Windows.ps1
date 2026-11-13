@@ -1,5 +1,5 @@
 param(
- [Parameter(Mandatory)][ValidateSet('ListApps','RemoveApp','RestorePoint')][string]$Action,
+ [Parameter(Mandatory)][ValidateSet('ScoopUninstall','RestorePoint')][string]$Action,
  [string]$Package
 )
 $ErrorActionPreference='Stop'
@@ -8,18 +8,13 @@ $ErrorActionPreference='Stop'
 if([Console]::ReadLine() -ne 'owned'){exit 2}
 try {
  switch($Action) {
-  'ListApps' {
-   $packages=@(Get-AppxPackage | Select-Object -ExpandProperty Name -Unique)
-   ConvertTo-Json -InputObject $packages -Compress
-  }
-  'RemoveApp' {
-   if($Package -notmatch '^[A-Za-z0-9][A-Za-z0-9.]+$'){throw 'Invalid package identity'}
-   # Exact current-user identity only. Do not remove all-user packages or provisioning.
-   $items=@(Get-AppxPackage -Name $Package | Where-Object {$_.Name -ceq $Package})
-   if(!$items.Count){throw 'Package is not installed for this user'}
-   foreach($item in $items){Remove-AppxPackage -Package $item.PackageFullName -ErrorAction Stop}
-   if(@(Get-AppxPackage -Name $Package | Where-Object {$_.Name -ceq $Package}).Count){throw 'Windows still reports the package installed'}
-   @{message='Removed for the current user. Reinstall through Microsoft Store if needed.'}|ConvertTo-Json -Compress
+  'ScoopUninstall' {
+   if($Package -notmatch '^[A-Za-z0-9][A-Za-z0-9._-]*$' -or $Package -eq 'scoop'){throw 'Invalid Scoop app name'}
+   # Scoop's own uninstaller for the current user's app; Pathweft never deletes the app folder itself.
+   $scoop=Get-Command scoop -CommandType ExternalScript,Application -ErrorAction Stop | Select-Object -First 1
+   $output=& $scoop.Source uninstall $Package 2>&1 | Out-String
+   if($LASTEXITCODE){throw ('Scoop uninstall failed: '+$output.Trim())}
+   @{message='Removed by Scoop.'}|ConvertTo-Json -Compress
   }
   'RestorePoint' {
    $before=@(Get-ComputerRestorePoint | Select-Object -ExpandProperty SequenceNumber)

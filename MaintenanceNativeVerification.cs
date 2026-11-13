@@ -91,6 +91,22 @@ internal static class MaintenanceNativeVerification
             (neighbour with{Exists=false,Value=default}).Write();
         }
     }
+    // MAINT-39 guest qualification: uninstall, installer-busy guard, Store removal, restore point and leftovers.
+    internal static async Task<int> Apps(string root)
+    {
+        if(Environment.GetEnvironmentVariable("PATHWEFT_MAINTENANCE_GUEST")!="1"||!Path.GetFullPath(root).StartsWith(@"C:\Coordinator\Work\",StringComparison.OrdinalIgnoreCase))return 2;
+        Directory.CreateDirectory(root);var checks=new List<object>();int result=0;
+        // Written after every entry so a step that never returns still leaves the evidence before it.
+        void Save(){lock(checks)File.WriteAllText(Path.Combine(root,"apps-results.json"),JsonSerializer.Serialize(new{pid=Environment.ProcessId,result,checks},new JsonSerializerOptions{WriteIndented=true}));}
+        void Check(bool pass,string criterion){checks.Add(new{criterion,passed=pass});if(!pass)result=1;Save();}
+        try
+        {
+            await using(var client=new MaintenanceClient())Check(!(await client.Start(new("remove-app","not.whitelisted",null,null),false)).Ok,"The retired app-removal action is refused");
+            await MaintenanceAppsVerification.Guest(root,Check,(name,value)=>{checks.Add(new{note=name,value});Save();});
+        }
+        catch(Exception ex){checks.Add(new{failure=ex.ToString()});result=1;}
+        Save();return result;
+    }
     internal static async Task<int> Run(string root)
     {
         if(Environment.GetEnvironmentVariable("PATHWEFT_MAINTENANCE_GUEST")!="1"||!Path.GetFullPath(root).StartsWith(@"C:\Coordinator\Work\",StringComparison.OrdinalIgnoreCase))return 2;
@@ -114,8 +130,7 @@ internal static class MaintenanceNativeVerification
             var bad=new MaintenanceUndo("startup:bad",[new("HKEY_LOCAL_MACHINE",@"Software\Pathweft-unapproved","value",RegistryValueKind.String,JsonSerializer.SerializeToElement("invalid"),true)],[]);
             Maintenance.Save(new(){[bad.Id]=bad},Path.Combine(root,"invalid.json"));
             await using(var client=new MaintenanceClient())Check(!(await client.Start(new("restore",bad.Id,Path.Combine(root,"invalid.json"),null),false)).Ok,"Privileged restore refuses a malformed or unapproved saved target");
-            await using(var client=new MaintenanceClient())Check(!(await client.Start(new("remove-app","not.whitelisted",null,null),false)).Ok,"Built-in app worker refuses arbitrary package identities");
-            var packages=JsonSerializer.Deserialize<string[]>(await MaintenanceWorker.WindowsAction("ListApps"));Check(packages!=null,"Owned PowerShell child reads current-user package state and retires its native process tree");
+            await using(var client=new MaintenanceClient())Check(!(await client.Start(new("remove-app","not.whitelisted",null,null),false)).Ok,"The retired app-removal action is refused");
             string files=Path.Combine(root,"files");Directory.CreateDirectory(files);File.WriteAllText(Path.Combine(files,"old"),"reviewed");
             using(var review=new CleanupReview(new("fixture","Fixture","Guest-only cleanup",files),Path.Combine(root,"review")))
             {

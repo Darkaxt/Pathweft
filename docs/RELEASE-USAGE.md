@@ -1,6 +1,8 @@
-# Pathweft 1.1.60
+# Pathweft 1.1.61
 
-Pathweft 1.1.60 organises Maintenance › Windows tweaks by goal (Debloat, Privacy,
+Pathweft 1.1.61 turns Maintenance › Windows apps into an uninstaller for desktop
+programs, Store apps, Scoop and Chocolatey packages, with bulk uninstall in Bulk
+Crap Uninstaller's order and leftover cleanup with Restore. 1.1.60 organises Maintenance › Windows tweaks by goal (Debloat, Privacy,
 Performance, Security, Personalize), adds 81 individually journaled settings from
 MIT donors, marks settings with a cost ▲ Caution or ◆ High with a confirmation, and
 can return policies set outside Pathweft to the Windows default. 1.1.59 starts on PCs without a D: drive (bulk data takes the first local
@@ -72,8 +74,15 @@ navigation. Mutations and duplicate scans remain gated. Scoop Cleanup does not
 scan package members or query their consumers before deletion.
 The hidden-files eye remains visible without its active square in Maintenance
 and Performance modes; its original state returns with ordinary folder statistics.
-Optional app removal applies only to the current user and does not remove Windows
-provisioning. Reinstall removed apps through Microsoft Store.
+Windows apps lists desktop programs, Store apps, Scoop and Chocolatey packages,
+grouped by source; select several with Ctrl or Shift. Uninstall runs each app's
+own uninstaller one at a time (quietly only where the app supports it), after an
+optional restore point, and reads the app again to report Removed, Still installed
+or Cancelled; an uninstall has no Restore. Store apps are removed for the current
+user only, without removing Windows provisioning; reinstall them through Microsoft
+Store. Find leftovers offers what a removed app left behind by confidence; files
+go to the Recycle Bin and registry keys are backed up as .reg so Restore can
+return them. Protected Windows parts and Pathweft itself cannot be selected.
 
 Ctrl+Z retains Undo history across restarts in the selected bulk-data folder.
 Successful transfers still close their cards automatically. Interrupted or

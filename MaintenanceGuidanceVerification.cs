@@ -22,8 +22,9 @@ public partial class MainWindow
         check(MaintenanceDonorTweaks.All().Length==24&&Maintenance.Tweaks.Count()==121&&MaintenanceS47Tweaks.All().Length==81&&rules.Count(r=>r.Kind=="service"&&r.ReadOnlyEvidence)>=24,"Expanded catalog contains real typed donor actions and documented native service dependencies");
         check(rules.All(r=>r.MinBuild<=r.MaxBuild&&r.Source.StartsWith("https://")&&!string.IsNullOrWhiteSpace(r.FeatureLoss)),"Every bundled rule has bounded applicability, effect and source");
         check(rules.All(r=>r.Qualified.Length==0||DateOnly.TryParseExact(r.Qualified,"yyyy-MM-dd",out _)&&r.Supports(r.QualifiedBuild)),"Configuration qualification has an explicit date and actual guest build");
-        var unqualified=rules.First(r=>r.Qualified.Length==0&&r.Kind=="app");
-        check(MaintenanceGuidance.Describe("Windows apps",new(unqualified.Target,"App","Current user","Installed",""),26100).Recommendation=="Not assessed","A documented but unqualified package does not gain an assessed recommendation");
+        var rated=rules.First(r=>r.Kind=="app");
+        check(MaintenanceGuidance.Describe("Windows apps",new("app:store:fixture","App","Current user","Installed","",Type:MaintenanceApps.Store,Package:rated.Target),99999).Recommendation=="Not assessed",
+            "A rated Store package is not assessed outside its reviewed Windows builds");
         var tweak=Maintenance.Tweaks.First();var row=new MaintenanceRow("tweak:"+Maintenance.Id("tweak",tweak.Name),tweak.Name,"Windows","Not applied",tweak.Description);
         check(!MaintenanceGuidance.Describe("Windows tweaks",row,99999).CanChange&&MaintenanceGuidance.Describe("Windows tweaks",row,99999).Recommendation=="Not assessed","Unsupported build retains explanation but cannot Apply");
         bool rejected=false;try{MaintenanceGuidance.RequireSupported(row.Id,99999);}catch(InvalidOperationException){rejected=true;}

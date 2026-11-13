@@ -1,0 +1,84 @@
+{
+  "repository": "https://github.com/Klocman/Bulk-Crap-Uninstaller",
+  "revision": "30da609384c98ba6e35c6530129541ea4ff3970a",
+  "license": "Apache-2.0",
+  "adaptation": "Uninstaller sources (registry, Store, Scoop, Chocolatey), Windows Installer and Inno Setup quiet switches, bulk uninstall ordering, leftover scanners and confidence scoring are re-implemented in Pathweft code (MaintenanceApps.cs, MaintenanceLeftovers.cs). Cited files are provenance only, never compiled or executed. The GPL list control, online rating service and telemetry are not used.",
+  "files": [
+    {
+      "path": "source/UninstallTools/Factory/RegistryFactory.cs",
+      "sha256": "b2adf83371ef8fbf21e95a02e87fd2c6482f7e65aaf49e6dbd3f41bf6d79a681"
+    },
+    {
+      "path": "source/UninstallTools/Factory/StoreAppFactory.cs",
+      "sha256": "1e4e286bfa39ad526e5f747ec03c5a96859e95caf015d19a4d4c61a7ef31201b"
+    },
+    {
+      "path": "source/UninstallTools/Factory/ScoopFactory.cs",
+      "sha256": "8b6803ae1411bd563ceb146cc8d96644b965b505578cb35f2f24284e90e586a8"
+    },
+    {
+      "path": "source/UninstallTools/Factory/ChocolateyFactory.cs",
+      "sha256": "13d5388ba1f7801566468051c3cfd8b1cf7a5af84aa4c1d895be1cb8d7b9f1a7"
+    },
+    {
+      "path": "source/StoreAppHelper/AppManager.cs",
+      "sha256": "9187cabc446fd06f8a7ae8f4d0648a0c5b7fbba2369d2adfbf7eee0553656411"
+    },
+    {
+      "path": "source/UninstallTools/Factory/InfoAdders/InnoSetupQuietUninstallStringGenerator.cs",
+      "sha256": "b0c7c4c7039c5295563029cbab2f7573a49fa3ffd8b982a860c77769ba13c499"
+    },
+    {
+      "path": "source/UninstallTools/Factory/InfoAdders/MsiUninstallStringGenerator.cs",
+      "sha256": "4641ed9277c90963b81a03520cd28e58468a1d82e4947dddac3a04de4930433b"
+    },
+    {
+      "path": "source/UninstallTools/Factory/InfoAdders/UninstallerTypeAdder.cs",
+      "sha256": "607703dc78ded3b5b8ef4a92afc95b0010dd34b4c060032101d40001873257c5"
+    },
+    {
+      "path": "source/BulkCrapUninstaller/Functions/AppUninstaller.cs",
+      "sha256": "ffaa859f9705991667dc229a0c8f7839e7a31ffe39b573e2390481cd97e79d9d"
+    },
+    {
+      "path": "source/UninstallTools/Junk/Confidence/ConfidenceGenerators.cs",
+      "sha256": "60c6ea4f136eebf7c879c8389b1dab603164228997ea58fca3d4539df2219f2c"
+    },
+    {
+      "path": "source/UninstallTools/Junk/Confidence/ConfidenceLevel.cs",
+      "sha256": "299596d79bd3d6042ba23c1a02a79243a68e4b1da6cae8c7e1b26f8e293799c3"
+    },
+    {
+      "path": "source/UninstallTools/Junk/Finders/Drive/CommonDriveJunkScanner.cs",
+      "sha256": "fe0b018b20c516c02beb1cccd30b0036551df65e1f9221b327afd74f6c0244f9"
+    },
+    {
+      "path": "source/UninstallTools/Junk/Finders/Drive/InstallLocationScanner.cs",
+      "sha256": "0e309a6f431365ddc96f904cf21d6405185d1e75c919e12c160f5fc7af0042b6"
+    },
+    {
+      "path": "source/UninstallTools/Junk/Finders/Drive/UninstallerLocationScanner.cs",
+      "sha256": "f0010aaa74e2ea031c2023105c6360f92ab1eb152c93b8628b228cfb7d6e57d8"
+    },
+    {
+      "path": "source/UninstallTools/Junk/Finders/Misc/ShortcutJunk.cs",
+      "sha256": "1eb68cc7d08f1b1c7022b2464bd9905199c9d88712e29de63aa02ce46de156b3"
+    },
+    {
+      "path": "source/UninstallTools/Junk/Finders/Misc/StartupJunk.cs",
+      "sha256": "e92ee91f42d24295083568ee43168caabb8aa2ce8784f832f2785032e78ae296"
+    },
+    {
+      "path": "source/UninstallTools/Junk/Containers/RegistryKeyJunk.cs",
+      "sha256": "ec58edc0ab775e463165d0c8e865a6896a0927132534dfceb07a2749f92da4c4"
+    },
+    {
+      "path": "source/UninstallTools/Junk/Containers/FileSystemJunk.cs",
+      "sha256": "8a7d359dba3d8969470c882a68f5acce0d571d7dbf8fba5c6b0d846b920d67c5"
+    },
+    {
+      "path": "source/UninstallTools/Uninstaller/BulkUninstallTask.cs",
+      "sha256": "e6904e63e202e735e950c1b799fd8e7d53230f20ca86c272f9441caa4923c2fd"
+    }
+  ]
+}

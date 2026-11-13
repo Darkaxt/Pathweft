@@ -96,7 +96,7 @@ sealed partial class PackageProbe
                 string direction=AutomationProperties.GetItemStatus(header);
                 var sorted=System.Windows.Data.CollectionViewSource.GetDefaultView(rows.ItemsSource).SortDescriptions;
                 Check(sorted.Count>0&&sorted[0].PropertyName==(string)header.Tag&&direction.Length>0,"Delivered header sorts "+categories[i]+" / "+AutomationProperties.GetName(header));
-                var grouped=rows.Items.Cast<object>().GroupBy(row=>categories[i]=="Windows tweaks"?(string)Get(row,"Group"):"");
+                var grouped=rows.Items.Cast<object>().GroupBy(row=>categories[i] is "Windows tweaks" or "Windows apps"?(string)Get(row,"Group"):"");
                 Check(grouped.All(group=>{var values=group.Select(row=>Get(row,(string)header.Tag)).ToArray();return values.Zip(values.Skip(1),(a,b)=>direction=="Ascending"?System.Collections.Comparer.Default.Compare(a,b)<=0:System.Collections.Comparer.Default.Compare(a,b)>=0).All(x=>x);}),"Delivered rows follow selected header ordering within setting groups: "+AutomationProperties.GetName(header));
                 rows.RaiseEvent(new RoutedEventArgs(Button.ClickEvent,header));
                 Check(AutomationProperties.GetItemStatus(header)!=direction,"Delivered header reverses "+AutomationProperties.GetName(header));
@@ -134,7 +134,8 @@ sealed partial class PackageProbe
             }
         }
         Check(File.Exists(Path.Combine(Path.GetDirectoryName(Product.Location),"Maintenance-Windows.ps1"))&&
-            rows.Items.Cast<object>().All(r=>(string)Get(r,"Scope")=="Current user"),"Delivered optional Windows-app query uses its bundled supervised script");
+            File.Exists(Path.Combine(Path.GetDirectoryName(Product.Location),"vendor","BulkCrapUninstaller","source-manifest.json"))&&
+            rows.Items.Cast<object>().All(r=>((string)Get(r,"Type")).Length>0&&(string)Get(r,"Group")==(string)Get(r,"Type")),"Delivered Windows apps lists installed apps by source with the bundled script and BCU provenance");
         await (Task)Call(owner.GetType(),owner,"CloseMaintenance");
         Check(cards.Visibility==Visibility.Collapsed&&!(bool)owner.GetType().GetField("maintenanceVisible",Flags).GetValue(owner),
             "Delivered Back to files retires Maintenance and restores browser layout");

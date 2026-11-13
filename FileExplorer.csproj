@@ -9,7 +9,7 @@
     <AssemblyName>Pathweft</AssemblyName>
     <Product>Pathweft</Product>
     <Company>Darkaxt</Company>
-    <Version>1.1.60</Version>
+    <Version>1.1.61</Version>
     <!-- WPF windows without their own Icon use this one, so every window gets it -->
     <ApplicationIcon>app.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
@@ -71,6 +71,8 @@
     <None Update="vendor\SophiApp\source-manifest.json" CopyToOutputDirectory="PreserveNewest" />
     <None Update="vendor\UnattendedWinstall\source-manifest.json" CopyToOutputDirectory="PreserveNewest" />
     <None Update="vendor\Bloatynosy\source-manifest.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="vendor\BulkCrapUninstaller\source-manifest.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="vendor\BulkCrapUninstaller\NOTICE" CopyToOutputDirectory="PreserveNewest" />
     <None Update="vendor\Sophia\source-manifest.json" CopyToOutputDirectory="PreserveNewest" />
     <None Update="vendor\WinUtil\source-manifest.json" CopyToOutputDirectory="PreserveNewest" />
     <None Update="docs\PERFORMANCE-MCP.md" Link="Performance-MCP.md" CopyToOutputDirectory="PreserveNewest" />
