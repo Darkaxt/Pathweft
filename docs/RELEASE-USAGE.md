@@ -1,6 +1,8 @@
-# Pathweft 1.1.62
+# Pathweft 1.1.63
 
-Pathweft 1.1.62 uses the administrator approval given at launch for Maintenance
+Pathweft 1.1.63 adds Maintenance › Security check, a read-only comparison with the
+HardeningKitty machine list, eight opt-in hardening tweaks with Restore, and a
+Memory growth event in System analysis. 1.1.62 uses the administrator approval given at launch for Maintenance
 and uninstallers too, so no further UAC prompt follows it. 1.1.61 turns Maintenance › Windows apps into an uninstaller for desktop
 programs, Store apps, Scoop and Chocolatey packages, with bulk uninstall in Bulk
 Crap Uninstaller's order and leftover cleanup with Restore. 1.1.60 organises Maintenance › Windows tweaks by goal (Debloat, Privacy,

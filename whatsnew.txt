@@ -1,6 +1,18 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.63 | 2026-11-13 | Security check and memory growth
+
+**Maintenance › Security check**
+- A new read-only category compares this PC with the HardeningKitty machine list: 418 settings, 335 of them checked automatically, grouped by severity with the current and recommended value side by side. Nothing is changed from this list.
+- Where a Pathweft Windows tweak changes the same setting, "Open in Windows tweaks" takes you to it.
+- Eight new Security tweaks, each with exact Restore: Defender network protection, potentially unwanted app blocking, the Defender sandbox, LSA protection, firmware-installed software (WPBT), and removing the PowerShell 2.0 engine, WMIC and VBScript. Settings with a cost are marked ▲ Caution.
+
+**System analysis**
+- Physical RAM history now flags an app whose memory keeps growing, for example "growing steadily ~1 GB/min for 23 min · 6.9 GB → 30.1 GB". App start-up bursts and builds are not flagged.
+- Usage spikes sit at their peak and name the largest app there and, for memory, the app that grew most.
+- Spike and growth markers use the caution colour; selecting one shows the apps recorded at its peak.
+
 ## 1.1.62 | 2026-11-13 | One administrator approval
 
 - Approving administrator access when Pathweft starts now covers Maintenance too: elevated tweaks, services, startup items for all users, protected Cleanup and restore points no longer ask Windows again, and leaving Maintenance keeps the approval until Pathweft closes.
