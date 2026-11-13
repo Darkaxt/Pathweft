@@ -106,12 +106,13 @@ sealed partial class PackageProbe
             if(categories[i]=="Services")Check(rows.Items.Cast<object>().Any(row=>(string)Get(row,"Type")=="AppXSvc"&&(string)Get(row,"Recommendation")=="Keep enabled")&&
                 rows.Items.Cast<object>().All(row=>((string)Get(row,"Summary")).IndexOfAny(['\r','\n'])<0),"Delivered Services includes matched guidance and compact details");
             if(i>0)Check(headers.Contains("Recommendation")== (categories[i]=="Windows tweaks")&&
-                rows.Items.Cast<object>().All(row=>!string.IsNullOrEmpty((string)Get(row,"Guidance"))),
+                (categories[i]=="Security check"||rows.Items.Cast<object>().All(row=>!string.IsNullOrEmpty((string)Get(row,"Guidance")))),
                 "Delivered Recommendation column appears only with full reviewed tweak coverage: "+categories[i]);
             if(categories[i]=="Windows tweaks")
             {
-                Check(rows.Items.Count==121&&rows.Items.Cast<object>().Count(row=>((string)Get(row,"RuleId")).StartsWith("donor."))==24&&
+                Check(rows.Items.Count==129&&rows.Items.Cast<object>().Count(row=>((string)Get(row,"RuleId")).StartsWith("donor."))==24&&
                     rows.Items.Cast<object>().Count(row=>((string)Get(row,"RuleId")).StartsWith("s47."))==81&&
+                    rows.Items.Cast<object>().Count(row=>((string)Get(row,"RuleId")).StartsWith("s47c."))==8&&
                     rows.Items.Cast<object>().Where(row=>((string)Get(row,"RuleId")).StartsWith("donor.")).All(row=>(string)Get(row,"Recommendation")!="Not assessed"),"Delivered catalog contains all qualified adopted donor actions");
                 Check(rows.Items.Cast<object>().All(row=>((string)Get(row,"Goal")).Length>0&&(string)Get(row,"Risk") is "Low" or "Caution" or "High")&&
                     rows.Items.Cast<object>().Any(row=>(string)Get(row,"Risk")=="Caution"&&((string)Get(row,"RiskLabel")).Contains("Caution")),"Delivered tweaks carry a goal and a labelled risk level (MAINT-25/26)");
@@ -132,10 +133,16 @@ sealed partial class PackageProbe
                 Check(((StackPanel)card.Content).Children.OfType<TextBlock>().ElementAt(1).Text==pending.ToString("N0"),"Delivered filtering preserves the whole-category recommendation count");
                 filter.SelectedIndex=0;Check(rows.Items.Count==all,"Delivered All categories restores the full setting list");
             }
+            if(categories[i]=="Windows apps")
+                Check(File.Exists(Path.Combine(Path.GetDirectoryName(Product.Location),"Maintenance-Windows.ps1"))&&
+                    File.Exists(Path.Combine(Path.GetDirectoryName(Product.Location),"vendor","BulkCrapUninstaller","source-manifest.json"))&&
+                    rows.Items.Cast<object>().All(r=>((string)Get(r,"Type")).Length>0&&(string)Get(r,"Group")==(string)Get(r,"Type")),"Delivered Windows apps lists installed apps by source with the bundled script and BCU provenance");
+            if(categories[i]=="Security check")
+                Check(rows.Items.Count==418&&rows.Items.Cast<object>().All(r=>!(bool)Get(r,"CanChange")&&
+                    (string)Get(r,"Group") is "High · not met" or "Medium · not met" or "Low · not met" or "Met" or "Not checked")&&
+                    File.Exists(Path.Combine(Path.GetDirectoryName(Product.Location),"vendor","HardeningKitty","source-manifest.json")),
+                    "Delivered Security check evaluates the bundled HardeningKitty list read-only with its provenance (MAINT-40/41)");
         }
-        Check(File.Exists(Path.Combine(Path.GetDirectoryName(Product.Location),"Maintenance-Windows.ps1"))&&
-            File.Exists(Path.Combine(Path.GetDirectoryName(Product.Location),"vendor","BulkCrapUninstaller","source-manifest.json"))&&
-            rows.Items.Cast<object>().All(r=>((string)Get(r,"Type")).Length>0&&(string)Get(r,"Group")==(string)Get(r,"Type")),"Delivered Windows apps lists installed apps by source with the bundled script and BCU provenance");
         await (Task)Call(owner.GetType(),owner,"CloseMaintenance");
         Check(cards.Visibility==Visibility.Collapsed&&!(bool)owner.GetType().GetField("maintenanceVisible",Flags).GetValue(owner),
             "Delivered Back to files retires Maintenance and restores browser layout");
