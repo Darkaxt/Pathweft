@@ -56,7 +56,7 @@ public partial class MainWindow
     {
         await maintenance.CategoryForVerification("Security check");UpdateLayout();
         var rows=maintenance.Rows.Items.Cast<MaintenanceRow>().ToArray();
-        check(rows.Length==335&&!maintenance.VisibleActionsForVerification.Any(a=>a is "Apply" or "Restore" or "Restore Windows default"),"Security check lists the evaluated rows and offers no Apply or Restore");
+        check(rows.Length==335&&rows.Length==MaintenanceSecurity.Rules().Count(r=>MaintenanceSecurity.Evaluated.Contains(r.Method))&&!maintenance.VisibleActionsForVerification.Any(a=>a is "Apply" or "Restore" or "Restore Windows default"),"Security check lists the evaluated rows and offers no Apply or Restore");
         var headers=((GridView)maintenance.Rows.View).Columns.Select(x=>System.Windows.Automation.AutomationProperties.GetName((GridViewColumnHeader)x.Header)).ToArray();
         check(headers.SequenceEqual(new[]{"Setting","Category","Current","Recommended","Result"}),"Security check shows Setting, Category, Current, Recommended and Result");
         var groups=CollectionViewSource.GetDefaultView(maintenance.Rows.ItemsSource).Groups.Cast<CollectionViewGroup>().Select(g=>(string)g.Name).ToArray();

@@ -110,9 +110,10 @@ sealed partial class PackageProbe
                 "Delivered Recommendation column appears only with full reviewed tweak coverage: "+categories[i]);
             if(categories[i]=="Windows tweaks")
             {
-                Check(rows.Items.Count==129&&rows.Items.Cast<object>().Count(row=>((string)Get(row,"RuleId")).StartsWith("donor."))==24&&
-                    rows.Items.Cast<object>().Count(row=>((string)Get(row,"RuleId")).StartsWith("s47."))==81&&
-                    rows.Items.Cast<object>().Count(row=>((string)Get(row,"RuleId")).StartsWith("s47c."))==8&&
+                // counts come from the shipped catalog, not from numbers that drift with each stage
+                int Shipped(string type,string member)=>((Array)(Type(type).GetProperty(member,Flags)?.GetValue(null)??Type(type).GetMethod(member,Flags).Invoke(null,null))).Length;
+                Check(rows.Items.Count==Shipped("Maintenance","Tweaks")&&rows.Items.Cast<object>().Count(row=>((string)Get(row,"RuleId")).StartsWith("donor."))==Shipped("MaintenanceDonorTweaks","All")&&
+                    rows.Items.Cast<object>().Count(row=>((string)Get(row,"RuleId")) is var id&&(id.StartsWith("s47.")||id.StartsWith("s47c.")))==Shipped("MaintenanceS47Tweaks","All")&&
                     rows.Items.Cast<object>().Where(row=>((string)Get(row,"RuleId")).StartsWith("donor.")).All(row=>(string)Get(row,"Recommendation")!="Not assessed"),"Delivered catalog contains all qualified adopted donor actions");
                 Check(rows.Items.Cast<object>().All(row=>((string)Get(row,"Goal")).Length>0&&(string)Get(row,"Risk") is "Low" or "Caution" or "High")&&
                     rows.Items.Cast<object>().Any(row=>(string)Get(row,"Risk")=="Caution"&&((string)Get(row,"RiskLabel")).Contains("Caution")),"Delivered tweaks carry a goal and a labelled risk level (MAINT-25/26)");
@@ -137,8 +138,10 @@ sealed partial class PackageProbe
                 Check(File.Exists(Path.Combine(Path.GetDirectoryName(Product.Location),"Maintenance-Windows.ps1"))&&
                     File.Exists(Path.Combine(Path.GetDirectoryName(Product.Location),"vendor","BulkCrapUninstaller","source-manifest.json"))&&
                     rows.Items.Cast<object>().All(r=>((string)Get(r,"Type")).Length>0&&(string)Get(r,"Group")==(string)Get(r,"Type")),"Delivered Windows apps lists installed apps by source with the bundled script and BCU provenance");
+            static int Evaluated(){var security=Type("MaintenanceSecurity");var methods=(string[])security.GetField("Evaluated",Flags).GetValue(null);
+                return ((Array)security.GetMethod("Rules",Flags).Invoke(null,[null])).Cast<object>().Count(r=>methods.Contains((string)Get(r,"Method")));}
             if(categories[i]=="Security check")
-                Check(rows.Items.Count==418&&rows.Items.Cast<object>().All(r=>!(bool)Get(r,"CanChange")&&
+                Check(rows.Items.Count==Evaluated()&&rows.Items.Cast<object>().All(r=>!(bool)Get(r,"CanChange")&&
                     (string)Get(r,"Group") is "High · not met" or "Medium · not met" or "Low · not met" or "Met" or "Not checked")&&
                     File.Exists(Path.Combine(Path.GetDirectoryName(Product.Location),"vendor","HardeningKitty","source-manifest.json")),
                     "Delivered Security check evaluates the bundled HardeningKitty list read-only with its provenance (MAINT-40/41)");

@@ -1,7 +1,7 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
-## 1.1.63 | 2026-11-13 | Security check and memory growth
+## 1.1.64 | 2026-11-14 | Security check, memory growth and shortcut details
 
 **Maintenance › Security check**
 - A new read-only category compares this PC with the HardeningKitty machine list: 418 settings, 335 of them checked automatically, grouped by severity with the current and recommended value side by side. Nothing is changed from this list.
@@ -12,6 +12,9 @@
 - Physical RAM history now flags an app whose memory keeps growing, for example "growing steadily ~1 GB/min for 23 min · 6.9 GB → 30.1 GB". App start-up bursts and builds are not flagged.
 - Usage spikes sit at their peak and name the largest app there and, for memory, the app that grew most.
 - Spike and growth markers use the caution colour; selecting one shows the apps recorded at its peak.
+
+**Preview**
+- Shortcuts (.lnk and .url) now show what they point to instead of a hex dump: target, arguments, start folder, shortcut key, icon and comment, whether the target is still there, and buttons to open it or show it in its folder.
 
 ## 1.1.62 | 2026-11-13 | One administrator approval
 

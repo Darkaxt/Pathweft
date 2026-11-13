@@ -3,7 +3,7 @@
 param(
     [Parameter(Mandatory)][string]$Executable,
     [string]$ScratchRoot='D:\Temp\pathweft-s13-s9-s11',
-    [ValidateSet('full','drive','administrator','maintenance','performance-adoption','performance','performance-ui','performance-analysis','performance-native','office','office-extraction','office-reference','office-fallback','office-formats','photo-core','vector-core','fig-core','pdf-core','policies','formats','runtime','sizes','space','space-entry','space-refresh','space-ui','indexed-sizes','live-indexed-sizes','existing','pdf','modes','preview-selection','missing-tabs','icons','menus','menus-ui','menus-properties','menus-shell','jump-lists','windows','transfers','transfer-progress','transfer-differences','transfers-clipboard')][string]$Scenario='full',
+    [ValidateSet('full','drive','administrator','maintenance','performance-adoption','performance','performance-ui','performance-analysis','performance-native','office','office-extraction','office-reference','office-fallback','office-formats','photo-core','vector-core','fig-core','pdf-core','policies','formats','runtime','sizes','space','space-entry','space-refresh','space-ui','indexed-sizes','live-indexed-sizes','existing','pdf','modes','preview-selection','shortcuts','missing-tabs','icons','menus','menus-ui','menus-properties','menus-shell','jump-lists','windows','transfers','transfer-progress','transfer-differences','transfers-clipboard')][string]$Scenario='full',
     [string]$MenuDesktop,
     [string]$FixtureSource,
     [string]$MediaInputs,

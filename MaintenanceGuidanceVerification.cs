@@ -65,6 +65,10 @@ public partial class MainWindow
         await S1Verification.Snapshot(this,root,"services-compact");
         await maintenance.CategoryForVerification("Windows tweaks");int all=maintenance.Rows.Items.Count;
         check(all==129&&maintenance.Rows.Items.Cast<MaintenanceRow>().Count(r=>r.RuleId.StartsWith("donor."))==24,"Actual searchable grouped table contains all newly adopted donor actions");
+        // the package checks count from these catalogs; they must agree with the table
+        check(all==Maintenance.Tweaks.Length&&maintenance.Rows.Items.Cast<MaintenanceRow>().Count(r=>r.RuleId.StartsWith("donor."))==MaintenanceDonorTweaks.All().Length&&
+            maintenance.Rows.Items.Cast<MaintenanceRow>().Count(r=>r.RuleId.StartsWith("s47.")||r.RuleId.StartsWith("s47c."))==MaintenanceS47Tweaks.All().Length,
+            $"Windows tweaks rows match the shipped catalogs ({Maintenance.Tweaks.Length}, {MaintenanceDonorTweaks.All().Length} donor, {MaintenanceS47Tweaks.All().Length} S47)");
         check(maintenance.Rows.Items.Cast<MaintenanceRow>().Where(r=>r.RuleId.StartsWith("donor.")).All(r=>r.Recommendation!="Not assessed"&&r.Guidance.Contains("configuration and Restore checked")),"Adopted donor settings expose their actual qualified guidance rather than empty recommendation scaffolding");
         string expected=maintenance.Rows.Items.Cast<MaintenanceRow>().Count(MaintenanceGuidance.PendingRecommendation).ToString("N0");
         var card=(Button)((System.Windows.Controls.Primitives.UniformGrid)maintenance.Cards).Children[3];
