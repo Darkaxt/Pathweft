@@ -110,10 +110,13 @@ sealed partial class PackageProbe
                 "Delivered Recommendation column appears only with full reviewed tweak coverage: "+categories[i]);
             if(categories[i]=="Windows tweaks")
             {
-                Check(rows.Items.Count==40&&rows.Items.Cast<object>().Count(row=>((string)Get(row,"RuleId")).StartsWith("donor."))==24&&
+                Check(rows.Items.Count==121&&rows.Items.Cast<object>().Count(row=>((string)Get(row,"RuleId")).StartsWith("donor."))==24&&
+                    rows.Items.Cast<object>().Count(row=>((string)Get(row,"RuleId")).StartsWith("s47."))==81&&
                     rows.Items.Cast<object>().Where(row=>((string)Get(row,"RuleId")).StartsWith("donor.")).All(row=>(string)Get(row,"Recommendation")!="Not assessed"),"Delivered catalog contains all qualified adopted donor actions");
+                Check(rows.Items.Cast<object>().All(row=>((string)Get(row,"Goal")).Length>0&&(string)Get(row,"Risk") is "Low" or "Caution" or "High")&&
+                    rows.Items.Cast<object>().Any(row=>(string)Get(row,"Risk")=="Caution"&&((string)Get(row,"RiskLabel")).Contains("Caution")),"Delivered tweaks carry a goal and a labelled risk level (MAINT-25/26)");
                 int pending=rows.Items.Cast<object>().Count(row=>(bool)Get(row,"CanChange")&&
-                    ((string)Get(row,"Recommendation")=="Optional"&&(string)Get(row,"State")=="Not applied"||
+                    ((string)Get(row,"Recommendation")=="Optional"&&(string)Get(row,"Risk")=="Low"&&(string)Get(row,"State")=="Not applied"||
                      (string)Get(row,"Recommendation")=="Keep enabled"&&(string)Get(row,"State")=="Applied"));
                 Check(((StackPanel)card.Content).Children.OfType<TextBlock>().ElementAt(1).Text==pending.ToString("N0")&&
                     card.ToolTip.ToString().Contains("recommended actions pending"),"Delivered Tweaks card counts applicable pending recommendations");
