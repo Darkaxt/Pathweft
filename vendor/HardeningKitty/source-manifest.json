@@ -1,0 +1,12 @@
+{
+  "repository": "https://github.com/scipag/HardeningKitty",
+  "revision": "da0976073caad006c48b2478588c2f7fa572ab46",
+  "license": "MIT",
+  "adaptation": "The main machine finding list is shipped unchanged and evaluated read-only by Pathweft's Security check (MaintenanceSecurity.cs). The HardeningKitty module is not shipped or run; its HailMary/apply modes are not used.",
+  "files": [
+    {
+      "path": "lists/finding_list_0x6d69636b_machine.csv",
+      "sha256": "cc6cf409c7cb0f7dc0caeb82b8323dcc13ddb4dcb88e35e9e2cc4f52874816f4"
+    }
+  ]
+}

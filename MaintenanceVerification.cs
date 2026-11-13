@@ -31,7 +31,7 @@ public partial class MainWindow
         File.WriteAllText(Path.Combine(root,"selection.txt"),"Maintenance must preserve this browser");await S1Verification.Navigate(active,root);
         active.ListForVerification.SelectedItem=active.Items.First(x=>!x.IsUp);string path=active.Dir;var selection=active.Selected.Select(x=>x.Path).ToArray();
         MaintenanceCommand.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await paneModeWork;UpdateLayout();
-        check(!maintenance.IsVisible&&PaneArea.IsVisible&&!AnalysisVisible&&TerminalCommand.IsEnabled&&Equals(MaintenanceCommand.Tag,"on")&&maintenance.Cards.IsVisible,"Brush first opens only the five Maintenance cards, preserving the usable file browser");
+        check(!maintenance.IsVisible&&PaneArea.IsVisible&&!AnalysisVisible&&TerminalCommand.IsEnabled&&Equals(MaintenanceCommand.Tag,"on")&&maintenance.Cards.IsVisible,"Brush first opens only the six Maintenance cards, preserving the usable file browser");
         string automaticState=maintenance.State;
         await maintenance.CategoryForVerification("Cleanup");UpdateLayout();
         check(maintenance.IsVisible&&!PaneArea.IsVisible&&AnalysisVisible&&!TerminalCommand.IsEnabled&&MaintenanceCommand.IsEnabled&&!PerformanceCommand.IsEnabled&&!AdministratorCommand.IsEnabled&&!HiddenToggle.IsEnabled,
@@ -140,7 +140,7 @@ public partial class MainWindow
         resume.SetResult();await originalWork;await leaving;await retiring;await paneModeWork;maintenance.AnalyzeStepForVerification=null;
         MaintenanceCommand.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await paneModeWork;UpdateLayout();
         check(!maintenance.IsVisible&&PaneArea.IsVisible&&maintenance.State=="All categories reviewed. Nothing has been removed.","Maintenance reopens cards-first after the original analysis and review disposal finish");
-        check(maintenance.Cards.IsVisible&&!StatsRow.IsVisible&&!performance.IsVisible&&((System.Windows.Controls.Primitives.UniformGrid)maintenance.Cards).Children.Count==5,"Brush replaces the bottom statistics with exactly five maintenance summary tabs");
+        check(maintenance.Cards.IsVisible&&!StatsRow.IsVisible&&!performance.IsVisible&&((System.Windows.Controls.Primitives.UniformGrid)maintenance.Cards).Children.Count==6,"Brush replaces the bottom statistics with exactly six maintenance summary tabs");
         check(!PerformanceMode&&PerformanceCommand.Tag==null&&System.Windows.Automation.AutomationProperties.GetItemStatus(PerformanceCommand)=="Off"&&
             PerformanceCommand.IsEnabled&&AdministratorCommand.IsEnabled&&TerminalCommand.IsEnabled&&HiddenToggle.IsEnabled&&PerformanceCommand.Opacity==1&&
             System.Windows.Automation.AutomationProperties.GetItemStatus(AdministratorCommand)!="Explorer only"&&!AdministratorSession.Available,
@@ -160,8 +160,8 @@ public partial class MainWindow
         check(!PerformanceMode&&!performance.IsVisible&&!performance.Analysis.IsVisible&&performance.Selected==-1&&PerformanceCommand.Tag==null,"Entering Maintenance exits the prior Performance cards and analysis");
         await CloseMaintenance();UpdateLayout();check(!PerformanceMode&&StatsRow.IsVisible&&PaneArea.IsVisible,"Leaving Maintenance returns to files rather than reviving hidden Performance");
         MaintenanceCommand.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await paneModeWork;
-        VerifyMaintenanceGuidance(check);MaintenanceAppsVerification.Host(root,check);
-        foreach(string category in new[]{"Startup","Services","Windows tweaks","Windows apps"})
+        VerifyMaintenanceGuidance(check);MaintenanceAppsVerification.Host(root,check);VerifySecurityCheck(check);
+        foreach(string category in new[]{"Startup","Services","Windows tweaks","Windows apps","Security check"})
         {
             await maintenance.CategoryForVerification(category);check(!maintenance.State.Contains("failed",StringComparison.OrdinalIgnoreCase),"Native read-only category opens: "+category);
             check(category=="Windows apps"||maintenance.Rows.Items.Count>0,"Category exposes actual Windows rows: "+category);
@@ -188,7 +188,7 @@ public partial class MainWindow
             await maintenance.CategoryForVerification("Windows tweaks");maintenance.Rows.SelectedIndex=0;UpdateLayout();
             check(maintenance.Rows.ActualHeight>120&&maintenance.Rows.ActualWidth>400,"Maintenance table remains usable at "+theme+" / "+scale);
         }
-        await VerifyMaintenanceGuidanceUi(root,check);
+        await VerifyMaintenanceGuidanceUi(root,check);await VerifySecurityCheckUi(root,check);
         Width=820;UpdateLayout();await S1Verification.Snapshot(this,root,"maintenance-narrow");
         await maintenance.CategoryForVerification("Windows apps");UpdateLayout();await S1Verification.Snapshot(this,root,"maintenance-apps-narrow");
         check(maintenance.Rows.ActualHeight>100,"Narrow Windows apps keeps its table visible");
@@ -298,7 +298,7 @@ public partial class MainWindow
             var view=System.Windows.Data.CollectionViewSource.GetDefaultView(table.ItemsSource);
             check(view.SortDescriptions[0].PropertyName==property&&direction.Length>0&&direction!=previous,"Actual sortable header selects "+panel.Category+" / "+property);
             var comparison=System.Collections.Comparer.Default;
-            var grouped=table.Items.Cast<MaintenanceRow>().GroupBy(x=>panel.Category is "Windows tweaks" or "Windows apps"?x.Group:"");
+            var grouped=table.Items.Cast<MaintenanceRow>().GroupBy(x=>panel.Category is "Windows tweaks" or "Windows apps" or "Security check"?x.Group:"");
             check(grouped.All(group=>{var values=group.Select(x=>typeof(MaintenanceRow).GetProperty(property).GetValue(x)).ToArray();return values.Zip(values.Skip(1),(a,b)=>direction=="Ascending"?comparison.Compare(a,b)<=0:comparison.Compare(a,b)>=0).All(x=>x);}),"Actual rows follow header ordering within setting categories: "+panel.Category+" / "+property);
             header.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             check(System.Windows.Automation.AutomationProperties.GetItemStatus(header)!=direction,"Header reverses direction: "+property);

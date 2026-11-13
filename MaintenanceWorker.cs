@@ -29,7 +29,7 @@ internal sealed class MaintenanceClient : IAsyncDisposable
         {
             if(elevated)
             {
-                session=await AdministratorSession.Open(name,"maintenance",cancel,enable:request.Action is not ("list" or "space" or "disk-health")).ConfigureAwait(false);
+                session=await AdministratorSession.Open(name,"maintenance",cancel,enable:request.Action is not ("list" or "space" or "disk-health" or "security-check")).ConfigureAwait(false);
                 sessionStop=session.Stopped.Register(()=>{stopped.Cancel();pipe.Dispose();});
             }
             else
@@ -236,6 +236,8 @@ internal static class MaintenanceWorker
     internal static async Task<string> Apply(MaintenanceRequest request,CancellationToken cancel=default)
     {
         if(request.Action=="save-editor")return SaveEditor(request,cancel);
+        // Read-only Security check with the approved session's access (MAINT-40); it never writes.
+        if(request.Action=="security-check")return JsonSerializer.Serialize(MaintenanceSecurity.Check(cancel));
         if(request.Action=="restore-point")return await WindowsAction("RestorePoint",cancel:cancel);
         // Administrator leftovers of a removed app (MAINT-36): the worker re-scans with the same identity and
         // removes only requested items it finds again, after its own .reg backup inside the profile's folder.
@@ -265,13 +267,14 @@ internal static class MaintenanceWorker
         if(request.Id.StartsWith("startup-file:"))return MaintenanceStartup.ChangeFile(request.Id,restore,request.Journal);
         if(request.Id.StartsWith("startup-task:"))
         {try{return MaintenanceStartup.ChangeTask(request.Id,restore,request.Journal);}catch(COMException error){throw new IOException("Windows Task Scheduler: "+error.Message,error);}}
+        bool restart;
         try
         {
-            if(restore)Maintenance.RestoreRegistry(request.Id,request.Journal);
-            else Maintenance.ApplyRegistry(request.Id,request.Id.StartsWith("startup:")?Maintenance.StartupEdits(request.Id):Maintenance.TweakEdits(request.Id),request.Journal);
+            restart=restore?Maintenance.RestoreRegistry(request.Id,request.Journal)
+                :Maintenance.ApplyRegistry(request.Id,request.Id.StartsWith("startup:")?Maintenance.StartupEdits(request.Id):Maintenance.TweakEdits(request.Id),request.Journal);
         }
         catch(COMException error){throw new IOException("Windows Task Scheduler: "+error.Message,error);}
-        return restore?"Original settings restored.":"Change verified. Original settings saved for Restore.";
+        return (restore?"Original settings restored.":"Change verified. Original settings saved for Restore.")+(restart?" Windows completes it after a restart.":"");
     }
     // The elevated worker writes journals and review manifests only to this
     // profile's Maintenance locations (DEBUG verification uses owned fixture roots).

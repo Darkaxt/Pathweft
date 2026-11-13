@@ -94,6 +94,8 @@ internal sealed partial class PerformancePanel
         analysisGraph.MomentSelected+=time=>{investigationFrom=investigationTo=null;investigationMoment=time;selectedEvents=null;SetDetailKind();_ = LoadHistory();};
         analysisGraph.RangeSelected+=(from,to)=>{investigationMoment=null;selectedEvents=null;investigationFrom=from;investigationTo=to;historyWindow=to-from;historyEnd=to;changingRange=true;try{range.SelectedIndex=6;}finally{changingRange=false;}SetDetailKind();_ = LoadHistory();};
         analysisGraph.EventsSelected+=events=>{investigationFrom=investigationTo=null;selectedEvents=events;investigationMoment=null;SetDetailKind();_ = LoadHistory();};
+        // Selecting a spike or growth row investigates the apps recorded at its peak.
+        table.SelectionChanged+=(_,_)=>{if(selectedEvents!=null&&table.SelectedItem is PerformanceFact fact&&PerformanceTimeline.Alerting(fact)&&fact.PeakAt!=default)analysisGraph.Investigate(fact.PeakAt);};
         analysisGraph.MomentHovered+=time=>{hoverCancel?.Cancel();var previous=hoverQuery;var cancellation=new CancellationTokenSource();hoverCancel=cancellation;hoverQuery=ReadHover(previous,time,cancellation);};
         analysisGraph.SelectionCleared+=ResetInvestigation;
         var plots=new Grid();plots.Children.Add(analysisGraph);plots.Children.Add(appCharts);Grid.SetRow(plots,2);grid.Children.Add(plots);

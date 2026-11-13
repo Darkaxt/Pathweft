@@ -1,0 +1,24 @@
+{
+  "repository": "https://github.com/HotCakeX/Harden-Windows-Security",
+  "revision": "abe25f9210c09e56cce51331c39fbf3ca9a790fb",
+  "license": "MIT",
+  "adaptation": "Selected Defender, LSA and optional-feature hardening items reimplemented as individually journaled Windows tweaks (MaintenanceS47Tweaks.cs, MaintenanceFeatures.cs). Source files are provenance only, never executed or compiled.",
+  "files": [
+    {
+      "path": "Harden System Security/Resources/DeviceGuard.json",
+      "sha256": "09473a6ec98d11e7fc20cf33f6e895c760f39f38e8a82f75931d0e59ad67bb77"
+    },
+    {
+      "path": "Harden System Security/Resources/MicrosoftDefender.json",
+      "sha256": "6dbd1b2b36ece7f8e8e114f66bb6033d0685806d2e7a31b218ec8de2bc57ce12"
+    },
+    {
+      "path": "Harden System Security/ViewModels/MicrosoftDefenderVM.cs",
+      "sha256": "0126ed9f632659048bdcbd1490f069421ad013db534e1eb21ff0d00101c74d14"
+    },
+    {
+      "path": "Harden System Security/ViewModels/OptionalWindowsFeaturesVM.cs",
+      "sha256": "1ebcbf5c6777f3fa0c383a294b8715e02b6a620965decbe1fe7d7499d8e69345"
+    }
+  ]
+}

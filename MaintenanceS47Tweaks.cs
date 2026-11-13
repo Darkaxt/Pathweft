@@ -173,10 +173,33 @@ internal static class MaintenanceS47Tweaks
         // win11debloat 516fe42d Regfiles/Prevent_Auto_Reboot.reg:4-5
         Setting("Automatic restart while signed in","Do not restart automatically while someone is signed in",[],D("HKEY_LOCAL_MACHINE","SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate\\AU","NoAutoRebootWithLoggedOnUsers",1)),
         // sophia b9010fce src/Sophia_Script_for_Windows_11/Module/Sophia.psm1:5258-5258
-        Setting("Automatic active hours","Adjust active hours automatically",[],D("HKEY_LOCAL_MACHINE","SOFTWARE\\Microsoft\\WindowsUpdate\\UX\\Settings","SmartActiveHoursState",1))
+        Setting("Automatic active hours","Adjust active hours automatically",[],D("HKEY_LOCAL_MACHINE","SOFTWARE\\Microsoft\\WindowsUpdate\\UX\\Settings","SmartActiveHoursState",1)),
+        // S47c opt-in hardening (MAINT-42). Microsoft documentation is primary; donors are MIT and pinned in vendor.
+        // hardenwindowssecurity abe25f92 Harden System Security/Resources/MicrosoftDefender.json:822-831
+        Setting("Network protection in Microsoft Defender","Block connections to dangerous websites and domains from any app",[],D("HKEY_LOCAL_MACHINE","SOFTWARE\\Policies\\Microsoft\\Windows Defender\\Windows Defender Exploit Guard\\Network Protection","EnableNetworkProtection",1)),
+        // hardenwindowssecurity abe25f92 Harden System Security/Resources/MicrosoftDefender.json:977-986
+        Setting("Potentially unwanted app blocking","Block potentially unwanted apps in Microsoft Defender",[],D("HKEY_LOCAL_MACHINE","SOFTWARE\\Policies\\Microsoft\\Windows Defender","PUAProtection",1)),
+        // hardenwindowssecurity abe25f92 Harden System Security/ViewModels/MicrosoftDefenderVM.cs:608-630
+        Setting("Microsoft Defender sandbox","Run Microsoft Defender's scanning inside a sandbox",[],S("HKEY_LOCAL_MACHINE","SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment","MP_FORCE_USE_SANDBOX","1")),
+        // hardenwindowssecurity abe25f92 Harden System Security/Resources/DeviceGuard.json:170-179 (donor uses 1, the UEFI lock; Pathweft uses 2 so Restore works)
+        Setting("LSA protection","Run the Local Security Authority as a protected process, without UEFI lock",[],D("HKEY_LOCAL_MACHINE","SOFTWARE\\Policies\\Microsoft\\Windows\\System","RunAsPPL",2)),
+        // winutil 2ef5e5dc config/tweaks.json:1008-1020
+        Setting("Software installed by firmware (WPBT)","Do not run programs the PC's firmware asks Windows to install",[],D("HKEY_LOCAL_MACHINE","SYSTEM\\CurrentControlSet\\Control\\Session Manager","DisableWpbtExecution",1)),
+        // hardenwindowssecurity abe25f92 Harden System Security/ViewModels/OptionalWindowsFeaturesVM.cs:1855-1868
+        Component("PowerShell 2.0 engine","Turn off the legacy PowerShell 2.0 engine",new WindowsComponent("MicrosoftWindowsPowerShellV2Root",false),new WindowsComponent("MicrosoftWindowsPowerShellV2",false)),
+        // hardenwindowssecurity abe25f92 Harden System Security/ViewModels/OptionalWindowsFeaturesVM.cs:1909-1914
+        Component("WMIC command-line tool","Remove the deprecated WMIC tool",new WindowsComponent("WMIC~~~~",true,@"%SystemRoot%\System32\wbem\WMIC.exe")),
+        // hardenwindowssecurity abe25f92 Harden System Security/ViewModels/OptionalWindowsFeaturesVM.cs:1944-1949
+        Component("VBScript","Remove the deprecated VBScript engine",new WindowsComponent("VBSCRIPT~~~~",true,@"%SystemRoot%\System32\vbscript.dll")),
     ];
     static RegistryEdit D(string hive,string path,string name,int value)=>new(hive,path,name,RegistryValueKind.DWord,JsonSerializer.SerializeToElement(value),true);
     static RegistryEdit S(string hive,string path,string name,string value)=>new(hive,path,name,RegistryValueKind.String,JsonSerializer.SerializeToElement(value),true);
+    // Windows optional features or capabilities, changed through the servicing API in the administrator session (MAINT-43).
+    static MaintenanceTweak Component(string name,string effect,params WindowsComponent[] components)=>new()
+    {
+        Name=name,Description=effect,Components=components,IsApplied=()=>components.All(c=>MaintenanceFeatures.Installed(c)!=true),
+        Apply=_=>{},Revert=_=>throw new InvalidOperationException("Restore uses the exact saved original states.")
+    };
     static MaintenanceTweak Setting(string name,string effect,string[] tasks,params RegistryEdit[] targets)=>new()
     {
         Name=name,Description=effect,TaskPaths=tasks,IsApplied=()=>targets.All(t=>t.Same(t.Read())),

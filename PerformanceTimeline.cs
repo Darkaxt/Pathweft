@@ -64,6 +64,7 @@ internal sealed class PerformanceTimeline : FrameworkElement
     internal void HoverForVerification(DateTimeOffset time){hover=time;MomentHovered?.Invoke(time);}
     internal int MomentAppsForVerification=>moment?.Apps.Length??0;
 #endif
+    internal void Investigate(DateTimeOffset time){cursor=time;hover=null;MomentSelected?.Invoke(time);InvalidateVisual();}
     void ChooseMoment(DateTimeOffset time)
     {
         if(cursor.HasValue&&Math.Abs(X(cursor.Value)-X(time))<=6){cursor=null;SelectionCleared?.Invoke();}
@@ -94,6 +95,9 @@ internal sealed class PerformanceTimeline : FrameworkElement
     Brush Ink=>TryFindResource("Palette.E8EEF6") as Brush??Brushes.White;
     Brush Muted=>TryFindResource("Muted") as Brush??Brushes.Gray;
     Brush Accent=>TryFindResource("Accent") as Brush??Brushes.DodgerBlue;
+    Brush Caution=>TryFindResource("RiskCaution") as Brush??Brushes.Orange;
+    // Spikes and sustained memory growth stand out; lifecycle and gap markers stay neutral.
+    internal static bool Alerting(PerformanceFact item)=>item.Name is "Usage spike" or "Memory growth";
     void Text(DrawingContext dc,string text,Point where,Brush brush,double size=11,double? width=null)
     {
         var formatted=new FormattedText(text,CultureInfo.CurrentCulture,FlowDirection.LeftToRight,new Typeface("Segoe UI"),size,brush,VisualTreeHelper.GetDpi(this).PixelsPerDip){MaxTextWidth=Math.Max(1,Math.Min(width??double.MaxValue,ActualWidth-where.X)),MaxLineCount=1,Trimming=TextTrimming.CharacterEllipsis};
@@ -127,8 +131,9 @@ internal sealed class PerformanceTimeline : FrameworkElement
         {
             var items=group.ToArray();double x=Math.Clamp(X(items[0].Time),14,Math.Max(14,plot.Right-14));
             var bounds=new Rect(x-13,1,26,24);groups.Add((bounds,items));
-            dc.PushOpacity(.13);dc.DrawLine(new Pen(Accent,1),new(x,29),new(x,plot.Bottom));dc.DrawRoundedRectangle(Accent,null,bounds,10,10);dc.Pop();
-            dc.DrawRoundedRectangle(null,new Pen(Accent,1),bounds,10,10);
+            var tone=items.Any(Alerting)?Caution:Muted;
+            dc.PushOpacity(items.Any(Alerting)?.22:.13);dc.DrawLine(new Pen(tone,1),new(x,29),new(x,plot.Bottom));dc.DrawRoundedRectangle(tone,null,bounds,10,10);dc.Pop();
+            dc.DrawRoundedRectangle(null,new Pen(tone,1),bounds,10,10);
             string count=items.Length.ToString();Text(dc,count,new(x-(count.Length>1?7:3.5),4),Ink,11);
         }
         DrawSelection(dc,plot,false);DrawSelection(dc,Overview,true);

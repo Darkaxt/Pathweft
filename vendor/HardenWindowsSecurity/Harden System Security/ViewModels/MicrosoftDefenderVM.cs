@@ -1,0 +1,1572 @@
+// MIT License
+//
+// Copyright (c) 2023-Present - Violet Hansen - (aka HotCakeX on GitHub) - Email Address: spynetgirl@outlook.com
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// See here for more information: https://github.com/HotCakeX/Harden-Windows-Security/blob/main/LICENSE
+//
+
+using System.Collections.Frozen;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using CommonCore.GroupPolicy;
+using CommonCore.IncrementalCollection;
+using HardenSystemSecurity.ExploitMitigation;
+using HardenSystemSecurity.Helpers;
+using HardenSystemSecurity.Protect;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using WinRT;
+
+namespace HardenSystemSecurity.ViewModels;
+
+internal sealed partial class MicrosoftDefenderVM : MUnitListViewModelBase
+{
+	// To size the listview columns with some padding after initial page load.
+	internal MicrosoftDefenderVM() => _ = Atlas.AppDispatcher.TryEnqueue(ComputeColumnWidths);
+
+	/// <summary>
+	/// Creates all MUnits for this ViewModel.
+	/// </summary>
+	/// <returns>List of all MUnits for this ViewModel</returns>
+	private static readonly Lazy<List<MUnit>> LazyCatalog =
+		new(static () =>
+		{
+			#region One-time global registrations for this category - Registers specialized strategies for specific policies.
+
+			// SEE THE END OF THE FILE FOR MORE EXAMPLES
+			/*
+			// E.g., registering specialized apply strategy that runs before the main operation
+			SpecializedStrategiesRegistry.RegisterSpecializedApply(
+				"Software\\Policies\\Microsoft\\Windows Defender\\Features|TDTFeatureEnabled",
+				new TDTPreApplyCheck()
+			);
+
+			// E.g., registering specialized remove strategy that runs after the main operation
+			SpecializedStrategiesRegistry.RegisterSpecializedRemove(
+				"Software\\Policies\\Microsoft\\Windows Defender\\Features|TDTFeatureEnabled",
+				new TDTPostRemoveCleanup()
+			);
+			*/
+
+			#endregion
+
+			#region Register Dependencies
+
+			/// Registers MUnit dependencies to define relationships between security measures.
+			/// This allows automatic application or removal of related policies.
+
+
+			// Apply/Remove Diagnostic data when Smart App Control gets enabled/disabled.
+			MUnitDependencyRegistry.RegisterDependency(
+				primaryMUnitId: new("019a8dfa-253e-767c-b531-de109f3929d8"), // SAC-MSDefender (SYSTEM\\CurrentControlSet\\Control\\CI\\Policy|VerifiedAndReputablePolicyState)
+				dependentMUnitId: new("019a8dfa-253e-764f-acd5-d26c2c0e3d6c"), // AllowTelemetry-MSDefender (Software\\Policies\\Microsoft\\Windows\\DataCollection|AllowTelemetry)
+				type: DependencyType.Both,
+				timing: ExecutionTiming.After
+			);
+
+			MUnitDependencyRegistry.RegisterDependency(
+				primaryMUnitId: new("019a8dfa-253e-767c-b531-de109f3929d8"), // SAC-MSDefender (SYSTEM\\CurrentControlSet\\Control\\CI\\Policy|VerifiedAndReputablePolicyState)
+				dependentMUnitId: new("019a8dfa-253e-7bef-95cc-a7277deae4cd"),  // DisableTelemetryOptInSettingsUx-MSDefender (Software\\Policies\\Microsoft\\Windows\\DataCollection|DisableTelemetryOptInSettingsUx)
+				type: DependencyType.Both,
+				timing: ExecutionTiming.After
+			);
+
+
+			#endregion
+
+			// Create MUnits from JSON policies using the centralized method.
+			List<MUnit> allResults = MUnit.CreateMUnitsFromPolicies(Categories.MicrosoftDefender);
+
+			// Create programmatic MUnits that are not from Group Policies.
+			allResults.AddRange(CreateUnits());
+
+			return allResults;
+
+		}, LazyThreadSafetyMode.ExecutionAndPublication);
+
+	/// <summary>
+	/// Gets the current catalog of all MUnits for this ViewModel.
+	/// </summary>
+	public override List<MUnit> AllMUnits => LazyCatalog.Value;
+
+	/// <summary>
+	/// Create <see cref="MUnit"/> that is not for Group Policies.
+	/// </summary>
+	/// <exception cref="InvalidOperationException"></exception>
+	private static List<MUnit> CreateUnits()
+	{
+		List<MUnit> temp = [];
+
+		// Enabling Restore point scan
+		temp.Add(new(
+			category: Categories.MicrosoftDefender,
+			name: Atlas.GetStr("EnablingRestorePointScan-MSDefender"),
+
+			applyStrategy: new DefaultApply(static () =>
+			{
+				if (!IsWmiPropertyAvailable("ROOT\\Microsoft\\Windows\\Defender", "MSFT_MpPreference", "DisableRestorePoint"))
+				{
+					return;
+				}
+
+				_ = QuantumRelayHSS.Client.RunCommand(Atlas.ComManagerProcessPath, "wmi bool ROOT\\Microsoft\\Windows\\Defender MSFT_MpPreference Set DisableRestorePoint false");
+			}),
+
+			verifyStrategy: new DefaultVerify(static () =>
+			{
+				if (!IsWmiPropertyAvailable("ROOT\\Microsoft\\Windows\\Defender", "MSFT_MpPreference", "DisableRestorePoint"))
+				{
+					return false;
+				}
+
+				string result = QuantumRelayHSS.Client.RunCommand(Atlas.ComManagerProcessPath, "get ROOT\\Microsoft\\Windows\\Defender MSFT_MpPreference DisableRestorePoint");
+
+				if (bool.TryParse(result, out bool actualResult))
+				{
+					return !actualResult; // Being false == true in this case.
+				}
+
+				return false;
+			}),
+
+			removeStrategy: new DefaultRemove(static () =>
+			{
+				if (!IsWmiPropertyAvailable("ROOT\\Microsoft\\Windows\\Defender", "MSFT_MpPreference", "DisableRestorePoint"))
+				{
+					return;
+				}
+
+				_ = QuantumRelayHSS.Client.RunCommand(Atlas.ComManagerProcessPath, "wmi bool ROOT\\Microsoft\\Windows\\Defender MSFT_MpPreference Set DisableRestorePoint true");
+			}),
+
+			deviceIntents: [
+				Intent.Business,
+				Intent.SpecializedAccessWorkstation,
+				Intent.PrivilegedAccessWorkstation,
+				Intent.School
+			],
+			id: new("019a9060-c319-742a-8ee6-f31481846eaa")
+			));
+
+		// AllowSwitchToAsyncInspection
+		temp.Add(new(
+			category: Categories.MicrosoftDefender,
+			name: Atlas.GetStr("AllowSwitchToAsyncInspection-MSDefender"),
+
+			applyStrategy: new DefaultApply(static () =>
+			{
+				if (!IsWmiPropertyAvailable("ROOT\\Microsoft\\Windows\\Defender", "MSFT_MpPreference", "AllowSwitchToAsyncInspection"))
+				{
+					return;
+				}
+
+				_ = QuantumRelayHSS.Client.RunCommand(Atlas.ComManagerProcessPath, "wmi bool ROOT\\Microsoft\\Windows\\Defender MSFT_MpPreference Set AllowSwitchToAsyncInspection true");
+			}),
+
+			verifyStrategy: new DefaultVerify(static () =>
+			{
+				if (!IsWmiPropertyAvailable("ROOT\\Microsoft\\Windows\\Defender", "MSFT_MpPreference", "AllowSwitchToAsyncInspection"))
+				{
+					return false;
+				}
+
+				string result = QuantumRelayHSS.Client.RunCommand(Atlas.ComManagerProcessPath, "get ROOT\\Microsoft\\Windows\\Defender MSFT_MpPreference AllowSwitchToAsyncInspection");
+
+				if (bool.TryParse(result, out bool actualResult))
+				{
+					return actualResult;
+				}
+
+				return false;
+			}),
+
+			removeStrategy: new DefaultRemove(static () =>
+			{
+				if (!IsWmiPropertyAvailable("ROOT\\Microsoft\\Windows\\Defender", "MSFT_MpPreference", "AllowSwitchToAsyncInspection"))
+				{
+					return;
+				}
+
+				_ = QuantumRelayHSS.Client.RunCommand(Atlas.ComManagerProcessPath, "wmi bool ROOT\\Microsoft\\Windows\\Defender MSFT_MpPreference Set AllowSwitchToAsyncInspection false");
+			}),
+
+			deviceIntents: [
+				Intent.All
+			],
+			id: new("019a9060-e172-7876-885d-633d2dbd65eb")
+			));
+
+		// EnableConvertWarnToBlock
+		temp.Add(new(
+			category: Categories.MicrosoftDefender,
+			name: Atlas.GetStr("EnableConvertWarnToBlock-MSDefender"),
+
+			applyStrategy: new DefaultApply(static () =>
+			{
+				if (!IsWmiPropertyAvailable("ROOT\\Microsoft\\Windows\\Defender", "MSFT_MpPreference", "EnableConvertWarnToBlock"))
+				{
+					return;
+				}
+
+				_ = QuantumRelayHSS.Client.RunCommand(Atlas.ComManagerProcessPath, "wmi bool ROOT\\Microsoft\\Windows\\Defender MSFT_MpPreference Set EnableConvertWarnToBlock true");
+			}),
+
+			verifyStrategy: new DefaultVerify(static () =>
+			{
+				if (!IsWmiPropertyAvailable("ROOT\\Microsoft\\Windows\\Defender", "MSFT_MpPreference", "EnableConvertWarnToBlock"))
+				{
+					return false;
+				}
+
+				string result = QuantumRelayHSS.Client.RunCommand(Atlas.ComManagerProcessPath, "get ROOT\\Microsoft\\Windows\\Defender MSFT_MpPreference EnableConvertWarnToBlock");
+
+				if (bool.TryParse(result, out bool actualResult))
+				{
+					return actualResult;
+				}
+
+				return false;
+			}),
+
+			removeStrategy: new DefaultRemove(static () =>
+			{
+				if (!IsWmiPropertyAvailable("ROOT\\Microsoft\\Windows\\Defender", "MSFT_MpPreference", "EnableConvertWarnToBlock"))
+				{
+					return;
+				}
+
+				_ = QuantumRelayHSS.Client.RunCommand(Atlas.ComManagerProcessPath, "wmi bool ROOT\\Microsoft\\Windows\\Defender MSFT_MpPreference Set EnableConvertWarnToBlock false");
+			}),
+
+			deviceIntents: [
+				Intent.Business,
+				Intent.SpecializedAccessWorkstation,
+				Intent.PrivilegedAccessWorkstation,
+				Intent.School
+			],
+			id: new("019a9061-41b0-7baa-afc8-b253b43025fd")
+			));
+
+		// BruteForceProtectionLocalNetworkBlocking
+		temp.Add(new(
+			category: Categories.MicrosoftDefender,
+			name: Atlas.GetStr("BruteForceProtectionLocalNetworkBlocking-MSDefender"),
+
+			applyStrategy: new DefaultApply(static () =>
+			{
+				if (!IsWmiPropertyAvailable("ROOT\\Microsoft\\Windows\\Defender", "MSFT_MpPreference", "BruteForceProtectionLocalNetworkBlocking"))
+				{
+					return;
+				}
+
+				_ = QuantumRelayHSS.Client.RunCommand(Atlas.ComManagerProcessPath, "wmi bool ROOT\\Microsoft\\Windows\\Defender MSFT_MpPreference Set BruteForceProtectionLocalNetworkBlocking true");
+			}),
+
+			verifyStrategy: new DefaultVerify(static () =>
+			{
+				if (!IsWmiPropertyAvailable("ROOT\\Microsoft\\Windows\\Defender", "MSFT_MpPreference", "BruteForceProtectionLocalNetworkBlocking"))
+				{
+					return false;
+				}
+
+				string result = QuantumRelayHSS.Client.RunCommand(Atlas.ComManagerProcessPath, "get ROOT\\Microsoft\\Windows\\Defender MSFT_MpPreference BruteForceProtectionLocalNetworkBlocking");
+
+				if (bool.TryParse(result, out bool actualResult))
+				{
+					return actualResult;
+				}
+
+				return false;
+			}),
+
+			removeStrategy: new DefaultRemove(static () =>
+			{
+				if (!IsWmiPropertyAvailable("ROOT\\Microsoft\\Windows\\Defender", "MSFT_MpPreference", "BruteForceProtectionLocalNetworkBlocking"))
+				{
+					return;
+				}
+
+				_ = QuantumRelayHSS.Client.RunCommand(Atlas.ComManagerProcessPath, "wmi bool ROOT\\Microsoft\\Windows\\Defender MSFT_MpPreference Set BruteForceProtectionLocalNetworkBlocking false");
+			}),
+
+			deviceIntents: [
+				Intent.Business,
+				Intent.SpecializedAccessWorkstation,
+				Intent.PrivilegedAccessWorkstation,
+				Intent.School
+			],
+			id: new("019a9061-8aba-789f-9291-fa4fd6464fda")
+			));
+
+		// Adding OneDrive directories to Controlled Folder Access
+		temp.Add(new(
+			category: Categories.MicrosoftDefender,
+			name: Atlas.GetStr("AddOneDriveDirsToCFA-MSDefender"),
+
+			applyStrategy: new DefaultApply(static () =>
+			{
+				if (!IsWmiPropertyAvailable("ROOT\\Microsoft\\Windows\\Defender", "MSFT_MpPreference", "ControlledFolderAccessProtectedFolders"))
+				{
+					return;
+				}
+
+				List<string> oneDriveDirs = OneDriveDirectories.Get();
+
+				if (oneDriveDirs.Count > 0)
+				{
+					// Wrap them with double quotes and separate them with a space
+					string oneDriveDirsFinal = string.Join(" ", oneDriveDirs.Select(static item => $"\"{item}\""));
+
+					_ = QuantumRelayHSS.Client.RunCommand(Atlas.ComManagerProcessPath, $"wmi stringarray ROOT\\Microsoft\\Windows\\Defender MSFT_MpPreference Add ControlledFolderAccessProtectedFolders {oneDriveDirsFinal}");
+				}
+			}),
+			deviceIntents: [
+				Intent.All
+			],
+			id: new("019a9061-ff1a-7c33-9152-2395ed108dfe")
+			));
+
+
+		// Enable Mandatory ASLR for System
+		temp.Add(new(
+			category: Categories.MicrosoftDefender,
+			name: Atlas.GetStr("EnableMandatoryASLR-MSDefender"),
+
+			applyStrategy: new DefaultApply(static () =>
+			{
+				Result systemResult = AddMitigationsToSystem(
+					null,
+					[MitigationOptions.ForceRelocateImages],
+					null,
+					null,
+					false,
+					false);
+
+				if (!systemResult.IsSuccess)
+				{
+					throw new InvalidOperationException(systemResult.Error);
+				}
+			}),
+
+			verifyStrategy: new DefaultVerify(static () =>
+			{
+				Result<AppMitigations> systemPolicyResult = GetSystemPolicy();
+				if (!systemPolicyResult.IsSuccess)
+				{
+					throw new InvalidOperationException(systemPolicyResult.Error);
+				}
+
+				AppMitigations system = systemPolicyResult.Value;
+				return system.Aslr.ForceRelocateImages == OPTIONVALUE.ON;
+			}),
+
+			removeStrategy: new DefaultRemove(static () =>
+			{
+				Result systemResult = AddMitigationsToSystem(
+					[MitigationOptions.ForceRelocateImages],
+					null,
+					null,
+					null,
+					false,
+					false);
+
+				if (!systemResult.IsSuccess)
+				{
+					throw new InvalidOperationException(systemResult.Error);
+				}
+			}),
+			url: "https://support.microsoft.com/office/how-onedrive-safeguards-your-data-in-the-cloud-23c6ea94-3608-48d7-8bf0-80e142edd1e1",
+
+			deviceIntents: [
+				Intent.Business,
+				Intent.SpecializedAccessWorkstation,
+				Intent.PrivilegedAccessWorkstation,
+				Intent.School
+			],
+			id: new("019a9062-247e-7b49-a029-e2e3917b7ba9")
+
+			));
+
+
+		// Create MUnits for Process Mitigations
+		Manage.CreateMUnitEntries(temp);
+
+
+		// BCD NX Bit Policy
+		// bcdedit.exe /set '{current}' nx AlwaysOn
+		temp.Add(new(
+			category: Categories.MicrosoftDefender,
+			name: Atlas.GetStr("SetNXBit-MSDefender"),
+
+			applyStrategy: new DefaultApply(static () =>
+			{
+				BCDManager.SetNxElement(3);
+
+				// Verify new value after set
+				long? newVal = BCDManager.GetNxElement();
+
+				if (newVal != 3)
+				{
+					throw new InvalidOperationException(Atlas.GetStr("SetNXBitError-MSDefender"));
+				}
+			}),
+
+			verifyStrategy: new DefaultVerify(static () =>
+			{
+				return BCDManager.GetNxElement() == 3;
+			}),
+
+			removeStrategy: new DefaultRemove(static () =>
+			{
+				// Set it back to the default value.
+				BCDManager.SetNxElement(0);
+
+				// Verify new value after set
+				long? newVal = BCDManager.GetNxElement();
+
+				if (newVal != 0)
+				{
+					throw new InvalidOperationException(Atlas.GetStr("SetNXBitError-MSDefender"));
+				}
+			}),
+			deviceIntents: [
+				Intent.All
+			],
+			id: new("019a9062-6faa-7196-9f28-0b3e8b67abad")
+			));
+
+
+		// Apply exclusions for Mandatory ASLR
+		temp.Add(new(
+			category: Categories.MicrosoftDefender,
+			name: Atlas.GetStr("ApplyMandatoryASLRExcl-MSDefender"),
+
+			applyStrategy: new DefaultApply(static () =>
+			{
+				// Collect all of the ASLR-Incompatible files.
+				HashSet<string> results = BinarySecurityAnalyzer.GetASLRIncompatibleExes();
+
+				foreach (string item in results)
+				{
+					// Disable the Mandatory ASLR for the PE
+					Result addResult = AddMitigationsForProcess(
+					   item,
+					   [MitigationOptions.ForceRelocateImages],
+					   null,
+					   null,
+					   "on",
+					   false,
+					   false);
+
+					if (!addResult.IsSuccess)
+					{
+						throw new InvalidOperationException(addResult.Error);
+					}
+				}
+			}),
+
+			verifyStrategy: new DefaultVerify(static () =>
+			{
+				// Collect all of the ASLR-Incompatible files.
+				HashSet<string> results = BinarySecurityAnalyzer.GetASLRIncompatibleExes();
+
+				// No incompatible files found means nothing has been applied.
+				if (results.Count is 0)
+				{
+					return true;
+				}
+
+				foreach (string item in results)
+				{
+					// Use the filename to query registry, then match by full path.
+					// Using RetrieveSecurityConfigurationListFromRegistry and filter manually.
+					string fileName = Path.GetFileName(item);
+
+					// Gets all of the policies for the selected file name but results contain full file paths.
+					Result<List<AppMitigations>> registryResult = SecurityPolicyRepository.RetrieveSecurityConfigurationListFromRegistry(fileName);
+
+					// If no registry entry exists for this filename, the exclusion is not applied
+					if (!registryResult.IsSuccess || registryResult.Value.Count is 0)
+					{
+						return false;
+					}
+
+					// Find the entry matching our specific full file path
+					AppMitigations? matchingPolicy = null;
+					foreach (AppMitigations policy in registryResult.Value)
+					{
+						if (string.Equals(policy.ProcessName, item, StringComparison.OrdinalIgnoreCase))
+						{
+							matchingPolicy = policy;
+							break;
+						}
+					}
+
+					if (matchingPolicy is null)
+					{
+						return false;
+					}
+
+					// Verify that Mandatory ASLR is disabled (excluded) for this PE
+					// and that the Force override is set so the per-process exclusion
+					// takes precedence over the system-wide Mandatory ASLR policy
+					if (matchingPolicy.Aslr.ForceRelocateImages != OPTIONVALUE.OFF ||
+						!matchingPolicy.Aslr.OverrideForceRelocateImages)
+					{
+						return false;
+					}
+				}
+
+				return true;
+			}),
+
+			deviceIntents: [
+				Intent.Development
+			],
+			id: new("019a9062-e303-7f26-85db-29b45813cfa3")
+			));
+
+
+		// Beta update channels for the Microsoft Defender
+		temp.Add(new(
+			category: Categories.MicrosoftDefender,
+			name: Atlas.GetStr("BetaUpdateChannels-MSDefender"),
+
+			applyStrategy: new DefaultApply(static () =>
+			{
+				if (!IsWmiPropertyAvailable("ROOT\\Microsoft\\Windows\\Defender", "MSFT_MpPreference", "EngineUpdatesChannel"))
+				{
+					return;
+				}
+				if (!IsWmiPropertyAvailable("ROOT\\Microsoft\\Windows\\Defender", "MSFT_MpPreference", "PlatformUpdatesChannel"))
+				{
+					return;
+				}
+
+				_ = QuantumRelayHSS.Client.RunCommand(Atlas.ComManagerProcessPath, "wmi string ROOT\\Microsoft\\Windows\\Defender MSFT_MpPreference Set EngineUpdatesChannel 2");
+				_ = QuantumRelayHSS.Client.RunCommand(Atlas.ComManagerProcessPath, "wmi string ROOT\\Microsoft\\Windows\\Defender MSFT_MpPreference Set PlatformUpdatesChannel 2");
+			}),
+
+			verifyStrategy: new DefaultVerify(static () =>
+			{
+				if (!IsWmiPropertyAvailable("ROOT\\Microsoft\\Windows\\Defender", "MSFT_MpPreference", "EngineUpdatesChannel"))
+				{
+					return false;
+				}
+				if (!IsWmiPropertyAvailable("ROOT\\Microsoft\\Windows\\Defender", "MSFT_MpPreference", "PlatformUpdatesChannel"))
+				{
+					return false;
+				}
+
+				string result1 = QuantumRelayHSS.Client.RunCommand(Atlas.ComManagerProcessPath, "get ROOT\\Microsoft\\Windows\\Defender MSFT_MpPreference EngineUpdatesChannel");
+				string result2 = QuantumRelayHSS.Client.RunCommand(Atlas.ComManagerProcessPath, "get ROOT\\Microsoft\\Windows\\Defender MSFT_MpPreference PlatformUpdatesChannel");
+
+				if (string.Equals(result1, "2", StringComparison.OrdinalIgnoreCase) &&
+					string.Equals(result2, "2", StringComparison.OrdinalIgnoreCase))
+					return true;
+
+				return false;
+			}),
+
+			removeStrategy: new DefaultRemove(static () =>
+			{
+				if (!IsWmiPropertyAvailable("ROOT\\Microsoft\\Windows\\Defender", "MSFT_MpPreference", "EngineUpdatesChannel"))
+				{
+					return;
+				}
+				if (!IsWmiPropertyAvailable("ROOT\\Microsoft\\Windows\\Defender", "MSFT_MpPreference", "PlatformUpdatesChannel"))
+				{
+					return;
+				}
+
+				_ = QuantumRelayHSS.Client.RunCommand(Atlas.ComManagerProcessPath, "wmi string ROOT\\Microsoft\\Windows\\Defender MSFT_MpPreference Set EngineUpdatesChannel 0");
+				_ = QuantumRelayHSS.Client.RunCommand(Atlas.ComManagerProcessPath, "wmi string ROOT\\Microsoft\\Windows\\Defender MSFT_MpPreference Set PlatformUpdatesChannel 0");
+			}),
+
+			subCategory: SubCategories.MSDefender_BetaUpdateChannelsForDefender,
+
+			deviceIntents: [
+				Intent.SpecializedAccessWorkstation
+			],
+			id: new("019a9063-39db-7eb4-b5c3-99394df239c4")
+			));
+
+
+		const string Name = "MP_FORCE_USE_SANDBOX";
+		const string Value = "1";
+
+		// Microsoft Defender Sandbox
+		temp.Add(new(
+				category: Categories.MicrosoftDefender,
+				name: Atlas.GetStr("EnableMDAVSandboxMode-MSDefender"),
+
+				applyStrategy: new DefaultApply(static () =>
+				{
+					Environment.SetEnvironmentVariable(Name, Value, EnvironmentVariableTarget.Machine);
+				}),
+
+				verifyStrategy: new DefaultVerify(static () =>
+				{
+					string? current = Environment.GetEnvironmentVariable(Name, EnvironmentVariableTarget.Machine);
+					return string.Equals(current, Value, StringComparison.OrdinalIgnoreCase);
+				}),
+
+				removeStrategy: new DefaultRemove(static () =>
+				{
+					Environment.SetEnvironmentVariable(Name, null, EnvironmentVariableTarget.Machine);
+				}),
+
+				url: "https://learn.microsoft.com/defender-endpoint/sandbox-mdav",
+
+				deviceIntents: [
+					Intent.Development,
+					Intent.School,
+					Intent.Business,
+					Intent.SpecializedAccessWorkstation,
+					Intent.PrivilegedAccessWorkstation
+				],
+				id: new("019a9063-824a-71a0-9564-1618d602830c")
+				));
+
+
+		// AiAgentProtection
+		temp.Add(new(
+			category: Categories.MicrosoftDefender,
+			name: Atlas.GetStr("AiAgentProtection-MSDefender"),
+
+			applyStrategy: new DefaultApply(static () =>
+			{
+				if (!IsWmiPropertyAvailable("ROOT\\Microsoft\\Windows\\Defender", "MSFT_MpPreference", "AiAgentProtection"))
+				{
+					return;
+				}
+				_ = QuantumRelayHSS.Client.RunCommand(Atlas.ComManagerProcessPath, "wmi string ROOT\\Microsoft\\Windows\\Defender MSFT_MpPreference Set AiAgentProtection 1");
+			}),
+
+			verifyStrategy: new DefaultVerify(static () =>
+			{
+				if (!IsWmiPropertyAvailable("ROOT\\Microsoft\\Windows\\Defender", "MSFT_MpPreference", "AiAgentProtection"))
+				{
+					return false;
+				}
+
+				string result1 = QuantumRelayHSS.Client.RunCommand(Atlas.ComManagerProcessPath, "get ROOT\\Microsoft\\Windows\\Defender MSFT_MpPreference AiAgentProtection");
+
+				if (string.Equals(result1, "1", StringComparison.OrdinalIgnoreCase))
+					return true;
+
+				return false;
+			}),
+
+			removeStrategy: new DefaultRemove(static () =>
+			{
+				if (!IsWmiPropertyAvailable("ROOT\\Microsoft\\Windows\\Defender", "MSFT_MpPreference", "AiAgentProtection"))
+				{
+					return;
+				}
+				_ = QuantumRelayHSS.Client.RunCommand(Atlas.ComManagerProcessPath, "wmi string ROOT\\Microsoft\\Windows\\Defender MSFT_MpPreference Set AiAgentProtection 0");
+			}),
+
+			subCategory: null,
+
+			url: "https://learn.microsoft.com/en-us/windows/client-management/mdm/defender-csp#configurationaiagentprotection",
+
+			deviceIntents: [
+				Intent.All
+			],
+			id: new("01a1ac98-f03b-7d98-977b-98fb72ac53a3")
+			));
+
+
+		// AiAgentNetworkInspection
+		temp.Add(new(
+			category: Categories.MicrosoftDefender,
+			name: Atlas.GetStr("AiAgentNetworkInspection-MSDefender"),
+
+			applyStrategy: new DefaultApply(static () =>
+			{
+				if (!IsWmiPropertyAvailable("ROOT\\Microsoft\\Windows\\Defender", "MSFT_MpPreference", "AiAgentNetworkInspection"))
+				{
+					return;
+				}
+				_ = QuantumRelayHSS.Client.RunCommand(Atlas.ComManagerProcessPath, "wmi string ROOT\\Microsoft\\Windows\\Defender MSFT_MpPreference Set AiAgentNetworkInspection 1");
+			}),
+
+			verifyStrategy: new DefaultVerify(static () =>
+			{
+				if (!IsWmiPropertyAvailable("ROOT\\Microsoft\\Windows\\Defender", "MSFT_MpPreference", "AiAgentNetworkInspection"))
+				{
+					return false;
+				}
+
+				string result1 = QuantumRelayHSS.Client.RunCommand(Atlas.ComManagerProcessPath, "get ROOT\\Microsoft\\Windows\\Defender MSFT_MpPreference AiAgentNetworkInspection");
+
+				if (string.Equals(result1, "1", StringComparison.OrdinalIgnoreCase))
+					return true;
+
+				return false;
+			}),
+
+			removeStrategy: new DefaultRemove(static () =>
+			{
+				if (!IsWmiPropertyAvailable("ROOT\\Microsoft\\Windows\\Defender", "MSFT_MpPreference", "AiAgentNetworkInspection"))
+				{
+					return;
+				}
+				_ = QuantumRelayHSS.Client.RunCommand(Atlas.ComManagerProcessPath, "wmi string ROOT\\Microsoft\\Windows\\Defender MSFT_MpPreference Set AiAgentNetworkInspection 0");
+			}),
+
+			subCategory: null,
+
+			url: "https://learn.microsoft.com/en-us/windows/client-management/mdm/defender-csp#configurationaiagentnetworkinspection",
+
+			deviceIntents: [
+				Intent.All
+			],
+			id: new("01a1ac99-ae18-7ea8-8fe5-ca2f6f1622ef")
+			));
+
+		return temp;
+	}
+
+	/// <summary>
+	/// Gets the current system process mitigation defaults stored in the registry.
+	/// </summary>
+	private static Result<AppMitigations> GetSystemPolicy()
+	{
+		try
+		{
+			return SecurityPolicyRepository.RetrieveSystemSecurityConfiguration();
+		}
+		catch (Exception ex)
+		{
+			return new Result<AppMitigations>(false, $"Failed to get system policy: {ex.Message}");
+		}
+	}
+
+	/// <summary>
+	/// Add mitigations for the Process
+	/// </summary>
+	private static Result AddMitigationsForProcess(string processName, MitigationOptions[]? disableList, MitigationOptions[]? enableList, string[]? EAFModulesList, string? isForce, bool isRemove, bool isReset)
+	{
+		try
+		{
+			if (enableList is null && disableList is null)
+				return new Result(false, "The input parameters are invalid. Please specify a list of mitigations to enable or disable for this process.");
+
+			if (processName.Equals(Path.GetFileNameWithoutExtension(processName), StringComparison.OrdinalIgnoreCase))
+				processName = (processName + ".exe").ToLowerInvariant();
+
+			Result<List<AppMitigations>> fromRegistryByNameResult = SecurityPolicyRepository.RetrieveSecurityConfigurationFromRegistryByName(processName);
+			if (!fromRegistryByNameResult.IsSuccess)
+				return new Result(false, fromRegistryByNameResult.Error);
+
+			List<AppMitigations> fromRegistryByName = fromRegistryByNameResult.Value;
+			AppMitigations appMitigations;
+			if (fromRegistryByName.Count is 0)
+				appMitigations = new AppMitigations(processName);
+			else if (fromRegistryByName.Count > 1)
+				return new Result(false, "Multiple mitigation policies found that may match the given process name. Please specify the full path to be matched instead.");
+			else
+				appMitigations = fromRegistryByName[0];
+
+			return SetProcessMitigationsCommand.SetEnableAndDisable(appMitigations, disableList, enableList, EAFModulesList, isForce, isRemove, isReset, isSystemMode: false);
+		}
+		catch (Exception ex)
+		{
+			return new Result(false, $"Failed to add mitigations for process: {ex.Message}");
+		}
+	}
+
+	/// <summary>
+	/// Add mitigations to the System
+	/// </summary>
+	private static Result AddMitigationsToSystem(MitigationOptions[]? disableList, MitigationOptions[]? enableList, string[]? EAFModulesList, string? isForce, bool isRemove, bool isReset)
+	{
+		try
+		{
+			Result<AppMitigations> systemPolicyResult = SecurityPolicyRepository.RetrieveSystemSecurityConfiguration();
+			AppMitigations appMitigations = systemPolicyResult.IsSuccess
+				? systemPolicyResult.Value
+				: new("System")
+				{
+					Source = "System Defaults"
+				};
+			return SetProcessMitigationsCommand.SetEnableAndDisable(appMitigations, disableList, enableList, EAFModulesList, isForce, isRemove, isReset, isSystemMode: true);
+		}
+		catch (Exception ex)
+		{
+			return new Result(false, $"Failed to add mitigations to system: {ex.Message}");
+		}
+	}
+
+	/*
+	/// <summary>
+	/// E.g., specialized apply strategy that runs before the main apply operation.
+	/// Can check system prerequisites before applying Intel TDT feature.
+	/// </summary>
+	private sealed class TDTPreApplyCheck : ISpecializedApplyStrategy
+	{
+		public ExecutionTiming Timing => ExecutionTiming.Before;
+
+		public void Apply()
+		{
+			// CUSTOM CODE
+		}
+	}
+
+	/// <summary>
+	/// E.g., specialized remove strategy that runs after the main remove operation.
+	/// Maybe a JSON based policy needs some additional personal touch to be completely removed.
+	/// </summary>
+	private sealed class TDTPostRemoveCleanup : ISpecializedRemoveStrategy
+	{
+		public ExecutionTiming Timing => ExecutionTiming.After;
+
+		public void Remove()
+		{
+			// CUSTOM CODE
+		}
+	}
+	*/
+
+	/// <summary>
+	/// Checks availability of a WMI property via ComManager's GetAvailability command.
+	/// Logs a unified message when the property is not available and returns false in that case.
+	/// Returns true if available; false otherwise.
+	/// </summary>
+	internal static bool IsWmiPropertyAvailable(string wmiNamespace, string className, string propertyName)
+	{
+		try
+		{
+			string output = QuantumRelayHSS.Client.RunCommand(Atlas.ComManagerProcessPath,
+							$"getavailability {wmiNamespace} {className} {propertyName}");
+
+			string token = output.Trim();
+
+			if (bool.TryParse(token, out bool exists))
+			{
+				if (!exists)
+				{
+					Logger.Write($"Property {propertyName} not available on {className}.");
+				}
+				return exists;
+			}
+
+			// Unexpected output token from ComManager -> treat as unavailable and log detail.
+			Logger.Write($"Unexpected response while checking availability of {className}.{propertyName}: \"{token}\".");
+			return false;
+		}
+		catch (Exception ex)
+		{
+			Logger.Write(ex);
+			return false;
+		}
+	}
+
+	#region Exclusion
+
+	// Column widths
+	internal GridLength EXColWidth1 { get; set => SP(ref field, value); }
+	internal GridLength EXColWidth2 { get; set => SP(ref field, value); }
+
+	/// <summary>
+	/// Compute dynamic column widths.
+	/// </summary>
+	private void ComputeColumnWidths()
+	{
+		double w1 = ListViewHelper.MeasureText(Atlas.GetStr("TargetHeader/Text"));
+		double w2 = ListViewHelper.MeasureText(Atlas.GetStr("SourceHeader/Text"));
+
+		foreach (Exclusions v in Exclusions)
+		{
+			w1 = ListViewHelper.MeasureText(v.Target, w1);
+			w2 = ListViewHelper.MeasureText(v.SourceFriendlyName, w2);
+		}
+
+		EXColWidth1 = new(w1);
+		EXColWidth2 = new(w2);
+	}
+
+	internal readonly RangedObservableCollection<Exclusions> Exclusions = [];
+	private readonly List<Exclusions> AllExclusions = [];
+
+	internal Visibility ExclusionProgressVisibility { get; private set => SP(ref field, value); } = Visibility.Collapsed;
+
+	internal bool ExclusionsUIIsEnabled
+	{
+		get; set
+		{
+			if (SP(ref field, value))
+			{
+				ExclusionProgressVisibility = value ? Visibility.Collapsed : Visibility.Visible;
+
+			}
+		}
+	} = true;
+
+	internal string? ExclusionsSearchText
+	{
+		get; set
+		{
+			if (SPT(ref field, value))
+			{
+				SearchBox_TextChanged();
+			}
+		}
+	}
+
+	/// <summary>
+	/// Clear the exclusions list in the UI.
+	/// </summary>
+	internal void ClearExclusionsList()
+	{
+		Exclusions.Clear();
+		AllExclusions.Clear();
+		ExclusionsSearchText = null;
+		ComputeColumnWidths();
+	}
+
+	/// <summary>
+	/// Mapping of sortable / copyable fields.
+	/// </summary>
+	private static readonly FrozenDictionary<string, (string Label, Func<Exclusions, object?> Getter)> _exclusionsMappings =
+		new Dictionary<string, (string Label, Func<Exclusions, object?> Getter)>(StringComparer.OrdinalIgnoreCase)
+		{
+			{ "Target",     (Atlas.GetStr("TargetHeader/Text"),  static v => v.Target) },
+			{ "Source",     (Atlas.GetStr("SourceHeader/Text"),  static v => v.SourceFriendlyName) }
+		}.ToFrozenDictionary(StringComparer.OrdinalIgnoreCase);
+
+	#region Sort
+
+	/// <summary>
+	/// Local sort state
+	/// </summary>
+	private ListViewHelper.SortState SortState { get; set; } = new();
+
+	[DynamicWindowsRuntimeCast(typeof(Button))]
+	internal void HeaderColumnSortingButton_Click(object sender, RoutedEventArgs e)
+	{
+		if (sender is Button button &&
+			button.Tag is string key &&
+			_exclusionsMappings.TryGetValue(key, out (string Label, Func<Exclusions, object?> Getter) mapping))
+		{
+			// Look up the mapping in the reusable property mappings dictionary.
+			ListViewHelper.SortColumn(
+				mapping.Getter,
+				ExclusionsSearchText,
+				AllExclusions,
+				Exclusions,
+				SortState,
+				key,
+				regKey: ListViewHelper.ListViewsRegistry.MD_Exclusions);
+		}
+	}
+	#endregion
+
+	#region Copy
+
+	/// <summary>
+	/// Converts selected Exclusions rows to text.
+	/// </summary>
+	internal void CopySelectedExclusions_Click()
+	{
+		ListView? lv = ListViewHelper.GetListViewFromCache(ListViewHelper.ListViewsRegistry.MD_Exclusions);
+		if (lv is null) return;
+		if (lv.SelectedItems.Count > 0)
+		{
+			// SelectedItems is an IList
+			ListViewHelper.ConvertRowToText(lv.SelectedItems, _exclusionsMappings);
+		}
+	}
+
+	/// <summary>
+	/// Copy a single property of the current selection
+	/// </summary>
+	[DynamicWindowsRuntimeCast(typeof(MenuFlyoutItem))]
+	internal void CopyExclusionProperty_Click(object sender, RoutedEventArgs e)
+	{
+		MenuFlyoutItem menuItem = (MenuFlyoutItem)sender;
+		string key = (string)menuItem.Tag;
+		ListView? lv = ListViewHelper.GetListViewFromCache(ListViewHelper.ListViewsRegistry.MD_Exclusions);
+		if (lv is null) return;
+
+		if (_exclusionsMappings.TryGetValue(key, out (string Label, Func<Exclusions, object?> Getter) map))
+		{
+			// TElement = Exclusions, copy just that one property
+			ListViewHelper.CopyToClipboard<Exclusions>(ci => map.Getter(ci)?.ToString(), lv);
+		}
+	}
+
+	#endregion
+
+	#region Search
+
+	/// <summary>
+	/// Event handler for the SearchBox text change
+	/// </summary>
+	internal void SearchBox_TextChanged()
+	{
+		string? searchTerm = ExclusionsSearchText?.Trim();
+		if (searchTerm is null)
+			return;
+
+		// Get the ListView ScrollViewer info
+		ScrollViewer? Sv = ListViewHelper.GetScrollViewerFromCache(ListViewHelper.ListViewsRegistry.MD_Exclusions);
+
+		double? savedHorizontal = null;
+		if (Sv != null)
+		{
+			savedHorizontal = Sv.HorizontalOffset;
+		}
+
+		// Perform a case-insensitive search in all relevant fields
+		List<Exclusions> filteredResults = AllExclusions.Where(v =>
+			v.Target.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+			v.SourceFriendlyName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)).ToList();
+
+		Exclusions.Clear();
+		Exclusions.AddRange(filteredResults);
+
+		// restore horizontal scroll position
+		_ = Sv?.ChangeView(savedHorizontal, null, null, disableAnimation: false);
+
+		// Adjust column widths after search
+		ComputeColumnWidths();
+	}
+	#endregion
+
+	/// <summary>
+	/// Event handler for the UI.
+	/// </summary>
+	internal async void RetrieveAllExclusions() => await RetrieveAllExclusionsInternal();
+
+	/// <summary>
+	/// Retrieves all exclusions from Microsoft Defender.
+	/// </summary>
+	private async Task RetrieveAllExclusionsInternal()
+	{
+
+		try
+		{
+			ExclusionsUIIsEnabled = false;
+
+			ClearExclusionsList();
+
+			List<Exclusions> allData = [];
+
+			await Task.Run(() =>
+			{
+
+				string results = QuantumRelayHSS.Client.RunCommand(Atlas.ComManagerProcessPath, "get ROOT\\Microsoft\\Windows\\Defender MSFT_MpPreference");
+
+				List<Dictionary<string, object?>> DeserializedResults = ComJsonDeserializer.DeserializeInstances(results);
+
+				if (DeserializedResults.Count <= 0)
+					return;
+
+				// Microsoft Defender - File and Folder paths exclusions
+				if (DeserializedResults[0].TryGetValue("ExclusionPath", out object? ExclusionPath))
+				{
+					List<string> finalResults = ComJsonDeserializer.CoerceToStringList(ExclusionPath);
+
+					foreach (string item in finalResults)
+					{
+						allData.Add(new(target: item, source: ExclusionSource.Antivirus_Path));
+					}
+				}
+
+				// Microsoft Defender - Process exclusions
+				if (DeserializedResults[0].TryGetValue("ExclusionProcess", out object? ExclusionProcess))
+				{
+					List<string> finalResults = ComJsonDeserializer.CoerceToStringList(ExclusionProcess);
+
+					foreach (string item in finalResults)
+					{
+						allData.Add(new(target: item, source: ExclusionSource.Antivirus_Process));
+					}
+				}
+
+				// Microsoft Defender - Extension exclusions
+				if (DeserializedResults[0].TryGetValue("ExclusionExtension", out object? ExclusionExtension))
+				{
+					List<string> finalResults = ComJsonDeserializer.CoerceToStringList(ExclusionExtension);
+
+					foreach (string item in finalResults)
+					{
+						allData.Add(new(target: item, source: ExclusionSource.Antivirus_Extension));
+					}
+				}
+
+				// Controlled Folder Access exclusions
+				if (DeserializedResults[0].TryGetValue("ControlledFolderAccessAllowedApplications", out object? cfaAppsObj))
+				{
+					List<string> finalResults = ComJsonDeserializer.CoerceToStringList(cfaAppsObj);
+
+					foreach (string item in finalResults)
+					{
+						allData.Add(new(target: item, source: ExclusionSource.ControlledFolderAccess));
+					}
+				}
+
+				// Attack Surface Reduction rules exclusions
+				if (DeserializedResults[0].TryGetValue("AttackSurfaceReductionOnlyExclusions", out object? asrObj))
+				{
+					List<string> finalResults = ComJsonDeserializer.CoerceToStringList(asrObj);
+
+					foreach (string item in finalResults)
+					{
+						allData.Add(new(target: item, source: ExclusionSource.AttackSurfaceReduction));
+					}
+				}
+			});
+
+			Exclusions.AddRange(allData);
+			AllExclusions.AddRange(allData);
+
+			ComputeColumnWidths();
+
+			MainInfoBar.WriteSuccess(Atlas.GetStr("RetrievedExclusionsSuccessfullyMsg"));
+		}
+		catch (Exception ex)
+		{
+			MainInfoBar.WriteError(ex);
+		}
+		finally
+		{
+			ExclusionsUIIsEnabled = true;
+		}
+	}
+
+	/// <summary>
+	/// Add exclusions for Microsoft Defender - File path.
+	/// </summary>
+	internal async void AddFilePathExclusion()
+	{
+		try
+		{
+			ExclusionsUIIsEnabled = false;
+
+			List<string> selectedFiles = FileDialogHelper.ShowMultipleFilePickerDialog(Atlas.AnyFilePickerFilter);
+
+			if (selectedFiles.Count == 0)
+				return;
+
+			await Task.Run(() =>
+			{
+				foreach (string item in selectedFiles)
+				{
+					_ = QuantumRelayHSS.Client.RunCommand(Atlas.ComManagerProcessPath, $"wmi stringarray ROOT\\Microsoft\\Windows\\Defender MSFT_MpPreference add ExclusionPath \"{item}\"");
+
+					MainInfoBar.WriteInfo(string.Format(Atlas.GetStr("AddedExclusionMsg"), item));
+				}
+			});
+
+			await RetrieveAllExclusionsInternal();
+
+		}
+		catch (Exception ex)
+		{
+			MainInfoBar.WriteError(ex);
+		}
+		finally
+		{
+			MainInfoBar.IsClosable = true;
+			ExclusionsUIIsEnabled = true;
+		}
+	}
+
+	/// <summary>
+	/// Add exclusions for Microsoft Defender - Folder path.
+	/// </summary>
+	internal async void AddFolderPathExclusion()
+	{
+		try
+		{
+			ExclusionsUIIsEnabled = false;
+
+			List<string> selectedFiles = FileDialogHelper.ShowMultipleDirectoryPickerDialog();
+
+			if (selectedFiles.Count == 0)
+				return;
+
+			await Task.Run(() =>
+			{
+				foreach (string item in selectedFiles)
+				{
+					_ = QuantumRelayHSS.Client.RunCommand(Atlas.ComManagerProcessPath, $"wmi stringarray ROOT\\Microsoft\\Windows\\Defender MSFT_MpPreference add ExclusionPath \"{item}\"");
+
+					MainInfoBar.WriteInfo(string.Format(Atlas.GetStr("AddedExclusionMsg"), item));
+				}
+			});
+
+			await RetrieveAllExclusionsInternal();
+		}
+		catch (Exception ex)
+		{
+			MainInfoBar.WriteError(ex);
+		}
+		finally
+		{
+			MainInfoBar.IsClosable = true;
+			ExclusionsUIIsEnabled = true;
+		}
+	}
+
+	/// <summary>
+	/// Add exclusions for Microsoft Defender - Extension.
+	/// </summary>
+	internal async void AddExtensionExclusion()
+	{
+		try
+		{
+			ExclusionsUIIsEnabled = false;
+
+			TextBox inputBox = new()
+			{
+				Header = "Enter the file extension to exclude",
+				PlaceholderText = ".ext",
+				Text = string.Empty
+			};
+
+			using AppControlManager.CustomUIElements.ContentDialogV2 dialog = new()
+			{
+				Title = Atlas.GetStr("AddExtensionExclusionText"),
+				Content = inputBox,
+				PrimaryButtonText = Atlas.GetStr("AddToExclusionsText"),
+				CloseButtonText = Atlas.GetStr("Cancel"),
+				DefaultButton = ContentDialogButton.Primary
+			};
+
+			// Show dialog
+			ContentDialogResult result = await dialog.ShowAsync();
+
+			// If user didn't confirm, exit early
+			if (result != ContentDialogResult.Primary)
+			{
+				return;
+			}
+
+			string text = inputBox.Text;
+
+			// Add to Defender exclusions
+			await Task.Run(() =>
+			{
+				// Normalize and validate the extension
+				string normalizedExtension = NormalizeExtensionOrThrow(text);
+
+				_ = QuantumRelayHSS.Client.RunCommand(Atlas.ComManagerProcessPath,
+					$"wmi stringarray ROOT\\Microsoft\\Windows\\Defender MSFT_MpPreference add ExclusionExtension \"{normalizedExtension}\"");
+
+				MainInfoBar.WriteInfo(string.Format(Atlas.GetStr("AddedExclusionMsg"), normalizedExtension));
+			});
+
+			await RetrieveAllExclusionsInternal();
+
+		}
+		catch (Exception ex)
+		{
+			MainInfoBar.WriteError(ex);
+		}
+		finally
+		{
+			MainInfoBar.IsClosable = true;
+			ExclusionsUIIsEnabled = true;
+		}
+	}
+
+	/// <summary>
+	/// Method to normalize and validate a file extension.
+	/// </summary>
+	private static string NormalizeExtensionOrThrow(string value)
+	{
+		if (string.IsNullOrWhiteSpace(value))
+		{
+			throw new InvalidOperationException(Atlas.GetStr("EnterFileExtensionText"));
+		}
+
+		string extension = value.Trim();
+
+		// Prepend '.' if missing
+		if (!extension.StartsWith('.'))
+		{
+			extension = "." + extension;
+		}
+
+		// Must have something after the dot
+		if (extension.Length <= 1)
+		{
+			throw new InvalidOperationException(Atlas.GetStr("FileExtensionInvalidMsg"));
+		}
+
+		// Validate characters (no invalid file name characters allowed)
+		if (extension.IndexOfAny(Atlas.InvalidFileNameChars.Value) >= 0)
+		{
+			throw new InvalidOperationException(Atlas.GetStr("FileExtensionHasInvalidCharsMsg"));
+		}
+
+		// Do not allow directory separators or drive specifiers
+		if (extension.Contains('\\', StringComparison.Ordinal) ||
+			extension.Contains('/', StringComparison.Ordinal) ||
+			extension.Contains(':', StringComparison.Ordinal))
+		{
+			throw new InvalidOperationException("The file extension must not contain path separators or a drive specifier.");
+		}
+
+		return extension;
+	}
+
+	/// <summary>
+	/// Add exclusions for Microsoft Defender - Process.
+	/// </summary>
+	internal async void AddProcessExclusion()
+	{
+		try
+		{
+			ExclusionsUIIsEnabled = false;
+
+			TextBox inputBox = new()
+			{
+				Header = "Enter the process name (e.g., notepad.exe) or a full path",
+				PlaceholderText = "notepad.exe",
+				Text = string.Empty
+			};
+
+			using AppControlManager.CustomUIElements.ContentDialogV2 dialog = new()
+			{
+				Title = Atlas.GetStr("AddProcessExclusionText"),
+				Content = inputBox,
+				PrimaryButtonText = Atlas.GetStr("AddToExclusionsText"),
+				CloseButtonText = Atlas.GetStr("Cancel"),
+				DefaultButton = ContentDialogButton.Primary
+			};
+
+			// Show dialog
+			ContentDialogResult result = await dialog.ShowAsync();
+
+			// If user didn't confirm, exit early
+			if (result != ContentDialogResult.Primary)
+			{
+				return;
+			}
+
+			string text = inputBox.Text;
+
+			// Add to Defender exclusions
+			await Task.Run(() =>
+			{
+				// Normalize and validate the process name
+				string normalizedProcessName = NormalizeProcessNameOrThrow(text);
+
+				_ = QuantumRelayHSS.Client.RunCommand(Atlas.ComManagerProcessPath,
+					$"wmi stringarray ROOT\\Microsoft\\Windows\\Defender MSFT_MpPreference add ExclusionProcess \"{normalizedProcessName}\"");
+
+				MainInfoBar.WriteInfo(string.Format(Atlas.GetStr("AddedExclusionMsg"), normalizedProcessName));
+			});
+
+			await RetrieveAllExclusionsInternal();
+		}
+		catch (Exception ex)
+		{
+			MainInfoBar.WriteError(ex);
+		}
+		finally
+		{
+			MainInfoBar.IsClosable = true;
+			ExclusionsUIIsEnabled = true;
+		}
+	}
+
+	/// <summary>
+	/// Local function to normalize and validate a process name or path.
+	/// </summary>
+	private static string NormalizeProcessNameOrThrow(string value)
+	{
+		if (string.IsNullOrWhiteSpace(value))
+		{
+			throw new InvalidOperationException(Atlas.GetStr("EnterProcessNameText"));
+		}
+
+		string input = value.Trim();
+
+		// If it's a path, extract the file name
+		string name = input;
+		if (input.Contains('\\', StringComparison.Ordinal) ||
+			input.Contains('/', StringComparison.Ordinal) ||
+			input.Contains(':', StringComparison.Ordinal))
+		{
+			name = Path.GetFileName(input);
+		}
+
+		if (string.IsNullOrWhiteSpace(name))
+		{
+			throw new InvalidOperationException(Atlas.GetStr("ProcessNameInvalidMsg"));
+		}
+
+		// Ensure it ends with .exe
+		if (!name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
+		{
+			name += ".exe";
+		}
+
+		// Validate characters (no invalid file name characters allowed)
+		if (name.IndexOfAny(Atlas.InvalidFileNameChars.Value) >= 0)
+		{
+			throw new InvalidOperationException(Atlas.GetStr("ProcessNameHasInvalidCharsMsg"));
+		}
+
+		// Must not contain path separators after normalization
+		if (name.Contains('\\', StringComparison.Ordinal) ||
+			name.Contains('/', StringComparison.Ordinal) ||
+			name.Contains(':', StringComparison.Ordinal))
+		{
+			throw new InvalidOperationException("The process name must not contain path separators or a drive specifier.");
+		}
+
+		return name;
+	}
+
+	/// <summary>
+	/// Add exclusions for Microsoft Defender - Controlled Folder Access.
+	/// </summary>
+	internal async void AddControlledFolderAccessExclusion()
+	{
+		try
+		{
+			ExclusionsUIIsEnabled = false;
+
+			List<string> selectedFiles = FileDialogHelper.ShowMultipleFilePickerDialog(Atlas.AnyFilePickerFilter);
+
+			if (selectedFiles.Count == 0)
+				return;
+
+			await Task.Run(() =>
+			{
+				foreach (string item in selectedFiles)
+				{
+					_ = QuantumRelayHSS.Client.RunCommand(Atlas.ComManagerProcessPath, $"wmi stringarray ROOT\\Microsoft\\Windows\\Defender MSFT_MpPreference add ControlledFolderAccessAllowedApplications \"{item}\"");
+
+					MainInfoBar.WriteInfo(string.Format(Atlas.GetStr("AddedExclusionMsg"), item));
+				}
+			});
+
+			await RetrieveAllExclusionsInternal();
+
+		}
+		catch (Exception ex)
+		{
+			MainInfoBar.WriteError(ex);
+		}
+		finally
+		{
+			MainInfoBar.IsClosable = true;
+			ExclusionsUIIsEnabled = true;
+		}
+	}
+
+	/// <summary>
+	/// Add exclusions for Microsoft Defender - Attack Surface Reduction.
+	/// </summary>
+	internal async void AddASRExclusion()
+	{
+		try
+		{
+			ExclusionsUIIsEnabled = false;
+
+			List<string> selectedFiles = FileDialogHelper.ShowMultipleFilePickerDialog(Atlas.AnyFilePickerFilter);
+
+			if (selectedFiles.Count == 0)
+				return;
+
+			await Task.Run(() =>
+			{
+				foreach (string item in selectedFiles)
+				{
+					_ = QuantumRelayHSS.Client.RunCommand(Atlas.ComManagerProcessPath, $"wmi stringarray ROOT\\Microsoft\\Windows\\Defender MSFT_MpPreference add AttackSurfaceReductionOnlyExclusions \"{item}\"");
+
+					MainInfoBar.WriteInfo(string.Format(Atlas.GetStr("AddedExclusionMsg"), item));
+				}
+			});
+
+			await RetrieveAllExclusionsInternal();
+
+		}
+		catch (Exception ex)
+		{
+			MainInfoBar.WriteError(ex);
+		}
+		finally
+		{
+			MainInfoBar.IsClosable = true;
+			ExclusionsUIIsEnabled = true;
+		}
+	}
+
+	/// <summary>
+	/// Removes a single exclusion based on its source type.
+	/// Triggered by the per-row context menu "Remove" item.
+	/// </summary>
+	[DynamicWindowsRuntimeCast(typeof(MenuFlyoutItem))]
+	internal async void RemoveExclusion_Click(object sender, RoutedEventArgs e)
+	{
+		try
+		{
+			ExclusionsUIIsEnabled = false;
+
+			// Retrieve the specific exclusion from the flyout item's Tag
+			MenuFlyoutItem menuItem = (MenuFlyoutItem)sender;
+
+			Exclusions exclusion = (Exclusions)menuItem.Tag;
+
+			// Map the ExclusionSource to the corresponding MSFT_MpPreference property
+			// Each exclusion type is removed from its own string[] property via "remove"
+			string propertyName = exclusion.Source switch
+			{
+				ExclusionSource.Antivirus_Path => "ExclusionPath",
+				ExclusionSource.Antivirus_Extension => "ExclusionExtension",
+				ExclusionSource.Antivirus_Process => "ExclusionProcess",
+				ExclusionSource.ControlledFolderAccess => "ControlledFolderAccessAllowedApplications",
+				ExclusionSource.AttackSurfaceReduction => "AttackSurfaceReductionOnlyExclusions",
+				_ => throw new InvalidOperationException("Unsupported exclusion type.")
+			};
+
+			string target = exclusion.Target;
+
+			// Perform the removal in background to keep UI responsive
+			await Task.Run(() =>
+			{
+				_ = QuantumRelayHSS.Client.RunCommand(Atlas.ComManagerProcessPath,
+					$"wmi stringarray ROOT\\Microsoft\\Windows\\Defender MSFT_MpPreference remove {propertyName} \"{target}\"");
+			});
+
+			// Refresh the list
+			await RetrieveAllExclusionsInternal();
+
+			MainInfoBar.WriteSuccess($"Removed exclusion: '{target}' from {exclusion.SourceFriendlyName}");
+		}
+		catch (Exception ex)
+		{
+			MainInfoBar.WriteError(ex);
+		}
+		finally
+		{
+			ExclusionsUIIsEnabled = true;
+		}
+	}
+
+	#endregion
+
+}

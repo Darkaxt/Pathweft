@@ -29,6 +29,7 @@
   </PropertyGroup>
   <ItemGroup>
     <EmbeddedResource Include="MaintenanceGuidance.json" />
+    <EmbeddedResource Include="vendor\HardeningKitty\lists\finding_list_0x6d69636b_machine.csv" LogicalName="FileExplorer.SecurityChecks.csv" />
     <None Update="scripts\Maintenance-Windows.ps1" Link="Maintenance-Windows.ps1" CopyToOutputDirectory="PreserveNewest" />
     <None Include="$(ShellRouterRoot)\x64\PathweftShell.dll" Link="PathweftShell-$(Version)-x64.dll" CopyToOutputDirectory="PreserveNewest" />
     <None Include="$(ShellRouterRoot)\x86\PathweftShell.dll" Link="PathweftShell-$(Version)-x86.dll" CopyToOutputDirectory="PreserveNewest" />
@@ -75,6 +76,8 @@
     <None Include="vendor\BulkCrapUninstaller\NOTICE" CopyToOutputDirectory="PreserveNewest" />
     <None Update="vendor\Sophia\source-manifest.json" CopyToOutputDirectory="PreserveNewest" />
     <None Update="vendor\WinUtil\source-manifest.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="vendor\HardeningKitty\source-manifest.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="vendor\HardenWindowsSecurity\source-manifest.json" CopyToOutputDirectory="PreserveNewest" />
     <None Update="docs\PERFORMANCE-MCP.md" Link="Performance-MCP.md" CopyToOutputDirectory="PreserveNewest" />
     <None Update="COPYING-GPL-3.0.txt" CopyToOutputDirectory="PreserveNewest" />
     <None Update="LICENSE" CopyToOutputDirectory="PreserveNewest" />

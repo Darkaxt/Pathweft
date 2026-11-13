@@ -17,6 +17,8 @@ internal sealed class MaintenanceTweak
     public Action<List<RegistryEdit>> Revert {get;init;}
     // Exact scheduled task paths this tweak disables (MAINT-27); empty for registry-only tweaks.
     public string[] TaskPaths {get;init;}=[];
+    // Windows optional features or capabilities this tweak turns off (MAINT-43); empty for most tweaks.
+    public WindowsComponent[] Components {get;init;}=[];
 }
 internal static class MaintenanceTweaks
 {

@@ -11,6 +11,8 @@ namespace FileExplorer;
 internal sealed record PerformanceFact(DateTimeOffset Time,string Name,int? Pid,double? Average,double? Peak,long Observations,string Details)
 {
     public long Started {get;init;}
+    // Highest observation of a spike or growth interval; internal so the MCP payload is unchanged.
+    internal DateTimeOffset PeakAt {get;init;}
     public string When=>Time==default?"":Time.ToLocalTime().ToString("G");
     public string Value=>Average?.ToString("0.##",CultureInfo.CurrentCulture)??"—";
     public string Maximum=>Peak?.ToString("0.##",CultureInfo.CurrentCulture)??"—";
@@ -256,8 +258,8 @@ internal sealed partial class PerformanceHistory : IDisposable
             var sums=new Dictionary<string,(double Sum,double Weight,double Peak,DateTimeOffset PeakAt,long Count)>();
             var buckets=new Dictionary<long,(DateTimeOffset Time,double Sum,int Count,double Peak)>();var breaks=new HashSet<long>();
             var driveBuckets=new Dictionary<long,DrivePoint>();
-            DateTimeOffset first=default,latest=default,previous=default,spikeStart=default;double spikeMax=0;long spikeCount=0;string spikeDevice=null;
-            void EndSpike(){if(spikeCount==0)return;total++;if(rows.Count<query.Limit)rows.Add(new(spikeStart,spikeDevice,null,null,spikeMax,spikeCount,"Threshold exceedances at sampled times; coincident apps are not proof of cause"));spikeCount=0;}
+            DateTimeOffset first=default,latest=default,previous=default,spikeStart=default,spikePeakAt=default;double spikeMax=0;long spikeCount=0;string spikeDevice=null;
+            void EndSpike(){if(spikeCount==0)return;total++;if(rows.Count<query.Limit)rows.Add(new(spikeStart,spikeDevice,null,null,spikeMax,spikeCount,"Threshold exceedances at sampled times; coincident apps are not proof of cause"){PeakAt=spikePeakAt});spikeCount=0;}
             foreach(var sample in Samples())
             {
                 cancel.ThrowIfCancellationRequested();
@@ -294,7 +296,7 @@ internal sealed partial class PerformanceHistory : IDisposable
                 if(plotted.Value is {} v)
                 {
                     var old=buckets.GetValueOrDefault(bucket);buckets[bucket]=(sample.Time,old.Sum+v,old.Count+1,old.Count==0?v:Math.Max(old.Peak,v));
-                    if(query.Tool=="find_spikes"){if(v>=query.Threshold){if(spikeCount==0){spikeStart=sample.Time;spikeDevice=plotted.Name;spikeMax=v;}spikeCount++;spikeMax=Math.Max(spikeMax,v);}else EndSpike();}
+                    if(query.Tool=="find_spikes"){if(v>=query.Threshold){if(spikeCount==0){spikeStart=spikePeakAt=sample.Time;spikeDevice=plotted.Name;spikeMax=v;}spikeCount++;if(v>spikeMax){spikeMax=v;spikePeakAt=sample.Time;}}else EndSpike();}
                 }
                 else {EndSpike();breaks.Add(bucket);buckets.TryAdd(bucket,(sample.Time,0,0,0));}
                 previous=sample.Time;

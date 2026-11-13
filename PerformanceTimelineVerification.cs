@@ -7,6 +7,41 @@ using System.Windows.Threading;
 namespace FileExplorer;
 public partial class MainWindow
 {
+    // MONITOR-22: sustained growth of one process is an event; boots, short bursts and trims are not.
+    static void VerifyMemoryGrowth(string root,Action<bool,string> check)
+    {
+        const long Gb=1L<<30;string path=Path.Combine(root,"growth.sqlite");var start=DateTimeOffset.UtcNow.AddMinutes(-40);
+        var snapshots=new List<PerformanceProcessSnapshot>();
+        using(var store=new PerformanceHistory(path))
+        {
+            for(int i=0;i<180;i++)
+            {
+                double minute=i/6d;var at=start.AddSeconds(i*10);
+                // Level 2 GB for 5 minutes, then +1 GB/min with a 2 GB working-set trim at minute 15.
+                long leak=2*Gb+(long)(Math.Max(0,minute-5)*Gb)-(minute is >=15 and <16?2*Gb:0);
+                long boot=minute<3?Gb+(long)(minute*2*Gb):7*Gb;
+                ProcessMetric[] apps=[new(7,start.UtcTicks,"leaky",1,leak),new(8,start.UtcTicks,"booting",1,boot)];
+                store.Record(new(at,10,[],[],null,new(leak+boot,40*Gb)),apps,[]);
+                snapshots.Add(new(at,apps,[]));
+            }
+            check(store.Issue==null,"Growth fixture uses actual history persistence");
+        }
+        var found=PerformanceInvestigation.Growth(start,start.AddMinutes(31),16*Gb,source:path);
+        check(found.Length==1&&found[0].Name=="Memory growth"&&found[0].Pid==7&&found[0].Details.StartsWith("leaky · growing steadily",StringComparison.Ordinal),
+            "Sustained growth of one process is a single event; an app's startup burst is not");
+        check(found.Length==1&&Math.Abs((found[0].Time-start.AddMinutes(5)).TotalSeconds)<=20&&found[0].PeakAt>=start.AddMinutes(29.5),"Growth starts where the level period ends and spans a working-set trim to the latest high");
+        check(found.Length==1&&found[0].Details.Contains("/min for 25 min",StringComparison.Ordinal),"Growth reports its rate and sustained duration: "+found.FirstOrDefault()?.Details);
+        var live=PerformanceInvestigation.Growth(start,start.AddMinutes(31),16*Gb,source:Path.Combine(root,"absent.sqlite"),liveApps:snapshots.ToArray());
+        check(live.Length==1&&live[0].Pid==7,"Growth is detected from the automatic recent snapshots before they are saved");
+        check(PerformanceInvestigation.Growth(start,start.AddMinutes(31),256*Gb,source:path).Length==0,"Growth below 15% of installed memory is not flagged");
+        var query=new PerformanceQuery(LastMinutes:60,Metric:"ram",From:start.AddSeconds(-5),To:start.AddMinutes(31));
+        var rail=PerformanceInvestigation.Read(query,source:path).Events;
+        var spike=rail.FirstOrDefault(x=>x.Name=="Usage spike");
+        check(spike!=null&&spike.Time==spike.PeakAt&&spike.Details.Contains("largest leaky",StringComparison.Ordinal)&&spike.Details.Contains("leaky +",StringComparison.Ordinal),
+            "A RAM spike marker sits at its peak and names the largest and fastest-growing app: "+spike?.Details);
+        check(rail.Count(x=>x.Name=="Memory growth")==1&&rail.Where(PerformanceTimeline.Alerting).All(x=>x.PeakAt!=default),"The RAM timeline carries the growth event and every alert has a peak to investigate");
+        check(PerformanceInvestigation.Read(query with{Metric="cpu"},source:path).Events.All(x=>x.Name!="Memory growth"),"Memory growth appears only in the RAM view");
+    }
     async Task VerifyTimeline29(string root,Action<bool,string> check)
     {
         string path=Path.Combine(root,"investigation.sqlite");var start=DateTimeOffset.UtcNow.AddMinutes(-50);
@@ -37,6 +72,7 @@ public partial class MainWindow
         check(gpu.Apps.Single().Average==60,"Moment attribution respects selected GPU identity");
         check(PerformanceInvestigation.Moment(query with{Metric="ram"},start.AddSeconds(20),source:path).Apps.Single().Average==1024,"RAM investigation returns recorded working sets");
         check(PerformanceInvestigation.Moment(query with{Metric="disk"},start.AddSeconds(20),source:path).Apps.Length==0,"Drive history never claims recorded per-process I/O attribution");
+        VerifyMemoryGrowth(root,check);
         var range=PerformanceHistory.Query(query with{Tool="get_top_processes",From=start.AddSeconds(1250),To=start.AddSeconds(1350)},source:path);
         check(range.Rows.Length==1&&range.Rows[0].Name=="observed-second","Selected-range app queries exclude observations outside the interval");
         performance.SetHistorySourceForVerification(path);performance.Select(PerformancePanel.Cpu);await performance.HistoryForVerification(1);UpdateLayout();

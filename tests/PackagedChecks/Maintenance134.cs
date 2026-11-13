@@ -26,8 +26,8 @@ sealed partial class PackageProbe
         // The independent consumer never shows its host window. Rendered
         // visibility is qualified by the source UI scenario; here inspect
         // the delivered layout state and real navigation/readers.
-        Check(cards.Columns==5&&cards.Children.Count==5&&cards.Visibility==Visibility.Visible,
-            "Delivered brush opens five bottom Maintenance summary tabs");
+        Check(cards.Columns==6&&cards.Children.Count==6&&cards.Visibility==Visibility.Visible,
+            "Delivered brush opens six bottom Maintenance summary tabs");
         var actions=(WrapPanel)type.GetField("actions",Flags).GetValue(panel);
         Check(actions.Children.OfType<Button>().All(button=>!Equals(button.Content,"Refresh")&&!Equals(button.Content,"Analyze")),
             "Delivered Maintenance has no manual Refresh or generic Analyze button");
@@ -72,7 +72,7 @@ sealed partial class PackageProbe
         Check(protectedAction.Visibility==Visibility.Visible&&protectedAction.IsEnabled&&!cleanAction.IsEnabled,
             "Delivered protected Cleanup requires its own review before Clean and does not depend on the Explorer shield");
         rows.SelectedItem=null;
-        string[] categories=["Cleanup","Startup","Services","Windows tweaks","Windows apps"];
+        string[] categories=["Cleanup","Startup","Services","Windows tweaks","Windows apps","Security check"];
         for(int i=0;i<categories.Length;i++)
         {
             var card=(Button)cards.Children[i];
@@ -96,7 +96,7 @@ sealed partial class PackageProbe
                 string direction=AutomationProperties.GetItemStatus(header);
                 var sorted=System.Windows.Data.CollectionViewSource.GetDefaultView(rows.ItemsSource).SortDescriptions;
                 Check(sorted.Count>0&&sorted[0].PropertyName==(string)header.Tag&&direction.Length>0,"Delivered header sorts "+categories[i]+" / "+AutomationProperties.GetName(header));
-                var grouped=rows.Items.Cast<object>().GroupBy(row=>categories[i] is "Windows tweaks" or "Windows apps"?(string)Get(row,"Group"):"");
+                var grouped=rows.Items.Cast<object>().GroupBy(row=>categories[i] is "Windows tweaks" or "Windows apps" or "Security check"?(string)Get(row,"Group"):"");
                 Check(grouped.All(group=>{var values=group.Select(row=>Get(row,(string)header.Tag)).ToArray();return values.Zip(values.Skip(1),(a,b)=>direction=="Ascending"?System.Collections.Comparer.Default.Compare(a,b)<=0:System.Collections.Comparer.Default.Compare(a,b)>=0).All(x=>x);}),"Delivered rows follow selected header ordering within setting groups: "+AutomationProperties.GetName(header));
                 rows.RaiseEvent(new RoutedEventArgs(Button.ClickEvent,header));
                 Check(AutomationProperties.GetItemStatus(header)!=direction,"Delivered header reverses "+AutomationProperties.GetName(header));

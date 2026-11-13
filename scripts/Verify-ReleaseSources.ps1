@@ -54,7 +54,7 @@ try{
     try{$base=$reader.ReadToEnd()|ConvertFrom-Json}finally{$reader.Dispose()}
     foreach($pin in $base){CheckDependency $pin.name $pin.sha256}
     $marked=ReadJson 'vendor/Marked/runtime-manifest.json'
-    foreach($donor in @('Scoop','Win11Debloat','Win11Debloat-516fe42','RemoveWindowsAI','SophiApp','UnattendedWinstall','Bloatynosy','Sophia','WinUtil','BulkCrapUninstaller')){
+    foreach($donor in @('Scoop','Win11Debloat','Win11Debloat-516fe42','RemoveWindowsAI','SophiApp','UnattendedWinstall','Bloatynosy','Sophia','WinUtil','BulkCrapUninstaller','HardeningKitty','HardenWindowsSecurity')){
         $pin=ReadJson ('vendor/'+$donor+'/source-manifest.json')
         if($pin.revision -notmatch '^[a-f0-9]{40}$' -or $pin.license -notin @('MIT','Apache-2.0') -or !$source.GetEntry('Pathweft/vendor/'+$donor+'/License.txt') -or $pin.license -eq 'Apache-2.0' -and !$source.GetEntry('Pathweft/vendor/'+$donor+'/NOTICE')){throw ('Maintenance donor provenance missing: '+$donor)}
         foreach($file in $pin.files){

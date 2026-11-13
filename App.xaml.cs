@@ -48,6 +48,8 @@ static class Program
         {Environment.ExitCode=MaintenanceNativeVerification.Guidance(args[1]).GetAwaiter().GetResult();return;}
         if(args.Length==2&&args[0]=="--verify-maintenance-apps")
         {Environment.ExitCode=MaintenanceNativeVerification.Apps(args[1]).GetAwaiter().GetResult();return;}
+        if(args.Length==2&&args[0]=="--verify-maintenance-hardening")
+        {Environment.ExitCode=MaintenanceHardeningVerification.Run(args[1]).GetAwaiter().GetResult();return;}
         if(args.Length==2&&args[0]=="--verify-maintenance-native")
         {Environment.ExitCode=MaintenanceNativeVerification.Run(args[1]).GetAwaiter().GetResult();return;}
         if(args.Length==2&&args[0]=="--verify-performance-bridge")
