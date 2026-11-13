@@ -126,7 +126,7 @@ internal sealed class LeftoversWindow : Window
         var machine=chosen.Where(x=>x.Administrator).Select(x=>x.Identity).ToArray();
         if(machine.Length>0)
         {
-            await using var client=new MaintenanceClient(maintenanceScope:true);
+            await using var client=new MaintenanceClient();
             var reply=await client.Start(new("remove-leftovers",MaintenanceLeftovers.Serialize(app,machine),backupFolder,null),true);
             if(!reply.Ok){skipped+=machine.Length;details.Add(reply.Message);}
             else
@@ -146,7 +146,7 @@ internal sealed class LeftoversWindow : Window
         {
             if(Path.GetFileName(file).StartsWith("machine",StringComparison.OrdinalIgnoreCase))
             {
-                await using var client=new MaintenanceClient(maintenanceScope:true);
+                await using var client=new MaintenanceClient();
                 var reply=await client.Start(new("restore-leftovers","",file,null),true);if(!reply.Ok)throw new IOException(reply.Message);
             }
             else await MaintenanceLeftovers.Restore(file,CancellationToken.None);

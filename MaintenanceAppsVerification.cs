@@ -154,7 +154,7 @@ internal static class MaintenanceAppsVerification
         var rows=panel.Rows.Items.Cast<MaintenanceRow>().ToArray();
         check(rows.Length==3&&rows.All(r=>r.Group==MaintenanceApps.Desktop&&r.Recommendation=="Not assessed"),"The tab lists the fixture's three programs grouped by source, unrated");
         panel.Rows.SelectedItem=rows.Single(r=>r.Name=="Fixture Locked App");
-        check(!panel.CleanEnabledForVerification&&panel.ExplanationForVerification.Contains("cannot be selected for removal"),"A protected row disables Uninstall and says why");
+        check(!panel.CleanEnabledForVerification&&panel.ExplanationForVerification.Contains("cannot be selected for removal")&&!panel.ExplanationForVerification.Contains("Protected · "),"A protected row disables Uninstall and says why once");
         panel.Rows.SelectedItems.Clear();foreach(var row in rows.Where(r=>r.CanChange))panel.Rows.SelectedItems.Add(row);
         check(panel.CleanEnabledForVerification&&panel.ActionLabelsForVerification.Contains("Uninstall selected…")&&!panel.ActionLabelsForVerification.Contains("Remove"),"Selecting two programs offers Uninstall selected…");
         IReadOnlyList<InstalledApp> asked=null;
@@ -180,6 +180,7 @@ internal static class MaintenanceAppsVerification
         fixture.Entry("Plain",("DisplayName","Fixture Plain App"),("Publisher","Fixture Labs"),("InstallLocation",install),("UninstallString","\""+Script("plain",$"start \"\" /min cmd.exe /c \"{child}\"")+"\""));
         fixture.Entry("Quiet",("DisplayName","Fixture Quiet App"),("UninstallString","\""+Script("loud","exit /b 0")+"\""),("QuietUninstallString","\""+Script("quiet",delete("Quiet"))+"\" /S"));
         fixture.Entry("Refuses",("DisplayName","Fixture Refusing App"),("UninstallString","\""+Script("refuses","exit /b 1602")+"\""));
+        fixture.Entry("Worker",("DisplayName","Fixture Worker App"),("UninstallString","\""+Script("worker",delete("Worker"))+"\""));
         fixture.Entry(MsiCode,("DisplayName","Fixture Installer App"),("WindowsInstaller",1),("UninstallString","MsiExec.exe /X"+MsiCode));
         var watch=Stopwatch.StartNew();var outcome=await Bounded(note,"uninstall plain",()=>MaintenanceApps.Uninstall(fixture.Id("Plain"),false,default));
         check(outcome.State=="Removed"&&watch.Elapsed>=TimeSpan.FromSeconds(2),"Uninstall waits for the uninstaller's descendants and confirms removal by re-reading the entry: "+outcome.State+" after "+watch.Elapsed.TotalSeconds.ToString("0.0")+" s");
@@ -189,6 +190,12 @@ internal static class MaintenanceAppsVerification
         check(outcome.State=="Removed","Quiet uninstall runs the declared quiet command: "+outcome.State);
         outcome=await Bounded(note,"uninstall refusing",()=>MaintenanceApps.Uninstall(fixture.Id("Refuses"),false,default));
         check(outcome.State=="Cancelled","Exit code 1602 reports Cancelled with the entry kept: "+outcome.State);
+        // ACCESS-07: uninstalls run through the administrator session's worker, which re-reads the entry itself.
+        var viaWorker=await Bounded(note,"worker uninstall",async()=>{await using var client=new MaintenanceClient();return await client.Start(new("uninstall-app",fixture.Id("Worker"),root,""),false);});
+        var workerOutcome=viaWorker.Ok?JsonSerializer.Deserialize<MaintenanceApps.Outcome>(viaWorker.Message):null;
+        check(workerOutcome?.State=="Removed","The administrator-session worker runs a desktop program's own uninstaller and confirms removal: "+viaWorker.Message);
+        await using(var client=new MaintenanceClient())
+            check(!(await client.Start(new("uninstall-app","app:store:fixture",root,""),false)).Ok,"The worker refuses to uninstall a Store package");
         // The named mutex existing is the busy signal; it is not owned, so no thread affinity crosses the await.
         using(new Mutex(false,@"Global\_MSIExecute"))
         {

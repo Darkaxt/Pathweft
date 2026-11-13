@@ -66,7 +66,7 @@ public partial class MainWindow
         check(maintenance.Rows.SelectedItem==null,"Automatic analysis does not select a cleanup action on the user's behalf");
         maintenance.Rows.SelectedItem=maintenance.Rows.Items.Cast<MaintenanceRow>().Single(r=>r.Id=="windows-temp");
         check(!maintenance.CleanEnabledForVerification&&maintenance.ActionLabelsForVerification.Contains("Use administrator access")&&
-            !AdministratorSession.MaintenanceAvailable,
+            !AdministratorSession.Available,
             "Protected Cleanup requires its own explicit administrator review and no elevation starts on entry");
         maintenance.Rows.SelectedItem=null;
         var scoopRow=maintenance.Rows.Items.Cast<MaintenanceRow>().Single(r=>r.Id=="scoop-versions");maintenance.Rows.SelectedItem=scoopRow;
@@ -143,7 +143,7 @@ public partial class MainWindow
         check(maintenance.Cards.IsVisible&&!StatsRow.IsVisible&&!performance.IsVisible&&((System.Windows.Controls.Primitives.UniformGrid)maintenance.Cards).Children.Count==5,"Brush replaces the bottom statistics with exactly five maintenance summary tabs");
         check(!PerformanceMode&&PerformanceCommand.Tag==null&&System.Windows.Automation.AutomationProperties.GetItemStatus(PerformanceCommand)=="Off"&&
             PerformanceCommand.IsEnabled&&AdministratorCommand.IsEnabled&&TerminalCommand.IsEnabled&&HiddenToggle.IsEnabled&&PerformanceCommand.Opacity==1&&
-            System.Windows.Automation.AutomationProperties.GetItemStatus(AdministratorCommand)!="Explorer only"&&!AdministratorSession.MaintenanceAvailable,
+            System.Windows.Automation.AutomationProperties.GetItemStatus(AdministratorCommand)!="Explorer only"&&!AdministratorSession.Available,
             "Maintenance cards leave the file panes and every toolbar command, including Performance and the shield, usable without starting the Maintenance backend");
         PerformanceCommand.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await paneModeWork;UpdateLayout();
         check(!maintenanceVisible&&!maintenance.IsVisible&&PerformanceMode&&MaintenanceCommand.Tag==null&&Equals(PerformanceCommand.Tag,"on")&&

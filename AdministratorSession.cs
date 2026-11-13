@@ -11,19 +11,16 @@ namespace FileExplorer;
 internal sealed record AdministratorRequest(string Kind,string Pipe);
 internal sealed record AdministratorReply(bool Ok,string Message,int Pid=0);
 
-// Explorer/Performance and Maintenance own separate UAC-approved processes.
-// Each hosts only the existing scoped Maintenance / I/O protocols; no request
+// One UAC-approved process per run, requested at launch (ACCESS-04) and shared by
+// Explorer browsing, Performance and Maintenance (ACCESS-07). It hosts only the existing scoped Maintenance / I/O protocols; no request
 // supplies an executable, command line or script. Authenticated operation pipes
 // retain cancellation and exact-review lifetimes without serializing long scans.
 internal sealed class AdministratorSession : IAsyncDisposable
 {
     static readonly SemaphoreSlim admission=new(1);
-    static readonly SemaphoreSlim maintenanceAdmission=new(1);
     static AdministratorSession current;
-    static AdministratorSession maintenanceCurrent;
     internal static bool Browsing {get;private set;}
     internal static bool Available=>current is { } session&&!session.stopped.IsCancellationRequested;
-    internal static bool MaintenanceAvailable=>maintenanceCurrent is { } session&&!session.stopped.IsCancellationRequested;
     internal static event Action Changed;
     internal static void SetBrowsing(bool enabled){Browsing=enabled&&Available;Changed?.Invoke();}
     readonly SemaphoreSlim commands=new(1);
@@ -50,21 +47,6 @@ internal sealed class AdministratorSession : IAsyncDisposable
             catch{await session.DisposeAsync().ConfigureAwait(false);throw;}
         }
         finally{admission.Release();}
-    }
-    internal static async Task<bool> EnableMaintenance(CancellationToken cancel=default)
-    {
-        await maintenanceAdmission.WaitAsync(cancel).ConfigureAwait(false);
-        try
-        {
-            if(MaintenanceAvailable)return true;
-            if(maintenanceCurrent!=null){await maintenanceCurrent.DisposeAsync().ConfigureAwait(false);maintenanceCurrent=null;}
-            var session=new AdministratorSession();
-            try{await session.Start(cancel).ConfigureAwait(false);maintenanceCurrent=session;return true;}
-            catch(Win32Exception error)when(error.NativeErrorCode==1223)
-            {await session.DisposeAsync().ConfigureAwait(false);return false;}
-            catch{await session.DisposeAsync().ConfigureAwait(false);throw;}
-        }
-        finally{maintenanceAdmission.Release();}
     }
     async Task Start(CancellationToken cancel)
     {
@@ -123,12 +105,12 @@ internal sealed class AdministratorSession : IAsyncDisposable
             finally{session.operations.Release();}
         }
     }
-    internal static async Task<Operation> Open(string name,string kind,CancellationToken cancel,bool enable=true,bool maintenanceScope=false)
+    internal static async Task<Operation> Open(string name,string kind,CancellationToken cancel,bool enable=true)
     {
         cancel.ThrowIfCancellationRequested();
-        if(enable&&!(maintenanceScope?await EnableMaintenance(cancel).ConfigureAwait(false):await Enable(cancel).ConfigureAwait(false)))throw new Win32Exception(1223,"Administrator permission cancelled. Nothing changed.");
-        if(!(maintenanceScope?MaintenanceAvailable:Available))throw new IOException("Administrator session ended");
-        var session=(maintenanceScope?maintenanceCurrent:current)??throw new IOException("Administrator session ended");
+        if(enable&&!await Enable(cancel).ConfigureAwait(false))throw new Win32Exception(1223,"Administrator permission cancelled. Nothing changed.");
+        if(!Available)throw new IOException("Administrator session ended");
+        var session=current??throw new IOException("Administrator session ended");
         // Queue at the owner before sending admission. Never hold the control
         // pipe while waiting for capacity: existing operations need it to retire.
         using var waiting=CancellationTokenSource.CreateLinkedTokenSource(cancel,session.stopped.Token);
@@ -147,12 +129,6 @@ internal sealed class AdministratorSession : IAsyncDisposable
         await admission.WaitAsync().ConfigureAwait(false);
         try{var old=current;current=null;Browsing=false;Changed?.Invoke();if(old!=null)await old.DisposeAsync().ConfigureAwait(false);}
         finally{admission.Release();}
-    }
-    internal static async Task EndMaintenance()
-    {
-        await maintenanceAdmission.WaitAsync().ConfigureAwait(false);
-        try{var old=maintenanceCurrent;maintenanceCurrent=null;if(old!=null)await old.DisposeAsync().ConfigureAwait(false);}
-        finally{maintenanceAdmission.Release();}
     }
     public async ValueTask DisposeAsync()
     {

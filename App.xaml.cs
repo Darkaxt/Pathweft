@@ -365,7 +365,6 @@ public partial class App : Application
         try{updateRetirement.GetAwaiter().GetResult();}catch(OperationCanceledException)when(updateRetirementCancellation.IsCancellationRequested){}
         updateRetirementCancellation.Dispose();
         PerformanceMonitor.Stop();
-        AdministratorSession.EndMaintenance().GetAwaiter().GetResult();
         AdministratorSession.End().GetAwaiter().GetResult();
 #if DEBUG
         HiddenTrialPresentation.StopObserver();

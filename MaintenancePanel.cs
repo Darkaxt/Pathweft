@@ -108,14 +108,16 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
         filters.Children.Add(groups);filters.Children.Add(goals);filters.Children.Add(search);var clear=new Button{Content="Clear",MinHeight=32};clear.SetResourceReference(StyleProperty,"AuxiliaryAction");clear.Click+=(_,_)=>{search.Clear();groups.SelectedIndex=0;goals.SelectedIndex=0;};filters.Children.Add(clear);intro.Children.Add(filters);
         search.TextChanged+=(_,_)=>FilterRows();groups.SelectionChanged+=(_,_)=>FilterRows();goals.SelectionChanged+=(_,_)=>FilterRows();
         explanation.SetResourceReference(BackgroundProperty,"Palette.0AFFFFFF");explanation.CornerRadius=new(8);
+        // The title row with its close button stays fixed; only the text below scrolls, so the scrollbar never runs beside the button.
         var detail=new StackPanel();var titleRow=new DockPanel();DockPanel.SetDock(closeExplanation,Dock.Right);titleRow.Children.Add(closeExplanation);titleRow.Children.Add(explanationTitle);
-        detail.Children.Add(titleRow);detail.Children.Add(explanationText);detail.Children.Add(sourceText);
+        detail.Children.Add(explanationText);detail.Children.Add(sourceText);
         closeExplanation.SetResourceReference(StyleProperty,"IconButton");AutomationProperties.SetName(closeExplanation,"Close details");
         // Dismissing hides only the details; the selection and its actions stay. Selecting another row shows them again.
         closeExplanation.Click+=(_,_)=>{dismissedExplanation=(table.SelectedItem as MaintenanceRow)?.Id;Explain();table.Focus();};
         table.PreviewKeyDown+=(_,e)=>{if(e.Key==Key.Escape&&explanation.Visibility==Visibility.Visible){closeExplanation.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent));e.Handled=true;}};
         explanationText.SetResourceReference(Control.ForegroundProperty,"Muted");AutomationProperties.SetName(explanationText,"Selected maintenance assessment");
-        explanation.Child=new ScrollViewer{Content=detail,MaxHeight=150,VerticalScrollBarVisibility=ScrollBarVisibility.Auto};Grid.SetRow(explanation,2);body.Children.Add(explanation);
+        var well=new DockPanel();DockPanel.SetDock(titleRow,Dock.Top);well.Children.Add(titleRow);
+        well.Children.Add(new ScrollViewer{Content=detail,MaxHeight=124,VerticalScrollBarVisibility=ScrollBarVisibility.Auto});explanation.Child=well;Grid.SetRow(explanation,2);body.Children.Add(explanation);
         table.SetResourceReference(Control.ForegroundProperty,"Palette.E8EEF6");VirtualizingPanel.SetIsVirtualizing(table,true);VirtualizingPanel.SetIsVirtualizingWhenGrouping(table,true);VirtualizingPanel.SetVirtualizationMode(table,VirtualizationMode.Recycling);ScrollViewer.SetCanContentScroll(table,true);
         VirtualizingPanel.SetScrollUnit(table,ScrollUnit.Pixel);VirtualizingPanel.SetCacheLengthUnit(table,VirtualizationCacheLengthUnit.Page);VirtualizingPanel.SetCacheLength(table,new VirtualizationCacheLength(1));
         Columns();Grid.SetRow(table,1);body.Children.Add(table);AutomationProperties.SetName(table,"Maintenance items");
@@ -285,7 +287,7 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
         MaintenanceRow result;
         if(allowElevation&&row.Id is ("windows-temp" or "error-reports"))
         {
-            var client=new MaintenanceClient(maintenanceScope:true);
+            var client=new MaintenanceClient();
             try
             {
                 var reply=await client.Start(new("analyze",row.Id,Maintenance.Journal,Path.Combine(DataFolder.Cache,"Maintenance")),true,reading.Token);
@@ -323,6 +325,17 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
         };
     }
     Task Change()=>Category switch{"Cleanup"=>Clean(),"Windows apps"=>UninstallApps(),_=>Apply("apply")};
+    // Desktop programs and Chocolatey run from the approved administrator session (no further UAC); Store and Scoop
+    // stay with the current user. Without an approved session the uninstaller may ask Windows for elevation itself.
+    async Task<MaintenanceApps.Outcome> Uninstall(InstalledApp app,bool quiet)
+    {
+        if(app.Source is MaintenanceApps.Store or MaintenanceApps.Scoop||!AdministratorSession.Available)return await MaintenanceApps.Uninstall(app.Id,quiet,reading.Token);
+        await using var client=new MaintenanceClient();MaintenanceReply reply;
+        try{reply=await client.Start(new("uninstall-app",app.Id,Maintenance.Journal,quiet?"quiet":""),true,reading.Token);}
+        catch(OperationCanceledException){return new("Not waited","Pathweft stopped waiting; the uninstaller may still be open.");}
+        if(!reply.Ok)throw new IOException(reply.Message);
+        return JsonSerializer.Deserialize<MaintenanceApps.Outcome>(reply.Message)??throw new InvalidDataException("Invalid uninstall result");
+    }
     // MAINT-34/35: confirmation names every app; one uninstaller at a time in BCU order; Cancel stops between apps.
     async Task UninstallApps()
     {
@@ -336,7 +349,7 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
         if(answer.RestorePoint)
         {
             status.Text="Creating a Windows restore point…";MaintenanceReply point;
-            await using(var client=new MaintenanceClient(maintenanceScope:true))point=await client.Start(new("restore-point","",Maintenance.Journal,null),true,reading.Token);
+            await using(var client=new MaintenanceClient())point=await client.Start(new("restore-point","",Maintenance.Journal,null),true,reading.Token);
             bool proceed=point.Ok;
 #if DEBUG
             if(!proceed&&ContinueWithoutRestorePointForVerification!=null)proceed=ContinueWithoutRestorePointForVerification(point.Message);else
@@ -350,7 +363,7 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
             if(reading.IsCancellationRequested){results.Add(app.Name+": Not started (cancelled)");continue;}
             status.Text=$"Uninstalling {results.Count+1} of {ordered.Length} · {app.Name}…";
             MaintenanceApps.Outcome outcome;
-            try{outcome=await MaintenanceApps.Uninstall(app.Id,answer.Quiet,reading.Token);}
+            try{outcome=await Uninstall(app,answer.Quiet);}
             catch(Exception error)when(error is IOException or InvalidOperationException or UnauthorizedAccessException or System.ComponentModel.Win32Exception or System.Runtime.InteropServices.COMException)
             {outcome=new("Failed",error.Message);}
             if(outcome.State=="Removed"){removed++;removedApps[app.Id]=(app,"Removed");}
@@ -423,7 +436,7 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
         if(action=="apply"&&row.Risk is "Caution" or "High"&&MessageBox.Show(Window.GetWindow(this),
             $"Apply \"{row.Name}\"?\n\n{MaintenanceGuidance.RiskText(row.Risk)}\n\nRestore returns the exact saved original settings.",
             row.Risk=="High"?"High-risk Windows setting":"Windows setting with a cost",MessageBoxButton.YesNo,MessageBoxImage.Warning,MessageBoxResult.No)!=MessageBoxResult.Yes)return;
-        await using var client=new MaintenanceClient(maintenanceScope:true);status.Text="Waiting for Windows…";
+        await using var client=new MaintenanceClient();status.Text="Waiting for Windows…";
         var result=await client.Start(new(action,id,Maintenance.Journal,null),elevated,reading.Token);string message=result.Message;
         await Load();status.Text=message;
     }
@@ -483,7 +496,6 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
         Collapse();Motion.SetShown(cards,false);reading.Cancel();await work;
         foreach(var review in reviews.Values)review.Dispose();reviews.Clear();
         foreach(var client in elevatedReviews.Values)await client.DisposeAsync();elevatedReviews.Clear();
-        await AdministratorSession.EndMaintenance();
         analyzedRows.Clear();loadedRows.Clear();filterStates.Clear();visitedCategories.Clear();refreshPending=false;
     }
     internal void Collapse()
@@ -551,14 +563,18 @@ internal sealed class MaintenancePanel : Border,IAsyncDisposable
             "Services"=>"Stop and disable stops this service and disables automatic startup. Restore returns its saved startup configuration without starting the service.",
             "Windows tweaks"=>"Apply changes this Windows setting. Restore returns its exact saved original values.",
             _ when row.State!="Installed"=>"Removed in this session. Find leftovers looks for folders, shortcuts and registry entries it left behind.",
+            _ when !row.CanChange=>"",
             _ when row.Type==MaintenanceApps.Store=>"Uninstall removes this Store app for the current user only. Reinstall it from Microsoft Store.",
             _ when row.Type==MaintenanceApps.Scoop=>"Uninstall runs Scoop's own uninstall for this app.",
             _ when row.Type==MaintenanceApps.Chocolatey=>"Uninstall runs Chocolatey's uninstall with administrator permission.",
-            _=>"Uninstall runs this program's own uninstaller, which may ask for administrator permission. Pathweft cannot undo an uninstall."
+            _=>"Uninstall runs this program's own uninstaller with the administrator access approved when Pathweft started. Pathweft cannot undo an uninstall."
         };
         string signature="";
         if(Category=="Windows apps"&&apps.TryGetValue(row.Id,out var app)&&!signatures.TryGetValue(row.Id,out signature)){signature=signatures[row.Id]="Checking the uninstaller's signature…";_=Sign(app);}
-        explanationText.Text=effect+"\n"+(Category=="Cleanup"?"":row.Guidance+"\n")+row.Details+(signature is {Length:>0}?"\n"+signature:"");sourceText.Inlines.Clear();
+        // A protected app's guidance already says why, and a Store app's effect line says how it is removed; those detail lines would repeat them.
+        string details=Category!="Windows apps"?row.Details:string.Join("\n",row.Details.Split('\n').Where(line=>!line.StartsWith("Protected · ",StringComparison.Ordinal)&&
+            !(row.Type==MaintenanceApps.Store&&line.StartsWith("Uninstall: ",StringComparison.Ordinal))));
+        explanationText.Text=string.Join("\n",new[]{effect,Category=="Cleanup"?"":row.Guidance,details,signature??""}.Where(x=>x.Length>0));sourceText.Inlines.Clear();
         if(!string.IsNullOrEmpty(row.Source))
         {
             var uri=new Uri(row.Source);var link=new System.Windows.Documents.Hyperlink(new System.Windows.Documents.Run("Source · "+uri.Host)){NavigateUri=uri};

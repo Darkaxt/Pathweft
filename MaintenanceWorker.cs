@@ -14,8 +14,6 @@ internal sealed record MaintenanceReply(bool Ok,string Message,MaintenanceRow Ro
 // existing owner/pipe contract. No listener/service, arbitrary shell or driver.
 internal sealed class MaintenanceClient : IAsyncDisposable
 {
-    readonly bool maintenanceScope;
-    internal MaintenanceClient(bool maintenanceScope=false)=>this.maintenanceScope=maintenanceScope;
     NamedPipeServerStream pipe;Process process;StreamReader reader;StreamWriter writer;
     AdministratorSession.Operation session;CancellationTokenRegistration sessionStop;
     Task disposal;
@@ -31,7 +29,7 @@ internal sealed class MaintenanceClient : IAsyncDisposable
         {
             if(elevated)
             {
-                session=await AdministratorSession.Open(name,"maintenance",cancel,enable:request.Action is not ("list" or "space" or "disk-health"),maintenanceScope:maintenanceScope).ConfigureAwait(false);
+                session=await AdministratorSession.Open(name,"maintenance",cancel,enable:request.Action is not ("list" or "space" or "disk-health")).ConfigureAwait(false);
                 sessionStop=session.Stopped.Register(()=>{stopped.Cancel();pipe.Dispose();});
             }
             else
@@ -247,6 +245,14 @@ internal static class MaintenanceWorker
             return JsonSerializer.Serialize(await Task.Run(()=>MaintenanceLeftovers.Remove(data.App,data.Items,true,request.Journal,cancel),cancel));
         }
         if(request.Action=="restore-leftovers"){await MaintenanceLeftovers.Restore(request.Journal,cancel);return "Registry backup restored.";}
+        // Desktop programs and Chocolatey packages uninstall from the approved session, so their uninstallers
+        // inherit its elevation instead of raising another UAC prompt. The worker re-reads the entry by identity;
+        // the command never comes from the request.
+        if(request.Action=="uninstall-app")
+        {
+            if(!request.Id.StartsWith("app:reg:",StringComparison.Ordinal)&&!request.Id.StartsWith("app:choco:",StringComparison.Ordinal))throw new ArgumentException("Only desktop programs and Chocolatey packages uninstall through the administrator session");
+            return JsonSerializer.Serialize(await MaintenanceApps.Uninstall(request.Id,request.Cache=="quiet",cancel));
+        }
         if(request.Action is not ("apply" or "restore" or "reset-default"))throw new ArgumentException("Unknown maintenance action");
         bool restore=request.Action=="restore";
         RequireOwnedPaths(request);
