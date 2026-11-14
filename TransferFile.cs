@@ -115,8 +115,14 @@ internal sealed class TransferFile : IDisposable
 
     internal static string StreamPath(string path, string name) => name == "::$DATA" ? path : path + name;
 
+#if DEBUG
+    internal static Func<string, bool?> NamedStreamsOverride;
+#endif
     internal static bool NamedStreams(string path)
     {
+#if DEBUG
+        if (NamedStreamsOverride?.Invoke(path) is bool overridden) return overridden;
+#endif
         // Reuse scratch storage on this synchronous worker. Volume paths and
         // capabilities are still queried afresh: removable/mounted volumes must
         // never inherit a cached filesystem result from an earlier operation.

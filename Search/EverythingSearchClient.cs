@@ -30,8 +30,12 @@ internal sealed class EverythingSearchClient
     volatile Request sending;
 #if DEBUG
     internal static Action<CancellationToken> BeforeNativeSend;
+    internal void ResetUnansweredForVerification() => Interlocked.Exchange(ref unansweredSince, 0);
 #endif
     HwndSource window;
+    // Environment.TickCount64 when Everything was last sent a request that has
+    // not been answered yet; 0 while every sent request has been answered.
+    long unansweredSince;
     uint nextReply;
     bool closing;
 
@@ -80,10 +84,17 @@ internal sealed class EverythingSearchClient
     {
         var dispatcher = await ready.Task.ConfigureAwait(false);
         token.ThrowIfCancellationRequested();
-        var request = new Request(expression, instance, offset, count, Sort(sort, descending), token,folderSizes);
-        using var cancellation = token.Register(() =>
+        // SEARCH-05: every query is bounded; an unanswered one ends like a
+        // cancellation, so the existing native ownership rules still apply.
+        using var timeout = new CancellationTokenSource(EverythingRecovery.ReplyTimeout);
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(token, timeout.Token);
+        var request = new Request(expression, instance, offset, count, Sort(sort, descending), linked.Token,folderSizes);
+        using var cancellation = linked.Token.Register(() =>
         {
-            request.Completion.TrySetCanceled(token);
+            request.Completion.TrySetCanceled(linked.Token);
+            // A caller's own cancellation says nothing about Everything; only
+            // timeouts keep counting towards SEARCH-05's restart threshold.
+            if (!timeout.IsCancellationRequested) Interlocked.Exchange(ref unansweredSince, 0);
             dispatcher.BeginInvoke(ProcessNext);
         });
         // Cancellation belongs to the request completion, not execution of its
@@ -93,7 +104,13 @@ internal sealed class EverythingSearchClient
             if (closing) request.Completion.TrySetException(new ObjectDisposedException(nameof(EverythingSearchClient)));
             else { queue.Enqueue(request); ProcessNext(); }
         });
-        return await request.Completion.Task.ConfigureAwait(false);
+        try { return await request.Completion.Task.ConfigureAwait(false); }
+        catch (OperationCanceledException) when (timeout.IsCancellationRequested && !token.IsCancellationRequested)
+        {
+            long since = Interlocked.Read(ref unansweredSince);
+            var unanswered = since == 0 ? TimeSpan.Zero : TimeSpan.FromMilliseconds(Environment.TickCount64 - since);
+            throw new InvalidOperationException(await EverythingRecovery.AfterTimeoutAsync(unanswered).ConfigureAwait(false), new TimeoutException());
+        }
     }
 
     internal async Task StopAsync()
@@ -128,6 +145,7 @@ internal sealed class EverythingSearchClient
             if (request.Token.IsCancellationRequested) continue;
             current = request;
             sending=request;
+            Interlocked.CompareExchange(ref unansweredSince, Environment.TickCount64, 0);
             try
             {
 #if DEBUG
@@ -179,7 +197,12 @@ internal sealed class EverythingSearchClient
                 if (!Native.Everything_QueryW(false)) throw new InvalidOperationException($"Everything query failed (SDK error {Native.Everything_GetLastError()}). Search again to reconnect.");
                 return;
             }
-            catch (Exception ex) { request.Completion.TrySetException(ex); request.Dispose(); current = null; }
+            catch (Exception ex)
+            {
+                // A refusal (unavailable, loading, query error) is still an answer.
+                if (!request.Token.IsCancellationRequested) Interlocked.Exchange(ref unansweredSince, 0);
+                request.Completion.TrySetException(ex); request.Dispose(); current = null;
+            }
             finally{sending=null;}
         }
     }
@@ -189,6 +212,7 @@ internal sealed class EverythingSearchClient
         if (current == null || !Native.Everything_IsQueryReply((uint)message, wparam, lparam, current.Reply)) return IntPtr.Zero;
         var completed = current;
         current = null;
+        Interlocked.Exchange(ref unansweredSince, 0);
         try
         {
             if (!completed.Token.IsCancellationRequested)

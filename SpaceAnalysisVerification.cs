@@ -68,7 +68,19 @@ public partial class MainWindow
         var branch=(SpaceEntry)Left.Items.First(entry=>entry.Name=="branch-079");
         Left.ListForVerification.SelectedItem=branch;Left.ListForVerification.ScrollIntoView(branch);UpdateLayout();
         var expand=PreviewChildren<Button>(Left.ListForVerification).First(button=>ReferenceEquals(button.DataContext,branch)&&AutomationProperties.GetName(button)=="Expand or collapse folder");
-        expand.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await Left.SpaceCompletion;
+        // Hold the expanded folder's listing: the row shows a loading ring and status until its members are listed.
+        var listing=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);var listingEntered=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);int held=0;
+        SpaceScan.BeforeEnumeration=(path,token)=>{if(path==branch.Path&&Interlocked.Exchange(ref held,1)==0){listingEntered.TrySetResult();listing.Task.WaitAsync(token).GetAwaiter().GetResult();}};
+        try
+        {
+            expand.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            await listingEntered.Task.WaitAsync(TimeSpan.FromSeconds(30));await Dispatcher.InvokeAsync(()=>{},DispatcherPriority.ApplicationIdle);UpdateLayout();
+            var ring=PreviewChildren<FrameworkElement>(Left.ListForVerification).FirstOrDefault(element=>ReferenceEquals(element.DataContext,branch)&&AutomationProperties.GetName(element)=="Loading folder");
+            check(branch.Loading&&ring is {IsVisible:true}&&branch.SpaceStatus=="Loading folder…"&&branch.Spinning==Motion.On,"An expanded folder shows a loading ring beside its name and Loading folder… while its members are listed");
+        }
+        finally{listing.TrySetResult();}
+        await Left.SpaceCompletion;SpaceScan.BeforeEnumeration=null;UpdateLayout();
+        check(!branch.Loading&&branch.LoadingVisible==Visibility.Collapsed&&branch.SpaceStatus!="Loading folder…"&&Left.Items.Any(entry=>entry.Path==Path.Combine(branch.Path,"nested")),"The loading ring clears once the folder's members are listed");
         var nested=(SpaceEntry)Left.Items.First(entry=>entry.Path==Path.Combine(branch.Path,"nested"));
         Left.ListForVerification.ScrollIntoView(nested);UpdateLayout();
         expand=PreviewChildren<Button>(Left.ListForVerification).First(button=>ReferenceEquals(button.DataContext,nested)&&AutomationProperties.GetName(button)=="Expand or collapse folder");

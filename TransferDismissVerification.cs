@@ -52,6 +52,25 @@ public partial class MainWindow
             if(one!=null)await one.Completion;if(two!=null)await two.Completion;
         }
 
+        // A destination without named streams (FAT, exFAT, Tresorit Drive) receives a downloaded file without
+        // its download mark, as Explorer does; any other alternate stream is data and refuses the file.
+        string marked=Write("downloaded.pdf");File.WriteAllText(marked+":Zone.Identifier","[ZoneTransfer]"+Environment.NewLine+"ZoneId=3"+Environment.NewLine);
+        string streamed=Write("data-stream.txt");File.WriteAllText(streamed+":fixture","stream data");
+        TransferFile.NamedStreamsOverride=path=>path.StartsWith(target,StringComparison.OrdinalIgnoreCase)?false:null;
+        try
+        {
+            var marks=Submit(new(){marked},target,false);await marks.Completion;await Settle();
+            string arrived=Path.Combine(target,"downloaded.pdf");
+            check(marks.Successful&&File.ReadAllText(arrived)==File.ReadAllText(marked)&&TransferFile.Streams(arrived).All(stream=>stream.Name=="::$DATA")&&
+                TransferFile.Streams(marked).Any(stream=>stream.Name==":Zone.Identifier:$DATA")&&marks.Notes.Contains("Downloaded-file marks were not kept: the destination can't store them.")&&!jobs.Contains(marks),
+                "A downloaded file copies to a destination without alternate streams, leaving out only its download mark and keeping the source's: "+string.Join(" | ",marks.Errors.Concat(marks.Notes)));
+            var data=Submit(new(){streamed},target,false);await data.Completion;await Settle();
+            check(!data.Successful&&!File.Exists(Path.Combine(target,"data-stream.txt"))&&data.Errors.Any(error=>error.Contains("(fixture)")&&error.Contains("can't store")),
+                "Any other alternate stream still refuses the file instead of losing data: "+string.Join(" | ",data.Errors));
+            DismissJob(data);await Settle();
+        }
+        finally{TransferFile.NamedStreamsOverride=null;}
+
         var failed=Submit(new(){Path.Combine(source,"missing.txt")},target,false);await failed.Completion;await Settle();
         check(!failed.Successful&&jobs.Contains(failed)&&transfersWindow.IsVisible,"A genuine missing-source transfer remains visible for review");
         failed.Notes.Enqueue("Some stored timestamps differ from the source.");failed.Refresh();await Settle();

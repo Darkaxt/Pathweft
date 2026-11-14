@@ -50,7 +50,7 @@ public partial class MainWindow
             start.Environment["PATHWEFT_PROFILE"]=workerProfile;start.ArgumentList.Add("--storage-parent="+requestPath);start.ArgumentList.Add("--storage-parent-pipe="+channel);
             using var parent=System.Diagnostics.Process.Start(start);await pipe.WaitForConnectionAsync();
             using var reader=new StreamReader(pipe,System.Text.Encoding.UTF8,false,1024,true);using var writer=new StreamWriter(pipe,new System.Text.UTF8Encoding(false),1024,true){AutoFlush=true};
-            using var worker=System.Diagnostics.Process.GetProcessById(int.Parse(await reader.ReadLineAsync()));
+            using var worker=System.Diagnostics.Process.GetProcessById(int.Parse(await reader.ReadLineAsync()));_=worker.Handle; // hold the worker's handle so its exit code stays readable after it exits
             check(!worker.HasExited&&!File.Exists(Path.Combine(workerRoot,"location.txt")),"The real relocation worker waits while its exact requesting parent remains alive");
             await writer.WriteLineAsync("exit");await parent.WaitForExitAsync();await worker.WaitForExitAsync();
             check(parent.ExitCode==0&&worker.ExitCode==0&&File.ReadAllLines(Path.Combine(workerRoot,"location.txt")).Single()==workerTarget&&File.ReadAllText(Path.Combine(workerTarget,"Runtime","cache.txt"))=="Worker fixture","Actual parent exit releases the original worker, which verifies/moves data and commits its pointer successfully");

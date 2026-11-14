@@ -13,7 +13,7 @@ internal sealed class SpaceEntry:Entry
 {
     internal string ParentPath;
     internal int Depth;
-    internal bool Expanded,ChildrenRead,ChildrenReading,Refreshing;
+    internal bool Expanded,ChildrenRead,ChildrenReading,Refreshing,Loading;
     internal SpaceState State;
     internal long Files,Folders;
     internal string Failure="";
@@ -21,11 +21,14 @@ internal sealed class SpaceEntry:Entry
     public Thickness TreeIndent=>new(Math.Min(Depth,128)*16,0,0,0);
     public string ExpandGlyph=>Expanded?"\uE70D":"\uE76C";
     public Visibility ExpandVisible=>IsDir&&State!=SpaceState.Reparse?Visibility.Visible:Visibility.Hidden;
-    public string SpaceStatus=>Refreshing&&State==SpaceState.Changed?"Updating…":State switch{SpaceState.Pending=>"Pending",SpaceState.Scanning=>"Measuring…",SpaceState.Complete=>"Measured",SpaceState.Indexed=>"Indexed",SpaceState.Denied=>"Access denied",SpaceState.Reparse=>"Link skipped",SpaceState.Incomplete=>"Partially measured",SpaceState.Changed=>"Changed during scan",SpaceState.Cancelled=>"Cancelled",_=>"Unavailable"};
+    // Loading: an expanded folder whose members are still being listed; its children appear once listed.
+    public Visibility LoadingVisible=>Loading&&Expanded?Visibility.Visible:Visibility.Collapsed;
+    public bool Spinning=>Loading&&Expanded&&Motion.On;
+    public string SpaceStatus=>Loading&&Expanded?"Loading folder…":Refreshing&&State==SpaceState.Changed?"Updating…":State switch{SpaceState.Pending=>"Pending",SpaceState.Scanning=>"Measuring…",SpaceState.Complete=>"Measured",SpaceState.Indexed=>"Indexed",SpaceState.Denied=>"Access denied",SpaceState.Reparse=>"Link skipped",SpaceState.Incomplete=>"Partially measured",SpaceState.Changed=>"Changed during scan",SpaceState.Cancelled=>"Cancelled",_=>"Unavailable"};
     public string SpaceTip=>State==SpaceState.Indexed?"Everything index · excluded files may be omitted":Failure;
     public double Usage=>RootBytes>0?Math.Clamp(DisplaySize/RootBytes*100,0,100):0;
     public string UsageText=>RootBytes>0?$"{Usage:0.#}%":"";
-    internal void Updated(){Changed(nameof(TreeIndent));Changed(nameof(ExpandGlyph));Changed(nameof(ExpandVisible));Changed(nameof(SpaceStatus));Changed(nameof(SpaceTip));Changed(nameof(Usage));Changed(nameof(UsageText));}
+    internal void Updated(){Changed(nameof(TreeIndent));Changed(nameof(ExpandGlyph));Changed(nameof(LoadingVisible));Changed(nameof(Spinning));Changed(nameof(ExpandVisible));Changed(nameof(SpaceStatus));Changed(nameof(SpaceTip));Changed(nameof(Usage));Changed(nameof(UsageText));}
 }
 
 public partial class PaneView
@@ -240,6 +243,9 @@ public partial class PaneView
             current.Nodes[member.Path]=new SpaceEntry{Path=member.Path,Name=member.Name,IsDir=member.Directory,Modified=member.Modified.ToLocalTime(),ParentPath=path,
                 Size=member.Reparse?0:member.Directory?indexed?bytes:-1:member.Bytes,State=member.Reparse?SpaceState.Reparse:member.Directory?indexed?SpaceState.Indexed:SpaceState.Pending:SpaceState.Complete,Expanded=current.ExpandedAfterAccess.Contains(member.Path)};
         }
+        // Show the listed members now; unindexed subfolders fill in as they are measured below.
+        if(current.Nodes.TryGetValue(path,out var listed)&&listed.Loading){listed.Loading=false;listed.Updated();}
+        RebuildSpace(current);
         // An indexed parent does not establish coverage of every child. A newly
         // expanded unindexed branch still receives a real metadata measurement.
         foreach(var member in missing.Where(member=>measureMissing&&!sizes.ContainsKey(Path.TrimEndingDirectorySeparator(member.Path))))
@@ -262,12 +268,12 @@ public partial class PaneView
             // operations owned until completion, but never wait for an unrelated
             // branch before showing this folder's files or launch a duplicate walk.
             var previous=current.Work;bool scanning=!previous.IsCompleted;
-            row.ChildrenReading=true;current.Work=Task.WhenAll(previous,ReadNow());
+            row.ChildrenReading=true;row.Loading=true;row.Updated();current.Work=Task.WhenAll(previous,ReadNow());
             async Task ReadNow()
             {
                 try{await ReadSpaceChildren(current,row.Path,measureMissing:!scanning);}
                 catch(OperationCanceledException)when(current.Cancellation.IsCancellationRequested){}
-                finally{row.ChildrenReading=false;}
+                finally{row.ChildrenReading=false;if(row.Loading){row.Loading=false;row.Updated();}}
             }
         }
     }

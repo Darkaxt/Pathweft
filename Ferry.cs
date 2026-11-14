@@ -493,8 +493,17 @@ public static class Ferry
             {
                 Check(job);
                 Boundary("before-source-open", job, e.Source, w.Target);
+                // The streams written to the target. A destination without named streams (FAT, exFAT, some cloud
+                // drives) gets the file without Windows' download marks, as Explorer does; other streams are data.
+                var written = e;
                 if (e.Streams.Any(stream => stream.Name != "::$DATA") && !TransferFile.NamedStreams(job.Destination))
-                    throw new IOException("The destination filesystem cannot preserve alternate streams: " + e.Relative);
+                {
+                    var lost = e.Streams.Where(stream => stream.Name != "::$DATA" && !DownloadMarks.Contains(stream.Name)).ToArray();
+                    if (lost.Length > 0)
+                        throw new IOException($"{e.Relative} has alternate data streams ({string.Join(", ", lost.Select(stream => stream.Name.Split(':')[1]))}) that the destination can't store; it was not transferred");
+                    written = e with { Streams = e.Streams.Where(stream => stream.Name == "::$DATA").ToArray() };
+                    lock (job.Notes) if (!job.Notes.Contains(DownloadMarksNote)) job.Notes.Enqueue(DownloadMarksNote);
+                }
                 if (w.Old != null && File.Exists(w.Target))
                 {
                     Boundary("before-keep-old", job, e.Source, w.Target); Check(job);
@@ -524,7 +533,7 @@ public static class Ferry
                 else
                 {
                     Boundary("before-copy", job, e.Source, w.Target); Check(job);
-                    bool streamed = StreamData(e, w.Target, w.Overwrite);
+                    bool streamed = StreamData(written, w.Target, w.Overwrite);
                     if (!streamed) TransferFile.RequireCurrent(e.Source, e.Snapshot);
                     ulong? copiedHash = null;
                     string error = streamed
@@ -538,7 +547,7 @@ public static class Ferry
                     if (job.Verify)
                     {
                         if (!job.Concurrent) { job.Phase = Phase.Verifying; job.Current = "Verifying " + e.Relative; job.CurrentSize = e.Size * (streamed ? 1 : 2); job.CurrentDone = 0; }
-                        RequireStreams(w.Target, e.Streams);
+                        RequireStreams(w.Target, written.Streams);
                     }
                     FileAttributes storageChanges;
                     if (job.Verify && streamed)
@@ -547,7 +556,7 @@ public static class Ferry
                     }
                     else
                     {
-                        if (job.Verify) foreach (var stream in e.Streams)
+                        if (job.Verify) foreach (var stream in written.Streams)
                         {
                             Check(job);
                             var original = Digest(job, TransferFile.StreamPath(e.Source, stream.Name));
@@ -664,6 +673,9 @@ public static class Ferry
         const string note = "Some stored timestamps differ from the source.";
         if (!job.Notes.Contains(note)) job.Notes.Enqueue(note);
     }
+    // Windows-generated marks that Explorer drops without asking when the destination can't store named streams.
+    static readonly HashSet<string> DownloadMarks = new(StringComparer.OrdinalIgnoreCase) { ":Zone.Identifier:$DATA", ":SmartScreen:$DATA" };
+    const string DownloadMarksNote = "Downloaded-file marks were not kept: the destination can't store them.";
     static void RequireStreams(string source, IReadOnlyList<TransferFile.StreamEntry> expected)
     {
         if (!TransferFile.Streams(source).SequenceEqual(expected)) throw new IOException("A file's stream set changed; publication/source removal was refused: " + source);
