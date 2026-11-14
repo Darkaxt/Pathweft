@@ -1,7 +1,11 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
-## 1.1.66 | 2026-11-14 | Handle growth, Everything recovery and copy fixes
+## 1.1.67 | 2026-11-14 | Administrator access without prompts, handle growth and Everything recovery
+
+**Administrator access**
+- Approve Windows' prompt once more after this update; from then on the installed Pathweft starts its administrator access in the background, including at sign-in, without asking. Folder I/O, drive health, Maintenance and administrator browsing never prompt.
+- Settings › Start administrator access with Pathweft turns this off again and returns to asking when a feature needs it.
 
 **System analysis › RAM**
 - A Handle growth event marks a process that holds 250,000 handles or gains 100,000 in five minutes; leaked handles use kernel memory and can make Windows sluggish.
