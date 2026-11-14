@@ -36,7 +36,8 @@ sealed partial class PackageProbe
         Check(((IEnumerable)Get(liveResult,"Points")).Cast<object>().Any(),"Delivered query inspects real live observations without a recording database");
         range.SelectedIndex=0;kind.SelectedIndex=0;Call(type,panel,"Refresh");
         var menu=(ContextMenu)type.GetField("processColumnsMenu",Flags).GetValue(panel);
-        Check(menu.Items.Count==7&&menu.Items.Cast<MenuItem>().Any(x=>Equals(x.Header,"Command line")),"Delivered CPU column chooser includes path and command line");
+        var offered=menu.Items.Cast<MenuItem>().Where(x=>x.Visibility==Visibility.Visible).ToList();
+        Check(offered.Count==7&&offered.Any(x=>Equals(x.Header,"Command line"))&&!offered.Any(x=>Equals(x.Header,"Handles")),"Delivered CPU column chooser includes path and command line, and offers Handles only in RAM");
         var metricsType=Type("ProcessMetrics");var metrics=Activator.CreateInstance(metricsType,true);
         Call(metricsType,metrics,"Read");var samples=Call(metricsType,metrics,"Read");
         Call(type,panel,"RefreshProcessRows",samples);
