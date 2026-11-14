@@ -263,6 +263,7 @@ public partial class MainWindow
         ShowInTaskbar = true;
         WindowState = shownAt.State;
         startHidden = false;
+        RequestStartupAdministrator(prompt: false); // ACCESS-04: an already approved copy starts its session now, silently
     }
 
     // ---- the notification area: closing hides the window, the next open shows it at once ----

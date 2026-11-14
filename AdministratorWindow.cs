@@ -69,16 +69,17 @@ public partial class MainWindow
     // for it; cancelling leaves Standard access with the explicit shield and I/O actions as retries.
     bool startupAccessAsked;
     static readonly bool automatedStart=Environment.GetCommandLineArgs().Skip(1).Any(a=>a.StartsWith("--verify")||a.StartsWith("--selftest")||a.StartsWith("--s8"));
-    void RequestStartupAdministrator()
+    // prompt:false (sign-in start) only uses the approved task; a missing task still asks when the window is first shown.
+    void RequestStartupAdministrator(bool prompt=true)
     {
-        if(startupAccessAsked)return;startupAccessAsked=true;
+        if(startupAccessAsked)return;if(prompt)startupAccessAsked=true;
         if(!Settings.AdminAtStart||Settings.Profile!=null||automatedStart||AdministratorSession.Available)return;
 #if DEBUG
         if(HiddenTrialPresentation.Enabled)return;
 #endif
         Dispatcher.BeginInvoke(async()=>
         {
-            try{await AdministratorSession.Enable();}
+            try{await AdministratorSession.Enable(prompt:prompt);}
             catch(Exception error)when(error is System.IO.IOException or System.ComponentModel.Win32Exception or OperationCanceledException or InvalidOperationException){Status.Text=error.Message;}
         },System.Windows.Threading.DispatcherPriority.ApplicationIdle);
     }

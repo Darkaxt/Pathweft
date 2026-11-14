@@ -16,7 +16,8 @@ internal static class StartupTasks
     static string Sid=>WindowsIdentity.GetCurrent().User.Value;
     internal static string LaunchName=>"Pathweft startup "+Sid;
     internal static string RecorderName=>"Pathweft activity recorder "+Sid;
-    internal const string LaunchArguments="--tray",RecorderArguments="--activity-recorder";
+    internal static string SessionName=>"Pathweft administrator session "+Sid;
+    internal const string LaunchArguments="--tray",RecorderArguments="--activity-recorder",SessionArguments="--administrator-session $(Arg0) $(Arg1) $(Arg2)";
     static string RunCommand=>$"\"{Environment.ProcessPath}\" --tray";
 
     internal static bool ProtectedInstall
@@ -67,6 +68,22 @@ internal static class StartupTasks
         StopRecorder();
         try{RemoveTask(RecorderName,RecorderArguments);}
         catch(UnauthorizedAccessException){}
+        try{RemoveTask(SessionName,SessionArguments);}
+        catch(UnauthorizedAccessException){}
+    }
+
+    // ---- Administrator session (ACCESS-04): on demand only, no trigger. Registered by an approved
+    // session; Run substitutes the pipe name and owner identity, which the helper verifies as before.
+    internal static bool? SessionRegistered=>ProtectedInstall?Owned(SessionName,SessionArguments):false;
+    internal static void SetSession(bool on)
+    {
+        if(!ProtectedInstall)throw new InvalidOperationException("Automatic administrator access needs the Program Files installation.");
+        if(on)Register(SessionName,SessionArguments,elevated:true,trigger:false);else RemoveTask(SessionName,SessionArguments);
+    }
+    internal static void RunSession(string[] arguments)
+    {
+        using var session=new MaintenanceStartup.TaskSession();dynamic task=session.Own(session.Root.GetTask(SessionName));
+        session.Own(task.Run(arguments));
     }
 
     // ---- Activity recorder (elevated; called from the administrator session or the uninstaller) ----
@@ -120,31 +137,32 @@ internal static class StartupTasks
         catch(UnauthorizedAccessException){return null;}
         catch(COMException){return null;} // access denied or Task Scheduler unavailable: unknown, never assumed ours
     }
-    static void Register(string name,string arguments,bool elevated)
+    static void Register(string name,string arguments,bool elevated,bool trigger=true)
     {
         using var session=new MaintenanceStartup.TaskSession();
         // 6 = create or update, 3 = interactive token: runs in the signed-in session, no stored password.
-        session.Own(session.Root.RegisterTask(name,Definition(name,arguments,elevated),6,null,null,3,null));
+        session.Own(session.Root.RegisterTask(name,Definition(name,arguments,elevated,trigger),6,null,null,3,null));
     }
     static void RemoveTask(string name,string arguments)
     {
         if(Owned(name,arguments)!=true)return; // never delete a task this executable does not own
         using var session=new MaintenanceStartup.TaskSession();session.Root.DeleteTask(name,0);
     }
-    internal static string Definition(string name,string arguments,bool elevated)
+    internal static string Definition(string name,string arguments,bool elevated,bool trigger=true)
     {
         string sid=SecurityElement.Escape(Sid),exe=SecurityElement.Escape(Program.Executable);
-        string description=elevated?"Records app activity for Pathweft's performance history (Settings > Record app activity).":"Starts Pathweft in the notification area at sign-in (Settings > Start with Windows).";
+        string description=!trigger?"Starts Pathweft's administrator session without a prompt when Pathweft asks for it (Settings > Start administrator access with Pathweft).":
+            elevated?"Records app activity for Pathweft's performance history (Settings > Record app activity).":"Starts Pathweft in the notification area at sign-in (Settings > Start with Windows).";
         // No delay, priority 4 (normal CPU, I/O and memory priority), one instance, no time limit:
         // both run for the signed-in session and end at sign-out.
         return $"""
             <?xml version="1.0" encoding="UTF-16"?>
             <Task version="1.4" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
               <RegistrationInfo><Author>Pathweft</Author><Description>{SecurityElement.Escape(description)}</Description><URI>\{SecurityElement.Escape(name)}</URI></RegistrationInfo>
-              <Triggers><LogonTrigger><Enabled>true</Enabled><UserId>{sid}</UserId></LogonTrigger></Triggers>
+              {(trigger?$"<Triggers><LogonTrigger><Enabled>true</Enabled><UserId>{sid}</UserId></LogonTrigger></Triggers>":"")}
               <Principals><Principal id="Author"><UserId>{sid}</UserId><LogonType>InteractiveToken</LogonType><RunLevel>{(elevated?"HighestAvailable":"LeastPrivilege")}</RunLevel></Principal></Principals>
               <Settings>
-                <MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy>
+                <MultipleInstancesPolicy>{(trigger?"IgnoreNew":"Parallel")}</MultipleInstancesPolicy>
                 <DisallowStartIfOnBatteries>false</DisallowStartIfOnBatteries>
                 <StopIfGoingOnBatteries>false</StopIfGoingOnBatteries>
                 <AllowHardTerminate>true</AllowHardTerminate>

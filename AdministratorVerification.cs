@@ -45,6 +45,7 @@ public partial class MainWindow
             check(rejected&&File.ReadAllBytes(editorFile).SequenceEqual(contents)&&!Directory.EnumerateFiles(root,"editor-save.txt.pathweft-*.tmp").Any(),"Changed editor staging is rejected without replacing the original or leaving adjacent temporary files");
         }
         finally{File.Delete(staged);}
+        await VerifyAutomaticAdministrator08(check);
         if(Environment.GetEnvironmentVariable("PATHWEFT_ADMIN_NATIVE")!="1"){AdministratorSession.LaunchForVerification=null;return;}
         string handoff="Pathweft-Admin-Trial-"+Guid.NewGuid().ToString("N");
         using var ready=new EventWaitHandle(false,EventResetMode.ManualReset,handoff);

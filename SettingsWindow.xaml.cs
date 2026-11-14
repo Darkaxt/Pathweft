@@ -605,7 +605,21 @@ public partial class SettingsWindow : Window
         try { Settings.StartWithWindows = StartupBox.IsChecked == true; }
         catch (Exception ex) when (ex is UnauthorizedAccessException or System.Security.SecurityException or System.IO.IOException) { StartupBox.IsChecked = Settings.StartWithWindows; }
     }
-    void AdminAtStart_Click(object s, RoutedEventArgs e) { Settings.AdminAtStart = AdminAtStartBox.IsChecked == true; Settings.Save(); }
+    async void AdminAtStart_Click(object s, RoutedEventArgs e)
+    {
+        bool on = AdminAtStartBox.IsChecked == true;
+        Settings.AdminAtStart = on; Settings.Save();
+        if (!StartupTasks.ProtectedInstall) return; // other copies keep asking once at start
+        AdminAtStartBox.IsEnabled = false; AdminAtStartStatus.Text = "";
+        try
+        {
+            await AdministratorSession.SetSessionTask(on);
+            AdminAtStartStatus.Text = on ? "Approved. Administrator access now starts with Pathweft, without a prompt." : "Off. Pathweft asks when a feature needs administrator access.";
+        }
+        catch (Exception ex) when (ex is System.IO.IOException or System.ComponentModel.Win32Exception or InvalidOperationException or OperationCanceledException)
+        { AdminAtStartStatus.Text = ex.Message; }
+        finally { AdminAtStartBox.IsEnabled = true; }
+    }
     async void Activity_Click(object s, RoutedEventArgs e)
     {
         bool on = ActivityBox.IsChecked == true;

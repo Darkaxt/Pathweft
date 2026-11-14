@@ -25,8 +25,9 @@ static class Program
     [STAThread]
     static void Main(string[] args)
     {
-        if(args.Length==5&&args[0]=="--administrator-session")
-        {Environment.ExitCode=AdministratorSession.Run(args[1],int.Parse(args[2]),long.Parse(args[3]),args[4]).GetAwaiter().GetResult();return;}
+        // Five arguments from the UAC launch; four from the on-demand task, which only starts the installed copy (no profile).
+        if((args.Length is 4 or 5)&&args[0]=="--administrator-session")
+        {Environment.ExitCode=AdministratorSession.Run(args[1],int.Parse(args[2]),long.Parse(args[3]),args.Length==5?args[4]:"").GetAwaiter().GetResult();return;}
         if(args.Length==4&&args[0]=="--maintenance-worker")
         {Environment.ExitCode=MaintenanceWorker.Run(args[1],int.Parse(args[2]),long.Parse(args[3])).GetAwaiter().GetResult();return;}
         if((args.Length is 3 or 4)&&args[0]=="--manager-clean-worker")

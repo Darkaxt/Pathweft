@@ -27,32 +27,64 @@ internal sealed class AdministratorSession : IAsyncDisposable
     readonly SemaphoreSlim operations=new(8);
     readonly CancellationTokenSource stopped=new();
     NamedPipeServerStream pipe;StreamReader reader;StreamWriter writer;Process process;int pid;bool disposed;
+    // The helper's real exit, from the runas process handle or (task start) a handle opened for SYNCHRONIZE.
+    readonly TaskCompletionSource exited=new(TaskCreationOptions.RunContinuationsAsynchronously);
+    SafeProcessWait taskHelper;
 #if DEBUG
     internal static Func<ProcessStartInfo,Task<Process>> LaunchForVerification;
+    internal static Func<string[],bool> TaskRunForVerification;
+    internal static bool? TaskRegisteredForVerification;
 #endif
-    internal static async Task<bool> Enable(CancellationToken cancel=default)
+    // ACCESS-04: after one approval the installed copy starts its session through an
+    // on-demand elevated task, with no Windows prompt. prompt:false never falls back to UAC.
+    internal static async Task<bool> Enable(CancellationToken cancel=default,bool prompt=true)
     {
         await admission.WaitAsync(cancel).ConfigureAwait(false);
         try
         {
             if(Available)return true;
             if(current!=null){await current.DisposeAsync().ConfigureAwait(false);current=null;}
+            if(TaskRegistered)
+            {
+                var silent=new AdministratorSession();
+                try{await silent.StartFromTask(cancel).ConfigureAwait(false);current=silent;Changed?.Invoke();return true;}
+                catch(Exception error)when(error is IOException or TimeoutException or COMException or UnauthorizedAccessException or InvalidDataException or JsonException or Win32Exception)
+                {await silent.DisposeAsync().ConfigureAwait(false);}
+            }
+            if(!prompt)return false;
             var session=new AdministratorSession();
             try
             {
-                await session.Start(cancel).ConfigureAwait(false);current=session;Changed?.Invoke();return true;
+                await session.Start(cancel).ConfigureAwait(false);current=session;Changed?.Invoke();
             }
             catch(Win32Exception error)when(error.NativeErrorCode==1223)
             {await session.DisposeAsync().ConfigureAwait(false);return false;}
             catch{await session.DisposeAsync().ConfigureAwait(false);throw;}
+            // The approved session registers the task so the next start needs no prompt.
+            if(Settings.AdminAtStart&&StartupTasks.ProtectedInstall&&!TaskRegistered)
+                try{await session.Call("session-task-on","",cancel).ConfigureAwait(false);}
+                catch(IOException){} // keeps prompting at start; the approved session itself is unaffected
+            return true;
         }
         finally{admission.Release();}
     }
+    static bool TaskRegistered
+    {
+        get
+        {
+#if DEBUG
+            if(TaskRegisteredForVerification is {} registered)return registered;
+#endif
+            try{return StartupTasks.SessionRegistered==true;}
+            catch(Exception error)when(error is COMException or UnauthorizedAccessException or IOException){return false;}
+        }
+    }
+    void Watch(){if(process.HasExited)Ended();else{process.EnableRaisingEvents=true;process.Exited+=(_,_)=>Ended();if(process.HasExited)Ended();}}
+    void Ended(){stopped.Cancel();exited.TrySetResult();if(ReferenceEquals(current,this)){Browsing=false;Changed?.Invoke();}}
     async Task Start(CancellationToken cancel)
     {
         cancel.ThrowIfCancellationRequested();using var owner=Process.GetCurrentProcess();
-        string name="Pathweft-Administrator-"+owner.Id+"-"+Guid.NewGuid().ToString("N");
-        pipe=new(name,PipeDirection.InOut,1,PipeTransmissionMode.Byte,PipeOptions.Asynchronous|PipeOptions.CurrentUserOnly);
+        string name=NewPipe(owner);
         var launch=new ProcessStartInfo(Program.Executable){UseShellExecute=true,Verb="runas",CreateNoWindow=true,WindowStyle=ProcessWindowStyle.Hidden};
         foreach(string arg in new[]{"--administrator-session",name,owner.Id.ToString(),owner.StartTime.ToUniversalTime().Ticks.ToString(),Settings.Profile??""})launch.ArgumentList.Add(arg);
 #if DEBUG
@@ -61,16 +93,46 @@ internal sealed class AdministratorSession : IAsyncDisposable
         process=await Task.Run(()=>Process.Start(launch)).ConfigureAwait(false);
 #endif
         if(process==null)throw new IOException("Administrator session did not start");
-        pid=process.Id;process.EnableRaisingEvents=true;process.Exited+=(_,_)=>{stopped.Cancel();if(ReferenceEquals(current,this)){Browsing=false;Changed?.Invoke();}};
-        if(process.HasExited)stopped.Cancel();
+        pid=process.Id;Watch();
         // After Windows has launched the helper, finish this same handshake.
         // Closing a not-yet-connected server would strand its ConnectAsync.
         await pipe.WaitForConnectionAsync(stopped.Token).ConfigureAwait(false);
         if(!ClientPid(pipe,out uint client)||client!=pid)throw new IOException("Administrator session identity differs");
+        await Handshake(cancel).ConfigureAwait(false);
+    }
+    string NewPipe(Process owner)
+    {
+        string name="Pathweft-Administrator-"+owner.Id+"-"+Guid.NewGuid().ToString("N");
+        pipe=new(name,PipeDirection.InOut,1,PipeTransmissionMode.Byte,PipeOptions.Asynchronous|PipeOptions.CurrentUserOnly);
+        return name;
+    }
+    async Task Handshake(CancellationToken cancel)
+    {
         reader=new(pipe,leaveOpen:true);writer=new(pipe,leaveOpen:true){AutoFlush=true};
         var ready=await ReadReply(stopped.Token).ConfigureAwait(false);
         if(!ready.Ok||ready.Pid!=pid)throw new IOException(ready.Message);
         cancel.ThrowIfCancellationRequested();
+    }
+    // The task names only the protected Program Files executable; the pipe client must be that
+    // image, so another program of this user cannot take the session's place.
+    async Task StartFromTask(CancellationToken cancel)
+    {
+        cancel.ThrowIfCancellationRequested();using var owner=Process.GetCurrentProcess();
+        string name=NewPipe(owner);
+        string[] arguments=[name,owner.Id.ToString(),owner.StartTime.ToUniversalTime().Ticks.ToString()];
+#if DEBUG
+        if(TaskRunForVerification!=null){if(!TaskRunForVerification(arguments))throw new IOException("Administrator task did not start");}
+        else
+#endif
+        await Task.Run(()=>StartupTasks.RunSession(arguments)).ConfigureAwait(false);
+        using var waiting=CancellationTokenSource.CreateLinkedTokenSource(cancel);waiting.CancelAfter(TimeSpan.FromSeconds(30));
+        try{await pipe.WaitForConnectionAsync(waiting.Token).ConfigureAwait(false);}
+        catch(OperationCanceledException)when(!cancel.IsCancellationRequested){throw new TimeoutException("The administrator task did not connect");}
+        if(!ClientPid(pipe,out uint client))throw new IOException("Administrator session identity differs");
+        var helper=SafeProcessWait.Open(client)??throw new IOException("Administrator session identity differs");
+        if(!string.Equals(helper.Image,Program.Executable,StringComparison.OrdinalIgnoreCase)){helper.Dispose();throw new IOException("Administrator session identity differs");}
+        taskHelper=helper;pid=(int)client;helper.Exited(Ended);
+        await Handshake(cancel).ConfigureAwait(false);
     }
     async Task<AdministratorReply> ReadReply(CancellationToken token)
     {
@@ -124,6 +186,15 @@ internal sealed class AdministratorSession : IAsyncDisposable
         var session=current??throw new IOException("Administrator session ended");
         await session.Call(on?"activity-on":"activity-off","",cancel).ConfigureAwait(false);
     }
+    // Settings: turning automatic access off removes the task through the session it started.
+    internal static async Task SetSessionTask(bool on,CancellationToken cancel=default)
+    {
+        if(on==TaskRegistered)return;
+        if(!await Enable(cancel).ConfigureAwait(false))throw new Win32Exception(1223,"Administrator permission cancelled. Nothing changed.");
+        var session=current??throw new IOException("Administrator session ended");
+        if(on==TaskRegistered)return; // Enable registered it already
+        await session.Call(on?"session-task-on":"session-task-off","",cancel).ConfigureAwait(false);
+    }
     internal static async Task End()
     {
         await admission.WaitAsync().ConfigureAwait(false);
@@ -137,6 +208,7 @@ internal sealed class AdministratorSession : IAsyncDisposable
         // drains through its existing cancellation/finally path before exit.
         pipe?.Dispose();
         if(process!=null){await process.WaitForExitAsync().ConfigureAwait(false);process.Dispose();}
+        if(taskHelper!=null){await exited.Task.ConfigureAwait(false);taskHelper.Dispose();}
         try{writer?.Dispose();}catch(Exception error)when(error is IOException or ObjectDisposedException){}
         reader?.Dispose();
     }
@@ -178,6 +250,11 @@ internal sealed class AdministratorSession : IAsyncDisposable
                     }
                 }
                 else if(request.Kind=="wait"&&ValidPipe(request.Pipe,"Pathweft-Maintenance-",ownerPid)||request.Kind=="wait"&&ValidPipe(request.Pipe,"Pathweft-Io-",ownerPid))reply=new(true,"Operation already retired");
+                else if(request.Kind is "session-task-on" or "session-task-off"&&request.Pipe=="")
+                {
+                    try{StartupTasks.SetSession(request.Kind=="session-task-on");reply=new(true,request.Kind=="session-task-on"?"Administrator access starts automatically":"Administrator access asks again");}
+                    catch(Exception error)when(error is IOException or UnauthorizedAccessException or InvalidOperationException or COMException or System.Security.SecurityException or ArgumentException){reply=new(false,error.Message);}
+                }
                 else if(request.Kind is "activity-on" or "activity-off"&&request.Pipe=="")
                 {
                     // ACTIVITY-01: the approved session registers or removes the elevated recorder task; no second prompt.
@@ -197,4 +274,26 @@ internal sealed class AdministratorSession : IAsyncDisposable
     internal static bool ServerPid(NamedPipeClientStream pipe,out uint pid)=>GetNamedPipeServerProcessId(pipe.SafePipeHandle.DangerousGetHandle(),out pid);
     [DllImport("kernel32.dll",SetLastError=true)]static extern bool GetNamedPipeClientProcessId(IntPtr pipe,out uint pid);
     [DllImport("kernel32.dll",SetLastError=true)]static extern bool GetNamedPipeServerProcessId(IntPtr pipe,out uint pid);
+}
+
+// A standard process may open its elevated helper only for SYNCHRONIZE and limited query: enough
+// to read its image path and observe its exit, without reading or changing the helper.
+internal sealed class SafeProcessWait : IDisposable
+{
+    sealed class Handle : WaitHandle {internal Handle(Microsoft.Win32.SafeHandles.SafeWaitHandle process)=>SafeWaitHandle=process;}
+    readonly Handle wait;RegisteredWaitHandle registration;
+    internal string Image {get;}
+    SafeProcessWait(Microsoft.Win32.SafeHandles.SafeWaitHandle handle,string image){wait=new(handle);Image=image;}
+    internal static SafeProcessWait Open(uint pid)
+    {
+        var handle=OpenProcess(0x1000|0x100000,false,pid); // PROCESS_QUERY_LIMITED_INFORMATION | SYNCHRONIZE
+        if(handle.IsInvalid){handle.Dispose();return null;}
+        var text=new System.Text.StringBuilder(32768);int length=text.Capacity;
+        if(!QueryFullProcessImageNameW(handle,0,text,ref length)){handle.Dispose();return null;}
+        return new(handle,text.ToString(0,length));
+    }
+    internal void Exited(Action ended)=>registration=ThreadPool.RegisterWaitForSingleObject(wait,(_,_)=>ended(),null,Timeout.Infinite,true);
+    public void Dispose(){registration?.Unregister(null);wait.Dispose();}
+    [DllImport("kernel32.dll",SetLastError=true)]static extern Microsoft.Win32.SafeHandles.SafeWaitHandle OpenProcess(uint access,bool inherit,uint pid);
+    [DllImport("kernel32.dll",SetLastError=true,CharSet=CharSet.Unicode)]static extern bool QueryFullProcessImageNameW(Microsoft.Win32.SafeHandles.SafeWaitHandle process,uint flags,System.Text.StringBuilder name,ref int size);
 }
