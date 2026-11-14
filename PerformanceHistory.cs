@@ -16,6 +16,9 @@ internal sealed record PerformanceFact(DateTimeOffset Time,string Name,int? Pid,
     public string When=>Time==default?"":Time.ToLocalTime().ToString("G");
     public string Value=>Average?.ToString("0.##",CultureInfo.CurrentCulture)??"—";
     public string Maximum=>Peak?.ToString("0.##",CultureInfo.CurrentCulture)??"—";
+    // MONITOR-23: peak handle count and parent-ended state of a process row; omitted when unknown.
+    [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]public long? Handles {get;init;}
+    [System.Text.Json.Serialization.JsonIgnore(Condition=System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]public bool? ParentEnded {get;init;}
 }
 internal sealed record PerformancePoint(DateTimeOffset Time,double? Value,double? Peak=null);
 internal sealed record DrivePoint(DateTimeOffset Time,double? Read,double? Write,double? LatencyMs,double? Busy);
@@ -53,11 +56,15 @@ internal sealed partial class PerformanceHistory : IDisposable
         if(writer!=null)return;Directory.CreateDirectory(Path.GetDirectoryName(StoragePath));writer=Open(StoragePath,false);
         Execute(writer,"PRAGMA auto_vacuum=INCREMENTAL; PRAGMA journal_mode=WAL; CREATE TABLE IF NOT EXISTS samples(t INTEGER PRIMARY KEY,data TEXT NOT NULL); CREATE TABLE IF NOT EXISTS apps(t INTEGER NOT NULL,pid INTEGER NOT NULL,start INTEGER NOT NULL,name TEXT NOT NULL,cpu REAL,memory INTEGER,PRIMARY KEY(t,pid,start)); CREATE INDEX IF NOT EXISTS apps_name_time ON apps(name,t); CREATE TABLE IF NOT EXISTS gpu_apps(t INTEGER NOT NULL,pid INTEGER NOT NULL,start INTEGER NOT NULL,name TEXT NOT NULL,adapter TEXT NOT NULL,usage REAL,PRIMARY KEY(t,pid,start,adapter)); CREATE INDEX IF NOT EXISTS gpu_apps_name_time ON gpu_apps(name,t); CREATE TABLE IF NOT EXISTS events(t INTEGER NOT NULL,kind TEXT NOT NULL,detail TEXT NOT NULL); CREATE INDEX IF NOT EXISTS events_time ON events(t);");
         Execute(writer,"CREATE INDEX IF NOT EXISTS apps_identity_time ON apps(name,pid,start,t); CREATE INDEX IF NOT EXISTS gpu_apps_identity_time ON gpu_apps(name,pid,start,adapter,t);");
+        // MONITOR-23 columns; rows saved before them stay NULL (unknown, not zero).
+        if(!HasHandleColumns(writer))Execute(writer,"ALTER TABLE apps ADD COLUMN handles INTEGER; ALTER TABLE apps ADD COLUMN parent_ended INTEGER;");
         long pageSize=Scalar("PRAGMA page_size");
         Execute(writer,$"PRAGMA max_page_count={storageLimit/pageSize}; PRAGMA journal_size_limit=1048576; PRAGMA wal_autocheckpoint=256; PRAGMA busy_timeout=0;");
     }
     long Scalar(string sql)
     {using var command=writer.CreateCommand();command.CommandText=sql;return Convert.ToInt64(command.ExecuteScalar());}
+    internal static bool HasHandleColumns(SqliteConnection db)
+    {using var command=db.CreateCommand();command.CommandText="SELECT COUNT(*) FROM pragma_table_info('apps') WHERE name IN ('handles','parent_ended')";return Convert.ToInt64(command.ExecuteScalar())==2;}
     bool Checkpoint()
     {
         // Do not grow an unbounded WAL behind a long-lived reader. PASSIVE is
@@ -134,7 +141,7 @@ internal sealed partial class PerformanceHistory : IDisposable
             if(apps!=null)
             {
                 var selected=SelectApps(apps,gpuApps);
-                foreach(var app in selected)Execute(writer,"INSERT OR REPLACE INTO apps VALUES($0,$1,$2,$3,$4,$5)",sample.Time.ToUnixTimeMilliseconds(),app.Pid,app.Started,app.Process,app.Usage,app.Memory);
+                foreach(var app in selected)Execute(writer,"INSERT OR REPLACE INTO apps(t,pid,start,name,cpu,memory,handles,parent_ended) VALUES($0,$1,$2,$3,$4,$5,$6,$7)",sample.Time.ToUnixTimeMilliseconds(),app.Pid,app.Started,app.Process,app.Usage,app.Memory,app.Handles,app.ParentEnded is {} ended?(object)(ended?1:0):null);
                 var identities=selected.Select(x=>(x.Pid,x.Started)).ToHashSet();
                 foreach(var app in gpuApps??[])if(app.Adapter!=null&&identities.Contains((app.Pid,app.Started)))Execute(writer,"INSERT OR REPLACE INTO gpu_apps VALUES($0,$1,$2,$3,$4,$5)",sample.Time.ToUnixTimeMilliseconds(),app.Pid,app.Started,app.Process,app.Adapter,app.Usage);
             }
@@ -148,8 +155,12 @@ internal sealed partial class PerformanceHistory : IDisposable
         apps??=[];
         var gpuByPid=(gpuApps??[]).GroupBy(x=>(x.Pid,x.Started)).ToDictionary(g=>g.Key,g=>g.Max(x=>x.Usage));
         return apps.OrderByDescending(x=>x.Usage).Take(15).Concat(apps.OrderByDescending(x=>x.Memory).Take(15))
-            .Concat(apps.OrderByDescending(x=>gpuByPid.GetValueOrDefault((x.Pid,x.Started))).Take(15)).DistinctBy(x=>(x.Pid,x.Started)).ToArray();
+            .Concat(apps.OrderByDescending(x=>gpuByPid.GetValueOrDefault((x.Pid,x.Started))).Take(15))
+            // MONITOR-23: a handle leaker need not be busy or large; keep the top handle holders too.
+            .Concat(apps.Where(x=>x.Handles>0).OrderByDescending(x=>x.Handles).Take(15)).DistinctBy(x=>(x.Pid,x.Started)).ToArray();
     }
+    static long? Most(long? a,long? b)=>a.HasValue&&b.HasValue?Math.Max(a.Value,b.Value):a??b;
+    static bool? Either(bool? a,bool? b)=>a==true||b==true?true:a??b;
     internal static void Validate(PerformanceQuery query)
     {
         if(!new[]{"get_current_usage","get_usage_summary","get_top_processes","find_spikes","get_app_history","get_events"}.Contains(query.Tool))throw new ArgumentException("Unknown read-only performance tool");
@@ -190,7 +201,7 @@ internal sealed partial class PerformanceHistory : IDisposable
             // Stream identity groups from the matching index. Only the bounded
             // top results are sorted, while a separate count covers all matches.
             string name=query.Tool=="get_app_history"?query.Name:"";
-            var recent=new Dictionary<(string,int,long,string),(double Sum,double Peak,long Count,DateTimeOffset First,DateTimeOffset Last)>();
+            var recent=new Dictionary<(string,int,long,string),(double Sum,double Peak,long Count,DateTimeOffset First,DateTimeOffset Last,long? Handles,bool? Ended)>();
             foreach(var snapshot in liveApps??[])
             {
                 cancel.ThrowIfCancellationRequested();
@@ -200,14 +211,15 @@ internal sealed partial class PerformanceHistory : IDisposable
                     if(!app.Process.Contains(name,StringComparison.OrdinalIgnoreCase)||(gpu&&query.Device!=null&&app.Adapter!=query.Device))continue;
                     var key=(app.Process,app.Pid,app.Started,gpu?app.Adapter:"");
                     double value=query.Metric=="ram"?app.Memory:app.Usage;
-                    if(recent.TryGetValue(key,out var old))recent[key]=(old.Sum+value,Math.Max(old.Peak,value),old.Count+1,old.First,snapshot.Time);
-                    else recent[key]=(value,value,1,snapshot.Time,snapshot.Time);
+                    if(recent.TryGetValue(key,out var old))recent[key]=(old.Sum+value,Math.Max(old.Peak,value),old.Count+1,old.First,snapshot.Time,Most(old.Handles,app.Handles),Either(old.Ended,app.ParentEnded));
+                    else recent[key]=(value,value,1,snapshot.Time,snapshot.Time,app.Handles,app.ParentEnded);
                 }
             }
-            void Add((string Name,int Pid,long Start,string Adapter) key,double sum,double peak,long count,DateTimeOffset first,DateTimeOffset last)
+            void Add((string Name,int Pid,long Start,string Adapter) key,double sum,double peak,long count,DateTimeOffset first,DateTimeOffset last,long? handles,bool? ended)
             {
                 total++;
-                rows.Add(new(last,key.Name,key.Pid,count==0?null:sum/count,count==0?null:peak,count,$"Started {new DateTime(key.Start,DateTimeKind.Utc):O}; observed from {first:O}; {column} {(column=="memory"?"bytes":"%")}"+(gpu?" · "+key.Adapter:"")){Started=key.Start});
+                rows.Add(new(last,key.Name,key.Pid,count==0?null:sum/count,count==0?null:peak,count,$"Started {new DateTime(key.Start,DateTimeKind.Utc):O}; observed from {first:O}; {column} {(column=="memory"?"bytes":"%")}"+(gpu?" · "+key.Adapter:"")
+                    +(handles is {} held?$" · peak {held:N0} handles":"")+(ended==true?" · parent ended":"")){Started=key.Start,Handles=handles,ParentEnded=ended});
                 // Stream all saved groups, retaining only the requested top
                 // results plus bounded identities present in the recent hour.
                 rows.Sort((a,b)=>{int order=Nullable.Compare(b.Average,a.Average);if(order!=0)return order;order=string.CompareOrdinal(a.Name,b.Name);return order!=0?order:Nullable.Compare(a.Pid,b.Pid);});
@@ -219,18 +231,21 @@ internal sealed partial class PerformanceHistory : IDisposable
                 command.Parameters.AddWithValue("$live",liveApps is {Length:>0}?liveApps[0].Time.ToUnixTimeMilliseconds():long.MaxValue);
                 if(gpu)command.Parameters.AddWithValue("$device",query.Device??"");
                 string grouping=$" FROM {(gpu?"gpu_apps":"apps")} INDEXED BY {(gpu?"gpu_apps_identity_time":"apps_identity_time")} WHERE t BETWEEN $from AND $to AND t<$live AND ($name='' OR instr(lower(name),lower($name))>0)"+(gpu?" AND ($device='' OR adapter=$device)":"")+$" GROUP BY name,pid,start{(gpu?",adapter":"")}";
-                command.CommandText=$"SELECT name,pid,start,SUM({column}),MAX({column}),COUNT({column}),MIN(t),MAX(t)"+(gpu?",adapter":"")+grouping;
+                // Older history has no handle columns: those values are unknown, not zero.
+                string handleColumns=gpu?",adapter,NULL":HasHandleColumns(db)?",MAX(handles),MAX(parent_ended)":",NULL,NULL";
+                command.CommandText=$"SELECT name,pid,start,SUM({column}),MAX({column}),COUNT({column}),MIN(t),MAX(t)"+handleColumns+grouping;
                 using var reader=command.ExecuteReader();while(reader.Read())
                 {
                     cancel.ThrowIfCancellationRequested();
                     var key=(reader.GetString(0),reader.GetInt32(1),reader.GetInt64(2),gpu?reader.GetString(8):"");
                     double sum=reader.IsDBNull(3)?0:reader.GetDouble(3),peak=reader.IsDBNull(4)?0:reader.GetDouble(4);long count=reader.GetInt64(5);
                     var first=DateTimeOffset.FromUnixTimeMilliseconds(reader.GetInt64(6));var last=DateTimeOffset.FromUnixTimeMilliseconds(reader.GetInt64(7));
-                    if(recent.Remove(key,out var item)){sum+=item.Sum;peak=Math.Max(peak,item.Peak);count+=item.Count;last=item.Last;}
-                    Add(key,sum,peak,count,first,last);
+                    long? handles=gpu||reader.IsDBNull(8)?null:reader.GetInt64(8);bool? ended=reader.IsDBNull(9)?null:reader.GetInt64(9)!=0;
+                    if(recent.Remove(key,out var item)){sum+=item.Sum;peak=Math.Max(peak,item.Peak);count+=item.Count;last=item.Last;handles=Most(handles,item.Handles);ended=Either(ended,item.Ended);}
+                    Add(key,sum,peak,count,first,last,handles,ended);
                 }
             }
-            foreach(var (key,item) in recent){cancel.ThrowIfCancellationRequested();Add(key,item.Sum,item.Peak,item.Count,item.First,item.Last);}
+            foreach(var (key,item) in recent){cancel.ThrowIfCancellationRequested();Add(key,item.Sum,item.Peak,item.Count,item.First,item.Last,item.Handles,item.Ended);}
             note+="Automatic recent app snapshots every 10s; selected heavy apps only, so inaccessible, small and short-lived processes may be absent. PID/start distinguishes reuse; observations are not exact launch/exit sessions.";
         }
         else if(query.Tool=="get_events")
@@ -252,6 +267,8 @@ internal sealed partial class PerformanceHistory : IDisposable
                 }
                 previous=sample;
             }
+            // MONITOR-23: derived at query time from recorded handle counts, like Memory growth.
+            foreach(var growth in PerformanceInvestigation.HandleGrowth(from,to,cancel,path,liveApps)){total++;if(rows.Count<query.Limit)rows.Add(growth);}
         }
         else
         {

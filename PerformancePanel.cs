@@ -129,9 +129,9 @@ internal sealed partial class PerformancePanel : StackPanel,IAsyncDisposable
     void ConfigureTable()
     {
         var view=new GridView{AllowsColumnReorder=false};
-        if(selected==Cpu&&!Historical){ConfigureProcessTable(view);table.View=view;return;}
+        if(selected is Cpu or Ram&&!Historical){ConfigureProcessTable(view);table.View=view;return;}
         void Column(string title,string property,double width)=>view.Columns.Add(new GridViewColumn{Header=title,DisplayMemberBinding=new Binding(property),Width=width});
-        Column("Process","Process",145);Column("PID","Pid",70);
+        Column("Process",selected==Gpu?"ProcessLabel":"Process",145);Column("PID","Pid",70);
         if(selected is Cpu or Ram or Gpu){if(selected!=Ram)Column(selected==Cpu?"CPU":"GPU","Percent",100);if(selected!=Gpu)Column("Working set","MemoryText",120);}
         else
         {
@@ -177,8 +177,9 @@ internal sealed partial class PerformancePanel : StackPanel,IAsyncDisposable
         graphs[Drive].Set(history.Select(x=>{var d=WindowsPerformanceCounters.ForDisk(x,diskNumber);return(x.Time,d?.Read+d?.Write);}).ToArray());
         graphs[Folder].Set(folderHistory.ToArray());
         if(selected<0)return;
-        columnsButton.Visibility=selected==Cpu&&!Historical?Visibility.Visible:Visibility.Collapsed;
+        columnsButton.Visibility=selected is Cpu or Ram&&!Historical?Visibility.Visible:Visibility.Collapsed;
         processFilter.Visibility=columnsButton.Visibility;
+        UpdateProcessActions();
         UpdateAnalysisGraph();
         RefreshDrive(history);
         detailTitle.Text=new[]{"CPU","Physical RAM","GPU",$"Drive · {volumeRoot??PathRoot(folder)}",$"Folder · {folder}"}[selected];
@@ -194,7 +195,7 @@ internal sealed partial class PerformancePanel : StackPanel,IAsyncDisposable
         if(selected<Drive)
         {
             detailState.Text=selected==Cpu?"CPU usage across all logical processors · inaccessible processes omitted":selected==Ram?"Process working sets may share pages; their sum is not system RAM usage":"Busiest GPU engine · "+adapter?.Name;
-            if(selected==Cpu)RefreshProcessRows(monitor.Details);
+            if(selected is Cpu or Ram)RefreshProcessRows(monitor.Details);
             else table.ItemsSource=selected==Gpu?monitor.Details.Where(x=>x.Adapter==gpu).ToArray():monitor.Details.OrderByDescending(x=>x.Memory).ToArray();
         }
         else
@@ -262,7 +263,7 @@ internal sealed partial class PerformancePanel : StackPanel,IAsyncDisposable
         disposed=true;historyCancel?.Cancel();hoverCancel?.Cancel();metadataStopped.Cancel();appChartCancel?.Cancel();
         // Closed can synchronously drain us on the UI thread. Wait only for
         // native/background reads, never their UI presentation continuation.
-        try{await Task.WhenAll(historyWork,hoverWork,metadataRead,appChartRead,healthWork).ConfigureAwait(false);}
+        try{await Task.WhenAll(historyWork,hoverWork,metadataRead,appChartRead,healthWork,handleWork).ConfigureAwait(false);}
         // These query failures already have a visible unavailable state. They
         // must not prevent retirement of an independent native I/O worker.
         catch(Exception error)when(error is OperationCanceledException or ArgumentException or IOException or UnauthorizedAccessException or Microsoft.Data.Sqlite.SqliteException or System.Runtime.InteropServices.COMException or System.ComponentModel.Win32Exception or TypeLoadException){}

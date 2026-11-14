@@ -210,7 +210,7 @@ internal sealed partial class PerformancePanel
     internal System.Windows.Controls.ContextMenu ColumnsMenuForVerification=>processColumnsMenu;
     internal void ShowColumnsForVerification(){analysisScroll.ScrollToTop();UpdateLayout();columnsButton.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Button.ClickEvent));}
     internal void HideColumnsForVerification()=>processColumnsMenu.IsOpen=false;
-    internal bool ColumnsFitForVerification=>columnsButton.IsVisible&&columnsButton.ActualHeight>=32&&processColumnsMenu.IsOpen&&processColumnsMenu.Items.Cast<System.Windows.Controls.MenuItem>().Count(x=>x.IsCheckable)==7&&table.ActualHeight>=90;
+    internal bool ColumnsFitForVerification=>columnsButton.IsVisible&&columnsButton.ActualHeight>=32&&processColumnsMenu.IsOpen&&processColumnsMenu.Items.Cast<System.Windows.Controls.MenuItem>().Count(x=>x.IsCheckable&&x.Visibility==Visibility.Visible)==7&&table.ActualHeight>=90;
     internal async Task VerifyProcessInspection31(string root,Action<bool,string> check)
     {
         using var owner=System.Diagnostics.Process.GetCurrentProcess();

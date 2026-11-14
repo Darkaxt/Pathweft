@@ -1,6 +1,22 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.66 | 2026-11-14 | Handle growth, Everything recovery and copy fixes
+
+**System analysis › RAM**
+- A Handle growth event marks a process that holds 250,000 handles or gains 100,000 in five minutes; leaked handles use kernel memory and can make Windows sluggish.
+- A Handles column (off by default, from Columns), kernel memory pools in the RAM details, and "parent ended" beside processes left running after their parent exited.
+- For a pinned process: Handle types shows what kind of handles it holds, and End process ends it after you confirm, only if it is still the same process.
+
+**Everything**
+- Searches no longer wait forever when Everything stops answering. If it is loading or updating its index Pathweft says so; if it has stopped answering altogether, Pathweft restarts it once.
+
+**Copying**
+- Copying a downloaded file to a drive that can't store alternate data streams (FAT, exFAT, Tresorit Drive) now works like Explorer: only the "downloaded from the internet" mark is left out. Any other alternate stream still stops the copy, so no data is lost silently.
+
+**Space analysis**
+- Expanding a folder shows a loading ring beside its name until its contents arrive, and the contents appear sooner.
+
 ## 1.1.65 | 2026-11-14 | Run PowerShell scripts
 
 **Context menu**

@@ -1,6 +1,7 @@
-# Pathweft 1.1.65
+# Pathweft 1.1.66
 
-Pathweft 1.1.65 runs PowerShell scripts from the context menu
+Pathweft 1.1.66 shows handle growth under RAM in System analysis, recovers when Everything stops answering,
+copies downloaded files to drives without alternate streams, and shows a loading ring in the space analyzer. 1.1.65 runs PowerShell scripts from the context menu
 (Run with PowerShell, and Run as administrator under Tools). 1.1.64 adds Maintenance › Security check, a read-only comparison with the
 HardeningKitty machine list, eight opt-in hardening tweaks with Restore, and a
 Memory growth event in System analysis, and shortcut details in preview. 1.1.62 uses the administrator approval given at launch for Maintenance

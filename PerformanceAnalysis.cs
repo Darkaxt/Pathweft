@@ -55,7 +55,7 @@ internal sealed partial class PerformancePanel
         var heading=new DockPanel();
         var back=Action("Back to files",()=>Select(-1));DockPanel.SetDock(back,Dock.Right);heading.Children.Add(back);
         detailTitle.FontSize=18;detailTitle.VerticalAlignment=VerticalAlignment.Center;
-        var title=new StackPanel();var category=new TextBlock{Text="System analysis",FontSize=11};category.SetResourceReference(TextBlock.ForegroundProperty,"Muted");title.Children.Add(category);title.Children.Add(detailTitle);BuildDriveHeader(title);heading.Children.Add(title);grid.Children.Add(heading);
+        var title=new StackPanel();var category=new TextBlock{Text="System analysis",FontSize=11};category.SetResourceReference(TextBlock.ForegroundProperty,"Muted");title.Children.Add(category);title.Children.Add(detailTitle);BuildDriveHeader(title);BuildProcessHeader(title);heading.Children.Add(title);grid.Children.Add(heading);
         var controls=new WrapPanel{Margin=new(0,10,0,0)};Grid.SetRow(controls,1);grid.Children.Add(controls);
         void Add(Control control,string name)
         {
@@ -67,6 +67,7 @@ internal sealed partial class PerformancePanel
         analysisKind.ItemsSource=new[]{"Activity","Summary","Top apps","Spikes","App history","Events","Boot diagnostics","System changes","Insights"};analysisKind.SelectedIndex=0;
         Add(range,"Performance time range");Add(analysisKind,"Analysis section");
         BuildProcessControls();Add(columnsButton,"Choose process columns");Add(processFilter,"Filter CPU processes");
+        Add(handleTypesButton,"Show handle types of the pinned process");Add(endProcessButton,"End the pinned process");
         gpuPicker.Visibility=Visibility.Collapsed;Add(gpuPicker,"GPU adapter");
         gpuPicker.SelectionChanged+=(_,_)=>{gpu=(gpuPicker.SelectedItem as GpuReading)?.Id;Refresh();if(ready&&Historical)_ = LoadHistory();};
         Add(appFilter,"App history name");Add(threshold,"Spike threshold");
@@ -108,7 +109,7 @@ internal sealed partial class PerformancePanel
             if(e.OriginalSource is not GridViewColumnHeader header)return;
             string property=header.Tag as string??(header.Column?.DisplayMemberBinding as Binding)?.Path.Path;
             if(property==null)return;
-            if(ReferenceEquals(table.ItemsSource,processItems))property=property switch{"Percent"=>"SortUsage","MemoryText"=>"Memory",_=>property};
+            if(ReferenceEquals(table.ItemsSource,processItems))property=property switch{"Percent"=>"SortUsage","MemoryText"=>"Memory","HandlesText"=>"Handles",_=>property};
             sortDirection=sortProperty==property&&sortDirection==ListSortDirection.Descending?ListSortDirection.Ascending:ListSortDirection.Descending;sortProperty=property;SortRows();
         }));
         Grid.SetRow(table,4);grid.Children.Add(table);
@@ -136,7 +137,7 @@ internal sealed partial class PerformancePanel
         string filter=processFilter.Text.Trim();
         view.Filter=processes&&filter.Length>0?item=>item is PerformanceProcessRow row&&(row.Pinned||row.Process.Contains(filter,StringComparison.OrdinalIgnoreCase)||row.Pid.ToString().Contains(filter,StringComparison.OrdinalIgnoreCase)||(processColumns["ExecutablePath"]&&row.ExecutablePath.Contains(filter,StringComparison.OrdinalIgnoreCase))||(processColumns["CommandLine"]&&row.CommandLine.Contains(filter,StringComparison.OrdinalIgnoreCase))):null;
         if(sortProperty!=null)view.SortDescriptions.Add(new(sortProperty,sortDirection));
-        else if(processes)view.SortDescriptions.Add(new("SortUsage",ListSortDirection.Descending));
+        else if(processes)view.SortDescriptions.Add(new(selected==Ram?"Memory":"SortUsage",ListSortDirection.Descending));
         if(processes){view.SortDescriptions.Add(new("Process",ListSortDirection.Ascending));view.SortDescriptions.Add(new("Pid",ListSortDirection.Ascending));}
     }
     void ChangedAnalysis()

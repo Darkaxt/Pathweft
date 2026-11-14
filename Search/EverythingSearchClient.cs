@@ -30,7 +30,7 @@ internal sealed class EverythingSearchClient
     volatile Request sending;
 #if DEBUG
     internal static Action<CancellationToken> BeforeNativeSend;
-    internal void ResetUnansweredForVerification() => Interlocked.Exchange(ref unansweredSince, 0);
+    internal void StartUnansweredForVerification() => Interlocked.Exchange(ref unansweredSince, Environment.TickCount64);
 #endif
     HwndSource window;
     // Environment.TickCount64 when Everything was last sent a request that has

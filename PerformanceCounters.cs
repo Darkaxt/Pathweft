@@ -10,7 +10,13 @@ internal sealed record GpuReading(string Id,string Name,double? Usage,long? Memo
 {public override string ToString()=>Name;}
 internal sealed record DiskReading(string Id,double? Read,double? Write,double? Busy,double? LatencyMs=null);
 internal sealed record RamReading(long Used,long Total)
-{internal double Usage=>100d*Used/Total;}
+{
+    internal double Usage=>100d*Used/Total;
+    // MONITOR-23: system handle total and kernel pools; absent in older saved samples (unknown, not zero).
+    public long? KernelPaged {get;init;}
+    public long? KernelNonpaged {get;init;}
+    public long? Handles {get;init;}
+}
 internal sealed record PerformanceSample(DateTimeOffset Time,double? Cpu,GpuReading[] Gpus,DiskReading[] Disks,string Issue,RamReading Ram=null);
 internal sealed record PerformanceProcessSnapshot(DateTimeOffset Time,ProcessMetric[] Apps,ProcessMetric[] GpuApps);
 
@@ -161,17 +167,29 @@ internal sealed class WindowsPerformanceCounters : IDisposable
         var physical=new MemoryStatus{Length=(uint)Marshal.SizeOf<MemoryStatus>()};
         RamReading ram=GlobalMemoryStatusEx(ref physical)&&physical.Total>0&&physical.Available<=physical.Total?
             new((long)(physical.Total-physical.Available),(long)physical.Total):null;
+        var kernel=new PerformanceInformation{Size=(uint)Marshal.SizeOf<PerformanceInformation>()};
+        if(ram!=null&&GetPerformanceInfo(ref kernel,kernel.Size))
+        {
+            long page=(long)kernel.PageSize.ToUInt64();
+            ram=ram with{KernelPaged=(long)kernel.KernelPaged.ToUInt64()*page,KernelNonpaged=(long)kernel.KernelNonpaged.ToUInt64()*page,Handles=kernel.HandleCount};
+        }
         return new(now,cpu,gpus,disks,status==0?null:$"Windows counters unavailable (0x{status:X8})",ram);
     }
     static string Id(string instance){var match=gpuId.Match(instance);return match.Success?match.Value.ToLowerInvariant():null;}
-    internal ProcessMetric[] GpuProcesses()=>lastEngines.Where(x=>x.Key.StartsWith("pid_",StringComparison.Ordinal))
+    internal ProcessMetric[] GpuProcesses()
+    {
+        // MONITOR-23: one Toolhelp snapshot per read, taken only when a GPU process exists.
+        var parents=new Lazy<Dictionary<int,int>>(ProcessParents.Read);
+        return lastEngines.Where(x=>x.Key.StartsWith("pid_",StringComparison.Ordinal))
         .GroupBy(x=>(Pid:x.Key.Split('_')[1],Adapter:Id(x.Key))).Select(group=>
         {
             int.TryParse(group.Key.Pid,out int pid);string name="Unavailable";long started=0;
             try{using var process=Process.GetProcessById(pid);name=process.ProcessName;started=process.StartTime.ToUniversalTime().Ticks;}
             catch(Exception ex)when(ex is ArgumentException or InvalidOperationException or System.ComponentModel.Win32Exception){}
-            return new ProcessMetric(pid,started,name,Math.Clamp(group.GroupBy(x=>Id(x.Key)+x.Key[(x.Key.IndexOf("_eng_",StringComparison.Ordinal)+5)..]).Max(g=>g.Sum(x=>x.Value)),0,100),0,group.Key.Adapter);
+            return new ProcessMetric(pid,started,name,Math.Clamp(group.GroupBy(x=>Id(x.Key)+x.Key[(x.Key.IndexOf("_eng_",StringComparison.Ordinal)+5)..]).Max(g=>g.Sum(x=>x.Value)),0,100),0,group.Key.Adapter)
+                {ParentEnded=started==0?null:ProcessParents.Ended(pid,started,parents.Value,ProcessParents.StartOf)};
         }).OrderByDescending(x=>x.Usage).ToArray();
+    }
     internal Dictionary<string,double> Values(IntPtr counter)
     {
         var result=new Dictionary<string,double>(StringComparer.OrdinalIgnoreCase);
@@ -229,7 +247,14 @@ internal sealed class WindowsPerformanceCounters : IDisposable
         public uint Length,Load;
         public ulong Total,Available,TotalPageFile,AvailablePageFile,TotalVirtual,AvailableVirtual,AvailableExtended;
     }
+    [StructLayout(LayoutKind.Sequential)]struct PerformanceInformation
+    {
+        public uint Size;
+        public UIntPtr CommitTotal,CommitLimit,CommitPeak,PhysicalTotal,PhysicalAvailable,SystemCache,KernelTotal,KernelPaged,KernelNonpaged,PageSize;
+        public uint HandleCount,ProcessCount,ThreadCount;
+    }
     [DllImport("kernel32.dll",SetLastError=true)]static extern bool GlobalMemoryStatusEx(ref MemoryStatus status);
+    [DllImport("kernel32.dll",EntryPoint="K32GetPerformanceInfo",SetLastError=true)]static extern bool GetPerformanceInfo(ref PerformanceInformation information,uint size);
     [DllImport("pdh.dll",CharSet=CharSet.Unicode,EntryPoint="PdhOpenQueryW")]static extern uint PdhOpenQuery(string source,UIntPtr data,out IntPtr query);
     [DllImport("pdh.dll",CharSet=CharSet.Unicode,EntryPoint="PdhAddEnglishCounterW")]static extern uint PdhAddEnglishCounter(IntPtr query,string path,UIntPtr data,out IntPtr counter);
     [DllImport("pdh.dll")]static extern uint PdhCollectQueryData(IntPtr query);
@@ -246,25 +271,34 @@ internal sealed class WindowsPerformanceCounters : IDisposable
 }
 
 internal sealed record ProcessMetric(int Pid,long Started,string Process,double Usage,long Memory,string Adapter=null)
-{public string Percent=>$"{Usage:0.0}%";public string MemoryText=>MainWindow.Fmt(Memory);}
+{
+    public string Percent=>$"{Usage:0.0}%";public string MemoryText=>MainWindow.Fmt(Memory);
+    // MONITOR-23: null is unknown (older history, GPU-only rows or an unreadable parent), never zero/false.
+    public int? Handles {get;init;}
+    public bool? ParentEnded {get;init;}
+    public string ProcessLabel=>ParentEnded==true?Process+" · parent ended":Process;
+}
 internal sealed class ProcessMetrics
 {
     Dictionary<(int,long),TimeSpan> previous=new();long timestamp;
     internal ProcessMetric[] Read()
     {
         long now=Stopwatch.GetTimestamp();double seconds=timestamp==0?0:Stopwatch.GetElapsedTime(timestamp,now).TotalSeconds;timestamp=now;
-        var next=new Dictionary<(int,long),TimeSpan>();var result=new List<ProcessMetric>();
+        var next=new Dictionary<(int,long),TimeSpan>();var result=new List<ProcessMetric>();var starts=new Dictionary<int,long>();
         foreach(var process in Process.GetProcesses())
         {
             using(process)try
             {
-                var key=(process.Id,process.StartTime.ToUniversalTime().Ticks);var total=process.TotalProcessorTime;next[key]=total;
+                var key=(process.Id,process.StartTime.ToUniversalTime().Ticks);var total=process.TotalProcessorTime;next[key]=total;starts[key.Id]=key.Ticks;
                 if(seconds>0&&previous.TryGetValue(key,out var old))result.Add(new(key.Id,key.Ticks,process.ProcessName,
-                    Math.Clamp((total-old).TotalSeconds/seconds/Environment.ProcessorCount*100,0,100),process.WorkingSet64));
+                    Math.Clamp((total-old).TotalSeconds/seconds/Environment.ProcessorCount*100,0,100),process.WorkingSet64){Handles=process.HandleCount});
             }
             catch(Exception ex)when(ex is InvalidOperationException or System.ComponentModel.Win32Exception or NotSupportedException){}
         }
-        previous=next;return result.OrderByDescending(x=>x.Usage).ToArray();
+        previous=next;
+        // Same enumeration plus one Toolhelp parent snapshot; no further collector.
+        var parents=result.Count==0?null:ProcessParents.Read();
+        return result.Select(x=>x with{ParentEnded=ProcessParents.Ended(x.Pid,x.Started,parents,pid=>starts.TryGetValue(pid,out long start)?(long?)start:null)}).OrderByDescending(x=>x.Usage).ToArray();
     }
 }
 

@@ -96,10 +96,10 @@ internal static class PerformanceMcp
         {
             "get_current_usage"=>"Latest recorded CPU, physical RAM, each GPU and drive observation with age; may be stale or absent when recording is off.",
             "get_usage_summary"=>"Observed averages, peaks and bounded graph over a recorded range; devices remain separate.",
-            "get_top_processes"=>"Top observed heavy processes by CPU, RAM bytes or GPU; sampled every 10s, incomplete process coverage. PID/start distinguishes reuse.",
+            "get_top_processes"=>"Top observed heavy processes by CPU, RAM bytes or GPU; sampled every 10s, incomplete process coverage. PID/start distinguishes reuse. CPU/RAM rows include peak Handles and ParentEnded when recorded; absent means unknown.",
             "find_spikes"=>"Observed threshold exceedance intervals for a selected metric/device; no inferred cause or fabricated gap samples.",
             "get_app_history"=>"Observed app usage grouped by process name/PID/start identity; not exact launch/exit sessions. Requires name.",
-            _=>"Recorded collection start/stop, gaps and counter availability events; no security or execution audit."
+            _=>"Recorded collection start/stop, gaps and counter availability events, plus derived Handle growth (one PID/start at 250,000+ handles or +100,000 within 5 minutes while growing); no security or execution audit."
         },
         inputSchema=new{type="object",properties=new Dictionary<string,object>
         {

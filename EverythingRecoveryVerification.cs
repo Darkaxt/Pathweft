@@ -13,12 +13,25 @@ public partial class MainWindow
         var replyTimeout=EverythingRecovery.ReplyTimeout;var restartAfter=EverythingRecovery.RestartAfter;
         var state=EverythingRecovery.State.Ready;int restarts=0;
         using var release=new ManualResetEventSlim();
-        EverythingRecovery.ReplyTimeout=TimeSpan.FromSeconds(1);EverythingRecovery.RestartAfter=TimeSpan.FromSeconds(3.5);
+        // While waiting for the dispatcher, a timeout must never reach the real status or restart.
+        EverythingRecovery.ProbeOverride=()=>EverythingRecovery.State.Loading;
+        EverythingRecovery.RestartOverride=()=>Task.FromResult(false);
+        EverythingRecovery.ReplyTimeout=TimeSpan.FromMinutes(4);
+        // Earlier real queries may still occupy the IPC dispatcher (a slow real Everything). Wait until it
+        // reaches this fixture's held send, then start the unanswered clock from that held request.
+        var entered=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        EverythingSearchClient.BeforeNativeSend=_=>{entered.TrySetResult();release.Wait();};
+        using(var hold=new CancellationTokenSource())
+        {
+            var held=EverythingSearchClient.Shared.QueryAsync("folder:","",0,1,"Name",false,hold.Token);
+            await Task.WhenAny(entered.Task,Task.Delay(TimeSpan.FromMinutes(3)));
+            check(entered.Task.IsCompleted,"The Everything IPC dispatcher reaches the held fixture send");
+            hold.Cancel();try{await held;}catch(Exception error)when(error is OperationCanceledException or InvalidOperationException){}
+        }
         EverythingRecovery.ProbeOverride=()=>state;
         EverythingRecovery.RestartOverride=()=>{Interlocked.Increment(ref restarts);return Task.FromResult(true);};
-        // Earlier real queries may have left Everything's unanswered clock running; start this fixture from silence.
-        EverythingRecovery.ResetForVerification();EverythingSearchClient.Shared.ResetUnansweredForVerification();
-        EverythingSearchClient.BeforeNativeSend=_=>release.Wait();
+        EverythingRecovery.ResetForVerification();EverythingSearchClient.Shared.StartUnansweredForVerification();
+        EverythingRecovery.ReplyTimeout=TimeSpan.FromSeconds(1);EverythingRecovery.RestartAfter=TimeSpan.FromSeconds(3.5);
         async Task<string> Unanswered(CancellationToken token=default)
         {
             try{await EverythingSearchClient.Shared.QueryAsync("folder:","",0,1,"Name",false,token);return "answered";}

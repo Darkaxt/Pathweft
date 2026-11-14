@@ -96,8 +96,8 @@ internal sealed class PerformanceTimeline : FrameworkElement
     Brush Muted=>TryFindResource("Muted") as Brush??Brushes.Gray;
     Brush Accent=>TryFindResource("Accent") as Brush??Brushes.DodgerBlue;
     Brush Caution=>TryFindResource("RiskCaution") as Brush??Brushes.Orange;
-    // Spikes and sustained memory growth stand out; lifecycle and gap markers stay neutral.
-    internal static bool Alerting(PerformanceFact item)=>item.Name is "Usage spike" or "Memory growth";
+    // Spikes and sustained memory or handle growth stand out; lifecycle and gap markers stay neutral.
+    internal static bool Alerting(PerformanceFact item)=>item.Name is "Usage spike" or "Memory growth" or "Handle growth";
     void Text(DrawingContext dc,string text,Point where,Brush brush,double size=11,double? width=null)
     {
         var formatted=new FormattedText(text,CultureInfo.CurrentCulture,FlowDirection.LeftToRight,new Typeface("Segoe UI"),size,brush,VisualTreeHelper.GetDpi(this).PixelsPerDip){MaxTextWidth=Math.Max(1,Math.Min(width??double.MaxValue,ActualWidth-where.X)),MaxLineCount=1,Trimming=TextTrimming.CharacterEllipsis};

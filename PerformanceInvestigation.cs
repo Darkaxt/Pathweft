@@ -18,8 +18,69 @@ internal static class PerformanceInvestigation
         var spikeRows=spikes.Rows.Select((x,i)=>x with{Time=x.PeakAt==default?x.Time:x.PeakAt,Name="Usage spike",
             Details=i<20?Attribute(query,x,cancel,source,liveApps):x.Name+" · "+x.Details}).ToArray();
         var growth=query.Metric=="ram"?Growth(query.From??DateTimeOffset.UtcNow.AddMinutes(-query.LastMinutes),query.To??DateTimeOffset.UtcNow,InstalledMemory,cancel,source,liveApps):[];
-        var markers=events.Rows.Concat(spikeRows).Concat(growth).OrderBy(x=>x.Time).Take(query.Limit).ToArray();
-        return new(activity,markers,events.Total+spikes.Total+growth.Length);
+        // Handle growth (part of the event query for MCP) belongs to the RAM graph only.
+        var eventRows=query.Metric=="ram"?events.Rows:events.Rows.Where(x=>x.Name!="Handle growth").ToArray();
+        var markers=eventRows.Concat(spikeRows).Concat(growth).OrderBy(x=>x.Time).Take(query.Limit).ToArray();
+        return new(activity,markers,events.Total-(events.Rows.Length-eventRows.Length)+spikes.Total+growth.Length);
+    }
+    internal const long HandleLevel=250_000,HandleGain=100_000;
+    // MONITOR-23: one PID/start identity at or above 250,000 handles, or gaining at least 100,000
+    // within 5 minutes while its count is still rising. One event per identity in the range.
+    internal static PerformanceFact[] HandleGrowth(DateTimeOffset from,DateTimeOffset to,CancellationToken cancel=default,string source=null,PerformanceProcessSnapshot[] liveApps=null)
+    {
+        var series=new Dictionary<(string Name,int Pid,long Start),List<(long T,long H)>>();
+        long live=liveApps is {Length:>0}?liveApps[0].Time.ToUnixTimeMilliseconds():long.MaxValue;
+        string path=source??PerformanceHistory.FilePath;
+        if(File.Exists(path))
+        {
+            SqliteRuntime.Ensure();using var db=new SqliteConnection(new SqliteConnectionStringBuilder{DataSource=path,Mode=SqliteOpenMode.ReadOnly,Pooling=false}.ToString());db.Open();
+            using var command=db.CreateCommand();command.CommandText="PRAGMA query_only=ON; PRAGMA temp_store=MEMORY;";command.ExecuteNonQuery();
+            // History saved before MONITOR-23 has no handle counts: unknown, so no event.
+            if(PerformanceHistory.HasHandleColumns(db))
+            {
+                command.Parameters.AddWithValue("$from",from.ToUnixTimeMilliseconds());command.Parameters.AddWithValue("$to",to.ToUnixTimeMilliseconds());
+                command.Parameters.AddWithValue("$live",live);command.Parameters.AddWithValue("$level",HandleLevel);command.Parameters.AddWithValue("$gain",HandleGain);
+                command.CommandText="SELECT a.name,a.pid,a.start,a.t,a.handles FROM apps a JOIN (SELECT name,pid,start FROM apps WHERE t BETWEEN $from AND $to AND t<$live AND handles IS NOT NULL GROUP BY name,pid,start HAVING MAX(handles)>=$level OR MAX(handles)-MIN(handles)>=$gain) c "+
+                    "ON a.name=c.name AND a.pid=c.pid AND a.start=c.start WHERE a.t BETWEEN $from AND $to AND a.t<$live AND a.handles IS NOT NULL ORDER BY a.name,a.pid,a.start,a.t";
+                using var reader=command.ExecuteReader();
+                while(reader.Read())
+                {
+                    cancel.ThrowIfCancellationRequested();var key=(reader.GetString(0),reader.GetInt32(1),reader.GetInt64(2));
+                    if(!series.TryGetValue(key,out var list))series[key]=list=[];list.Add((reader.GetInt64(3),reader.GetInt64(4)));
+                }
+            }
+        }
+        foreach(var snapshot in liveApps??[])
+        {
+            cancel.ThrowIfCancellationRequested();if(snapshot.Time<from||snapshot.Time>to)continue;
+            foreach(var app in snapshot.Apps)
+            {
+                if(app.Handles is not {} held)continue;var key=(app.Process,app.Pid,app.Started);
+                if(!series.TryGetValue(key,out var list))series[key]=list=[];list.Add((snapshot.Time.ToUnixTimeMilliseconds(),held));
+            }
+        }
+        var found=new List<PerformanceFact>();
+        foreach(var (key,list) in series)
+        {
+            cancel.ThrowIfCancellationRequested();
+            if(list.Max(x=>x.H)<HandleLevel&&list.Max(x=>x.H)-list.Min(x=>x.H)<HandleGain)continue;
+            list.Sort();(long T,long H) high=default;long? began=null,levelAt=null;long gain=0,gainSpan=0;int window=0;
+            for(int j=0;j<list.Count;j++)
+            {
+                var (t,h)=list[j];if(h>high.H)high=(t,h);
+                if(h>=HandleLevel&&levelAt==null){levelAt=t;began??=t;}
+                while(list[window].T<t-5*60_000)window++;
+                if(j==0||h<=list[j-1].H)continue;
+                // Still growing: gain over the lowest count within the preceding five minutes.
+                var low=list[j];for(int i=j-1;i>=window;i--)if(list[i].H<low.H)low=list[i];
+                if(h-low.H>=HandleGain){began=Math.Min(began??low.T,low.T);if(h-low.H>gain){gain=h-low.H;gainSpan=t-low.T;}}
+            }
+            if(began==null)continue;
+            found.Add(new(DateTimeOffset.FromUnixTimeMilliseconds(began.Value),"Handle growth",key.Pid,null,high.H,list.Count,
+                $"{key.Name} · {high.H:N0} handles at peak"+(levelAt!=null?$" · reached {HandleLevel:N0}":"")+(gain>0?$" · +{gain:N0} within {gainSpan/60_000d:0.#} min while growing":"")+" · sampled; not proof of cause")
+                {Started=key.Start,PeakAt=DateTimeOffset.FromUnixTimeMilliseconds(high.T),Handles=high.H});
+        }
+        return found.ToArray();
     }
     internal static long InstalledMemory=>GC.GetGCMemoryInfo().TotalAvailableMemoryBytes;
     // Names the app with the largest share at the peak and, for RAM, the one that grew most since the spike began.
@@ -109,7 +170,7 @@ internal static class PerformanceInvestigation
             if(Math.Abs((snapshot.Time-time).TotalSeconds)>10)continue;
             var apps=(query.Metric=="gpu"?snapshot.GpuApps.Where(x=>query.Device==null||x.Adapter==query.Device):snapshot.Apps).ToArray();
             if(apps.Length==0||recent!=null&&Math.Abs((recent.Observed.Value-time).Ticks)<=Math.Abs((snapshot.Time-time).Ticks))continue;
-            recent=new(time,snapshot.Time,apps.OrderByDescending(x=>query.Metric=="ram"?x.Memory:x.Usage).Select(x=>new PerformanceFact(snapshot.Time,x.Process,x.Pid,query.Metric=="ram"?x.Memory:x.Usage,null,1,$"Started {new DateTime(x.Started,DateTimeKind.Utc):O}"+(query.Metric=="gpu"?" · "+x.Adapter:" · "+MainWindow.Fmt(x.Memory)+" working set"))).ToArray(),$"Observed {snapshot.Time.ToLocalTime():G} · automatic recent snapshot; selected heavy apps, not proof of cause.");
+            recent=new(time,snapshot.Time,apps.OrderByDescending(x=>query.Metric=="ram"?x.Memory:x.Usage).Select(x=>new PerformanceFact(snapshot.Time,x.Process,x.Pid,query.Metric=="ram"?x.Memory:x.Usage,null,1,$"Started {new DateTime(x.Started,DateTimeKind.Utc):O}"+(query.Metric=="gpu"?" · "+x.Adapter:" · "+MainWindow.Fmt(x.Memory)+" working set")+Marks(x.Handles,x.ParentEnded)){Handles=x.Handles,ParentEnded=x.ParentEnded}).ToArray(),$"Observed {snapshot.Time.ToLocalTime():G} · automatic recent snapshot; selected heavy apps, not proof of cause.");
         }
         string path=source??PerformanceHistory.FilePath;
         if(!File.Exists(path))return recent??new(time,null,[],"No process observations near this moment. Recent snapshots are collected automatically while Pathweft runs; missing intervals are not zero activity.");
@@ -128,14 +189,16 @@ internal static class PerformanceInvestigation
         if(recent!=null&&Math.Abs((recent.Observed.Value-time).Ticks)<=Math.Abs((observed-time).Ticks))return recent;
         command.Parameters.AddWithValue("$sample",observed.ToUnixTimeMilliseconds());
         string value=query.Metric switch{"ram"=>"memory","gpu"=>"usage",_=>"cpu"};
-        command.CommandText=$"SELECT name,pid,start,{value}"+(query.Metric=="gpu"?",NULL":",memory")+$" FROM {table} WHERE t=$sample{device} ORDER BY {value} DESC LIMIT 45";
+        command.CommandText=$"SELECT name,pid,start,{value}"+(query.Metric=="gpu"?",NULL,NULL,NULL":PerformanceHistory.HasHandleColumns(db)?",memory,handles,parent_ended":",memory,NULL,NULL")+$" FROM {table} WHERE t=$sample{device} ORDER BY {value} DESC LIMIT 45";
         using var reader=command.ExecuteReader();var rows=new List<PerformanceFact>();
         while(reader.Read())
         {
             cancel.ThrowIfCancellationRequested();
+            long? handles=reader.IsDBNull(5)?null:reader.GetInt64(5);bool? ended=reader.IsDBNull(6)?null:reader.GetInt64(6)!=0;
             rows.Add(new(observed,reader.GetString(0),reader.GetInt32(1),reader.IsDBNull(3)?null:reader.GetDouble(3),null,1,
-                $"Started {new DateTime(reader.GetInt64(2),DateTimeKind.Utc):O}"+(reader.IsDBNull(4)?"":" · "+MainWindow.Fmt(reader.GetInt64(4))+" working set")));
+                $"Started {new DateTime(reader.GetInt64(2),DateTimeKind.Utc):O}"+(reader.IsDBNull(4)?"":" · "+MainWindow.Fmt(reader.GetInt64(4))+" working set")+Marks(handles,ended)){Handles=handles,ParentEnded=ended});
         }
         return new(time,observed,rows.ToArray(),$"Observed {observed.ToLocalTime():G} · selected heavy apps; incomplete coverage, not proof of cause.");
     }
+    static string Marks(long? handles,bool? ended)=>(handles is {} held?$" · {held:N0} handles":"")+(ended==true?" · parent ended":"");
 }
