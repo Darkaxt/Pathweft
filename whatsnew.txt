@@ -1,6 +1,19 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.68 | 2026-11-15 | MCP tools for Maintenance, files and search; process table controls
+
+**System analysis**
+- The process filter, Handle types, End process and Columns now sit on a bar right above the process table instead of over the graph.
+- Right-click the table's header row to choose columns. CPU and RAM remember their own columns, also after a restart.
+- The footer under the analysis only appears when history can't be recorded.
+
+**MCP**
+- The read-only MCP server (Pathweft.exe --performance-mcp) can now also read Maintenance (including Cleanup sizes from Everything), list folders and file details, search with Everything's full syntax, and report Windows boots, system changes and insights. It never changes, cleans or elevates anything.
+
+**Preview**
+- Closing an Office preview no longer fails when another program briefly holds one of its temporary files; the leftover is removed later.
+
 ## 1.1.67 | 2026-11-14 | Administrator access without prompts, handle growth and Everything recovery
 
 **Administrator access**

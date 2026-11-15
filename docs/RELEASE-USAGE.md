@@ -1,6 +1,7 @@
-# Pathweft 1.1.67
+# Pathweft 1.1.68
 
-Pathweft 1.1.67 starts administrator access in the background after one approval, with no further UAC prompts
+Pathweft 1.1.68 extends the read-only MCP server (`Pathweft.exe --performance-mcp`) to Maintenance rows and Cleanup sizes,
+file and folder metadata, Everything search, Windows boots, system changes and insights, and puts the process table's controls on the table. 1.1.67 starts administrator access in the background after one approval, with no further UAC prompts
 (Settings › Start administrator access with Pathweft). It also shows handle growth under RAM in System analysis, recovers when Everything stops answering,
 copies downloaded files to drives without alternate streams, and shows a loading ring in the space analyzer. 1.1.65 runs PowerShell scripts from the context menu
 (Run with PowerShell, and Run as administrator under Tools). 1.1.64 adds Maintenance › Security check, a read-only comparison with the
