@@ -714,7 +714,7 @@ public partial class MainWindow : Window
         Grid.SetColumn(name, 1); Grid.SetColumn(size, 2);
         Grid.SetRow(bar, 1); Grid.SetColumn(bar, 1); Grid.SetColumnSpan(bar, 2);
         g.Children.Add(icon); g.Children.Add(name); g.Children.Add(size); g.Children.Add(bar);
-        var b = new Button { Content = g, Style = (Style)FindResource("Side"), HorizontalContentAlignment = HorizontalAlignment.Stretch, Margin = new(0, 1, 0, 1), ToolTip = $"{d.Name}  {d.Format}  ·  {DrivePresentation.Capacity(d.Total,d.Free,d.CloudQuota)}"+(d.Connection.Length>0?" · "+d.Connection:"")+(d.CloudQuota?"\n"+DrivePresentation.CloudSource+"\nMount-reported space (cache constrained): "+DrivePresentation.Capacity(d.MountTotal,d.MountFree):"") };
+        var b = new Button { Content = g, Style = (Style)FindResource("Side"), HorizontalContentAlignment = HorizontalAlignment.Stretch, Margin = new(0, 1, 0, 1), ToolTip = $"{d.Name}  {d.Format}  ·  {DrivePresentation.Capacity(d.Total,d.Free,d.CloudQuota)}"+(d.Connection.Length>0?" · "+d.Connection:"")+(DrivePresentation.SpaceSource(d.Connection,d.CloudQuota,d.MountTotal,d.MountFree) is { } source?"\n"+source:"") };
         b.Click += (_, _) => { active.Navigate(d.Name); active.FocusList(); };
         b.PreviewMouseDown += (_, e) => { if (e.ChangedButton == MouseButton.Middle) { active.OpenInBackgroundTab(d.Name); e.Handled = true; } };
         // Windows' own menu for the drive (Properties, Eject, Format, BitLocker…), hosted as the folders' Windows menu is
@@ -723,7 +723,7 @@ public partial class MainWindow : Window
     }
 
     [DllImport("mpr.dll", CharSet = CharSet.Unicode)] static extern int WNetGetConnection(string local, System.Text.StringBuilder remote, ref int len);
-    static string GetNetworkPath(string root)
+    internal static string GetNetworkPath(string root)
     {
         var sb = new System.Text.StringBuilder(512); int len = sb.Capacity;
         return WNetGetConnection(root.TrimEnd((char)92), sb, ref len) == 0 ? sb.ToString() : null;
@@ -1002,7 +1002,7 @@ public partial class MainWindow : Window
         StatFs.Text = $"  ·  {d.Format}{(d.Network ? " · network" : "")}";
         StatFree.Text = DrivePresentation.Size(d.Free,d.CloudQuota);
         StatUsed.Text = $"   ·   {DrivePresentation.Size(d.Used,d.CloudQuota)} of {DrivePresentation.Size(d.Total,d.CloudQuota)} used";
-        DriveCard.ToolTip=d.CloudQuota?DrivePresentation.CloudSource:null;
+        DriveCard.ToolTip=d.CloudQuota?DrivePresentation.CloudSource:d.Connection=="Tresorit"?DrivePresentation.TresoritSource:null;
         DrivePct.Text = $"{used * 100:0}% full";
         DriveBar.ColumnDefinitions[0].Width = new GridLength(used, GridUnitType.Star);
         DriveBar.ColumnDefinitions[1].Width = new GridLength(1 - used, GridUnitType.Star);
@@ -1419,20 +1419,65 @@ public partial class MainWindow : Window
         if (active.ArchiveRoot != null) { DeleteFromArchive(active); return; } // out of the ZIP: asked there, never to the Recycle Bin
         var sel = active.Selected;
         if (sel.Count == 0) return;
-        if (permanent && !AskPermanent(this, sel.Select(e => e.Path).ToList(), "They will not go to the Recycle Bin.")) return;
-        if (permanent) Recycle(sel.Select(e => e.Path).ToList(), UIOption.AllDialogs, permanent: true);
-        else RecycleUndoably(sel.Select(e => e.Path).ToList(), UIOption.AllDialogs);
+        var paths = sel.Select(e => e.Path).ToList();
+        if (paths.GroupBy(p => Path.GetPathRoot(p), StringComparer.OrdinalIgnoreCase).Where(g => CloudVolumes.OnTresorit(g.Key)).SelectMany(g => g).ToList() is { Count: > 0 } tresorit)
+        {
+            if (!DeleteOnTresorit(tresorit)) return;
+            paths = paths.Except(tresorit).ToList(); // search results can mix drives
+            if (paths.Count == 0) return;
+        }
+        if (permanent && !AskPermanent(this, paths, "They will not go to the Recycle Bin.")) return;
+        if (permanent) Recycle(paths, UIOption.AllDialogs, permanent: true);
+        else RecycleUndoably(paths, UIOption.AllDialogs);
     }
 
     // Shift+Delete, Enter deletes, as in Explorer: Yes is the default button, and the shell is not
     // asked to confirm a second time what was just confirmed here. With the sound off (Settings →
     // Files) the question is Pathweft's own dialog, which is silent, not a box that plays a warning.
-    static bool AskPermanent(Window owner, List<string> paths, string detail)
+    static bool AskPermanent(Window owner, List<string> paths, string detail) =>
+        AskDelete(owner, $"Permanently delete {ItemsNamed(paths)}?", detail, "Delete permanently");
+    static bool AskDelete(Window owner, string question, string detail, string caption) => Settings.DeleteSound
+        ? MessageBox.Show(owner, question + "\n\n" + detail, caption, MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.Yes) == MessageBoxResult.Yes
+        : PromptDialog.Choose(owner, question, detail, "Delete", "Cancel") == 0;
+    static string ItemsNamed(List<string> paths) => paths.Count == 1 ? $"“{Path.GetFileName(paths[0].TrimEnd('\\'))}”" : $"these {paths.Count:N0} items";
+
+    // Tresorit Drive (TRES-06/07). Windows calls every delete there permanent, but a file or folder inside a tresor goes
+    // to Tresorit's deleted files, and a tresor itself (a folder on the drive) only its Owner may delete, for every
+    // member and for good. Which role the user has nothing on the drive says, so the question says both.
+    bool DeleteOnTresorit(List<string> paths)
     {
-        var question = $"Permanently delete {(paths.Count == 1 ? $"“{Path.GetFileName(paths[0].TrimEnd('\\'))}”" : $"these {paths.Count:N0} items")}?";
-        return Settings.DeleteSound
-            ? MessageBox.Show(owner, question + "\n\n" + detail, "Delete permanently", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.Yes) == MessageBoxResult.Yes
-            : PromptDialog.Choose(owner, question, detail, "Delete", "Cancel") == 0;
+        var tresors = paths.Where(CloudVolumes.AtTop).ToList();
+        var children = paths.Except(tresors).ToList();
+        var detail = new List<string>();
+        if (tresors.Count > 0) detail.Add((tresors.Count == 1 ? "This is a tresor." : $"{tresors.Count:N0} of these are tresors.")
+            + " Only a tresor’s Owner can delete it, and it is then deleted for every member and can’t be restored. If you aren’t its Owner, you can leave it in the Tresorit app instead.");
+        if (children.Count > 0) detail.Add((tresors.Count > 0 ? "The other items go" : children.Count == 1 ? "It goes" : "They go")
+            + " to Tresorit’s deleted files; you can restore them in the Tresorit app (Show deleted).");
+        var question = tresors.Count == paths.Count ? $"Delete {(tresors.Count == 1 ? "the tresor " + ItemsNamed(tresors) : $"these {tresors.Count:N0} tresors")}?" : $"Delete {ItemsNamed(paths)}?";
+        if (!AskDelete(this, question, string.Join("\n\n", detail), "Delete")) return false;
+        if (children.Count > 0) Recycle(children, UIOption.AllDialogs, permanent: true);
+        if (tresors.Count > 0) DeleteTresors(tresors);
+        return true;
+    }
+
+    // A tresor is deleted as one item, by the drive, or not at all: walking it first, as a permanent delete does, would
+    // delete everything in it for every member even when Tresorit then refuses the tresor itself. Its ReadOnly attribute
+    // is Tresorit's and is left alone.
+    void DeleteTresors(List<string> tresors)
+    {
+        Task.Run(() => tresors.Select(path =>
+        {
+            var name = $"“{Path.GetFileName(path.TrimEnd('\\'))}”";
+            try { Directory.Delete(path); return null; }
+            catch (UnauthorizedAccessException) { return $"{name} wasn’t deleted: {CloudVolumes.TresorOwnerOnly}"; }
+            catch (IOException ex) when (ex.HResult == unchecked((int)0x80070091)) // ERROR_DIR_NOT_EMPTY
+            { return $"{name} wasn’t deleted, and nothing in it was: Tresorit Drive didn’t delete the tresor as a whole. Its Owner can delete it in the Tresorit app."; }
+            catch (IOException ex) { return $"{name} wasn’t deleted: {ex.Message}"; }
+        }).Where(error => error != null).ToList()).ContinueWith(t =>
+        {
+            if (t.Result.Count > 0) MessageBox.Show(this, string.Join("\n\n", t.Result), "Delete");
+            Left.Refresh(); Right.Refresh(); RefreshDrives(); UpdateStats();
+        }, TaskScheduler.FromCurrentSynchronizationContext());
     }
 
     /// The drive's Recycle Bin is switched off in Windows, so a delete there is for good. The shell doesn't say so unless its
@@ -1644,7 +1689,12 @@ public partial class MainWindow : Window
             return;
         }
         var renamed = Path.Combine(Path.GetDirectoryName(entry.Path), name);
-        if (Run(() => RenamePath(entry.Path, name))) Remember($"rename to {name}", new UndoStep("rename", renamed, entry.Name, Ferry.Stamp(renamed)));
+        if (Run(() =>
+            {
+                try { RenamePath(entry.Path, name); }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException && CloudVolumes.IsTresor(entry.Path))
+                { throw new IOException(CloudVolumes.TresorOwnerOnly + "\n\n" + ex.Message, ex); } // TRES-06
+            })) Remember($"rename to {name}", new UndoStep("rename", renamed, entry.Name, Ferry.Stamp(renamed)));
         if (pane.InSearch) pane.Refresh();
         else pane.Navigate(pane.Dir, name, record: false);
     }

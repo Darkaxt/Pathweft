@@ -148,6 +148,20 @@ internal static class CloudVolumes
         string host=remote.TrimStart('\\').Split('\\')[0];
         return host.EndsWith(".drive.tresorit.com",StringComparison.OrdinalIgnoreCase)?"Tresorit":"";
     }
+    // Tresorit Drive (TRES-05..07): its drive letter maps to *.drive.tresorit.com. Asking is local (the mapping,
+    // not the server), so it is cheap enough for a menu or a delete.
+    internal static bool OnTresorit(string path)
+    {
+        if(string.IsNullOrEmpty(path)||!Path.IsPathFullyQualified(path))return false;
+        var root=Path.GetPathRoot(path);
+        var remote=root.StartsWith(@"\\")?root:PaneView.IsRemote(root)?MainWindow.GetNetworkPath(root):null;
+        return remote!=null&&Provider(root,remote,new())=="Tresorit";
+    }
+    /// A tresor: a folder directly on the drive. Only its Owner may delete or rename one, and deleting it is for good.
+    internal static bool IsTresor(string path)=>OnTresorit(path)&&AtTop(path);
+    /// A folder directly under its drive or share root (for paths already known to be on Tresorit Drive).
+    internal static bool AtTop(string path)=>string.Equals(Path.GetDirectoryName(path.TrimEnd('\\'))?.TrimEnd('\\'),Path.GetPathRoot(path).TrimEnd('\\'),StringComparison.OrdinalIgnoreCase)&&Directory.Exists(path);
+    internal const string TresorOwnerOnly="Tresorit only lets the tresor’s Owner delete or rename it.";
     [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     [DllImport("winsqlite3.dll",CallingConvention=CallingConvention.Cdecl)] static extern int sqlite3_open_v2([MarshalAs(UnmanagedType.LPUTF8Str)]string file,out IntPtr db,int flags,IntPtr vfs);
     [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]

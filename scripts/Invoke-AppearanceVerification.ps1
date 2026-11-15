@@ -26,6 +26,7 @@ if($OrbitOnly){$start.Environment['PATHWEFT_VERIFY_ORBIT']='1'}
 if($env:PATHWEFT_VERIFY_S25 -eq '1'){$start.Environment['PATHWEFT_VERIFY_S25']='1'}
 if($env:PATHWEFT_VERIFY_RENDER_PERF -eq '1'){$start.Environment['PATHWEFT_VERIFY_RENDER_PERF']='1'}
 if($env:PATHWEFT_VERIFY_OPEN1111 -eq '1'){$start.Environment['PATHWEFT_VERIFY_OPEN1111']='1'}
+if($env:PATHWEFT_VERIFY_TRESORIT -eq '1'){$start.Environment['PATHWEFT_VERIFY_TRESORIT']='1'}
 if($env:PATHWEFT_VERIFY_FOLDER112 -eq '1'){$start.Environment['PATHWEFT_VERIFY_FOLDER112']='1'}
 if($env:PATHWEFT_VERIFY_MEDIA113 -eq '1'){$start.Environment['PATHWEFT_VERIFY_MEDIA113']='1';$start.Environment['PATHWEFT_MEDIA113_INPUTS']=$env:PATHWEFT_MEDIA113_INPUTS}
 if($env:PATHWEFT_VERIFY_UPDATE114 -eq '1'){$start.Environment['PATHWEFT_VERIFY_UPDATE114']='1';$start.Environment['PATHWEFT_MEDIA113_INPUTS']=$env:PATHWEFT_MEDIA113_INPUTS}

@@ -15,4 +15,8 @@ internal static class DrivePresentation
     internal static string FreeText(long total,long free,bool cloud=false)=>total>0?$"{Size(free,cloud)} ({Math.Clamp(100.0*free/total,0,100):0}%)":"";
     internal static string Capacity(long total,long free,bool cloud=false)=>total>0?$"{Size(free,cloud)} free of {Size(total,cloud)}":cloud?"Cloud quota unavailable":"No media or unavailable";
     internal static string CloudSource=>"Cloud account quota from Google Drive’s local metadata; refreshed by Google Drive.";
+    // TRES-08: Tresorit Drive reports the account's storage as the volume's size, so it is that, not a disk.
+    internal static string TresoritSource=>"Tresorit account storage, as Tresorit Drive reports it (shared tresors count toward it); not a disk.";
+    internal static string SpaceSource(string connection,bool cloudQuota,long mountTotal,long mountFree)=>
+        cloudQuota?CloudSource+"\nMount-reported space (cache constrained): "+Capacity(mountTotal,mountFree):connection=="Tresorit"?TresoritSource:null;
 }

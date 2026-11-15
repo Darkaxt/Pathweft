@@ -207,7 +207,7 @@ public class Entry : INotifyPropertyChanged
     {
         Name, Message.Length>0?Message:null, IsReadOnly ? ReadOnlyReason : null, Location != "" ? "In: " + Location : null, "Type: " + Thumbnails.TypeName(Name, IsDir),
         IsDrive?CapacityText:null,DriveConnection.Length>0?DriveConnection:null,DriveRawFormat.Length>0?"Reported filesystem: "+DriveRawFormat:null,DriveLocation.Length>0?DriveLocation:null,
-        DriveCloudQuota?DrivePresentation.CloudSource+"\nMount-reported space (cache constrained): "+DrivePresentation.Capacity(DriveMountTotal,DriveMountFree):null,
+        IsDrive?DrivePresentation.SpaceSource(DriveConnection,DriveCloudQuota,DriveMountTotal,DriveMountFree):null,
         DisplaySize >= 0 ? "Size: " + MainWindow.Fmt(DisplaySize) : null, SizeSource.Length>0?SizeSource:null, NoDate ? null : "Date modified: " + Modified.ToString("yyyy-MM-dd HH:mm:ss"),
     }.Where(line => line != null));
 }

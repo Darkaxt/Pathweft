@@ -1,6 +1,6 @@
 # Pathweft specification
 
-Version 1.27 - 2026-11-15. Owner: Darkaxt.
+Version 1.28 - 2026-11-15. Owner: Darkaxt.
 
 ### Read-only MCP expansion (S48)
 
@@ -2293,7 +2293,7 @@ Settings → Animations / Windows animation-effects switches stay authoritative.
 The user's 2026-11-02 request adds S12 as planned work. COMPLETE 2026-11-15 as an investigation: the capability
 matrix, evidence and decision are in research/S12-TRESORIT.md. Decision: no service or internal integration; the
 proposed follow-up TRES-05..08 (provider shell commands in Pathweft's menu, Owner/permanence-aware main-folder
-delete, Tresorit deleted-files wording, account-storage label) is issue #8 and is NOT activated.
+delete, Tresorit deleted-files wording, account-storage label) is issue #8, activated 2026-11-15 as S12b below.
 Recording this stage does not activate a client integration, change Tresorit
 configuration or authorize deleting cloud content. The reported main-folder
 deletion restriction is a provider capability boundary, not an NTFS ACL fix.
@@ -2304,6 +2304,21 @@ deletion restriction is a provider capability boundary, not an NTFS ACL fix.
 | TRES-02 | Assess supported public APIs/SDKs and documented client commands first. Verify actual content-operation coverage versus administration/audit-only surfaces, account/tier availability, authentication/scopes, limits and terms. Produce a capability matrix with evidence; availability of a suitable API is an open question. |
 | TRES-03 | Where documented surfaces are insufficient, use the installed REA workflow and its storage/Coordinator guidance to inspect the exact signed installed client/version. Examine command/URI/Shell/IPC contracts before internal hooks. Qualify any candidate with bounded runtime evidence; record version coupling, maintenance and unsupported operations. Static analysis alone does not establish feasibility. No automatic Sandbox setup or credential extraction. |
 | TRES-04 | Deliver an evidence-backed integration decision and a narrow end-to-end implementation proposal with acceptance, lifecycle, recovery and release criteria. Preserve provider ownership, consent and permanent-delete semantics; never bypass permissions or silently substitute permanent deletion. Use disposable fixtures for later mutation tests and preserve existing cloud data. Any implementation remains separate from this plan-only request. |
+
+### Tresorit Drive integration (S12b)
+
+Activated 2026-11-15 by the owner ("lets go with the plan as you suggested") with the folder-router fix, for
+release 1.1.70. It integrates only through the mounted drive and the client's own shell extension (TRES-04):
+no S3 gateway, `tresorit-core-interface.exe`, client logs or credentials, and no cloud mutation outside
+disposable fixtures the owner creates. A tresor is a folder directly on Tresorit Drive (a main folder).
+
+| ID | Requirement and acceptance |
+| --- | --- |
+| TRES-05 | On Tresorit Drive, Pathweft's own item menu shows the Tresorit shell extension's commands (Sharing and members, Copy Tresorit Path), as Explorer does, through its registered `TresoritExt` handler, initialized and invoked the way the other adopted extensions are. Only that extension is loaded there; other network drives keep today's exclusion. Verify the verbs are listed (never invoked) for a main folder and a child on the real drive. |
+| TRES-06 | Deleting a tresor asks first with Tresorit's terms: only its Owner can delete it, it is then deleted for every member and can't be restored, and a non-Owner can leave it in the Tresorit app. The tresor is deleted as one item by the drive or not at all: Pathweft never walks it to delete its contents first (that would delete them for every member even when the tresor itself is then refused) and never clears its ReadOnly attribute. A refused delete or rename reads "Tresorit only lets the tresor's Owner delete or rename it"; a drive that won't delete a non-empty tresor as a whole says nothing in it was deleted. Verify the refusal and wording on a disposable tresor created by the owner, never on existing content. |
+| TRES-07 | Deleting items inside a tresor asks with Tresorit's terms instead of Windows' "permanently delete": they go to Tresorit's deleted files and can be restored in the Tresorit app (Show deleted). Verify with disposable files in a disposable tresor; the owner confirms the restore in the client. |
+| TRES-08 | The drive's space is labelled as the Tresorit account's storage (shared tresors count toward it), not a disk. |
+| SHELL-05 | When the folder router hands a request back to Windows (Setup is running, a virtual location such as This PC, or several folders without a browser site), it forwards what the Shell gave it (the verb's association element and initialization) to Windows' own folder command, so the calling app never crashes. Verify with the router probe's hand-off check against the built DLLs and a real ShellExecuteEx of This PC through a test-only class registration. |
 
 ### Selected-folder content indexing (S19)
 

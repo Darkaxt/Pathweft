@@ -221,7 +221,7 @@ public partial class MainWindow
         bool one = sel.Count == 1, dir = one && first.IsDir;
         var ext = Path.GetExtension(first.Name);
         var m = new ContextMenu();
-        // Open with, 7-Zip, WinRAR and Google Drive: their own commands, as in Explorer (ShellMenu.LoadExtensions)
+        // Open with, 7-Zip, WinRAR, Google Drive and Tresorit: their own commands, as in Explorer (ShellMenu.LoadExtensions)
         var shell = ShellMenu.LoadExtensions(this, sel.Select(x => x.Path).ToList());
         m.Closed += (_, _) => Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.ApplicationIdle, shell.Dispose); // after a Click
         m.Items.Add(Item("Open", "", "Enter", () => p.OpenSelected()));
@@ -296,6 +296,7 @@ public partial class MainWindow
         if (LumeItem(sel.Select(x => x.Path).ToList()) is { } lume) m.Items.Add(lume);
         m.Items.Add(Item("Show in File Explorer", "", "", () => OpenInExplorer($"/select,\"{first.Path}\"")));
         AddShell(m, shell, "drive");
+        AddShell(m, shell, "tresorit");
         m.Items.Add(Item(p.SpaceAnalyzing?"Restore previous view":"Analyze space in this folder","\uE9F5","",()=>AnalyzeSpace_Click(null,new()),p.CanAnalyzeSpace));
         if (sel.All(x => x.IsDir || Path.GetExtension(x.Name).Equals(".exe", StringComparison.OrdinalIgnoreCase)))
             m.Items.Add(Item("Add to Shelf", "\uE7FC", "", () => HandTo("shelf", ShelfPage, sel.Select(x => x.Path))));

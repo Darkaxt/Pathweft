@@ -1,6 +1,13 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.70 | 2026-11-15 | Folder hand-off fix; Tresorit Drive commands and delete wording
+
+- Fixed: opening a folder from another app (for example JDownloader) while Pathweft was updating, or opening This PC from an app, could crash that app.
+- On Tresorit Drive, the item menu shows Tresorit's Sharing and members and Copy Tresorit Path.
+- Deleting a tresor says that only its Owner can delete it and that it goes for every member; Pathweft never deletes its contents first. Items inside a tresor are said to go to Tresorit's deleted files, where the Tresorit app can restore them.
+- Tresorit Drive's space is labelled as your Tresorit account's storage.
+
 ## 1.1.69 | 2026-11-15 | Administrator-only reads use administrator access
 
 - Boot diagnostics and Insights read Windows' boot log with administrator access when it is running, instead of reporting it as unavailable.

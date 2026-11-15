@@ -161,7 +161,7 @@ public static class ShellMenu
     /// A command of an extension: Text null is a separator; Run null with Children is a submenu.
     public sealed record Node(string Text, string Gesture, ImageSource Icon, IReadOnlyList<Node> Children, Action Run);
 
-    /// What each extension added for the selection, by name ("openwith", "7-zip", "winrar", "drive"); an extension that is
+    /// What each extension added for the selection, by name ("openwith", "7-zip", "winrar", "drive", "tresorit"); an extension that is
     /// not installed, failed, or had nothing for these items is absent. Holds the extensions until disposed, which the menu
     /// does when it closes (a command still running is let finish first).
     public sealed class Extensions : IDisposable
@@ -194,7 +194,7 @@ public static class ShellMenu
 
     // name → the key its installer writes under <class>\shellex\ContextMenuHandlers (Google Drive's carries its version:
     // "DriveFS 28 or later"), so a prefix
-    static readonly (string Name, string Key)[] Wanted = { ("openwith", "Open With"), ("7-zip", "7-Zip"), ("winrar", "WinRAR"), ("drive", "DriveFS") };
+    static readonly (string Name, string Key)[] Wanted = { ("openwith", "Open With"), ("7-zip", "7-Zip"), ("winrar", "WinRAR"), ("drive", "DriveFS"), ("tresorit", "Tresorit") };
     // WinRAR 7 on Windows 11 by default adds itself only to the new menu, through its sparse package
     // (WinRAR.ShellExtension: an IExplorerCommand with this CLSID, RarExt.dll); the classic handler is there only when
     // its "Legacy context menu" option is on.
@@ -207,13 +207,18 @@ public static class ShellMenu
         // drive: the extensions read the files on the UI thread, and a share that is asleep would freeze the window
         // (1.0.49 fixed that for backups); the Windows menu… item still has them there.
         // ponytail: network items get none; asking on an STA thread of their own would bring them back if missed
-        if (items.Count == 0 || items.Select(Path.GetDirectoryName).Distinct(StringComparer.OrdinalIgnoreCase).Count() != 1 || PaneView.IsRemote(items[0])) return found;
+        // Tresorit Drive is the exception, for Tresorit's own commands only (TRES-05): it is the client's drive on this PC,
+        // and its extension is how Explorer offers Sharing and members and Copy Tresorit Path there.
+        if (items.Count == 0 || items.Select(Path.GetDirectoryName).Distinct(StringComparer.OrdinalIgnoreCase).Count() != 1) return found;
+        bool tresorit = CloudVolumes.OnTresorit(items[0]);
+        if (!tresorit && PaneView.IsRemote(items[0])) return found;
         var hwnd = new WindowInteropHelper(owner).Handle;
         var folder = Path.GetDirectoryName(items[0]);
         bool files = items.Any(File.Exists), dirs = items.Any(Directory.Exists);
         System.Runtime.InteropServices.ComTypes.IDataObject data = null;
         foreach (var (name, key) in Wanted)
         {
+            if (tresorit != (name == "tresorit")) continue;
             // registered for every kind in the selection: files under *, folders under Directory
             var clsid = Handler(files ? "*" : "Directory", key);
             if (files && dirs && Handler("Directory", key) != clsid) clsid = null;

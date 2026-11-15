@@ -58,6 +58,8 @@ public partial class MainWindow
             {await VerifyCloudQuota(root,Check);result=0;return;}
             if(Environment.GetEnvironmentVariable("PATHWEFT_VERIFY_STATS_ONLY")=="1")
             {await VerifyStatsVisibility(root,Check);result=0;return;}
+            if(Environment.GetEnvironmentVariable("PATHWEFT_VERIFY_TRESORIT")=="1")
+            {await VerifyTresorit(root,Check);result=0;return;}
             if(Environment.GetEnvironmentVariable("PATHWEFT_VERIFY_DRIVES_ONLY")=="1")
             {await VerifyDriveViews(root,Check);result=0;return;}
             if(Environment.GetEnvironmentVariable("PATHWEFT_VERIFY_PREVIEW_ONLY")=="1")
