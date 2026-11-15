@@ -84,43 +84,7 @@ internal sealed partial class PerformancePanel
     {
         string changed=null;
         if(kind==7&&historySource==null)changed=await PerformanceChanges.Check(monitor,cancel);
-        return await Task.Run(()=>
-        {
-            var rows=new List<PerformanceFact>();var issues=new List<string>();
-            if(kind==6)
-            {
-                foreach(var boot in BootService.Read(30,cancel,issues).Where(x=>x.StartUtc>=query.From.Value.UtcDateTime&&x.StartUtc<=query.To.Value.UtcDateTime))
-                    rows.Add(new(new DateTimeOffset(DateTime.SpecifyKind(boot.StartUtc,DateTimeKind.Utc)),"Windows boot",null,boot.DesktopSeconds,boot.Seconds,boot.StartupApps,"Seconds to desktop / settled boot · "+string.Join("; ",boot.SlowedBy.Select(x=>$"{x.Name}: +{x.ExtraSeconds:0.#}s"))));
-            }
-            else if(kind==7)
-            {
-                rows.AddRange(BootService.WindowsChanges(query.From.Value.UtcDateTime,new(),cancel,issues).Where(x=>x.Utc<=query.To.Value.UtcDateTime).Select(x=>new PerformanceFact(new DateTimeOffset(DateTime.SpecifyKind(x.Utc,DateTimeKind.Utc)),x.Kind,null,null,null,1,x.Detail)));
-                rows.AddRange(PerformanceHistory.Query(query with{Tool="get_events"},cancel,historySource,live,apps).Rows);
-            }
-            else
-            {
-                // InsightService's pressure/large-holder/sustained-CPU/boot
-                // comparisons; no inferred network, temperature or causality.
-                var ram=PerformanceHistory.Query(query with{Tool="find_spikes",Metric="ram",Threshold=85,Device=null},cancel,historySource,live,apps);
-                rows.AddRange(ram.Rows.Select(x=>x with{Name="High memory pressure",Details="RAM at least 85% in these observations. Inspect contemporaneous apps; this does not prove paging or a cause."}));
-                foreach(string metric in new[]{"ram","cpu"})
-                {
-                    var heavy=PerformanceHistory.Query(query with{Tool="get_top_processes",Metric=metric,Device=null},cancel,historySource,live,apps);
-                    rows.AddRange(heavy.Rows.Where(x=>x.Observations>=60&&x.Average>=(metric=="ram"?3L*1024*1024*1024:5)).Take(3).Select(x=>x with{Name=(metric=="ram"?"Large memory holder · ":"Sustained CPU · ")+x.Name}));
-                }
-                var boots=BootService.Read(30,cancel,issues);var now=query.To.Value.UtcDateTime;
-                var recent=boots.Where(x=>x.StartUtc>now.AddDays(-7)).ToArray();var before=boots.Where(x=>x.StartUtc<=now.AddDays(-7)&&x.StartUtc>now.AddDays(-14)).ToArray();
-                if(recent.Length>=2&&before.Length>=2)
-                {
-                    double current=recent.Average(x=>x.Seconds),old=before.Average(x=>x.Seconds);
-                    if(current-old>=10&&current>=old*1.2)rows.Add(new(query.To.Value,"Slower Windows startup",null,old,current,recent.Length,"Average boot seconds: previous week / recent week; inspect the boot slow-starter list."));
-                }
-            }
-            cancel.ThrowIfCancellationRequested();
-            foreach(string issue in issues)rows.Add(new(default,"Windows diagnostics unavailable",null,null,null,0,issue));
-            var ordered=rows.OrderByDescending(x=>x.Time).ToArray();
-            return new PerformanceResult((changed??"Local Windows diagnostics and retained observations.")+" Missing observations are not zero. "+(kind==6?"Boots: desktop seconds / settled seconds / startup apps.":""),ordered.Take(500).ToArray(),[],ordered.Length,ordered.Length>500);
-        },cancel);
+        return await Task.Run(()=>PerformanceAdoptionFacts.Read(kind,query,cancel,historySource,live,apps,changed),cancel);
     }
     void ExportAnalysis(string format)
     {
@@ -157,5 +121,51 @@ internal sealed partial class PerformancePanel
         }
         else throw new ArgumentException("Unsupported report format");
         File.WriteAllText(file,text,new UTF8Encoding(false));
+    }
+}
+
+// Kept outside the WPF panel so the MCP server can use it without loading UI types.
+internal static class PerformanceAdoptionFacts
+{
+    // Boot diagnostics (6), system changes (7) and insights (8), shared with the MCP server (MCP-04).
+    // Reads only: the installed-app baseline check stays with the view that runs it.
+    internal static PerformanceResult Read(int kind,PerformanceQuery query,CancellationToken cancel,string historySource=null,PerformanceSample[] live=null,PerformanceProcessSnapshot[] apps=null,string changed=null)
+    {
+        {
+            var rows=new List<PerformanceFact>();var issues=new List<string>();
+            if(kind==6)
+            {
+                foreach(var boot in BootService.Read(30,cancel,issues).Where(x=>x.StartUtc>=query.From.Value.UtcDateTime&&x.StartUtc<=query.To.Value.UtcDateTime))
+                    rows.Add(new(new DateTimeOffset(DateTime.SpecifyKind(boot.StartUtc,DateTimeKind.Utc)),"Windows boot",null,boot.DesktopSeconds,boot.Seconds,boot.StartupApps,"Seconds to desktop / settled boot · "+string.Join("; ",boot.SlowedBy.Select(x=>$"{x.Name}: +{x.ExtraSeconds:0.#}s"))));
+            }
+            else if(kind==7)
+            {
+                rows.AddRange(BootService.WindowsChanges(query.From.Value.UtcDateTime,new(),cancel,issues).Where(x=>x.Utc<=query.To.Value.UtcDateTime).Select(x=>new PerformanceFact(new DateTimeOffset(DateTime.SpecifyKind(x.Utc,DateTimeKind.Utc)),x.Kind,null,null,null,1,x.Detail)));
+                rows.AddRange(PerformanceHistory.Query(query with{Tool="get_events"},cancel,historySource,live,apps).Rows);
+            }
+            else
+            {
+                // InsightService's pressure/large-holder/sustained-CPU/boot
+                // comparisons; no inferred network, temperature or causality.
+                var ram=PerformanceHistory.Query(query with{Tool="find_spikes",Metric="ram",Threshold=85,Device=null},cancel,historySource,live,apps);
+                rows.AddRange(ram.Rows.Select(x=>x with{Name="High memory pressure",Details="RAM at least 85% in these observations. Inspect contemporaneous apps; this does not prove paging or a cause."}));
+                foreach(string metric in new[]{"ram","cpu"})
+                {
+                    var heavy=PerformanceHistory.Query(query with{Tool="get_top_processes",Metric=metric,Device=null},cancel,historySource,live,apps);
+                    rows.AddRange(heavy.Rows.Where(x=>x.Observations>=60&&x.Average>=(metric=="ram"?3L*1024*1024*1024:5)).Take(3).Select(x=>x with{Name=(metric=="ram"?"Large memory holder · ":"Sustained CPU · ")+x.Name}));
+                }
+                var boots=BootService.Read(30,cancel,issues);var now=query.To.Value.UtcDateTime;
+                var recent=boots.Where(x=>x.StartUtc>now.AddDays(-7)).ToArray();var before=boots.Where(x=>x.StartUtc<=now.AddDays(-7)&&x.StartUtc>now.AddDays(-14)).ToArray();
+                if(recent.Length>=2&&before.Length>=2)
+                {
+                    double current=recent.Average(x=>x.Seconds),old=before.Average(x=>x.Seconds);
+                    if(current-old>=10&&current>=old*1.2)rows.Add(new(query.To.Value,"Slower Windows startup",null,old,current,recent.Length,"Average boot seconds: previous week / recent week; inspect the boot slow-starter list."));
+                }
+            }
+            cancel.ThrowIfCancellationRequested();
+            foreach(string issue in issues)rows.Add(new(default,"Windows diagnostics unavailable",null,null,null,0,issue));
+            var ordered=rows.OrderByDescending(x=>x.Time).ToArray();
+            return new PerformanceResult((changed??"Local Windows diagnostics and retained observations.")+" Missing observations are not zero. "+(kind==6?"Boots: desktop seconds / settled seconds / startup apps.":""),ordered.Take(query.Limit).ToArray(),[],ordered.Length,ordered.Length>query.Limit);
+        }
     }
 }

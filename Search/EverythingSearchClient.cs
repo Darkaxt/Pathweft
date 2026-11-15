@@ -11,7 +11,9 @@ using System.Windows.Threading;
 
 namespace FileExplorer.Search;
 
-internal sealed record IndexedHit(string Path, bool IsFolder, long Size, DateTime Modified);
+internal sealed record IndexedHit(string Path, bool IsFolder, long Size, DateTime Modified, DateTime Created = default, uint? Attributes = null);
+// MCP-03: the es.exe-equivalent switches; Everything resets them before every query.
+internal sealed record SearchSwitches(bool MatchPath, bool MatchCase, bool WholeWord, bool Regex);
 internal sealed record IndexedPage(IReadOnlyList<IndexedHit> Hits, uint Total, string Engine, bool FolderSizesIndexed=false);
 
 // One SDK state owner for both panes. Native SendMessage calls and the reply
@@ -61,7 +63,10 @@ internal sealed class EverythingSearchClient
     }
 
     internal Task<IndexedPage> QueryAsync(string expression,string instance,uint offset,uint count,string sort,bool descending,CancellationToken token)
-        =>QueryCoreAsync(expression,instance,offset,count,sort,descending,token,false);
+        =>QueryCoreAsync(expression,instance,offset,count,Sort(sort,descending),token,false);
+    // Everything SDK sort codes: name 1, path 3, size 5, extension 7, created 11, modified 13; +1 descending.
+    internal Task<IndexedPage> SearchAsync(string expression,uint offset,uint count,string sort,bool descending,SearchSwitches switches,CancellationToken token)
+        =>QueryCoreAsync(expression,"",offset,count,(sort switch{"name"=>1u,"path"=>3u,"size"=>5u,"extension"=>7u,"created"=>11u,"modified"=>13u,_=>throw new ArgumentException("Sort by name, path, size, extension, created or modified")})+(descending?1u:0u),token,false,switches);
 
     // Exact folder queries only; never copy or enumerate the external full index.
     // A missing size/index entry is unknown, not a zero-byte directory.
@@ -74,13 +79,13 @@ internal sealed class EverythingSearchClient
         foreach(var batch in paths.Distinct(StringComparer.OrdinalIgnoreCase).Chunk(64))
         {
             token.ThrowIfCancellationRequested();
-            var page=await QueryCoreAsync(FolderExpression(batch),instance,0,(uint)batch.Length,"Name",false,token,true).ConfigureAwait(false);
+            var page=await QueryCoreAsync(FolderExpression(batch),instance,0,(uint)batch.Length,Sort("Name",false),token,true).ConfigureAwait(false);
             if(!page.FolderSizesIndexed)break;
             foreach(var hit in page.Hits)if(hit.IsFolder&&hit.Size>=0)result[System.IO.Path.TrimEndingDirectorySeparator(hit.Path)]=hit.Size;
         }
         return result;
     }
-    async Task<IndexedPage> QueryCoreAsync(string expression, string instance, uint offset, uint count, string sort, bool descending, CancellationToken token,bool folderSizes)
+    async Task<IndexedPage> QueryCoreAsync(string expression, string instance, uint offset, uint count, uint sort, CancellationToken token,bool folderSizes,SearchSwitches switches=null)
     {
         var dispatcher = await ready.Task.ConfigureAwait(false);
         token.ThrowIfCancellationRequested();
@@ -88,7 +93,7 @@ internal sealed class EverythingSearchClient
         // cancellation, so the existing native ownership rules still apply.
         using var timeout = new CancellationTokenSource(EverythingRecovery.ReplyTimeout);
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(token, timeout.Token);
-        var request = new Request(expression, instance, offset, count, Sort(sort, descending), linked.Token,folderSizes);
+        var request = new Request(expression, instance, offset, count, sort, linked.Token,folderSizes){Switches=switches};
         using var cancellation = linked.Token.Register(() =>
         {
             request.Completion.TrySetCanceled(linked.Token);
@@ -187,7 +192,13 @@ internal sealed class EverythingSearchClient
                 {request.Completion.TrySetResult(new(Array.Empty<IndexedHit>(),0,request.Engine,false));request.Dispose();current=null;continue;}
                 Native.Everything_Reset();
                 Native.Everything_SetSearchW(request.Expression);
-                Native.Everything_SetRequestFlags(0x4 | 0x10 | 0x40);
+                if (request.Switches is {} switches)
+                {
+                    Native.Everything_SetMatchPath(switches.MatchPath); Native.Everything_SetMatchCase(switches.MatchCase);
+                    Native.Everything_SetMatchWholeWord(switches.WholeWord); Native.Everything_SetRegex(switches.Regex);
+                }
+                // Full path, size and modified; created and attributes for MCP searches.
+                Native.Everything_SetRequestFlags(0x4 | 0x10 | 0x40 | (request.Switches != null ? 0x20u | 0x100u : 0));
                 Native.Everything_SetSort(request.Sort);
                 Native.Everything_SetMax(request.Count);
                 Native.Everything_SetOffset(request.Offset);
@@ -226,8 +237,14 @@ internal sealed class EverythingSearchClient
                     Native.Everything_GetResultFullPathNameW(i, path, (uint)path.Capacity);
                     bool sizeKnown = Native.Everything_GetResultSize(i, out long size);
                     bool dateKnown = Native.Everything_GetResultDateModified(i, out long date);
+                    DateTime created = default; uint? attributes = null;
+                    if (completed.Switches != null)
+                    {
+                        if (Native.Everything_GetResultDateCreated(i, out long made) && made > 0) created = DateTime.FromFileTime(made);
+                        uint read = Native.Everything_GetResultAttributes(i); if (read != uint.MaxValue) attributes = read;
+                    }
                     hits.Add(new(path.ToString(), !Native.Everything_IsFileResult(i), sizeKnown ? size : -2,
-                        dateKnown && date > 0 ? DateTime.FromFileTime(date) : default));
+                        dateKnown && date > 0 ? DateTime.FromFileTime(date) : default, created, attributes));
                 }
                 completed.Completion.TrySetResult(new(hits, Native.Everything_GetTotResults(), completed.Engine,completed.FolderSizesIndexed));
             }
@@ -245,6 +262,7 @@ internal sealed class EverythingSearchClient
         internal readonly uint Offset = offset, Count = count, Sort = sort;
         internal readonly CancellationToken Token = token;
         internal readonly bool FolderSizes=folderSizes;
+        internal SearchSwitches Switches;
         internal bool FolderSizesIndexed;
         internal uint Reply;
         internal string Engine;
@@ -284,5 +302,11 @@ internal sealed class EverythingSearchClient
         [DllImport(Dll)] internal static extern bool Everything_GetResultSize(uint index, out long size);
         [DllImport(Dll)] internal static extern bool Everything_GetResultDateModified(uint index, out long date);
         [DllImport(Dll)] internal static extern void Everything_CleanUp();
+        [DllImport(Dll)] internal static extern void Everything_SetMatchPath(bool enable);
+        [DllImport(Dll)] internal static extern void Everything_SetMatchCase(bool enable);
+        [DllImport(Dll)] internal static extern void Everything_SetMatchWholeWord(bool enable);
+        [DllImport(Dll)] internal static extern void Everything_SetRegex(bool enable);
+        [DllImport(Dll)] internal static extern bool Everything_GetResultDateCreated(uint index, out long date);
+        [DllImport(Dll)] internal static extern uint Everything_GetResultAttributes(uint index);
     }
 }

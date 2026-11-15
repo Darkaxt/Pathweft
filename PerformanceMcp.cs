@@ -15,15 +15,19 @@ internal static class PerformanceMcp
     internal static async Task<int> Run()
     {
         Settings.Load();
+        Search.EverythingRecovery.RestartAllowed=false;
         using var input=new StreamReader(Console.OpenStandardInput(),new UTF8Encoding(false,true));
         using var output=new StreamWriter(Console.OpenStandardOutput(),new UTF8Encoding(false)){AutoFlush=true};
         bool initialized=false,ready=false;
+        // MCP-01: requests run one at a time; reading continues meanwhile so that
+        // closing stdin cancels the running request and ends the server.
+        Task<string> reading=null;
         while(true)
         {
             JsonNode id=null;JsonObject response;
             try
             {
-                string line=await Line(input);if(line==null)return 0;
+                string line=await (reading??Line(input));reading=null;if(line==null)return 0;
                 using var document=JsonDocument.Parse(line);var request=document.RootElement;
                 if(request.ValueKind!=JsonValueKind.Object||!request.TryGetProperty("jsonrpc",out var version)||version.GetString()!="2.0"||!request.TryGetProperty("method",out var methodValue)||methodValue.ValueKind!=JsonValueKind.String)throw new ArgumentException("Expected JSON-RPC 2.0 request");
                 bool hasId=request.TryGetProperty("id",out var requestId);
@@ -37,22 +41,31 @@ internal static class PerformanceMcp
                     if(initialized)throw new ArgumentException("Already initialized");
                     string proposed=request.GetProperty("params").GetProperty("protocolVersion").GetString();
                     string selected=proposed is "2025-06-18" or "2024-11-05"?proposed:"2025-06-18";
-                    result=new{protocolVersion=selected,capabilities=new{tools=new{listChanged=false}},serverInfo=new{name="Pathweft performance",version=typeof(PerformanceMcp).Assembly.GetName().Version?.ToString()},instructions="Read-only saved local performance observations. Pathweft collects and saves automatically while running; the optional app activity recorder adds program runs, workloads and per-executable usage. This endpoint does not start collection. Missing or stale observations are not live usage."};initialized=true;
+                    result=new{protocolVersion=selected,capabilities=new{tools=new{listChanged=false}},serverInfo=new{name="Pathweft",version=typeof(PerformanceMcp).Assembly.GetName().Version?.ToString()},instructions="Read-only Pathweft data. Performance: saved local observations; Pathweft collects and saves automatically while running, and the optional app activity recorder adds program runs, workloads and per-executable usage; this endpoint does not start collection, and missing or stale observations are not live usage. Also Maintenance rows and Cleanup sizes, file and folder metadata, Everything search, Windows boots, system changes and insights. Nothing is changed, cleaned, uninstalled or elevated, and file contents are never read."};initialized=true;
                 }
                 else if(method=="ping")result=new{};
                 else if(!ready){response=Error(id,-32002,"Initialize and send notifications/initialized first");await output.WriteLineAsync(response.ToJsonString());continue;}
-                else if(method=="tools/list")result=new{tools=Definitions().Concat(ActivityQuery.Tools.Select(ActivityQuery.Definition)).ToArray()};
+                else if(method=="tools/list")result=new{tools=Definitions().Concat(ActivityQuery.Tools.Select(ActivityQuery.Definition)).Concat(McpTools.Tools.Select(McpTools.Definition)).ToArray()};
                 else if(method=="tools/call")
                 {
                     var parameters=request.GetProperty("params");string name=parameters.GetProperty("name").GetString();
                     try
                     {
                         var arguments=parameters.TryGetProperty("arguments",out var supplied)?supplied:JsonSerializer.SerializeToElement(new{});
-                        object data=ActivityQuery.Tools.Contains(name)?ActivityQuery.Query(ActivityQuery.Parse(name,arguments)):PerformanceHistory.Query(Parse(name,arguments));
+                        using var stop=new CancellationTokenSource();
+                        var work=McpTools.Tools.Contains(name)?McpTools.Query(name,arguments,stop.Token):
+                            Task.Run(()=>(object)(ActivityQuery.Tools.Contains(name)?ActivityQuery.Query(ActivityQuery.Parse(name,arguments)):PerformanceHistory.Query(Parse(name,arguments),stop.Token)),stop.Token);
+                        reading=Line(input);
+                        if(await Task.WhenAny(work,reading)==reading&&!work.IsCompleted)
+                        {
+                            // A request line that arrives meanwhile waits its turn; end of input ends the server now.
+                            if(await reading==null){stop.Cancel();return 0;}
+                        }
+                        object data=await work;
                         result=new{content=new[]{new{type="text",text=JsonSerializer.Serialize(data)}},isError=false};
                     }
-                    catch(Exception ex)when(ex is ArgumentException or FormatException or InvalidOperationException or KeyNotFoundException or IOException or UnauthorizedAccessException or Microsoft.Data.Sqlite.SqliteException)
-                    {result=new{content=new[]{new{type="text",text="Performance query unavailable: "+ex.Message}},isError=true};}
+                    catch(Exception ex)when(ex is ArgumentException or FormatException or InvalidOperationException or KeyNotFoundException or IOException or UnauthorizedAccessException or Microsoft.Data.Sqlite.SqliteException or System.Security.SecurityException or OperationCanceledException)
+                    {result=new{content=new[]{new{type="text",text="Query unavailable: "+ex.Message}},isError=true};}
                 }
                 else {response=Error(id,-32601,"Method not found");await output.WriteLineAsync(response.ToJsonString());continue;}
                 response=new JsonObject{["jsonrpc"]="2.0",["id"]=id,["result"]=JsonSerializer.SerializeToNode(result)};

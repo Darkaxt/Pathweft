@@ -39,6 +39,37 @@ Aggregates always include all matching stored observations. Sampled spikes
 identify observed exceedances, not causes. Events cover collection/gap/counter
 state, not security or exact app launches/exits. No mutation tools are exposed.
 
+Since 1.1.68 the same server is named Pathweft and also answers these read-only
+tools. Paged tools take `offset` and `limit` (1..500, default 100) and return
+Status, Rows, Total, Offset and Truncated. Arguments outside each schema are
+structured errors, and paths must be absolute local or UNC.
+
+- get_maintenance(category, target): rows of Startup, Services, Windows tweaks,
+  Windows apps or Security check as the Maintenance tab shows them, read as the
+  signed-in user. Cleanup lists each target (or one `target` id) with its size,
+  file count and the method used: Everything's index for the temporary-file,
+  error-report and thumbnail folders, the package manager's own report for its
+  cache, otherwise a direct measurement. This is a size report, not the exact
+  review the tab performs before cleaning; nothing is removed.
+- get_maintenance_changes: Pathweft's Maintenance change journal (id, kind,
+  phase, what it saved, whether it can be restored). It records no times.
+- list_folder(path), get_file_details(path): metadata only (sizes, times,
+  attributes, link targets, executable version details); contents are never read.
+- get_folder_size(path): Everything's indexed folder size, otherwise Pathweft's
+  cached size if still current, otherwise unknown. It never starts a scan.
+- search_files(query, match_path, match_case, whole_word, regex, sort,
+  descending): the running Everything with its full search syntax; sort by name,
+  path, size, extension, created or modified. Returns path, type, size, created,
+  modified and attributes. A missing or unresponsive Everything is reported;
+  the MCP never restarts it.
+- get_boots, get_system_changes, get_insights: Windows starts, updates and
+  driver/feature/app changes, and derived findings as in the Insights view.
+  They take `last_minutes` (default 30 days) or `from`/`to`. Installed-app
+  changes come from baselines Pathweft already saved; no new baseline is taken.
+
+Nothing is applied, cleaned, uninstalled or elevated, and the administrator
+session is never used.
+
 MCP stdio lifecycle and negotiation follow the [protocol specification](https://modelcontextprotocol.io/specification/2025-06-18/basic/lifecycle)
 and [transport contract](https://modelcontextprotocol.io/specification/2025-06-18/basic/transports).
 Supported versions:2025-06-18 and2024-11-05. Unknown proposals negotiate2025-06-18.

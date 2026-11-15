@@ -73,8 +73,8 @@ sealed partial class PackageProbe
         Check(init.GetProperty("result").GetProperty("protocolVersion").GetString()=="2025-06-18","Delivered stdio MCP negotiates its actual supported protocol");
         await process.StandardInput.WriteLineAsync("{\"jsonrpc\":\"2.0\",\"method\":\"notifications/initialized\"}");await process.StandardInput.FlushAsync();
         var tools=(await Send("tools/list",new{})).GetProperty("result").GetProperty("tools");
-        Check(tools.GetArrayLength()==11&&tools.EnumerateArray().All(x=>x.GetProperty("annotations").GetProperty("readOnlyHint").GetBoolean()),
-            "Delivered MCP advertises only eleven read-only performance, history and app activity tools");
+        Check(tools.GetArrayLength()==20&&tools.EnumerateArray().All(x=>x.GetProperty("annotations").GetProperty("readOnlyHint").GetBoolean()),
+            "Delivered MCP advertises exactly twenty read-only tools");
         foreach(string tool in new[]{"get_current_usage","get_usage_summary","get_top_processes","find_spikes","get_app_history","get_events","get_run_history","get_workloads","get_top_consumers","get_app_usage","get_activity_intervals"})
         {
             var response=(await Send("tools/call",new{name=tool,arguments=new{name="Pathweft"}})).GetProperty("result");
@@ -88,6 +88,9 @@ sealed partial class PackageProbe
         }
         var invalid=(await Send("tools/call",new{name="get_usage_summary",arguments=new{metric="invalid"}})).GetProperty("result");
         Check(invalid.GetProperty("isError").GetBoolean(),"Delivered MCP rejects unsupported metrics without mutation");
+        var listed=(await Send("tools/call",new{name="list_folder",arguments=new{path=Path.GetDirectoryName(Product.Location)}})).GetProperty("result");
+        Check(!listed.GetProperty("isError").GetBoolean()&&listed.GetProperty("content")[0].GetProperty("text").GetString().Contains("Pathweft.exe"),"Delivered MCP lists the installed folder's metadata");
+        Check((await Send("tools/call",new{name="get_maintenance",arguments=new{category="Nope"}})).GetProperty("result").GetProperty("isError").GetBoolean(),"Delivered MCP rejects an unknown Maintenance category");
         process.StandardInput.Close();await process.WaitForExitAsync();
         Check(process.ExitCode==0&&(await error).Length==0&&before.SequenceEqual(SHA256.HashData(File.ReadAllBytes(database))),
             "Delivered MCP exits naturally on EOF and does not modify recorded history");

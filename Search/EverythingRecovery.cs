@@ -13,6 +13,8 @@ internal static class EverythingRecovery
     internal enum State { Missing, Loading, Busy, Ready, Hung }
     internal static TimeSpan ReplyTimeout = TimeSpan.FromSeconds(45), RestartAfter = TimeSpan.FromMinutes(3);
     static int restarted;
+    // MCP-01: the read-only MCP server reports a stuck Everything but never restarts it.
+    internal static bool RestartAllowed = true;
 #if DEBUG
     internal static Func<State> ProbeOverride;
     internal static Func<Task<bool>> RestartOverride;
@@ -32,6 +34,7 @@ internal static class EverythingRecovery
             case State.Busy: return waited + " because it is busy updating its index. Search again in a moment.";
         }
         if (unanswered < RestartAfter) return waited + ". Search again in a moment.";
+        if (!RestartAllowed) return "Everything has stopped answering. Restart Everything, then search again.";
         if (Interlocked.Exchange(ref restarted, 1) == 1) return "Everything still isn't answering. Restart Everything, then search again.";
         bool done = await RestartAsync().ConfigureAwait(false);
         return done ? "Everything stopped answering, so Pathweft restarted it. Search again once it has loaded its index."

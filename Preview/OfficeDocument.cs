@@ -158,9 +158,24 @@ internal sealed class OfficeDocument : IAsyncDisposable
         try
         {
             if(worker!=null){await worker.DisposeAsync();worker=null;}
-            lifetime?.Dispose();if(folder!=null&&Directory.Exists(folder))Directory.Delete(folder,true);
-            if(profile!=null&&Directory.Exists(profile))Directory.Delete(profile,true);
+            lifetime?.Dispose();
+            // PREVIEW-39 (#4): another program (antivirus, indexer) can briefly hold a
+            // scratch file after the worker has exited. Closing never fails for that;
+            // the folder is retried when a later preview closes.
+            foreach(string owned in new[]{folder,profile})if(owned!=null)lock(leftovers)leftovers.Add(owned);
+            RemoveLeftovers();
         }
         finally{serial.Release();serial.Dispose();}
+    }
+    static readonly HashSet<string> leftovers=new(StringComparer.OrdinalIgnoreCase);
+    internal static int LeftoverCountForVerification{get{lock(leftovers)return leftovers.Count;}}
+    static void RemoveLeftovers()
+    {
+        string[] pending;lock(leftovers)pending=leftovers.ToArray();
+        foreach(string path in pending)
+        {
+            try{if(Directory.Exists(path))Directory.Delete(path,true);lock(leftovers)leftovers.Remove(path);}
+            catch(Exception ex)when(ex is IOException or UnauthorizedAccessException){}
+        }
     }
 }

@@ -70,13 +70,19 @@ public partial class MainWindow
         check(initialized.GetProperty("result").GetProperty("protocolVersion").GetString()=="2025-06-18","MCP negotiates a supported finite version");
         await child.StandardInput.WriteLineAsync("{\"jsonrpc\":\"2.0\",\"method\":\"notifications/initialized\"}");await child.StandardInput.FlushAsync();
         var listed=(await Call("tools/list")).GetProperty("result").GetProperty("tools");
-        check(listed.GetArrayLength()==11&&listed.EnumerateArray().All(x=>x.GetProperty("annotations").GetProperty("readOnlyHint").GetBoolean()),"MCP exposes exactly eleven read-only tools (six history, five app activity)");
+        check(listed.GetArrayLength()==20&&listed.EnumerateArray().All(x=>x.GetProperty("annotations").GetProperty("readOnlyHint").GetBoolean()),"MCP exposes exactly twenty read-only tools (six history, five app activity, nine Maintenance/file/search/boot)");
         var reply=(await Call("tools/call",new{name="get_current_usage",arguments=new{}})).GetProperty("result");
         var result=JsonSerializer.Deserialize<PerformanceResult>(reply.GetProperty("content")[0].GetProperty("text").GetString());
         var persisted=PerformanceHistory.Query(new("get_current_usage"),source:snapshot);
         check(!reply.GetProperty("isError").GetBoolean()&&result.Rows.SequenceEqual(persisted.Rows),"Independent MCP process reads the same committed facts after writer closure");
         check((await Call("tools/call",new{name="get_app_history",arguments=new{}})).GetProperty("result").GetProperty("isError").GetBoolean(),"Invalid app history request returns structured error");
-        child.StandardInput.Close();await child.WaitForExitAsync();
+        await VerifyMcpTools48(root,mcpProfile,Call,check);
+        // MCP-05: closing stdin while a slow request (every Cleanup target) runs ends the server promptly.
+        await child.StandardInput.WriteLineAsync(JsonSerializer.Serialize(new{jsonrpc="2.0",id=2,method="tools/call",@params=new{name="get_maintenance",arguments=new{category="Cleanup"}}}));await child.StandardInput.FlushAsync();
+        child.StandardInput.Close();var stopwatch=Stopwatch.StartNew();
+        try{await child.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(20));}catch(TimeoutException){}
+        check(child.HasExited&&stopwatch.Elapsed<TimeSpan.FromSeconds(20),"MCP exits promptly when stdin closes mid-request");
+        if(!child.HasExited){child.Kill();await child.WaitForExitAsync();}
         check(child.ExitCode==0&&(await errors).Length==0&&before.SequenceEqual(SHA256.HashData(File.ReadAllBytes(snapshot))),"Independent reopened history survives while collection continues; MCP exits on EOF without changing it");
         VerifyHistoryBoundaries28(root,check);
         VerifyGraphTransition28(check);
@@ -127,5 +133,41 @@ public partial class MainWindow
 public partial class PaneView
 {
     internal ScrollViewer ScrollerForAnalysisVerification=>FindScroller(List);
+
+    // S48 MCP-05: the added tools answer through the real stdio server; bad input is a structured error;
+    // reading Maintenance/Cleanup leaves the profile (journal, settings, baselines) byte-identical.
+    static async Task VerifyMcpTools48(string root,string profile,Func<string,object,Task<JsonElement>> call,Action<bool,string> check)
+    {
+        Dictionary<string,string> Hashes()=>Directory.EnumerateFiles(profile,"*",SearchOption.AllDirectories).Where(x=>!x.EndsWith("-wal")&&!x.EndsWith("-shm"))
+            .ToDictionary(x=>x,x=>Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(x))));
+        var before=Hashes();
+        async Task<JsonElement> Tool(string name,object arguments)=>(await call("tools/call",new{name,arguments})).GetProperty("result");
+        static string Text(JsonElement x)=>x.GetProperty("content")[0].GetProperty("text").GetString();
+        string folder=Path.Combine(root,"mcp-folder");Directory.CreateDirectory(Path.Combine(folder,"sub"));File.WriteAllText(Path.Combine(folder,"a.txt"),"12345");
+        var listed=await Tool("list_folder",new{path=folder});
+        using(var page=JsonDocument.Parse(Text(listed)))
+            check(!listed.GetProperty("isError").GetBoolean()&&page.RootElement.GetProperty("Total").GetInt32()==2&&page.RootElement.GetProperty("Rows")[0].GetProperty("type").GetString()=="folder"
+                &&page.RootElement.GetProperty("Rows")[1].GetProperty("size_bytes").GetInt64()==5,"MCP list_folder returns metadata, folders first, with the total");
+        var details=await Tool("get_file_details",new{path=Program.Executable});
+        using(var item=JsonDocument.Parse(Text(details)))
+            check(!details.GetProperty("isError").GetBoolean()&&item.RootElement.GetProperty("size_bytes").GetInt64()>0&&item.RootElement.GetProperty("product").GetString()!=null,"MCP get_file_details reports size, times and executable version");
+        var size=await Tool("get_folder_size",new{path=folder});
+        check(!size.GetProperty("isError").GetBoolean()&&Text(size).Contains("\"method\""),"MCP get_folder_size answers without starting a scan and states its method");
+        var search=await Tool("search_files",new{query="\""+Path.GetFileName(Program.Executable)+"\"",limit=5});
+        check(!search.GetProperty("isError").GetBoolean()?Text(search).Contains("\"total\""):Text(search).StartsWith("Query unavailable:"),"MCP search_files pages Everything results or states why Everything cannot answer");
+        foreach(string tool in new[]{"get_maintenance_changes","get_boots","get_system_changes","get_insights"})
+            check(!(await Tool(tool,new{})).GetProperty("isError").GetBoolean(),"MCP read-only tool answers: "+tool);
+        var startup=await Tool("get_maintenance",new{category="Startup",limit=5});
+        check(!startup.GetProperty("isError").GetBoolean(),"MCP get_maintenance reads Startup rows as the signed-in user");
+        var cleanup=await Tool("get_maintenance",new{category="Cleanup",target="user-temp"});
+        using(var page=JsonDocument.Parse(Text(cleanup)))
+            check(!cleanup.GetProperty("isError").GetBoolean()&&page.RootElement.GetProperty("Rows")[0].GetProperty("method").GetString().Length>0,"MCP Cleanup size report states the method of each size");
+        foreach(var (tool,arguments,what) in new (string,object,string)[]{
+            ("list_folder",new{path="relative\folder"},"relative path"),("get_maintenance",new{category="Nope"},"unknown category"),
+            ("get_maintenance",new{category="Startup",target="user-temp"},"target outside Cleanup"),("list_folder",new{path=folder,extra=1},"unknown argument"),
+            ("search_files",new{query="x",limit=501},"limit above 500"),("get_folder_size",new{path=Path.Combine(root,"missing-folder")},"missing folder")})
+            check((await Tool(tool,arguments)).GetProperty("isError").GetBoolean(),"MCP rejects "+what+" with a structured error");
+        var after=Hashes();
+        check(before.Count==after.Count&&before.All(x=>after.TryGetValue(x.Key,out var hash)&&hash==x.Value),"MCP Maintenance and Cleanup reads leave the profile's journal, settings and baselines byte-identical");
+    }
 }
-#endif
