@@ -8,6 +8,8 @@ using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Input;
+using System.Windows.Controls.Primitives;
+using System.Windows.Media;
 
 namespace FileExplorer;
 
@@ -134,7 +136,7 @@ internal sealed partial class PerformancePanel
             item.Click+=(_,_)=>{processColumns[property]=item.IsChecked;ConfigureTable();RefreshProcessRows(monitor.Details);};
             processColumnsMenu.Items.Add(item);
         }
-        columnsButton.Click+=(_,_)=>{processColumnsMenu.PlacementTarget=columnsButton;processColumnsMenu.IsOpen=true;};
+        columnsButton.Click+=(_,_)=>{processColumnsMenu.PlacementTarget=columnsButton;processColumnsMenu.Placement=PlacementMode.Bottom;processColumnsMenu.IsOpen=true;};
         foreach(var button in new[]{handleTypesButton,endProcessButton,openDriveButton})button.SetResourceReference(StyleProperty,"AuxiliaryAction");
         handleTypesButton.ToolTip="Count the pinned process's handles by type (read once, on demand)";
         endProcessButton.ToolTip="End the pinned process after confirmation; its PID and start time are rechecked first";
@@ -151,6 +153,20 @@ internal sealed partial class PerformancePanel
         pin.Click+=(_,_)=>ToggleProcessPin(table.SelectedItem as PerformanceProcessRow);
         rowMenu.Opened+=(_,_)=>pin.IsEnabled=history.IsEnabled=table.SelectedItem is PerformanceProcessRow;
         table.ContextMenu=rowMenu;
+        // As in Task Manager: right-clicking the header row chooses columns; blank space offers nothing.
+        table.ContextMenuOpening+=(_,e)=>
+        {
+            if(!ReferenceEquals(table.ItemsSource,processItems)||e.OriginalSource is not DependencyObject source)return;
+            for(var node=source;node!=null&&!ReferenceEquals(node,table);node=VisualTreeHelper.GetParent(node))
+            {
+                if(node is GridViewHeaderRowPresenter or GridViewColumnHeader)
+                {
+                    e.Handled=true;processColumnsMenu.PlacementTarget=table;processColumnsMenu.Placement=PlacementMode.MousePoint;processColumnsMenu.IsOpen=true;return;
+                }
+                if(node is ListViewItem)return;
+            }
+            e.Handled=true;
+        };
         table.AddHandler(Mouse.MouseUpEvent,new MouseButtonEventHandler((_,e)=>
         {
             if(e.ChangedButton==MouseButton.Left&&ItemsControl.ContainerFromElement(table,e.OriginalSource as DependencyObject) is ListViewItem {Content:PerformanceProcessRow row})ToggleProcessPin(row);
