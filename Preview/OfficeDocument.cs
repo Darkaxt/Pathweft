@@ -169,6 +169,7 @@ internal sealed class OfficeDocument : IAsyncDisposable
     }
     static readonly HashSet<string> leftovers=new(StringComparer.OrdinalIgnoreCase);
     internal static int LeftoverCountForVerification{get{lock(leftovers)return leftovers.Count;}}
+    internal static void RemoveForVerification(string path){lock(leftovers)leftovers.Add(path);RemoveLeftovers();}
     static void RemoveLeftovers()
     {
         string[] pending;lock(leftovers)pending=leftovers.ToArray();

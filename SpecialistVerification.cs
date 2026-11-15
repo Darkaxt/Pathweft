@@ -239,6 +239,15 @@ public partial class MainWindow
     }
     internal async Task VerifyOffice13(string root,Action<bool,string> check)
     {
+        // PREVIEW-39 (#4): a briefly locked scratch file never fails closing and is removed by a later close.
+        string locked=Path.Combine(root,"office-leftover");Directory.CreateDirectory(locked);
+        using(new FileStream(Path.Combine(locked,"lock.tmp"),FileMode.Create,FileAccess.ReadWrite,FileShare.None))
+        {
+            OfficeDocument.RemoveForVerification(locked);
+            check(Directory.Exists(locked)&&OfficeDocument.LeftoverCountForVerification==1,"Office close tolerates a locked LibreOffice scratch file and keeps it for a later attempt");
+        }
+        OfficeDocument.RemoveForVerification(Path.Combine(root,"office-leftover-absent"));
+        check(!Directory.Exists(locked)&&OfficeDocument.LeftoverCountForVerification==0,"A later Office close removes the released scratch folder");
         string inputs=Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_INPUTS");
         var body=new ContentControl{HorizontalContentAlignment=HorizontalAlignment.Stretch,VerticalContentAlignment=VerticalAlignment.Stretch};
         var window=new Window{Content=body,Width=780,Height=700,ShowInTaskbar=false,Background=new SolidColorBrush(Appearance.Background),Foreground=(Brush)FindResource("Palette.E8EEF6")};HiddenTrialPresentation.Prepare(window);window.Show();
