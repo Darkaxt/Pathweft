@@ -150,8 +150,10 @@ internal sealed partial class PerformancePanel
     }
     void UpdateHistoryStatus()
     {
-        historyStatus.Text=monitor.HistoryIssue??$"History automatic · up to {Settings.PerformanceRetention} {(Settings.PerformanceRetention==1?"day":"days")} · 256 MiB limit";
-        historyStatus.ToolTip=monitor.HistoryIssue??"Aggregate observations are saved every 5s and selected CPU/RAM/GPU app snapshots every 10s, including in the tray. Oldest observations expire by retention or storage capacity. Command lines and file I/O are not retained.";
+        // Only a recording problem earns the line; the normal retention settings live in Settings.
+        historyStatus.Text=monitor.HistoryIssue??"";
+        historyStatus.ToolTip=monitor.HistoryIssue;
+        historyStatus.Visibility=monitor.HistoryIssue is null?Visibility.Collapsed:Visibility.Visible;
     }
     void UpdateAnalysisGraph()
     {
