@@ -1,6 +1,6 @@
 # Pathweft specification
 
-Version 1.26 - 2026-11-15. Owner: Darkaxt.
+Version 1.27 - 2026-11-15. Owner: Darkaxt.
 
 ### Read-only MCP expansion (S48)
 
@@ -2290,7 +2290,10 @@ Settings → Animations / Windows animation-effects switches stay authoritative.
 
 ### Tresorit capability investigation (S12)
 
-The user's 2026-11-02 request adds S12 as planned work, NOT STARTED.
+The user's 2026-11-02 request adds S12 as planned work. COMPLETE 2026-11-15 as an investigation: the capability
+matrix, evidence and decision are in research/S12-TRESORIT.md. Decision: no service or internal integration; the
+proposed follow-up TRES-05..08 (provider shell commands in Pathweft's menu, Owner/permanence-aware main-folder
+delete, Tresorit deleted-files wording, account-storage label) is issue #8 and is NOT activated.
 Recording this stage does not activate a client integration, change Tresorit
 configuration or authorize deleting cloud content. The reported main-folder
 deletion restriction is a provider capability boundary, not an NTFS ACL fix.
