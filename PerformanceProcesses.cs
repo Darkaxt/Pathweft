@@ -104,7 +104,13 @@ internal sealed partial class PerformancePanel
     readonly ContextMenu processColumnsMenu=new();
     // CPU and RAM keep their own column choices.
     static Dictionary<string,bool> DefaultProcessColumns()=>new(){["Process"]=true,["Pid"]=true,["Percent"]=true,["MemoryText"]=true,["ExecutablePath"]=false,["CommandLine"]=false,["State"]=false,["HandlesText"]=false};
-    readonly Dictionary<string,bool> cpuColumns=DefaultProcessColumns(),ramColumns=DefaultProcessColumns();
+    readonly Dictionary<string,bool> cpuColumns=SavedProcessColumns(Settings.CpuProcessColumns),ramColumns=SavedProcessColumns(Settings.RamProcessColumns);
+    static Dictionary<string,bool> SavedProcessColumns(string[] shown)
+    {
+        var columns=DefaultProcessColumns();if(shown==null)return columns;
+        foreach(var key in columns.Keys.ToArray())columns[key]=key=="Process"||shown.Contains(key);
+        return columns;
+    }
     Dictionary<string,bool> processColumns=>selected==Ram?ramColumns:cpuColumns;
     // MONITOR-23: CPU and RAM share the live process table; CPU% is CPU-only and Handles RAM-only.
     static readonly (string Label,string Property,double Width)[] processColumnSet=[("Process","Process",170d),("PID","Pid",70d),("CPU","Percent",90d),("Working set","MemoryText",120d),("Executable path","ExecutablePath",340d),("Command line","CommandLine",480d),("Status","State",170d),("Handles","HandlesText",100d)];
@@ -136,7 +142,13 @@ internal sealed partial class PerformancePanel
             // check gutter. Supply the checked state through that same slot.
             var mark=new TextBlock{Text="\uE73E",FontFamily=new("Segoe Fluent Icons"),FontSize=12};
             mark.SetBinding(VisibilityProperty,new Binding(nameof(MenuItem.IsChecked)){Source=item,Converter=(BooleanToVisibilityConverter)FindResource("Vis")});item.Icon=mark;
-            item.Click+=(_,_)=>{processColumns[property]=item.IsChecked;ConfigureTable();RefreshProcessRows(monitor.Details);};
+            item.Click+=(_,_)=>
+            {
+                processColumns[property]=item.IsChecked;
+                var shown=processColumns.Where(x=>x.Value).Select(x=>x.Key).ToArray();
+                if(selected==Ram)Settings.RamProcessColumns=shown;else Settings.CpuProcessColumns=shown;Settings.Save();
+                ConfigureTable();RefreshProcessRows(monitor.Details);
+            };
             processColumnsMenu.Items.Add(item);
         }
         columnsButton.Click+=(_,_)=>{processColumnsMenu.PlacementTarget=columnsButton;processColumnsMenu.Placement=PlacementMode.Bottom;processColumnsMenu.IsOpen=true;};

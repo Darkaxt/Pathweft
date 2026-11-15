@@ -36,6 +36,7 @@ public static class Settings
     public static double SidebarScale = 1, TabsScale = 1, PathScale = 1, ListScale = 1; // per area, on top of TextScale: 0.8–1.5
     public static HashSet<string> DisabledPreviewModules = new(new[] { "f3d" }, StringComparer.Ordinal);
     public static volatile int PerformanceRetention=7;
+    public static string[] CpuProcessColumns, RamProcessColumns; // shown columns per analysis view; null = defaults
     public static bool TaskbarSearch;        // explicit opt-in; lifetime belongs to the running application
     public static bool TaskbarSearchBox = true;
     public static bool ItemTips = true;      // hovering a file shows its full name, type, size and date
@@ -134,6 +135,8 @@ public static class Settings
                 case "previewwidth" when double.TryParse(v, CultureInfo.InvariantCulture, out var pw) && double.IsFinite(pw): PreviewWidth = Math.Clamp(pw, 200, 1600); break;
                 case "stats" when int.TryParse(v, out var st) && st is >= 0 and <= 2: Stats = st; break;
                 case "performance.days" when int.TryParse(v,out var days)&&days is 1 or 7 or 30: PerformanceRetention=days; break;
+                case "performance.columns.cpu": CpuProcessColumns = v.Split(',', StringSplitOptions.RemoveEmptyEntries); break;
+                case "performance.columns.ram": RamProcessColumns = v.Split(',', StringSplitOptions.RemoveEmptyEntries); break;
                 case "scale.sidebar" when double.TryParse(v, CultureInfo.InvariantCulture, out var s1) && double.IsFinite(s1): SidebarScale = Math.Clamp(s1, 0.8, 1.5); break;
                 case "scale.tabs" when double.TryParse(v, CultureInfo.InvariantCulture, out var s2) && double.IsFinite(s2): TabsScale = Math.Clamp(s2, 0.8, 1.5); break;
                 case "scale.path" when double.TryParse(v, CultureInfo.InvariantCulture, out var s3) && double.IsFinite(s3): PathScale = Math.Clamp(s3, 0.8, 1.5); break;
@@ -263,7 +266,8 @@ public static class Settings
          .Concat(ActiveTab.Select(a => $"activetab.{a.Key}={a.Value}"))
          .Concat(Pins.Select(p => $"pins.{p.Key}={string.Join(",", p.Value)}"))
          .Concat(FolderSorts.Select(s => $"sort={s.Value.Key}|{(s.Value.Desc ? 1 : 0)}|{s.Key}"))
-         .Concat(DateGroupFolders.Select(f => $"groupdate={f}"));
+         .Concat(DateGroupFolders.Select(f => $"groupdate={f}"))
+         .Concat(new[] { ("cpu", CpuProcessColumns), ("ram", RamProcessColumns) }.Where(c => c.Item2 != null).Select(c => $"performance.columns.{c.Item1}={string.Join(",", c.Item2)}"));
 
     // Explicit per-user launch-boundary integration. The two settings are independent.
     public static bool IsDefaultFileManager => WindowsIntegration.Enabled;
