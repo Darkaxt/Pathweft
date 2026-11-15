@@ -76,6 +76,86 @@ public:
     HRESULT STDMETHODCALLTYPE SetToolbarItems(LPTBBUTTONSB,UINT,UINT) override{return E_NOTIMPL;}
 };
 
+// Process-local stand-in for Windows' folder-open command (explorerframe's
+// CExecuteFolder). The real command reads the association element the Shell
+// gives a DelegateExecute handler; without it, it read a null pointer inside
+// the calling app (JDownloader, 1.1.69). This fake records the hand-off
+// instead of opening an Explorer window.
+MIDL_INTERFACE("e157c3a1-a532-4de2-9480-1452b7426eee")
+IObjectWithAssociationElement:public IUnknown{
+public:
+    virtual HRESULT STDMETHODCALLTYPE SetAssocElement(IUnknown* element)=0;
+    virtual HRESULT STDMETHODCALLTYPE GetAssocElement(REFIID iid,void** out)=0;
+};
+const CLSID WindowsFolderOpenId={0x11dbb47c,0xa525,0x400b,{0x9e,0x80,0xa5,0x46,0x15,0xa0,0x90,0xc0}};
+struct FolderOpenRecord{std::wstring verb;IPropertyBag* bag=nullptr;IUnknown* element=nullptr;bool selected=false,executed=false;};
+static FolderOpenRecord folderOpen;
+class FakeFolderOpen final:public IExecuteCommand,public IObjectWithSelection,public IInitializeCommand,public IObjectWithAssociationElement,public IClassFactory{
+    ULONG refs=1;
+public:
+    HRESULT STDMETHODCALLTYPE QueryInterface(REFIID iid,void** out) override{
+        *out=nullptr;
+        if(iid==IID_IUnknown||iid==IID_IExecuteCommand)*out=static_cast<IExecuteCommand*>(this);
+        else if(iid==IID_IObjectWithSelection)*out=static_cast<IObjectWithSelection*>(this);
+        else if(iid==IID_IInitializeCommand)*out=static_cast<IInitializeCommand*>(this);
+        else if(iid==__uuidof(IObjectWithAssociationElement))*out=static_cast<IObjectWithAssociationElement*>(this);
+        else if(iid==IID_IClassFactory)*out=static_cast<IClassFactory*>(this);
+        else return E_NOINTERFACE;AddRef();return S_OK;
+    }
+    ULONG STDMETHODCALLTYPE AddRef() override{return ++refs;}
+    ULONG STDMETHODCALLTYPE Release() override{return --refs;}
+    HRESULT STDMETHODCALLTYPE CreateInstance(IUnknown* outer,REFIID iid,void** out) override{return outer?CLASS_E_NOAGGREGATION:QueryInterface(iid,out);}
+    HRESULT STDMETHODCALLTYPE LockServer(BOOL) override{return S_OK;}
+    HRESULT STDMETHODCALLTYPE Initialize(LPCWSTR verb,IPropertyBag* bag) override{folderOpen.verb=verb?verb:L"";folderOpen.bag=bag;return S_OK;}
+    HRESULT STDMETHODCALLTYPE SetAssocElement(IUnknown* element) override{folderOpen.element=element;return S_OK;}
+    HRESULT STDMETHODCALLTYPE GetAssocElement(REFIID,void** out) override{*out=nullptr;return E_NOTIMPL;}
+    HRESULT STDMETHODCALLTYPE SetSelection(IShellItemArray* value) override{folderOpen.selected=value!=nullptr;return S_OK;}
+    HRESULT STDMETHODCALLTYPE GetSelection(REFIID,void** out) override{*out=nullptr;return E_NOTIMPL;}
+    HRESULT STDMETHODCALLTYPE SetKeyState(DWORD) override{return S_OK;}
+    HRESULT STDMETHODCALLTYPE SetParameters(LPCWSTR) override{return S_OK;}
+    HRESULT STDMETHODCALLTYPE SetPosition(POINT) override{return S_OK;}
+    HRESULT STDMETHODCALLTYPE SetShowWindow(int) override{return S_OK;}
+    HRESULT STDMETHODCALLTYPE SetNoShowUI(BOOL) override{return S_OK;}
+    HRESULT STDMETHODCALLTYPE SetDirectory(LPCWSTR) override{return S_OK;}
+    HRESULT STDMETHODCALLTYPE Execute() override{folderOpen.executed=true;return S_OK;}
+};
+
+// Static Shell-owned objects that outlive the router, which keeps references.
+struct ShellBag final:IPropertyBag{
+    HRESULT STDMETHODCALLTYPE QueryInterface(REFIID iid,void** out) override{*out=nullptr;if(iid!=IID_IUnknown&&iid!=IID_IPropertyBag)return E_NOINTERFACE;*out=this;return S_OK;}
+    ULONG STDMETHODCALLTYPE AddRef() override{return 2;}
+    ULONG STDMETHODCALLTYPE Release() override{return 1;}
+    HRESULT STDMETHODCALLTYPE Read(LPCOLESTR,VARIANT*,IErrorLog*) override{return E_INVALIDARG;}
+    HRESULT STDMETHODCALLTYPE Write(LPCOLESTR,VARIANT*) override{return E_NOTIMPL;}
+};
+struct ShellElement final:IUnknown{
+    HRESULT STDMETHODCALLTYPE QueryInterface(REFIID iid,void** out) override{*out=nullptr;if(iid!=IID_IUnknown)return E_NOINTERFACE;*out=this;return S_OK;}
+    ULONG STDMETHODCALLTYPE AddRef() override{return 2;}
+    ULONG STDMETHODCALLTYPE Release() override{return 1;}
+};
+
+// A caller without a browser site (JDownloader, the Run dialog) opening a
+// virtual location is handed to Windows' own folder command. Without the
+// Shell's association element it is refused rather than crash the caller;
+// Shell-initialized, the command receives the same verb, bag and element.
+static void WindowsHandOff(IExecuteCommand* command){
+    FakeFolderOpen fake;DWORD cookie=0;
+    Check(CoRegisterClassObject(WindowsFolderOpenId,static_cast<IClassFactory*>(&fake),CLSCTX_INPROC_SERVER,REGCLS_MULTIPLEUSE,&cookie),"process-local Windows folder command");
+    PIDLIST_ABSOLUTE computer=nullptr;Check(SHGetKnownFolderIDList(FOLDERID_ComputerFolder,0,nullptr,&computer),"virtual This PC item");
+    IShellItemArray* virtualSelection=nullptr;PCIDLIST_ABSOLUTE items[]={computer};Check(SHCreateShellItemArrayFromIDLists(1,items,&virtualSelection),"virtual selection");CoTaskMemFree(computer);
+    IObjectWithSelection* selected=nullptr;Check(command->QueryInterface(IID_PPV_ARGS(&selected)),"virtual selection interface");
+    Check(selected->SetSelection(virtualSelection),"set virtual selection");virtualSelection->Release();selected->Release();
+    if(SUCCEEDED(command->Execute())||folderOpen.executed){CoRevokeClassObject(cookie);Fail(24);}
+    static ShellBag bag;static ShellElement element;
+    IObjectWithAssociationElement* associated=nullptr;Check(command->QueryInterface(IID_PPV_ARGS(&associated)),"router association interface");
+    Check(associated->SetAssocElement(&element),"Shell association element");associated->Release();
+    IInitializeCommand* initialize=nullptr;Check(command->QueryInterface(IID_PPV_ARGS(&initialize)),"router initialization interface");
+    Check(initialize->Initialize(L"explore",&bag),"Shell initialization");initialize->Release();
+    Check(command->Execute(),"Shell-initialized Windows hand-off");
+    if(!folderOpen.executed||!folderOpen.selected||folderOpen.verb!=L"explore"||folderOpen.bag!=&bag||folderOpen.element!=&element){CoRevokeClassObject(cookie);Fail(25);}
+    CoRevokeClassObject(cookie);
+}
+
 static void NativeContextMenu(IClassFactory* factory,PCWSTR dll,PCWSTR folder){
     // A unique nondefault verb exercises the real Shell's site propagation
     // without replacing the user's open/explore verbs. The otherwise absent
@@ -192,7 +272,8 @@ int wmain(int argc,wchar_t** argv){
     CloseHandle(child);CloseHandle(release);
     CloseHandle(completed);SetEnvironmentVariableW(L"PATHWEFT_SHELL_PROBE_EVENT",nullptr);
     }
+    WindowsHandOff(command);
     command->Release();if(unload()!=S_OK)return 7;FreeLibrary(library);CoUninitialize();
-    printf("PASS: real hidden browser navigation via direct/service sites, external launch, native COM release (%zu-bit)\n",sizeof(void*)*8);
+    printf("PASS: real hidden browser navigation via direct/service sites, external launch, initialized Windows hand-off, native COM release (%zu-bit)\n",sizeof(void*)*8);
     return 0;
 }

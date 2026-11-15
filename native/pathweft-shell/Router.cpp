@@ -70,10 +70,25 @@ static bool SetupRunning(){
     return GetLastError()==ERROR_ACCESS_DENIED;
 }
 
-class Router final: public IExecuteCommand, public IObjectWithSelection, public IObjectWithSite {
+// The Shell passes a DelegateExecute handler its association element (the
+// registry class the verb came from) through this undocumented interface
+// (declared as in ReactOS's shlobj_undoc.h). Windows' folder command reads it
+// unconditionally, so a hand-off must carry it.
+MIDL_INTERFACE("e157c3a1-a532-4de2-9480-1452b7426eee")
+IObjectWithAssociationElement:public IUnknown{
+public:
+    virtual HRESULT STDMETHODCALLTYPE SetAssocElement(IUnknown* element)=0;
+    virtual HRESULT STDMETHODCALLTYPE GetAssocElement(REFIID iid,void** out)=0;
+};
+
+class Router final: public IExecuteCommand, public IObjectWithSelection, public IObjectWithSite, public IInitializeCommand, public IObjectWithAssociationElement {
     std::atomic<ULONG> refs{1};
     IShellItemArray* selection=nullptr;
     IUnknown* site=nullptr;
+    IPropertyBag* bag=nullptr;
+    IUnknown* element=nullptr;
+    std::wstring verb;
+    bool initialized=false;
     DWORD keys=0;
     POINT point{};
     int show=SW_SHOWNORMAL;
@@ -81,12 +96,14 @@ class Router final: public IExecuteCommand, public IObjectWithSelection, public 
     std::wstring parameters, directory;
 public:
     Router(){++objects;}
-    ~Router(){if(selection)selection->Release();if(site)site->Release();--objects;}
+    ~Router(){if(selection)selection->Release();if(site)site->Release();if(bag)bag->Release();if(element)element->Release();--objects;}
     HRESULT STDMETHODCALLTYPE QueryInterface(REFIID iid,void** out) override {
         if(!out)return E_POINTER;*out=nullptr;
         if(iid==IID_IUnknown||iid==IID_IExecuteCommand)*out=static_cast<IExecuteCommand*>(this);
         else if(iid==IID_IObjectWithSelection)*out=static_cast<IObjectWithSelection*>(this);
         else if(iid==IID_IObjectWithSite)*out=static_cast<IObjectWithSite*>(this);
+        else if(iid==IID_IInitializeCommand)*out=static_cast<IInitializeCommand*>(this);
+        else if(iid==__uuidof(IObjectWithAssociationElement))*out=static_cast<IObjectWithAssociationElement*>(this);
         else return E_NOINTERFACE;
         AddRef();return S_OK;
     }
@@ -110,10 +127,33 @@ public:
     HRESULT STDMETHODCALLTYPE GetSite(REFIID iid,void** out) override{
         if(!out)return E_POINTER;*out=nullptr;return site?site->QueryInterface(iid,out):E_FAIL;
     }
+    // Windows' own folder command is initialized exactly as the Shell
+    // initialized this handler: same verb, property bag and association element.
+    HRESULT STDMETHODCALLTYPE Initialize(LPCWSTR name,IPropertyBag* value) override{
+        verb=name?name:L"";initialized=true;
+        if(value)value->AddRef();if(bag)bag->Release();bag=value;return S_OK;
+    }
+    HRESULT STDMETHODCALLTYPE SetAssocElement(IUnknown* value) override{
+        if(value)value->AddRef();if(element)element->Release();element=value;return S_OK;
+    }
+    HRESULT STDMETHODCALLTYPE GetAssocElement(REFIID iid,void** out) override{
+        if(!out)return E_POINTER;*out=nullptr;return element?element->QueryInterface(iid,out):E_FAIL;
+    }
     HRESULT WindowsOpen() {
+        // Without the Shell's association element Windows' command would read
+        // a null pointer in the caller's process (it crashed JDownloader).
+        if(!element)return HRESULT_FROM_WIN32(ERROR_NOT_SUPPORTED);
         IExecuteCommand* command=nullptr;
         HRESULT hr=CoCreateInstance(CLSID_WindowsFolderOpen,nullptr,CLSCTX_INPROC_SERVER,IID_PPV_ARGS(&command));
         if(FAILED(hr))return hr;
+        IObjectWithAssociationElement* associated=nullptr;
+        hr=command->QueryInterface(IID_PPV_ARGS(&associated));
+        if(SUCCEEDED(hr)){hr=associated->SetAssocElement(element);associated->Release();}
+        IInitializeCommand* initialize=nullptr;
+        if(SUCCEEDED(hr)&&initialized&&SUCCEEDED(command->QueryInterface(IID_PPV_ARGS(&initialize)))){
+            hr=initialize->Initialize(verb.c_str(),bag);initialize->Release();
+        }
+        if(FAILED(hr)){command->Release();return hr;}
         IObjectWithSelection* selected=nullptr;
         hr=command->QueryInterface(IID_PPV_ARGS(&selected));
         if(SUCCEEDED(hr)){hr=selected->SetSelection(selection);selected->Release();}
