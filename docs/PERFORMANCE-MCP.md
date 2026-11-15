@@ -49,7 +49,8 @@ structured errors, and paths must be absolute local or UNC.
   signed-in user. Cleanup lists each target (or one `target` id) with its size,
   file count and the method used: Everything's index for the temporary-file,
   error-report and thumbnail folders, the package manager's own report for its
-  cache, otherwise a direct measurement. This is a size report, not the exact
+  cache, otherwise a direct measurement. User temporary files means the
+  signed-in user's TEMP folder, not the TEMP of the program that started the MCP. This is a size report, not the exact
   review the tab performs before cleaning; nothing is removed.
 - get_maintenance_changes: Pathweft's Maintenance change journal (id, kind,
   phase, what it saved, whether it can be restored). It records no times.
@@ -66,6 +67,8 @@ structured errors, and paths must be absolute local or UNC.
   driver/feature/app changes, and derived findings as in the Insights view.
   They take `last_minutes` (default 30 days) or `from`/`to`. Installed-app
   changes come from baselines Pathweft already saved; no new baseline is taken.
+  Windows keeps the boot diagnostics log readable only by administrators, so
+  get_boots reports that it is unavailable rather than elevating.
 
 Nothing is applied, cleaned, uninstalled or elevated, and the administrator
 session is never used.

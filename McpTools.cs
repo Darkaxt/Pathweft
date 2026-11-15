@@ -100,7 +100,7 @@ internal static class McpTools
         if(target!=null&&category!="Cleanup")throw new ArgumentException("target applies to Cleanup only");
         if(category=="Cleanup")
         {
-            var targets=CleanupReview.Targets.Where(t=>target==null||t.Id==target).ToArray();
+            var targets=CleanupReview.Targets.Where(t=>target==null||t.Id==target).Select(SignedInUser).ToArray();
             if(target!=null&&targets.Length==0)throw new ArgumentException("Unknown Cleanup target. Targets: "+string.Join(", ",CleanupReview.Targets.Select(t=>t.Id)));
             var rows=new List<object>();
             foreach(var item in targets.Skip(offset).Take(limit))rows.Add(await CleanupSize(item,cancel));
@@ -122,6 +122,13 @@ internal static class McpTools
         }),offset,limit,status);
     }
     static string Empty(string value)=>string.IsNullOrEmpty(value)?null:value;
+    // An MCP client may launch this process with its own TEMP; report the signed-in user's temporary folder, as the tab does.
+    static CleanupTarget SignedInUser(CleanupTarget target)
+    {
+        if(target.Id!="user-temp")return target;
+        using var environment=Microsoft.Win32.Registry.CurrentUser.OpenSubKey("Environment");
+        return environment?.GetValue("TEMP") is string temp&&Path.IsPathFullyQualified(temp)?target with{Root=Path.TrimEndingDirectorySeparator(Path.GetFullPath(temp))+Path.DirectorySeparatorChar}:target;
+    }
 
     static async Task<object> CleanupSize(CleanupTarget target,CancellationToken cancel)
     {
