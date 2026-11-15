@@ -102,7 +102,10 @@ internal sealed partial class PerformancePanel
 {
     readonly Button columnsButton=new(){Content="Columns",MinHeight=32};
     readonly ContextMenu processColumnsMenu=new();
-    readonly Dictionary<string,bool> processColumns=new(){["Process"]=true,["Pid"]=true,["Percent"]=true,["MemoryText"]=true,["ExecutablePath"]=false,["CommandLine"]=false,["State"]=false,["HandlesText"]=false};
+    // CPU and RAM keep their own column choices.
+    static Dictionary<string,bool> DefaultProcessColumns()=>new(){["Process"]=true,["Pid"]=true,["Percent"]=true,["MemoryText"]=true,["ExecutablePath"]=false,["CommandLine"]=false,["State"]=false,["HandlesText"]=false};
+    readonly Dictionary<string,bool> cpuColumns=DefaultProcessColumns(),ramColumns=DefaultProcessColumns();
+    Dictionary<string,bool> processColumns=>selected==Ram?ramColumns:cpuColumns;
     // MONITOR-23: CPU and RAM share the live process table; CPU% is CPU-only and Handles RAM-only.
     static readonly (string Label,string Property,double Width)[] processColumnSet=[("Process","Process",170d),("PID","Pid",70d),("CPU","Percent",90d),("Working set","MemoryText",120d),("Executable path","ExecutablePath",340d),("Command line","CommandLine",480d),("Status","State",170d),("Handles","HandlesText",100d)];
     bool Offered(string property)=>property switch{"Percent"=>selected!=Ram,"HandlesText"=>selected==Ram,_=>true};
@@ -222,7 +225,7 @@ internal sealed partial class PerformancePanel
     }
     void ConfigureProcessTable(GridView view)
     {
-        foreach(MenuItem item in processColumnsMenu.Items)item.Visibility=Offered((string)item.Tag)?Visibility.Visible:Visibility.Collapsed;
+        foreach(MenuItem item in processColumnsMenu.Items){item.Visibility=Offered((string)item.Tag)?Visibility.Visible:Visibility.Collapsed;item.IsChecked=processColumns[(string)item.Tag];}
         foreach(var (label,property,width) in processColumnSet)
         {
             if(!processColumns[property]||!Offered(property))continue;
