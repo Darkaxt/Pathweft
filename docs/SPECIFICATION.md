@@ -1,6 +1,24 @@
 # Pathweft specification
 
-Version 1.24 - 2026-11-14. Owner: Darkaxt.
+Version 1.25 - 2026-11-15. Owner: Darkaxt.
+
+### Read-only MCP expansion (S48)
+
+Owner direction (plan, after S47 and before S12): extend the existing explicit stdio
+`--performance-mcp` server so a client can read Maintenance, file metadata and boot and
+change history as well as performance. MONITOR-12 and ACTIVITY-05 constraints still apply.
+The S48 release also carries the process table corrections MONITOR-24 and the Office
+preview fix PREVIEW-39 (issue #4).
+
+| ID | Required behavior and acceptance |
+| --- | --- |
+| MCP-01 | One server, same entry point (`Pathweft.exe --performance-mcp`), renamed "Pathweft" in serverInfo; existing tool names and results are unchanged. Every new tool is read-only: it never applies, restores, deletes, uninstalls, moves or writes anything outside Pathweft's own temporary review files, which it removes before replying. No elevation, administrator session, WPF window, sampler, network listener, Everything restart or MCP client configuration. Inputs are validated against a closed schema; output is bounded (`limit` 1..500, default 100) with total and truncation reported; failures are structured tool errors, and data that needs administrator rights is reported as unavailable, never guessed. Requests run one at a time; closing stdin cancels the running one and ends the server. |
+| MCP-02 | Maintenance. `get_maintenance(category)` for Startup, Services, Windows tweaks, Windows apps and Security check returns the same rows the Maintenance tab shows: id, name, scope, state, recommendation, goal, risk, publisher/version where present and the one-line summary. Cleanup returns each target with its measured size and file count from the same analysis the tab uses (`category: "Cleanup"`, optional `target` to measure one). `get_maintenance_changes` lists Pathweft's journal of applied changes (id, item, when, what can be restored). No action tools. |
+| MCP-03 | Files, metadata only. `list_folder(path)` returns entries (name, folder/file, size, modified, attributes) sorted folders-first then name. `get_file_details(path)` returns size, created/modified/accessed times, attributes, link target, file version and publisher for executables. `get_folder_size(path)` returns the indexed size when Everything indexes folder sizes, otherwise Pathweft's cached size with its age, otherwise unknown; it never starts a full scan. `search_files(query)` uses the running Everything with Pathweft's search syntax and reports when Everything is missing, busy or not answering. File contents are never read. Paths must be absolute local or UNC; access errors are reported per path. |
+| MCP-04 | Boot and changes. `get_boots` returns recorded Windows starts (time, seconds to desktop, settled seconds, startup app count, what slowed it and by how much). `get_system_changes` returns Windows updates and driver/feature changes from Windows' logs plus the installed-app changes Pathweft has already saved; it does not take a new installed-app baseline. `get_insights` returns the same derived findings as the Insights view (memory pressure, large memory holders, sustained CPU, slower startup). All three take `last_minutes` or `from`/`to` like the existing tools. |
+| MCP-05 | Verify with the real built executable as a subprocess: tools/list contains old and new tools with read-only annotations; each new tool answers on a fixture profile and on this PC; invalid arguments, unknown categories, relative paths and missing files give structured errors; Cleanup measurement leaves no files behind and the Maintenance journal, settings and baseline files are byte-identical before and after; no elevated or windowed process starts; stdin close mid-request exits promptly. Document the tools in PERFORMANCE-MCP.md. |
+| MONITOR-24 | Owner feedback 2026-11-15 on the live process table. The process filter, Handle types, End process and a compact column chooser sit on a bar directly above the table, not in the graph toolbar. Right-clicking the header row opens the column chooser; right-clicking blank space opens nothing. CPU and RAM keep separate column choices, saved in settings across restarts. The analysis footer shows only a history recording problem; the normal retention summary is not shown. |
+| PREVIEW-39 | Issue #4: closing an Office preview tolerates a LibreOffice temporary file that is briefly locked; it never throws, and the file is removed once released. |
 
 ### Maintenance tweaks by goal with risk colours (S47a)
 
