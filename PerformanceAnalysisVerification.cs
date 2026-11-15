@@ -129,11 +129,6 @@ public partial class MainWindow
         var spikes=PerformanceHistory.Query(query with{Tool="find_spikes",Threshold=80},source:path);
         check(spikes.Total==1&&spikes.Rows.Single().Peak==90,"Spike query finds observed threshold exceedance");
     }
-}
-public partial class PaneView
-{
-    internal ScrollViewer ScrollerForAnalysisVerification=>FindScroller(List);
-
     // S48 MCP-05: the added tools answer through the real stdio server; bad input is a structured error;
     // reading Maintenance/Cleanup leaves the profile (journal, settings, baselines) byte-identical.
     static async Task VerifyMcpTools48(string root,string profile,Func<string,object,Task<JsonElement>> call,Action<bool,string> check)
@@ -171,3 +166,9 @@ public partial class PaneView
         check(before.Count==after.Count&&before.All(x=>after.TryGetValue(x.Key,out var hash)&&hash==x.Value),"MCP Maintenance and Cleanup reads leave the profile's journal, settings and baselines byte-identical");
     }
 }
+public partial class PaneView
+{
+    internal ScrollViewer ScrollerForAnalysisVerification=>FindScroller(List);
+
+}
+#endif
