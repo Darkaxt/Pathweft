@@ -85,10 +85,11 @@ internal static class PerformanceProcessMetadataReader
         }
         return result;
     }
+    // WMI reports an empty property (a process that exited, or one whose path is hidden) as DBNull.
     internal static object Property(object row,string name)
     {
         object properties=null,property=null;
-        try{properties=((dynamic)row).Properties_;property=((dynamic)properties).Item(name,0);return ((dynamic)property).Value;}
+        try{properties=((dynamic)row).Properties_;property=((dynamic)properties).Item(name,0);object value=((dynamic)property).Value;return value is DBNull?null:value;}
         finally{foreach(var value in new[]{property,properties})if(value!=null&&Marshal.IsComObject(value))Marshal.FinalReleaseComObject(value);}
     }
     static long? CreationTicks(string value)

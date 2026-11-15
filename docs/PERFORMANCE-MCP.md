@@ -24,7 +24,7 @@ No MCP client is activated or configured by Pathweft. After a separate explicit
 activation decision, a client can launch the installed Pathweft.exe with the
 single argument `--performance-mcp` over stdio. Use the same portable location
 or PATHWEFT_PROFILE as the browser to select its recorded history. This entry
-reads local history without launching a browser, collector, elevation or network
+reads local history without launching a browser, collector, elevation prompt or network
 listener. `get_current_usage` means latest recorded observation plus its age;
 it may be absent or stale when recording is off or Pathweft has exited.
 
@@ -67,11 +67,14 @@ structured errors, and paths must be absolute local or UNC.
   driver/feature/app changes, and derived findings as in the Insights view.
   They take `last_minutes` (default 30 days) or `from`/`to`. Installed-app
   changes come from baselines Pathweft already saved; no new baseline is taken.
-  Windows keeps the boot diagnostics log readable only by administrators, so
-  get_boots reports that it is unavailable rather than elevating.
+  Windows lets only administrators read the boot diagnostics log; see below.
 
-Nothing is applied, cleaned, uninstalled or elevated, and the administrator
-session is never used.
+Nothing is applied, cleaned or uninstalled. Since 1.1.69, reads that Windows keeps
+for administrators use the administrator session (boot diagnostics, the Security
+check, folders only administrators can list). The installed copy starts that session
+through its on-demand task after your one approval, never with a prompt, and ends it
+when the MCP exits. Without it (a portable copy, never approved, or turned off) these
+read as the signed-in user and say what could not be read.
 
 MCP stdio lifecycle and negotiation follow the [protocol specification](https://modelcontextprotocol.io/specification/2025-06-18/basic/lifecycle)
 and [transport contract](https://modelcontextprotocol.io/specification/2025-06-18/basic/transports).

@@ -29,7 +29,7 @@ internal sealed class MaintenanceClient : IAsyncDisposable
         {
             if(elevated)
             {
-                session=await AdministratorSession.Open(name,"maintenance",cancel,enable:request.Action is not ("list" or "space" or "disk-health" or "security-check")).ConfigureAwait(false);
+                session=await AdministratorSession.Open(name,"maintenance",cancel,enable:request.Action is not ("list" or "space" or "disk-health" or "security-check" or "boots")).ConfigureAwait(false);
                 sessionStop=session.Stopped.Register(()=>{stopped.Cancel();pipe.Dispose();});
             }
             else
@@ -238,6 +238,13 @@ internal static class MaintenanceWorker
         if(request.Action=="save-editor")return SaveEditor(request,cancel);
         // Read-only Security check with the approved session's access (MAINT-40); it never writes.
         if(request.Action=="security-check")return JsonSerializer.Serialize(MaintenanceSecurity.Check(cancel));
+        // Read-only boot diagnostics, whose log Windows lets only administrators read (MCP-06).
+        if(request.Action=="boots")
+        {
+            var issues=new List<string>();var boots=BootService.Read(30,cancel,issues);
+            if(issues.Count>0)throw new IOException(issues[0]);
+            return JsonSerializer.Serialize(boots);
+        }
         if(request.Action=="restore-point")return await WindowsAction("RestorePoint",cancel:cancel);
         // Administrator leftovers of a removed app (MAINT-36): the worker re-scans with the same identity and
         // removes only requested items it finds again, after its own .reg backup inside the profile's folder.

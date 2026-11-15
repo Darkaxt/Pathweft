@@ -8,7 +8,8 @@ using System.Text.RegularExpressions;
 namespace FileExplorer;
 
 // Explicit stdio only. Never installed into an MCP client automatically and
-// never starts WPF, an elevated worker, a network listener or another sampler.
+// never starts WPF, a prompt, a network listener or another sampler; reads only administrators may
+// make use the administrator session the installed task starts silently (MCP-06).
 internal static class PerformanceMcp
 {
     internal static readonly string[] Tools=["get_current_usage","get_usage_summary","get_top_processes","find_spikes","get_app_history","get_events"];
@@ -16,6 +17,13 @@ internal static class PerformanceMcp
     {
         Settings.Load();
         Search.EverythingRecovery.RestartAllowed=false;
+        // MCP-06: reads only administrators may make use the session the installed task starts without a prompt.
+        ElevatedReads.StartSilently=true;
+        try{return await Serve();}
+        finally{await AdministratorSession.End();}
+    }
+    static async Task<int> Serve()
+    {
         using var input=new StreamReader(Console.OpenStandardInput(),new UTF8Encoding(false,true));
         using var output=new StreamWriter(Console.OpenStandardOutput(),new UTF8Encoding(false)){AutoFlush=true};
         bool initialized=false,ready=false;
@@ -41,7 +49,7 @@ internal static class PerformanceMcp
                     if(initialized)throw new ArgumentException("Already initialized");
                     string proposed=request.GetProperty("params").GetProperty("protocolVersion").GetString();
                     string selected=proposed is "2025-06-18" or "2024-11-05"?proposed:"2025-06-18";
-                    result=new{protocolVersion=selected,capabilities=new{tools=new{listChanged=false}},serverInfo=new{name="Pathweft",version=typeof(PerformanceMcp).Assembly.GetName().Version?.ToString()},instructions="Read-only Pathweft data. Performance: saved local observations; Pathweft collects and saves automatically while running, and the optional app activity recorder adds program runs, workloads and per-executable usage; this endpoint does not start collection, and missing or stale observations are not live usage. Also Maintenance rows and Cleanup sizes, file and folder metadata, Everything search, Windows boots, system changes and insights. Nothing is changed, cleaned, uninstalled or elevated, and file contents are never read."};initialized=true;
+                    result=new{protocolVersion=selected,capabilities=new{tools=new{listChanged=false}},serverInfo=new{name="Pathweft",version=typeof(PerformanceMcp).Assembly.GetName().Version?.ToString()},instructions="Read-only Pathweft data. Performance: saved local observations; Pathweft collects and saves automatically while running, and the optional app activity recorder adds program runs, workloads and per-executable usage; this endpoint does not start collection, and missing or stale observations are not live usage. Also Maintenance rows and Cleanup sizes, file and folder metadata, Everything search, Windows boots, system changes and insights. Nothing is changed, cleaned or uninstalled, and file contents are never read; reads only administrators may make (boot diagnostics, Security check, protected folders) use Pathweft's approved administrator session when the installed copy has one, without a prompt."};initialized=true;
                 }
                 else if(method=="ping")result=new{};
                 else if(!ready){response=Error(id,-32002,"Initialize and send notifications/initialized first");await output.WriteLineAsync(response.ToJsonString());continue;}

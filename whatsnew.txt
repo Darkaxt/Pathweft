@@ -1,6 +1,12 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.69 | 2026-11-15 | Administrator-only reads use administrator access
+
+- Boot diagnostics and Insights read Windows' boot log with administrator access when it is running, instead of reporting it as unavailable.
+- The MCP server reads boot diagnostics, the Security check and folders only administrators can list through administrator access. The installed copy starts it in the background after your one approval, without a prompt, and still changes nothing.
+- Fixed: Pathweft could close with an error when System analysis looked up a process whose path Windows reports as empty.
+
 ## 1.1.68 | 2026-11-15 | MCP tools for Maintenance, files and search; process table controls
 
 **System analysis**

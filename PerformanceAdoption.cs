@@ -84,7 +84,8 @@ internal sealed partial class PerformancePanel
     {
         string changed=null;
         if(kind==7&&historySource==null)changed=await PerformanceChanges.Check(monitor,cancel);
-        return await Task.Run(()=>PerformanceAdoptionFacts.Read(kind,query,cancel,historySource,live,apps,changed),cancel);
+        var notes=new List<string>();var boots=kind is 6 or 8?await ElevatedReads.Boots(notes,cancel):null;
+        return await Task.Run(()=>PerformanceAdoptionFacts.Read(kind,query,cancel,historySource,live,apps,changed,boots,notes),cancel);
     }
     void ExportAnalysis(string format)
     {
@@ -129,13 +130,14 @@ internal static class PerformanceAdoptionFacts
 {
     // Boot diagnostics (6), system changes (7) and insights (8), shared with the MCP server (MCP-04).
     // Reads only: the installed-app baseline check stays with the view that runs it.
-    internal static PerformanceResult Read(int kind,PerformanceQuery query,CancellationToken cancel,string historySource=null,PerformanceSample[] live=null,PerformanceProcessSnapshot[] apps=null,string changed=null)
+    internal static PerformanceResult Read(int kind,PerformanceQuery query,CancellationToken cancel,string historySource=null,PerformanceSample[] live=null,PerformanceProcessSnapshot[] apps=null,string changed=null,List<Boot> elevatedBoots=null,IEnumerable<string> notes=null)
     {
         {
-            var rows=new List<PerformanceFact>();var issues=new List<string>();
+            var rows=new List<PerformanceFact>();var issues=new List<string>(notes??[]);
+            List<Boot> Boots()=>elevatedBoots??BootService.Read(30,cancel,issues);
             if(kind==6)
             {
-                foreach(var boot in BootService.Read(30,cancel,issues).Where(x=>x.StartUtc>=query.From.Value.UtcDateTime&&x.StartUtc<=query.To.Value.UtcDateTime))
+                foreach(var boot in Boots().Where(x=>x.StartUtc>=query.From.Value.UtcDateTime&&x.StartUtc<=query.To.Value.UtcDateTime))
                     rows.Add(new(new DateTimeOffset(DateTime.SpecifyKind(boot.StartUtc,DateTimeKind.Utc)),"Windows boot",null,boot.DesktopSeconds,boot.Seconds,boot.StartupApps,"Seconds to desktop / settled boot · "+string.Join("; ",boot.SlowedBy.Select(x=>$"{x.Name}: +{x.ExtraSeconds:0.#}s"))));
             }
             else if(kind==7)
@@ -154,7 +156,7 @@ internal static class PerformanceAdoptionFacts
                     var heavy=PerformanceHistory.Query(query with{Tool="get_top_processes",Metric=metric,Device=null},cancel,historySource,live,apps);
                     rows.AddRange(heavy.Rows.Where(x=>x.Observations>=60&&x.Average>=(metric=="ram"?3L*1024*1024*1024:5)).Take(3).Select(x=>x with{Name=(metric=="ram"?"Large memory holder · ":"Sustained CPU · ")+x.Name}));
                 }
-                var boots=BootService.Read(30,cancel,issues);var now=query.To.Value.UtcDateTime;
+                var boots=Boots();var now=query.To.Value.UtcDateTime;
                 var recent=boots.Where(x=>x.StartUtc>now.AddDays(-7)).ToArray();var before=boots.Where(x=>x.StartUtc<=now.AddDays(-7)&&x.StartUtc>now.AddDays(-14)).ToArray();
                 if(recent.Length>=2&&before.Length>=2)
                 {
@@ -165,7 +167,7 @@ internal static class PerformanceAdoptionFacts
             cancel.ThrowIfCancellationRequested();
             foreach(string issue in issues)rows.Add(new(default,"Windows diagnostics unavailable",null,null,null,0,issue));
             var ordered=rows.OrderByDescending(x=>x.Time).ToArray();
-            return new PerformanceResult((changed??"Local Windows diagnostics and retained observations.")+" Missing observations are not zero. "+(kind==6?"Boots: desktop seconds / settled seconds / startup apps.":""),ordered.Take(query.Limit).ToArray(),[],ordered.Length,ordered.Length>query.Limit);
+            return new PerformanceResult((changed??"Local Windows diagnostics and retained observations.")+(elevatedBoots!=null?" Boot diagnostics read with the administrator session.":"")+" Missing observations are not zero. "+(kind==6?"Boots: desktop seconds / settled seconds / startup apps.":""),ordered.Take(query.Limit).ToArray(),[],ordered.Length,ordered.Length>query.Limit);
         }
     }
 }

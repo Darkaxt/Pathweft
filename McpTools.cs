@@ -9,7 +9,8 @@ using Microsoft.Data.Sqlite;
 namespace FileExplorer;
 
 // S48 (MCP-01..04): read-only Maintenance, file metadata, search and boot/change tools
-// served by --performance-mcp. Nothing here applies, restores, deletes or elevates.
+// served by --performance-mcp. Nothing here applies, restores or deletes; reads only administrators may
+// make use the approved administrator session (MCP-06), never a prompt.
 internal static class McpTools
 {
     internal static readonly string[] Tools=["get_maintenance","get_maintenance_changes","list_folder","get_file_details","get_folder_size","search_files","get_boots","get_system_changes","get_insights"];
@@ -56,7 +57,7 @@ internal static class McpTools
         {
             case "get_maintenance":return await Maintenance(arguments.Text("category",true,40),arguments.Text("target",max:200),offset,limit,cancel);
             case "get_maintenance_changes":return Changes(offset,limit);
-            case "list_folder":return await Task.Run(()=>ListFolder(FullPath(arguments.Text("path",true)),offset,limit,cancel),cancel);
+            case "list_folder":return await ListFolder(FullPath(arguments.Text("path",true)),offset,limit,cancel);
             case "get_file_details":return Details(FullPath(arguments.Text("path",true)));
             case "get_folder_size":return await FolderSize(FullPath(arguments.Text("path",true)),cancel);
             case "search_files":
@@ -75,11 +76,11 @@ internal static class McpTools
                 }.Where(x=>x.Value!=null).ToDictionary()));
                 var to=parsed.To??DateTimeOffset.UtcNow;var query=parsed with{From=parsed.From??to.AddMinutes(-parsed.LastMinutes),To=to};
                 int kind=tool switch{"get_boots"=>6,"get_system_changes"=>7,_=>8};
-                return await Task.Run(()=>PerformanceAnalysisFacts(kind,query,cancel),cancel);
+                var notes=new List<string>();var boots=kind is 6 or 8?await ElevatedReads.Boots(notes,cancel):null;
+                return await Task.Run(()=>PerformanceAdoptionFacts.Read(kind,query,cancel,elevatedBoots:boots,notes:notes),cancel);
             }
         }
     }
-    static PerformanceResult PerformanceAnalysisFacts(int kind,PerformanceQuery query,CancellationToken cancel)=>PerformanceAdoptionFacts.Read(kind,query,cancel);
 
     static string FullPath(string path)
     {
@@ -106,14 +107,18 @@ internal static class McpTools
             foreach(var item in targets.Skip(offset).Take(limit))rows.Add(await CleanupSize(item,cancel));
             return new Page("Cleanup size report; the Maintenance tab still reviews the exact files before cleaning. Nothing was removed.",rows.ToArray(),targets.Length,offset,offset+rows.Count<targets.Length);
         }
+        string status=category=="Security check"?"Read as the signed-in user; values only administrators can read are marked, never guessed.":"Read as the signed-in user, as the Maintenance tab shows it.";
+        SecurityFinding[] elevated=null;
+        if(category=="Security check")
+            try{if(await ElevatedReads.Read("security-check",cancel) is {} json){elevated=JsonSerializer.Deserialize<SecurityFinding[]>(json);status="Read with the administrator session; nothing was changed.";}}
+            catch(Exception error)when(ElevatedReads.Expected(error)){status="The administrator session could not read the list ("+error.Message+"); read as the signed-in user, and values only administrators can read are marked.";}
         var found=await Task.Run(()=>category switch
         {
             "Windows apps"=>MaintenanceApps.Read(cancel).Select(a=>a.Row()).ToArray(),
-            "Security check"=>MaintenanceSecurity.Check(cancel).Select(MaintenancePanel.SecurityRow).ToArray(),
+            "Security check"=>(elevated??MaintenanceSecurity.Check(cancel)).Select(MaintenancePanel.SecurityRow).ToArray(),
             _=>FileExplorer.Maintenance.Read(category,cancel)
         },cancel);
         if(category!="Security check")found=found.Select(r=>MaintenanceGuidance.Describe(category,r)).ToArray();
-        string status=category=="Security check"?"Read as the signed-in user; values only administrators can read are marked, never guessed.":"Read as the signed-in user, as the Maintenance tab shows it.";
         return Bound(found.Select(r=>(object)new
         {
             id=r.Id,name=r.Name,scope=r.Scope,state=r.State,recommendation=r.Recommendation,group=Empty(r.Group),type=Empty(r.Type),
@@ -187,11 +192,23 @@ internal static class McpTools
     }
 
     // MCP-03 files, metadata only.
-    static Page ListFolder(string path,int offset,int limit,CancellationToken cancel)
+    static async Task<Page> ListFolder(string path,int offset,int limit,CancellationToken cancel)
     {
         var folder=new DirectoryInfo(path);if(!folder.Exists)throw new ArgumentException("Folder not found: "+path);
         var entries=new List<FileSystemInfo>();
-        foreach(var entry in folder.EnumerateFileSystemInfos("*",new EnumerationOptions{AttributesToSkip=0,IgnoreInaccessible=false,RecurseSubdirectories=false})){cancel.ThrowIfCancellationRequested();entries.Add(entry);}
+        bool denied=false;
+        try{await Task.Run(()=>{foreach(var entry in folder.EnumerateFileSystemInfos("*",new EnumerationOptions{AttributesToSkip=0,IgnoreInaccessible=false,RecurseSubdirectories=false})){cancel.ThrowIfCancellationRequested();entries.Add(entry);}},cancel);}
+        catch(UnauthorizedAccessException){denied=true;}
+        if(denied)
+        {
+            if(!await ElevatedReads.Ensure(cancel))throw new UnauthorizedAccessException("Only administrators can list "+path+", and no administrator session is available (start Pathweft once and approve administrator access).");
+            // MCP-06: a folder only administrators can list is read through the administrator session.
+            var rows=await MaintenanceClient.ReadFolder(path,cancel);
+            return Bound(rows.OrderBy(x=>!x.Attributes.HasFlag(FileAttributes.Directory)).ThenBy(x=>x.Name,StringComparer.CurrentCultureIgnoreCase).Select(x=>(object)new
+            {
+                name=x.Name,type=x.Attributes.HasFlag(FileAttributes.Directory)?"folder":"file",size_bytes=x.Attributes.HasFlag(FileAttributes.Directory)?(long?)null:x.Bytes,modified=Time(x.Modified),attributes=x.Attributes.ToString(),link_target=(string)null
+            }),offset,limit,"Folder entries read with the administrator session, folders first; contents are not read.");
+        }
         return Bound(entries.OrderBy(x=>x is FileInfo).ThenBy(x=>x.Name,StringComparer.CurrentCultureIgnoreCase).Select(x=>(object)new
         {
             name=x.Name,type=x is DirectoryInfo?"folder":"file",size_bytes=x is FileInfo file?file.Length:(long?)null,modified=Time(x.LastWriteTimeUtc),attributes=x.Attributes.ToString(),link_target=x.LinkTarget

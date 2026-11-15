@@ -77,6 +77,7 @@ public partial class MainWindow
         check(!reply.GetProperty("isError").GetBoolean()&&result.Rows.SequenceEqual(persisted.Rows),"Independent MCP process reads the same committed facts after writer closure");
         check((await Call("tools/call",new{name="get_app_history",arguments=new{}})).GetProperty("result").GetProperty("isError").GetBoolean(),"Invalid app history request returns structured error");
         await VerifyMcpTools48(root,mcpProfile,Call,check);
+        await VerifyElevatedReads06((name,arguments)=>Call("tools/call",new{name,arguments}),check);
         // MCP-05: closing stdin while a slow request (every Cleanup target) runs ends the server promptly.
         await child.StandardInput.WriteLineAsync(JsonSerializer.Serialize(new{jsonrpc="2.0",id=2,method="tools/call",@params=new{name="get_maintenance",arguments=new{category="Cleanup"}}}));await child.StandardInput.FlushAsync();
         child.StandardInput.Close();var stopwatch=Stopwatch.StartNew();
@@ -128,6 +129,28 @@ public partial class MainWindow
         check(limited.Total==2&&limited.Truncated&&limited.Rows.Length==1,"Bounded output reports full matching count");
         var spikes=PerformanceHistory.Query(query with{Tool="find_spikes",Threshold=80},source:path);
         check(spikes.Total==1&&spikes.Rows.Single().Peak==90,"Spike query finds observed threshold exceedance");
+    }
+    // MCP-06: the worker's read-only boot action exists; without an administrator session nothing is launched
+    // from the window process and a folder only administrators can list is a clear, prompt structured error.
+    static async Task VerifyElevatedReads06(Func<string,object,Task<JsonElement>> tool,Action<bool,string> check)
+    {
+        bool answered;
+        try{answered=(await MaintenanceWorker.Apply(new("boots","",Maintenance.Journal,null))).StartsWith("[");}
+        catch(IOException error){answered=error.Message.Length>0;}
+        check(answered,"MCP-06 worker boot action returns boots or a clear reason");
+        if(!AdministratorSession.Available)
+        {
+            var notes=new List<string>();
+            check(!ElevatedReads.StartSilently&&await ElevatedReads.Boots(notes,default)==null&&notes.Count==0&&!AdministratorSession.Available,"MCP-06 without a session the window reads boots as the user and starts no helper");
+        }
+        const string protectedFolder=@"C:\System Volume Information";
+        bool denied=false;try{Directory.EnumerateFileSystemEntries(protectedFolder).Any();}catch(UnauthorizedAccessException){denied=true;}catch(IOException){}
+        if(denied&&!StartupTasks.SessionRegistered.GetValueOrDefault())
+        {
+            var watch=Stopwatch.StartNew();var reply=(await tool("list_folder",new{path=protectedFolder})).GetProperty("result");
+            check(reply.GetProperty("isError").GetBoolean()&&reply.GetProperty("content")[0].GetProperty("text").GetString().Contains("administrator session")&&watch.Elapsed<TimeSpan.FromSeconds(15),
+                "MCP-06 list_folder on an administrators-only folder without a session is a prompt structured error");
+        }
     }
     // S48 MCP-05: the added tools answer through the real stdio server; bad input is a structured error;
     // reading Maintenance/Cleanup leaves the profile (journal, settings, baselines) byte-identical.
