@@ -17,6 +17,7 @@ internal sealed partial class PerformancePanel
     readonly PerformanceTimeline analysisGraph=new(){MinHeight=180,Margin=new(0,12,0,12)};
     readonly ComboBox range=new(){MinWidth=130},analysisKind=new(){MinWidth=145};
     readonly TextBox appFilter=new(){MinWidth=130,MaxWidth=200,ToolTip="Observed process name"},threshold=new(){Width=65,Text="80",ToolTip="Spike threshold: percent, or bytes/s for drive I/O"};
+    DockPanel detailBar;
     readonly TextBlock historyStatus=new(){TextWrapping=TextWrapping.Wrap,FontSize=11,Margin=new(0,8,0,0)};
     CancellationTokenSource historyCancel;Task historyQuery=Task.CompletedTask,historyWork=Task.CompletedTask;
     CancellationTokenSource hoverCancel;Task hoverQuery=Task.CompletedTask,hoverWork=Task.CompletedTask;
@@ -66,8 +67,7 @@ internal sealed partial class PerformancePanel
         range.ItemsSource=new[]{"Rolling hour","Last 15 minutes","Last hour","Last 24 hours","Last 7 days","Last 30 days","Selected interval"};range.SelectedIndex=0;
         analysisKind.ItemsSource=new[]{"Activity","Summary","Top apps","Spikes","App history","Events","Boot diagnostics","System changes","Insights"};analysisKind.SelectedIndex=0;
         Add(range,"Performance time range");Add(analysisKind,"Analysis section");
-        BuildProcessControls();Add(columnsButton,"Choose process columns");Add(processFilter,"Filter CPU processes");
-        Add(handleTypesButton,"Show handle types of the pinned process");Add(endProcessButton,"End the pinned process");
+        BuildProcessControls();
         gpuPicker.Visibility=Visibility.Collapsed;Add(gpuPicker,"GPU adapter");
         gpuPicker.SelectionChanged+=(_,_)=>{gpu=(gpuPicker.SelectedItem as GpuReading)?.Id;Refresh();if(ready&&Historical)_ = LoadHistory();};
         Add(appFilter,"App history name");Add(threshold,"Spike threshold");
@@ -100,7 +100,13 @@ internal sealed partial class PerformancePanel
         analysisGraph.MomentHovered+=time=>{hoverCancel?.Cancel();var previous=hoverQuery;var cancellation=new CancellationTokenSource();hoverCancel=cancellation;hoverQuery=ReadHover(previous,time,cancellation);};
         analysisGraph.SelectionCleared+=ResetInvestigation;
         var plots=new Grid();plots.Children.Add(analysisGraph);plots.Children.Add(appCharts);Grid.SetRow(plots,2);grid.Children.Add(plots);
-        detailState.TextWrapping=TextWrapping.NoWrap;detailState.TextTrimming=TextTrimming.CharacterEllipsis;detailState.SetBinding(ToolTipProperty,new Binding(nameof(TextBlock.Text)){Source=detailState});detailState.SetResourceReference(TextBlock.ForegroundProperty,"Muted");Grid.SetRow(detailState,3);grid.Children.Add(detailState);
+        detailState.TextWrapping=TextWrapping.NoWrap;detailState.TextTrimming=TextTrimming.CharacterEllipsis;detailState.SetBinding(ToolTipProperty,new Binding(nameof(TextBlock.Text)){Source=detailState});detailState.SetResourceReference(TextBlock.ForegroundProperty,"Muted");detailState.VerticalAlignment=VerticalAlignment.Center;
+        // The process filter, pinned-process actions and column chooser act on the table, so they sit on its own bar.
+        var tableTools=new StackPanel{Orientation=Orientation.Horizontal};DockPanel.SetDock(tableTools,Dock.Right);
+        void Tool(Control control,string name){control.Margin=new Thickness(8,0,0,4);control.MinHeight=32;AutomationProperties.SetName(control,name);control.ToolTip??=name;tableTools.Children.Add(control);}
+        Tool(processFilter,"Filter CPU processes");Tool(handleTypesButton,"Show handle types of the pinned process");Tool(endProcessButton,"End the pinned process");
+        columnsButton.Content="";columnsButton.FontFamily=new("Segoe Fluent Icons");columnsButton.FontSize=13;columnsButton.Width=columnsButton.MinWidth=32;columnsButton.Padding=new Thickness(0);Tool(columnsButton,"Choose columns");
+        detailBar=new DockPanel{Margin=new(0,4,0,0)};detailBar.Children.Add(tableTools);detailBar.Children.Add(detailState);Grid.SetRow(detailBar,3);grid.Children.Add(detailBar);
         table.SetResourceReference(Control.ForegroundProperty,"Palette.E8EEF6");AutomationProperties.SetName(table,"Performance activity");
         VirtualizingPanel.SetIsVirtualizing(table,true);VirtualizingPanel.SetVirtualizationMode(table,VirtualizationMode.Recycling);
         ScrollViewer.SetCanContentScroll(table,true);
@@ -119,7 +125,7 @@ internal sealed partial class PerformancePanel
         {
             // Star rows need a finite height even inside the small-window
             // scroller, preserving table virtualization and the whole timeline.
-            grid.Height=Math.Max(analysisScroll.ActualHeight,(appCharts.IsVisible||selected==Drive?290:180)+110+heading.ActualHeight+controls.ActualHeight+detailState.ActualHeight+historyStatus.ActualHeight+48);
+            grid.Height=Math.Max(analysisScroll.ActualHeight,(appCharts.IsVisible||selected==Drive?290:180)+110+heading.ActualHeight+controls.ActualHeight+detailBar.ActualHeight+historyStatus.ActualHeight+48);
         }
         analysisScroll.Content=grid;analysisScroll.SizeChanged+=(_,_)=>FitAnalysis();controls.SizeChanged+=(_,_)=>FitAnalysis();
         details.Child=analysisScroll;ready=true;ChangedAnalysis();
