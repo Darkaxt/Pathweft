@@ -49,7 +49,7 @@ internal static class McpTools
     internal static async Task<object> Query(string tool,JsonElement value,CancellationToken cancel)
     {
         if(!Allowed.TryGetValue(tool,out var allowed)||value.ValueKind!=JsonValueKind.Object)throw new ArgumentException("Unknown tool or invalid arguments");
-        if(value.EnumerateObject().FirstOrDefault(x=>!allowed.Contains(x.Name)) is {Name:{} unknown})throw new ArgumentException("Unknown argument: "+unknown);
+        if(value.EnumerateObject().Select(x=>x.Name).FirstOrDefault(x=>!allowed.Contains(x)) is {} unknown)throw new ArgumentException("Unknown argument: "+unknown);
         var arguments=new Arguments(value);
         int offset=arguments.Integer("offset",0,0,int.MaxValue),limit=arguments.Integer("limit",100,1,500);
         switch(tool)
