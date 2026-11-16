@@ -1,6 +1,6 @@
 # Pathweft specification
 
-Version 1.29 - 2026-11-16. Owner: Darkaxt.
+Version 1.30 - 2026-11-16. Owner: Darkaxt.
 
 ### Read-only MCP expansion (S48)
 
@@ -2232,6 +2232,21 @@ authorize redesigning Windows' native third-party menu or starting S6/S7.
 | MENU-03 | Replace bottom command text with familiar Explorer-style icons, keeping names and shortcuts in hover tooltips and accessible names. Recover exact toolbar and View-menu SVG artwork where available; use verified Fluent glyphs for structural controls. Preserve supported actions, state/eligibility, shortcuts and Native/Original styling. Verify recognizable active/disabled states, keyboard/focus access, narrow layouts and 100%/150% rendering in both themes. Native icon recovery is research until S9 becomes ACTIVE; source provenance and distribution/runtime-use decisions must be explicit. Shared final delivery belongs to S11. |
 | MENU-04 | PowerShell scripts: a single .ps1 file's menu offers Run with PowerShell at the root and Run as administrator under Tools. Both run `pwsh -NoProfile -File <script>` (PowerShell 7 from its install folder or PATH; otherwise Windows PowerShell with `-ExecutionPolicy RemoteSigned` for that process) in its own console, starting in the script's folder; Run as administrator asks for UAC. Opening the script still edits it, as in Windows. Owner request 2026-11-14: .ps1 files could not be launched from Pathweft, and this PC has no Run with PowerShell verb registered. |
 
+### One organized Pathweft menu (S49)
+
+Owner direction 2026-11-16: Pathweft's right-click menu is the one organized menu. Upstream File Labs promotions
+leave the program, the useful entries other programs add to the Windows menu join Pathweft's own groups, and
+the full standard Windows menu is one Ctrl+right-click away. Windows' and Explorer's own menu is not changed.
+This supersedes MENU-02's "Windows menu…" item; MENU-01/03/04 still apply. Planned first, before S20.
+
+| ID | Requirement and acceptance |
+| --- | --- |
+| MENU-05 | Remove the upstream sister-app tie-ins: Add to Shelf, Add to Reel, Back up with Backup Labs, Pin/Unpin to Lume, opening Stash/Backup Labs backups (Backups.cs), the Reel header in video previews, reading and writing the ProtagonistLabs ecosystem cards and data files (Sisters.cs, lume.txt, the items list), the "Works with other apps" help section and the paid-app discount line. No protagonistlabs.app link or UTM address remains in the program. Files Pathweft itself wrote for that ecosystem are removed once; other programs' files there are left alone. |
+| MENU-06 | Pathweft's file, folder, empty-space and drive menus take in the entries other programs and Windows register for that selection (shell verbs and context-menu handlers: e.g. VS Code, Git GUI/Bash, VLC, Tailscale, Notepad++, Google Drive, Defender scan, WSL), shown with their own text and icon inside Pathweft's groups and invoked through the shell as Windows would. Left out: entries that duplicate a Pathweft command (Open, Open in Pathweft, explore, Copy as path, Pin to Quick access/Home, Open terminal here's cmd/PowerShell, Pathweft's own rename/space analysis once S20 delivers them) and Windows features that are not set up on this PC (Work Folders, Offline Files/Sync Center). The exact duplicate and placement lists come from the inventory taken when S49 becomes ACTIVE (the 2026-11-16 audit lists about 100 entries) and are recorded with the stage. Tresorit and Google Drive keep their existing provider placement. |
+| MENU-07 | The "Windows menu…" items are removed. Ctrl+right-click (and Ctrl+Shift+F10 or Ctrl+Menu key from the keyboard) opens the complete standard Windows menu for the same selection, folder background or This PC drive, at the pointer or the focused item, with Rename routed to Pathweft's rename as today. Inside an archive, where Windows has no menu, Ctrl+right-click shows Pathweft's archive menu. The existing native-menu setting keeps working. |
+| MENU-08 | Nothing is written to the Windows menu registrations: Explorer's own menu is unchanged. A third-party entry that fails or hangs only fails that command, as in Explorer; building the menu stays fast with all registered handlers present (measured on this PC). |
+| MENU-09 | Verify the menus-ui inventory for files, folders, mixed and multiple selections, empty space, drives and archive entries: no sister-app item or link, no duplicate, the taken-in entries present and working (at least VS Code, Git Bash here, VLC and a handler-based entry), Ctrl+right-click and its keyboard equivalents, both themes at 100%/150%. Publish and verify through the normal release channel. |
+
 ### Native Jump Lists (S11)
 
 The user's 2026-10-31 screenshots add S11 as planned work: Pathweft's expandable
@@ -2338,7 +2353,7 @@ Owner direction 2026-11-16 on issue #9 ("Please reach full parity with native be
 
 ### Selected-folder content indexing (S19)
 
-Planned immediately after S12 and before S20; NOT STARTED. Everything remains the
+Planned after S21 and before S22 (owner order 2026-11-16: S49 -> S20 -> S21 -> S19); NOT STARTED. Because S21 now comes first, S19 also adds content queries to S21's saved searches (BROWSE-03's content-query part). Everything remains the
 filename/path engine. Content indexing is opt-in for selected folders and is a
 separate capability. This planning request does not authorize extracting user
 documents, hydrating cloud files, starting indexers or installing components.
@@ -2359,7 +2374,7 @@ authorized by registration of this stage.
 
 ### Integrated PowerToys file tools (S20)
 
-Planned after S19 and before S21; NOT STARTED. Scope is the seven capabilities
+Planned after S49 and before S21; NOT STARTED. Scope is the seven capabilities
 accepted in the brainstorming discussion, with New+ last in implementation
 priority. This registration does not activate implementation or any live action.
 Use the [PowerToys source](https://github.com/microsoft/PowerToys/tree/main/src/modules)
@@ -2391,7 +2406,7 @@ remain unqualified. No tracked deferral or ACTIVE stage is introduced.
 
 ### Browsing productivity and smart destinations (S21)
 
-Planned after S20 and before S22; NOT STARTED. The user registered the Linux
+Planned after S20 and before S19; NOT STARTED. The user registered the Linux
 comparison's suggested features and the agreed browser-style address dropdown
 as one future stage. This extends existing browsing rather than replacing its
 working commands or importing a whole donor application. Scope registration
@@ -2428,7 +2443,7 @@ deferral or ACTIVE stage is introduced; S19 and S20 retain their own scope.
 
 ### Focused file workflow enhancements (S22)
 
-Planned immediately after Linux-inspired S21 and before S6; NOT STARTED. The
+Planned after S19 and before S6; NOT STARTED. The
 user registered the Directory Opus assessment's useful additions, including its
 lower-priority candidates. Favor direct implementation using existing tabs,
 panes, operations, preview and settings owners. This is not whole-product parity,
