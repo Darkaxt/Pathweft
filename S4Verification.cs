@@ -513,7 +513,7 @@ public partial class MainWindow
             {
                 await S1Verification.Navigate(Left, protectedArchive); await Select(Left, "image.png");
                 var protectedMenu = Menu(Left);
-                try { Check(!Archive.CanChange(protectedArchive) && !protectedMenu.Items.OfType<MenuItem>().Single(i => i.Header?.ToString() == "Rename").IsEnabled && Descendants<TextBlock>(Left).Any(t => t.Text.Contains("read-only")), "ARCHIVE-02/03 Windows read-only archive files remain browsable and disable editing in the actual pane"); }
+                try { Check(!Archive.CanChange(protectedArchive) && !protectedMenu.Items.OfType<MenuItem>().Single(i => i.Header?.ToString() == "Rename").IsEnabled && Left.ReadOnlyWatermark.Visibility == Visibility.Visible, "ARCHIVE-02/03 Windows read-only archive files remain browsable and disable editing in the actual pane"); }
                 finally { protectedMenu.RaiseEvent(new RoutedEventArgs(ContextMenu.ClosedEvent)); }
             }
             finally { File.SetAttributes(protectedArchive, File.GetAttributes(protectedArchive) & ~FileAttributes.ReadOnly); }
