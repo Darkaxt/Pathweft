@@ -4,6 +4,7 @@ using Microsoft.Win32;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 
 using Clipboard = System.Windows.Forms.Clipboard;
@@ -19,8 +20,6 @@ public partial class MainWindow
     internal static IEnumerable<MenuItem> MenuCommands(ItemsControl menu)
     {foreach(var item in menu.Items.OfType<MenuItem>()){yield return item;foreach(var child in MenuCommands(item))yield return child;}}
 #endif
-    long contextMenuRequest;
-    readonly HashSet<Task> contextMenuInspections=new();
     void HookContextMenu(PaneView p)
     {
         p.List.ContextMenuOpening += (_, e) =>
@@ -29,18 +28,49 @@ public partial class MainWindow
             // right-click on empty space (in Details also right of the columns) = the folder itself, not
             // whatever is still selected
             var row = p.RowAt(e.OriginalSource as DependencyObject);
-            if (row == null && e.CursorLeft >= 0) p.List.SelectedItems.Clear();
+            bool keyboard = e.CursorLeft < 0;
+            if (row == null && !keyboard) p.List.SelectedItems.Clear();
+            // MENU-07: Ctrl+right-click opens the other menu (the standard Windows one, by default). With Ctrl held WPF
+            // leaves the selection as it was, so the row under the pointer is selected here, as a plain right-click does.
+            bool ctrl = Keyboard.Modifiers.HasFlag(ModifierKeys.Control);
+            if (ctrl && !keyboard && row is Entry entry && !p.List.SelectedItems.Contains(entry)) { p.List.SelectedItems.Clear(); p.List.SelectedItems.Add(entry); }
             e.Handled = true;
-            ShowMenu(p);
+            ShowMenu(p, ctrl, keyboard);
+        };
+        // WPF opens a menu from the keyboard only for Shift+F10 and the Menu key without Ctrl
+        p.List.PreviewKeyUp += (_, e) =>
+        {
+            if (!OtherMenuKey(e.Key == Key.System ? e.SystemKey : e.Key, Keyboard.Modifiers)) return;
+            e.Handled = true;
+            SetActive(p);
+            ShowMenu(p, ctrl: true, keyboard: true);
         };
         p.RightDragSelected += () => { SetActive(p); ShowMenu(p); };
     }
 
-    /// The menu for the pane's selection, or for its folder when nothing is selected.
-    async void ShowMenu(PaneView p)
+    /// Ctrl+Shift+F10 or Ctrl+Menu key: the keyboard's Ctrl+right-click.
+    internal static bool OtherMenuKey(Key key, ModifierKeys modifiers) =>
+        modifiers.HasFlag(ModifierKeys.Control) && !modifiers.HasFlag(ModifierKeys.Alt) &&
+        (key == Key.F10 && modifiers.HasFlag(ModifierKeys.Shift) || key == Key.Apps);
+
+    /// Where a menu opened from the keyboard goes: below the focused (else the selected) item, in screen pixels.
+    static (int X, int Y)? MenuPoint(PaneView p, bool keyboard)
+    {
+        if (!keyboard) return null;
+        var element = Keyboard.FocusedElement as ListBoxItem is { } focused && ItemsControl.ItemsControlFromItemContainer(focused) == p.List ? focused
+            : p.List.SelectedItem != null ? p.List.ItemContainerGenerator.ContainerFromItem(p.List.SelectedItem) as FrameworkElement : null;
+        element ??= p.List;
+        if (PresentationSource.FromVisual(element) == null) return null;
+        var point = element.PointToScreen(element == p.List ? new Point(24, 24) : new Point(Math.Min(48, element.ActualWidth / 2), element.ActualHeight));
+        return ((int)point.X, (int)point.Y);
+    }
+
+    /// The menu for the pane's selection, or for its folder when nothing is selected. `ctrl`: the other menu than the
+    /// right-click setting picks (MENU-07); `keyboard`: opened from the keyboard, so at the focused item.
+    void ShowMenu(PaneView p, bool ctrl = false, bool keyboard = false)
     {
         if(closingPreviews)return;
-        long request=++contextMenuRequest;string originalDirectory=p.Dir;
+        var at = MenuPoint(p, keyboard);
         // This PC: Windows' menu for the drive (Properties, Eject, Format…), or for This PC itself (Map network drive…)
         if (p.Dir == PaneView.ThisPC && !p.InSearch)
         {
@@ -52,7 +82,7 @@ public partial class MainWindow
                 if ((map ? WNetConnectionDialog(hwnd, 1) : WNetDisconnectDialog(hwnd, 1)) == 0) { RefreshDrives(); p.Refresh(); } // RESOURCETYPE_DISK
             }
             (string, Action)[] net = { ("&Map network drive…", () => Net(true)), ("&Disconnect network drive…", () => Net(false)) };
-            ShellMenu.Show(this, PaneView.ThisPC, drive != null ? new[] { drive.Path } : Array.Empty<string>(), rename: false, top: drive == null ? net : null);
+            ShellMenu.Show(this, PaneView.ThisPC, drive != null ? new[] { drive.Path } : Array.Empty<string>(), rename: false, top: drive == null ? net : null, at: at);
             p.Refresh();
             return;
         }
@@ -68,25 +98,19 @@ public partial class MainWindow
             return;
         }
         var sel = p.Selected;
-        if (Settings.NativeMenu&&ShellMenu.CanShowItems(sel.Select(entry=>entry.Path).ToArray()))
+        // Settings → Files → Context menu picks the right-click menu; Ctrl+right-click opens the other one (archives
+        // and This PC above have only one)
+        if ((Settings.NativeMenu ^ ctrl) && ShellMenu.CanShowItems(sel.Select(entry=>entry.Path).ToArray()))
         {
+#if DEBUG
+            NativeMenuForVerification?.Invoke(sel.Select(x => x.Path).ToArray(), at);
+#endif
             // the folder's menu gets Pathweft' View submenu; Paste on a folder, or a shortcut to one, is Windows' own here
-            if (ShellMenu.Show(this, p.Dir, sel.Select(x => x.Path).ToList(), sel.Count == 0 ? p.ViewChoices() : null) == "rename") Rename();
+            if (ShellMenu.Show(this, p.Dir, sel.Select(x => x.Path).ToList(), sel.Count == 0 ? p.ViewChoices() : null, at: at) == "rename") Rename();
             p.Refresh();
             return;
         }
-        // Observe the actual optional metadata read. A changed selection/folder
-        // or closing browser invalidates this menu request, without a timer race.
-        Backups.Info backup = null;
-        if (sel.Count == 1 && !sel[0].IsDir && Backups.Named(sel[0].Path))
-        {
-            var path = sel[0].Path;
-            var look = Task.Run(() => Backups.Inspect(path) is { Unreadable: false } b && BackupStart(b.Id, path) == null ? b : null);
-            contextMenuInspections.Add(look);
-            try{backup=await look;}finally{contextMenuInspections.Remove(look);}
-            if(closingPreviews||request!=contextMenuRequest||p.Dir!=originalDirectory||!sel.Select(entry=>entry.Path).SequenceEqual(p.Selected.Select(entry=>entry.Path)))return;
-        }
-        var menu = sel.Count > 0 ? ItemMenu(p, sel, backup) : FolderMenu(p);
+        var menu = sel.Count > 0 ? ItemMenu(p, sel) : FolderMenu(p);
         PrepareContextMenu(menu,p.List);
 #if DEBUG
         archiveMenuForVerification = menu;
@@ -94,82 +118,10 @@ public partial class MainWindow
 #endif
         menu.IsOpen = true;
     }
-
-    // Shelf, Reel and Backup Labs (sister apps) take folders and files on the command line, already
-    // running or not: Shelf (3.59.0) and Reel (1.9.11) offer to add them, Backup Labs (1.0.2) makes a
-    // new job of them. Each is found through its card, else the uninstall entry its installer writes; without either
-    // the menu item sends the user to the app's page.
-    const string ShelfKey = "93869666-a03d-5775-ba3a-19dde48e73bc", ReelKey = "95693626-e8c4-5132-9e4f-6f4a12169be6";
-    const string BackupKey = "{3B9E6A12-8C4D-4F7B-A1E5-6D2F0B8C9E34}_is1";
-    const string BackupPage = "https://protagonistlabs.app/backuplabs/?utm_source=pathweft&utm_medium=app&utm_campaign=back-up-with-backuplabs";
-    const string ShelfPage = "https://protagonistlabs.app/shelf/?utm_source=pathweft&utm_medium=app&utm_campaign=add-to-shelf";
-    const string ReelPage = "https://protagonistlabs.app/reel/?utm_source=pathweft&utm_medium=app&utm_campaign=add-to-reel";
-    // the extensions Reel takes as a film
-    static readonly HashSet<string> ReelVideo = Set(".mkv", ".mp4", ".avi", ".mov", ".wmv", ".m4v", ".ts", ".m2ts", ".mpg", ".mpeg", ".webm");
-
-    /// The exe an uninstall entry's DisplayIcon names ("C:\...\Shelf.exe,0"), or null when it is not on disk.
-    internal static string ExeOf(string displayIcon)
-    {
-        var exe = displayIcon?.Split(',')[0].Trim('"');
-        return exe != null && File.Exists(exe) ? exe : null;
-    }
-
-    /// A sister's exe: its ecosystem card first (Sisters.cs), else what older versions left in the registry; null = not installed.
-    internal static string SisterExe(string id) => Sisters.Exe(id) ?? id switch
-    {
-        "shelf" => Uninstalled(ShelfKey),
-        "reel" => Uninstalled(ReelKey),
-        "backuplabs" => Uninstalled(BackupKey),
-        _ => null,
-    };
-
-    // Since ecosystem v3 the studio's apps install per machine (Program Files\ProtagonistLabs), so their uninstall entry is
-    // in HKLM, in the 64-bit view (Inno in 64-bit mode) or the 32-bit one (an NSIS installer); a per-user install in HKCU.
-    static string Uninstalled(string key)
-    {
-        foreach (var (hive, view) in new[] { (RegistryHive.LocalMachine, RegistryView.Registry64), (RegistryHive.LocalMachine, RegistryView.Registry32), (RegistryHive.CurrentUser, RegistryView.Default) })
-        {
-            using var root = RegistryKey.OpenBaseKey(hive, view);
-            using var entry = root.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Uninstall\" + key);
-            if (ExeOf(entry?.GetValue("DisplayIcon") as string) is { } exe) return exe;
-        }
-        return null;
-    }
-
-    static void HandTo(string id, string page, IEnumerable<string> paths)
-    {
-        var exe = SisterExe(id);
-        if (exe == null) { Process.Start(new ProcessStartInfo(page) { UseShellExecute = true }); return; }
-        // ArgumentList, not a quoted string: a drive root ends in a backslash, which would escape the closing quote
-        var start = new ProcessStartInfo(exe);
-        foreach (var p in paths) start.ArgumentList.Add(p);
-        Process.Start(start);
-    }
-
-    // Stash (2.1) and Backup Labs (1.3.0) open one of their backups (Backups.cs) given `--browse` / `--open` and its
-    // full path. Older versions don't know the switch (Backup Labs would make a bare path a new job), so a version
-    // below these counts as not installed and the button opens the app's page.
-    static readonly Dictionary<string, (string Switch, Version Min, string Page)> BackupApps = new()
-    {
-        ["stash"] = ("--browse", new(2, 1, 0), "https://protagonistlabs.app/stash/?utm_source=pathweft&utm_medium=app&utm_campaign=open-backup"),
-        ["backuplabs"] = ("--open", new(1, 3, 0), "https://protagonistlabs.app/backuplabs/?utm_source=pathweft&utm_medium=app&utm_campaign=open-backup"),
-    };
-
-    /// The command that opens this backup in its app, or null when it isn't one, can't be read, or the app is missing or too old.
-    internal static ProcessStartInfo BackupStart(string path) =>
-        Backups.Inspect(path) is { Unreadable: false } b && BackupStart(b.Id, path) is { } start ? start : null;
-
-    static ProcessStartInfo BackupStart(string id, string path)
-    {
-        if (SisterExe(id) is not { } exe || !Version.TryParse(FileVersionInfo.GetVersionInfo(exe).FileVersion, out var v) || v < BackupApps[id].Min) return null;
-        var start = new ProcessStartInfo(exe);
-        start.ArgumentList.Add(BackupApps[id].Switch);
-        start.ArgumentList.Add(path);
-        return start;
-    }
-
-    static void OpenBackup(string id, string path) =>
-        Process.Start(BackupStart(id, path) ?? new ProcessStartInfo(BackupApps[id].Page) { UseShellExecute = true });
+#if DEBUG
+    internal Action<string[], (int X, int Y)?> NativeMenuForVerification;
+    internal void S49ShowMenu(PaneView p, bool ctrl, bool keyboard) { SetActive(p); ShowMenu(p, ctrl, keyboard); }
+#endif
 
     internal static MenuItem Item(string header, string glyph, string gesture, Action run, bool enabled = true)
     {
@@ -188,20 +140,16 @@ public partial class MainWindow
         return mi;
     }
 
-    /// `backup`: the selected file is a backup whose app isn't installed (ShowMenu), so the menu leads to it.
-    ContextMenu ItemMenu(PaneView p, List<Entry> sel, Backups.Info backup)
+    ContextMenu ItemMenu(PaneView p, List<Entry> sel)
     {
         var first = sel[0];
         bool one = sel.Count == 1, dir = one && first.IsDir;
         var ext = Path.GetExtension(first.Name);
         var m = new ContextMenu();
-        // Open with, 7-Zip, WinRAR, Google Drive and Tresorit: their own commands, as in Explorer (ShellMenu.LoadExtensions)
+        // Open with, 7-Zip, WinRAR, Google Drive, Tresorit and what other programs register: their own commands, as in Explorer (ShellMenu.LoadExtensions)
         var shell = ShellMenu.LoadExtensions(this, sel.Select(x => x.Path).ToList());
         m.Closed += (_, _) => Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.ApplicationIdle, shell.Dispose); // after a Click
         m.Items.Add(Item("Open", "", "Enter", () => p.OpenSelected()));
-        // with Stash / Backup Labs installed, Open already opens their backups there; without, this leads to them
-        if (backup != null)
-            m.Items.Add(Item($"Open in {backup.App}", "", "", () => OpenBackup(backup.Id, first.Path)));
         if (dir)
         {
             m.Items.Add(Item("Open in new tab", "", "Middle click", () => { p.NewTab(); p.Navigate(first.Path); }));
@@ -262,21 +210,14 @@ public partial class MainWindow
         m.Items.Add(Item("Create shortcut", "", "", CreateShortcuts));
         m.Items.Add(new Separator());
         if (sel.Any(x => x.IsDir)) m.Items.Add(Item("Pin to Quick access", "", "Ctrl+D", PinSelected));
-        if (LumeItem(sel.Select(x => x.Path).ToList()) is { } lume) m.Items.Add(lume);
         m.Items.Add(Item("Show in File Explorer", "", "", () => OpenInExplorer($"/select,\"{first.Path}\"")));
         AddShell(m, shell, "drive");
         AddShell(m, shell, "tresorit");
         m.Items.Add(Item(p.SpaceAnalyzing?"Restore previous view":"Analyze space in this folder","\uE9F5","",()=>AnalyzeSpace_Click(null,new()),p.CanAnalyzeSpace));
-        if (sel.All(x => x.IsDir || Path.GetExtension(x.Name).Equals(".exe", StringComparison.OrdinalIgnoreCase)))
-            m.Items.Add(Item("Add to Shelf", "\uE7FC", "", () => HandTo("shelf", ShelfPage, sel.Select(x => x.Path))));
-        if (sel.All(x => x.IsDir || ReelVideo.Contains(Path.GetExtension(x.Name))))
-            m.Items.Add(Item("Add to Reel", "\uE8B2", "", () => HandTo("reel", ReelPage, sel.Select(x => x.Path))));
-        m.Items.Add(Item("Back up with Backup Labs", "\uE81C", "", () => HandTo("backuplabs", BackupPage, sel.Select(x => x.Path))));
         var paths=sel.Select(entry=>entry.Path).ToArray();
-        var windows=Item("Windows menu…", "", "", () => { if (ShellMenu.Show(this, p.Dir, paths) == "rename") Rename(); },ShellMenu.CanShowItems(paths));
-        if(!windows.IsEnabled){windows.ToolTip="Select items from one containing folder for the Windows menu.";ToolTipService.SetShowOnDisabled(windows,true);}m.Items.Add(windows);
         var properties=Item("Properties", "", "Alt+Enter", () => Properties(paths),SupportsProperties(paths));
         if(!properties.IsEnabled){properties.ToolTip="Select items on the same drive or share for combined Properties.";ToolTipService.SetShowOnDisabled(properties,true);}m.Items.Add(properties);
+        AddOthers(m, shell);
         GroupItemMenu(m);
         return m;
     }
@@ -286,12 +227,11 @@ public partial class MainWindow
     static void GroupItemMenu(ContextMenu menu)
     {
         var remaining=menu.Items.OfType<MenuItem>().ToList();menu.Items.Clear();
-        var windows=remaining.Single(item=>item.Header as string=="Windows menu…");remaining.Remove(windows);
         var properties=remaining.Single(item=>item.Header as string=="Properties");remaining.Remove(properties);
         void Take(ItemsControl target,Func<MenuItem,bool> predicate){foreach(var item in remaining.Where(predicate).ToArray()){remaining.Remove(item);target.Items.Add(item);}}
         void Group(string name,string glyph,Func<MenuItem,bool> predicate){var group=Item(name,glyph,"",()=>{});Take(group,predicate);if(group.Items.Count>0)menu.Items.Add(group);}
         static bool Named(MenuItem item,params string[] labels)=>labels.Contains(item.Header as string);
-        Take(menu,item=>Named(item,"Open","Run with PowerShell","Open with…","Open in new tab","Open in other pane","Open file location","Edit","Quick View")||item.Tag as string=="shell:openwith"||(item.Header as string)?.StartsWith("Open in ")==true&&item.Header as string!="Open in File Explorer");
+        Take(menu,item=>Named(item,"Open","Run with PowerShell","Open with…","Open in new tab","Open in other pane","Open file location","Edit","Quick View")||item.Tag as string is "shell:openwith" or "shell:apps"||(item.Header as string)?.StartsWith("Open in ")==true&&item.Header as string!="Open in File Explorer");
         menu.Items.Add(new Separator());
         Take(menu,item=>Named(item,"Cut","Copy","Paste","Paste into folder","Rename","Rename all…","Delete","Delete permanently"));
         menu.Items.Add(new Separator());
@@ -300,8 +240,29 @@ public partial class MainWindow
         Group("Archive","\uF012",item=>(item.Header as string)?.StartsWith("Compress to ")==true||item.Tag as string is "shell:7-zip" or "shell:winrar");
         Group("Tools","\uE713",item=>Named(item,"Run as administrator","Compare in editor","Edit with Notepad++","Checksum (SHA-256)","Create shortcut","Mount")||(item.Header as string)?.StartsWith("Find duplicates")==true);
         Group("More actions","\uE712",_=>true);
-        menu.Items.Add(new Separator());menu.Items.Add(windows);menu.Items.Add(properties);
+        menu.Items.Add(new Separator());menu.Items.Add(properties);
     }
+
+    /// MENU-06: what other programs and Windows registered for the selection, in Pathweft's groups: the ones that open
+    /// it in a program (Open with Code, Git Bash here, Play with VLC) beside Open, or in Tools on a folder's background,
+    /// the rest in More actions. One that repeats a command already in the menu, or another taken-in one, is left out.
+    static void AddOthers(ContextMenu menu, ShellMenu.Extensions shell)
+    {
+        var taken = new HashSet<string>();
+        void Collect(ItemsControl parent) { foreach (var item in parent.Items.OfType<MenuItem>()) { if (item.Header is string h) taken.Add(ShellMenu.Comparable(h)); Collect(item); } }
+        Collect(menu);
+        foreach (var node in shell.Others)
+        {
+            var key = ShellMenu.Comparable(node.Text);
+            if (key.Length == 0 || !taken.Add(key)) continue;
+            if (ShellItem(node) is not MenuItem item) continue;
+            item.Tag = OpensInApp(key) ? "shell:apps" : "shell:other";
+            menu.Items.Add(item);
+        }
+    }
+
+    internal static bool OpensInApp(string comparable) =>
+        comparable.StartsWith("open") || comparable.StartsWith("play") || comparable.StartsWith("edit with") || comparable.EndsWith(" here");
 
     /// Adds what a shell extension offered for the selection (ShellMenu.Extensions); false when it offered nothing.
     static bool AddShell(ItemsControl menu, ShellMenu.Extensions shell, string name)
@@ -324,6 +285,8 @@ public partial class MainWindow
     ContextMenu FolderMenu(PaneView p)
     {
         var m = new ContextMenu();
+        var shell = ShellMenu.LoadExtensions(this, Array.Empty<string>(), p.InSearch ? null : p.Dir);
+        m.Closed += (_, _) => Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.ApplicationIdle, shell.Dispose); // after a Click
         if (undo.Count > 0) m.Items.Add(Item($"Undo {undo[^1].What}", "", "Ctrl+Z", Undo));
         m.Items.Add(Item("Paste", "", "Ctrl+V", () => ClipboardPaste(), HasTransferClipboard()));
         m.Items.Add(new Separator());
@@ -353,14 +316,14 @@ public partial class MainWindow
         m.Items.Add(Item("Refresh", "", "F5 / Ctrl+R", () => { SizeCache.Clear(); p.Refresh(force: true); }));
         m.Items.Add(Item(Settings.ShowHidden ? "Hide hidden files" : "Show hidden files", "", "Ctrl+H", ToggleHidden));
         m.Items.Add(Item("Pin to Quick access", "", "Ctrl+D", PinSelected));
-        if (LumeItem(new[] { p.Dir }) is { } lume) m.Items.Add(lume);
         m.Items.Add(Item("Open terminal here", "", "Ctrl+`", OpenTerminal));
         m.Items.Add(Item("Open in File Explorer", "", "", () => OpenInExplorer($"\"{p.Dir}\"")));
         m.Items.Add(Item(p.SpaceAnalyzing?"Restore previous view":"Analyze space in this folder","\uE9F5","",()=>AnalyzeSpace_Click(null,new()),p.CanAnalyzeSpace));
-        m.Items.Add(Item("Back up with Backup Labs", "\uE81C", "", () => HandTo("backuplabs", BackupPage, new[] { p.Dir })));
+        AddShell(m, shell, "drive");
+        AddShell(m, shell, "tresorit");
         m.Items.Add(new Separator());
-        m.Items.Add(Item("Windows menu…", "", "", () => ShellMenu.Show(this, p.Dir, Array.Empty<string>())));
         m.Items.Add(Item("Properties", "", "", () => Properties(p.Dir)));
+        AddOthers(m, shell);
         GroupFolderMenu(m);
         return m;
     }
@@ -377,8 +340,8 @@ public partial class MainWindow
         Group("Select","\uE762",item=>item.Header as string is "Select by pattern…" or "Invert selection");
         Take(menu,item=>item.Header as string is "Refresh" or "Show hidden files" or "Hide hidden files");
         menu.Items.Add(new Separator());
-        Group("Tools","\uE713",item=>item.Header as string is "Compare with other pane" or "Open terminal here"||(item.Header as string)?.StartsWith("Find duplicates")==true);
-        Group("More actions","\uE712",item=>item.Header as string is not ("Windows menu…" or "Properties"));
+        Group("Tools","\uE713",item=>item.Header as string is "Compare with other pane" or "Open terminal here"||item.Tag as string=="shell:apps"||(item.Header as string)?.StartsWith("Find duplicates")==true);
+        Group("More actions","\uE712",item=>item.Header as string!="Properties");
         menu.Items.Add(new Separator());Take(menu,_=>true);
     }
 

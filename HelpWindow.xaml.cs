@@ -108,8 +108,6 @@ public partial class HelpWindow : Window
             ("Space", "Built-in preview: pictures, video/audio (Enter pauses, ←/→ seek), PDF pages, text/code, Markdown, ZIP contents, fonts and folders. Up/Down move through the list; Space or Esc closes. The taskbar widget uses the same modules"),
             ("Alt+P", "Preview pane: the selected file beside the panes, following the active pane; drag its edge to size it"),
             ("Settings → Files → Preview modules", "Enable or disable each built-in viewer. Changes affect open previews immediately. Markdown takes priority over text; disabled/unsupported files show an honest state or a readable alternative"),
-            ("Backups", "Stash and Backup Labs backups show what is inside them (apps, mail folders, files) in the preview, and open in their app"),
-            ("Videos Reel knows", "With Reel installed, its poster, title and whether you watched it, above the video's preview"),
         }),
         ("Tools", new[]
         {
@@ -124,7 +122,9 @@ public partial class HelpWindow : Window
             ("Create shortcut", "“name - Shortcut” beside the original"),
             ("Run as administrator", "For programs, scripts and installers"),
             ("Ctrl+`", "A terminal in this folder (Windows Terminal, or PowerShell)"),
-            ("Windows menu…", "Windows' own right-click menu, with everything other apps add to it. Settings → Files makes it the default right-click"),
+            ("Ctrl+right-click", "The full Windows menu for the same items or folder (Ctrl+Shift+F10 or Ctrl+Menu key from the keyboard). Settings → Files → Context menu chooses which one a plain right-click opens; Ctrl opens the other"),
+            ("Other apps' commands", "What other programs add to the Windows menu (VS Code, Git, VLC, Defender, PowerToys…) appears in Pathweft's menu, in its groups"),
+            ("Analyze space", "Beside Terminal: show this folder as a largest-first tree with logical sizes and usage bars. Expand with the arrows or Left/Right. Indexed sizes may omit Everything exclusions. Click again to restore the exact previous view."),
             ("Show in File Explorer", "Opens Explorer on the item, for the rare thing only Explorer does"),
             ("Edit with Notepad++", "When Notepad++ is installed"),
         }),
@@ -150,15 +150,6 @@ public partial class HelpWindow : Window
             ("Right-click a drive or a folder in the sidebar", "Windows' own menu for it: Properties, Eject, Format, BitLocker and what other apps add"),
             ("Ctrl+G in an Open or Save dialog", "Takes the dialog to the folder Pathweft is showing (while Pathweft is the default file manager)"),
             ("Settings → Close to the notification area", "Closing hides Pathweft next to the clock instead of quitting, so it opens again at once. Click the icon to bring it back; right-click it → Quit to really close"),
-        }),
-        ("Works with other apps", new[]
-        {
-            ("Analyze space", "Beside Terminal: show this folder as a largest-first tree with logical sizes and usage bars. Expand with the arrows or Left/Right. Indexed sizes may omit Everything exclusions. Click again to restore the exact previous view."),
-            ("Add to Shelf", "Folders and games (.exe) into Shelf's library"),
-            ("Add to Reel", "Folders and videos into Reel"),
-            ("Back up with Backup Labs", "The selection, or the folder you are in"),
-            ("Lume", "Your Quick access folders show up in Lume's search"),
-            ("Not installed?", "Each of these opens the app's page instead"),
         }),
         ("Settings and updates", new[]
         {

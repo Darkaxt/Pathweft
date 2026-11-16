@@ -23,8 +23,9 @@ public static class ShellMenu
     /// `rename`: false where Pathweft has no in-place rename to offer (the sidebar's drives and folders), so Windows
     /// leaves Rename out instead of showing an item that does nothing.
     /// `top`: Pathweft' own commands above Windows' (a Quick access folder's Move up, Move down and Remove).
+    /// `at`: where it opens, in screen pixels (the focused item, from the keyboard); else at the pointer.
     public static string Show(Window owner, string folder, IReadOnlyList<string> items, IReadOnlyList<(string Text, bool On, Action Run)> view = null, bool rename = true,
-        IReadOnlyList<(string Text, Action Run)> top = null)
+        IReadOnlyList<(string Text, Action Run)> top = null, (int X, int Y)? at = null)
     {
         if(!CanShowItems(items))return null;
         var hwnd = new WindowInteropHelper(owner).Handle;
@@ -84,7 +85,8 @@ public static class ShellMenu
             }
 #endif
 
-            GetCursorPos(out var pt);
+            POINT pt;
+            if (at is { } point) pt = new POINT { X = point.X, Y = point.Y }; else GetCursorPos(out pt);
             int cmd = TrackPopupMenuEx(menu, TPM_RETURNCMD | TPM_RIGHTBUTTON, pt.X, pt.Y, hwnd, IntPtr.Zero);
             if (cmd >= OwnFirst && cmd < OwnFirst + own.Count) { own[cmd - (int)OwnFirst](); return null; }
             if (cmd < FirstId) return null; // dismissed
@@ -125,11 +127,19 @@ public static class ShellMenu
         // when the foreground process allows it. A packaged app (Notepad on Windows 11) is started, or an open one
         // given the file, by other processes on our behalf; a report had Notepad opening behind Pathweft. The
         // user just picked the command, so the right to come forward is passed on to whoever needs it.
+#if DEBUG
+        if (InvokeForVerification is { } observe) { observe(Verb(ctx, (uint)offset)); return; }
+#endif
         AllowSetForegroundWindow(ASFW_ANY);
         var before = items.Count > 0 ? Titles() : null;
         ctx.InvokeCommand(ref info);
         if (before != null) BringForward(owner, items, before);
     }
+
+#if DEBUG
+    /// The verb a command would run (null for one without a name), instead of running it.
+    internal static Action<string> InvokeForVerification;
+#endif
 
     static IContextMenu ItemsMenu(IntPtr hwnd, IReadOnlyList<string> items, List<IntPtr> pidls) =>
         (IContextMenu)ItemsObject(hwnd, items, pidls, typeof(IContextMenu).GUID);
@@ -167,6 +177,8 @@ public static class ShellMenu
     public sealed class Extensions : IDisposable
     {
         public readonly Dictionary<string, IReadOnlyList<Node>> Found = new();
+        /// MENU-06: what every other program and Windows registered for the selection, in Explorer's order.
+        public readonly List<Node> Others = new();
         internal readonly List<object> Held = new();
         internal readonly List<IntPtr> Pidls = new(), Menus = new();
         int busy;
@@ -200,56 +212,148 @@ public static class ShellMenu
     // its "Legacy context menu" option is on.
     static readonly Guid WinRarCommand = new("B41DB860-64E4-11D2-9906-E49FADC173CA");
 
-    public static Extensions LoadExtensions(Window owner, IReadOnlyList<string> items)
+    /// `items` (all in one folder), or none for the background menu of `folder`.
+    public static Extensions LoadExtensions(Window owner, IReadOnlyList<string> items, string folder = null)
     {
         var found = new Extensions();
+#if DEBUG
+        var clock = System.Diagnostics.Stopwatch.StartNew();
+        try {
+#endif
         // One parent for all (search results from several folders get none, like the Windows menu). Not on a network
         // drive: the extensions read the files on the UI thread, and a share that is asleep would freeze the window
-        // (1.0.49 fixed that for backups); the Windows menu… item still has them there.
+        // (1.0.49 fixed that for backups); Ctrl+right-click still has them there.
         // ponytail: network items get none; asking on an STA thread of their own would bring them back if missed
         // Tresorit Drive is the exception, for Tresorit's own commands only (TRES-05): it is the client's drive on this PC,
         // and its extension is how Explorer offers Sharing and members and Copy Tresorit Path there.
-        if (items.Count == 0 || items.Select(Path.GetDirectoryName).Distinct(StringComparer.OrdinalIgnoreCase).Count() != 1) return found;
-        bool tresorit = CloudVolumes.OnTresorit(items[0]);
-        if (!tresorit && PaneView.IsRemote(items[0])) return found;
+        bool background = items.Count == 0;
+        if (background ? folder == null || !Directory.Exists(folder) : items.Select(Path.GetDirectoryName).Distinct(StringComparer.OrdinalIgnoreCase).Count() != 1) return found;
+        var probe = background ? folder : items[0];
+        bool tresorit = CloudVolumes.OnTresorit(probe);
+        if (!tresorit && PaneView.IsRemote(probe)) return found;
         var hwnd = new WindowInteropHelper(owner).Handle;
-        var folder = Path.GetDirectoryName(items[0]);
+        if (!background) folder = Path.GetDirectoryName(items[0]);
         bool files = items.Any(File.Exists), dirs = items.Any(Directory.Exists);
         System.Runtime.InteropServices.ComTypes.IDataObject data = null;
+        IntPtr pidlFolder = IntPtr.Zero;
+        // Explorer's two ways of initialising an extension: the selection as a data object, or (background) the folder
+        bool Ready()
+        {
+            if (background)
+            {
+                if (pidlFolder != IntPtr.Zero) return true;
+                if (SHParseDisplayName(folder, IntPtr.Zero, out pidlFolder, 0, out _) != 0) { pidlFolder = IntPtr.Zero; return false; }
+                found.Pidls.Add(pidlFolder);
+                return true;
+            }
+            if (data != null) return true;
+            data = (System.Runtime.InteropServices.ComTypes.IDataObject)ItemsObject(hwnd, items, found.Pidls, typeof(System.Runtime.InteropServices.ComTypes.IDataObject).GUID);
+            if (data == null) return false;
+            found.Held.Add(data);
+            return true;
+        }
         foreach (var (name, key) in Wanted)
         {
             if (tresorit != (name == "tresorit")) continue;
             // registered for every kind in the selection: files under *, folders under Directory
-            var clsid = Handler(files ? "*" : "Directory", key);
+            var clsid = Handler(background ? @"Directory\Background" : files ? "*" : "Directory", key);
             if (files && dirs && Handler("Directory", key) != clsid) clsid = null;
             try
             {
                 if (clsid == null)
                 {
-                    if (name == "winrar" && Explorer(owner, items, WinRarCommand, found) is { Count: > 0 } rar) found.Found[name] = rar;
+                    if (name == "winrar" && !background && Explorer(owner, items, WinRarCommand, found) is { Count: > 0 } rar) found.Found[name] = rar;
                     continue;
                 }
-                if (data == null)
-                {
-                    data = (System.Runtime.InteropServices.ComTypes.IDataObject)ItemsObject(hwnd, items, found.Pidls, typeof(System.Runtime.InteropServices.ComTypes.IDataObject).GUID);
-                    if (data == null) return found;
-                    found.Held.Add(data);
-                }
-                var clsidValue = clsid.Value;
-                var iid = typeof(IContextMenu).GUID;
-                if (CoCreateInstance(ref clsidValue, IntPtr.Zero, CLSCTX_INPROC_SERVER, ref iid, out var obj) != 0) continue;
-                found.Held.Add(obj);
-                // no folder: that is how a drop target is told, and 7-Zip then leaves out its email commands
-                if (obj is not IShellExtInit init || init.Initialize(IntPtr.Zero, data, IntPtr.Zero) != 0) continue;
-                var ctx = (IContextMenu)obj;
-                var menu = CreatePopupMenu();
-                found.Menus.Add(menu);
-                if (ctx.QueryContextMenu(menu, 0, FirstId, LastId, CMF_NORMAL | CMF_EXPLORE) < 0) continue;
-                if (Nodes(owner, ctx, menu, folder, items, found) is { Count: > 0 } nodes) found.Found[name] = nodes;
+                if (!Ready()) return found;
+                // no folder for a selection: that is how a drop target is told, and 7-Zip then leaves out its email commands
+                if (LoadHandler(owner, clsid.Value, pidlFolder, data, folder, items, found) is { Count: > 0 } nodes) found.Found[name] = nodes;
             }
             catch (Exception ex) when (ex is COMException or InvalidCastException) { } // one broken extension leaves the others
         }
+        // MENU-06: everything else Explorer's own menu has for this selection (or folder background): the shell builds it
+        // from every registered handler, static verb and packaged app command, with Explorer's rules (AppliesTo, Extended,
+        // Blocked, multi-selection) and order. Pathweft's own commands are taken out; the rest keeps Explorer's callbacks.
+        // Tresorit Drive keeps only Tresorit's own commands. Nothing is written: Explorer's menu stays as it is.
+        if (tresorit) return found;
+        var ctx = background ? BackgroundMenu(hwnd, folder, found.Pidls) : ItemsMenu(hwnd, items, found.Pidls);
+        if (ctx == null) return found;
+        found.Held.Add(ctx);
+        var menu = CreatePopupMenu();
+        found.Menus.Add(menu);
+        uint flags = CMF_NORMAL | CMF_EXPLORE;
+        if (System.Windows.Input.Keyboard.Modifiers.HasFlag(System.Windows.Input.ModifierKeys.Shift)) flags |= CMF_EXTENDEDVERBS;
+        try
+        {
+            if (ctx.QueryContextMenu(menu, 0, FirstId, LastId, flags) < 0) return found;
+            for (int i = GetMenuItemCount(menu) - 1; i >= 0; i--)
+                if (OwnCommand(ctx, menu, i)) DeleteMenu(menu, (uint)i, MF_BYPOSITION);
+            found.Others.AddRange(Nodes(owner, ctx, menu, folder, items, found).Where(n => n.Text != null));
+        }
+        catch (Exception ex) when (ex is COMException or InvalidCastException) { } // a broken extension costs only its own entries
         return found;
+#if DEBUG
+        } finally { LastLoadMilliseconds = clock.Elapsed.TotalMilliseconds; }
+#endif
+    }
+#if DEBUG
+    internal static double LastLoadMilliseconds;
+#endif
+
+    /// One extension, as Explorer calls it: Initialize, then QueryContextMenu into a menu of its own.
+    static List<Node> LoadHandler(Window owner, Guid clsid, IntPtr pidlFolder, System.Runtime.InteropServices.ComTypes.IDataObject data, string folder, IReadOnlyList<string> items, Extensions found)
+    {
+        var iid = typeof(IContextMenu).GUID;
+        if (CoCreateInstance(ref clsid, IntPtr.Zero, CLSCTX_INPROC_SERVER, ref iid, out var obj) != 0) return null;
+        found.Held.Add(obj);
+        if (obj is not IShellExtInit init || init.Initialize(pidlFolder, data, IntPtr.Zero) != 0) return null;
+        var ctx = (IContextMenu)obj;
+        var menu = CreatePopupMenu();
+        found.Menus.Add(menu);
+        uint flags = CMF_NORMAL | CMF_EXPLORE;
+        if (System.Windows.Input.Keyboard.Modifiers.HasFlag(System.Windows.Input.ModifierKeys.Shift)) flags |= CMF_EXTENDEDVERBS;
+        if (ctx.QueryContextMenu(menu, 0, FirstId, LastId, flags) < 0) return null;
+        return Nodes(owner, ctx, menu, folder, items, found);
+    }
+
+    // What Pathweft has itself, by Windows' verb names: Open, Edit, Open with (its dialog), Run as administrator, Cut, Copy,
+    // Paste, Delete, Rename, Create shortcut, Copy as path, Properties, Pin to Quick access (folders), the folder windows
+    // and tabs, Undo, Open terminal here (cmd, PowerShell), Pathweft itself and Diskweft / RidNacs (Analyze space).
+    static readonly HashSet<string> OwnVerbs = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "open", "opennew", "explore", "find", "edit", "runas", "openas", "cut", "copy", "paste", "delete", "rename", "link", "copyaspath",
+        "properties", "pintohome", "unpinfromhome", "opennewprocess", "opennewtab", "opennewwindow", "undo", "redo",
+        "pathweft", "cmd", "powershell", "Diskweft", "RidNacs",
+    };
+
+    /// Whether item `position` of Explorer's menu is one Pathweft has itself: an own verb, or the New submenu (New folder,
+    /// New file).
+    static bool OwnCommand(IContextMenu ctx, IntPtr menu, int position)
+    {
+        var info = new MENUITEMINFO { cbSize = Marshal.SizeOf<MENUITEMINFO>(), fMask = MIIM_ID | MIIM_SUBMENU | MIIM_FTYPE };
+        if (!GetMenuItemInfo(menu, (uint)position, true, ref info) || (info.fType & MFT_SEPARATOR) != 0) return false;
+        if (info.hSubMenu == IntPtr.Zero) return info.wID >= FirstId && info.wID <= LastId && Verb(ctx, info.wID - FirstId) is { } verb && OwnVerbs.Contains(verb);
+        if (ctx is IContextMenu3 c3) c3.HandleMenuMsg2((uint)WM_INITMENUPOPUP, info.hSubMenu, (IntPtr)position, out _);
+        else if (ctx is IContextMenu2 c2) c2.HandleMenuMsg((uint)WM_INITMENUPOPUP, info.hSubMenu, (IntPtr)position);
+        for (int i = 0; i < GetMenuItemCount(info.hSubMenu); i++)
+        {
+            var child = new MENUITEMINFO { cbSize = Marshal.SizeOf<MENUITEMINFO>(), fMask = MIIM_ID };
+            if (GetMenuItemInfo(info.hSubMenu, (uint)i, true, ref child) && child.wID >= FirstId && child.wID <= LastId &&
+                string.Equals(Verb(ctx, child.wID - FirstId), "NewFolder", StringComparison.OrdinalIgnoreCase)) return true;
+        }
+        return false;
+    }
+
+    /// "Open w_ith Code…" → "open with code": the label without access keys and ellipsis, for spotting a duplicate.
+    internal static string Comparable(string label)
+    {
+        var sb = new System.Text.StringBuilder();
+        for (int i = 0; i < label.Length; i++)
+        {
+            if (label[i] == '_') { if (i + 1 < label.Length && label[i + 1] == '_') { sb.Append('_'); i++; } continue; }
+            sb.Append(label[i]);
+        }
+        return sb.ToString().Replace("…", "").Replace("...", "").Trim().ToLowerInvariant();
     }
 
     /// The CLSID of the context-menu extension registered as `key` (or a key starting with it) for `cls`, or null.
@@ -623,6 +727,7 @@ public static class ShellMenu
     [DllImport("user32.dll")] static extern int TrackPopupMenuEx(IntPtr menu, uint flags, int x, int y, IntPtr hwnd, IntPtr tpm);
     [DllImport("user32.dll")] static extern bool GetCursorPos(out POINT pt);
     [DllImport("user32.dll")] static extern bool AllowSetForegroundWindow(int pid);
+    [DllImport("user32.dll")] static extern bool DeleteMenu(IntPtr menu, uint position, uint flags);
     [DllImport("user32.dll", CharSet = CharSet.Unicode)] static extern bool AppendMenu(IntPtr menu, uint flags, UIntPtr id, string text);
     [DllImport("user32.dll", CharSet = CharSet.Unicode)] static extern bool InsertMenu(IntPtr menu, int position, uint flags, UIntPtr id, string text);
     delegate bool EnumWindowsProc(IntPtr h, IntPtr l);

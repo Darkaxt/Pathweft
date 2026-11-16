@@ -37,7 +37,6 @@ public partial class MainWindow
             await Task.WhenAll(Left.DrainSpaceAndSizesAsync(),Right.DrainSpaceAndSizesAsync());
             await PreviewSession.DrainAsync();
             await driveRefreshWork;
-            await Task.WhenAll(contextMenuInspections.ToArray());
             await Task.WhenAll(Left.driveListingWork,Right.driveListingWork);
             await Task.WhenAll(jobs.Select(job => job.Completion));
             // Finished dispatches precede this turn's barrier; drain durable undo

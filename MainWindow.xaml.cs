@@ -764,31 +764,9 @@ public partial class MainWindow : Window
     void LoadQuickAccess()
     {
         if (File.Exists(QuickFile)) quickLists = ParseQuickLists(File.ReadAllLines(QuickFile));
-        if (File.Exists(LumeFile)) lumePins = File.ReadAllLines(LumeFile).Where(l => l.Trim() != "").ToList();
+        // MENU-05: Pin to Lume is gone; its list (lume.txt, the only ecosystem file Pathweft wrote) is removed once.
+        try { File.Delete(Path.Combine(Settings.Dir, "lume.txt")); } catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
         BuildQuickAccess();
-    }
-
-    // Lume (sister app) lists these folders, from every Quick access list, and what was pinned to it, in its search; copies,
-    // since the write runs off the UI thread
-    // Pin to Lume (1.0.50): files, folders and shortcuts that Lume then finds by name, one path per line in lume.txt in
-    // the data folder. They reach Lume with Quick access, in data\pathweft.items.json (Sisters.WriteItems).
-    static string LumeFile => Path.Combine(Settings.Dir, "lume.txt");
-    List<string> lumePins = new();
-
-    /// "Pin to Lume", or "Unpin from Lume" when all of them are pinned; null without Lume.
-    MenuItem LumeItem(IReadOnlyList<string> paths)
-    {
-        if (SisterExe("lume") == null) return null;
-        bool all = paths.All(x => lumePins.Contains(x, StringComparer.OrdinalIgnoreCase));
-        return Item(all ? "Unpin from Lume" : "Pin to Lume", all ? "" : "", "", () =>
-        {
-            if (all) lumePins.RemoveAll(x => paths.Contains(x, StringComparer.OrdinalIgnoreCase));
-            else lumePins.AddRange(paths.Where(x => !lumePins.Contains(x, StringComparer.OrdinalIgnoreCase)));
-            Directory.CreateDirectory(Path.GetDirectoryName(LumeFile));
-            Settings.WriteAllLines(LumeFile, lumePins);
-                var names = string.Join(", ", paths.Select(x => Path.GetFileName(x.TrimEnd('\\')) is { Length: > 0 } n ? n : x));
-            Status.Text = all ? $"Unpinned {names} from Lume" : $"Pinned {names} to Lume";
-        });
     }
 
     void BuildQuickAccess()

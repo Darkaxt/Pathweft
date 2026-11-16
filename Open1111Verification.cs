@@ -39,7 +39,7 @@ public partial class MainWindow
                     Left.List.RaiseEvent(new MouseButtonEventArgs(Mouse.PrimaryDevice,Environment.TickCount,MouseButton.Left){RoutedEvent=Control.MouseDoubleClickEvent,Source=row});
                     check(dispatches.Count==before+1&&dispatches[^1].FileName==entry.Path,"Double-click dispatches "+entry.Name+"; editor="+enabled);
                     // The actual custom menu command uses the same method.
-                    var menu=ItemMenu(Left,new(){entry},null);
+                    var menu=ItemMenu(Left,new(){entry});
                     try{((MenuItem)menu.Items[0]).RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));}
                     finally{menu.IsOpen=false;menu.RaiseEvent(new RoutedEventArgs(ContextMenu.ClosedEvent));}
                     check(dispatches.Count==before+2&&dispatches[^1].FileName==entry.Path,"Context Open dispatches "+entry.Name+"; editor="+enabled);

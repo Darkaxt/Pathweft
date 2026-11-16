@@ -50,9 +50,7 @@ internal sealed class BuiltinViewer(PreviewModule module, MainWindow owner, Entr
                     content = ArchiveTree.View(await Task.Run(() => ArchiveTree.Read(location.Archive, location.Inner, context.Token), context.Token), context);
                     break;
                 }
-                if (!entry.IsDir && Backups.Named(path) && await Task.Run(() => Backups.Inspect(path, details: true, () => context.Token.IsCancellationRequested), context.Token) is { } backup)
-                    content = owner.BackupView(entry, backup);
-                else if (!entry.IsDir) content = ArchiveTree.View(await Task.Run(() => ArchiveTree.Read(path, "", context.Token), context.Token), context);
+                if (!entry.IsDir) content = ArchiveTree.View(await Task.Run(() => ArchiveTree.Read(path, "", context.Token), context.Token), context);
                 else content = ArchiveTree.View(await Task.Run(() => ArchiveTree.ReadDirectory(path, context.Token, PaneView.ShowHidden), context.Token), context);
                 break;
             case "font": content = Font(path); break;

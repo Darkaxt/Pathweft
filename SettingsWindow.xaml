@@ -216,7 +216,7 @@
               <Button x:Name="MenuOwn" Content="Pathweft" Style="{StaticResource Tab}" Click="Menu_Click"/>
               <Button x:Name="MenuWin" Content="Windows" Style="{StaticResource Tab}" Click="Menu_Click"/>
             </StackPanel>
-            <TextBlock Style="{StaticResource Hint}" Text="Pathweft: a compact menu that matches the app. Windows: the full Explorer menu, with Send to, Open with and extensions like 7-Zip. Either one can open the other: Pathweft has a 'Windows menu…' item."/>
+            <TextBlock Style="{StaticResource Hint}" Text="Pathweft: one organized menu that matches the app, including what other apps add to Windows' menu. Windows: the full Explorer menu. Ctrl+right-click opens the other one."/>
           </StackPanel>
         </Border>
 

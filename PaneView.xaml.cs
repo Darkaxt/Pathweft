@@ -2149,17 +2149,14 @@ public partial class PaneView : UserControl
                 return;
             }
         }
-        // a Stash or Backup Labs backup opens in its app when that is installed (1.0.40), otherwise as before;
-        // read off the UI thread, the file may be on a share that is asleep
         if(IsWidget&&(e.FolderTarget!=null||Archive.IsArchiveName(e.Path)))
         {WidgetLocationOpened?.Invoke(e.FolderTarget??e.Path);return;}
-        var backup = !e.IsUp && !e.IsDir && Backups.Named(e.Path) ? await Task.Run(() => MainWindow.BackupStart(e.Path)) : null;
         if (e.IsUp) Up();
         else if (ArchiveRoot != null) { if (e.IsDir || Archive.IsArchiveName(e.Name)) Navigate(e.Path); else OpenArchived?.Invoke(e); }
         else if (!e.IsDir && Archive.IsArchiveName(e.Path)) Navigate(e.Path); // a ZIP or TAR opens like a folder
         else if (e.FolderTarget is { } folder) Navigate(folder); // a shortcut to a folder opens here, as in Explorer
         // a script is run, like Explorer does; editing it is F4 / Edit in the menu
-        else if (backup == null && Settings.InternalEditor && !MainWindow.Runnable.Contains(Path.GetExtension(e.Path)) && EditorWindow.TryOpen(e.Path)) { }
+        else if (Settings.InternalEditor && !MainWindow.Runnable.Contains(Path.GetExtension(e.Path)) && EditorWindow.TryOpen(e.Path)) { }
         else
         {
             // A shortcut whose target is gone gets Windows' own answer, as from Explorer: it looks for the target, then
@@ -2169,7 +2166,7 @@ public partial class PaneView : UserControl
             // started in its own folder, as from Explorer: scripts rely on relative paths
             try
             {
-                var start = backup ?? new System.Diagnostics.ProcessStartInfo(e.Path)
+                var start = new System.Diagnostics.ProcessStartInfo(e.Path)
                 {
                     UseShellExecute = true, WorkingDirectory = Path.GetDirectoryName(e.Path),
                     ErrorDialog = link, ErrorDialogParentHandle = link ? new System.Windows.Interop.WindowInteropHelper(Window.GetWindow(this)).Handle : IntPtr.Zero,

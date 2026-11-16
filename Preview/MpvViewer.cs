@@ -48,7 +48,6 @@ internal sealed class MpvViewer(MainWindow owner)
         context.ViewerContent=root;
         using var cancelled=context.Token.Register(()=>created.TrySetCanceled(context.Token));
         Ready=Loaded();await Ready;
-        await owner.AddReelPreview(path,root,()=>context.IsCurrent);
         async Task Loaded(){var native=await created.Task;await native.Ready;context.Token.ThrowIfCancellationRequested();play.IsEnabled=position.IsEnabled=true;}
     }
     void Changed(string name,object value)

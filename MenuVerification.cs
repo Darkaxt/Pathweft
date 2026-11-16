@@ -94,6 +94,7 @@ public partial class MainWindow
             File.WriteAllText(Path.Combine(root,"menu-"+context+".json"),JsonSerializer.Serialize(commands.Select(item=>new{label=item.Header.ToString(),item.InputGestureText,item.IsEnabled,children=item.Items.Count,tag=item.Tag?.ToString()})));
         }
         await Select(Left,Path.GetFileName(file));var single=Menu(Left);Inventory(single,"single");
+        await VerifyOrganizedMenu49(root,source,file,folder,move,zip,names=>Select(Left,names),()=>Menu(Left),check);await Select(Left,Path.GetFileName(file));
         string script=Path.Combine(source,"launch pilot.ps1");File.WriteAllText(script,"exit 0");await S1Verification.Navigate(Left,source);
         await Select(Left,"launch pilot.ps1");var scriptMenu=Menu(Left);
         check(scriptMenu.Items.OfType<MenuItem>().Any(item=>item.Header as string=="Run with PowerShell")&&MenuCommands(scriptMenu).Single(item=>item.Header as string=="Run as administrator").Parent is MenuItem{Header:"Tools"}&&
@@ -105,7 +106,7 @@ public partial class MainWindow
         File.Delete(script);await S1Verification.Navigate(Left,source);
         await Select(Left,Path.GetFileName(file));
         check(MenuCommands(single).Where(item=>item.Header as string is "Open" or "Cut" or "Copy" or "Paste" or "Rename" or "Delete").All(item=>item.Icon is Image{Source:DrawingImage}),"Every native-art primary command has an actual bound vector, including Cut and Paste");
-        check(new[]{"Open","Cut","Copy","Rename","Delete","Windows menu…","Properties"}.All(name=>single.Items.OfType<MenuItem>().Any(item=>item.Header as string==name)),"Frequent file actions remain at the root");
+        check(new[]{"Open","Cut","Copy","Rename","Delete","Properties"}.All(name=>single.Items.OfType<MenuItem>().Any(item=>item.Header as string==name)),"Frequent file actions remain at the root");
         check(single.Items.OfType<MenuItem>().Where(item=>item.Items.Count>0).Select(item=>item.Header as string).Contains("Transfer")&&MenuCommands(single).Single(item=>item.Header as string=="Copy path").Parent is MenuItem {Header:"Copy details"},"Secondary commands are grouped without losing their callbacks");
         if(native){
         Click(single,"Copy");await clipboardOperation;
@@ -306,8 +307,8 @@ public partial class MainWindow
             check(MenuCommands(empty).All(item=>!item.IsEnabled),"An empty widget selection never dispatches a file action");
             widget.Pane.List.SelectedItems.Add(widget.Pane.Items.Single(entry=>entry.Path==file));widget.Pane.List.SelectedItems.Add(widget.Pane.Items.Single(entry=>entry.Path==folder));
             var multiple=widget.ResultMenu();check(!MenuCommands(multiple).Single(item=>item.Header as string=="Open containing folder").IsEnabled&&MenuCommands(multiple).Single(item=>item.Header as string=="Properties").IsEnabled,"Widget multiple selection preserves combined Properties and disables single-result reveal");
-            await Select(shortcut);ShellMenu.InspectForVerification=(paths,verbs,top)=>check(paths.SequenceEqual(new[]{shortcut})&&verbs.Contains("properties"),"Widget Windows menu uses the shortcut itself and actual Shell verbs");
-            try{MenuCommands(widget.ResultMenu()).Single(item=>item.Header as string=="Windows menu…").RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));}finally{ShellMenu.InspectForVerification=null;}
+            await Select(shortcut);ShellMenu.InspectForVerification=(paths,verbs,top)=>check(paths.SequenceEqual(new[]{shortcut})&&verbs.Contains("properties"),"Widget Ctrl+right-click opens the Windows menu for the shortcut itself, with actual Shell verbs");
+            try{widget.ShowResultMenu(ctrl:true);}finally{ShellMenu.InspectForVerification=null;}
             await S1Verification.Snapshot(widget,root,"widget-result-menu-owner");
         }finally{PropertiesForVerification=null;widget.Shutdown();}
     }

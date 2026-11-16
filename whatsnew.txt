@@ -1,6 +1,12 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.72 | 2026-11-16 | One organized right-click menu
+
+- Commands other apps add to Windows' menu (Open with Code, Git Bash here, Play with VLC, Scan with Microsoft Defender, PowerToys and more) now appear in Pathweft's menu, in its groups, without repeats.
+- Ctrl+right-click opens the standard Windows menu (or Pathweft's, if Windows' is your default). From the keyboard: Ctrl+Shift+F10 or Ctrl+Menu key. The separate "Windows menu…" item is gone.
+- The links to the old sister apps (Backup Labs, Reel, Shelf, Stash, Lume) are removed.
+
 ## 1.1.71 | 2026-11-16 | Archives work like folders; copies never fail over attributes
 
 **Inside archives**

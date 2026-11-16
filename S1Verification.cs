@@ -374,7 +374,7 @@ public partial class MainWindow
         pane.StatsChanged += Listed;
         try
         {
-            var menu = ItemMenu(pane, pane.Selected, null);
+            var menu = ItemMenu(pane, pane.Selected);
             menu.PlacementTarget = pane.ListForVerification;
             menu.IsOpen = true;
             menu.Items.OfType<MenuItem>().Single(m => m.Header?.ToString() == "Open file location").RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));

@@ -51,8 +51,17 @@ internal sealed class SearchWidgetWindow : Window
         Pane.List.ContextMenuOpening+=(_,args)=>
         {
             args.Handled=true;
-            if(args.CursorLeft>=0&&Pane.RowAt(args.OriginalSource as DependencyObject)==null)Pane.List.SelectedItems.Clear();
-            ShowResultMenu();
+            var row=Pane.RowAt(args.OriginalSource as DependencyObject);
+            if(args.CursorLeft>=0&&row==null)Pane.List.SelectedItems.Clear();
+            // MENU-07: Ctrl+right-click opens the other menu, for the result under the pointer
+            bool ctrl=Keyboard.Modifiers.HasFlag(ModifierKeys.Control);
+            if(ctrl&&args.CursorLeft>=0&&row!=null&&!Pane.List.SelectedItems.Contains(row)){Pane.List.SelectedItems.Clear();Pane.List.SelectedItems.Add(row);}
+            ShowResultMenu(ctrl);
+        };
+        Pane.List.PreviewKeyUp+=(_,args)=>
+        {
+            if(!MainWindow.OtherMenuKey(args.Key==Key.System?args.SystemKey:args.Key,Keyboard.Modifiers))return;
+            args.Handled=true;ShowResultMenu(ctrl:true);
         };
         query.TextChanged+=(_,_)=>Notice.Visibility=Visibility.Collapsed;
         PreviewKeyDown += OnWidgetKeyDown;
@@ -150,23 +159,21 @@ internal sealed class SearchWidgetWindow : Window
         var selected=Pane.Selected;bool one=selected.Count==1;
         bool physical=PhysicalSelection(selected);
         var paths=selected.Select(entry=>entry.Path).ToArray();
-        bool shell=physical&&ShellMenu.CanShowItems(paths);
         var menu=new ContextMenu();
         menu.Items.Add(MainWindow.Item("Open","\uE8E5","Enter",Pane.OpenSelected,selected.Count>0));
         menu.Items.Add(MainWindow.Item("Preview","\uE8B7","Space",Preview,one));
         menu.Items.Add(MainWindow.Item("Open containing folder","\uE838","Ctrl+Shift+Enter",RevealSelection,one&&physical&&Path.GetDirectoryName(paths[0].TrimEnd('\\'))!=null));
         menu.Items.Add(new Separator());
         menu.Items.Add(MainWindow.Item("Copy path","\uE8C8","Ctrl+Shift+C",()=>System.Windows.Forms.Clipboard.SetText(Entry.QuotedPaths(Pane.Selected)),selected.Count>0));
-        var windows=MainWindow.Item("Windows menu…","\uE712","",()=>ShellMenu.Show(this,Path.GetDirectoryName(paths[0]),paths,rename:false),shell);
-        if(physical&&!shell){windows.ToolTip="Select results from one containing folder for the Windows menu.";ToolTipService.SetShowOnDisabled(windows,true);}menu.Items.Add(windows);
         var properties=MainWindow.Item("Properties","\uE946","Alt+Enter",PropertiesSelection,physical&&MainWindow.SupportsProperties(paths));
         if(physical&&!properties.IsEnabled){properties.ToolTip="Select results on the same drive or share for combined Properties.";ToolTipService.SetShowOnDisabled(properties,true);}menu.Items.Add(properties);
         MainWindow.PrepareContextMenu(menu,Pane.List);
         return menu;
     }
-    void ShowResultMenu()
+    /// `ctrl`: the other menu than Settings → Files → Context menu picks (MENU-07).
+    internal void ShowResultMenu(bool ctrl=false)
     {
-        if(Settings.NativeMenu&&PhysicalSelection(Pane.Selected)&&ShellMenu.CanShowItems(Pane.Selected.Select(entry=>entry.Path).ToArray()))
+        if((Settings.NativeMenu^ctrl)&&PhysicalSelection(Pane.Selected)&&ShellMenu.CanShowItems(Pane.Selected.Select(entry=>entry.Path).ToArray()))
         {
             var selected=Pane.Selected;
             ShellMenu.Show(this,Path.GetDirectoryName(selected[0].Path),selected.Select(entry=>entry.Path).ToArray(),rename:false,
