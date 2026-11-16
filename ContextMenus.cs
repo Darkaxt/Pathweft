@@ -199,6 +199,7 @@ public partial class MainWindow
         m.Items.Add(Item("Delete permanently", "", "Shift+Del", () => Delete(permanent: true)));
         m.Items.Add(new Separator());
         m.Items.Add(Item("Compress to ZIP", "", "", Compress));
+        m.Items.Add(Item("Compress to 7z", "", "", () => CompressArchive(".7z")));
         string rarUnavailable = RarNative.AvailabilityReason();
         var rarCreate = Item("Compress to RAR", "", "", () => CompressArchive(".rar"), rarUnavailable.Length == 0);
         if (rarUnavailable.Length > 0) { rarCreate.ToolTip = rarUnavailable; ToolTipService.SetShowOnDisabled(rarCreate, true); }
@@ -231,7 +232,9 @@ public partial class MainWindow
         void Take(ItemsControl target,Func<MenuItem,bool> predicate){foreach(var item in remaining.Where(predicate).ToArray()){remaining.Remove(item);target.Items.Add(item);}}
         void Group(string name,string glyph,Func<MenuItem,bool> predicate){var group=Item(name,glyph,"",()=>{});Take(group,predicate);if(group.Items.Count>0)menu.Items.Add(group);}
         static bool Named(MenuItem item,params string[] labels)=>labels.Contains(item.Header as string);
-        Take(menu,item=>Named(item,"Open","Run with PowerShell","Open with…","Open in new tab","Open in other pane","Open file location","Edit","Quick View")||item.Tag as string is "shell:openwith" or "shell:apps"||(item.Header as string)?.StartsWith("Open in ")==true&&item.Header as string!="Open in File Explorer");
+        Take(menu,item=>item.Tag==null&&(Named(item,"Open","Open in new tab","Open in other pane","Open file location")||(item.Header as string)?.StartsWith("Open in ")==true&&item.Header as string!="Open in File Explorer"));
+        OpenWithGroup(menu,remaining);
+        Take(menu,item=>Named(item,"Run with PowerShell","Edit","Quick View"));
         menu.Items.Add(new Separator());
         Take(menu,item=>Named(item,"Cut","Copy","Paste","Paste into folder","Rename","Rename all…","Delete","Delete permanently"));
         menu.Items.Add(new Separator());
@@ -340,9 +343,28 @@ public partial class MainWindow
         Group("Select","\uE762",item=>item.Header as string is "Select by pattern…" or "Invert selection");
         Take(menu,item=>item.Header as string is "Refresh" or "Show hidden files" or "Hide hidden files");
         menu.Items.Add(new Separator());
-        Group("Tools","\uE713",item=>item.Header as string is "Compare with other pane" or "Open terminal here"||item.Tag as string=="shell:apps"||(item.Header as string)?.StartsWith("Find duplicates")==true);
+        OpenWithGroup(menu,remaining);
+        Group("Tools","\uE713",item=>item.Header as string is "Compare with other pane" or "Open terminal here"||(item.Header as string)?.StartsWith("Find duplicates")==true);
         Group("More actions","\uE712",item=>item.Header as string!="Properties");
         menu.Items.Add(new Separator());Take(menu,_=>true);
+    }
+
+    /// MENU-10: one "Open with" submenu: Windows' Open with list (or Pathweft's Open with… dialog), then every taken-in
+    /// program that opens, plays or edits the selection (VS Code, Git Bash here, VLC). A lone entry stays unwrapped.
+    static void OpenWithGroup(ContextMenu menu,List<MenuItem> remaining)
+    {
+        var group=Item("Open with","\uE7AC","",()=>{});
+        foreach(var item in remaining.Where(item=>item.Tag as string=="shell:openwith"||item.Header as string=="Open with…").ToArray())
+        {
+            remaining.Remove(item);
+            if(item.Items.Count==0){group.Items.Add(item);continue;}
+            foreach(var child in item.Items.Cast<object>().ToArray()){item.Items.Remove(child);group.Items.Add(child);}
+        }
+        var apps=remaining.Where(item=>item.Tag as string=="shell:apps").ToArray();
+        if(apps.Length>0&&group.Items.Count>0)group.Items.Add(new Separator());
+        foreach(var app in apps){remaining.Remove(app);group.Items.Add(app);}
+        if(group.Items.Count==1&&group.Items[0] is MenuItem only){group.Items.Clear();menu.Items.Add(only);}
+        else if(group.Items.OfType<MenuItem>().Any())menu.Items.Add(group);
     }
 
     static void OpenWith(string path)

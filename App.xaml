@@ -646,7 +646,10 @@
                     <ColumnDefinition/>
                     <ColumnDefinition Width="Auto"/>
                   </Grid.ColumnDefinitions>
-                  <ContentPresenter ContentSource="Icon" VerticalAlignment="Center" TextElement.Foreground="{DynamicResource Palette.8A97AA}"/>
+                  <!-- one 16-DIP slot: glyphs, Pathweft's icons and other programs' bitmaps share the same centre -->
+                  <Border Width="16" HorizontalAlignment="Left" VerticalAlignment="Center">
+                    <ContentPresenter ContentSource="Icon" HorizontalAlignment="Center" VerticalAlignment="Center" TextElement.Foreground="{DynamicResource Palette.8A97AA}"/>
+                  </Border>
                   <ContentPresenter Grid.Column="1" ContentSource="Header" RecognizesAccessKey="True" VerticalAlignment="Center"/>
                   <TextBlock Grid.Column="2" Text="{TemplateBinding InputGestureText}" Foreground="{DynamicResource Palette.6E7A8C}" Margin="28,0,0,0" VerticalAlignment="Center"/>
                   <!-- an item with children shows the usual arrow instead of a shortcut -->

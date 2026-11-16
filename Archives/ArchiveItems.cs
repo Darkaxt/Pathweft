@@ -65,6 +65,7 @@ public partial class MainWindow
             am.Items.Add(one ? WriteAction("Rename", "F2", p.BeginRename) : WriteAction("Rename all…", "F2", () => ArchiveRenameMany(p)));
             am.Items.Add(WriteAction("Delete", "Del", () => DeleteFromArchive(p)));
             am.Items.Add(Item("Compress to ZIP", "", "", () => ArchiveCompress(p, ".zip")));
+            am.Items.Add(Item("Compress to 7z", "", "", () => ArchiveCompress(p, ".7z")));
             string rarUnavailable = RarNative.AvailabilityReason();
             var rarCreate = Item("Compress to RAR", "", "", () => ArchiveCompress(p, ".rar"), rarUnavailable.Length == 0);
             if (rarUnavailable.Length > 0) { rarCreate.ToolTip = rarUnavailable; ToolTipService.SetShowOnDisabled(rarCreate, true); }

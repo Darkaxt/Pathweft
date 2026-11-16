@@ -377,6 +377,10 @@ public partial class MainWindow
             Action(Left, "Compress to ZIP"); await lastArchiveJob.Completion;
             string createdZip = Path.Combine(source, "plain 子 spaced.zip");
             Check(lastArchiveJob.Phase == Phase.Done && lastArchiveJob.Errors.IsEmpty && Archive.EntryHash(createdZip, Archive.Read(createdZip).Single()) == Hash(Path.Combine(source, "plain 子 spaced.txt")), "ARCHIVE-01/03 Compress to ZIP uses the native backend and existing verified job owner");
+            await Select(Left, "plain 子 spaced.txt"); // ZIP creation selects its arrival; restore this test's input.
+            Action(Left, "Compress to 7z"); await lastArchiveJob.Completion;
+            string created7z = Path.Combine(source, "plain 子 spaced.7z");
+            Check(lastArchiveJob.Phase == Phase.Done && lastArchiveJob.Errors.IsEmpty && Archive.EntryHash(created7z, Archive.Read(created7z).Single()) == Hash(Path.Combine(source, "plain 子 spaced.txt")), "ARCHIVE-11 Compress to 7z writes a verified 7z through the same native backend and job owner");
             if (rarWriterTrial)
             {
                 await Select(Left, "plain 子 spaced.txt"); // ZIP creation selects its arrival; restore this test's input.

@@ -1,6 +1,12 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.73 | 2026-11-17 | Open with submenu, 7z and a quieter update check
+
+- Programs that open, play or edit what you right-clicked (VS Code, Git Bash, VLC and others) are now together in one Open with submenu, and the menu icons line up.
+- Archive has Compress to 7z, beside ZIP and RAR.
+- When a new version is out, a dot appears on the update button at the top of the sidebar instead of a window popping up. Click it to see what's new and update.
+
 ## 1.1.72 | 2026-11-16 | One organized right-click menu
 
 - Commands other apps add to Windows' menu (Open with Code, Git Bash here, Play with VLC, Scan with Microsoft Defender, PowerToys and more) now appear in Pathweft's menu, in its groups, without repeats.

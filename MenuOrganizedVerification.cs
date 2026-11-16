@@ -69,7 +69,10 @@ public partial class MainWindow
         var single=await Built("file",Path.GetFileName(file));
         Parity(single,"file",source,Path.GetFileName(file));
         var code=Taken(single,key=>key.Contains("code"));
-        check(code!=null&&code.Tag as string=="shell:apps"&&code.Parent==single,"MENU-06: VS Code's Open with Code is taken in beside Open for a file");
+        check(code!=null&&code.Tag as string=="shell:apps"&&code.Parent is MenuItem{Header:"Open with"} openWith&&openWith.Parent==single,"MENU-10: VS Code's Open with Code is in the Open with submenu for a file");
+        static bool AllAppsInOpenWith(ContextMenu built)=>MenuCommands(built).Where(item=>item.Tag as string=="shell:apps").All(item=>item.Parent is MenuItem{Header:"Open with"});
+        check(AllAppsInOpenWith(single),"MENU-10: every taken-in open/play/edit-with program is in the Open with submenu (file)");
+        check(!MenuCommands(single).Any(item=>Label(item).Contains("zcode")),"MENU-06: the removed ZCode leftover is gone");
         var handlerEntry=Taken(single,key=>key.Contains("file locksmith")||key.Contains("previous versions"));
         check(handlerEntry?.Parent is MenuItem{Header:"More actions"},"MENU-06: a handler-based entry (PowerToys File Locksmith or Previous Versions) is taken in under More actions");
         check(MenuCommands(single).Count(item=>Label(item)=="edit with notepad++")<=1,"MENU-06: Notepad++'s own Edit with Notepad++ does not repeat Pathweft's");
@@ -78,11 +81,13 @@ public partial class MainWindow
         var gitBash=Taken(folderMenu,key=>key.Contains("git bash"));
         var vlc=Taken(folderMenu,key=>key.Contains("vlc"));
         check(gitBash!=null&&vlc!=null,"MENU-06: Git Bash here and VLC are taken in for a folder");
+        check(AllAppsInOpenWith(folderMenu)&&gitBash?.Parent is MenuItem{Header:"Open with"},"MENU-10: a folder's taken-in programs (Git Bash, VLC) are in its Open with submenu");
+        check(MenuCommands(folderMenu).Any(item=>item.Header as string=="Compress to 7z"&&item.Parent is MenuItem{Header:"Archive"}),"ARCHIVE-11: Archive offers Compress to 7z");
         await Built("mixed",Path.GetFileName(file),Path.GetFileName(folder));
         await Built("multiple",Path.GetFileName(file),Path.GetFileName(move));
         var background=await Built("background");
         var backgroundBash=Taken(background,key=>key.Contains("git bash"));
-        check(backgroundBash?.Parent is MenuItem{Header:"Tools"},"MENU-06: Git Bash here is taken in under Tools on a folder's background");
+        check(backgroundBash?.Parent is MenuItem{Header:"Open with"},"MENU-10: Git Bash here is in Open with on a folder's background");
 
         // A taken-in command runs Explorer's own verb, whose registered program exists (observed instead of started)
         var invoked=new List<string>();ShellMenu.InvokeForVerification=invoked.Add;
