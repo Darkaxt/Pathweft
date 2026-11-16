@@ -3,7 +3,7 @@
 Authority: [SPECIFICATION.md](SPECIFICATION.md), version 1.29, 2026-11-16,
 including the user-authorized continued comparison requirement TRANSFER-07.
 
-Current 2026-11-16/spec1.29: S4P (archive parity, issue #9: ARCHIVE-06..10, TRANSFER-19, BIN-01, SPACE-10) was released in 1.1.71 (COMPLETE; verification/2026-11-16-release-1.1.71.md). Open: issue #10 (legacy registration upgrade check).
+Current 2026-11-16/spec1.29: S4P (archive parity, issue #9: ARCHIVE-06..10, TRANSFER-19, BIN-01, SPACE-10) was released in 1.1.71 (COMPLETE; verification/2026-11-16-release-1.1.71.md).
 Earlier 2026-11-15/spec1.28: S12b (TRES-05..08, issue #8, with SHELL-05, the folder-router hand-off fix 8f607e4) was released in 1.1.70 (COMPLETE);
 TRES-06/07 mutation checks need a disposable tresor from the owner. S19 follows S12b.
 Earlier 2026-11-15/spec1.26: S48b (MCP-06, administrator-only reads through the administrator session) is COMPLETE, published as 1.1.69 (ecbf1ac);

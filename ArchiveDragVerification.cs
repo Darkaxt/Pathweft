@@ -76,18 +76,7 @@ public partial class MainWindow
                 using(var before=isolated.CreateSubKey(@"Software\Classes\Directory\shell"))before.SetValue("","previous-manager");
                 WindowsIntegration.SetEnabled(true);
                 using(var current=isolated.OpenSubKey(@"Software\Classes\Directory\shell"))check((string)current.GetValue("")=="open"&&WindowsIntegration.Enabled,"Opt-in routing preserves the canonical Open verb used by Explorer navigation");
-                var registration=System.Text.Json.JsonSerializer.Deserialize<WindowsIntegration.Registration>(File.ReadAllText(WindowsIntegration.RecoveryPath));
                 WindowsIntegration.SetEnabled(false);
-                foreach(var oldDefault in new[]{"pathweft","open"})
-                {
-                    var legacy=registration with{Version=1,Values=registration.Values.Where(v=>!v.Key.Contains(@"\CLSID\")).Select(v=>v.Name=="DelegateExecute"?v with{Written=""}:v.Name==""&&v.Key.EndsWith(@"\shell")?v with{Written=oldDefault}:v).ToList(),CreatedKeys=registration.CreatedKeys.Where(k=>!k.Contains("CLSID")&&!k.EndsWith("WOW6432Node")).ToList()};
-                    foreach(var value in legacy.Values)using(var key=isolated.CreateSubKey(value.Key))key.SetValue(value.Name,value.Written);
-                    File.WriteAllText(WindowsIntegration.RecoveryPath,System.Text.Json.JsonSerializer.Serialize(legacy));
-                    WindowsIntegration.UpgradeOwnedRegistration();
-                    using(var command=isolated.OpenSubKey(@"Software\Classes\Directory\shell\open\command"))
-                        check(WindowsIntegration.Enabled&&(string)command.GetValue("DelegateExecute")=="{CF5ABF8B-73EA-4DF9-A991-C163D76FE2A2}","A wholly owned "+oldDefault+" legacy registration upgrades to browser-aware routing");
-                    WindowsIntegration.SetEnabled(false);
-                }
                 WindowsIntegration.SetEnabled(true);
                 var nativePrior=System.Text.Json.JsonSerializer.Deserialize<WindowsIntegration.Registration>(File.ReadAllText(WindowsIntegration.RecoveryPath));
                 nativePrior=nativePrior with{Values=nativePrior.Values.Select(v=>v.Name==""&&v.Key.EndsWith(@"\InprocServer32")?v with{Written=Path.Combine(AppContext.BaseDirectory,"PathweftShell-1.0.0-"+(v.Key.Contains("WOW6432Node")?"x86":"x64")+".dll")}:v).ToList()};
