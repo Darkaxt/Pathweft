@@ -1,6 +1,6 @@
 # Pathweft specification
 
-Version 1.28 - 2026-11-15. Owner: Darkaxt.
+Version 1.29 - 2026-11-16. Owner: Darkaxt.
 
 ### Read-only MCP expansion (S48)
 
@@ -2319,6 +2319,22 @@ disposable fixtures the owner creates. A tresor is a folder directly on Tresorit
 | TRES-07 | Deleting items inside a tresor asks with Tresorit's terms instead of Windows' "permanently delete": they go to Tresorit's deleted files and can be restored in the Tresorit app (Show deleted). Verify with disposable files in a disposable tresor; the owner confirms the restore in the client. |
 | TRES-08 | The drive's space is labelled as the Tresorit account's storage (shared tresors count toward it), not a disk. |
 | SHELL-05 | When the folder router hands a request back to Windows (Setup is running, a virtual location such as This PC, or several folders without a browser site), it forwards what the Shell gave it (the verb's association element and initialization) to Windows' own folder command, so the calling app never crashes. Verify with the router probe's hand-off check against the built DLLs and a real ShellExecuteEx of This PC through a test-only class registration. |
+
+### Archive parity (S4P)
+
+Owner direction 2026-11-16 on issue #9 ("Please reach full parity with native behavior"), with the earlier
+1.1.71 corrections. Items inside an archive behave like items on disk; ARCHIVE-01..05 still apply.
+
+| ID | Requirement and acceptance |
+| --- | --- |
+| ARCHIVE-06 | The item and background menus inside an archive offer the disk menus' commands, grouped the same way: Open, Open in new tab/other pane, Open with, Run with PowerShell/as administrator, Edit (several), Compare, Notepad++ (on owned working copies), Quick View, Cut/Copy/Paste/Paste into folder, Rename, Rename all (one staged edit, so names can swap), Delete, Copy/Move to other pane, Copy to, Move to, Group into new folder, Add to Drop bin, Copy path/name, Compress to ZIP/RAR (beside the outermost real archive), Checksum SHA-256 from the entry, New folder/New file, View/Sort/Select/Refresh, Archive tools, Show the archive and Properties. Commands Explorer doesn't offer inside archives (shortcut, Windows menu, Pin, Undo, Delete permanently) are absent. A read-only archive disables write commands with the reason as tooltip. Verify the menu inventory and representative actions. |
+| ARCHIVE-07 | Extraction, Ctrl+C into other apps (delay-rendered CF_HDROP) and drag-out run as Transfers jobs: one extraction pass per archive, temporary file beside the target, size check and read-back verification when verification is on, stored CRC-32 checks for edits, Keep both keeps the existing file as "name.old.ext", conflicts name source and target. No separate Extract commands where native integration exists. Verify copy-out, clipboard and drag-out contents. |
+| ARCHIVE-08 | An archive inside an archive browses like a folder through an owned working copy; edits to it are written back into the outer archive in the same job, and working copies are released at exit. |
+| ARCHIVE-09 | Passwords are asked on demand: before opening, copying or editing encrypted entries, and on opening an archive whose names are encrypted (or whose encrypted entry holds the archive being opened). Cancelling leaves the archive closed. Verify on the encrypted-names fixture. |
+| ARCHIVE-10 | Properties (Alt+Enter) inside an archive show name, type, location, size, method, CRC-32, encryption, modified/created, attributes and comment; folders and several items show counts and totals; every selection shows the archive's format, packed and unpacked size, ratio and whether it is solid. |
+| TRANSFER-19 | Attributes never fail a copy: when the destination can't keep Read-only, Hidden, System or Archive (Google Drive dropped Archive), the file is copied and the job ends with an orange note naming what wasn't kept. |
+| BIN-01 | Recycle Bin: Restore and Delete permanently are enabled only with a selection; Empty Recycle Bin takes everything. |
+| SPACE-10 | The space analyzer waits at most 5 seconds for Everything's folder sizes, then measures on disk, so a slow index never leaves it pending. |
 
 ### Selected-folder content indexing (S19)
 

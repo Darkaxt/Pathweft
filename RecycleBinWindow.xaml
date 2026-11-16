@@ -7,13 +7,13 @@
     <DockPanel Margin="{StaticResource AuxiliaryMargin}">
       <DockPanel DockPanel.Dock="Top" Margin="0,0,0,10">
         <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
-          <Button Style="{StaticResource AuxiliaryAction}" MaxWidth="200" Margin="0,0,6,0" Click="Restore_Click" ToolTip="Put the selected items back where they were deleted from">
+          <Button x:Name="RestoreButton" IsEnabled="False" Style="{StaticResource AuxiliaryAction}" MaxWidth="200" Margin="0,0,6,0" Click="Restore_Click" ToolTip="Put the selected items back where they were deleted from">
             <TextBlock><Run FontFamily="Segoe Fluent Icons" Text="&#xE777;"/>  Restore</TextBlock>
           </Button>
-          <Button Style="{StaticResource AuxiliaryAction}" MaxWidth="200" Margin="0,0,6,0" Click="Delete_Click">
+          <Button x:Name="DeleteButton" IsEnabled="False" Style="{StaticResource AuxiliaryAction}" MaxWidth="200" Margin="0,0,6,0" Click="Delete_Click" ToolTip="Delete only the selected items for good; the rest stay in the bin">
             <TextBlock><Run FontFamily="Segoe Fluent Icons" Text="&#xE74D;"/>  Delete permanently</TextBlock>
           </Button>
-          <Button Style="{StaticResource AuxiliaryAction}" MaxWidth="200" Click="Empty_Click">
+          <Button Style="{StaticResource AuxiliaryAction}" MaxWidth="200" Click="Empty_Click" ToolTip="Delete everything in the Recycle Bin for good, on every drive">
             <TextBlock><Run FontFamily="Segoe Fluent Icons" Text="&#xE894;"/>  Empty Recycle Bin</TextBlock>
           </Button>
         </StackPanel>
@@ -23,7 +23,7 @@
       <Border Style="{StaticResource AuxiliaryCard}" Padding="4,2">
         <Grid>
         <ListView x:Name="List" Background="Transparent" BorderThickness="0" SelectionMode="Extended"
-                  ScrollViewer.HorizontalScrollBarVisibility="Disabled" MouseDoubleClick="List_DoubleClick">
+                  ScrollViewer.HorizontalScrollBarVisibility="Disabled" MouseDoubleClick="List_DoubleClick" SelectionChanged="List_SelectionChanged">
           <ListView.View>
             <GridView>
               <GridViewColumn Header="Name" Width="260">

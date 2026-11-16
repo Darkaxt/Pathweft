@@ -162,7 +162,7 @@ public partial class MainWindow
         }
         Settings.TextScale=1;Settings.NativeTheme=true;Settings.NativeMode="dark";ApplyAppearance();
         await S1Verification.Navigate(Left,zip);await Select(Left,"first.txt");var archiveMenu=Menu(Left);Inventory(archiveMenu,"archive");
-        Click(archiveMenu,"Preview");await quickPreview.Completion;check(quickPreview.State=="ready"&&quickPreview.ModuleId=="text","Grouped archive Preview renders the actual selected member");quick.Close();await PreviewSession.DrainAsync();
+        Click(archiveMenu,"Quick View");await quickPreview.Completion;check(quickPreview.State=="ready"&&quickPreview.ModuleId=="text","Grouped archive Preview renders the actual selected member");quick.Close();await PreviewSession.DrainAsync();
         Click(Menu(Left),"Rename");await Layout();var rename=Descendants<TextBox>(Left).Single(box=>box.Tag is Entry{Renaming:true});rename.Text="renamed.txt";
         rename.RaiseEvent(new KeyEventArgs(Keyboard.PrimaryDevice,PresentationSource.FromVisual(this),Environment.TickCount,Key.Enter){RoutedEvent=Keyboard.PreviewKeyDownEvent});await lastArchiveJob.Completion;
         check(lastArchiveJob.Successful&&Archive.Read(zip).Any(entry=>entry.Path=="renamed.txt"),"Archive Rename uses the actual transactional native edit");
@@ -172,15 +172,15 @@ public partial class MainWindow
             var prompt=Application.Current.Windows.Cast<Window>().Single(window=>window!=this&&window.Title=="Pathweft"&&window.Content is Grid);
             Descendants<Button>(prompt).Single(button=>button.Content as string=="Delete").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         });
-        Click(Menu(Left),"Delete from archive");await lastArchiveJob.Completion;
+        Click(Menu(Left),"Delete");await lastArchiveJob.Completion;
         check(lastArchiveJob.Successful&&Archive.Read(zip).All(entry=>entry.Path!="renamed.txt"),"Archive Delete confirms and commits through its real grouped menu action");
         await S1Verification.Navigate(Left,source);File.SetAttributes(zip,File.GetAttributes(zip)|FileAttributes.ReadOnly);
         try
         {
             await S1Verification.Navigate(Left,zip);await Select(Left,"second.txt");var readOnly=Menu(Left);Inventory(readOnly,"readonly-archive");
-            check(MenuCommands(readOnly).Where(item=>item.Header as string is "Cut" or "Paste" or "Rename" or "Delete from archive").All(item=>!item.IsEnabled&&item.ToolTip?.ToString()==Archive.ChangeReason(zip)),"Read-only archive mutations retain the actual disabled-state explanation");
-            Click(readOnly,"Extract to other pane");await lastArchiveJob.Completion;
-            check(lastArchiveJob.Successful&&File.ReadAllText(Path.Combine(target,"second.txt"))=="S9 cut and paste","The grouped Extract action reads a real read-only archive into the destination pane");
+            check(MenuCommands(readOnly).Where(item=>item.Header as string is "Cut" or "Paste" or "Rename" or "Delete" or "Move to other pane" or "Move to").All(item=>!item.IsEnabled&&item.ToolTip?.ToString()==Archive.ChangeReason(zip)),"Read-only archive mutations retain the actual disabled-state explanation");
+            Click(readOnly,"Copy to other pane");await lastArchiveJob.Completion;
+            check(lastArchiveJob.Successful&&File.ReadAllText(Path.Combine(target,"second.txt"))=="S9 cut and paste","Copy to other pane reads a real read-only archive into the destination pane");
         }finally{File.SetAttributes(zip,File.GetAttributes(zip)&~FileAttributes.ReadOnly);}
         await S1Verification.Navigate(Left,source);
         await VerifyWidgetMenu9(root,source,file,folder,shortcut,native,check);

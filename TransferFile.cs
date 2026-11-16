@@ -164,10 +164,12 @@ internal sealed class TransferFile : IDisposable
         if (current != desired) File.SetAttributes(target, desired);
         var actual = Inspect(target);
         if (requireSize && actual.Size != source.Size) throw new IOException("The destination length changed during verification: " + target);
-        if ((actual.Attributes & writable) != (source.Attributes & writable)) throw new IOException("The destination could not preserve basic file attributes: " + target);
         if (source.Attributes.HasFlag(FileAttributes.Encrypted) && !actual.Attributes.HasFlag(FileAttributes.Encrypted))
             throw new IOException("The destination could not preserve encryption: " + target);
-        storageChanges = (actual.Attributes ^ source.Attributes) & (FileAttributes.Compressed | FileAttributes.SparseFile);
+        // Attributes never fail a copy, as in Explorer: cloud and virtual filesystems such as Google
+        // Drive ignore them. Archive, NotContentIndexed and Temporary are dropped silently; a lost
+        // read-only, hidden or system flag is reported to the caller as a note.
+        storageChanges = (actual.Attributes ^ source.Attributes) & (FileAttributes.Compressed | FileAttributes.SparseFile | FileAttributes.ReadOnly | FileAttributes.Hidden | FileAttributes.System);
         if (source.Attributes.HasFlag(FileAttributes.SparseFile)) storageChanges |= FileAttributes.SparseFile;
         return actual.Created != source.Created || actual.Modified != source.Modified || actual.Accessed != source.Accessed;
     }

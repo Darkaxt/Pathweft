@@ -115,9 +115,9 @@ public partial class MainWindow
         EmptyBin();
         ShowBin();
         DropBin.Visibility = Visibility.Collapsed;
-        var there = await Task.Run(() => paths.Where(p => File.Exists(p) || Directory.Exists(p)).ToList());
+        var there = await Task.Run(() => paths.Where(Archive.Exists).ToList()); // on disk, or still in its archive
         int gone = paths.Count - there.Count;
-        if (there.Count > 0) Submit(there, into, move, ask: false); // the bin says how many from how many folders, and where
+        if (there.Count > 0 && ArchivePasswords(there)) Submit(there, into, move, ask: false); // the bin says how many from how many folders, and where
         if (gone > 0) Status.Text = $"{gone} item{(gone == 1 ? " was" : "s were")} no longer there and stayed out";
     }
 }

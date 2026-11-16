@@ -33,6 +33,8 @@ internal sealed class SpaceEntry:Entry
 
 public partial class PaneView
 {
+    /// How long the analyzer waits for Everything's folder sizes before measuring on disk (SPACE: slow index).
+    internal static TimeSpan IndexWait=TimeSpan.FromSeconds(5);
     sealed class SpaceView
     {
         internal string Root;
@@ -233,8 +235,15 @@ public partial class PaneView
             foreach(var key in current.Nodes.Keys.Where(key=>SizeCache.Within(key,absent.Path)).ToArray())current.Nodes.Remove(key);
         var missing=members.Where(member=>member.Directory&&!member.Reparse&&!current.Nodes.ContainsKey(member.Path)).ToArray();
         Dictionary<string,long> sizes=new(StringComparer.OrdinalIgnoreCase);
-        if(preferIndex&&missing.Length>0)try{sizes=await FileExplorer.Search.EverythingSearchClient.Shared.FolderSizesAsync(missing.Select(member=>member.Path),SearchInstance,token);}
-        catch(Exception error)when(error is InvalidOperationException or System.ComponentModel.Win32Exception or DllNotFoundException or EntryPointNotFoundException){}
+        // A slow Everything must not leave the analysis Pending (and F5 queued behind it) for its whole reply
+        // timeout: after IndexWait the folders are measured on disk instead.
+        if(preferIndex&&missing.Length>0)
+        {
+            using var indexWait=CancellationTokenSource.CreateLinkedTokenSource(token);indexWait.CancelAfter(IndexWait);
+            try{sizes=await FileExplorer.Search.EverythingSearchClient.Shared.FolderSizesAsync(missing.Select(member=>member.Path),SearchInstance,indexWait.Token);}
+            catch(OperationCanceledException)when(!token.IsCancellationRequested){}
+            catch(Exception error)when(error is InvalidOperationException or System.ComponentModel.Win32Exception or DllNotFoundException or EntryPointNotFoundException){}
+        }
         foreach(var member in members)
         {
             if(current.Nodes.TryGetValue(member.Path,out var existing))

@@ -58,34 +58,8 @@ public partial class MainWindow
         }
         if (p.ArchiveRoot is var (archive, _))
         {
-            var rows = ArchiveSelection(p);
-            var am = new ContextMenu();
-            string changeReason = Archive.ChangeReason(archive);
-            bool writable = changeReason.Length == 0;
-            MenuItem WriteAction(string label, string key, Action action, bool enabled = true)
-            {
-                var item = Item(label, "", key, action, writable && enabled);
-                if (!writable) { item.ToolTip = changeReason; ToolTipService.SetShowOnDisabled(item, true); }
-                return item;
-            }
-            if (rows.Count == 1) am.Items.Add(Item("Open", "", "Enter", p.OpenSelected));
-            if (rows.Count == 1) am.Items.Add(Item("Preview", "", "Space", () => ToggleQuickView(p, this)));
-            if (rows.Count > 0)
-            {
-                am.Items.Add(Item("Copy", "", "Ctrl+C", () => ClipboardPut(false)));
-                am.Items.Add(WriteAction("Cut", "Ctrl+X", () => ClipboardPut(true)));
-                if (rows.Count == 1) am.Items.Add(WriteAction("Rename", "F2", p.BeginRename));
-                am.Items.Add(Item("Extract to other pane", "", "Ctrl+F5", () => ExtractFromArchive(p, Other.Dir), !Settings.SinglePane && !PaneView.IsVirtual(Other.Dir)));
-                am.Items.Add(Item("Extract to…", "", "", () => ExtractFromArchiveTo(p)));
-                am.Items.Add(WriteAction("Delete from archive", "Del", () => DeleteFromArchive(p)));
-            }
-            am.Items.Add(WriteAction("Paste", "Ctrl+V", () => ClipboardPaste(), HasTransferClipboard()));
-            am.Items.Add(Item("Enter archive password…", "", "", () => ArchivePassword(p)));
-            am.Items.Add(Item("Forget archive password", "", "", () => { Archive.SetPassword(archive, null); p.Refresh(); }));
-            am.Items.Add(Item("Archive working copies…", "", "", ShowArchiveWorkingCopies));
-            am.Items.Add(new Separator());
-            am.Items.Add(Item("Show the archive", "", "", () => p.Navigate(Path.GetDirectoryName(archive), Path.GetFileName(archive))));
-            GroupArchiveMenu(am);PrepareContextMenu(am,p.List);
+            var am = ArchiveMenu(p, archive);
+            PrepareContextMenu(am,p.List);
 #if DEBUG
             archiveMenuForVerification = am;
             if (captureS4Menu) return;
@@ -281,11 +255,6 @@ public partial class MainWindow
         var rarCreate = Item("Compress to RAR", "", "", () => CompressArchive(".rar"), rarUnavailable.Length == 0);
         if (rarUnavailable.Length > 0) { rarCreate.ToolTip = rarUnavailable; ToolTipService.SetShowOnDisabled(rarCreate, true); }
         m.Items.Add(rarCreate);
-        if (one && (ZipExt.Contains(ext) || Archive.IsArchiveName(first.Path)))
-        {
-            m.Items.Add(Item("Extract here", "", "", () => Extract(first, toFolder: false)));
-            m.Items.Add(Item($"Extract to {Path.GetFileNameWithoutExtension(first.Name)}\\", "", "", () => Extract(first, toFolder: true)));
-        }
         if (one && DiskImageExt.Contains(ext)) m.Items.Add(Item("Mount", "", "", () => MountImage(first.Path)));
         AddShell(m, shell, "7-zip");
         AddShell(m, shell, "winrar");
@@ -328,7 +297,7 @@ public partial class MainWindow
         menu.Items.Add(new Separator());
         Group("Transfer","\uE8DE",item=>Named(item,"Copy to other pane","Move to other pane","Copy to","Move to","Group into new folder…","Add to Drop bin"));
         Group("Copy details","\uE8C8",item=>Named(item,"Copy path","Copy name"));
-        Group("Archive","\uF012",item=>(item.Header as string)?.StartsWith("Compress to ")==true||(item.Header as string)?.StartsWith("Extract ")==true||item.Tag as string is "shell:7-zip" or "shell:winrar");
+        Group("Archive","\uF012",item=>(item.Header as string)?.StartsWith("Compress to ")==true||item.Tag as string is "shell:7-zip" or "shell:winrar");
         Group("Tools","\uE713",item=>Named(item,"Run as administrator","Compare in editor","Edit with Notepad++","Checksum (SHA-256)","Create shortcut","Mount")||(item.Header as string)?.StartsWith("Find duplicates")==true);
         Group("More actions","\uE712",_=>true);
         menu.Items.Add(new Separator());menu.Items.Add(windows);menu.Items.Add(properties);
@@ -417,19 +386,6 @@ public partial class MainWindow
     {
         var start=new ProcessStartInfo("rundll32.exe");
         start.ArgumentList.Add("shell32.dll,OpenAs_RunDLL");start.ArgumentList.Add(path);Process.Start(start);
-    }
-
-    static void GroupArchiveMenu(ContextMenu menu)
-    {
-        var remaining=menu.Items.OfType<MenuItem>().ToList();menu.Items.Clear();
-        void Take(ItemsControl target,Func<MenuItem,bool> predicate){foreach(var item in remaining.Where(predicate).ToArray()){remaining.Remove(item);target.Items.Add(item);}}
-        Take(menu,item=>item.Header as string is "Open" or "Preview");
-        if(menu.Items.Count>0)menu.Items.Add(new Separator());
-        Take(menu,item=>item.Header as string is "Copy" or "Cut" or "Paste" or "Rename" or "Delete from archive");
-        var extract=Item("Extract","\uF012","",()=>{});Take(extract,item=>(item.Header as string)?.StartsWith("Extract ")==true);
-        if(extract.Items.Count>0){menu.Items.Add(new Separator());menu.Items.Add(extract);}
-        var tools=Item("Archive tools","\uE713","",()=>{});Take(tools,item=>item.Header as string!="Show the archive");menu.Items.Add(tools);
-        menu.Items.Add(new Separator());Take(menu,_=>true);
     }
 
     internal static void PrepareContextMenu(ContextMenu menu,FrameworkElement target)

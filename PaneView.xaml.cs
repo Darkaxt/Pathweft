@@ -308,6 +308,9 @@ public partial class PaneView : UserControl
     string itemsFolder;
     public event Action<string> Error;
     public event Action<Entry> OpenArchived; // Enter on a file inside an archive: MainWindow opens it from a temp copy
+    public event Func<string, bool> ArchivePasswordNeeded; // the archive's names are encrypted: true once its password was given
+    /// Archive items given to another app (drag out): extracted through a Transfers job, as the clipboard's are.
+    internal static Func<IReadOnlyList<string>, string, ArchiveContent.Lease> ExportArchive;
     internal event Action<Entry> InspectRequested;
     public event Action<List<string>, string, bool> FilesDropped; // sources, destination, move
     public event Action RightDragSelected; // a right-button rectangle was let go: the menu for what it selected
@@ -901,14 +904,14 @@ public partial class PaneView : UserControl
     ArchiveContent.Lease dragExport;
     internal DataObject CreateDragData()
     {
-        if(ArchiveRoot is not { } at)return new DataObject(DataFormats.FileDrop,Selected.Select(e=>e.Path).ToArray());
+        if(ArchiveRoot is null)return new DataObject(DataFormats.FileDrop,Selected.Select(e=>e.Path).ToArray());
         var selected=Selected.Select(e=>(e.Path,e.Name)).ToArray();
         return new DataObject(new ArchiveDragData(selected.Select(e=>e.Path).ToArray(),()=>
         {
             try
             {
-                var copy=dragExport=ArchiveContent.Extract(at.Archive,selected.Select(e=>e.Name).ToArray(),at.Inner,"drag export");
-                return selected.Select(e=>System.IO.Path.Combine(copy.Directory,"data",e.Name)).ToArray();
+                var copy=dragExport=ExportArchive?.Invoke(selected.Select(e=>e.Path).ToArray(),"drag export");
+                return copy==null?Array.Empty<string>():selected.Select(e=>System.IO.Path.Combine(copy.Directory,"data",e.Name)).ToArray();
             }
             catch(Exception error)when(error is IOException or UnauthorizedAccessException)
             {Error?.Invoke("Cannot prepare archive drag: "+error.Message);return Array.Empty<string>();}
@@ -1087,6 +1090,8 @@ public partial class PaneView : UserControl
     // ---- inside a ZIP or TAR (1.0.60): its folders as rows; the path goes on past the archive, "C:\a\b.zip\docs" ----
     /// The archive this pane shows, and the folder inside it ('/'-separated, "" = its top); null on a real folder.
     public (string Archive, string Inner)? ArchiveRoot { get; private set; }
+    /// The archive as this pane shows it ("C:\a\outer.zip\inner.7z" for a nested one, whose ArchiveRoot is its working copy).
+    public string ArchivePath => ArchiveRoot is { } at ? (at.Inner.Length == 0 ? Dir.TrimEnd('\\') : Dir.TrimEnd('\\')[..^(at.Inner.Length + 1)]) : null;
 
     /// The archive a path runs through, if any. Only paths that name one are looked at on disk.
     public static (string Archive, string Inner)? ArchiveOf(string path)
@@ -1094,8 +1099,11 @@ public partial class PaneView : UserControl
         if (string.IsNullOrEmpty(path)) return null;
         path = path.TrimEnd('\\');
         for (var at = path; at != null && at.Length > 3; at = System.IO.Path.GetDirectoryName(at))
-            if (Archive.IsArchiveName(at) && File.Exists(at))
-                return (at, at.Length == path.Length ? "" : path[(at.Length + 1)..].Replace('\\', '/'));
+        {
+            string inner = at.Length == path.Length ? "" : path[(at.Length + 1)..].Replace('\\', '/');
+            if (Archive.NestedCopy(at) is { } copy) return (copy, inner); // an archive inside an archive, once opened
+            if (Archive.IsArchiveName(at) && File.Exists(at)) return (at, inner);
+        }
         return null;
     }
 
@@ -1109,20 +1117,28 @@ public partial class PaneView : UserControl
         ArchiveRoot = at;
         watcher?.Dispose(); watcher = null;
         sizing?.Cancel();
+        string shown = dir.TrimEnd('\\'), virtualArchive = at.Inner.Length == 0 ? shown : shown[..^(at.Inner.Length + 1)];
+        var reading = at;
         Task.Run(() =>
         {
-            try { return (Archive.List(at.Archive, at.Inner), (string)null); }
+            try { reading = Archive.Resolve(at, virtualArchive); return (Archive.List(reading.Archive, reading.Inner), (string)null); }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException or FormatException) { return (null, ex.Message); }
         }).ContinueWith(t => Dispatcher.BeginInvoke(() =>
         {
             if (v != navVersion) return;
             ListingLoaded(v);
             var (items, error) = t.IsFaulted ? (null, t.Exception.GetBaseException().Message) : t.Result; // an unexpected archive failure must not escape on the dispatcher
+            // as 7-Zip and Explorer: an archive whose file names are encrypted, or whose encrypted entry holds the
+            // archive being opened, asks for its password on opening
+            if (error != null && !Archive.HasPassword(reading.Archive) && (Archive.HidesNames(reading.Archive) || Archive.NeedsPassword(reading.Archive, new[] { "" }))
+                && ArchivePasswordNeeded?.Invoke(reading.Archive) == true)
+            { Navigate(dir, select, record: false); return; }
             if (error != null)
             {
                 ShowItems(new List<Entry>(), null);
                 Listed = true; Error?.Invoke("Archive unavailable · " + error); StatsChanged?.Invoke(); return;
             }
+            at = reading; ArchiveRoot = at; // the archive really read (a nested one's working copy)
             string changeReason = Archive.ChangeReason(at.Archive);
             var shownMembers = items.Where(i => FileVisibility.Visible(i.Name, i.Attributes, ShowHidden)).ToList();
             ShowItems(shownMembers.Select(i => new Entry { Name = i.Name, Path = dir + "\\" + i.Name, IsDir = i.IsDir, Size = i.Size, Modified = i.Modified, Crc = i.Crc,
@@ -2139,7 +2155,7 @@ public partial class PaneView : UserControl
         {WidgetLocationOpened?.Invoke(e.FolderTarget??e.Path);return;}
         var backup = !e.IsUp && !e.IsDir && Backups.Named(e.Path) ? await Task.Run(() => MainWindow.BackupStart(e.Path)) : null;
         if (e.IsUp) Up();
-        else if (ArchiveRoot != null) { if (e.IsDir) Navigate(e.Path); else OpenArchived?.Invoke(e); }
+        else if (ArchiveRoot != null) { if (e.IsDir || Archive.IsArchiveName(e.Name)) Navigate(e.Path); else OpenArchived?.Invoke(e); }
         else if (!e.IsDir && Archive.IsArchiveName(e.Path)) Navigate(e.Path); // a ZIP or TAR opens like a folder
         else if (e.FolderTarget is { } folder) Navigate(folder); // a shortcut to a folder opens here, as in Explorer
         // a script is run, like Explorer does; editing it is F4 / Edit in the menu

@@ -1,6 +1,22 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.71 | 2026-11-16 | Archives work like folders; copies never fail over attributes
+
+**Inside archives**
+- Items inside an archive have the same right-click commands as files on disk: Open with, Edit, Compare, Rename all, New folder and New file, Group into new folder, Compress, Checksum, Copy path and name, and Properties (Alt+Enter).
+- An archive inside an archive opens like a folder; changes to it are saved back into the outer archive.
+- An archive whose file names are encrypted asks for its password when you open it. Other passwords are asked only when a file is actually needed.
+- Copying out of an archive, Ctrl+C into another app and dragging out all run in the Transfers window, with progress, verification and the same conflict choices as other copies. The separate Extract commands are gone.
+- A read-only archive greys out its write commands and says why.
+
+**Copying**
+- A copy no longer fails because the destination can't keep a file's attributes (for example Google Drive); the job finishes with an orange note naming what wasn't kept.
+
+**Other**
+- Recycle Bin: Restore and Delete permanently are enabled only when something is selected.
+- The space analyzer measures folders on disk if Everything hasn't answered within 5 seconds, instead of waiting.
+
 ## 1.1.70 | 2026-11-15 | Folder hand-off fix; Tresorit Drive commands and delete wording
 
 - Fixed: opening a folder from another app (for example JDownloader) while Pathweft was updating, or opening This PC from an app, could crash that app.

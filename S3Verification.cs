@@ -80,7 +80,7 @@ public partial class MainWindow
             // The existing preview toolbar uses the same click handler; find its routed button.
             if (!Settings.Preview)
             {
-                var toggle = Descendants<Button>(this).First(b => b.ToolTip?.ToString() == "Show the selected file beside the panes");
+                var toggle = (Button)FindName("PreviewCommand");
                 Click(toggle);
             }
             Check(Settings.Preview && PreviewPane.IsVisible, "PREVIEW-04 real preview toolbar enables the side pane");

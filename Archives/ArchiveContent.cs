@@ -28,22 +28,44 @@ internal static class ArchiveContent
             Release(record);
         }
     }
-    internal static Lease Extract(string archive, IReadOnlyCollection<string> names, string inner, string purpose)
+    internal static Lease Extract(string archive, IReadOnlyCollection<string> names, string inner, string purpose, string source = null)
     {
-        string id = Guid.NewGuid().ToString("N"), directory = Path.Combine(Root, id);
-        Directory.CreateDirectory(directory);
+        string id = Reserve(out string directory);
         try
         {
-            string data = Path.Combine(directory, "data"); Directory.CreateDirectory(data);
-            Archive.Extract(archive, names, inner, data);
-            var record = new Record(id, archive + (inner == "" ? "" : "\\" + inner.Replace('/', '\\')), purpose,
-                Directory.GetFiles(directory, "*", SearchOption.AllDirectories).Select(p => Path.GetRelativePath(directory, p)).ToArray(),
-                Directory.GetDirectories(directory, "*", SearchOption.AllDirectories).Select(p => Path.GetRelativePath(directory, p)).ToArray());
-            System.IO.File.WriteAllText(Path.Combine(directory, "lease.json"), JsonSerializer.Serialize(record));
-            if (purpose == "preview") activePreviews.TryAdd(id, 0);
-            return new(record);
+            Archive.Extract(archive, names, inner, Path.Combine(directory, "data"));
+            return Seal(id, source ?? archive + (inner == "" ? "" : "\\" + inner.Replace('/', '\\')), purpose);
         }
         catch { Directory.Delete(directory, recursive: true); throw; }
+    }
+    /// A new working copy whose "data" folder the caller fills (Extract, or a Transfers job), then Seals.
+    /// The working copy holding `file` released, if nothing holds it (a stale nested archive).
+    internal static void ReleaseQuietly(string file)
+    {
+        foreach (var record in Retained().Where(r => file.StartsWith(Location(r) + "\\", StringComparison.OrdinalIgnoreCase)).ToList())
+            try { Release(record); } catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
+    }
+    /// At exit: nested archives were written back as they changed, so their copies are not kept.
+    internal static void ReleaseNested()
+    {
+        foreach (var record in Retained().Where(r => r.Purpose == "nested archive").ToList())
+            try { Release(record); } catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
+    }
+    internal static string Reserve(out string directory)
+    {
+        string id = Guid.NewGuid().ToString("N"); directory = Path.Combine(Root, id);
+        Directory.CreateDirectory(Path.Combine(directory, "data"));
+        return id;
+    }
+    internal static Lease Seal(string id, string source, string purpose)
+    {
+        string directory = Path.Combine(Root, id);
+        var record = new Record(id, source, purpose,
+            Directory.GetFiles(directory, "*", SearchOption.AllDirectories).Select(p => Path.GetRelativePath(directory, p)).ToArray(),
+            Directory.GetDirectories(directory, "*", SearchOption.AllDirectories).Select(p => Path.GetRelativePath(directory, p)).ToArray());
+        System.IO.File.WriteAllText(Path.Combine(directory, "lease.json"), JsonSerializer.Serialize(record));
+        if (purpose == "preview") activePreviews.TryAdd(id, 0);
+        return new(record);
     }
     internal static Lease Preview(string path)
     {

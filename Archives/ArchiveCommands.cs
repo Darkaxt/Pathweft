@@ -13,12 +13,6 @@ public partial class MainWindow
     Job SubmitArchiveEdit(IEnumerable<string> sources, string destination, string description, Action<Job> work) =>
         TrackSubmittedJob(Ferry.Submit(sources, destination, false, work, description));
 
-    void ExtractFromArchive(PaneView pane, string destination) => Submit(pane.Selected.Select(e => e.Path).ToList(), destination, false);
-    void ExtractFromArchiveTo(PaneView pane)
-    {
-        var pick = new Microsoft.Win32.OpenFolderDialog { Title = "Extract to which folder?" };
-        if (pick.ShowDialog(this) == true) ExtractFromArchive(pane, pick.FolderName);
-    }
     void OpenFromArchive(PaneView pane, Entry entry) => archiveOpenCompletion = OpenArchiveEntry(pane, entry);
 #if DEBUG
     internal Func<string, Process> ArchiveConsumerForVerification = null;
@@ -26,6 +20,7 @@ public partial class MainWindow
     async Task OpenArchiveEntry(PaneView pane, Entry entry, bool editor = false)
     {
         if (pane.ArchiveRoot is not { } at) return;
+        if (!ArchivePasswords(new[] { entry.Path })) return;
         entry.Message="";
         ArchiveContent.Lease copy = null;
         try
@@ -56,11 +51,33 @@ public partial class MainWindow
     }
     void ArchivePassword(PaneView pane)
     {
-        if (pane.ArchiveRoot is not { } at) return;
+        if (pane.ArchiveRoot is { } at && AskArchivePassword(at.Archive)) pane.Refresh();
+    }
+    /// As Explorer: the password is asked when an encrypted entry is about to be read, not beforehand.
+    /// False when it was needed and not given.
+    bool ArchivePasswords(IEnumerable<string> paths)
+    {
+        foreach (var group in paths.Select(PaneView.ArchiveOf).Where(a => a is { Inner.Length: > 0 }).Select(a => a.Value).GroupBy(a => a.Archive, StringComparer.OrdinalIgnoreCase))
+            if (Archive.NeedsPassword(group.Key, group.Select(a => a.Inner)) && !AskArchivePassword(group.Key)) return false;
+        return true;
+    }
+#if DEBUG
+    /// Verification answers the password prompt instead of a person: the password, or null for Cancel.
+    internal Func<string, string> ArchivePasswordAnswerForVerification;
+#endif
+    bool AskArchivePassword(string archive)
+    {
+#if DEBUG
+        if (ArchivePasswordAnswerForVerification is { } answer)
+        {
+            if (answer(archive) is not { Length: > 0 } answered) return false;
+            Archive.SetPassword(archive, answered); return true;
+        }
+#endif
         var password = new PasswordBox { Name = "ArchivePassword", Margin = new(0, 12, 0, 12) };
-        var open = new Button { Name = "ArchivePasswordOpen", Content = "Open archive", Style = (Style)FindResource("Ghost"), IsDefault = true, Padding = new(12, 6, 12, 6) };
+        var open = new Button { Name = "ArchivePasswordOpen", Content = "OK", Style = (Style)FindResource("Ghost"), IsDefault = true, Padding = new(12, 6, 12, 6) };
         var panel = new StackPanel { Margin = new(20), LayoutTransform = ArchiveTextScale() };
-        panel.Children.Add(new TextBlock { Text = "Password for " + Path.GetFileName(at.Archive), TextWrapping = TextWrapping.Wrap });
+        panel.Children.Add(new TextBlock { Text = "Password for " + Path.GetFileName(archive), TextWrapping = TextWrapping.Wrap });
         panel.Children.Add(password); panel.Children.Add(new TextBlock { Text = "Kept only in memory for this session. Editing depends on the archive's preservation capabilities.", TextWrapping = TextWrapping.Wrap, Foreground = Hex("#8A97AA") }); panel.Children.Add(open);
         var dialog = new Window { Owner = this, Title = "Archive password", Content = panel, Width = 440, SizeToContent = SizeToContent.Height, Background = Hex("#161B24"), Foreground = Foreground, FontFamily = FontFamily, WindowStartupLocation = WindowStartupLocation.CenterOwner, ShowInTaskbar = false };
         System.Windows.Automation.AutomationProperties.SetName(password, "Archive password");
@@ -76,8 +93,10 @@ public partial class MainWindow
 #endif
         open.Click += (_, _) => dialog.DialogResult = true;
         dialog.PreviewKeyDown += (_, e) => { if (e.Key == System.Windows.Input.Key.Escape) dialog.Close(); };
-        if (dialog.ShowDialog() == true) { Archive.SetPassword(at.Archive, password.Password); pane.Refresh(); }
+        bool given = dialog.ShowDialog() == true && password.Password.Length > 0;
+        if (given) Archive.SetPassword(archive, password.Password);
         password.Clear();
+        return given;
     }
     Window archiveCopiesWindow;
     Action refreshArchiveCopies;

@@ -53,17 +53,11 @@ public partial class MainWindow
 
     // Materialize every transfer format before publication. The OS owns each
     // HGLOBAL after SetClipboardData succeeds; no OLE/managed stream is retained.
-    uint WriteTransferClipboard(string[] files, byte[] archiveSelection, bool move, uint expectedSequence)
+    /// `delayFiles`: the file list (CF_HDROP) is rendered only when another app asks for it (RenderArchiveFiles).
+    uint WriteTransferClipboard(string[] files, byte[] archiveSelection, bool move, uint expectedSequence, bool delayFiles = false)
     {
         var values = new Dictionary<uint, byte[]> { [RegisterClipboardFormat("Preferred DropEffect")] = BitConverter.GetBytes(move ? 2 : 5) };
-        if (files is { Length: > 0 })
-        {
-            byte[] names = System.Text.Encoding.Unicode.GetBytes(string.Join('\0', files) + "\0\0");
-            byte[] drop = new byte[checked(20 + names.Length)];
-            BitConverter.GetBytes(20).CopyTo(drop, 0); // DROPFILES.pFiles
-            BitConverter.GetBytes(1).CopyTo(drop, 16); // DROPFILES.fWide
-            names.CopyTo(drop, 20); values[15] = drop;
-        }
+        if (files is { Length: > 0 }) values[15] = DropFiles(files);
         if (archiveSelection != null) values[RegisterClipboardFormat(ArchiveClipboardFormat)] = archiveSelection;
         if (values.ContainsKey(0)) throw new Win32Exception(Marshal.GetLastWin32Error());
         IntPtr owner = new System.Windows.Interop.WindowInteropHelper(this).Handle;
@@ -91,12 +85,82 @@ public partial class MainWindow
                     if (SetClipboardData(format, memory[format]) == IntPtr.Zero) throw new Win32Exception(Marshal.GetLastWin32Error());
                     memory[format] = IntPtr.Zero;
                 }
+                if (delayFiles) SetClipboardData(15, IntPtr.Zero); // delayed rendering: WM_RENDERFORMAT asks for it
                 return GetClipboardSequenceNumber(); // capture ownership while the clipboard is still locked
             }
             finally { CloseClipboard(); }
         }
         finally { foreach (IntPtr handle in memory.Values) if (handle != IntPtr.Zero) GlobalFree(handle); }
     }
+    static byte[] DropFiles(string[] files)
+    {
+        byte[] names = System.Text.Encoding.Unicode.GetBytes(string.Join('\0', files) + "\0\0");
+        byte[] drop = new byte[checked(20 + names.Length)];
+        BitConverter.GetBytes(20).CopyTo(drop, 0); // DROPFILES.pFiles
+        BitConverter.GetBytes(1).CopyTo(drop, 16); // DROPFILES.fWide
+        names.CopyTo(drop, 20);
+        return drop;
+    }
+
+    // Archive items copied here: Pathweft panes paste them from the archive itself; another app
+    // (Explorer, a chat window) gets real files, extracted when it first asks, as a Transfers job.
+    (List<string> Paths, uint Sequence)? pendingArchiveExport;
+    bool renderingArchiveFiles;
+    const int WM_RENDERFORMAT = 0x0305, WM_RENDERALLFORMATS = 0x0306, WM_DESTROYCLIPBOARD = 0x0307;
+    IntPtr ClipboardRender(IntPtr hwnd, int message, IntPtr wParam, IntPtr lParam, ref bool handled)
+    {
+        if (message == WM_DESTROYCLIPBOARD) pendingArchiveExport = null;
+        // closing: no files are extracted on the way out; Pathweft's own format stays on the clipboard
+        else if (message == WM_RENDERALLFORMATS) { pendingArchiveExport = null; handled = true; }
+        else if (message == WM_RENDERFORMAT && (int)wParam == 15) { handled = true; RenderArchiveFiles(); }
+        return IntPtr.Zero;
+    }
+    // Runs with the clipboard opened by the asking app, which waits in GetClipboardData while the
+    // Transfers job runs, as it waits for Explorer's own extraction from a ZIP.
+    void RenderArchiveFiles()
+    {
+        if (renderingArchiveFiles || pendingArchiveExport is not { } export || export.Sequence != GetClipboardSequenceNumber()) return;
+        renderingArchiveFiles = true;
+        try
+        {
+            if (ExportArchiveItems(export.Paths, "clipboard export") is not { } lease) return;
+            byte[] drop = DropFiles(export.Paths.Select(p => Path.Combine(lease.Directory, "data", Path.GetFileName(p.TrimEnd('\\')))).ToArray());
+            IntPtr handle = GlobalAlloc(0x42, (nuint)drop.Length);
+            if (handle == IntPtr.Zero) return;
+            IntPtr pointer = GlobalLock(handle);
+            if (pointer == IntPtr.Zero) { GlobalFree(handle); return; }
+            try { Marshal.Copy(drop, 0, pointer, drop.Length); } finally { GlobalUnlock(handle); }
+            if (SetClipboardData(15, handle) == IntPtr.Zero) GlobalFree(handle); // the OS owns it on success
+        }
+        finally { renderingArchiveFiles = false; }
+    }
+    /// Archive items given to another app (clipboard, drag out): extracted into a working copy by a Transfers
+    /// job, the same as any copy, while the asking app waits. Null when cancelled or failed (the job says why).
+    internal ArchiveContent.Lease ExportArchiveItems(IReadOnlyList<string> paths, string purpose)
+    {
+        string directory = null; bool sealedCopy = false;
+        try
+        {
+            if (!ArchivePasswords(paths)) return null;
+            string id = ArchiveContent.Reserve(out directory);
+            var job = Submit(paths.ToList(), Path.Combine(directory, "data"), move: false, ask: false, journal: false);
+            if (job == null) return null;
+            var frame = new System.Windows.Threading.DispatcherFrame();
+            job.Completion.ContinueWith(_ => frame.Continue = false, TaskScheduler.Default);
+            System.Windows.Threading.Dispatcher.PushFrame(frame);
+            if (!job.Successful) return null;
+            // kept until the user releases it (Archive working copies...), as the other app may read it later
+            var lease = ArchiveContent.Seal(id, paths[0], purpose); sealedCopy = true;
+            return lease;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { Status.Text = "Archive items could not be prepared: " + ex.Message; return null; }
+        finally
+        {
+            if (!sealedCopy && directory != null)
+                try { Directory.Delete(directory, recursive: true); } catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
+        }
+    }
+
     bool ClearTransferClipboard(uint expectedSequence, out uint clearedSequence)
     {
         clearedSequence = 0;

@@ -72,18 +72,28 @@ internal static class ManagerCleanup
 #if DEBUG
         if(FindForVerification is {} find)return find(name);
 #endif
+        bool python=name.Equals("python.exe",StringComparison.OrdinalIgnoreCase);
+        // Apps bundle embedded Pythons without pip on PATH (SVP 4's mpv64): Pip needs a Python that has it.
+        static bool HasPip(string executable)=>Directory.Exists(Path.Combine(Path.GetDirectoryName(executable)!,"Lib","site-packages","pip"));
+        string first=null;
         foreach(string folder in (Environment.GetEnvironmentVariable("PATH")??"").Split(Path.PathSeparator))
         {
             if(string.IsNullOrWhiteSpace(folder))continue;
-            try{string path=Path.GetFullPath(Path.Combine(folder.Trim('"'),name));if(File.Exists(path))return path;}
+            try
+            {
+                string path=Path.GetFullPath(Path.Combine(folder.Trim('"'),name));
+                if(!File.Exists(path))continue;
+                if(!python||HasPip(path))return path;
+                first??=path;
+            }
             catch(Exception error)when(error is ArgumentException or NotSupportedException or PathTooLongException){}
         }
-        if(name.Equals("python.exe",StringComparison.OrdinalIgnoreCase))
+        if(python)
         {
             string scoopPython=Path.Combine(ScoopCleanup.Locations().Root,"apps","python","current","python.exe");
-            if(File.Exists(scoopPython))return Path.GetFullPath(scoopPython);
+            if(File.Exists(scoopPython)&&(first==null||HasPip(scoopPython)))return Path.GetFullPath(scoopPython);
         }
-        throw new IOException(name+" is not installed on the application PATH");
+        return first??throw new IOException(name+" is not installed on the application PATH");
     }
     static string Run(string manager,string action,CancellationToken cancel,string root="")
     {

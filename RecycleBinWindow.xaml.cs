@@ -179,6 +179,8 @@ public partial class RecycleBinWindow : Window
     }
 
     List<Item> Selected => List.SelectedItems.Cast<Item>().ToList();
+    // Restore and Delete permanently act on the selection only; Empty Recycle Bin takes everything.
+    void List_SelectionChanged(object s, SelectionChangedEventArgs e) => RestoreButton.IsEnabled = DeleteButton.IsEnabled = List.SelectedItems.Count > 0;
 
     void Restore_Click(object s, RoutedEventArgs e) => Restore(Selected);
     void List_DoubleClick(object s, MouseButtonEventArgs e) { if (List.SelectedItem is Item i) Restore(new() { i }); }

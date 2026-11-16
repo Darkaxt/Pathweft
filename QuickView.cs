@@ -48,7 +48,7 @@ public partial class MainWindow
             previewCloseAccepted = true;
             _ = Dispatcher.BeginInvoke(Close);
         };
-        Closed += (_, _) => { sidePreview.Dispose(); Archive.ForgetPasswords(); };
+        Closed += (_, _) => { sidePreview.Dispose(); Archive.ForgetPasswords(); ArchiveContent.ReleaseNested(); }; // nested archives were written back as they changed
     }
     void ApplyPreview()
     {

@@ -13,7 +13,9 @@ internal static partial class Archive
         var destination = PaneView.ArchiveOf(job.Destination);
         if (destination == null && !Directory.Exists(job.Destination)) throw new IOException("The destination folder is unavailable.");
         if (destination is { } writable && ChangeReason(writable.Archive) is { Length: > 0 } destinationReason) throw new IOException(destinationReason);
-        string destinationHash = destination is { } d ? Fingerprint(d.Archive) : null;
+        // As in Ferry: sources are listed (names, sizes, dates) without reading their contents; a change is
+        // noticed through size and time, and contents are checked while they are written.
+        string destinationVersion = destination is { } d ? Version(d.Archive) : null;
         var containers = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         var directories = new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase);
         var members = new Dictionary<string, Member>(StringComparer.OrdinalIgnoreCase);
@@ -21,6 +23,7 @@ internal static partial class Archive
         {
             Check(job); _ = Clean(member.Name);
             if (!members.TryAdd(member.Name, member)) throw new IOException("Selected inputs have colliding names: " + member.Name);
+            if (!member.Directory) { job.TotalFiles++; job.TotalBytes += member.Size; } // shown while scanning
         }
         void Disk(string path, string name)
         {
@@ -29,7 +32,8 @@ internal static partial class Archive
             bool dir = (attributes & FileAttributes.Directory) != 0;
             if (TransferFile.Streams(path, dir).Any(stream => stream.Name != "::$DATA"))
                 throw new IOException("Archive transfers cannot preserve filesystem alternate streams; the source is retained: " + path);
-            Add(new(path, name, dir, dir ? 0 : new FileInfo(path).Length, File.GetLastWriteTime(path), dir ? "directory" : Fingerprint(path)));
+            // a move's source file is removed only if its content is unchanged (RemoveVerifiedSource), so it is hashed
+            Add(new(path, name, dir, dir ? 0 : new FileInfo(path).Length, File.GetLastWriteTime(path), dir ? "directory" : job.IsMove ? Fingerprint(path) : Version(path)));
             if (dir)
             {
                 string[] children = Directory.GetFileSystemEntries(path); directories.Add(path, children);
@@ -41,24 +45,30 @@ internal static partial class Archive
             var location = PaneView.ArchiveOf(source);
             if (location is not { Inner.Length: > 0 } at) { Disk(source, Path.GetFileName(source.TrimEnd('\\'))); continue; }
             if (job.IsMove && !CanChange(at.Archive)) throw new IOException("A cut cannot remove entries from this read-only container; use Copy.");
-            containers.TryAdd(at.Archive, Fingerprint(at.Archive));
+            containers.TryAdd(at.Archive, Version(at.Archive));
             string selected = Clean(at.Inner), prefix = selected.Contains('/') ? selected[..(selected.LastIndexOf('/') + 1)] : "";
             var entries = Read(at.Archive).Where(e => Under(e.Path, selected)).ToArray();
             if (entries.Length == 0) throw new IOException("A selected archive entry no longer exists.");
             if (!entries.Any(e => e.Path.Equals(selected, StringComparison.OrdinalIgnoreCase)))
                 Add(new(source, selected[prefix.Length..], true, 0, entries[0].Modified, "directory", at.Archive));
             foreach (var entry in entries)
-                Add(new(at.Archive + "\\" + entry.Path.Replace('/', '\\'), entry.Path[prefix.Length..], entry.IsDir, entry.Size, entry.Modified, EntryHash(at.Archive, entry, job), at.Archive, entry));
+                Add(new(at.Archive + "\\" + entry.Path.Replace('/', '\\'), entry.Path[prefix.Length..], entry.IsDir, entry.Size, entry.Modified, entry.IsDir ? "directory" : null, at.Archive, entry));
         }
-        void ValidateSources()
+        void ValidateSources() => Validate(true);
+        // `files`: also each source file and folder (a move's files are hashed again before removal); between
+        // the files of an extraction only the containers are compared.
+        void Validate(bool files)
         {
             Check(job);
-            foreach (var container in containers) if (Fingerprint(container.Key) != container.Value) throw new IOException("A source archive changed during the transfer; source removal is refused.");
+            foreach (var container in containers)
+                if (Version(container.Key) != container.Value) throw new IOException("A source archive changed during the transfer; source removal is refused.");
+            if (!files) return;
             foreach (var directory in directories)
                 if ((File.GetAttributes(directory.Key) & FileAttributes.ReparsePoint) != 0 || !Directory.GetFileSystemEntries(directory.Key).ToHashSet(StringComparer.OrdinalIgnoreCase).SetEquals(directory.Value))
                     throw new IOException("A source folder changed during the transfer; source removal is refused.");
             foreach (var member in members.Values.Where(m => m.Container == null && !m.Directory))
-                if ((File.GetAttributes(member.Source) & FileAttributes.ReparsePoint) != 0 || Fingerprint(member.Source) != member.Hash) throw new IOException("A source file changed during the transfer; source removal is refused.");
+                if ((File.GetAttributes(member.Source) & FileAttributes.ReparsePoint) != 0 || (job.IsMove ? Fingerprint(member.Source) : Version(member.Source)) != member.Hash)
+                    throw new IOException("A source file changed during the transfer; source removal is refused.");
         }
         var existing = destination is { } a ? Read(a.Archive).ToDictionary(e => e.Path, StringComparer.OrdinalIgnoreCase) : new Dictionary<string, Raw>(StringComparer.OrdinalIgnoreCase);
         string destinationPrefix = destination is { } b ? Prefix(b.Inner) : "";
@@ -81,8 +91,8 @@ internal static partial class Archive
                 if (File.Exists(target))
                 {
                     if (member.Directory) throw new IOException("A file occupies the destination folder: " + member.Name);
-                    var info = new FileInfo(target); diskTargets[target] = Fingerprint(target);
-                    conflicts.Add(new(index, member.Name, member.Size, member.Modified, info.Length, info.LastWriteTime));
+                    var info = new FileInfo(target); diskTargets[target] = Version(target);
+                    conflicts.Add(new(index, member.Name, member.Size, member.Modified, info.Length, info.LastWriteTime) { SourcePath = member.Source, TargetPath = target });
                 }
                 if (!member.Directory && Directory.Exists(target)) throw new IOException("A folder occupies the destination file: " + member.Name);
             }
@@ -98,13 +108,17 @@ internal static partial class Archive
         Check(job); ValidateSources();
         var planned = new List<(Member Member, string Name)>();
         var used = destination != null ? existing.Keys.ToHashSet(StringComparer.OrdinalIgnoreCase) : new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        // Keep both on disk, as in Ferry: the file already there steps aside as "name.old.ext"
+        var aside = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var reserved = destination == null ? members.Keys.Select(n => Target(job.Destination, n)).ToHashSet(StringComparer.OrdinalIgnoreCase) : null;
         foreach (var member in members.Values)
         {
             string name = member.Name;
             var conflict = conflicts.FirstOrDefault(c => c.Name == member.Name);
             if (conflict != null && (choice == Choice.Skip || choice == Choice.Newer && conflict.TargetModified >= member.Modified))
             { job.SkippedFiles++; job.Notes.Enqueue("Skipped existing destination; source retained: " + member.Name); continue; }
-            if (conflict != null && choice == Choice.Rename)
+            if (conflict != null && choice == Choice.Rename && destination == null) aside[Target(job.Destination, name)] = Ferry.OldName(Target(job.Destination, name), reserved);
+            else if (conflict != null && choice == Choice.Rename)
             {
                 string directory = name.Contains('/') ? name[..(name.LastIndexOf('/') + 1)] : "", file = name[directory.Length..];
                 string stem = Path.GetFileNameWithoutExtension(file), ext = Path.GetExtension(file); int n = 2;
@@ -127,6 +141,7 @@ internal static partial class Archive
             Directory.CreateDirectory(staging);
             try
             {
+                var staged = new Dictionary<string, Dictionary<int, string>>(StringComparer.OrdinalIgnoreCase); // per source archive: entry → staged file
                 foreach (var (member, name) in planned)
                 {
                     string target = destinationPrefix + name;
@@ -143,42 +158,73 @@ internal static partial class Archive
                         else if (member.Container == null) additions[target] = member.Source;
                         else
                         {
-                            string extracted = Target(staging, member.Name); Directory.CreateDirectory(Path.GetDirectoryName(extracted));
-                            using (var file = new FileStream(extracted, FileMode.CreateNew)) CopyEntry(member.Container, member.Entry, file, job);
-                            if (Fingerprint(extracted) != member.Hash) throw new IOException("Selected source-entry verification failed.");
+                            string extracted = Target(staging, member.Name);
+                            (staged.TryGetValue(member.Container, out var list) ? list : staged[member.Container] = new())[member.Entry.Index] = extracted;
                             additions[target] = extracted;
                         }
                     }
                     completed.Add(member);
                 }
+                long extractedBytes = 0;
+                foreach (var (container, targets) in staged)
+                {
+                    var entries = members.Values.Where(m => m.Entry != null && m.Container.Equals(container, StringComparison.OrdinalIgnoreCase) && targets.ContainsKey(m.Entry.Index)).Select(m => m.Entry).ToList();
+                    Pass(container, entries, job, (_, temporary) => { Directory.CreateDirectory(Path.GetDirectoryName(temporary)); return temporary; }, targets,
+                        (entry, landed) => { Validate(false); File.Move(landed, targets[entry.Index]); extractedBytes += entry.Size; });
+                }
                 ValidateSources();
-                Edit(into.Archive, changes, additions, job, destinationHash, ValidateSources);
-                foreach (var member in completed.Where(m => !m.Directory)) { job.DoneFiles++; job.AddBytes(member.Size); }
+                job.Phase = Phase.Copying;
+                Edit(into.Archive, changes, additions, job, destinationVersion, ValidateSources);
+                job.DoneFiles += completed.Count(m => !m.Directory);
+                job.AddBytes(completed.Where(m => !m.Directory).Sum(m => m.Size) - extractedBytes); // extracted bytes were counted as written
             }
             finally { Directory.Delete(staging, recursive: true); }
         }
         else
         {
-            foreach (var (member, name) in planned)
+            // The conflict seen at planning must still be the file there; Keep both moves it aside first.
+            void Publish(Member member, string name, string landed)
+            {
+                Validate(false); string target = Target(job.Destination, name);
+                if (diskTargets.TryGetValue(target, out var prior) && (!File.Exists(target) || Version(target) != prior)) throw new IOException("A destination changed after conflict planning: " + name);
+                if (aside.TryGetValue(target, out var old))
+                {
+                    File.Move(target, old);
+                    try { File.Move(landed, target); }
+                    catch { File.Move(old, target); throw; } // the existing file gets its name back
+                }
+                else File.Move(landed, target, diskTargets.ContainsKey(target));
+                File.SetLastWriteTime(target, member.Modified);
+                completed.Add(member); job.DoneFiles++;
+            }
+            foreach (var (member, name) in planned.Where(p => p.Member.Directory))
+            { Check(job); Directory.CreateDirectory(Target(job.Destination, name)); completed.Add(member); }
+            foreach (var group in planned.Where(p => !p.Member.Directory && p.Member.Container != null).GroupBy(p => p.Member.Container, StringComparer.OrdinalIgnoreCase))
+            {
+                var byIndex = group.ToDictionary(p => p.Member.Entry.Index);
+                var targets = byIndex.ToDictionary(p => p.Key, p => Target(job.Destination, p.Value.Name));
+                Pass(group.Key, byIndex.Values.Select(p => p.Member.Entry).ToList(), job,
+                    (_, temporary) => { Directory.CreateDirectory(Path.GetDirectoryName(temporary)); return temporary; }, targets,
+                    (entry, landed) => Publish(byIndex[entry.Index].Member, byIndex[entry.Index].Name, landed));
+            }
+            foreach (var (member, name) in planned.Where(p => !p.Member.Directory && p.Member.Container == null))
             {
                 Check(job); string target = Target(job.Destination, name);
-                if (member.Directory) { Directory.CreateDirectory(target); completed.Add(member); continue; }
                 Directory.CreateDirectory(Path.GetDirectoryName(target));
                 string temporary = target + ".pathweft-" + Guid.NewGuid().ToString("N");
                 try
                 {
                     using (var output = new FileStream(temporary, FileMode.CreateNew))
                     {
-                        if (member.Container != null) CopyEntry(member.Container, member.Entry, output, job);
-                        else { using var input = File.OpenRead(member.Source); using var checkedOutput = new CheckedOutput(output, member.Size, job); input.CopyTo(checkedOutput); }
+                        using var input = File.OpenRead(member.Source);
+                        using var checkedOutput = new CheckedOutput(output, member.Size, job, progress: true);
+                        input.CopyTo(checkedOutput);
                         output.Flush(true);
                     }
-                    job.Phase = Phase.Verifying;
-                    if (Fingerprint(temporary) != member.Hash) throw new IOException("Transferred content verification failed.");
-                    ValidateSources(); _ = Target(job.Destination, name);
-                    if (diskTargets.TryGetValue(target, out var prior) && Fingerprint(target) != prior) throw new IOException("A destination changed after conflict planning.");
-                    File.Move(temporary, target, diskTargets.ContainsKey(target)); File.SetLastWriteTime(target, member.Modified);
-                    completed.Add(member); job.DoneFiles++; job.AddBytes(member.Size); job.Phase = Phase.Copying;
+                    if (new FileInfo(temporary).Length != member.Size) throw new IOException("Transferred size does not match its source: " + name);
+                    // as Ferry: a verifying job (or a move) reads the copy back against its source
+                    if (job.Verify && Fingerprint(temporary) != (job.IsMove ? member.Hash : Fingerprint(member.Source))) throw new IOException("Transferred content verification failed: " + name);
+                    Publish(member, name, temporary);
                 }
                 finally { if (File.Exists(temporary)) File.Delete(temporary); }
             }

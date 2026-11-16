@@ -309,7 +309,7 @@ public partial class MainWindow
                 if (extension == "rar")
                 {
                     Check(!Archive.CanChange(Left.Dir), "The read-only RAR fixture disables editing without losing previews");
-                    await Select(Left, "helloworld.txt"); Action(Left, "Preview"); await quickPreview.Completion;
+                    await Select(Left, "helloworld.txt"); Action(Left, "Quick View"); await quickPreview.Completion;
                     Check(quickPreview.State == "ready" && quickPreview.ModuleId == "text", "Real RAR5 text entry renders without a standalone utility");
                     var content = ArchiveContent.Retained().Single(r => r.Purpose == "preview");
                     Check(File.ReadAllText(Path.Combine(ArchiveContent.Root, content.Id, content.Files[0])) == "hello libarchive test suite!\n", "RAR5 extracted content matches the independent upstream fixture oracle");
@@ -328,7 +328,7 @@ public partial class MainWindow
             Check(Left.ListForVerification.Items.Cast<Entry>().Where(e => !e.IsDir && !e.IsUp).Select(e => e.Name).SequenceEqual(sizes), "ARCHIVE-02 archive rows use normal pane sorting");
             Left.SetSort("Name", false);
             Check(!ArchiveContent.Retained().Any(), "ARCHIVE-02 archive browsing materializes no extracted working copy");
-            if (!Settings.Preview) Click(Descendants<Button>(this).Single(b => b.ToolTip?.ToString() == "Show the selected file beside the panes"));
+            if (!Settings.Preview) Click((Button)FindName("PreviewCommand"));
             await Select(Left, "image.png");
             Check(sidePreview.ModuleId == "image" && sidePreview.State == "ready", "ARCHIVE-05 native archive entry reaches the real internal image preview");
             var previewCopy = ArchiveContent.Retained().Single(r => r.Purpose == "preview");
@@ -338,7 +338,7 @@ public partial class MainWindow
             Check(previewCopy.Files.Length == 1 && Hash(Path.Combine(ArchiveContent.Root, previewCopy.Id, previewCopy.Files[0])) == Hash(Path.Combine(source, "image.png")), "ARCHIVE-05 only the selected entry is extracted and hash-bound");
             await S1Verification.Snapshot(this, evidence, "archive-native-image-preview");
             await Select(Left, "nested"); await Listed(Left, archive + "\\nested", () => Action(Left, "Open"));
-            await Select(Left, "readme.md"); Action(Left, "Preview"); await quickPreview.Completion;
+            await Select(Left, "readme.md"); Action(Left, "Quick View"); await quickPreview.Completion;
             Check(quickPreview.State == "ready" && quickPreview.ModuleId == "markdown", "ARCHIVE-05 nested archive Markdown renders in the governed popup");
             await S1Verification.Snapshot(quick, evidence, "archive-markdown-popup");
             quick.Close(); sidePreview.Clear(); await PreviewSession.DrainAsync();
@@ -439,7 +439,7 @@ public partial class MainWindow
                         try
                         {
                             transfersWindow.UpdateLayout();
-                            Click(Descendants<Button>(transfersWindow).Single(b => b.DataContext == lastArchiveJob && b.Content is TextBlock text && new System.Windows.Documents.TextRange(text.ContentStart, text.ContentEnd).Text.Trim().EndsWith("Cancel")));
+                            Click(Descendants<Button>(transfersWindow).Single(b => b.DataContext == lastArchiveJob && b.Content is TransferActionLabel { Text: "Cancel" }));
                         }
                         finally { cancelled.Set(); }
                     });
@@ -460,7 +460,10 @@ public partial class MainWindow
             await Copy(Left, false); await S1Verification.Navigate(Right, destination); await Paste(Right);
             Check(File.ReadAllText(Path.Combine(destination, "helloworld.txt")) == "hello libarchive test suite!\n", "RAR5 selected-entry copy uses the same queue and verified filesystem destination");
             await RestoreClipboard();
-            await S1Verification.Navigate(Left, containers); await Select(Left, "sample.rar"); Action(Left, "Extract to sample\\"); await lastArchiveJob.Completion;
+            // no Extract command (issue #9): the whole container is selected inside it and copied, as from any folder
+            Directory.CreateDirectory(Path.Combine(containers, "sample")); await S1Verification.Navigate(Right, Path.Combine(containers, "sample"));
+            await S1Verification.Navigate(Left, Path.Combine(containers, "sample.rar")); SetActive(Left); Left.ListForVerification.SelectAll(); await PreviewSession.DrainAsync();
+            Action(Left, "Copy to other pane"); await lastArchiveJob.Completion;
             Check(lastArchiveJob.Phase == Phase.Done && lastArchiveJob.Errors.IsEmpty && File.ReadAllText(Path.Combine(containers, "sample", "helloworld.txt")) == "hello libarchive test suite!\n", "ARCHIVE-01/03 whole-container Extract routes through the same verified Ferry owner");
 
             await S1Verification.Navigate(Left, archive); await Select(Left, "image.png");
@@ -514,6 +517,7 @@ public partial class MainWindow
                 finally { protectedMenu.RaiseEvent(new RoutedEventArgs(ContextMenu.ClosedEvent)); }
             }
             finally { File.SetAttributes(protectedArchive, File.GetAttributes(protectedArchive) & ~FileAttributes.ReadOnly); }
+            ArchivePasswordAnswerForVerification = _ => null; // the prompt on opening is cancelled, unless a step answers it
             bool encrypted = false;
             string encryptedPath = Path.Combine(containers, "encrypted.7z");
             try { await S1Verification.Navigate(Left, encryptedPath); } catch (IOException) { encrypted = true; }
@@ -529,13 +533,24 @@ public partial class MainWindow
                     Descendants<PasswordBox>(dialog).Single().Password = "pathweft-fixture-only";
                     Click(Descendants<Button>(dialog).Single(b => b.Name == "ArchivePasswordOpen"));
                 });
+                ArchivePasswordAnswerForVerification = null; // this step drives the real dialog
                 Action(Left, "Enter archive password…"); await passwordListed.Task;
             }
-            finally { Left.StatsChanged -= ListedPassword; }
+            finally { Left.StatsChanged -= ListedPassword; ArchivePasswordAnswerForVerification = _ => null; }
             Check(!Archive.CanChange(encryptedPath) && !File.ReadAllText(Settings.FilePath).Contains("pathweft-fixture-only"), "ARCHIVE-01/05 encrypted contents list with an ephemeral password and honest read-only capability");
-            await Select(Left, "readme.md"); Action(Left, "Preview"); await quickPreview.Completion;
+            await Select(Left, "readme.md"); Action(Left, "Quick View"); await quickPreview.Completion;
             Check(quickPreview.State == "ready" && quickPreview.ModuleId == "markdown", "ARCHIVE-05 encrypted entry previews with its ephemeral session password");
             quick.Close(); await PreviewSession.DrainAsync();
+            Action(Left, "Forget archive password");
+            // as 7-Zip: opening an archive whose names are encrypted asks for the password, then lists it
+            await S1Verification.Navigate(Left, containers);
+            var openedWithPassword = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            void OpenedListed() { if (Left.Listed && Left.Items.Any(e => e.Name == "readme.md")) openedWithPassword.TrySetResult(); }
+            Left.StatsChanged += OpenedListed;
+            ArchivePasswordAnswerForVerification = _ => "pathweft-fixture-only";
+            try { Left.Navigate(encryptedPath); await openedWithPassword.Task; }
+            finally { Left.StatsChanged -= OpenedListed; ArchivePasswordAnswerForVerification = _ => null; }
+            Check(Left.Items.Any(e => e.Name == "readme.md"), "ARCHIVE-02 an archive with encrypted names asks for its password on opening and lists it");
             Action(Left, "Forget archive password");
             if (rarWriterTrial)
             {
@@ -554,11 +569,12 @@ public partial class MainWindow
                         Descendants<PasswordBox>(dialog).Single().Password = "fixture-password";
                         Click(Descendants<Button>(dialog).Single(b => b.Name == "ArchivePasswordOpen"));
                     });
+                    ArchivePasswordAnswerForVerification = null; // this step drives the real dialog
                     Action(Left, "Enter archive password…"); await unlocked.Task;
                 }
-                finally { Left.StatsChanged -= RarListed; }
+                finally { Left.StatsChanged -= RarListed; ArchivePasswordAnswerForVerification = _ => null; }
                 Check(Archive.CanChange(protectedRar), "RAR-03 qualified encrypted RAR exposes native edit actions after unlock");
-                await Select(Left, "second.txt"); Action(Left, "Preview"); await quickPreview.Completion;
+                await Select(Left, "second.txt"); Action(Left, "Quick View"); await quickPreview.Completion;
                 Check(quickPreview.State == "ready" && quickPreview.ModuleId == "text", "RAR-05 encrypted RAR selection reaches the real internal text preview");
                 quick.Close(); await PreviewSession.DrainAsync();
                 Action(Left, "Rename");

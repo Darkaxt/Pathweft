@@ -409,21 +409,6 @@ public partial class MainWindow
         });
     }
 
-    void Extract(Entry e, bool toFolder)
-    {
-        var pane = active;
-        var here = Path.GetDirectoryName(e.Path);
-        var dest = toFolder ? Unique(Path.Combine(here, Path.GetFileNameWithoutExtension(e.Name))) : here;
-        Run(() =>
-        {
-            var top = Archive.List(e.Path, "").Select(x => Path.Combine(e.Path, x.Name)).ToList();
-            if (top.Count == 0) { Status.Text = "The archive is empty."; return; }
-            Directory.CreateDirectory(dest);
-            Submit(top, dest, false);
-        });
-    }
-
-
     // ---- Disk images: Windows mounts them (as Explorer's Mount does), and the pane opens the new drive ----
     internal static readonly HashSet<string> DiskImageExt = new(StringComparer.OrdinalIgnoreCase) { ".iso", ".img", ".vhd", ".vhdx" };
 
@@ -490,13 +475,17 @@ public partial class MainWindow
         string hash;
         try { hash = await Task.Run(() => { using var s = new FileStream(e.Path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 1 << 20); return Convert.ToHexString(SHA256.HashData(s)).ToLowerInvariant(); }); }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { Status.Text = ex.Message; return; }
+        ShowChecksum(e.Name, hash);
+    }
+    void ShowChecksum(string name, string hash)
+    {
         Status.Text = "";
         // A hash copied from a download page is compared automatically.
         var clip = Clipboard.ContainsText() ? Clipboard.GetText().Trim() : "";
         var label = clip.Length == 64 && clip.All(Uri.IsHexDigit)
             ? clip.Equals(hash, StringComparison.OrdinalIgnoreCase) ? "SHA-256 — matches the hash on the clipboard ✓" : "SHA-256 — does NOT match the hash on the clipboard ✗"
             : "SHA-256 (copy a published hash first and it is compared automatically)";
-        if (PromptDialog.Ask(this, e.Name, label, hash, "Copy", selectAll: true) != null) Clipboard.SetText(hash);
+        if (PromptDialog.Ask(this, name, label, hash, "Copy", selectAll: true) != null) Clipboard.SetText(hash);
     }
 
     // ---- Shortcuts ----

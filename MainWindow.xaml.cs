@@ -70,6 +70,7 @@ public partial class MainWindow : Window
         InitializePreviews();
         if (Settings.Profile == null) StartUpdateChecks();
 
+        PaneView.ExportArchive = ExportArchiveItems; // drag out of an archive: extracted through Transfers, as Ctrl+C is
         foreach (var p in new[] { Left, Right })
         {
             p.Activated += () => SetActive(p);
@@ -84,6 +85,7 @@ public partial class MainWindow : Window
             p.Error += msg => Status.Text = msg;
             p.FilesDropped += (files, dest, move) => Submit(files, dest, move);
             p.OpenArchived += e => OpenFromArchive(p, e);
+            p.ArchivePasswordNeeded += AskArchivePassword;
             p.InspectRequested += entry=>InspectShellClass(p,entry);
             p.RenameCommitted += (entry, name) => RenameCommitted(p, entry, name);
         }
@@ -223,6 +225,7 @@ public partial class MainWindow : Window
     {
         var hwnd = new WindowInteropHelper(this).Handle;
         HwndSource.FromHwnd(hwnd).AddHook(ShellNotify);
+        HwndSource.FromHwnd(hwnd).AddHook(ClipboardRender);
         SHGetSpecialFolderLocation(IntPtr.Zero, 0 /* CSIDL_DESKTOP: everything below it */, out var desktop);
         var entry = new SHChangeNotifyEntry { pidl = desktop, fRecursive = true };
         SHChangeNotifyRegister(hwnd, 0x1000 | 0x8000 /* SHCNRF_ShellLevel | SHCNRF_NewDelivery */,
@@ -1113,6 +1116,10 @@ public partial class MainWindow : Window
 
     void Transfer(bool move)
     {
+        // an archive that can't be changed says why at once, rather than through a failed job
+        string sourceReason = move && active.ArchiveRoot is { } source ? Archive.ChangeReason(source.Archive) : "";
+        string targetReason = PaneView.ArchiveOf(Other.Dir) is { } target ? Archive.ChangeReason(target.Archive) : "";
+        if (sourceReason.Length > 0 || targetReason.Length > 0) { Status.Text = sourceReason.Length > 0 ? sourceReason : targetReason; return; }
         Submit(active.Selected.Select(e => e.Path).ToList(), Other.Dir, move);
     }
 
@@ -1123,6 +1130,7 @@ public partial class MainWindow : Window
     internal Job Submit(List<string> sources, string dest, bool move, bool ask = true, IReadOnlyDictionary<string, string> names = null, bool journal = true)
     {
         if (closingPreviews || sources.Count == 0 || dest == PaneView.ThisPC) return null;
+        if (ask && !ArchivePasswords(sources)) return null;
         if (move && ask && sources.Select(s => Path.GetDirectoryName(s.TrimEnd('\\'))).Distinct(StringComparer.OrdinalIgnoreCase).Count() is var folders and > 1
             && PromptDialog.Choose(this, $"Move {sources.Count:N0} items from {folders:N0} folders into one folder?", "All of them go into " + dest, "Move", "Cancel") != 0) return null;
         Settings.Bump(Settings.RecentDestinations, dest, Settings.DestinationsMax); // for Copy to / Move to
@@ -1322,7 +1330,6 @@ public partial class MainWindow : Window
 
     // Clipboard in Explorer's own format (CF_HDROP + Preferred DropEffect), so copy/paste works both ways.
     Task clipboardOperation = Task.CompletedTask;
-    int clipboardRequestVersion;
     const string ArchiveClipboardFormat = "Pathweft.ArchiveSelection.v1";
 #if DEBUG
     uint lastOwnedClipboardSequence;
@@ -1338,34 +1345,34 @@ public partial class MainWindow : Window
         var pane = active;
         var sel = pane.Selected;
         if (sel.Count == 0) return;
-        int request = ++clipboardRequestVersion;
         uint expectedSequence = GetClipboardSequenceNumber();
         string[] files = null; byte[] archiveSelection = null;
-        if (pane.ArchiveRoot is { } at)
+        var at = pane.ArchiveRoot;
+        if (at != null)
         {
-            if (cut && !Archive.CanChange(at.Archive)) { Status.Text = "This archive is read-only; use Copy."; return; }
-            if (!cut)
-            {
-                string[] names = sel.Select(e => e.Name).ToArray();
-                var copies = await Task.Run(() => ArchiveContent.Extract(at.Archive, names, at.Inner, "clipboard export"));
-                files = names.Select(n => Path.Combine(copies.Directory, "data", n)).ToArray();
-            }
+            if (cut && !Archive.CanChange(at.Value.Archive)) { Status.Text = "This archive is read-only; use Copy."; return; }
+            if (!ArchivePasswords(sel.Select(e => e.Path))) return; // asked now: other apps' paste can't show it
             archiveSelection = System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(new ArchiveClipboard(Guid.NewGuid().ToString("N"), sel.Select(e => e.Path).ToArray(), cut));
         }
         else
         {
             files = sel.Select(x => x.Path).ToArray();
         }
-        if (request != clipboardRequestVersion) return;
-        uint ownedSequence = WriteTransferClipboard(files, archiveSelection, cut, expectedSequence);
+        // Published at once, as in Explorer: Pathweft panes paste archive items straight from the
+        // archive, and other apps get the files only when they ask for them (RenderArchiveFiles);
+        // both extract through a Transfers job.
+        bool delayFiles = at != null && !cut;
+        uint ownedSequence = WriteTransferClipboard(files, archiveSelection, cut, expectedSequence, delayFiles);
+        pendingArchiveExport = delayFiles ? (sel.Select(e => e.Path).ToList(), ownedSequence) : null;
 #if DEBUG
         lastOwnedClipboardSequence = ownedSequence;
 #endif
         // FilePilot/Explorer-style: a cut item's icon stays dimmed until it's pasted or something else is cut/copied
         PaneView.SetCut(cut ? sel.Select(x => x.Path) : Array.Empty<string>(), Left, Right);
-        Status.Text = $"{(cut ? "Cut" : "Copied")} {sel.Count} item(s)" + (cut && pane.ArchiveRoot != null ? " · paste into a Pathweft pane" : "");
+        Status.Text = $"{(cut ? "Cut" : "Copied")} {sel.Count} item(s)" + (cut && at != null ? " · paste into a Pathweft pane" : "");
+        await Task.CompletedTask;
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Runtime.InteropServices.ExternalException)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Runtime.InteropServices.ExternalException or InvalidOperationException or NotSupportedException)
         { Status.Text = "Clipboard copy failed: " + ex.Message; }
     }
 
@@ -1640,6 +1647,7 @@ public partial class MainWindow : Window
 
     void MkDir()
     {
+        if (active.ArchiveRoot != null) { ArchiveNewFolder(active); return; }
         if (PaneView.IsVirtual(active.Dir)) return; // This PC holds drives, an archive its own entries
         var name = PromptDialog.Ask(this, "New folder", "Folder name", "New folder", "Create");
         if (name == null) return;
@@ -1653,6 +1661,7 @@ public partial class MainWindow : Window
     // Ctrl+N: pick a type (Explorer's own New list), then the name.
     void NewFile()
     {
+        if (active.ArchiveRoot != null) { ArchiveNewFile(active); return; }
         if (PaneView.IsVirtual(active.Dir)) return;
         var dialog = new NewFileDialog(this);
         if (dialog.ShowDialog() != true) return;
@@ -1668,8 +1677,9 @@ public partial class MainWindow : Window
     {
         if (active.ArchiveRoot != null)
         {
-            if (active.Selected.FirstOrDefault(x => !x.IsDir && !x.IsUp) is { } entry)
-                archiveOpenCompletion = OpenArchiveEntry(active, entry, editor: true);
+            var files = active.Selected.Where(x => !x.IsDir && !x.IsUp).ToList();
+            if (files.Count == 1) archiveOpenCompletion = OpenArchiveEntry(active, files[0], editor: true);
+            else if (files.Count > 1) ArchiveEdit(active, files);
             return;
         }
         foreach (var e in active.Selected.Where(x => !x.IsDir && !x.IsUp).Take(10)) EditorWindow.Open(e.Path);
@@ -1677,7 +1687,7 @@ public partial class MainWindow : Window
 
     void Rename()
     {
-        if (active.ArchiveRoot != null && active.Selected.Count > 1) { Status.Text = "Rename one archive entry at a time."; return; }
+        if (active.ArchiveRoot != null && active.Selected.Count > 1) { ArchiveRenameMany(active); return; }
         if (active.Selected.Count > 1) RenameMany(); else active.BeginRename();
     }
 
@@ -1800,6 +1810,7 @@ public partial class MainWindow : Window
             case >= Key.D1 and <= Key.D5 when ctrl && shift:
                 active.SetView(new[] { PaneView.ViewMode.Details, PaneView.ViewMode.List, PaneView.ViewMode.IconsM, PaneView.ViewMode.IconsL, PaneView.ViewMode.IconsXL }[key - Key.D1]); break;
             case Key.D when ctrl: PinSelected(); break;
+            case Key.Enter when alt && active.ArchiveRoot != null: ArchiveProperties(active); break;
             case Key.Enter when alt: Properties(active.Selected is { Count: > 0 } sel ? sel.Select(x => x.Path).ToList() : new List<string> { active.Dir }); break;
             case Key.OemComma when ctrl: OpenSettings(); break;
             case Key.C when ctrl && !shift: ClipboardPut(cut: false); break;

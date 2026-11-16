@@ -685,6 +685,8 @@ public static class Ferry
         void Note(string text) { lock (job.Notes) { if (!job.Notes.Contains(text)) job.Notes.Enqueue(text); } }
         if (changes.HasFlag(FileAttributes.Compressed)) Note("Compression settings differ from the source.");
         if (changes.HasFlag(FileAttributes.SparseFile)) Note("Sparse layout is not preserved; the copy may use more disk space.");
+        if ((changes & (FileAttributes.ReadOnly | FileAttributes.Hidden | FileAttributes.System)) != 0)
+            Note("The destination didn't keep some read-only, hidden or system marks.");
     }
     static void CheckTarget(string target, bool overwrite)
     {
@@ -750,7 +752,7 @@ public static class Ferry
 
     /// Keep both: "report.pdf" steps aside as "report.old.pdf" ("notes" → "notes.old"), then "report.old (2).pdf"…,
     /// clear of existing items and of the names this transfer plans.
-    static string OldName(string target, HashSet<string> reserved)
+    internal static string OldName(string target, HashSet<string> reserved)
     {
         string dir = Path.GetDirectoryName(target), stem = Path.GetFileNameWithoutExtension(target), ext = Path.GetExtension(target);
         if (stem.Length == 0) { stem = ext; ext = ""; } // ".gitignore" → ".gitignore.old", not ".old.gitignore"
