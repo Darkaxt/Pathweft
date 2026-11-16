@@ -7,6 +7,16 @@ public partial class MainWindow
     readonly CancellationTokenSource updateShutdown=new();
     Task<string> updateCheck;
     bool manualUpdateRequested,updateChecksStopped;
+    Updater.Release availableUpdate; // UPDATE-03: the newer release the last check found, shown by the dot
+
+    // UPDATE-03: a dot on the sidebar's update button, with its tooltip and accessible name, instead of a popup
+    void ShowUpdateAvailable(Updater.Release release)
+    {
+        availableUpdate=release;
+        UpdateDot.Visibility=release==null?Visibility.Collapsed:Visibility.Visible;
+        UpdateButton.ToolTip=release==null?"Check for updates (it also checks by itself every hour)":$"Pathweft {release.Version} is available: click to see what\u2019s new and update";
+        System.Windows.Automation.AutomationProperties.SetName(UpdateButton,release==null?"Check for updates":$"Update available: Pathweft {release.Version}");
+    }
 
     // Establish the visible/manual state synchronously before the HTTP await.
     // Manual callers joining an automatic check share its task and get a result.
@@ -35,7 +45,6 @@ public partial class MainWindow
         var dialog=updateDialog=new UpdateDialog(this);
         dialog.Closed+=(_,_)=>
         {
-            if(dialog.OfferedRelease is {} release)Updater.Dismiss(release);
             if(ReferenceEquals(updateDialog,dialog))updateDialog=null;
         };
         dialog.Show();return dialog;
@@ -46,15 +55,16 @@ public partial class MainWindow
         Exception failure=null;
         try
         {
-            // Dismissal is evaluated after completion, so a manual caller joining
-            // an automatic check can still see the version it explicitly asked for.
+            // A manual caller joining an automatic check sees the version it asked for in its window.
             var release=await Updater.Check(manual:true,updateShutdown.Token);
             if(!updateChecksStopped)
             {
-                if(release!=null&&(manualUpdateRequested||!Updater.IsDismissed(release)))
+                // UPDATE-03: any successful check sets the dot; only a manual check shows the release in a window.
+                // Closing a manual checker does not resurrect it on response.
+                ShowUpdateAvailable(release);
+                if(release!=null)
                 {
-                    // Closing a manual checker does not resurrect it on response.
-                    if(!manualUpdateRequested||updateDialog!=null)EnsureUpdateDialog().ShowRelease(release);
+                    if(manualUpdateRequested&&updateDialog!=null)updateDialog.ShowRelease(release);
                 }
                 else if(manualUpdateRequested)
                 {

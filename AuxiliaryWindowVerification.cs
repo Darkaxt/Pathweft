@@ -245,7 +245,23 @@ public partial class MainWindow
         await using(var feed=new UpdateFeed14())
         {
             Updater.Feed=feed.Url;var work=CheckForUpdate(false);await feed.RequestSeen.Task;feed.Respond(200,new Version(999,14,0));await work;await feed.Completion;
-            check(updateDialog==null,"The actual automatic response respects a dismissed offer without another popup");
+            check(updateDialog==null,"An automatic response after Later opens no popup");
+        }
+        // UPDATE-03: an automatic check that finds a release opens no window; the update button shows a dot, and a click opens that release
+        await using(var feed=new UpdateFeed14())
+        {
+            Updater.Feed=feed.Url;var work=CheckForUpdate(false);await feed.RequestSeen.Task;feed.Respond(200,new Version(999,15,0));await work;await feed.Completion;await Settle();
+            check(updateDialog==null&&UpdateDot.Visibility==Visibility.Visible&&System.Windows.Automation.AutomationProperties.GetName(UpdateButton).Contains("999.15.0")&&(UpdateButton.ToolTip as string??"").Contains("999.15.0"),
+                "UPDATE-03: an automatic check that finds a newer release only shows a dot on the update button, with its version in the tooltip and accessible name");
+            await S1Verification.Snapshot(this,root,"update-dot");
+            UpdateButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            check(updateDialog is{CheckState:"available"}&&updateDialog.OfferedRelease.Version==new Version(999,15,0)&&updateCheck==null,"UPDATE-03: clicking the button with the dot opens that release at once, without another check");
+            updateDialog.Close();
+        }
+        await using(var feed=new UpdateFeed14())
+        {
+            Updater.Feed=feed.Url;var work=CheckForUpdate(false);await feed.RequestSeen.Task;feed.Respond(200,Updater.Current);await work;await feed.Completion;await Settle();
+            check(updateDialog==null&&!UpdateDot.Visibility==Visibility.Visible&&System.Windows.Automation.AutomationProperties.GetName(UpdateButton)=="Check for updates","UPDATE-03: a check that finds no newer release clears the dot");
         }
         await using(var feed=new UpdateFeed14())
         {

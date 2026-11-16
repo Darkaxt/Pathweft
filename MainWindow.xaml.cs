@@ -483,6 +483,8 @@ public partial class MainWindow : Window
     // Both entry points share the visible checker and the same in-flight task.
     async void CheckUpdates_Click(object s, RoutedEventArgs e)
     {
+        // UPDATE-03: the release behind the dot opens at once; otherwise this is a normal manual check
+        if (availableUpdate is { } found && updateDialog == null) { EnsureUpdateDialog().ShowRelease(found); return; }
         UpdateButton.IsEnabled = false;
         try{await CheckForUpdate(manual:true);}
         finally{UpdateButton.IsEnabled=true;}

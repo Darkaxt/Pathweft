@@ -25,7 +25,6 @@ public static class Updater
     public record DownloadProgress(string Stage,long Received,long Total);
 
     public static Version Current => typeof(Updater).Assembly.GetName().Version is { } v ? new Version(v.Major, v.Minor, v.Build) : new Version(0, 0, 0);
-    static string dismissed; // tag the user said "Later" to; deliberately not persisted
 
     static readonly HttpClient http = new() { Timeout = TimeSpan.FromSeconds(30) };
 
@@ -71,8 +70,6 @@ public static class Updater
                            digest?.StartsWith("sha256:") == true ? digest[7..] : null);
     }
 
-    public static void Dismiss(Release release) => dismissed = release.Tag;
-    internal static bool IsDismissed(Release release)=>release.Tag==dismissed;
 
     /// Downloads the installer, reporting 0..1 progress. Returns its path.
     public static async Task<string> Download(Release release, IProgress<DownloadProgress> progress, CancellationToken token)

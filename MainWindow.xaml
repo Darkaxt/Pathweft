@@ -243,8 +243,15 @@
           <TextBlock Text="Pathweft" FontWeight="SemiBold" FontSize="13" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
         </DockPanel>
         <StackPanel x:Name="SidebarHeaderActions" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
-        <Button x:Name="UpdateButton" Style="{StaticResource IconButton}" Width="28" Height="28" Content="&#xE895;" Click="CheckUpdates_Click"
-                ToolTip="Check for updates (it also checks by itself every hour)" AutomationProperties.Name="Check for updates"/>
+        <Button x:Name="UpdateButton" Style="{StaticResource IconButton}" Width="28" Height="28" Click="CheckUpdates_Click"
+                ToolTip="Check for updates (it also checks by itself every hour)" AutomationProperties.Name="Check for updates">
+          <!-- UPDATE-03: an automatic check that finds a newer release only lights this dot; no window opens -->
+          <Grid>
+            <TextBlock Text="&#xE895;" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            <Ellipse x:Name="UpdateDot" Width="7" Height="7" Fill="{DynamicResource Accent}" HorizontalAlignment="Right" VerticalAlignment="Top"
+                     Margin="0,-4,-5,0" IsHitTestVisible="False" Visibility="Collapsed"/>
+          </Grid>
+        </Button>
         <Button x:Name="WhatsNewButton" Style="{StaticResource IconButton}" Width="28" Height="28" Content="&#xE789;" Click="WhatsNew_Click" ToolTip="What&#x2019;s new" AutomationProperties.Name="What&#x2019;s new"/>
         <Button x:Name="HelpButton" Style="{StaticResource IconButton}" Width="28" Height="28" Content="&#xE897;" Click="Help_Click" ToolTip="Help: everything Pathweft does (F1)" AutomationProperties.Name="Help"/>
         <Button x:Name="SettingsButton" Style="{StaticResource IconButton}" Width="28" Height="28" Content="&#xE713;" Click="Settings_Click" ToolTip="Settings (Ctrl+,)" AutomationProperties.Name="Settings"/>

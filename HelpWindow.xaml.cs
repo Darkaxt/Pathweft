@@ -154,7 +154,7 @@ public partial class HelpWindow : Window
         ("Settings and updates", new[]
         {
             ("Ctrl+,", "Settings: appearance (backdrop, opacity, background picture, accent color, row height, text size per area, summary cards, animations), files, the right-click menu, transfers, Windows integration, about"),
-            ("Updates", "Pathweft checks every hour and asks before updating; the update downloads, is checked against GitHub's published SHA-256, installs and restarts in about ten seconds"),
+            ("Updates", "Pathweft checks every hour; a newer version shows as a dot on the update button at the top of the sidebar, and clicking it shows what's new and asks before updating; the update downloads, is checked against GitHub's published SHA-256, installs and restarts in about ten seconds"),
             ("What's new", "Every release's notes, by month, from the button beside Pathweft's name in the sidebar. It opens by itself after an update"),
             ("Settings → Reset to defaults", "Every setting back to how Pathweft comes, after asking; each card has its own Reset. Windows integration, tabs and Quick access stay. A double-click on a slider's handle resets just that slider"),
             ("Tooltips", "Wait 1.5 s before they show, each one; Settings → Files → Tooltip delay changes that, from the next start"),
