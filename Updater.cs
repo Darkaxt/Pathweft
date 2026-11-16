@@ -12,8 +12,8 @@ namespace FileExplorer;
 //   • a check that fails (offline, timeout, GitHub rate limit or 5xx, an unreadable answer) throws,
 //     so it is never mistaken for "nothing newer": the manual check says it couldn't check, the
 //     automatic one stays quiet and tries again next hour;
-//   • "Later" silences that one version for this session only, and the manual check in Settings
-//     ignores it, because asking explicitly deserves an answer;
+//   • an automatic check that finds a release only lights the dot on the sidebar update button
+//     (UPDATE-03); "Later" just closes the window and the dot stays;
 //   • updating verifies the installer size and published SHA-256, then starts
 //     the protected installer with this process's identity and installation path.
 //     Setup waits for actual exit, stops only the owned helper, and restarts it.
@@ -44,7 +44,6 @@ public static class Updater
         var release = await Latest(token);
         if (release == null) return null;
         if (release.Version <= Current) return null;
-        if (!manual && release.Tag == dismissed) return null; // "Later" must not become a nag
         return release;
     }
 

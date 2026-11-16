@@ -261,7 +261,7 @@ public partial class MainWindow
         await using(var feed=new UpdateFeed14())
         {
             Updater.Feed=feed.Url;var work=CheckForUpdate(false);await feed.RequestSeen.Task;feed.Respond(200,Updater.Current);await work;await feed.Completion;await Settle();
-            check(updateDialog==null&&!UpdateDot.Visibility==Visibility.Visible&&System.Windows.Automation.AutomationProperties.GetName(UpdateButton)=="Check for updates","UPDATE-03: a check that finds no newer release clears the dot");
+            check(updateDialog==null&&UpdateDot.Visibility!=Visibility.Visible&&System.Windows.Automation.AutomationProperties.GetName(UpdateButton)=="Check for updates","UPDATE-03: a check that finds no newer release clears the dot");
         }
         await using(var feed=new UpdateFeed14())
         {
