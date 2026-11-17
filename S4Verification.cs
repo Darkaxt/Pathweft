@@ -445,7 +445,13 @@ public partial class MainWindow
             string aesZip = Path.Combine(zipJob.Destination, zipJob.Arrivals.Single());
             Check(Locked(aesZip) || Archive.Read(aesZip).Where(e => !e.IsDir && e.Size > 0).All(e => e.Encrypted), "ARCHIVE-12 the AES ZIP's files are encrypted");
             Archive.SetPassword(aesZip, asciiSecret);
-            try { Check(SameContent(aesZip) && Archive.Read(aesZip).Where(e => !e.IsDir && e.Size > 0).All(e => e.Method?.Contains("AES-256") == true && e.Method.Contains("Deflate")), "ARCHIVE-12 ZIP decrypts with AES-256 and Deflate to its inputs"); }
+            try
+            {
+                // Like 7-Zip, the ZIP writer stores a file Deflate cannot shrink (the random noise), still under AES-256.
+                var zipFiles = Archive.Read(aesZip).Where(e => !e.IsDir && e.Size > 0).ToList();
+                Check(SameContent(aesZip) && zipFiles.All(e => e.Method?.Contains("AES-256") == true) && zipFiles.Single(e => e.Path.EndsWith(".txt")).Method.Contains("Deflate"),
+                    "ARCHIVE-12 ZIP decrypts with AES-256 and Deflate to its inputs: " + string.Join(", ", zipFiles.Select(e => Path.GetFileName(e.Path) + " " + e.Method)));
+            }
             finally { Archive.SetPassword(aesZip, null); }
 
             var splitJob = await CompressWith("options 子", dialog =>
