@@ -388,6 +388,126 @@ public partial class MainWindow
                 string createdRar = Path.Combine(source, "plain 子 spaced.rar");
                 Check(lastArchiveJob.Phase == Phase.Done && lastArchiveJob.Errors.IsEmpty && Archive.EntryHash(createdRar, Archive.Read(createdRar).Single()) == Hash(Path.Combine(source, "plain 子 spaced.txt")), "RAR-01/02 real Compress to RAR uses the native DLL and shared queue");
             }
+            // ARCHIVE-12 Compress…: the settings dialog through the real Archive menu, each format with its settings read back
+            string settingsInput = Path.Combine(source, "options 子"); Directory.CreateDirectory(Path.Combine(settingsInput, "empty folder"));
+            { var noise = new byte[3 << 20]; new Random(12).NextBytes(noise); File.WriteAllBytes(Path.Combine(settingsInput, "noise.bin"), noise); }
+            File.WriteAllText(Path.Combine(settingsInput, "text 子.txt"), string.Concat(Enumerable.Repeat("Pathweft compression settings 子\n", 60000)));
+            File.WriteAllBytes(Path.Combine(settingsInput, "empty.txt"), Array.Empty<byte>());
+            const string secret = "fixture-secret 子 ARCHIVE-12";
+            void Choose(ComboBox box, object tag) => box.SelectedItem = box.Items.Cast<ComboBoxItem>().Single(i => Equals(i.Tag, tag));
+            async Task<Job> CompressWith(string name, Action<CompressDialog> answer, string label)
+            {
+                await S1Verification.Navigate(Left, source); await Select(Left, name);
+                var before = lastArchiveJob; bool answered = false;
+                CompressDialog.VerificationAnswer = dialog => { answered = true; answer(dialog); };
+                try { Action(Left, "Compress…"); } finally { CompressDialog.VerificationAnswer = null; }
+                Check(answered && lastArchiveJob != before, "ARCHIVE-12 Compress… opens its dialog and submits one job: " + label);
+                await lastArchiveJob.Completion;
+                Check(lastArchiveJob.Phase == Phase.Done && lastArchiveJob.Errors.IsEmpty && lastArchiveJob.Arrivals?.Count > 0, "ARCHIVE-12 the created archive passed read-back verification: " + label);
+                return lastArchiveJob;
+            }
+            bool SameContent(string created)
+            {
+                var want = Archive.Files(new[] { settingsInput }, "");
+                var entries = Archive.Read(created); var files = entries.Where(e => !e.IsDir).ToList();
+                return files.Count == want.Count(w => w.Value != null) && files.All(e => want.TryGetValue(e.Path, out var input) && input != null && Archive.EntryHash(created, e) == Hash(input))
+                    && entries.Where(e => e.IsDir).All(e => want.TryGetValue(e.Path.TrimEnd('/'), out var folder) && folder == null) && entries.Any(e => e.IsDir && e.Path.TrimEnd('/').EndsWith("empty folder"));
+            }
+            bool Locked(string created)
+            {
+                try { return Archive.Read(created).Count == 0; } catch (Exception) { return true; }
+            }
+
+            var sevenZip = await CompressWith("options 子", dialog =>
+            {
+                Choose(dialog.FormatBox, "7z"); Choose(dialog.LevelBox, 5); Choose(dialog.MethodBox, "LZMA2");
+                Choose(dialog.DictionaryBox, 1L << 20); Choose(dialog.WordBox, 64); Choose(dialog.SolidBox, "on"); Choose(dialog.ThreadsBox, 2);
+                dialog.PasswordBox.Password = secret; dialog.RepeatBox.Password = secret; dialog.NamesBox.IsChecked = true;
+                dialog.Accept();
+            }, "7z Ultra LZMA2 1 MB solid, password, encrypted names");
+            string encrypted7z = Path.Combine(sevenZip.Destination, sevenZip.Arrivals.Single());
+            Check(Path.GetFileName(encrypted7z) == "options 子.7z" && Archive.HidesNames(encrypted7z) && Locked(encrypted7z), "ARCHIVE-12 7z with encrypted names hides its file list without the password");
+            Archive.SetPassword(encrypted7z, secret);
+            try
+            {
+                var entries = Archive.Read(encrypted7z);
+                Check(SameContent(encrypted7z) && Archive.IsSolid(encrypted7z) && entries.Where(e => !e.IsDir && e.Size > 0).All(e => e.Encrypted && e.Method?.Contains("LZMA2:20") == true && e.Method.Contains("7zAES")),
+                    "ARCHIVE-12 7z decrypts to its inputs with the chosen method, 1 MB dictionary, solid block and AES-256: " + string.Join(", ", entries.Select(e => e.Method).Distinct()));
+            }
+            finally { Archive.SetPassword(encrypted7z, null); }
+
+            var zipJob = await CompressWith("options 子", dialog =>
+            {
+                Choose(dialog.FormatBox, "zip"); Choose(dialog.LevelBox, 4); Choose(dialog.MethodBox, "Deflate"); Choose(dialog.WordBox, 128);
+                dialog.PasswordBox.Password = secret; dialog.RepeatBox.Password = secret; Choose(dialog.CipherBox, false);
+                dialog.Accept();
+            }, "ZIP Maximum Deflate, AES-256");
+            string aesZip = Path.Combine(zipJob.Destination, zipJob.Arrivals.Single());
+            Check(Locked(aesZip) || Archive.Read(aesZip).Where(e => !e.IsDir && e.Size > 0).All(e => e.Encrypted), "ARCHIVE-12 the AES ZIP's files are encrypted");
+            Archive.SetPassword(aesZip, secret);
+            try { Check(SameContent(aesZip) && Archive.Read(aesZip).Where(e => !e.IsDir && e.Size > 0).All(e => e.Method?.Contains("AES-256") == true && e.Method.Contains("Deflate")), "ARCHIVE-12 ZIP decrypts with AES-256 and Deflate to its inputs"); }
+            finally { Archive.SetPassword(aesZip, null); }
+
+            var splitJob = await CompressWith("options 子", dialog =>
+            {
+                Choose(dialog.FormatBox, "7z"); Choose(dialog.LevelBox, 3); Choose(dialog.SplitBox, -1L); dialog.VolumeBox.Text = "1M";
+                dialog.PasswordBox.Password = ""; dialog.RepeatBox.Password = "";
+                dialog.Accept();
+            }, "7z split into 1 MB volumes");
+            var pieces = splitJob.Arrivals.Select(n => Path.Combine(splitJob.Destination, n)).ToList();
+            string joined = Path.Combine(evidence, "joined.7z");
+            using (var whole = File.Create(joined)) foreach (var piece in pieces) using (var input = File.OpenRead(piece)) input.CopyTo(whole);
+            Check(pieces.Count >= 3 && pieces.Select((p, i) => p.EndsWith("options 子 (2).7z." + (i + 1).ToString("000"))).All(x => x) && pieces.SkipLast(1).All(p => new FileInfo(p).Length == 1 << 20)
+                && !File.Exists(Path.Combine(source, "options 子 (2).7z")) && SameContent(joined), "ARCHIVE-12 7z volumes are 1 MB pieces named .001… that join into the verified archive");
+
+            var rarJob = await CompressWith("options 子", dialog =>
+            {
+                Choose(dialog.FormatBox, "rar"); Choose(dialog.LevelBox, 4); Choose(dialog.SolidBox, "on"); Choose(dialog.RecoveryBox, 3);
+                Choose(dialog.SplitBox, -1L); dialog.VolumeBox.Text = "1M";
+                dialog.PasswordBox.Password = secret; dialog.RepeatBox.Password = secret; dialog.NamesBox.IsChecked = true;
+                dialog.Accept();
+            }, "RAR Maximum solid, recovery 3%, password, encrypted names, 1 MB volumes");
+            var rarVolumes = rarJob.Arrivals.Select(n => Path.Combine(rarJob.Destination, n)).ToList();
+            string firstRar = rarVolumes.Single(p => p.EndsWith("options 子.part1.rar"));
+            Check(rarVolumes.Count >= 3 && rarVolumes.All(p => System.Text.RegularExpressions.Regex.IsMatch(Path.GetFileName(p), @"^options 子\.part\d+\.rar$")) && Archive.HidesNames(firstRar) && Locked(firstRar),
+                "ARCHIVE-12 RAR volumes are named .partN.rar and hide their names without the password");
+            Archive.SetPassword(firstRar, secret);
+            try { Check(SameContent(firstRar) && Archive.Read(firstRar).Where(e => !e.IsDir && e.Size > 0).All(e => e.Encrypted), "ARCHIVE-12 the RAR volume set decrypts to its inputs"); }
+            finally { Archive.SetPassword(firstRar, null); }
+
+            var tarJob = await CompressWith("options 子", dialog => { Choose(dialog.FormatBox, "tar"); Choose(dialog.SplitBox, 0L); dialog.Accept(); }, "TAR");
+            string tar = Path.Combine(tarJob.Destination, tarJob.Arrivals.Single());
+            Check(tar.EndsWith("options 子.tar") && SameContent(tar), "ARCHIVE-12 TAR stores its inputs");
+
+            var mismatch = lastArchiveJob; CompressDialog refused = null;
+            await S1Verification.Navigate(Left, source); await Select(Left, "options 子");
+            CompressDialog.VerificationAnswer = dialog => { refused = dialog; Choose(dialog.FormatBox, "7z"); dialog.PasswordBox.Password = "one"; dialog.RepeatBox.Password = "two"; dialog.Accept(); };
+            try { Action(Left, "Compress…"); } finally { CompressDialog.VerificationAnswer = null; }
+            Check(lastArchiveJob == mismatch && refused?.Result == null && refused.Problem.Text.Contains("don't match"), "ARCHIVE-12 passwords that don't match keep the dialog open and write nothing");
+
+            string deleteMe = Path.Combine(source, "delete after 子.txt"); File.WriteAllText(deleteMe, "Delete files after compression");
+            string deleteHash = Hash(deleteMe);
+            var deleteJob = await CompressWith("delete after 子.txt", dialog => { Choose(dialog.FormatBox, "zip"); Choose(dialog.SplitBox, 0L); dialog.DeleteBox.IsChecked = true; dialog.Accept(); }, "ZIP, Delete files after compression");
+            await compressDeletion; await FinishUndoWork();
+            string deleteZip = Path.Combine(deleteJob.Destination, deleteJob.Arrivals.Single());
+            Check(!File.Exists(deleteMe) && Archive.EntryHash(deleteZip, Archive.Read(deleteZip).Single()) == deleteHash, "ARCHIVE-12 Delete files after compression removes the source only after the verified archive is published");
+            Undo(); await undoCompletion;
+            Check(File.Exists(deleteMe) && Hash(deleteMe) == deleteHash, "ARCHIVE-12 the deleted source went to the Recycle Bin and Undo brings it back");
+
+            var remembered = ArchiveOptions.Parse(Settings.Compress);
+            Check(remembered.Format == "zip" && !Settings.Compress.Contains(secret) && !File.ReadAllText(Settings.FilePath).Contains(secret) && !remembered.DeleteAfter,
+                "ARCHIVE-12 the last settings are remembered without the password or Delete after");
+
+            await S1Verification.Navigate(Left, archive); await Select(Left, "nested");
+            var inner = lastArchiveJob; bool deleteOffered = true;
+            CompressDialog.VerificationAnswer = dialog => { deleteOffered = dialog.DeleteBox.IsEnabled; Choose(dialog.FormatBox, "7z"); Choose(dialog.LevelBox, 1); Choose(dialog.SplitBox, 0L); dialog.Accept(); };
+            try { Action(Left, "Compress…"); } finally { CompressDialog.VerificationAnswer = null; }
+            Check(lastArchiveJob != inner && !deleteOffered, "ARCHIVE-12 Compress… inside an archive opens the dialog without Delete after");
+            await lastArchiveJob.Completion;
+            string fromInside = Path.Combine(lastArchiveJob.Destination, lastArchiveJob.Arrivals.Single());
+            Check(lastArchiveJob.Phase == Phase.Done && Path.GetDirectoryName(fromInside).Equals(containers, StringComparison.OrdinalIgnoreCase)
+                && Archive.Read(fromInside).Where(e => !e.IsDir).Select(e => e.Path).OrderBy(p => p, StringComparer.Ordinal).SequenceEqual(Archive.Read(archive).Where(e => !e.IsDir && e.Path.StartsWith("nested/")).Select(e => e.Path).OrderBy(p => p, StringComparer.Ordinal)),
+                "ARCHIVE-12 Compress… inside an archive writes the selection beside the archive with the chosen settings");
             await S1Verification.Navigate(Right, archive + "\\nested"); await Paste(Right);
             Check(Archive.List(archive, "nested").Any(e => e.Name == "plain 子 spaced.txt"), "ARCHIVE-03 actual OS clipboard copies filesystem content into the viewed archive folder");
             await S1Verification.Navigate(Left, archive + "\\nested"); await Select(Left, "plain 子 spaced.txt"); await Copy(Left, true);

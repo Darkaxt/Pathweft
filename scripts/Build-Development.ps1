@@ -65,7 +65,7 @@ try {
             ('-p:F3DRuntimeRoot=' + (Join-Path $cache 'f3d/4.0.0'))
             ('-p:SevenZipRuntimeRoot=' + (Join-Path $cache 'sevenzip/26.05'))
             ('-p:SharpSevenZipRuntimeRoot=' + (Join-Path $cache 'sharpsevenzip/2.0.130-pathweft.1'))
-            ('-p:RarsRuntimeRoot=' + (Join-Path $cache 'rars/0.12.3-pathweft.1'))
+            ('-p:RarsRuntimeRoot=' + (Join-Path $cache 'rars/0.12.3-pathweft.2'))
             ('-p:MpvRuntimeRoot=' + (Join-Path $cache 'mpv/e471496c56-pathweft.2'))
             ('-p:MediaInfoRuntimeRoot=' + (Join-Path $cache 'mediainfo/26.10'))
             ('-p:OfficeRuntimeRoot=' + (Join-Path $cache 'office'))

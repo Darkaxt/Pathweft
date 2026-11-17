@@ -400,14 +400,36 @@ public partial class MainWindow
         if (sel.Count == 0) return;
         var pane = active;
         var stem = sel.Count == 1 ? (sel[0].IsDir ? sel[0].Name : Path.GetFileNameWithoutExtension(sel[0].Name)) : Path.GetFileName(pane.Dir.TrimEnd('\\'));
-        var zip = Unique(Path.Combine(pane.Dir, (stem == "" ? "Archive" : stem) + extension));
-        var paths = sel.Select(e => e.Path).ToList();
-        SubmitArchiveEdit(paths, pane.Dir, "Create " + extension[1..].ToUpperInvariant(), job =>
-        {
-            Archive.Create(zip, Archive.Files(paths, ""), job);
-            job.Arrivals = new() { Path.GetFileName(zip) };
-        });
+        var zip = Archive.UniqueNew(Path.Combine(pane.Dir, (stem == "" ? "Archive" : stem) + extension));
+        CreateArchive(sel.Select(e => e.Path).ToList(), zip, null);
     }
+    /// ARCHIVE-12 Compress…: the format, level, method, password, volumes and the rest, chosen before the archive is written.
+    void CompressWithOptions()
+    {
+        var sel = active.Selected;
+        if (sel.Count == 0) return;
+        var pane = active;
+        var stem = sel.Count == 1 ? (sel[0].IsDir ? sel[0].Name : Path.GetFileNameWithoutExtension(sel[0].Name)) : Path.GetFileName(pane.Dir.TrimEnd('\\'));
+        var paths = sel.Select(e => e.Path).ToList();
+        if (CompressDialog.Ask(this, Path.Combine(pane.Dir, stem == "" ? "Archive" : stem), paths) is { } choice) CreateArchive(paths, choice.Path, choice.Options);
+    }
+    void CreateArchive(List<string> paths, string archive, ArchiveOptions options)
+    {
+        var job = SubmitArchiveEdit(paths, Path.GetDirectoryName(archive), "Create " + Path.GetExtension(archive)[1..].ToUpperInvariant(), job =>
+        {
+            job.Arrivals = Archive.Create(archive, Archive.Files(paths, ""), job, options);
+        });
+        // Delete files after compression: only once the archive was read back and published, to the Recycle Bin (Ctrl+Z)
+        if (options?.DeleteAfter != true) return;
+        var deleted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        compressDeletion = deleted.Task;
+        _ = job.Completion.ContinueWith(_ => Dispatcher.BeginInvoke(() =>
+        {
+            if (job.Phase == Phase.Done && job.Errors.IsEmpty) RecycleUndoably(paths, UIOption.OnlyErrorDialogs, () => deleted.TrySetResult());
+            else deleted.TrySetResult(); // not created: the files stay
+        }), TaskScheduler.Default);
+    }
+    Task compressDeletion = Task.CompletedTask; // the last Delete files after compression, for verification
 
     // ---- Disk images: Windows mounts them (as Explorer's Mount does), and the pane opens the new drive ----
     internal static readonly HashSet<string> DiskImageExt = new(StringComparer.OrdinalIgnoreCase) { ".iso", ".img", ".vhd", ".vhdx" };

@@ -83,6 +83,7 @@ public partial class MainWindow
         check(gitBash!=null&&vlc!=null,"MENU-06: Git Bash here and VLC are taken in for a folder");
         check(AllAppsInOpenWith(folderMenu)&&gitBash?.Parent is MenuItem{Header:"Open with"},"MENU-10: a folder's taken-in programs (Git Bash, VLC) are in its Open with submenu");
         check(MenuCommands(folderMenu).Any(item=>item.Header as string=="Compress to 7z"&&item.Parent is MenuItem{Header:"Archive"}),"ARCHIVE-11: Archive offers Compress to 7z");
+        check(MenuCommands(folderMenu).Any(item=>item.Header as string=="Compress…"&&item.Parent is MenuItem{Header:"Archive"}),"ARCHIVE-12: Archive offers Compress… with its settings");
         await Built("mixed",Path.GetFileName(file),Path.GetFileName(folder));
         await Built("multiple",Path.GetFileName(file),Path.GetFileName(move));
         var background=await Built("background");

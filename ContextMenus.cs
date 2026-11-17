@@ -204,6 +204,7 @@ public partial class MainWindow
         var rarCreate = Item("Compress to RAR", "", "", () => CompressArchive(".rar"), rarUnavailable.Length == 0);
         if (rarUnavailable.Length > 0) { rarCreate.ToolTip = rarUnavailable; ToolTipService.SetShowOnDisabled(rarCreate, true); }
         m.Items.Add(rarCreate);
+        m.Items.Add(Item("Compress…", "", "", CompressWithOptions));
         if (one && DiskImageExt.Contains(ext)) m.Items.Add(Item("Mount", "", "", () => MountImage(first.Path)));
         AddShell(m, shell, "7-zip");
         AddShell(m, shell, "winrar");
@@ -240,7 +241,7 @@ public partial class MainWindow
         menu.Items.Add(new Separator());
         Group("Transfer","\uE8DE",item=>Named(item,"Copy to other pane","Move to other pane","Copy to","Move to","Group into new folder…","Add to Drop bin"));
         Group("Copy details","\uE8C8",item=>Named(item,"Copy path","Copy name"));
-        Group("Archive","\uF012",item=>(item.Header as string)?.StartsWith("Compress to ")==true||item.Tag as string is "shell:7-zip" or "shell:winrar");
+        Group("Archive","\uF012",item=>(item.Header as string)?.StartsWith("Compress")==true||item.Tag as string is "shell:7-zip" or "shell:winrar");
         Group("Tools","\uE713",item=>Named(item,"Run as administrator","Compare in editor","Edit with Notepad++","Checksum (SHA-256)","Create shortcut","Mount")||(item.Header as string)?.StartsWith("Find duplicates")==true);
         Group("More actions","\uE712",_=>true);
         menu.Items.Add(new Separator());menu.Items.Add(properties);

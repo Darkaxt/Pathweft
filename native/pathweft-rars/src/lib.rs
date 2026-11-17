@@ -28,6 +28,51 @@ struct Request {
     changes: HashMap<String, Option<String>>,
     #[serde(default)]
     additions: HashMap<String, Option<String>>,
+    /// ABI v2 creation settings (ARCHIVE-12); only for a new archive (no input).
+    #[serde(default)]
+    create: Option<Create>,
+}
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct Create {
+    level: u8,
+    #[serde(default)]
+    solid: bool,
+    #[serde(default)]
+    encrypt_names: bool,
+    #[serde(default)]
+    recovery_percent: Option<u64>,
+    /// Split into volumes of at most this many bytes, named `<stem>.partN.rar`.
+    #[serde(default)]
+    volume_size: Option<usize>,
+    #[serde(default)]
+    volume_digits: Option<usize>,
+}
+/// Writes each RAR 5 volume straight to `<stem>.part<N>.rar` beside the output.
+struct FileVolumes {
+    stem: std::path::PathBuf,
+    digits: usize,
+    written: u64,
+}
+impl FileVolumes {
+    fn path(&self, index: u64) -> std::path::PathBuf {
+        let mut name = self.stem.file_name().unwrap_or_default().to_os_string();
+        name.push(format!(".part{:0width$}.rar", index + 1, width = self.digits));
+        self.stem.with_file_name(name)
+    }
+}
+impl rars::rar50::VolumeSink for FileVolumes {
+    fn start_volume(&mut self, index: u64) -> rars::Result<Box<dyn std::io::Write + Send>> {
+        let file = std::fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(self.path(index))?;
+        Ok(Box::new(std::io::BufWriter::new(file)))
+    }
+    fn finish_volume(&mut self, index: u64, _: u64) -> rars::Result<()> {
+        self.written = index + 1;
+        Ok(())
+    }
 }
 type Control = Option<extern "C" fn() -> i32>;
 struct Progress(Control);
@@ -301,7 +346,7 @@ fn verify_metadata(
 fn run(request: &Request, control: Control) -> rars::Result<Value> {
     if request.operation == "version" {
         return Ok(
-            json!({"abi":1,"rars":"0.12.3","source":"e2415a2eb12e6b62deaa0cca919864eabe4671b1"}),
+            json!({"abi":2,"rars":"0.12.3","source":"e2415a2eb12e6b62deaa0cca919864eabe4671b1"}),
         );
     }
     let password = request.password.as_deref().map(str::as_bytes);
@@ -330,6 +375,11 @@ fn run(request: &Request, control: Control) -> rars::Result<Value> {
     let progress = Arc::new(Progress(control));
     if progress.is_cancelled() {
         return Err(rars::Error::Cancelled);
+    }
+    if archive.is_some() && request.create.is_some() {
+        return Err(rars::Error::InvalidArgument(
+            "creation settings apply only to a new archive",
+        ));
     }
     let mut builder = if let Some(source) = &archive {
         let mut builder = source
@@ -381,14 +431,37 @@ fn run(request: &Request, control: Control) -> rars::Result<Value> {
         }
         builder
     } else {
-        Builder::new(ArchiveVersion::Rar50).compression_level(Some(3))
+        let create = request.create.as_ref();
+        let level = create.map_or(3, |c| c.level);
+        if level > 5 {
+            return Err(rars::Error::InvalidArgument("RAR compression level is 0 to 5"));
+        }
+        if create.is_some_and(|c| c.encrypt_names) && password.is_none() {
+            return Err(rars::Error::InvalidArgument("encrypting names needs a password"));
+        }
+        Builder::new(ArchiveVersion::Rar50)
+            .compression_level(Some(level))
+            .store(level == 0)
+            .solid(create.is_some_and(|c| c.solid))
+            .password(password.map(<[u8]>::to_vec))
+            .header_encryption(create.is_some_and(|c| c.encrypt_names))
+            .recovery_percent(create.and_then(|c| c.recovery_percent).filter(|p| *p > 0))
+            .volume_size(create.and_then(|c| c.volume_size))
     };
     add_inputs(&mut builder, &request.additions)?;
-    builder.write_to_path_with_resources(
-        output,
-        &WriterResources::default().with_temp_dir(work),
-        Some(progress.as_ref()),
-    )?;
+    let resources = WriterResources::default().with_temp_dir(work);
+    let mut volumes = 0;
+    if let Some(create) = request.create.as_ref().filter(|c| c.volume_size.is_some()) {
+        let mut sink = FileVolumes {
+            stem: output.with_extension(""),
+            digits: create.volume_digits.unwrap_or(1).clamp(1, 6),
+            written: 0,
+        };
+        builder.write_volumes_to(&mut sink, &resources, Some(progress.as_ref()))?;
+        volumes = sink.written;
+    } else {
+        builder.write_to_path_with_resources(output, &resources, Some(progress.as_ref()))?;
+    }
     if let Some(before) = &archive {
         let after = ArchiveReader::read_path_with_options(output, options(password))?;
         verify_metadata(before, &after, request, password)?;
@@ -396,10 +469,10 @@ fn run(request: &Request, control: Control) -> rars::Result<Value> {
     if progress.is_cancelled() {
         return Err(rars::Error::Cancelled);
     }
-    Ok(json!({"written":true}))
+    Ok(json!({"written":true,"volumes":volumes}))
 }
 
-/// ABI v1: caller passes a valid NUL-terminated UTF-8 JSON request and an optional
+/// ABI v2 (v1 plus `create`): caller passes a valid NUL-terminated UTF-8 JSON request and an optional
 /// synchronous, no-throw control callback. Response is freed only with pw_rar_free.
 /// No pointer or callback is retained after this call returns.
 ///

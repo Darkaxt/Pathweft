@@ -1,0 +1,117 @@
+<Window x:Class="FileExplorer.CompressDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Compress" Width="560" Height="700" MinWidth="440" MinHeight="420"
+        WindowStartupLocation="CenterOwner" ShowInTaskbar="False" Background="Transparent"
+        Foreground="{DynamicResource Palette.E8EEF6}" FontFamily="Segoe UI Variable Text, Segoe UI" FontSize="12">
+  <Window.Resources>
+    <Style x:Key="Label" TargetType="TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource Palette.8A97AA}"/>
+      <Setter Property="Width" Value="150"/>
+      <Setter Property="VerticalAlignment" Value="Center"/>
+      <Setter Property="TextWrapping" Value="Wrap"/>
+      <Setter Property="DockPanel.Dock" Value="Left"/>
+    </Style>
+    <Style x:Key="Row" TargetType="DockPanel">
+      <Setter Property="Margin" Value="0,0,0,8"/>
+      <Setter Property="LastChildFill" Value="True"/>
+    </Style>
+    <Style x:Key="Section" TargetType="TextBlock">
+      <Setter Property="FontWeight" Value="SemiBold"/>
+      <Setter Property="Margin" Value="0,10,0,8"/>
+    </Style>
+    <Style x:Key="Secret" TargetType="PasswordBox">
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="Foreground" Value="{DynamicResource Palette.F0FFFFFF}"/>
+      <Setter Property="CaretBrush" Value="{DynamicResource Palette.F0FFFFFF}"/>
+      <Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
+  </Window.Resources>
+  <Grid x:Name="Root" Background="{DynamicResource Palette.B30A0D13}">
+    <DockPanel Margin="{StaticResource AuxiliaryMargin}">
+      <TextBlock DockPanel.Dock="Top" Text="Archive" Foreground="{DynamicResource Palette.8A97AA}" Margin="2,0,0,6"/>
+      <DockPanel DockPanel.Dock="Top" Margin="0,0,0,12">
+        <Button x:Name="BrowseButton" DockPanel.Dock="Right" Content="Browse…" Style="{StaticResource AuxiliaryAction}" Margin="6,0,0,0" Click="Browse_Click"/>
+        <Border Style="{StaticResource AuxiliaryField}">
+          <TextBox x:Name="PathBox" Style="{StaticResource Bare}" AutomationProperties.Name="Archive path"/>
+        </Border>
+      </DockPanel>
+      <DockPanel DockPanel.Dock="Bottom" Margin="0,12,0,0">
+        <TextBlock x:Name="Problem" DockPanel.Dock="Top" Foreground="{DynamicResource PreviewWarning}" TextWrapping="Wrap" Margin="2,0,0,8" Visibility="Collapsed"/>
+        <Button x:Name="CompressButton" DockPanel.Dock="Right" Content="Compress" Style="{StaticResource AuxiliaryAction}" Tag="on" IsDefault="True" Click="Compress_Click"/>
+        <Button DockPanel.Dock="Right" Content="Cancel" Style="{StaticResource AuxiliaryAction}" Margin="0,0,6,0" IsCancel="True"/>
+        <TextBlock x:Name="Summary" Foreground="{DynamicResource Palette.6E7A8C}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+      </DockPanel>
+      <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,6,0">
+        <StackPanel>
+          <DockPanel Style="{StaticResource Row}">
+            <TextBlock Style="{StaticResource Label}" Text="Archive format"/>
+            <ComboBox x:Name="FormatBox" Style="{StaticResource PreviewClipCombo}" AutomationProperties.Name="Archive format" SelectionChanged="Format_Changed"/>
+          </DockPanel>
+          <DockPanel Style="{StaticResource Row}">
+            <TextBlock Style="{StaticResource Label}" Text="Compression level"/>
+            <ComboBox x:Name="LevelBox" Style="{StaticResource PreviewClipCombo}" AutomationProperties.Name="Compression level" SelectionChanged="Setting_Changed"/>
+          </DockPanel>
+          <DockPanel Style="{StaticResource Row}">
+            <TextBlock Style="{StaticResource Label}" Text="Compression method"/>
+            <ComboBox x:Name="MethodBox" Style="{StaticResource PreviewClipCombo}" AutomationProperties.Name="Compression method" SelectionChanged="Method_Changed"/>
+          </DockPanel>
+          <DockPanel Style="{StaticResource Row}">
+            <TextBlock x:Name="DictionaryLabel" Style="{StaticResource Label}" Text="Dictionary size"/>
+            <ComboBox x:Name="DictionaryBox" Style="{StaticResource PreviewClipCombo}" AutomationProperties.Name="Dictionary size" SelectionChanged="Setting_Changed"/>
+          </DockPanel>
+          <DockPanel Style="{StaticResource Row}">
+            <TextBlock x:Name="WordLabel" Style="{StaticResource Label}" Text="Word size"/>
+            <ComboBox x:Name="WordBox" Style="{StaticResource PreviewClipCombo}" AutomationProperties.Name="Word size" SelectionChanged="Setting_Changed"/>
+          </DockPanel>
+          <DockPanel Style="{StaticResource Row}">
+            <TextBlock Style="{StaticResource Label}" Text="Solid block size"/>
+            <ComboBox x:Name="SolidBox" Style="{StaticResource PreviewClipCombo}" AutomationProperties.Name="Solid block size" SelectionChanged="Setting_Changed"/>
+          </DockPanel>
+          <DockPanel Style="{StaticResource Row}">
+            <TextBlock Style="{StaticResource Label}" Text="CPU threads"/>
+            <ComboBox x:Name="ThreadsBox" Style="{StaticResource PreviewClipCombo}" AutomationProperties.Name="CPU threads" SelectionChanged="Setting_Changed"/>
+          </DockPanel>
+          <DockPanel Style="{StaticResource Row}">
+            <TextBlock Style="{StaticResource Label}" Text="Split to volumes"/>
+            <Border x:Name="VolumeField" DockPanel.Dock="Right" Style="{StaticResource AuxiliaryField}" Width="110" Margin="6,0,0,0" Visibility="Collapsed">
+              <TextBox x:Name="VolumeBox" Style="{StaticResource Bare}" AutomationProperties.Name="Volume size" ToolTip="Bytes, or a number with K, M or G: 700M, 4G" TextChanged="Volume_Changed"/>
+            </Border>
+            <ComboBox x:Name="SplitBox" Style="{StaticResource PreviewClipCombo}" AutomationProperties.Name="Split to volumes" SelectionChanged="Setting_Changed"/>
+          </DockPanel>
+
+          <TextBlock Style="{StaticResource Section}" Text="Encryption"/>
+          <DockPanel Style="{StaticResource Row}">
+            <TextBlock Style="{StaticResource Label}" Text="Password"/>
+            <Border x:Name="PasswordField" Style="{StaticResource AuxiliaryField}">
+              <Grid>
+                <PasswordBox x:Name="PasswordBox" Style="{StaticResource Secret}" AutomationProperties.Name="Password" PasswordChanged="Password_Changed"/>
+                <TextBox x:Name="PlainBox" Style="{StaticResource Bare}" AutomationProperties.Name="Password shown" Visibility="Collapsed" TextChanged="Password_Changed"/>
+              </Grid>
+            </Border>
+          </DockPanel>
+          <DockPanel x:Name="RepeatRow" Style="{StaticResource Row}">
+            <TextBlock Style="{StaticResource Label}" Text="Re-enter password"/>
+            <Border x:Name="RepeatField" Style="{StaticResource AuxiliaryField}">
+              <PasswordBox x:Name="RepeatBox" Style="{StaticResource Secret}" AutomationProperties.Name="Re-enter password" PasswordChanged="Password_Changed"/>
+            </Border>
+          </DockPanel>
+          <CheckBox x:Name="ShowBox" Content="Show password" Margin="150,0,0,8" Click="Show_Click"/>
+          <DockPanel Style="{StaticResource Row}">
+            <TextBlock Style="{StaticResource Label}" Text="Encryption method"/>
+            <ComboBox x:Name="CipherBox" Style="{StaticResource PreviewClipCombo}" AutomationProperties.Name="Encryption method" SelectionChanged="Setting_Changed"/>
+          </DockPanel>
+          <CheckBox x:Name="NamesBox" Content="Encrypt file names" Margin="150,0,0,8" Click="Setting_Click"/>
+
+          <TextBlock Style="{StaticResource Section}" Text="Options"/>
+          <DockPanel Style="{StaticResource Row}">
+            <TextBlock Style="{StaticResource Label}" Text="Recovery record"/>
+            <ComboBox x:Name="RecoveryBox" Style="{StaticResource PreviewClipCombo}" AutomationProperties.Name="Recovery record" SelectionChanged="Setting_Changed"/>
+          </DockPanel>
+          <CheckBox x:Name="DeleteBox" Content="Delete files after compression (to the Recycle Bin)" Margin="150,0,0,8" Click="Setting_Click"/>
+        </StackPanel>
+      </ScrollViewer>
+    </DockPanel>
+  </Grid>
+</Window>

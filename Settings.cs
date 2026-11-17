@@ -77,6 +77,7 @@ public static class Settings
     public static readonly Dictionary<string, double> ColumnWidths = new(); // "Size" → 80
     public static bool FolderCrc;          // CRC32 column in folders: opt-in, hashed lazily in the background
     public static bool ArchiveCrc = true;  // CRC32 column inside archives: stored metadata, shown by default
+    public static string Compress = "";    // ARCHIVE-12: Compress…'s last settings (ArchiveOptions.Serialize), never the password
     public static readonly Dictionary<string, PaneView.ViewMode> Views = new();
     public static readonly Dictionary<string, List<string>> Tabs = new();   // "Left" → folders open in that pane
     public static readonly Dictionary<string, int> ActiveTab = new(); // "Left" → Details
@@ -166,6 +167,7 @@ public static class Settings
                 case "autoscroll": Autoscroll = v == "1"; break;
                 case "crcfolders": FolderCrc = v == "1"; break;
                 case "crcarchives": ArchiveCrc = v != "0"; break;
+                case "compress": Compress = v; break;
                 case "autoscrollx": AutoscrollSideways = v != "0"; break;
                 case "quicklist" when int.TryParse(v, out var ql) && ql >= 0: QuickList = ql; break;
                 // paths can't hold |, so it separates them
@@ -250,6 +252,7 @@ public static class Settings
             $"autoscroll={(Autoscroll ? 1 : 0)}",
             $"crcfolders={(FolderCrc ? 1 : 0)}",
             $"crcarchives={(ArchiveCrc ? 1 : 0)}",
+            $"compress={Compress}",
             $"autoscrollx={(AutoscrollSideways ? 1 : 0)}",
             $"quicklist={QuickList}",
             $"recent={string.Join("|", RecentFolders)}",

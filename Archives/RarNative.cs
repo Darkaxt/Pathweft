@@ -23,7 +23,7 @@ internal static class RarNative
         {
             var value = new Binding(module, Marshal.GetDelegateForFunctionPointer<CallNative>(NativeLibrary.GetExport(module, "pw_rar_call")), Marshal.GetDelegateForFunctionPointer<FreeNative>(NativeLibrary.GetExport(module, "pw_rar_free")));
             using var version = Invoke(value, new { operation = "version" }, null);
-            if (version.RootElement.GetProperty("abi").GetInt32() != 1 || version.RootElement.GetProperty("rars").GetString() != "0.12.3" || version.RootElement.GetProperty("source").GetString() != "e2415a2eb12e6b62deaa0cca919864eabe4671b1") throw new IOException("Incompatible RAR library.");
+            if (version.RootElement.GetProperty("abi").GetInt32() != 2 || version.RootElement.GetProperty("rars").GetString() != "0.12.3" || version.RootElement.GetProperty("source").GetString() != "e2415a2eb12e6b62deaa0cca919864eabe4671b1") throw new IOException("Incompatible RAR library.");
             return value;
         }
         catch { NativeLibrary.Free(module); throw; }
@@ -70,11 +70,12 @@ internal static class RarNative
         catch (Exception ex) when (ex is IOException or DllNotFoundException or EntryPointNotFoundException or BadImageFormatException or JsonException)
         { return "RAR writer unavailable: " + ex.Message; }
     }
-    internal static void Write(string input, string output, string work, string password, Dictionary<string, string> changes, Dictionary<string, string> additions, Job job)
+    /// `create` (ABI v2, ARCHIVE-12): a new archive's level, solid, encrypted names, recovery record and volumes.
+    internal static void Write(string input, string output, string work, string password, Dictionary<string, string> changes, Dictionary<string, string> additions, Job job, object create = null)
     {
         try
         {
-            using var result = Invoke(binding.Value, new { operation = "write", input, output, work, password, changes, additions }, job);
+            using var result = Invoke(binding.Value, new { operation = "write", input, output, work, password, changes, additions, create }, job);
         }
         catch (Exception ex) when (ex is DllNotFoundException or EntryPointNotFoundException or BadImageFormatException or JsonException)
         { throw new IOException("The embedded RAR writer is unavailable; the original was preserved.", ex); }

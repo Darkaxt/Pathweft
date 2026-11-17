@@ -1,23 +1,16 @@
 {
   "backend": "rars",
-  "version": "0.12.3-pathweft.1",
+  "version": "0.12.3-pathweft.2",
   "source": "https://github.com/bitplane/rars",
   "sourceCommit": "e2415a2eb12e6b62deaa0cca919864eabe4671b1",
-  "abi": 1,
+  "abi": 2,
   "architecture": "x86_64-pc-windows-msvc",
   "rustc": "rustc 1.94.0 (4a4ef493e 2026-03-02)",
   "dll": "pathweft_rars.dll",
-  "dllSha256": "671A448B78C8A591DEFC68E791254C9E4D5B64F947FFBE197258074B9B5AE742",
-  "runtimeDependency": {
-    "dll": "vcruntime140.dll",
-    "sha256": "D5E4D9A3E835FA679450145D6A7D94E36573A509317111904D9B3712C30D9066",
-    "sourceManifest": "vendor/F3D/runtime-manifest.json",
-    "sourcePath": "bin/vcruntime140.dll",
-    "notices": "F3D/licenses"
-  },
-  "bridgeSourceSha256": "EE3B9BC2909CD7B7916850C200643E7263E643100285B14BF45635A5957BF718",
+  "dllSha256": "F4E4FCAB00F5E0B2CBE0BE0F21E4F968F58F5DB32262DD1A377373AA5C4DB79A",
+  "bridgeSourceSha256": "08FD4E9506088814E1188998A554AA8FC489FDA5633CB7B502D3BDE585ABF14A",
   "lockSha256": "B0CB200D8D4FCEF1664358A34F76401D0A7A2F9D5510A0F69E57B922DACD56F4",
-  "cargoManifestSha256": "B108CF92E629E8DB62DF3FA08706F4A99E37396B519E80912B2219CC1941F508",
+  "cargoManifestSha256": "995A9364AA912DBD48C5503669CE41D346AAB76259EE0B939C80ECB76ACFDA4D",
   "license": "Apache-2.0 donor; GPL-3.0-or-later Pathweft bridge",
   "dependencies": [
     {
@@ -290,5 +283,12 @@
       "license": "MIT",
       "source": "registry+https://github.com/rust-lang/crates.io-index"
     }
-  ]
+  ],
+  "runtimeDependency": {
+    "dll": "vcruntime140.dll",
+    "sha256": "D5E4D9A3E835FA679450145D6A7D94E36573A509317111904D9B3712C30D9066",
+    "sourceManifest": "vendor/F3D/runtime-manifest.json",
+    "sourcePath": "bin/vcruntime140.dll",
+    "notices": "F3D/licenses"
+  }
 }

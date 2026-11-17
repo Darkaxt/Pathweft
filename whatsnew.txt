@@ -1,6 +1,13 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.74 | 2026-11-17 | Compress… with your own settings
+
+- Archive → Compress… opens a settings window first: where to save, ZIP, 7z, RAR or TAR, the compression level and method, dictionary and word size, solid blocks, CPU threads, and splitting into volumes.
+- Protect an archive with a password (AES-256). 7z and RAR can hide the file names too; ZIP can use ZipCrypto for older programs. RAR can add a recovery record.
+- Delete files after compression sends them to the Recycle Bin once the archive is checked, and Ctrl+Z brings them back.
+- Your choices are remembered for next time, except the password.
+
 ## 1.1.73 | 2026-11-17 | Open with submenu, 7z and a quieter update check
 
 - Programs that open, play or edit what you right-clicked (VS Code, Git Bash, VLC and others) are now together in one Open with submenu, and the menu icons line up.

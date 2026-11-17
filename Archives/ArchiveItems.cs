@@ -70,6 +70,7 @@ public partial class MainWindow
             var rarCreate = Item("Compress to RAR", "", "", () => ArchiveCompress(p, ".rar"), rarUnavailable.Length == 0);
             if (rarUnavailable.Length > 0) { rarCreate.ToolTip = rarUnavailable; ToolTipService.SetShowOnDisabled(rarCreate, true); }
             am.Items.Add(rarCreate);
+            am.Items.Add(Item("Compress…", "", "", () => ArchiveCompress(p, null)));
             if (one && !dir) am.Items.Add(Item("Checksum (SHA-256)", "", "", () => ArchiveChecksum(p, first)));
         }
         else
@@ -119,7 +120,7 @@ public partial class MainWindow
         Take(menu, item => Named(item, "Refresh", "Show hidden files", "Hide hidden files"));
         Group("Transfer", "", item => Named(item, "Copy to other pane", "Move to other pane", "Copy to", "Move to", "Group into new folder…", "Add to Drop bin"));
         Group("Copy details", "", item => Named(item, "Copy path", "Copy name"));
-        Group("Archive", "", item => Starts(item, "Compress to "));
+        Group("Archive", "", item => Starts(item, "Compress"));
         Group("Tools", "", item => Named(item, "Run as administrator", "Compare in editor", "Edit with Notepad++", "Checksum (SHA-256)"));
         Group("Archive tools", "", _ => true);
         Separate(); menu.Items.Add(show); menu.Items.Add(properties);
@@ -224,7 +225,8 @@ public partial class MainWindow
         SubmitArchiveEdit(sel.Select(e => e.Path), p.Dir, "Group into new folder", job => { Archive.Relocate(at.Archive, at.Inner, items, job, folder: name); job.Arrivals = new() { name }; });
     }
 
-    // A new archive of the selection, beside the archive file (the outermost one, for an archive inside an archive)
+    // A new archive of the selection, beside the archive file (the outermost one, for an archive inside an archive).
+    // `extension` null: Compress…, where the settings and the archive's place are chosen first (ARCHIVE-12).
     void ArchiveCompress(PaneView p, string extension)
     {
         if (p.ArchiveRoot is not { } at || p.Selected.Where(e => !e.IsUp).ToList() is not { Count: > 0 } sel) return;
@@ -234,17 +236,19 @@ public partial class MainWindow
         if (outer == null) return;
         string folder = Path.GetDirectoryName(outer);
         var stem = sel.Count == 1 ? (sel[0].IsDir ? sel[0].Name : Path.GetFileNameWithoutExtension(sel[0].Name)) : Path.GetFileNameWithoutExtension(p.Dir.TrimEnd('\\'));
-        var target = Unique(Path.Combine(folder, (stem == "" ? "Archive" : stem) + extension));
+        ArchiveOptions options = null; string target;
+        if (extension != null) target = Archive.UniqueNew(Path.Combine(folder, (stem == "" ? "Archive" : stem) + extension));
+        else if (CompressDialog.Ask(this, Path.Combine(folder, stem == "" ? "Archive" : stem), null) is { } choice) (target, options) = (choice.Path, choice.Options);
+        else return;
         var names = sel.Select(e => e.Name).ToArray();
-        SubmitArchiveEdit(sel.Select(e => e.Path), folder, "Create " + extension[1..].ToUpperInvariant(), job =>
+        SubmitArchiveEdit(sel.Select(e => e.Path), Path.GetDirectoryName(target), "Create " + Path.GetExtension(target)[1..].ToUpperInvariant(), job =>
         {
             ArchiveContent.Reserve(out string directory);
             try
             {
                 string data = Path.Combine(directory, "data");
                 Archive.Extract(at.Archive, names, at.Inner, data);
-                Archive.Create(target, Archive.Files(names.Select(n => Path.Combine(data, n)), ""), job);
-                job.Arrivals = new() { Path.GetFileName(target) };
+                job.Arrivals = Archive.Create(target, Archive.Files(names.Select(n => Path.Combine(data, n)), ""), job, options);
             }
             finally { Directory.Delete(directory, recursive: true); }
         });

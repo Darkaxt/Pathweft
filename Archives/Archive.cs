@@ -531,11 +531,32 @@ internal static partial class Archive
         while (File.Exists(result) || Directory.Exists(result)) result = System.IO.Path.Combine(parent, stem + " (" + n++ + ")" + ext);
         return result;
     }
-    static SharpSevenZipCompressor Compressor(string archive, string temporaryDirectory, Job job)
+    static SharpSevenZipCompressor Compressor(string archive, string temporaryDirectory, Job job, ArchiveOptions options = null)
     {
         _ = native.Value;
         var compressor = new SharpSevenZipCompressor(temporaryDirectory) { ArchiveFormat = Format(archive), CompressionLevel = SharpSevenZip.CompressionLevel.Normal };
-        compressor.CustomParameters["mt"] = "2";
+        if (compressor.ArchiveFormat == OutArchiveFormat.Tar) compressor.CompressionLevel = SharpSevenZip.CompressionLevel.None; // TAR only stores
+        else if (options != null)
+        {
+            // ARCHIVE-12: 7-Zip's own switches, as its Add to archive dialog passes them (x level, method, d/mem, fb/o, s, mt, he, em)
+            compressor.CompressionLevel = new[] { SharpSevenZip.CompressionLevel.None, SharpSevenZip.CompressionLevel.Fast, SharpSevenZip.CompressionLevel.Low,
+                SharpSevenZip.CompressionLevel.Normal, SharpSevenZip.CompressionLevel.High, SharpSevenZip.CompressionLevel.Ultra }[Math.Clamp(options.Level, 0, 5)];
+            bool sevenZip = compressor.ArchiveFormat == OutArchiveFormat.SevenZip, ppmd = options.Method == "PPMd";
+            if (options.Level > 0)
+            {
+                if (options.Method.Length > 0) compressor.CompressionMethod = Enum.Parse<CompressionMethod>(options.Method, ignoreCase: true);
+                if (options.Dictionary > 0) compressor.CustomParameters[ppmd ? "mem" : "d"] = options.Dictionary.ToString(System.Globalization.CultureInfo.InvariantCulture) + "b";
+                if (options.Word > 0) compressor.CustomParameters[ppmd ? "o" : "fb"] = options.Word.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            }
+            if (sevenZip && options.Solid.Length > 0) compressor.CustomParameters["s"] = options.Solid;
+            compressor.CustomParameters["mt"] = options.Threads > 0 ? options.Threads.ToString(System.Globalization.CultureInfo.InvariantCulture) : "on";
+            if (options.Encrypted)
+            {
+                if (sevenZip) compressor.EncryptHeaders = options.EncryptNames;
+                else compressor.ZipEncryptionMethod = options.ZipCrypto ? ZipEncryptionMethod.ZipCrypto : ZipEncryptionMethod.Aes256;
+            }
+        }
+        if (compressor.ArchiveFormat != OutArchiveFormat.Tar && !compressor.CustomParameters.ContainsKey("mt")) compressor.CustomParameters["mt"] = "2";
         compressor.FileCompressionStarted += (_, e) => { job?.WaitUntilResumed(); e.Cancel = job?.IsCancelled == true; };
         return compressor;
     }
@@ -693,39 +714,155 @@ internal static partial class Archive
         string path = Prefix(inner) + Clean(name);
         return Read(archive).Where(e => Under(e.Path, path)).ToList();
     }
-    internal static void Create(string archive, Dictionary<string, string> files, Job job = null)
+    /// Whether a new archive would meet an existing name: the file itself, or a volume set with its name
+    /// (name.7z.001…, name.partN.rar), so a split archive never mixes with another one's volumes.
+    internal static bool NameTaken(string archive)
+    {
+        if (File.Exists(archive) || Directory.Exists(archive) || File.Exists(archive + ".001")) return true;
+        if (!Rar(archive)) return false;
+        string folder = System.IO.Path.GetDirectoryName(archive);
+        return Directory.Exists(folder) && Directory.EnumerateFiles(folder, System.IO.Path.GetFileNameWithoutExtension(archive) + ".part*.rar").Any();
+    }
+    /// The archive name for a new archive, numbered "name (2).7z" while it would meet an existing one.
+    internal static string UniqueNew(string archive)
+    {
+        string folder = System.IO.Path.GetDirectoryName(archive), stem = System.IO.Path.GetFileNameWithoutExtension(archive), extension = System.IO.Path.GetExtension(archive);
+        for (int n = 2; NameTaken(archive); n++) archive = System.IO.Path.Combine(folder, $"{stem} ({n}){extension}");
+        return archive;
+    }
+    /// Whether the archive is solid, as 7-Zip reports it.
+    internal static bool IsSolid(string archive) { using var reader = Open(archive); return reader.IsSolid; }
+
+    /// A new archive of `files` (entry name → input file, null for a folder), staged beside it, read back and checked
+    /// entry by entry before it takes its name. `options` (ARCHIVE-12, Compress…) sets level, method, password and
+    /// volumes; without them the one-click defaults apply. Returns the names published: the archive, or its volumes.
+    internal static List<string> Create(string archive, Dictionary<string, string> files, Job job = null, ArchiveOptions options = null)
     {
         Check(job);
-        if (File.Exists(archive)) throw new IOException("Archive already exists.");
+        if (NameTaken(archive)) throw new IOException("Archive already exists.");
         Directory.CreateDirectory(System.IO.Path.GetDirectoryName(archive));
         string directory = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(archive), ".pathweft-create-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(directory);
-        string stage = System.IO.Path.Combine(directory, "stage" + System.IO.Path.GetExtension(archive));
+        string stage = System.IO.Path.Combine(directory, "stage" + System.IO.Path.GetExtension(archive)), first = stage;
+        string password = options?.Encrypted == true ? options.Password : null;
+        bool split = options?.VolumeSize > 0, rar = Rar(archive);
+        var published = new List<string>();
         try
         {
             var expected = files.ToDictionary(e => Clean(e.Key), e => new Expected(null, e.Value), StringComparer.OrdinalIgnoreCase);
             var inputs = files.Where(e => e.Value != null).ToDictionary(e => e.Value, e => Version(e.Value), StringComparer.OrdinalIgnoreCase);
+            long total = files.Where(e => e.Value != null).Sum(e => new FileInfo(e.Value).Length);
             if (job != null)
             {
-                job.TotalFiles = files.Count(e => e.Value != null); job.TotalBytes = files.Where(e => e.Value != null).Sum(e => new FileInfo(e.Value).Length);
+                job.TotalFiles = files.Count(e => e.Value != null); job.TotalBytes = total;
                 job.Phase = Phase.Copying;
             }
-            if (Rar(archive)) RarNative.Write(null, stage, directory, null, new(), files.ToDictionary(e => Clean(e.Key), e => e.Value), job);
+            if (rar)
+            {
+                // RAR volumes are written by the embedded writer as stage.partN.rar; N is as wide as the largest
+                // count the input could need (stored, with its recovery record), as WinRAR names them
+                object create = options == null ? null : new
+                {
+                    level = options.Level, solid = options.Solid == "on", encrypt_names = options.EncryptNames && password != null,
+                    recovery_percent = options.Recovery > 0 ? (long?)options.Recovery : null,
+                    volume_size = split ? (long?)options.VolumeSize : null,
+                    volume_digits = split ? (int?)Math.Max(1, ((total + total * options.Recovery / 100 + 4096L * files.Count + (1 << 20)) / options.VolumeSize + 1).ToString().Length) : null
+                };
+                RarNative.Write(null, stage, directory, password, new(), files.ToDictionary(e => Clean(e.Key), e => e.Value), job, create);
+                if (split)
+                    first = Directory.GetFiles(directory, "stage.part*.rar").OrderBy(p => p.Length).ThenBy(p => p, StringComparer.OrdinalIgnoreCase).FirstOrDefault()
+                        ?? throw new IOException("The RAR writer produced no volumes.");
+            }
             else
             {
-                var compressor = Compressor(archive, directory, job);
-                compressor.CompressFileDictionary(files, stage);
+                var compressor = Compressor(archive, directory, job, options);
+                compressor.CompressFileDictionary(files, stage, password ?? "");
             }
             Boundary("stage-written"); Check(job);
             if (job != null) job.Phase = Phase.Verifying;
-            var actual = Read(stage);
-            if (actual.Count != expected.Count || actual.Any(e => !expected.TryGetValue(e.Path, out var want) || !Matches(stage, e, null, want, job))) throw new IOException("New archive content verification failed.");
+            if (password != null) passwords[first] = password;
+            var actual = Read(first);
+            if (actual.Count != expected.Count || actual.Any(e => !expected.TryGetValue(e.Path, out var want) || !Matches(first, e, null, want, job))) throw new IOException("New archive content verification failed.");
+            if (password != null)
+            {
+                // a stored CRC proves the content, not the password: every file is decrypted with it and hashed
+                if (actual.Any(e => !e.IsDir && e.Size > 0 && !e.Encrypted)) throw new IOException("An entry of the new archive is not encrypted.");
+                foreach (var e in actual.Where(e => !e.IsDir))
+                    if (EntryHash(first, e, job) != Fingerprint(expected[e.Path].Input)) throw new IOException("New archive content does not decrypt to its input.");
+                if (options.EncryptNames && options.Format is "7z" or "rar")
+                {
+                    passwords.TryRemove(first, out _);
+                    if (!HidesNames(first)) throw new IOException("The new archive's file names are not encrypted.");
+                    bool listed;
+                    try { listed = Read(first).Count > 0; } catch (Exception ex) when (ex is IOException or SharpSevenZipException) { listed = false; }
+                    if (listed) throw new IOException("The new archive lists its names without the password.");
+                }
+            }
             foreach (var input in inputs) if (Version(input.Key) != input.Value) throw new IOException("An input changed while the archive was created.");
             Boundary("before-publish"); Check(job);
-            File.Move(stage, archive);
+            var pieces = new List<(string From, string To)>();
+            if (rar && split)
+            {
+                string stem = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(archive), System.IO.Path.GetFileNameWithoutExtension(archive));
+                foreach (var volume in Directory.GetFiles(directory, "stage.part*.rar"))
+                    pieces.Add((volume, stem + System.IO.Path.GetFileName(volume)["stage".Length..]));
+            }
+            else if (split)
+            {
+                // 7z, ZIP and TAR volumes are the verified archive cut in pieces (name.7z.001, .002…), as 7-Zip writes
+                // them; the pieces are read back against it before any takes its name
+                long length = new FileInfo(stage).Length, size = options.VolumeSize;
+                int count = (int)Math.Max(1, (length + size - 1) / size), digits = Math.Max(3, count.ToString().Length);
+                string whole;
+                using (var input = new FileStream(stage, FileMode.Open, FileAccess.Read, FileShare.Read, 1 << 16, FileOptions.SequentialScan))
+                    whole = Convert.ToHexString(SHA256.HashData(input));
+                using (var input = new FileStream(stage, FileMode.Open, FileAccess.Read, FileShare.Read, 1 << 16, FileOptions.SequentialScan))
+                    for (int i = 1; i <= count; i++)
+                    {
+                        Check(job);
+                        string piece = stage + "." + i.ToString().PadLeft(digits, '0');
+                        using (var output = new FileStream(piece, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+                            CopyBounded(input, output, Math.Min(size, length - (i - 1) * size));
+                        pieces.Add((piece, archive + "." + i.ToString().PadLeft(digits, '0')));
+                    }
+                using (var sha = IncrementalHash.CreateHash(HashAlgorithmName.SHA256))
+                {
+                    var buffer = new byte[1 << 20];
+                    foreach (var (piece, _) in pieces)
+                    {
+                        using var input = new FileStream(piece, FileMode.Open, FileAccess.Read, FileShare.Read, 1, FileOptions.SequentialScan);
+                        int read; while ((read = input.Read(buffer, 0, buffer.Length)) > 0) sha.AppendData(buffer, 0, read);
+                    }
+                    if (Convert.ToHexString(sha.GetHashAndReset()) != whole) throw new IOException("The archive's volumes do not match the verified archive.");
+                }
+            }
+            else pieces.Add((stage, archive));
+            if (pieces.Any(p => File.Exists(p.To) || Directory.Exists(p.To)) || !split && NameTaken(archive)) throw new IOException("Archive already exists.");
+            try
+            {
+                foreach (var (from, to) in pieces) { File.Move(from, to); published.Add(to); }
+            }
+            catch
+            {
+                // a set is published whole or not at all: volumes already named are this job's own, taken back
+                foreach (var made in published) try { File.Delete(made); } catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
+                published.Clear();
+                throw;
+            }
             if (job != null) { job.DoneFiles = job.TotalFiles; job.AddBytes(job.TotalBytes); }
+            return published.Select(System.IO.Path.GetFileName).ToList();
         }
         catch (SharpSevenZipException ex) { Check(job); throw new IOException("Native archive creation failed.", ex); }
-        finally { Directory.Delete(directory, recursive: true); }
+        finally { passwords.TryRemove(first, out _); Directory.Delete(directory, recursive: true); }
+    }
+    static void CopyBounded(Stream input, Stream output, long count)
+    {
+        var buffer = new byte[1 << 20];
+        while (count > 0)
+        {
+            int read = input.Read(buffer, 0, (int)Math.Min(buffer.Length, count));
+            if (read == 0) throw new IOException("The archive ended before its last volume.");
+            output.Write(buffer, 0, read); count -= read;
+        }
     }
 }

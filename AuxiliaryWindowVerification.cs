@@ -115,6 +115,21 @@ public partial class MainWindow
                 var create=new NewFileDialog(this);
                 try{await Render(create,"new-file",scale==1.5);}
                 finally{create.Close();}
+                var compress=new CompressDialog(this,Path.Combine(fixture,"rename-me"),new[]{Path.Combine(fixture,"rename-me.txt")});
+                try
+                {
+                    await Render(compress,"compress",scale==1.5);
+                    void Format(string format)=>compress.FormatBox.SelectedItem=compress.FormatBox.Items.Cast<ComboBoxItem>().Single(i=>(string)i.Tag==format);
+                    Format("tar");
+                    check(!compress.LevelBox.IsEnabled&&!compress.MethodBox.IsEnabled&&!compress.PasswordField.IsEnabled&&compress.PathBox.Text.EndsWith(".tar"),"ARCHIVE-12 TAR offers no level, method or password and renames the archive: "+theme+scale);
+                    Format("zip");compress.PasswordBox.Password="secret";
+                    check(compress.CipherBox.IsEnabled&&!compress.NamesBox.IsEnabled&&!compress.RecoveryBox.IsEnabled&&compress.PathBox.Text.EndsWith(".zip"),"ARCHIVE-12 ZIP offers AES-256 or ZipCrypto, without hidden names or a recovery record: "+theme+scale);
+                    Format("7z");
+                    check(compress.NamesBox.IsEnabled&&!compress.CipherBox.IsEnabled&&compress.DeleteBox.IsEnabled,"ARCHIVE-12 7z hides names and offers Delete after for files on disk: "+theme+scale);
+                    compress.RepeatBox.Password="other";compress.Accept();
+                    check(compress.Result==null&&compress.Problem.Visibility==Visibility.Visible,"ARCHIVE-12 passwords that don't match are refused in the dialog: "+theme+scale);
+                }
+                finally{compress.Close();}
                 var duplicates=new DuplicatesWindow(this,new[]{fixture});
                 try
                 {
