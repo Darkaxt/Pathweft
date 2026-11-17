@@ -27,7 +27,7 @@ internal static class HiddenTrialPresentation
             // A native sheet can activate on a never-switched private desktop.
             // That is not activation on the user's input desktop. Distinguish
             // the actual desktop objects rather than assuming one per station.
-            if(Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO")=="menus-shell"&&IsPrivateDesktop(thread))return;
+            if(Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO") is "menus-shell" or "space-ui"&&IsPrivateDesktop(thread))return;
             ++ForegroundViolations;
             ForegroundEvents.Add(new { phase = Phase, window = Application.Current.Windows.Cast<Window>().FirstOrDefault(w => new WindowInteropHelper(w).Handle == hwnd)?.GetType().Name, hwnd = hwnd.ToInt64(), nativeTime, callbackTime = Environment.TickCount, currentForeground = GetForegroundWindow().ToInt64() });
         }

@@ -97,7 +97,7 @@ public partial class MainWindow
         finally{Left.StatsChanged-=Observed;SpaceScan.BeforeEnumeration=null;}
         await Left.EndSpaceAsync();await Left.StopSizingAsync();
         await VerifyCommandStates21(root,check);
-        check(HiddenTrialPresentation.ForegroundViolations==0,"Analysis refresh verification does not activate the user's desktop");
+        check(HiddenTrialPresentation.ForegroundViolations==0,"Analysis refresh verification does not activate the user's desktop: "+JsonSerializer.Serialize(HiddenTrialPresentation.ForegroundEvents));
     }
 
     // Owner, 2026-11-17: clicking the analysis tab's own tab reset it, other tabs could not be visited without losing
@@ -107,6 +107,7 @@ public partial class MainWindow
         async Task Idle()=>await Dispatcher.InvokeAsync(()=>{},DispatcherPriority.ApplicationIdle);
         void ClickTab(int index)=>((Button)Left.TabStrip.Children[index]).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         int analysisTab=Left.ActiveTab;
+        HiddenTrialPresentation.Phase="space-tabs";
         ClickTab(analysisTab);await Idle();
         check(Left.SpaceAnalyzing&&ReferenceEquals(Left.Items.Single(entry=>entry.Name=="stable"),stable)&&ReferenceEquals(Left.Selected.Single(),stable),"Clicking the analysis tab's own tab changes nothing: the analysis, its rows and its selection stay");
         int measured=visits.Values.Sum();
@@ -119,6 +120,11 @@ public partial class MainWindow
             "Another tab shows its own folder listing, and switching back restores the same analysis rows, selection and totals without measuring again");
         Left.CloseTab(analysisTab+1);await Idle();
         check(Left.SpaceAnalyzing&&ReferenceEquals(Left.Selected.Single(),stable)&&Left.OpenTabs.Count==analysisTab+1,"Closing another tab keeps the analysis on screen");
+        // A real recycle and its undelete are shell operations that may activate
+        // a sheet of this process. Run them only on the owned never-switched
+        // private desktop (space-ui), never on the user's desktop.
+        if(!HiddenTrialPresentation.PrivateSpaceTrial)return;
+        HiddenTrialPresentation.Phase="space-delete";
 
         string doomed=Path.Combine(folder,"doomed.bin");
         var appeared=Sizes(Left,()=>Left.Items.Any(entry=>entry.Path==doomed)&&Left.FolderTotal==250&&!Left.SizesPending);
