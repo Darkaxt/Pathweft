@@ -1,6 +1,12 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.75 | 2026-11-17 | Space analysis stays with its tab
+
+- Clicking the tab you are on no longer leaves the space analysis.
+- Switch to other tabs, open new ones or close others: the analysis stays with its tab and keeps measuring. Come back and it is exactly as you left it, with the same folders expanded and the same selection.
+- Deleting in the analysis (Delete, Shift+Delete or the menu) removes the item and its space from the tree at once and selects the next one, so you can keep deleting.
+
 ## 1.1.74 | 2026-11-17 | Compress… with your own settings
 
 - Archive → Compress… opens a settings window first: where to save, ZIP, 7z, RAR or TAR, the compression level and method, dictionary and word size, solid blocks, CPU threads, and splitting into volumes.

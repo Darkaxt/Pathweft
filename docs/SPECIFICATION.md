@@ -1,6 +1,6 @@
 # Pathweft specification
 
-Version 1.33 - 2026-11-17. Owner: Darkaxt.
+Version 1.34 - 2026-11-17. Owner: Darkaxt.
 
 ### Read-only MCP expansion (S48)
 
@@ -2354,6 +2354,7 @@ Owner direction 2026-11-16 on issue #9 ("Please reach full parity with native be
 | TRANSFER-19 | Attributes never fail a copy: when the destination can't keep Read-only, Hidden, System or Archive (Google Drive dropped Archive), the file is copied and the job ends with an orange note naming what wasn't kept. |
 | BIN-01 | Recycle Bin: Restore and Delete permanently are enabled only with a selection; Empty Recycle Bin takes everything. |
 | SPACE-10 | The space analyzer waits at most 5 seconds for Everything's folder sizes, then measures on disk, so a slow index never leaves it pending. |
+| SPACE-11 | Owner report 2026-11-17: clicking the analysis tab's own tab reset it to the folder listing, other tabs could not be visited without losing the analysis, and Delete (key or menu) on a tree row seemed to do nothing. As in Explorer, clicking the tab on screen changes nothing. Switching to another tab (or opening, closing or moving other tabs) keeps the analysis with its tab: its measurement continues in the background, folder sizing waits for it, and returning shows the same rows, expansion, selection and scroll without measuring again. Closing the tab ends it. Changes made while the tab is in the background are picked up by F5. Deleting a row through Pathweft (Delete, Shift+Delete, the menu) removes it and its size, files and folders from every folder above it at once, selects the row that moved into its place, then re-measures that branch quietly. Verify with the real tab buttons and context-menu Delete on an owned fixture. |
 
 ### Selected-folder content indexing (S19)
 

@@ -60,9 +60,18 @@ public partial class PaneView
         internal HashSet<string> Dirty=new(StringComparer.OrdinalIgnoreCase);
         internal HashSet<string> ExpandedAfterAccess=new(StringComparer.OrdinalIgnoreCase);
         internal HashSet<string> SelectionAfterAccess=new(StringComparer.OrdinalIgnoreCase);
+        // While its tab is in the background: what was selected and where the tree was scrolled.
+        internal string[] ParkedSelection=[];
+        internal double ParkedOffset;
     }
     SpaceView space;
+    // Analyses of tabs in the background, by folder. Their measurement keeps running; the tree comes back
+    // as it was when the tab is shown again (Explorer-like tabs: switching never discards a tab's work).
+    readonly Dictionary<string,SpaceView> parkedSpaces=new(StringComparer.OrdinalIgnoreCase);
+    readonly List<Task> discardedSpaces=[];
     internal bool SpaceAnalyzing=>space!=null;
+    /// An analysis is on screen or still measuring in a background tab: folder sizing waits for it.
+    internal bool SpaceWorking=>space!=null||parkedSpaces.Values.Any(parked=>!parked.Work.IsCompleted);
     internal bool SpaceCountsKnown=>space!=null&&!space.Nodes.Values.Any(row=>row.State==SpaceState.Indexed);
     internal bool CanAnalyzeSpace=>space!=null||Listed&&itemsFolder==Dir&&!IsWidget&&!InSearch&&!IsVirtual(Dir)&&!IsServer(Dir)&&Path.IsPathFullyQualified(Dir);
     internal Task SpaceCompletion=>ObserveSpaceCompletion();
@@ -80,27 +89,15 @@ public partial class PaneView
     internal async Task ToggleSpaceAsync()
     {
         if(space!=null){await EndSpaceAsync();return;}
+        if(ResumeSpace())return; // this folder's analysis is still kept from another tab
         if(!CanAnalyzeSpace)return;
         var sizingStopped=StopSizingAsync();
-        var scroll=FindScroller(List);
-        var current=new SpaceView{Root=Dir,SavedItems=items,SavedView=view,Mode=Mode,
-            Columns=((GridView)details).Columns.ToArray(),Widths=((GridView)details).Columns.Select(c=>c.Width).ToArray(),
-            Selected=Selected.Select(e=>e.Path).ToArray(),Vertical=scroll?.VerticalOffset??0,Horizontal=scroll?.HorizontalOffset??0};
+        var current=new SpaceView{Root=Dir};SaveListing(current);
         ++navVersion;prefetching?.Cancel();space=current;
         StopColumns();icons?.Cancel();thumbs?.Cancel();
         current.Nodes[current.Root]=new SpaceEntry{Path=current.Root,Name=Path.GetFileName(current.Root),IsDir=true,Depth=-1,Expanded=true,State=SpaceState.Pending};
         SpaceModeChanged?.Invoke();
-        List.ItemsSource=null;List.View=null;List.ClearValue(ItemsControl.ItemTemplateProperty);List.ClearValue(ItemsControl.ItemsPanelProperty);List.ClearValue(ItemsControl.ItemContainerStyleProperty);
-        var grid=new GridView{AllowsColumnReorder=false};
-        spaceNameColumn=new GridViewColumn{Header="Name",CellTemplate=(DataTemplate)FindResource("SpaceNameCell"),Width=Math.Max(170,List.ActualWidth-360)};
-        grid.Columns.Add(spaceNameColumn);
-        grid.Columns.Add(new GridViewColumn{Header="Space used",CellTemplate=(DataTemplate)FindResource("SpaceSizeCell"),Width=100});
-        grid.Columns.Add(new GridViewColumn{Header="Of this folder",CellTemplate=(DataTemplate)FindResource("SpaceUsageCell"),Width=130});
-        grid.Columns.Add(new GridViewColumn{Header="Status",CellTemplate=(DataTemplate)FindResource("SpaceStatusCell"),Width=115});
-        List.View=grid;ScrollViewer.SetVerticalScrollBarVisibility(List,ScrollBarVisibility.Auto);ScrollViewer.SetHorizontalScrollBarVisibility(List,ScrollBarVisibility.Auto);
-        items=current.Visible;view=new ListCollectionView((IList)current.Visible);List.ItemsSource=view;
-        NameEdge.Visibility=Visibility.Collapsed;ViewButton.ToolTip="Space analysis · toggle Analyze space to restore the previous view";
-        List.PreviewKeyDown+=SpaceKey;List.Focus();UpdateSpaceFooter();StatsChanged?.Invoke();
+        ShowSpaceGrid(current);
         // Presentation throttle only; terminal state is drained explicitly on
         // actual worker completion. It never decides cancellation/completion.
         current.Present=new DispatcherTimer(DispatcherPriority.Background){Interval=TimeSpan.FromMilliseconds(150)};
@@ -120,9 +117,109 @@ public partial class PaneView
             catch(OperationCanceledException)when(current.Cancellation.IsCancellationRequested){}
             catch(Exception error)
             {
-                if(space==current&&!current.Stopping){var root=current.Nodes[current.Root];root.State=SpaceState.Failed;root.Failure=error.Message;Error?.Invoke("Space analysis: "+error.Message);}
+                if(!current.Stopping){var root=current.Nodes[current.Root];root.State=SpaceState.Failed;root.Failure=error.Message;if(space==current)Error?.Invoke("Space analysis: "+error.Message);}
             }
             finally{current.Starting=false;if(space==current&&!current.Stopping){UpdateSpaceFooter();StatsChanged?.Invoke();}}
+        }
+    }
+    void SaveListing(SpaceView current)
+    {
+        var scroll=FindScroller(List);
+        current.SavedItems=items;current.SavedView=view;current.Mode=Mode;
+        current.Columns=((GridView)details).Columns.ToArray();current.Widths=((GridView)details).Columns.Select(c=>c.Width).ToArray();
+        current.Selected=Selected.Select(e=>e.Path).ToArray();current.Vertical=scroll?.VerticalOffset??0;current.Horizontal=scroll?.HorizontalOffset??0;
+    }
+    void ShowSpaceGrid(SpaceView current)
+    {
+        List.ItemsSource=null;List.View=null;List.ClearValue(ItemsControl.ItemTemplateProperty);List.ClearValue(ItemsControl.ItemsPanelProperty);List.ClearValue(ItemsControl.ItemContainerStyleProperty);
+        var grid=new GridView{AllowsColumnReorder=false};
+        spaceNameColumn=new GridViewColumn{Header="Name",CellTemplate=(DataTemplate)FindResource("SpaceNameCell"),Width=Math.Max(170,List.ActualWidth-360)};
+        grid.Columns.Add(spaceNameColumn);
+        grid.Columns.Add(new GridViewColumn{Header="Space used",CellTemplate=(DataTemplate)FindResource("SpaceSizeCell"),Width=100});
+        grid.Columns.Add(new GridViewColumn{Header="Of this folder",CellTemplate=(DataTemplate)FindResource("SpaceUsageCell"),Width=130});
+        grid.Columns.Add(new GridViewColumn{Header="Status",CellTemplate=(DataTemplate)FindResource("SpaceStatusCell"),Width=115});
+        List.View=grid;ScrollViewer.SetVerticalScrollBarVisibility(List,ScrollBarVisibility.Auto);ScrollViewer.SetHorizontalScrollBarVisibility(List,ScrollBarVisibility.Auto);
+        items=current.Visible;view=new ListCollectionView((IList)current.Visible);List.ItemsSource=view;
+        NameEdge.Visibility=Visibility.Collapsed;ViewButton.ToolTip="Space analysis · toggle Analyze space to restore the previous view";
+        List.PreviewKeyDown+=SpaceKey;List.Focus();UpdateSpaceFooter();StatsChanged?.Invoke();
+    }
+    /// The tab on screen is about to change: its analysis goes to the background with its tree, selection
+    /// and scroll, and the pane shows the folder listing again so the next tab can be navigated normally.
+    void ParkSpace()
+    {
+        if(space is not {} current)return;
+        current.ParkedOffset=FindScroller(List)?.VerticalOffset??0;
+        current.ParkedSelection=Selected.Select(e=>e.Path).ToArray();
+        if(parkedSpaces.Remove(current.Root,out var older)&&older!=current)DiscardSpace(older); // two tabs of one folder: the newer analysis is kept
+        parkedSpaces[current.Root]=current;
+        RestoreListing(current);
+        _=ReportParkedIdle(current);
+    }
+    /// After a tab was shown: its kept analysis, if any, takes the pane again exactly as it was left.
+    bool ResumeSpace()
+    {
+        if(space!=null||InSearch||!parkedSpaces.Remove(Dir,out var current))return false;
+        // The listing to return to when the analysis ends: the one just shown, or the folder's own from when
+        // its analysis began. Either way it is re-read then, as the folder may have changed meanwhile.
+        if(string.Equals(itemsFolder,Dir,StringComparison.OrdinalIgnoreCase))SaveListing(current);
+        else itemsFolder=Dir;
+        current.Changed=true;
+        ++navVersion;prefetching?.Cancel();accessReading?.Cancel();loadingListing=-1;UpdateAddressLoading();
+        space=current;sizing?.Cancel();StopColumns();icons?.Cancel();thumbs?.Cancel();
+        current.SelectionAfterAccess.UnionWith(current.ParkedSelection);current.SelectFirst=false;
+        ShowSpaceGrid(current);SpaceModeChanged?.Invoke();
+        DrainSpace(current);current.Present?.Start();
+        List.UpdateLayout();FindScroller(List)?.ScrollToVerticalOffset(current.ParkedOffset);FocusSelectedRow();
+        return true;
+    }
+    /// A background analysis that finished measuring lets folder sizing run again.
+    async Task ReportParkedIdle(SpaceView current)
+    {
+        for(;;){var work=current.Work;try{await work;}catch(Exception){}if(ReferenceEquals(work,current.Work))break;}
+        if(space!=current)SpaceModeChanged?.Invoke();
+    }
+    void DiscardSpace(SpaceView current)
+    {
+        current.Stopping=true;current.Cancellation.Cancel();current.Present?.Stop();
+        discardedSpaces.RemoveAll(done=>done.IsCompleted);discardedSpaces.Add(Finish());
+        async Task Finish(){try{await current.Work;}catch(Exception){}current.Publication?.Abort();current.Cancellation.Dispose();}
+    }
+    void DiscardParkedSpace(string root){if(parkedSpaces.Remove(root,out var parked)){DiscardSpace(parked);SpaceModeChanged?.Invoke();}}
+    /// A closed tab (or one dragged to the other pane) takes its kept analysis with it.
+    void DropOrphanedSpaces()
+    {
+        foreach(var root in parkedSpaces.Keys.Where(root=>!tabs.Any(path=>path.Equals(root,StringComparison.OrdinalIgnoreCase))).ToArray())DiscardParkedSpace(root);
+    }
+    /// Deleted (to the Recycle Bin or for good) through Pathweft: the rows leave the analysis now and their
+    /// space leaves every folder above them, as Explorer drops a deleted item at once. The row that moves up
+    /// into the place of the deleted one is selected, so Delete can be pressed again. The branch is then
+    /// re-measured quietly in the background to correct the totals.
+    internal void SpaceRemoved(IReadOnlyCollection<string> paths)
+    {
+        var gone=paths.Where(path=>!File.Exists(path)&&!Directory.Exists(path)).ToArray();
+        if(gone.Length==0)return;
+        foreach(var current in parkedSpaces.Values.Append(space).Where(view=>view!=null).ToArray())
+        {
+            int at=space==current?Selected.Select(entry=>current.Visible.IndexOf(entry)).Where(i=>i>=0).DefaultIfEmpty(-1).Min():-1;
+            bool removed=false;
+            foreach(var path in gone)
+            {
+                if(path.Equals(current.Root,StringComparison.OrdinalIgnoreCase)||!current.Nodes.TryGetValue(path,out var row))continue;
+                long bytes=Math.Max(0,row.DisplaySize),files=row.IsDir?row.Files:1,folders=row.IsDir?row.Folders+1:0;
+                lock(current.Mailbox)foreach(var key in current.Pending.Keys.Where(key=>SizeCache.Within(key,path)).ToArray())current.Pending.Remove(key);
+                foreach(var key in current.Nodes.Keys.Where(key=>SizeCache.Within(key,path)).ToArray())current.Nodes.Remove(key);
+                for(var parent=row.ParentPath;parent!=null&&current.Nodes.TryGetValue(parent,out var above);parent=above.ParentPath)
+                {
+                    if(above.DisplaySize>=0)above.Size=Math.Max(0,above.DisplaySize-bytes);
+                    above.Files=Math.Max(0,above.Files-files);above.Folders=Math.Max(0,above.Folders-folders);above.Updated();
+                }
+                if(space==current)dirtySizes.Add(path);
+                removed=true;
+            }
+            if(!removed||space!=current)continue;
+            RebuildSpace(current);
+            if(Selected.Count==0&&at>=0&&current.Visible.Count>0)
+            {List.SelectedItem=current.Visible[Math.Min(at,current.Visible.Count-1)];if(List.IsKeyboardFocusWithin)FocusSelectedRow();}
         }
     }
     async Task RunSpaceAsync(SpaceView current,bool preferIndex)
@@ -144,7 +241,7 @@ public partial class PaneView
             current.SelectionAfterAccess.Clear();
         }
         catch(OperationCanceledException)when(current.Cancellation.IsCancellationRequested){}
-        catch(Exception error){if(space==current&&!current.Stopping){var root=current.Nodes[current.Root];root.State=SpaceState.Failed;root.Failure=error.Message;UpdateSpaceFooter();Error?.Invoke("Space analysis: "+error.Message);}}
+        catch(Exception error){if(!current.Stopping){var root=current.Nodes[current.Root];root.State=SpaceState.Failed;root.Failure=error.Message;if(space==current){UpdateSpaceFooter();Error?.Invoke("Space analysis: "+error.Message);}}}
     }
     Task ScanWithAccess(SpaceView current,string path,bool preferIndex,Action<SpaceUpdate> publish)=>current.Administrator
         ? MaintenanceClient.ScanSpace(path,publish,current.Cancellation.Token)
@@ -161,7 +258,7 @@ public partial class PaneView
     {
         Dictionary<string,SpaceUpdate> updates;
         lock(current.Mailbox){updates=current.Pending;current.Pending=new(StringComparer.OrdinalIgnoreCase);current.Publication=null;}
-        if(space!=current||current.Stopping)return;
+        if(current.Stopping)return; // a background tab's analysis keeps its measurements; only the screen waits
         foreach(var update in updates.Values)
         {
             if(!current.Nodes.TryGetValue(update.Path,out var row))
@@ -228,8 +325,8 @@ public partial class PaneView
             ? (await MaintenanceClient.ReadFolder(path,token)).Select(row=>new SpaceMember(row.Path,row.Name,(row.Attributes&FileAttributes.Directory)!=0,(row.Attributes&FileAttributes.ReparsePoint)!=0,row.Bytes,row.Modified.ToUniversalTime())).ToList()
             : await Task.Run(()=>SpaceScan.Children(path,token),token);}
         catch(Exception error)when(error is System.ComponentModel.Win32Exception or IOException or UnauthorizedAccessException)
-        {if(space==current&&current.Nodes.TryGetValue(path,out var failed)){failed.State=IsAccessDenied(error)?SpaceState.Denied:SpaceState.Failed;failed.Failure=error.Message;failed.Updated();RebuildSpace(current);}return false;}
-        token.ThrowIfCancellationRequested();if(space!=current||current.Stopping)return false;DrainSpace(current);
+        {if(!current.Stopping&&current.Nodes.TryGetValue(path,out var failed)){failed.State=IsAccessDenied(error)?SpaceState.Denied:SpaceState.Failed;failed.Failure=error.Message;failed.Updated();RebuildSpace(current);}return false;}
+        token.ThrowIfCancellationRequested();if(current.Stopping)return false;DrainSpace(current);
         var present=members.Select(member=>member.Path).ToHashSet(StringComparer.OrdinalIgnoreCase);
         foreach(var absent in current.Nodes.Values.Where(row=>row.ParentPath==path&&!present.Contains(row.Path)).ToArray())
             foreach(var key in current.Nodes.Keys.Where(key=>SizeCache.Within(key,absent.Path)).ToArray())current.Nodes.Remove(key);
@@ -311,14 +408,19 @@ public partial class PaneView
         current.Stopping=true;current.Cancellation.Cancel();
         try{await current.Work;}catch(OperationCanceledException)when(current.Cancellation.IsCancellationRequested){}
         if(space!=current)return;
-        current.Present?.Stop();current.Publication?.Abort();current.Cancellation.Dispose();space=null;List.PreviewKeyDown-=SpaceKey;
+        current.Publication?.Abort();current.Cancellation.Dispose();
+        RestoreListing(current);StartSizing();
+        if(current.Changed)Refresh();
+    }
+    void RestoreListing(SpaceView current)
+    {
+        current.Present?.Stop();space=null;List.PreviewKeyDown-=SpaceKey;
         SpaceActivity.IsIndeterminate=false;SpaceActivity.Visibility=Visibility.Collapsed;
         List.ItemsSource=null;List.View=null;items=current.SavedItems;view=current.SavedView;SetView(current.Mode);List.ItemsSource=view;TrackColumns();
         var grid=(GridView)details;grid.Columns.Clear();for(int i=0;i<current.Columns.Length;i++){grid.Columns.Add(current.Columns[i]);current.Columns[i].Width=current.Widths[i];}
         bool previous=bulkSelect;bulkSelect=true;try{SetSelection(entry=>current.Selected.Contains(entry.Path,StringComparer.OrdinalIgnoreCase));}finally{bulkSelect=previous;}
         List.UpdateLayout();var scroll=FindScroller(List);scroll?.ScrollToVerticalOffset(current.Vertical);scroll?.ScrollToHorizontalOffset(current.Horizontal);
-        UpdateFooter();StatsChanged?.Invoke();SpaceModeChanged?.Invoke();StartSizing();
-        if(current.Changed)Refresh();
+        UpdateFooter();StatsChanged?.Invoke();SpaceModeChanged?.Invoke();
     }
     void AfterSpace(Action action)
     {
@@ -353,7 +455,7 @@ public partial class PaneView
                 // Finish the original finite pass. New notifications coalesce
                 // into this owner instead of cancelling/restarting the root.
                 await previous;
-                while(space==current&&!current.Stopping&&(current.FullRefresh||current.Dirty.Count>0))
+                while(!current.Stopping&&(current.FullRefresh||current.Dirty.Count>0))
                 {
                     bool full=current.FullRefresh;current.FullRefresh=false;
                     var dirty=current.Dirty.ToArray();current.Dirty.Clear();
@@ -393,7 +495,7 @@ public partial class PaneView
             foreach(var row in current.Nodes.Values.Where(row=>row.Expanded&&!row.ChildrenRead&&SizeCache.Within(row.Path,branch.Path)).ToArray())
                 await ReadSpaceChildren(current,row.Path,preferIndex:false,measureMissing:false);
         }
-        token.ThrowIfCancellationRequested();if(space!=current||current.Stopping)return;
+        token.ThrowIfCancellationRequested();if(current.Stopping)return;
         var children=current.Nodes.Values.Where(row=>row.ParentPath==current.Root).ToArray();
         var directories=children.Where(row=>row.IsDir).ToArray();var files=children.Where(row=>!row.IsDir&&row.State!=SpaceState.Reparse).ToArray();
         var root=current.Nodes[current.Root];
@@ -408,5 +510,10 @@ public partial class PaneView
             root.State==SpaceState.Changed?"Contents changed during measurement; updating the observed total.":"";
         RebuildSpace(current);
     }
-    internal async Task DrainSpaceAndSizesAsync(){await EndSpaceAsync();await StopSizingAsync();await spaceTransition;}
+    internal async Task DrainSpaceAndSizesAsync()
+    {
+        await EndSpaceAsync();
+        foreach(var root in parkedSpaces.Keys.ToArray())DiscardParkedSpace(root);
+        await Task.WhenAll(discardedSpaces);await StopSizingAsync();await spaceTransition;
+    }
 }

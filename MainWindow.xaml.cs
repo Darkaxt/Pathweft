@@ -77,7 +77,7 @@ public partial class MainWindow : Window
             p.SpaceAdmission=()=>Task.WhenAll(Left.StopSizingAsync(),Right.StopSizingAsync());
             p.SpaceModeChanged+=()=>
             {
-                bool analyzing=Left.SpaceAnalyzing||Right.SpaceAnalyzing;
+                bool analyzing=Left.SpaceWorking||Right.SpaceWorking;
                 Left.SetSizingSuspended(analyzing);Right.SetSizingSuspended(analyzing);UpdateCommandStates();
             };
             p.StatsChanged += () => { if (p == active) { UpdateStats(); PreviewFollow(); } FilesShown(); };
@@ -1605,6 +1605,7 @@ public partial class MainWindow : Window
             Dispatcher.BeginInvoke(() =>
             {
                 if (error != null) MessageBox.Show(this, error, "Delete");
+                Left.SpaceRemoved(paths); Right.SpaceRemoved(paths); // a space analysis drops what was deleted at once
                 Left.Refresh(); Right.Refresh();
                 RefreshDrives(); UpdateStats();
                 done?.Invoke();

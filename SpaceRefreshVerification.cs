@@ -92,11 +92,62 @@ public partial class MainWindow
             check(Left.FolderTotal==200&&ReferenceEquals(Left.Items.Single(entry=>entry.Name=="stable"),unrelated)&&ReferenceEquals(Left.Selected.Single(),unrelated),"Incremental shrink/rename/removal reaches exact totals and preserves unaffected selection/row identity");
             Left.Refresh(force:true);await Left.SpaceCompletion;
             check(Left.FolderTotal==200&&Left.SpaceSummary.Files==1&&Left.SpaceSummary.Folders==2,"Explicit refresh still performs a complete exact metadata measurement");
+            await VerifySpaceTabsAndDelete(root,folder,unrelated,visits,check);
         }
         finally{Left.StatsChanged-=Observed;SpaceScan.BeforeEnumeration=null;}
         await Left.EndSpaceAsync();await Left.StopSizingAsync();
         await VerifyCommandStates21(root,check);
         check(HiddenTrialPresentation.ForegroundViolations==0,"Analysis refresh verification does not activate the user's desktop");
+    }
+
+    // Owner, 2026-11-17: clicking the analysis tab's own tab reset it, other tabs could not be visited without losing
+    // it, and Delete (key or menu) on a tree row seemed to do nothing because the deleted row stayed in the tree.
+    async Task VerifySpaceTabsAndDelete(string root,string folder,SpaceEntry stable,ConcurrentDictionary<string,int> visits,Action<bool,string> check)
+    {
+        async Task Idle()=>await Dispatcher.InvokeAsync(()=>{},DispatcherPriority.ApplicationIdle);
+        void ClickTab(int index)=>((Button)Left.TabStrip.Children[index]).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        int analysisTab=Left.ActiveTab;
+        ClickTab(analysisTab);await Idle();
+        check(Left.SpaceAnalyzing&&ReferenceEquals(Left.Items.Single(entry=>entry.Name=="stable"),stable)&&ReferenceEquals(Left.Selected.Single(),stable),"Clicking the analysis tab's own tab changes nothing: the analysis, its rows and its selection stay");
+        int measured=visits.Values.Sum();
+        Left.OpenInBackgroundTab(root);await Idle();
+        ClickTab(analysisTab+1);await Idle();
+        bool otherShown=!Left.SpaceAnalyzing&&Left.Dir.Equals(root,StringComparison.OrdinalIgnoreCase)&&Left.Items.Any(entry=>entry.Name=="watched tree")&&!(Left.ListForVerification.View is GridView grid&&grid.Columns.Any(column=>column.Header as string=="Space used"));
+        bool otherCommand=AnalyzeSpaceCommand.Tag==null;
+        ClickTab(analysisTab);await Idle();
+        check(otherShown&&otherCommand&&Left.SpaceAnalyzing&&AnalyzeSpaceCommand.Tag as string=="on"&&ReferenceEquals(Left.Items.Single(entry=>entry.Name=="stable"),stable)&&ReferenceEquals(Left.Selected.Single(),stable)&&Left.FolderTotal==200&&visits.Values.Sum()==measured,
+            "Another tab shows its own folder listing, and switching back restores the same analysis rows, selection and totals without measuring again");
+        Left.CloseTab(analysisTab+1);await Idle();
+        check(Left.SpaceAnalyzing&&ReferenceEquals(Left.Selected.Single(),stable)&&Left.OpenTabs.Count==analysisTab+1,"Closing another tab keeps the analysis on screen");
+
+        string doomed=Path.Combine(folder,"doomed.bin");
+        var appeared=Sizes(Left,()=>Left.Items.Any(entry=>entry.Path==doomed)&&Left.FolderTotal==250&&!Left.SizesPending);
+        await Task.Run(()=>File.WriteAllBytes(doomed,new byte[50]));await appeared;await Left.SpaceCompletion;
+        byte[] hash=System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(doomed));
+        SetActive(Left);Left.ListForVerification.SelectedItem=Left.Items.Single(entry=>entry.Path==doomed);
+        var recycled=new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);bool removedAtOnce=false;
+        RecycleFinishedForVerification=(paths,error)=>
+        {
+            if(!paths.SequenceEqual(new[]{doomed}))return;
+            removedAtOnce=Left.Items.All(entry=>entry.Path!=doomed)&&Left.FolderTotal==200&&ReferenceEquals(Left.Selected.SingleOrDefault(),stable);
+            recycled.TrySetResult(error);
+        };
+        try
+        {
+            ContextMenu menu;captureS4Menu=true;try{Left.S4ContextAction();menu=archiveMenuForVerification;}finally{captureS4Menu=false;}
+            var command=MenuCommands(menu).Single(item=>item.Header as string=="Delete");
+            check(command.IsEnabled,"An analysis row's context menu offers Delete");
+            command.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
+            string error=await recycled.Task;
+            check(error==null&&!File.Exists(doomed)&&removedAtOnce,"Delete on an analysis row recycles it, removes the row and its space at once, and selects the row that took its place");
+        }
+        finally{RecycleFinishedForVerification=null;}
+        await Left.SpaceCompletion;await Idle();
+        check(Left.SpaceAnalyzing&&Left.FolderTotal==200&&Left.Items.All(entry=>entry.Path!=doomed),"The quiet re-measurement after a delete agrees with the total shown at once");
+        var restored=Sizes(Left,()=>Left.Items.Any(entry=>entry.Path==doomed)&&Left.FolderTotal==250&&!Left.SizesPending);
+        await RestoreRecycledMenuFixture(doomed,hash);await restored;await Left.SpaceCompletion;
+        var removed=Sizes(Left,()=>Left.Items.All(entry=>entry.Path!=doomed)&&Left.FolderTotal==200&&!Left.SizesPending);
+        await Task.Run(()=>File.Delete(doomed));await removed;await Left.SpaceCompletion;
     }
 
     async Task VerifyCommandStates21(string root,Action<bool,string> check)

@@ -1696,6 +1696,7 @@ public partial class PaneView : UserControl
         var signature = string.Join("|", tabs) + "@" + tab + "#" + tabs.Count + "^" + string.Join("", pins.Select(p => p ? 1 : 0));
         if (signature == tabsShown) return;
         tabsShown = signature;
+        DropOrphanedSpaces();
         TabStrip.Children.Clear();
         for (int i = 0; i < tabs.Count; i++)
         {
@@ -1814,6 +1815,7 @@ public partial class PaneView : UserControl
         {
             if (drag.Pane.IsPinned(drag.Path)) return; // a pinned tab stays where it was pinned
             drag.Pane.TakeTabAway(drag.Path);
+            ParkSpace();
             pins.Insert(Math.Clamp(at, 0, tabs.Count), false);
             tabs.Insert(Math.Clamp(at, 0, tabs.Count), drag.Path);
             tab = at;
@@ -1829,9 +1831,11 @@ public partial class PaneView : UserControl
         int i = tabs.IndexOf(path);
         if (i < 0) return;
         if (tabs.Count == 1) { tabs[0] = System.IO.Path.GetPathRoot(path) ?? path; Navigate(tabs[0], record: false); return; }
+        ParkSpace();
         tabs.RemoveAt(i); pins.RemoveAt(i);
         if (i < tab || tab == tabs.Count) tab--;
         Navigate(Dir, record: false);
+        ResumeSpace();
     }
 
     bool IsPinned(string path) => tabs.IndexOf(path) is >= 0 and var i && pins[i];
@@ -1917,7 +1921,7 @@ public partial class PaneView : UserControl
         StripShape.Data = shape;
     }
 
-    public void NewTab() { tabs.Insert(tab + 1, Dir); pins.Insert(tab + 1, false); tab++; Navigate(Dir, record: false); }
+    public void NewTab() { ParkSpace(); tabs.Insert(tab + 1, Dir); pins.Insert(tab + 1, false); tab++; Navigate(Dir, record: false); }
 
     /// What closing the last tab does instead of nothing: the second pane hides itself (Settings → "Close the second pane
     /// with its last tab"). The tab stays, so the pane comes back as it was. Null: the last tab can't be closed.
@@ -1934,13 +1938,20 @@ public partial class PaneView : UserControl
         if (pins[idx]) return;
         if (tabs.Count == 1) { closeLast?.Invoke(); return; }
         TabClosed?.Invoke(tabs[idx]);
+        ParkSpace(); // closing another tab keeps this one's analysis
         tabs.RemoveAt(idx); pins.RemoveAt(idx);
         if (idx < tab || tab == tabs.Count) tab--;
         Navigate(Dir, record: false);
         List.Focus();
-        RecallTab(focus: true);
+        if (!ResumeSpace()) RecallTab(focus: true);
     }
-    public void SwitchTab(int i) { RememberTab(); tab = (i + tabs.Count) % tabs.Count; back.Clear(); fwd.Clear(); Navigate(Dir, record: false); List.Focus(); RecallTab(focus: true); }
+    public void SwitchTab(int i)
+    {
+        i = (i + tabs.Count) % tabs.Count;
+        if (i == tab && !InSearch) return; // as in Explorer, clicking the tab on screen changes nothing
+        ParkSpace(); RememberTab(); tab = i; back.Clear(); fwd.Clear(); Navigate(Dir, record: false); List.Focus();
+        if (!ResumeSpace()) RecallTab(focus: true);
+    }
     public void NextTab(int step) => SwitchTab(tab + step);
 
     /// <summary>Going up to a folder that holds the one on screen, by any road (Up, Back, a breadcrumb, a typed
@@ -1967,7 +1978,14 @@ public partial class PaneView : UserControl
 
     /// The tab showing `path`, or -1. Opening a folder from outside switches to it instead of adding a duplicate.
     public int FindTab(string path) => tabs.FindIndex(t => t.TrimEnd('\\').Equals(path.TrimEnd('\\'), StringComparison.OrdinalIgnoreCase));
-    public void ShowTab(int i, string select = null) { RememberTab(); tab = i; back.Clear(); fwd.Clear(); Navigate(Dir, select, record: false); if (select == null) RecallTab(focus: List.IsKeyboardFocusWithin); }
+    public void ShowTab(int i, string select = null)
+    {
+        if (i == tab && SpaceAnalyzing && select == null) return;
+        ParkSpace(); RememberTab(); tab = i; back.Clear(); fwd.Clear();
+        if (select != null) DiscardParkedSpace(Dir); // an item is to be shown in the folder's listing
+        Navigate(Dir, select, record: false);
+        if (!ResumeSpace() && select == null) RecallTab(focus: List.IsKeyboardFocusWithin);
+    }
 
     /// Room kept free at the right of the tab row for the window's own buttons, which sit over it.
     /// Part of the tab row, so it still moves the window like the rest of the row's empty space.
@@ -2012,8 +2030,10 @@ public partial class PaneView : UserControl
     {
         for (int j = tabs.Count - 1; j >= 0; j--)
             if (j != keep && !pins[j]) { TabClosed?.Invoke(tabs[j]); tabs.RemoveAt(j); pins.RemoveAt(j); if (j < keep) keep--; }
+        ParkSpace();
         tab = keep;
         Navigate(Dir, record: false);
+        ResumeSpace();
         List.Focus();
     }
 
