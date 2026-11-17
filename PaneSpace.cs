@@ -200,26 +200,28 @@ public partial class PaneView
         if(gone.Length==0)return;
         foreach(var current in parkedSpaces.Values.Append(space).Where(view=>view!=null).ToArray())
         {
-            int at=space==current?Selected.Select(entry=>current.Visible.IndexOf(entry)).Where(i=>i>=0).DefaultIfEmpty(-1).Min():-1;
             bool removed=false;
             foreach(var path in gone)
             {
+                if(space==current&&!path.Equals(current.Root,StringComparison.OrdinalIgnoreCase)&&SizeCache.Within(path,current.Root))dirtySizes.Add(path);
                 if(path.Equals(current.Root,StringComparison.OrdinalIgnoreCase)||!current.Nodes.TryGetValue(path,out var row))continue;
-                long bytes=Math.Max(0,row.DisplaySize),files=row.IsDir?row.Files:1,folders=row.IsDir?row.Folders+1:0;
-                lock(current.Mailbox)foreach(var key in current.Pending.Keys.Where(key=>SizeCache.Within(key,path)).ToArray())current.Pending.Remove(key);
-                foreach(var key in current.Nodes.Keys.Where(key=>SizeCache.Within(key,path)).ToArray())current.Nodes.Remove(key);
-                for(var parent=row.ParentPath;parent!=null&&current.Nodes.TryGetValue(parent,out var above);parent=above.ParentPath)
-                {
-                    if(above.DisplaySize>=0)above.Size=Math.Max(0,above.DisplaySize-bytes);
-                    above.Files=Math.Max(0,above.Files-files);above.Folders=Math.Max(0,above.Folders-folders);above.Updated();
-                }
-                if(space==current)dirtySizes.Add(path);
-                removed=true;
+                RemoveSpaceRow(current,row);removed=true;
             }
-            if(!removed||space!=current)continue;
-            RebuildSpace(current);
-            if(Selected.Count==0&&at>=0&&current.Visible.Count>0)
-            {List.SelectedItem=current.Visible[Math.Min(at,current.Visible.Count-1)];if(List.IsKeyboardFocusWithin)FocusSelectedRow();}
+            if(removed)RebuildSpace(current);
+        }
+    }
+    /// A row that no longer exists leaves the tree with everything under it, and its size, files and folders
+    /// leave every folder above it now, not when the next measurement of the branch completes.
+    void RemoveSpaceRow(SpaceView current,SpaceEntry row)
+    {
+        if(!current.Nodes.ContainsKey(row.Path))return;
+        long bytes=Math.Max(0,row.DisplaySize),files=row.IsDir?row.Files:1,folders=row.IsDir?row.Folders+1:0;
+        lock(current.Mailbox)foreach(var key in current.Pending.Keys.Where(key=>SizeCache.Within(key,row.Path)).ToArray())current.Pending.Remove(key);
+        foreach(var key in current.Nodes.Keys.Where(key=>SizeCache.Within(key,row.Path)).ToArray())current.Nodes.Remove(key);
+        for(var parent=row.ParentPath;parent!=null&&current.Nodes.TryGetValue(parent,out var above);parent=above.ParentPath)
+        {
+            if(above.DisplaySize>=0)above.Size=Math.Max(0,above.DisplaySize-bytes);
+            above.Files=Math.Max(0,above.Files-files);above.Folders=Math.Max(0,above.Folders-folders);above.Updated();
         }
     }
     async Task RunSpaceAsync(SpaceView current,bool preferIndex)
@@ -281,6 +283,10 @@ public partial class PaneView
         var anchor=current.Visible.FirstOrDefault(e=>List.ItemContainerGenerator.ContainerFromItem(e) is FrameworkElement f&&f.TranslatePoint(new Point(),List).Y>=0);
         double anchorY=anchor!=null&&List.ItemContainerGenerator.ContainerFromItem(anchor) is FrameworkElement f?f.TranslatePoint(new Point(),List).Y:0;
         var selected=Selected.Select(e=>e.Path).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        // Selected rows that were deleted: the row that moves into their place is selected, as in Explorer
+        // (rows merely hidden by a collapse keep the old rule).
+        var lost=Selected.OfType<SpaceEntry>().ToArray();
+        int replace=lost.Length>0&&lost.All(row=>!current.Nodes.ContainsKey(row.Path))?lost.Select(row=>current.Visible.IndexOf(row)).Where(i=>i>=0).DefaultIfEmpty(-1).Min():-1;
         selected.UnionWith(current.SelectionAfterAccess);
         var children=current.Nodes.Values.Where(row=>row.ParentPath!=null).GroupBy(row=>row.ParentPath,StringComparer.OrdinalIgnoreCase).ToDictionary(group=>group.Key,group=>group.OrderByDescending(row=>row.DisplaySize).ThenBy(row=>row.Name,StringComparer.OrdinalIgnoreCase).ToArray(),StringComparer.OrdinalIgnoreCase);
         double total=Math.Max(0,current.Nodes[current.Root].DisplaySize);
@@ -308,6 +314,7 @@ public partial class PaneView
                 selected.Clear();selected.Add(current.Visible[0].Path);
             }
             SetSelection(entry=>selected.Contains(entry.Path));
+            if(replace>=0&&!Selected.Any()&&current.Visible.Count>0){var next=current.Visible[Math.Min(replace,current.Visible.Count-1)];SetSelection(entry=>ReferenceEquals(entry,next));}
             if(Selected.Any())current.SelectionAfterAccess.Clear();
         }
         finally{bulkSelect=previous;}
@@ -328,8 +335,7 @@ public partial class PaneView
         {if(!current.Stopping&&current.Nodes.TryGetValue(path,out var failed)){failed.State=IsAccessDenied(error)?SpaceState.Denied:SpaceState.Failed;failed.Failure=error.Message;failed.Updated();RebuildSpace(current);}return false;}
         token.ThrowIfCancellationRequested();if(current.Stopping)return false;DrainSpace(current);
         var present=members.Select(member=>member.Path).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        foreach(var absent in current.Nodes.Values.Where(row=>row.ParentPath==path&&!present.Contains(row.Path)).ToArray())
-            foreach(var key in current.Nodes.Keys.Where(key=>SizeCache.Within(key,absent.Path)).ToArray())current.Nodes.Remove(key);
+        foreach(var absent in current.Nodes.Values.Where(row=>row.ParentPath==path&&!present.Contains(row.Path)).ToArray())RemoveSpaceRow(current,absent);
         var missing=members.Where(member=>member.Directory&&!member.Reparse&&!current.Nodes.ContainsKey(member.Path)).ToArray();
         Dictionary<string,long> sizes=new(StringComparer.OrdinalIgnoreCase);
         // A slow Everything must not leave the analysis Pending (and F5 queued behind it) for its whole reply
