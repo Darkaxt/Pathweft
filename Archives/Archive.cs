@@ -761,17 +761,30 @@ internal static partial class Archive
             {
                 // RAR volumes are written by the embedded writer as stage.partN.rar; N is as wide as the largest
                 // count the input could need (stored, with its recovery record), as WinRAR names them
-                object create = options == null ? null : new
+                // The writer's volume size is the payload before its headers and recovery record (about 1.32 bytes per
+                // byte of recovery percent, measured); a volume must never exceed the size asked for, as WinRAR's don't
+                long payload = split ? (long)((options.VolumeSize - 8192) / (1 + options.Recovery * 0.0135)) : 0;
+                for (int attempt = 1; ; attempt++)
                 {
-                    level = options.Level, solid = options.Solid == "on", encrypt_names = options.EncryptNames && password != null,
-                    recovery_percent = options.Recovery > 0 ? (long?)options.Recovery : null,
-                    volume_size = split ? (long?)options.VolumeSize : null,
-                    volume_digits = split ? (int?)Math.Max(1, ((total + total * options.Recovery / 100 + 4096L * files.Count + (1 << 20)) / options.VolumeSize + 1).ToString().Length) : null
-                };
-                RarNative.Write(null, stage, directory, password, new(), files.ToDictionary(e => Clean(e.Key), e => e.Value), job, create);
-                if (split)
-                    first = Directory.GetFiles(directory, "stage.part*.rar").OrderBy(p => p.Length).ThenBy(p => p, StringComparer.OrdinalIgnoreCase).FirstOrDefault()
-                        ?? throw new IOException("The RAR writer produced no volumes.");
+                    object create = options == null ? null : new
+                    {
+                        level = options.Level, solid = options.Solid == "on", encrypt_names = options.EncryptNames && password != null,
+                        recovery_percent = options.Recovery > 0 ? (long?)options.Recovery : null,
+                        volume_size = split ? (long?)payload : null,
+                        volume_digits = split ? (int?)Math.Max(1, ((total + total * options.Recovery / 100 + 4096L * files.Count + (1 << 20)) / payload + 1).ToString().Length) : null
+                    };
+                    RarNative.Write(null, stage, directory, password, new(), files.ToDictionary(e => Clean(e.Key), e => e.Value), job, create);
+                    if (!split) break;
+                    var volumes = Directory.GetFiles(directory, "stage.part*.rar");
+                    if (volumes.Length == 0) throw new IOException("The RAR writer produced no volumes.");
+                    long largest = volumes.Max(v => new FileInfo(v).Length);
+                    if (largest <= options.VolumeSize) { first = volumes.OrderBy(p => p.Length).ThenBy(p => p, StringComparer.OrdinalIgnoreCase).First(); break; }
+                    if (attempt == 3) throw new IOException("The RAR volumes came out larger than the volume size.");
+                    foreach (var volume in volumes) File.Delete(volume);
+                    Check(job);
+                    payload = (long)(payload * ((double)options.VolumeSize / largest)) - 8192;
+                    if (payload < 16384) throw new IOException("The volume size is too small for this archive's headers and recovery record.");
+                }
             }
             else
             {

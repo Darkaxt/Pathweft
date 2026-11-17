@@ -393,7 +393,7 @@ public partial class MainWindow
             { var noise = new byte[3 << 20]; new Random(12).NextBytes(noise); File.WriteAllBytes(Path.Combine(settingsInput, "noise.bin"), noise); }
             File.WriteAllText(Path.Combine(settingsInput, "text 子.txt"), string.Concat(Enumerable.Repeat("Pathweft compression settings 子\n", 60000)));
             File.WriteAllBytes(Path.Combine(settingsInput, "empty.txt"), Array.Empty<byte>());
-            const string secret = "fixture-secret 子 ARCHIVE-12";
+            const string secret = "fixture-secret 子 ARCHIVE-12", asciiSecret = "fixture-secret ARCHIVE-12"; // 7-Zip's ZIP writer takes ASCII passwords only
             void Choose(ComboBox box, object tag) => box.SelectedItem = box.Items.Cast<ComboBoxItem>().Single(i => Equals(i.Tag, tag));
             async Task<Job> CompressWith(string name, Action<CompressDialog> answer, string label)
             {
@@ -403,7 +403,7 @@ public partial class MainWindow
                 try { Action(Left, "Compress…"); } finally { CompressDialog.VerificationAnswer = null; }
                 Check(answered && lastArchiveJob != before, "ARCHIVE-12 Compress… opens its dialog and submits one job: " + label);
                 await lastArchiveJob.Completion;
-                Check(lastArchiveJob.Phase == Phase.Done && lastArchiveJob.Errors.IsEmpty && lastArchiveJob.Arrivals?.Count > 0, "ARCHIVE-12 the created archive passed read-back verification: " + label);
+                Check(lastArchiveJob.Phase == Phase.Done && lastArchiveJob.Errors.IsEmpty && lastArchiveJob.Arrivals?.Count > 0, "ARCHIVE-12 the created archive passed read-back verification: " + label + string.Concat(lastArchiveJob.Errors.Select(e => " | " + e)));
                 return lastArchiveJob;
             }
             bool SameContent(string created)
@@ -439,12 +439,12 @@ public partial class MainWindow
             var zipJob = await CompressWith("options 子", dialog =>
             {
                 Choose(dialog.FormatBox, "zip"); Choose(dialog.LevelBox, 4); Choose(dialog.MethodBox, "Deflate"); Choose(dialog.WordBox, 128);
-                dialog.PasswordBox.Password = secret; dialog.RepeatBox.Password = secret; Choose(dialog.CipherBox, false);
+                dialog.PasswordBox.Password = asciiSecret; dialog.RepeatBox.Password = asciiSecret; Choose(dialog.CipherBox, false);
                 dialog.Accept();
             }, "ZIP Maximum Deflate, AES-256");
             string aesZip = Path.Combine(zipJob.Destination, zipJob.Arrivals.Single());
             Check(Locked(aesZip) || Archive.Read(aesZip).Where(e => !e.IsDir && e.Size > 0).All(e => e.Encrypted), "ARCHIVE-12 the AES ZIP's files are encrypted");
-            Archive.SetPassword(aesZip, secret);
+            Archive.SetPassword(aesZip, asciiSecret);
             try { Check(SameContent(aesZip) && Archive.Read(aesZip).Where(e => !e.IsDir && e.Size > 0).All(e => e.Method?.Contains("AES-256") == true && e.Method.Contains("Deflate")), "ARCHIVE-12 ZIP decrypts with AES-256 and Deflate to its inputs"); }
             finally { Archive.SetPassword(aesZip, null); }
 
@@ -469,8 +469,8 @@ public partial class MainWindow
             }, "RAR Maximum solid, recovery 3%, password, encrypted names, 1 MB volumes");
             var rarVolumes = rarJob.Arrivals.Select(n => Path.Combine(rarJob.Destination, n)).ToList();
             string firstRar = rarVolumes.Single(p => p.EndsWith("options 子.part1.rar"));
-            Check(rarVolumes.Count >= 3 && rarVolumes.All(p => System.Text.RegularExpressions.Regex.IsMatch(Path.GetFileName(p), @"^options 子\.part\d+\.rar$")) && Archive.HidesNames(firstRar) && Locked(firstRar),
-                "ARCHIVE-12 RAR volumes are named .partN.rar and hide their names without the password");
+            Check(rarVolumes.Count >= 3 && rarVolumes.All(p => System.Text.RegularExpressions.Regex.IsMatch(Path.GetFileName(p), @"^options 子\.part\d+\.rar$")) && Archive.HidesNames(firstRar) && Locked(firstRar) && rarVolumes.All(p => new FileInfo(p).Length <= 1 << 20),
+                "ARCHIVE-12 RAR volumes are named .partN.rar, no larger than 1 MB with the recovery record, and hide their names without the password: " + string.Join(", ", rarVolumes.Select(p => new FileInfo(p).Length)));
             Archive.SetPassword(firstRar, secret);
             try { Check(SameContent(firstRar) && Archive.Read(firstRar).Where(e => !e.IsDir && e.Size > 0).All(e => e.Encrypted), "ARCHIVE-12 the RAR volume set decrypts to its inputs"); }
             finally { Archive.SetPassword(firstRar, null); }
@@ -484,6 +484,9 @@ public partial class MainWindow
             CompressDialog.VerificationAnswer = dialog => { refused = dialog; Choose(dialog.FormatBox, "7z"); dialog.PasswordBox.Password = "one"; dialog.RepeatBox.Password = "two"; dialog.Accept(); };
             try { Action(Left, "Compress…"); } finally { CompressDialog.VerificationAnswer = null; }
             Check(lastArchiveJob == mismatch && refused?.Result == null && refused.Problem.Text.Contains("don't match"), "ARCHIVE-12 passwords that don't match keep the dialog open and write nothing");
+            CompressDialog.VerificationAnswer = dialog => { refused = dialog; Choose(dialog.FormatBox, "zip"); dialog.PasswordBox.Password = secret; dialog.RepeatBox.Password = secret; dialog.Accept(); };
+            try { Action(Left, "Compress…"); } finally { CompressDialog.VerificationAnswer = null; }
+            Check(lastArchiveJob == mismatch && refused?.Result == null && refused.Problem.Text.Contains("ZIP password"), "ARCHIVE-12 a ZIP password outside ASCII is refused in the dialog, as 7-Zip does, and nothing is written");
 
             string deleteMe = Path.Combine(source, "delete after 子.txt"); File.WriteAllText(deleteMe, "Delete files after compression");
             string deleteHash = Hash(deleteMe);

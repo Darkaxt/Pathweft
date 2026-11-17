@@ -260,6 +260,9 @@ public partial class CompressDialog : Window
         if (Archive.NameTaken(path)) { Fail($"{Path.GetFileName(path)} already exists there. Choose another name."); return; }
         if (Tag(SplitBox, 0L) == -1 && options.VolumeSize == 0) { Fail("Type a volume size of at least 64 KB, such as 700M or 4G."); return; }
         if (ShowBox.IsChecked != true && PasswordBox.Password != RepeatBox.Password) { Fail("The passwords don't match."); return; }
+        // 7-Zip's ZIP writer takes only printable ASCII passwords (its own dialog says so); other formats take any
+        if (options.Encrypted && Format == "zip" && options.Password.Any(c => c < ' ' || c > '~'))
+        { Fail("A ZIP password can only use English letters, digits, spaces and symbols. Use 7z to keep this password."); return; }
         if (options.DeleteAfter && sources.Any(source => Directory.Exists(source) && path.StartsWith(source.TrimEnd('\\') + "\\", StringComparison.OrdinalIgnoreCase)))
         { Fail("The archive can't go inside a folder that is deleted after compression."); return; }
         Settings.Compress = options.Serialize();
