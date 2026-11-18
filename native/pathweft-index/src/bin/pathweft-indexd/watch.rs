@@ -165,6 +165,17 @@ pub struct Applied {
     pub added: u64,
     pub removed: u64,
     pub updated: u64,
+    /// Folders that were listed, with whether their listing differed.
+    pub listed: Vec<(u32, bool)>,
+    /// Requested folders that no longer exist in the store.
+    pub missing: Vec<u32>,
+    /// Requested folders that could not be listed.
+    pub unlisted: Vec<u32>,
+    /// New folders, with their modified time.
+    pub new_dirs: Vec<(u32, u64)>,
+    /// Existing subfolders whose own entry changed (for example a new
+    /// modified time), so their contents probably changed too.
+    pub touched_dirs: Vec<u32>,
 }
 
 fn is_dir(e: &Entry) -> bool {
@@ -202,8 +213,8 @@ pub fn reconcile(
         .collect();
     targets.sort_by_key(|t| (t.matches('\\').count() + usize::from(!t.is_empty()), t.to_string()));
 
-    // Resolve the folders and collect their current children under a read lock.
-    let (root_name, resolved, mut children, mut next) = {
+    // Resolve the folders under a read lock.
+    let resolved: Vec<u32> = {
         let s = store.read().unwrap();
         let mut dirs: HashMap<(u32, String), u32> = HashMap::new();
         for (r, rec) in s.recs.iter().enumerate() {
@@ -211,7 +222,7 @@ pub fn reconcile(
                 dirs.insert((rec.parent, s.name(r as u32).to_lowercase()), r as u32);
             }
         }
-        let mut resolved: Vec<(u32, &str)> = Vec::new();
+        let mut resolved: Vec<u32> = Vec::new();
         for t in &targets {
             let mut cur = s.root;
             let mut found = true;
@@ -225,9 +236,39 @@ pub fn reconcile(
                 }
             }
             if found {
-                resolved.push((cur, *t));
+                resolved.push(cur);
             }
         }
+        resolved
+    };
+    relist(store, &resolved, list, walk)
+}
+
+/// Lists the folders `dirs` (store keys) again and applies the difference,
+/// shallowest first. Same `list` and `walk` contract as `reconcile`.
+pub fn relist(
+    store: &RwLock<Store>,
+    dirs: &[u32],
+    list: &mut dyn FnMut(&str) -> Option<Vec<Entry>>,
+    walk: &mut dyn FnMut(u32, &str, &mut u32, &mut dyn FnMut(u32, Entry)),
+) -> Applied {
+    let mut applied = Applied::default();
+    // Resolve paths and collect the current children under a read lock.
+    let (resolved, mut children, mut next) = {
+        let s = store.read().unwrap();
+        let mut resolved: Vec<(u32, String)> = Vec::new();
+        let mut path = String::new();
+        for &d in dirs.iter().collect::<HashSet<_>>() {
+            if d == s.root {
+                // The root's path is the store's name (`H:`, `\\server\share`).
+                resolved.push((d, s.name(s.root).to_string()));
+            } else if s.get(d).is_some_and(|r| r.is_dir()) && s.full_path(d, &mut path) {
+                resolved.push((d, path.clone()));
+            } else {
+                applied.missing.push(d);
+            }
+        }
+        resolved.sort_by_key(|(_, p)| (p.matches('\\').count(), p.clone()));
         let wanted: HashSet<u32> = resolved.iter().map(|&(r, _)| r).collect();
         let mut children: HashMap<u32, HashMap<String, (u32, Rec, String)>> = HashMap::new();
         for (r, rec) in s.recs.iter().enumerate() {
@@ -237,28 +278,34 @@ pub fn reconcile(
                 children.entry(rec.parent).or_default().insert(name.to_lowercase(), (r, *rec, name));
             }
         }
-        (s.name(s.root).to_string(), resolved, children, s.key_count())
+        (resolved, children, s.key_count())
     };
 
     // List the folders without holding the lock.
-    let mut applied = Applied::default();
     let mut removed: Vec<u32> = Vec::new();
     let mut updates: Vec<(u32, Entry)> = Vec::new();
     let mut adds: Vec<(u32, Entry)> = Vec::new();
     let mut gone: HashSet<u32> = HashSet::new();
-    for (dir, rel) in resolved {
+    for (dir, path) in resolved {
         if gone.contains(&dir) {
+            applied.missing.push(dir);
             continue;
         }
-        let path = if rel.is_empty() { root_name.clone() } else { format!("{root_name}\\{rel}") };
-        let Some(listed) = list(&path) else { continue };
+        let Some(listed) = list(&path) else {
+            applied.unlisted.push(dir);
+            continue;
+        };
         applied.folders += 1;
+        let before = applied.added + applied.removed + applied.updated;
         let mut old = children.remove(&dir).unwrap_or_default();
         for mut e in listed {
             e.parent = dir;
             match old.remove(&e.name.to_lowercase()) {
                 Some((r, rec, name)) if rec.is_dir() == is_dir(&e) => {
                     if !same(&rec, &name, &e) {
+                        if rec.is_dir() {
+                            applied.touched_dirs.push(r);
+                        }
                         updates.push((r, e));
                         applied.updated += 1;
                     }
@@ -293,7 +340,9 @@ pub fn reconcile(
             }
             applied.removed += 1;
         }
+        applied.listed.push((dir, applied.added + applied.removed + applied.updated != before));
     }
+    applied.new_dirs = adds.iter().filter(|(_, e)| descend(e)).map(|(k, e)| (*k, e.mtime)).collect();
 
     if removed.is_empty() && updates.is_empty() && adds.is_empty() {
         return applied;
@@ -447,6 +496,42 @@ mod tests {
         let a = run(&store, &fs, &["TOP.txt"]);
         assert_eq!(a.updated, 1);
         assert_eq!(view(&store.read().unwrap()), view(&build(&fs)));
+    }
+
+    fn key(s: &Store, name: &str) -> u32 {
+        (0..s.recs.len() as u32).find(|&r| r != s.root && s.get(r).is_some() && s.name(r) == name).unwrap()
+    }
+
+    fn relist_keys(store: &RwLock<Store>, fs: &Fs, keys: &[u32]) -> Applied {
+        relist(store, keys, &mut |p| fs.get(p).cloned(), &mut |k, p, next, sink| fake_walk(fs, k, p, next, sink))
+    }
+
+    #[test]
+    fn relist_reports_changed_touched_new_and_missing_folders() {
+        let mut fs = sample();
+        let store = RwLock::new(build(&fs));
+        let (root, docs, old, a_txt) = {
+            let s = store.read().unwrap();
+            (s.root, key(&s, "Docs"), key(&s, "Old"), key(&s, "a.txt"))
+        };
+        // A change made on the server inside Docs\Old (no notification): the
+        // folder's own entry gets a new modified time; a new folder appears too.
+        fs.insert(r"R:\Docs".into(), vec![Entry { mtime: 9, ..dir("Old") }, file("a.txt", 100, 1), dir("Fresh")]);
+        fs.insert(r"R:\Docs\Fresh".into(), vec![]);
+        fs.insert(r"R:\Docs\Old".into(), vec![file("x.bin", 1000, 1), dir("Deep"), file("srv.log", 4, 9)]);
+        let a = relist_keys(&store, &fs, &[docs, root, a_txt]);
+        assert_eq!(a.listed, vec![(root, false), (docs, true)], "shallowest first");
+        assert_eq!(a.missing, vec![a_txt], "a file is not a folder");
+        assert_eq!(a.touched_dirs, vec![old]);
+        assert_eq!(a.new_dirs.len(), 1);
+        // The touched folder's own check finds the server-side file.
+        let b = relist_keys(&store, &fs, &[old]);
+        assert_eq!(b.listed, vec![(old, true)]);
+        assert_eq!(view(&store.read().unwrap()), view(&build(&fs)));
+        // A removed folder is reported missing on its next check.
+        fs.insert(r"R:\Docs".into(), vec![file("a.txt", 100, 1), dir("Fresh")]);
+        relist_keys(&store, &fs, &[docs]);
+        assert_eq!(relist_keys(&store, &fs, &[old]).missing, vec![old]);
     }
 
     #[test]

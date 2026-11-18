@@ -1,12 +1,14 @@
 //! Opt-in folder roots (FAT32 drives, network shares): recursive directory
 //! listing at background priority as the user who added the root (SPEC IDX-03).
 //! Directory enumeration only; reparse points are listed but not followed.
-//! While the service runs, a watcher keeps the tree current between scans.
+//! While the service runs, a watcher keeps the tree current between scans,
+//! and every folder is listed again on an adaptive schedule (`sched`).
 
 use crate::config::FolderRoot;
 use crate::log::{info, warning};
+use crate::sched::{self, Schedule};
 use crate::state::{Service, Slot};
-use crate::watch::{self, Watcher};
+use crate::watch::{self, Applied, Watcher};
 use pathweft_index::ffi::*;
 use pathweft_index::store::{Entry, Store, ATTR_DIRECTORY, ATTR_REPARSE};
 use std::sync::atomic::Ordering;
@@ -144,28 +146,36 @@ pub fn scan(root: &FolderRoot, slot: &Slot) -> Result<Store, String> {
     Ok(store)
 }
 
-/// Applies the changes a watcher collected: re-lists the folders that
-/// contain them and updates the store (SPEC IDX-03).
-fn apply_changes(slot: &Slot, token: &Handle, paths: Vec<String>) {
+/// What to bring up to date: changed paths from the watcher, or folders
+/// (store keys) whose scheduled check is due.
+enum Work {
+    Paths(Vec<String>),
+    Folders(Vec<u32>),
+}
+
+/// Re-lists the folders behind `work` and applies the difference to the
+/// store (SPEC IDX-03). `None` when the owner cannot be impersonated.
+fn apply(slot: &Slot, token: &Handle, work: Work) -> Option<Applied> {
     let t = Instant::now();
     let store = slot.store();
+    let scheduled = matches!(work, Work::Folders(_));
     let applied = {
         let _bg = Background::begin();
         let Some(_imp) = Impersonation::begin(token) else {
             warning!("{}: cannot impersonate the folder's owner: error {}", slot.name, last_error());
-            return;
+            return None;
         };
-        watch::reconcile(
-            &store,
-            &paths,
-            &mut |p| {
-                let mut v = Vec::new();
-                list_dir(p, |e| v.push(e)).ok().map(|_| v)
-            },
-            &mut |k, p, next, sink| {
-                let _ = walk(k, p, next, slot, sink);
-            },
-        )
+        let mut list = |p: &str| {
+            let mut v = Vec::new();
+            list_dir(p, |e| v.push(e)).ok().map(|_| v)
+        };
+        let mut sub = |k: u32, p: &str, next: &mut u32, sink: &mut dyn FnMut(u32, Entry)| {
+            let _ = walk(k, p, next, slot, sink);
+        };
+        match work {
+            Work::Paths(paths) => watch::reconcile(&store, &paths, &mut list, &mut sub),
+            Work::Folders(keys) => watch::relist(&store, &keys, &mut list, &mut sub),
+        }
     };
     let needs = store.read().unwrap().needs_compaction();
     if needs {
@@ -176,18 +186,67 @@ fn apply_changes(slot: &Slot, token: &Handle, paths: Vec<String>) {
     let total = applied.added + applied.removed + applied.updated;
     if total > 0 {
         info!(
-            "{}: {} changes in {} folders ({} added, {} removed, {} updated) in {} ms",
+            "{}: {} changes in {} folders ({} added, {} removed, {} updated) in {} ms{}",
             slot.name,
             total,
             applied.folders,
             applied.added,
             applied.removed,
             applied.updated,
-            t.elapsed().as_millis()
+            t.elapsed().as_millis(),
+            if scheduled { " (found by a scheduled check)" } else { "" }
         );
         slot.health.lock().unwrap().applied += total;
     }
+    Some(applied)
 }
+
+/// Plans every folder of a freshly scanned store.
+fn plan_all(slot: &Slot, root: &FolderRoot) -> Schedule {
+    let max = root.rescan_minutes.max(5) as u64 * 60;
+    let mut plan = Schedule::new(MIN_CHECK_SECS, max);
+    let now = sched::now();
+    let store = slot.store();
+    let s = store.read().unwrap();
+    plan.add(s.root, 0, now);
+    for (r, rec) in s.recs.iter().enumerate() {
+        if r as u32 != s.root && rec.live() && rec.is_dir() && rec.attrs & ATTR_REPARSE == 0 {
+            plan.add(r as u32, sched::change_time(rec.mtime, now), now);
+        }
+    }
+    plan
+}
+
+/// Feeds the outcome of a pass back into the schedule.
+fn learn(plan: &mut Schedule, a: &Applied, checked: bool) {
+    let now = sched::now();
+    for &(k, changed) in &a.listed {
+        if changed {
+            plan.changed(k, now);
+        } else if checked {
+            plan.unchanged(k, now);
+        }
+    }
+    if checked {
+        for &k in &a.unlisted {
+            plan.unchanged(k, now);
+        }
+    }
+    for &k in &a.missing {
+        plan.forget(k);
+    }
+    for &(k, mtime) in &a.new_dirs {
+        plan.add(k, sched::change_time(mtime, now), now);
+    }
+    for &k in &a.touched_dirs {
+        plan.soon(k, now);
+    }
+}
+
+/// Shortest time between two checks of a folder (owner, 2026-11-18).
+const MIN_CHECK_SECS: u64 = 15 * 60;
+/// Folders checked per pass, so notifications are not held up for long.
+const CHECK_BATCH: usize = 256;
 
 /// Worker thread body for one folder slot.
 pub fn run(svc: Arc<Service>, slot: Arc<Slot>, root: FolderRoot) {
@@ -244,41 +303,82 @@ pub fn run(svc: Arc<Service>, slot: Arc<Slot>, root: FolderRoot) {
                 continue;
             }
         }
-        let minutes = root.rescan_minutes.max(5) as u64;
-        let until = Instant::now() + Duration::from_secs(minutes * 60);
+        let mut plan = plan_all(&slot, &root);
+        info!(
+            "{}: {} folders scheduled, {} checked at least hourly",
+            slot.name,
+            plan.len(),
+            plan.checked_within(3600, sched::now())
+        );
         // The first pass applies what changed while the scan ran.
         let mut during_scan = true;
-        while Instant::now() < until && !slot.stopping() && !svc.stopping() && !slot.refresh.load(Ordering::Relaxed) {
+        let mut hour = Instant::now();
+        let (mut checked, mut found) = (0usize, 0usize);
+        while !slot.stopping() && !svc.stopping() && !slot.refresh.load(Ordering::Relaxed) {
             if let Some(w) = &watcher {
-                if !during_scan && !w.has_pending() {
-                    slot.wait(until.saturating_duration_since(Instant::now()).min(Duration::from_secs(5)));
+                if during_scan || w.has_pending() {
+                    if !during_scan {
+                        // Let a burst of changes settle into one pass.
+                        std::thread::sleep(Duration::from_millis(500));
+                    }
+                    let p = w.take();
+                    if p.overflow {
+                        if during_scan {
+                            warning!("{}: too many changes while scanning for the notification buffer; scheduled checks pick them up", slot.name);
+                        } else {
+                            info!("{}: too many changes for the notification buffer; rescanning", slot.name);
+                            slot.refresh.store(true, Ordering::Relaxed);
+                            break;
+                        }
+                    }
+                    if !p.paths.is_empty() {
+                        if let Some(a) = apply(&slot, &token, Work::Paths(p.paths.into_iter().collect())) {
+                            learn(&mut plan, &a, false);
+                        }
+                    }
+                    if let Some(e) = p.failed {
+                        warning!("{}: change notifications stopped ({e}); changes are picked up by scheduled checks only", slot.name);
+                        watcher = None;
+                    }
+                    during_scan = false;
                     continue;
                 }
-                if !during_scan {
-                    // Let a burst of changes settle into one pass.
-                    std::thread::sleep(Duration::from_millis(500));
-                }
-                let p = w.take();
-                if p.overflow {
-                    if during_scan {
-                        warning!("{}: too many changes while scanning for the notification buffer; they are picked up by the next rescan", slot.name);
-                    } else {
-                        info!("{}: too many changes for the notification buffer; rescanning", slot.name);
-                        slot.refresh.store(true, Ordering::Relaxed);
-                        break;
+            }
+            during_scan = false;
+            let due = plan.due(sched::now(), CHECK_BATCH);
+            if !due.is_empty() {
+                match apply(&slot, &token, Work::Folders(due.clone())) {
+                    Some(a) => {
+                        checked += a.listed.len();
+                        found += a.listed.iter().filter(|(_, c)| *c).count();
+                        learn(&mut plan, &a, true);
+                    }
+                    None => {
+                        // Not impersonated: try these again later.
+                        let now = sched::now();
+                        for k in due {
+                            plan.unchanged(k, now);
+                        }
+                        slot.wait(Duration::from_secs(60));
                     }
                 }
-                if !p.paths.is_empty() {
-                    apply_changes(&slot, &token, p.paths.into_iter().collect());
-                }
-                if let Some(e) = p.failed {
-                    warning!("{}: change notifications stopped ({e}); changes are picked up by rescans only", slot.name);
-                    watcher = None;
-                }
-                during_scan = false;
-            } else {
-                slot.wait(until.saturating_duration_since(Instant::now()).min(Duration::from_secs(60)));
+                continue;
             }
+            if hour.elapsed() >= Duration::from_secs(3600) {
+                if checked > 0 {
+                    info!(
+                        "{}: checked {checked} folders in the last hour, {found} had changed; {} of {} folders are checked at least hourly",
+                        slot.name,
+                        plan.checked_within(3600, sched::now()),
+                        plan.len()
+                    );
+                }
+                hour = Instant::now();
+                checked = 0;
+                found = 0;
+            }
+            let wait = plan.next_due().map_or(60, |t| t.saturating_sub(sched::now())).clamp(1, if watcher.is_some() { 5 } else { 60 });
+            slot.wait(Duration::from_secs(wait));
         }
     }
 }

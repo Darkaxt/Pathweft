@@ -13,6 +13,7 @@ is recorded in SPEC.md.
 | IS4 install + measure | Install through the broker; live status, parity, churn latency, memory | IDX-01, IDX-02, IDX-03, IDX-08, IDX-09, IDX-10, IDX-12 | MEASUREMENTS.md |
 | IS5 integration | Integration note; message to the Pathweft thread | IDX-13 | INTEGRATION.md, message sent |
 | IS6 folder changes | Follow folder roots with change notifications while running (owner request 2026-11-18) | IDX-03 (live changes) | Unit tests; console-mode test on a local folder root; installed service log on the real roots |
+| IS7 adaptive checks | Per-folder adaptive re-listing, 15 min to 6 h, replacing the fixed full rescan (owner request 2026-11-18) | IDX-03 (scheduled checks) | Unit tests; console-mode test with a short schedule; installed service log (schedule summary, changes found by a scheduled check on the share) |
 
 ## Ledger
 
@@ -23,7 +24,8 @@ is recorded in SPEC.md.
 | IS3 | COMPLETE | – | – | IS3 record below |
 | IS4 | COMPLETE | – (IDX-10 footprint accepted by the owner 2026-11-18) | – | IS4 record below; `MEASUREMENTS.md` |
 | IS5 | COMPLETE | – | – | `INTEGRATION.md`; message sent to the Pathweft thread 2026-11-18 |
-| IS6 | ACTIVE | – | – | IS6 record below |
+| IS6 | COMPLETE | – | – | IS6 record below |
+| IS7 | ACTIVE | – | – | IS7 record below |
 
 ## IS1 readiness record (2026-11-18)
 
@@ -196,3 +198,17 @@ on the server itself, not over SMB; Samba apparently does not forward those
 changes to a subtree watch. Such changes are picked up only by the periodic
 rescan (every 360 minutes). Not changed; a shorter `rescan_minutes` for the share
 is the owner's choice.
+
+## IS7 record (2026-11-18)
+
+Owner: instead of fixed rescans, "make it learn how often a branch is updated and
+refresh that path ... by a minimum of 15 minutes and a maximun of 6 hours".
+Source: `sched.rs` (per-folder schedule: interval = half the time since the last
+observed change, clamped to 15 min .. `rescan_minutes`; seeded from believable
+folder modified times; first checks spread over the second half of the
+interval), `watch.rs` (`relist` re-lists folders by key and reports, per folder,
+whether it changed, plus new, missing, unlistable and touched subfolders),
+`scan.rs` (worker loop: notifications first, then due folders in batches of
+256; a full rescan only at start-up, on `rescan` and after an overflow; hourly
+summary in the log). Changes found by notifications also mark their folder as
+recently changed.

@@ -28,6 +28,8 @@ mod pipe;
 #[cfg(windows)]
 mod scan;
 #[cfg(windows)]
+mod sched;
+#[cfg(windows)]
 mod security;
 #[cfg(windows)]
 mod selftest;

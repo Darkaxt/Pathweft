@@ -81,8 +81,12 @@ path can show the message as it is.
   created, modified, renamed and deleted files and folders appear in queries
   within about a second, without a rescan (`service.log` records each applied
   batch as "N changes in M folders"). If notifications overflow, the root is
-  rescanned; if they cannot start on a drive, that drive falls back to the
-  periodic rescans.
+  rescanned. Changes that produce no notification (for example files written on
+  the share's server itself) are found by scheduled checks: each folder is
+  listed again after half the time since it last changed, between every 15
+  minutes and every `rescan_minutes` (6 h), so busy folders catch up within
+  15 minutes and quiet ones cost almost nothing. `service.log` reports an hourly
+  summary of these checks.
 - Not-always-attached NTFS volumes (F:, I:) are picked up within 30 s of
   appearing; a volume that disappears after loading is reported `offline` and
   retried every 15 s.

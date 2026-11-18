@@ -47,8 +47,8 @@ completes and swaps; live service reports per-volume `ready` with a moving USN.
 listed recursively on a background thread in Windows background-priority mode,
 impersonating the user who added them (so the user's drive mappings and
 credentials apply). A rescan builds a new tree and swaps it in; the old tree keeps
-answering. Reparse points are not followed. Default rescan interval 6 h, plus an
-explicit `rescan`. Nothing is scanned by default; T: is never indexed unless the
+answering. Reparse points are not followed. A full rescan runs at start-up, on an
+explicit `rescan` and after a notification overflow. Nothing is scanned by default; T: is never indexed unless the
 owner adds it.
 While the service runs, each folder root is followed through Windows change
 notifications (`ReadDirectoryChangesW` on the whole tree, opened as the same
@@ -56,7 +56,16 @@ user): the folders containing changed paths are re-listed and the difference is
 applied, so additions, deletions, renames and size or date changes appear without
 a rescan. Notifications start before the scan, so changes made during it are
 applied when it finishes. A lost-notification overflow triggers a full rescan; a
-root whose notifications cannot start or stop working falls back to rescans only.
+root whose notifications cannot start or stop working keeps the scheduled checks.
+Notifications miss some changes (a share does not forward changes made on the
+server itself), so every folder is also listed again on its own adaptive
+schedule: after half the time since it last changed, at least every 15 minutes
+and at most every `rescan_minutes` (default 6 h). The folder's own modified time
+seeds the schedule when it is believable (after 2000, not in the future); a check
+that finds a change resets the folder to 15 minutes; a subfolder whose entry
+changed is checked at once (owner, 2026-11-18: "make it learn how often a branch
+is updated and refresh that path ... by a minimum of 15 minutes and a maximun of 6
+hours").
 After a service restart the first scan still runs from scratch (owner, 2026-11-18:
 "lets assume that challenge, delayed update for cloud services after a restart.
 As long as we can monitor updates while running").
@@ -64,6 +73,9 @@ As long as we can monitor updates while running").
 return its entries, and queries stay responsive while it scans. While running,
 files created, modified, renamed and deleted below a folder root, and a folder
 created with content, are reflected in queries within seconds without a rescan.
+A change that produces no notification is picked up by the folder's scheduled
+check: within 15 minutes for a folder that changed recently, within 6 hours at
+most.
 
 **IDX-04 Queries never wait on indexing.** Each volume or folder root is a separate
 store with its own lock. Indexing holds a store's write lock only to apply a
