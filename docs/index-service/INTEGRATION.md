@@ -1,9 +1,10 @@
 # Wiring the index service into Pathweft
 
-Status: the service, client DLL and CLI build and pass their tests. The
-elevated self-test, installation and measurements are recorded in `PLAN.md`
-and `MEASUREMENTS.md`. Nothing in the Pathweft app has been changed; this note
-describes the wiring that remains.
+Status: the service, client DLL and CLI build and pass their tests (19/19);
+the elevated self-test passes all 8 checks on the installed build (d5d9fc7),
+which is running on the owner's PC. Measurements against Everything are in
+`MEASUREMENTS.md`, the stage record in `PLAN.md`. Nothing in the Pathweft app
+has been changed; this note describes the wiring that remains.
 
 ## What Pathweft talks to
 
@@ -11,10 +12,12 @@ describes the wiring that remains.
   required: `NamedPipeClientStream` with `TokenImpersonationLevel.Impersonation`
   is enough. `pathweft_index.dll` (`pwi_request`/`pwi_free`) is an optional C ABI.
 - The service runs as LocalSystem (`PathweftIndex`, automatic start) and holds
-  the whole index in memory. NTFS volumes come from the MFT and are kept current
-  from the USN journal. Folder roots (the FAT32 Google Drive drives H: and J:,
-  `M:` / `\\100.74.127.101\flint-ssd`) are opt-in background scans, added with
-  `folder_add` or `pwindex folder add`.
+  the whole index in memory (about 680 MB for 11.9 M NTFS entries). NTFS volumes
+  come from the MFT and are kept current from the USN journal. Folder roots are
+  opt-in background scans, added with `folder_add` or `pwindex folder add`. On
+  the owner's PC, H:, J: (Google Drive), T: (Tresorit, at the owner's request)
+  and `\\100.74.127.101\flint-ssd` (M:) are configured. Use the UNC path for
+  mapped network drives.
 - Queries never wait on indexing. While a store is loading or re-reading, the
   answer carries `"updating": true` and `updating_stores`, and contains what is
   indexed at that moment.
@@ -28,7 +31,7 @@ describes the wiring that remains.
 | `FolderExpression(paths)` (`folder: <path:wfn:"…" \| …>`) | accepted unchanged |
 | `IndexedQuery.Compose(query, folder)` output | accepted unchanged (covered by `query::tests::pathweft_compositions`) |
 | `FolderSizesAsync(paths, instance)` | `{"op":"folder_sizes","paths":[…]}`; a missing `size` means unknown, so leave the key out of the dictionary as now |
-| `IndexedHit(Path, IsFolder, Size, Modified, Created, Attributes)` | `hits[]`: `path`, `folder`, `size` (-1 unknown), `modified`/`created` FILETIME UTC (`DateTime.FromFileTimeUtc`, 0 unknown), `attributes` |
+| `IndexedHit(Path, IsFolder, Size, Modified, Created, Attributes)` | `hits[]`: `path`, `visible`, `folder`, `size` (-1 unknown), `modified`/`created` FILETIME UTC (`DateTime.FromFileTimeUtc`, 0 unknown), `attributes` |
 | `IndexedPage(Hits, Total, Engine, FolderSizesIndexed)` | `hits`, `total`; Engine `"Pathweft index"`; FolderSizesIndexed = true |
 | SDK error / unanswered Everything | `{"ok":false,"error":…}`, or connect timeout when the service is absent |
 
@@ -58,13 +61,22 @@ path can show the message as it is.
 
 ## Behaviour Pathweft should know about
 
-- Visibility is per caller: a result appears only if the calling user may list
-  its parent folder. An elevated Pathweft therefore sees protected folders that
-  a normal one does not. Folder roots are visible only to the user who added
-  them.
-- T: (Tresorit) is not indexed by default. No file contents are read anywhere:
-  folder scans only enumerate directories, and directory security descriptors
-  are read with `FILE_FLAG_OPEN_NO_RECALL`.
+- Every match is returned with `visible`: whether the calling user may list its
+  parent folder. Pathweft decides whether to hide the others (for example a
+  "Show protected items" toggle). To filter on the service side and keep
+  `total` and paging consistent, send `"visible_only": true`.
+- Folder sizes are always the administrator view: everything indexed below the
+  folder, including folders the user cannot open. Disk analysis can therefore
+  find problem folders such as large protected caches.
+- T: (Tresorit) is never indexed by default; on the owner's PC it was added as
+  a folder root at the owner's request, through a plain directory listing (no
+  Tresorit databases or interfaces). No file contents are read anywhere: folder
+  scans only enumerate directories, and directory security descriptors are read
+  with `FILE_FLAG_OPEN_NO_RECALL`.
+- Folder roots are rescanned from scratch after a service restart and every
+  `rescan_minutes` (default 360). Until a root's first scan finishes it appears
+  in `updating_stores` and contributes nothing. Measured first scans: H: 386 k
+  entries in 2–15 min, T: 175 k in 1.5–14 min, the network share in 21 min.
 - Not-always-attached NTFS volumes (F:, I:) are picked up within 30 s of
   appearing; a volume that disappears after loading is reported `offline` and
   retried every 15 s.

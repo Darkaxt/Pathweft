@@ -20,7 +20,8 @@ is recorded in SPEC.md.
 | IS1 | COMPLETE (source) | – | – | Readiness record below |
 | IS2 | COMPLETE | – | – | IS2 record below |
 | IS3 | COMPLETE | – | – | IS3 record below |
-| IS4 | ACTIVE | Memory over IDX-10 on the first install; fix c691a3d built (ticket `1660ee7c`), reinstall pending admin approval | – | IS4 record below |
+| IS4 | ACTIVE | IDX-10: 677 MB private against a 565 MB target. Needs the owner's decision: accept, or trade timestamp precision or attribute bits | – | IS4 record below; `MEASUREMENTS.md` |
+| IS5 | ACTIVE (parallel documentation only) | – | – | `INTEGRATION.md`; message to the Pathweft thread |
 
 ## IS1 readiness record (2026-11-18)
 
@@ -105,3 +106,35 @@ Rust gate ticket `1660ee7c9c1130f205f149952f562bbb` (renews the closed
 `9dbb5ac8`): attempt 1 `cargo test` 18/18 pass (workflow `a8899256`), attempt 2
 release build exit 0, no warnings (workflow `b1d514d0`). The first reinstall
 request returned `approval_timeout` (not launched).
+
+Continued (same day):
+
+- c691a3d installed (admin ticket after one `approval_timeout`): 1,014 MB
+  private. The service log showed the stores at about 660 MB; the rest was
+  vectors doubling on the first USN change after `shrink()` trimmed them.
+- 60ac4b6 + db23e27 (ticket `521ccdac`, attempt 1 failed with E0502; corrected
+  attempt 3 `cargo test` 19/19, attempt 4 release build): vectors grow by about
+  1/64. Installed: 677 MB private, unchanged after 60 s of churn. IDX-10 still
+  missed by 112 MB (half of Everything's 1,131 MB working set is 565 MB).
+- Owner (2026-11-18): opt in every drive on this laptop, T: included ("I want
+  support for everything in my laptop. I don't find much risk in knowing the
+  file paths of my files"). H:, J:, T: and `\\100.74.127.101\flint-ssd` were
+  added as folder roots (directory listing only).
+- Owner revision of IDX-08 (2026-11-18): "Just return a visibility flag so we
+  can decide in the client to filter them out or not. But features like the
+  disk analyzer should always run with admin view". A machine-wide switch
+  committed just before (e7aad12) was reverted in d5d9fc7, which returns every
+  hit with `visible`, adds `visible_only` and makes folder sizes the
+  administrator view. Ticket `c7328f39` (renews `521ccdac`): `cargo test` 19/19,
+  release build exit 0 with one unused-import warning, removed in a3bac6c
+  without a rebuild. Installed from d5d9fc7.
+- Self-test of d5d9fc7 (admin, disposable VHDX, removed): 8/8 pass; the hidden
+  entry is returned with `visible=false`, dropped by `visible_only`, and counted
+  in the folder size (43,334 vs 38,334 bytes).
+- Measurements: `MEASUREMENTS.md`. During the churn test Everything timed out on
+  5 of 9 queries, then stayed busy and unresponsive (no answer within 10 s) for
+  the rest of the session, so parity was not re-run on the final build.
+- Observed, not changed: the installed service picked up the self-test's W:
+  volume and keeps it `offline` until restart, logging a memory line every 15 s
+  retry; folder-root rescans after the restart took 6–8× longer than the first
+  scans, cause not established.
