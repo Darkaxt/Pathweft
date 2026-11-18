@@ -10,7 +10,7 @@ use crate::store::{Rec, Store, ATTR_DIRECTORY};
 use std::cmp::Ordering;
 use std::collections::{BinaryHeap, HashMap, HashSet};
 use std::sync::atomic::{AtomicUsize, Ordering as AtomicOrdering};
-use std::sync::{Arc, Mutex, RwLock};
+use std::sync::{Arc, RwLock};
 
 pub const CHUNK: usize = 65_536;
 
