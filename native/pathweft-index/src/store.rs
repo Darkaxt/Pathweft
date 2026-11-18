@@ -30,6 +30,14 @@ pub struct Rec {
     pub sec: u32,
 }
 
+/// Grows `v` in small steps (about 1/64 of its length) instead of doubling,
+/// so changes after a large load do not double a trimmed vector.
+fn room<T>(v: &mut Vec<T>, extra: usize) {
+    if v.capacity() - v.len() < extra {
+        v.reserve_exact(extra.max(v.len() / 64 + 1024));
+    }
+}
+
 pub const EMPTY: Rec = Rec { size: 0, mtime: 0, ctime: 0, parent: NONE, name: NONE, attrs: 0, sec: 0 };
 
 impl Rec {
@@ -98,6 +106,7 @@ impl Store {
     fn slot(&mut self, key: u32) -> u32 {
         let k = key as usize;
         if self.keys.len() <= k {
+            room(&mut self.keys, k + 1 - self.keys.len());
             self.keys.resize(k + 1, NONE);
         }
         let i = self.keys[k];
@@ -105,6 +114,7 @@ impl Store {
             return i;
         }
         let i = self.recs.len() as u32;
+        room(&mut self.recs, 1);
         self.recs.push(EMPTY);
         self.keys[k] = i;
         i
@@ -143,6 +153,7 @@ impl Store {
             }
         }
         let offset = self.arena.len() as u32;
+        room(&mut self.arena, 2 + bytes.len());
         self.arena.extend_from_slice(&(bytes.len() as u16).to_le_bytes());
         self.arena.extend_from_slice(bytes);
         if let (Some(map), Some(h)) = (self.shared.as_mut(), hash) {
@@ -489,6 +500,19 @@ mod tests {
         s.set(20, Some(&entry(5, "dir", 0, true)));
         s.set(32, Some(&entry(5, "top.txt", 7, false)));
         s
+    }
+
+    #[test]
+    fn growth_after_shrink_is_small() {
+        let mut s = sample();
+        for k in 100..10_000u32 {
+            s.set(k, Some(&entry(5, "f.txt", 1, false)));
+        }
+        s.shrink();
+        let (r0, n0, k0) = s.memory_parts();
+        s.set(10_500, Some(&entry(5, "new-name.txt", 1, false)));
+        let (r1, n1, k1) = s.memory_parts();
+        assert!(r1 < r0 * 2 && n1 < n0 + 4096 && k1 < k0 * 2, "{r0}->{r1} {n0}->{n1} {k0}->{k1}");
     }
 
     #[test]
