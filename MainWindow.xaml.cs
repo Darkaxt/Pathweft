@@ -1776,7 +1776,7 @@ public partial class MainWindow : Window
         if (e.OriginalSource is TextBox)
         {
             // tab shortcuts work from the filter/path box too
-            if (ctrl && key is Key.W or Key.T) { if (key == Key.W) active.CloseTab(); else active.NewTab(); e.Handled = true; return; }
+            if (ctrl && key is Key.W or Key.T) { if (key == Key.W) active.CloseTab(); else active.NewStartTab(); e.Handled = true; return; }
             // Filter box only: arrows/Enter/Esc hand control back to the list. The path and rename
             // boxes handle their own Enter/Esc.
             if (e.OriginalSource is not TextBox { Name: "FilterBox" } filter) return;
@@ -1792,7 +1792,7 @@ public partial class MainWindow : Window
             case Key.P when alt: TogglePreview(); break;
             case Key.F1: OpenHelp(); break;
             case Key.T when ctrl && shift: ReopenClosedTab(); break;
-            case Key.T when ctrl: active.NewTab(); break;
+            case Key.T when ctrl: active.NewStartTab(); break;
             case Key.B when ctrl: if (active.Selected.Count > 0) AddToBin(active.Selected.Select(x => x.Path)); break;
             case Key.W when ctrl: active.CloseTab(); break;
             case Key.L when ctrl: active.EditPath(); break;

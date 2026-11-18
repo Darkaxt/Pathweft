@@ -260,7 +260,7 @@
         <UniformGrid x:Name="TabStrip" DockPanel.Dock="Left" Rows="1"/>
         <Border x:Name="NewTabBox" DockPanel.Dock="Left" Padding="4,4,4,2">
           <Button x:Name="NewTabButton" Style="{StaticResource Ghost}" Content="&#xE710;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="11"
-                  ToolTip="New tab (Ctrl+T)" Click="NewTab_Click" VerticalAlignment="Center"/>
+                  ToolTip="New tab at This PC (Ctrl+T)" Click="NewTab_Click" VerticalAlignment="Center"/>
         </Border>
         <!-- under the window's buttons, when this pane is the one at the top right (MainWindow.PlaceCaption) -->
         <Border x:Name="CaptionSpace" DockPanel.Dock="Right" Width="0" Background="Transparent"/>
@@ -393,11 +393,6 @@
             </GridViewColumn>
             <GridViewColumn Header="Size" Width="80" CellTemplate="{StaticResource SizeCell}"/>
             <GridViewColumn Header="Modified" Width="170" CellTemplate="{StaticResource DateCell}"/>
-            <GridViewColumn Header="CRC32" Width="80">
-              <GridViewColumn.CellTemplate>
-                <DataTemplate><TextBlock Text="{Binding CrcText}" Opacity="0.55" Typography.NumeralAlignment="Tabular"/></DataTemplate>
-              </GridViewColumn.CellTemplate>
-            </GridViewColumn>
             <GridViewColumn Header="Message" Width="300">
               <GridViewColumn.CellTemplate>
                 <DataTemplate><TextBlock Text="{Binding Message}" ToolTip="{Binding Message}" TextTrimming="CharacterEllipsis"/></DataTemplate>

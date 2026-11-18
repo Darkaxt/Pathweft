@@ -62,6 +62,7 @@ public partial class MainWindow
             // as Explorer's Copy as path inside a ZIP: the archive's path followed by the entry's
             am.Items.Add(Item("Copy path", "", "Ctrl+Shift+C", () => Clipboard.SetText(Entry.QuotedPaths(rows))));
             am.Items.Add(Item("Copy name", "", "", () => Clipboard.SetText(string.Join(Environment.NewLine, rows.Select(x => x.Name)))));
+            foreach (var detail in CopyDetailItems(p, rows)) am.Items.Add(detail);
             am.Items.Add(one ? WriteAction("Rename", "F2", p.BeginRename) : WriteAction("Rename all…", "F2", () => ArchiveRenameMany(p)));
             am.Items.Add(WriteAction("Delete", "Del", () => DeleteFromArchive(p)));
             am.Items.Add(Item("Compress to ZIP", "", "", () => ArchiveCompress(p, ".zip")));
@@ -119,7 +120,7 @@ public partial class MainWindow
         Group("Select", "", item => Named(item, "Select by pattern…", "Invert selection"));
         Take(menu, item => Named(item, "Refresh", "Show hidden files", "Hide hidden files"));
         Group("Transfer", "", item => Named(item, "Copy to other pane", "Move to other pane", "Copy to", "Move to", "Group into new folder…", "Add to Drop bin"));
-        Group("Copy details", "", item => Named(item, "Copy path", "Copy name"));
+        Group("Copy details", "", item => Named(item, "Copy path", "Copy name") || item.Tag as string == "copy-detail");
         Group("Archive", "", item => IsArchiveCommand(item.Header as string));
         Group("Tools", "", item => Named(item, "Run as administrator", "Compare in editor", "Edit with Notepad++"));
         Group("Archive tools", "", _ => true);

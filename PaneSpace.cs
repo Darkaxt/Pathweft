@@ -28,7 +28,7 @@ internal sealed class SpaceEntry:Entry
     public string SpaceTip=>State==SpaceState.Indexed?"Everything index · excluded files may be omitted":Failure;
     public double Usage=>RootBytes>0?Math.Clamp(DisplaySize/RootBytes*100,0,100):0;
     public string UsageText=>RootBytes>0?$"{Usage:0.#}%":"";
-    internal void Updated(){Changed(nameof(TreeIndent));Changed(nameof(ExpandGlyph));Changed(nameof(LoadingVisible));Changed(nameof(Spinning));Changed(nameof(ExpandVisible));Changed(nameof(SpaceStatus));Changed(nameof(SpaceTip));Changed(nameof(Usage));Changed(nameof(UsageText));}
+    internal void Updated(){Changed(nameof(TreeIndent));Changed(nameof(ExpandGlyph));Changed(nameof(LoadingVisible));Changed(nameof(Spinning));Changed(nameof(ExpandVisible));Changed(nameof(SpaceStatus));Changed(nameof(SpaceTip));Changed(nameof(Usage));Changed(nameof(UsageText));Changed("Item[]");}
 }
 
 public partial class PaneView
@@ -138,7 +138,7 @@ public partial class PaneView
         grid.Columns.Add(new GridViewColumn{Header="Space used",CellTemplate=(DataTemplate)FindResource("SpaceSizeCell"),Width=100});
         grid.Columns.Add(new GridViewColumn{Header="Of this folder",CellTemplate=(DataTemplate)FindResource("SpaceUsageCell"),Width=130});
         grid.Columns.Add(new GridViewColumn{Header="Status",CellTemplate=(DataTemplate)FindResource("SpaceStatusCell"),Width=115});
-        List.View=grid;ScrollViewer.SetVerticalScrollBarVisibility(List,ScrollBarVisibility.Auto);ScrollViewer.SetHorizontalScrollBarVisibility(List,ScrollBarVisibility.Auto);
+        List.View=grid;AttachSpaceColumns(grid);ScrollViewer.SetVerticalScrollBarVisibility(List,ScrollBarVisibility.Auto);ScrollViewer.SetHorizontalScrollBarVisibility(List,ScrollBarVisibility.Auto);
         items=current.Visible;view=new ListCollectionView((IList)current.Visible);List.ItemsSource=view;
         NameEdge.Visibility=Visibility.Collapsed;ViewButton.ToolTip="Space analysis · toggle Analyze space to restore the previous view";
         List.PreviewKeyDown+=SpaceKey;List.Focus();UpdateSpaceFooter();StatsChanged?.Invoke();

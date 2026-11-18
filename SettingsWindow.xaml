@@ -219,6 +219,23 @@
               <Slider x:Name="TipDelaySlider" Minimum="0" Maximum="3000" TickFrequency="100" IsSnapToTickEnabled="True" VerticalAlignment="Center" ValueChanged="TipDelay_Changed"/>
             </DockPanel>
             <TextBlock Style="{StaticResource Hint}" Text="How long the pointer rests on something before its tooltip shows, for every tooltip in Pathweft, the next one too: running the pointer down a list no longer pops one on every row. 1.5 s unless you change it (1 s before 1.0.51). Takes effect the next time Pathweft starts."/>
+            <TextBlock Text="Hash columns" FontWeight="SemiBold" Margin="0,14,0,4"/>
+            <DockPanel Margin="0,2,0,0">
+              <TextBlock x:Name="HashLimitText" DockPanel.Dock="Right" Width="56" TextAlignment="Right" Foreground="{DynamicResource Palette.8A97AA}" Typography.NumeralAlignment="Tabular"/>
+              <TextBlock Text="Hash files up to" Width="110" VerticalAlignment="Center"/>
+              <Slider x:Name="HashLimitSlider" Minimum="16" Maximum="4096" TickFrequency="16" IsSnapToTickEnabled="True" VerticalAlignment="Center" ValueChanged="HashLimit_Changed"/>
+            </DockPanel>
+            <TextBlock Style="{StaticResource Hint}" Text="Hash columns (CRC-32, SHA-256 and the others, from a column header's Hashes) fill in by themselves for files up to this size. Bigger files show Hash instead, to calculate on a click. Online-only files and network folders are never read by themselves."/>
+            <DockPanel Margin="0,2,0,0">
+              <TextBlock x:Name="HashCacheText" DockPanel.Dock="Right" Width="56" TextAlignment="Right" Foreground="{DynamicResource Palette.8A97AA}" Typography.NumeralAlignment="Tabular"/>
+              <TextBlock Text="Remember up to" Width="110" VerticalAlignment="Center"/>
+              <Slider x:Name="HashCacheSlider" Minimum="10" Maximum="1000" TickFrequency="10" IsSnapToTickEnabled="True" VerticalAlignment="Center" ValueChanged="HashCache_Changed"/>
+            </DockPanel>
+            <DockPanel Margin="0,4,0,0">
+              <Button x:Name="HashCacheClear" DockPanel.Dock="Right" Content="Clear" Style="{StaticResource Tab}" Click="HashCacheClear_Click" ToolTip="Forget every remembered hash"/>
+              <TextBlock x:Name="HashCacheUsed" VerticalAlignment="Center" Foreground="{DynamicResource Palette.8A97AA}"/>
+            </DockPanel>
+            <TextBlock Style="{StaticResource Hint}" Text="Calculated hashes are kept in Pathweft's data folder, never in the files, and shared with Checksum: a file that hasn't changed is not read again. The least recently used go first when the limit is reached."/>
             <CheckBox x:Name="DeleteSoundBox" Content="Play a sound when deleting permanently" Click="DeleteSound_Click"/>
             <TextBlock Style="{StaticResource Hint}" Text="Shift+Delete: the warning when it asks, and Windows' recycle sound when it deletes. Off: both are silent."/>
             <TextBlock Text="Right-click menu"/>

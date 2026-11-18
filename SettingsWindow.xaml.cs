@@ -40,7 +40,7 @@ public partial class SettingsWindow : Window
         foreach (var (slider, value) in new (System.Windows.Controls.Slider, double)[]
         {
             (OpacitySlider, 70), (BgOpacitySlider, 40), (BgBlurSlider, 0), (BgBrightSlider, 0), (ValueSlider, 100), (StrengthSlider, 100),
-            (ScaleSidebar, 100), (ScaleTabs, 100), (ScalePath, 100), (ScaleList, 100), (TipDelaySlider, 1500),
+            (ScaleSidebar, 100), (ScaleTabs, 100), (ScalePath, 100), (ScaleList, 100), (TipDelaySlider, 1500), (HashLimitSlider, 256), (HashCacheSlider, 100),
         })
             slider.PreviewMouseLeftButtonDown += (_, e) =>
             {
@@ -153,6 +153,45 @@ public partial class SettingsWindow : Window
         AutoscrollUpDownBox.IsEnabled = Settings.Autoscroll;
         TipDelaySlider.Value = Settings.TipDelay;
         TipDelayText.Text = $"{Settings.TipDelay / 1000.0:0.0} s";
+        HashLimitSlider.Value = Settings.HashLimitMB;
+        HashLimitText.Text = Megabytes(Settings.HashLimitMB);
+        HashCacheSlider.Value = Settings.HashCacheMB;
+        HashCacheText.Text = Megabytes(Settings.HashCacheMB);
+        RefreshHashCache();
+    }
+
+    static string Megabytes(int mb) => mb >= 1024 && mb % 1024 == 0 ? $"{mb / 1024} GB" : mb >= 1024 ? $"{mb / 1024.0:0.#} GB" : $"{mb} MB";
+
+    // HASH-04: what the cache holds now; read off the UI thread, since the first look loads it
+    async void RefreshHashCache()
+    {
+        long used = await Task.Run(() => HashCache.Size);
+        HashCacheUsed.Text = used == 0 ? "No hashes remembered" : $"{MainWindow.Fmt(used)} of hashes remembered";
+        HashCacheClear.IsEnabled = used > 0;
+    }
+
+    void HashLimit_Changed(object s, RoutedPropertyChangedEventArgs<double> e)
+    {
+        if (!IsLoaded || loading) return;
+        Settings.HashLimitMB = (int)Math.Round(e.NewValue);
+        HashLimitText.Text = Megabytes(Settings.HashLimitMB);
+        Settings.Save();
+        main.RequeueHashes();
+    }
+
+    void HashCache_Changed(object s, RoutedPropertyChangedEventArgs<double> e)
+    {
+        if (!IsLoaded || loading) return;
+        Settings.HashCacheMB = (int)Math.Round(e.NewValue);
+        HashCacheText.Text = Megabytes(Settings.HashCacheMB);
+        Settings.Save();
+        Task.Run(HashCache.Trim).ContinueWith(_ => Dispatcher.BeginInvoke(RefreshHashCache));
+    }
+
+    void HashCacheClear_Click(object s, RoutedEventArgs e)
+    {
+        HashCache.Clear();
+        RefreshHashCache();
     }
 
     internal void RefreshFolderIntegration()
@@ -174,14 +213,15 @@ public partial class SettingsWindow : Window
         "scale.sidebar", "scale.tabs", "scale.path", "scale.list", "singlepane", "closeemptypane", "stats", "animations", "smoothscroll",
         "autoscroll", "autoscrollx", "theme.native", "theme.mode", "theme.windowsaccent",
     };
-    internal static readonly string[] FilesKeys = { "hidden", "shortcutfolders", "internaleditor", "preview.modules.disabled", "itemtips", "tipdelay", "deletesound", "nativemenu", "newplus.folder", "newplus.hideext", "newplus.hidedigits", "newplus.variables" };
+    internal static readonly string[] FilesKeys = { "hidden", "shortcutfolders", "internaleditor", "preview.modules.disabled", "itemtips", "tipdelay", "deletesound", "nativemenu", "newplus.folder", "newplus.hideext", "newplus.hidedigits", "newplus.variables", "hashlimit", "hashcache" };
     internal static readonly string[] TransfersKeys = { "verify", "parallel" };
     /// Choices outside these cards retain their own controls: Windows integration,
     /// history retention in System analysis, and remembered state.
     internal static readonly string[] NotReset =
     {
         "wine", "tray", "adminatstart", "taskbarsearch", "taskbarsearchbox", "preview", "previewwidth", "lastseen", "recent", "destinations", "sidebar", "sidebarorder", "sidebarcollapsed", "split", "maximized", "window", "quicklist",
-        "performance.days", "crcfolders", "crcarchives", // chosen from a Details column header, like the other remembered view state
+        "performance.days", "crcfolders", "crcarchives", "hashlower", // chosen from a Details column header, like the other remembered view state
+        "copydetails", // Copy…'s last choices
         "compress", // Compress…'s last choices, remembered as 7-Zip's Add to archive does
         "imageresize", "renameoptions", // Resize images' and Rename all's last choices, remembered as PowerToys does
     };

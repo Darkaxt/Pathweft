@@ -20,11 +20,20 @@ public partial class MainWindow
     internal static IEnumerable<MenuItem> MenuCommands(ItemsControl menu)
     {foreach(var item in menu.Items.OfType<MenuItem>()){yield return item;foreach(var child in MenuCommands(item))yield return child;}}
 #endif
+    internal static bool InColumnHeader(DependencyObject from, DependencyObject stop)
+    {
+        for (var d = from; d != null && d != stop; d = d is Visual or System.Windows.Media.Media3D.Visual3D ? VisualTreeHelper.GetParent(d) : LogicalTreeHelper.GetParent(d))
+            if (d is GridViewColumnHeader) return true;
+        return false;
+    }
+
     void HookContextMenu(PaneView p)
     {
         p.List.ContextMenuOpening += (_, e) =>
         {
             SetActive(p);
+            // COLS-01: a column header opens its own menu (the columns), never the folder's
+            if (InColumnHeader(e.OriginalSource as DependencyObject, p.List)) return;
             // right-click on empty space (in Details also right of the columns) = the folder itself, not
             // whatever is still selected
             var row = p.RowAt(e.OriginalSource as DependencyObject);
@@ -194,6 +203,7 @@ public partial class MainWindow
         m.Items.Add(new Separator());
         m.Items.Add(Item("Copy path", "", "Ctrl+Shift+C", () => Clipboard.SetText(Entry.QuotedPaths(sel))));
         m.Items.Add(Item("Copy name", "", "", () => Clipboard.SetText(string.Join(Environment.NewLine, sel.Select(x => x.Name)))));
+        foreach (var detail in CopyDetailItems(p, sel)) m.Items.Add(detail);
         m.Items.Add(one ? Item("Rename", "", "F2", Rename) : Item("Rename all…", "", "F2", RenameMany));
         m.Items.Add(Item("Delete", "", "Del", () => Delete()));
         m.Items.Add(Item("Delete permanently", "", "Shift+Del", () => Delete(permanent: true)));
@@ -243,7 +253,7 @@ public partial class MainWindow
         Take(menu,item=>Named(item,"Cut","Copy","Paste","Paste into folder","Rename","Rename all…","Delete","Delete permanently"));
         menu.Items.Add(new Separator());
         Group("Transfer","\uE8DE",item=>Named(item,"Copy to other pane","Move to other pane","Copy to","Move to","Group into new folder…","Add to Drop bin"));
-        Group("Copy details","\uE8C8",item=>Named(item,"Copy path","Copy name"));
+        Group("Copy details","\uE8C8",item=>Named(item,"Copy path","Copy name")||item.Tag as string=="copy-detail");
         Group("Archive","\uF012",item=>item.Tag==null&&IsArchiveCommand(item.Header as string)||item.Tag as string is "shell:7-zip" or "shell:winrar");
         Group("Tools","\uE713",item=>Named(item,"Run as administrator","Compare in editor","Edit with Notepad++","Resize images…","What's using this?","Create shortcut","Mount")||(item.Header as string)?.StartsWith("Find duplicates")==true);
         Group("More actions","\uE712",_=>true);

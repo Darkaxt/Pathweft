@@ -107,6 +107,34 @@ public class Entry : INotifyPropertyChanged
     uint? crc; // CRC32: stored by an archive, or hashed lazily for a folder's files (null: none/not yet)
     public uint? Crc { get => crc; set { crc = value; Changed(nameof(Crc)); Changed(nameof(CrcText)); } }
     public string CrcText => crc is { } c ? c.ToString("X8") : "";
+    // COLS-02 / HASH-01: the extended columns. Dates from the listing; the rest filled in the background
+    // (owner, Windows properties, hashes), read by the cells through this indexer ("?key": the Hash offer).
+    public DateTime Created { get; set; }
+    public DateTime Accessed { get; set; }
+    Dictionary<string, string> cells;
+    Dictionary<string, IComparable> sorts;
+    HashSet<string> offers;
+    public object this[string key] => key.StartsWith('?') ? (Offered(key[1..]) ? Visibility.Visible : Visibility.Collapsed) : ColumnCatalog.Text(this, key);
+    internal string Cell(string key) => cells?.GetValueOrDefault(key);
+    internal bool HasCell(string key) => cells?.ContainsKey(key) == true;
+    internal IComparable SortValue(string key) => sorts?.GetValueOrDefault(key);
+    internal bool Offered(string key) => offers?.Contains(key) == true;
+    internal void SetCell(string key, string text, IComparable sort = null)
+    {
+        (cells ??= new())[key] = text;
+        if (sort != null) (sorts ??= new())[key] = sort;
+        Changed("Item[]");
+    }
+    /// A hash not computed by itself (too big, online-only, on the network): the cell says why and offers Hash.
+    internal void Offer(string key, string why)
+    {
+        bool changed = (offers ??= new()).Add(key);
+        if (why != null && Cell("~" + key) != why) { (cells ??= new())["~" + key] = why; changed = true; }
+        if (changed) Changed("Item[]");
+    }
+    internal void Withdraw(string key) { if (offers?.Remove(key) == true) Changed("Item[]"); }
+    internal void ClearCells() { if (cells == null && offers == null) return; cells = null; sorts = null; offers = null; Changed("Item[]"); }
+    internal void RefreshCells() => Changed("Item[]");
     string version = "";
     public string Version { get => version; set { version = value; Changed(nameof(Version)); } }
     public string Ext => IsDir ? "" : System.IO.Path.GetExtension(Name).TrimStart('.').ToLowerInvariant();
@@ -245,9 +273,9 @@ class EntrySort(string key, bool desc) : IComparer
             "Message"=>ExplorerOrder.Instance.Compare(x.Message,y.Message),
             "Type" => ExplorerOrder.Instance.Compare(x.Ext, y.Ext) is var t && t != 0 ? t : ExplorerOrder.Instance.Compare(x.Name, y.Name),
             "Modified" => x.Modified.CompareTo(y.Modified),
-            "CRC32" => (x.Crc ?? -1L).CompareTo(y.Crc ?? -1L) is var c && c != 0 ? c : ExplorerOrder.Instance.Compare(x.Name, y.Name),
             "Version" => ExplorerOrder.Instance.Compare(x.Version, y.Version) is var v && v != 0 ? v : ExplorerOrder.Instance.Compare(x.Name, y.Name),
-            _ => ExplorerOrder.Instance.Compare(x.Name, y.Name),
+            "Name" => ExplorerOrder.Instance.Compare(x.Name, y.Name),
+            _ => ColumnCatalog.Compare(x, y, key) is var o && o != 0 ? o : ExplorerOrder.Instance.Compare(x.Name, y.Name),
         };
         return desc ? -r : r;
     }
@@ -322,6 +350,8 @@ public partial class PaneView : UserControl
     readonly List<string> tabs = new() { "" };
     readonly List<bool> pins = new() { false }; // beside tabs, index for index: a pinned tab cannot be closed
     int tab;
+    internal int TabCount => tabs.Count;
+    internal int TabIndex => tab;
     readonly Stack<string> back = new(), fwd = new();
     IList<Entry> items = new List<Entry>(); // an ObservableCollection while search results stream in
     ListCollectionView view;
@@ -460,9 +490,9 @@ public partial class PaneView : UserControl
             // widths survive restarts (saved with the other settings on exit)
             if (Settings.ColumnWidths.TryGetValue(colKey[c], out var w)) c.Width = w;
             if (c == NameColumn)
-                widthProp.AddValueChanged(c, (_, _) => { if (double.IsNaN(c.Width)) { if (!IsWidget) Settings.ColumnWidths.Remove("Name"); FitName(); } });
+                widthProp.AddValueChanged(c, (_, _) => { if (double.IsNaN(c.Width) && !fittingColumns) { if (!IsWidget) Settings.ColumnWidths.Remove("Name"); FitName(); } });
             else
-                widthProp.AddValueChanged(c, (_, _) => { if (!IsWidget) Settings.ColumnWidths[colKey[c]] = c.Width; if (!ResizingColumn) FitName(); });
+                widthProp.AddValueChanged(c, (_, _) => { SaveWidth(c); if (!ResizingColumn && !fittingColumns) FitName(); });
         }
         // The line where Name ends follows its width, the sideways scroll and the list's height.
         InitializeColumns();
@@ -471,6 +501,7 @@ public partial class PaneView : UserControl
         {
             PlaceNameEdge();
             QueueVisibleSearchAssets();
+            if (change.VerticalChange != 0 || change.ExtentHeightChange != 0 || change.ViewportHeightChange != 0) QueueHashes(); // HASH-02: the rows now in view go first
             WidgetScrolled(change);
             if (Marqueeing) MarqueeMove(Mouse.GetPosition(List)); // a wheel or the edge moved the rows under a rectangle
         }));
@@ -508,6 +539,7 @@ public partial class PaneView : UserControl
     public void SetActive(bool on)
     {
         if (on && !isActivePane) paneActivatedAt = Environment.TickCount64;
+        if (isActivePane != on) QueueHashes(); // the active pane's rows are read before the other pane's
         isActivePane = on;
         if (Card.Background != cardFill) { Card.Background = cardFill; Card.BorderBrush = cardEdge; Glow.BorderBrush = glowColor; }
         var accent = ((SolidColorBrush)Application.Current.Resources["AccentEdge"]).Color;
@@ -687,7 +719,7 @@ public partial class PaneView : UserControl
         StartVersions();
         StartThumbs();
         StartIcons();
-        StartCrc();
+        QueueHashes();
     }
 
     // ---- the folder cache: what makes tab switching and re-opening a folder instant ----
@@ -739,7 +771,7 @@ public partial class PaneView : UserControl
             {
                 if (!FileVisibility.Visible(fsi.Name, fsi.Attributes, hidden)) { concealed++; continue; }
                 bool isDir = fsi is DirectoryInfo;
-                var e = new Entry { Name = fsi.Name, Path = fsi.FullName, IsDir = isDir, Modified = fsi.LastWriteTime, IsCut = CutPaths.Contains(fsi.FullName), Attributes = fsi.Attributes, ReadOnlyReason = ReadOnlyIcons.AttributeReason(isDir, fsi.Attributes) };
+                var e = new Entry { Name = fsi.Name, Path = fsi.FullName, IsDir = isDir, Modified = fsi.LastWriteTime, Created = fsi.CreationTime, Accessed = fsi.LastAccessTime, IsCut = CutPaths.Contains(fsi.FullName), Attributes = fsi.Attributes, ReadOnlyReason = ReadOnlyIcons.AttributeReason(isDir, fsi.Attributes) };
                 e.Size = isDir ? SizeCache.Peek(fsi.FullName, fsi.LastWriteTimeUtc) : ((FileInfo)fsi).Length; // never waits for the cache
                 list.Add(e);
             }
@@ -815,7 +847,7 @@ public partial class PaneView : UserControl
         if (record && tabs[tab] != "" && !tabs[tab].Equals(path, StringComparison.OrdinalIgnoreCase)) { back.Push(tabs[tab]); fwd.Clear(); }
         tabs[tab] = path;
         ArchiveRoot = null; // NavigateArchive sets it again right after
-        crcWork?.Cancel(); // folder CRC32 hashing belongs to the folder being left
+        StopHashes(); // the folder's hashes and cells belong to the folder being left
         ReadOnlyWatermark.Visibility = Visibility.Collapsed;
         ClearFolderFailure();
         Visited?.Invoke(path);
@@ -1008,9 +1040,11 @@ public partial class PaneView : UserControl
                 e.ReadOnlyReason = f.ReadOnlyReason; reicon.Add(e);
             }
             if (e.ReadOnlyReason != f.ReadOnlyReason && !Archive.IsArchiveName(e.Path)) e.ReadOnlyReason = f.ReadOnlyReason;
+            if (e.Created != f.Created || e.Accessed != f.Accessed) { e.Created = f.Created; e.Accessed = f.Accessed; e.RefreshCells(); }
             if (e.Modified != f.Modified)
             {
                 e.Modified = f.Modified;
+                if (!e.IsDir) e.ClearCells(); // its hashes and properties describe the old content
                 if (e.IsDir) { e.Size = f.Size; resize |= f.Size == -1; } // -1: its contents changed, measure again
                 else if (e.Thumb != null) { e.Thumb = null; e.ThumbSize = 0; rethumb = true; } // an edited photo
                 // an installer still being written when it was first listed had no version or icon yet
@@ -1337,6 +1371,7 @@ public partial class PaneView : UserControl
                     batch.Add(new Entry
                     {
                         Name = fsi.Name, Path = fsi.FullName, IsDir = isDir, Modified = fsi.LastWriteTime, Location = where == "." ? "" : where,
+                        Created = fsi.CreationTime, Accessed = fsi.LastAccessTime, Attributes = fsi.Attributes,
                         IsCut = CutPaths.Contains(fsi.FullName), ReadOnlyReason = ReadOnlyIcons.AttributeReason(isDir, fsi.Attributes),
                         Size = isDir ? SizeCache.Get(fsi.FullName, fsi.LastWriteTimeUtc) : ((FileInfo)fsi).Length,
                     });
@@ -1516,7 +1551,7 @@ public partial class PaneView : UserControl
         StopFolderWatch();
         indexedSearch=false;
         StopColumns();
-        indexedCancellation?.Cancel();sizing?.Cancel();crcWork?.Cancel();prefetching?.Cancel();icons?.Cancel();thumbs?.Cancel();
+        indexedCancellation?.Cancel();sizing?.Cancel();StopHashes();prefetching?.Cancel();icons?.Cancel();thumbs?.Cancel();
         accessReading?.Cancel();
         renameTimer.Stop();zoomTimer?.Stop();overlayTimer?.Stop();
     }
@@ -1923,6 +1958,19 @@ public partial class PaneView : UserControl
 
     public void NewTab() { ParkSpace(); tabs.Insert(tab + 1, Dir); pins.Insert(tab + 1, false); tab++; Navigate(Dir, record: false); }
 
+    /// TABS-08: + and Ctrl+T start a fresh tab at This PC, the drives and folders to go on from.
+    public void NewStartTab() { ParkSpace(); tabs.Insert(tab + 1, ThisPC); pins.Insert(tab + 1, false); tab++; Navigate(ThisPC, record: false); List.Focus(); }
+
+    /// TABS-08: Duplicate: a second tab at the same place, next to it and active, unpinned.
+    internal void DuplicateTab(int i)
+    {
+        ParkSpace();
+        tabs.Insert(i + 1, tabs[i]); pins.Insert(i + 1, false);
+        tab = i + 1;
+        Navigate(tabs[tab], record: false);
+        List.Focus();
+    }
+
     /// What closing the last tab does instead of nothing: the second pane hides itself (Settings → "Close the second pane
     /// with its last tab"). The tab stays, so the pane comes back as it was. Null: the last tab can't be closed.
     Action closeLast;
@@ -2015,13 +2063,15 @@ public partial class PaneView : UserControl
     ContextMenu TabMenu(int i)
     {
         var menu = new ContextMenu();
+        var duplicate = new MenuItem { Header = "Duplicate" };
+        duplicate.Click += (_, _) => DuplicateTab(i);
         var pin = new MenuItem { Header = pins[i] ? "Unpin tab" : "Pin tab" };
         pin.Click += (_, _) => TogglePin(i);
         var close = new MenuItem { Header = "Close tab", InputGestureText = "Ctrl+W", IsEnabled = !pins[i] && (tabs.Count > 1 || closeLast != null) };
         close.Click += (_, _) => CloseTab(i);
         var others = new MenuItem { Header = "Close other tabs", IsEnabled = pins.Where((p, j) => j != i && !p).Any() };
         others.Click += (_, _) => CloseOtherTabs(i);
-        menu.Items.Add(pin); menu.Items.Add(close); menu.Items.Add(others);
+        menu.Items.Add(duplicate); menu.Items.Add(pin); menu.Items.Add(new Separator()); menu.Items.Add(close); menu.Items.Add(others);
         return menu;
     }
 
@@ -2367,6 +2417,12 @@ public partial class PaneView : UserControl
         if (indexedSearch)
         {
             if (key == "Version") { SearchCoverage.Text = "Everything does not index file versions. Choose Name, Size, Type or Modified."; return; }
+            if (key is not ("Name" or "Size" or "Type" or "Modified"))
+            {   // Everything sorts by what it indexes; any other column sorts the results already shown
+                ShowSort(key, desc);
+                if (view != null) view.CustomSort = new EntrySort(key, desc);
+                return;
+            }
             ShowSort(key, desc);
             Search(searchQuery);
             return;
@@ -2391,7 +2447,7 @@ public partial class PaneView : UserControl
     {
         sortKey = key; sortDesc = desc;
         ShowSortArrow();
-        SortButton.ToolTip=$"Sort: {key}, {(desc?"descending":"ascending")}";
+        SortButton.ToolTip=$"Sort: {ColumnCatalog.Header(key)}, {(desc?"descending":"ascending")}";
         System.Windows.Automation.AutomationProperties.SetName(SortButton,$"Sort by {key}, {(desc?"descending":"ascending")}");
     }
 
@@ -2853,7 +2909,7 @@ public partial class PaneView : UserControl
                 DockPanel.SetDock(arrow, Dock.Right);
                 row.Children.Add(arrow);
             }
-            row.Children.Add(new TextBlock { Text = key, TextTrimming = TextTrimming.CharacterEllipsis });
+            row.Children.Add(new TextBlock { Text = ColumnCatalog.Header(key), TextTrimming = TextTrimming.CharacterEllipsis });
             c.Header = row;
         }
     }
@@ -3425,7 +3481,7 @@ public partial class PaneView : UserControl
         if (List.SelectedItem is { } sel && List.ItemContainerGenerator.ContainerFromItem(sel) is UIElement selRow && selRow.Focus()) return;
         List.Focus();
     }
-    void NewTab_Click(object s, RoutedEventArgs e) => NewTab();
+    void NewTab_Click(object s, RoutedEventArgs e) => NewStartTab();
     // The press gave the button the keyboard, and the list only puts it back on a row when it had it (ShowItems):
     // after a click on Back the arrow keys moved between the buttons instead of the files (1.0.47 report).
     // Handed to the list first, the folder that opens puts it on its selected row, as Alt+Left does.

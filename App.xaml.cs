@@ -321,7 +321,7 @@ public partial class App : Application
         // folder sizes from previous sessions are read after the first frame, or on first need (SizeCache.StartLoading)
         Exit += (_, _) => SizeCache.Save();
         var sizeSaver = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMinutes(2) };
-        sizeSaver.Tick += (_, _) => Task.Run(SizeCache.SaveIfChanged); // off the UI thread: up to 50 000 lines
+        sizeSaver.Tick += (_, _) => Task.Run(() => { SizeCache.SaveIfChanged(); HashCache.SaveIfChanged(); }); // off the UI thread: up to 50 000 lines
         sizeSaver.Start();
         base.OnStartup(e);
         // SEARCH-05: verification profiles never restart the owner's real Everything.
@@ -371,6 +371,8 @@ public partial class App : Application
         updateRetirementCancellation.Dispose();
         PerformanceMonitor.Stop();
         Search.EverythingRecovery.StopMonitor();
+        HashQueue.CancelAll();
+        HashCache.SaveIfChanged();
         AdministratorSession.End().GetAwaiter().GetResult();
 #if DEBUG
         HiddenTrialPresentation.StopObserver();

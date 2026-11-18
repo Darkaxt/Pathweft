@@ -30,7 +30,7 @@ public partial class HelpWindow : Window
             ("Tab", "Switch to the other pane"),
             ("Ctrl+P", "One pane or two (also in Settings and the bottom bar)"),
             ("Ctrl+U", "Swap the two panes"),
-            ("Ctrl+T", "New tab"),
+            ("Ctrl+T", "New tab, at This PC"),
             ("Ctrl+W", "Close the tab (pinned tabs stay)"),
             ("Ctrl+Shift+T", "Reopen the tab you closed last; the history button has the rest"),
             ("Ctrl+Tab / Ctrl+Shift+Tab", "Next / previous tab"),

@@ -79,6 +79,12 @@ public static class Settings
     public static readonly Dictionary<string, double> ColumnWidths = new(); // "Size" → 80
     public static bool FolderCrc;          // CRC32 column in folders: opt-in, hashed lazily in the background
     public static bool ArchiveCrc = true;  // CRC32 column inside archives: stored metadata, shown by default
+    // COLS-03: each view kind's chosen columns in order ("folder" → Modified, Size, #SHA-1, System.Author); none: automatic
+    public static readonly Dictionary<string, List<string>> ColumnSets = new();
+    public static bool HashLowercase;      // HASH-01: hash columns and copies in lower case
+    public static int HashCacheMB = 100;   // HASH-04: the hash cache's size limit
+    public static int HashLimitMB = 256;   // HASH-03: larger files are hashed only when asked
+    public static string CopyDetails = ""; // COPY-02: Copy…'s last choices (CopyDetailsDialog.Serialize)
     public static string Compress = "";    // ARCHIVE-12: Compress…'s last settings (ArchiveOptions.Serialize), never the password
     public static int RenameOptions = 0x2; // TOOLS-01: Rename all's PowerRename options (RenameFlags), every occurrence by default
     public static string ImageResize = ""; // TOOLS-03: Resize images' last settings (ImageResizeDialog.Serialize), never Replace the originals
@@ -175,6 +181,11 @@ public static class Settings
                 case "autoscroll": Autoscroll = v == "1"; break;
                 case "crcfolders": FolderCrc = v == "1"; break;
                 case "crcarchives": ArchiveCrc = v != "0"; break;
+                case var k when k.StartsWith("columns.") && k.Length > 8: ColumnSets[k[8..]] = v.Split('|').Where(x => x != "").Distinct().ToList(); break;
+                case "hashlower": HashLowercase = v == "1"; break;
+                case "hashcache" when int.TryParse(v, out var hc): HashCacheMB = Math.Clamp(hc, 1, 4096); break;
+                case "hashlimit" when int.TryParse(v, out var hl): HashLimitMB = Math.Clamp(hl, 1, 1 << 20); break;
+                case "copydetails": CopyDetails = v; break;
                 case "compress": Compress = v; break;
                 case "imageresize": ImageResize = v; break;
                 case "renameoptions" when int.TryParse(v, out var ro): RenameOptions = ro; break;
@@ -266,6 +277,10 @@ public static class Settings
             $"autoscroll={(Autoscroll ? 1 : 0)}",
             $"crcfolders={(FolderCrc ? 1 : 0)}",
             $"crcarchives={(ArchiveCrc ? 1 : 0)}",
+            $"hashlower={(HashLowercase ? 1 : 0)}",
+            $"hashcache={HashCacheMB}",
+            $"hashlimit={HashLimitMB}",
+            $"copydetails={CopyDetails}",
             $"compress={Compress}",
             $"imageresize={ImageResize}",
             $"renameoptions={RenameOptions}",
@@ -280,6 +295,7 @@ public static class Settings
             $"maximized={(Maximized ? 1 : 0)}",
             WindowBounds is { } r ? $"window={r.ToString(CultureInfo.InvariantCulture)}" : "",
         }.Concat(ColumnWidths.Select(c => $"col.{c.Key}={c.Value.ToString(CultureInfo.InvariantCulture)}"))
+         .Concat(ColumnSets.Select(c => $"columns.{c.Key}={string.Join("|", c.Value)}"))
          .Concat(Views.Select(v => $"view.{v.Key}={v.Value}"))
          .Concat(Tabs.Select(t => $"tabs.{t.Key}={string.Join("|", t.Value)}"))
          .Concat(ActiveTab.Select(a => $"activetab.{a.Key}={a.Value}"))

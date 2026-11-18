@@ -115,10 +115,11 @@ public partial class MainWindow
                 foreach (var f in files)
                 {
                     long size = new FileInfo(f).Length, start = before;
-                    var values = Checksums.OfFile(f, names, CancellationToken.None, done =>
+                    // HASH-04: the cache the hash columns fill; asked for by name, so placeholders are read too
+                    var values = HashCache.OfFile(f, names, CancellationToken.None, done =>
                     {
                         if (total > 64L << 20) Dispatcher.BeginInvoke(() => Status.Text = $"Calculating {label}… {(start + done) * 100 / Math.Max(1, total)}%");
-                    });
+                    }, recall: true);
                     before += size;
                     list.Add((Path.GetRelativePath(root, f), values));
                 }
