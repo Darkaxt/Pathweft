@@ -147,7 +147,7 @@ only, no file contents, no hydration.
 | J: (Google Drive) | 8 | 7 ms | 17 ms |
 | T: (Tresorit) | 174,670 | 97 s | 813 s |
 | H: (Google Drive) | 386,709 | 136 s | 868 s |
-| `\\100.74.127.101\flint-ssd` | 30,178 | 21 min | in progress at the time of writing |
+| `\\100.74.127.101\flint-ssd` | 30,178 | 21 min | > 23 min (still running at the time of writing) |
 
 The second scans were 6–8× slower with the same trees. The service was
 enumerating steadily (about 3,000 directory operations per second, no errors);
