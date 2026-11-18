@@ -80,7 +80,7 @@ error; fixed in 2dc545a). Ticket 6 ran `scripts/selftest-vhd.ps1` elevated on a
 | Check | Result |
 | --- | --- |
 | load | ready in 2 ms, 14 items, journal read |
-| query-after-load | `W:pwtestlpha.txt` size 100 |
+| query-after-load | `W:\pwtest\a\alpha.txt` size 100 |
 | churn-within-2s | create, rename, move, resize, delete visible after 217 ms |
 | folder-sizes | recursive sizes correct; missing folder unknown |
 | visibility | entry of an unlistable folder hidden, the folder itself listed |
