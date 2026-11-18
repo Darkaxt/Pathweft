@@ -79,7 +79,14 @@ fn ensure_data_dir() -> Result<(), String> {
 
 /// Copies the binaries, writes the config, registers and starts the service.
 /// `allow` adds pipe users (default: the user running the install).
-pub fn install(allow: &[String]) -> Result<(), String> {
+/// `visibility` (`caller` or `all`) is written when given.
+pub fn install(allow: &[String], visibility: Option<&str>) -> Result<(), String> {
+    let visibility = match visibility {
+        None => None,
+        Some("caller") => Some(config::Visibility::Caller),
+        Some("all") => Some(config::Visibility::All),
+        Some(v) => return Err(format!("--visibility must be caller or all, not {v}")),
+    };
     let scm = open_scm()?;
     let existing = open_service(&scm);
     if let Some(s) = &existing {
@@ -113,8 +120,11 @@ pub fn install(allow: &[String]) -> Result<(), String> {
             cfg.allowed_users.push(u);
         }
     }
+    if let Some(v) = visibility {
+        cfg.visibility = v;
+    }
     cfg.save(&cfg_path)?;
-    println!("config {} (pipe users: {})", cfg_path.display(), cfg.allowed_users.join(", "));
+    println!("config {} (pipe users: {}; visibility: {:?})", cfg_path.display(), cfg.allowed_users.join(", "), cfg.visibility);
 
     let service = match existing {
         Some(s) => s,

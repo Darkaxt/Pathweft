@@ -106,6 +106,13 @@ listed with that user's token). Raw volume handles never leave the service.
 *Accept:* unit test of the filtering rule with a fake access oracle; live test
 that a directory the user cannot list (e.g. `C:\System Volume Information`)
 contributes no results.
+*Owner-approved exception (2026-11-18):* the config field `"visibility"`
+(`"caller"` by default, or `"all"`, set with `pathweft-indexd install
+--visibility all`) can turn the per-result check off for NTFS entries on one
+machine; any allowed pipe user then sees every indexed path. The owner chose
+`all` for this machine ("I don't find much risk in knowing the file paths of my
+files"). The default stays `caller`, so other installations are unchanged;
+scanned roots keep their owner rule, and only names and metadata are exposed.
 
 **IDX-09 Health and CLI.** `status` reports per store: kind, state
 (loading/ready/reloading/scanning/waiting-for-user/offline/error), items, folders,
