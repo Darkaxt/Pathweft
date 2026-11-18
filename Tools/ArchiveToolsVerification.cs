@@ -125,20 +125,24 @@ public partial class MainWindow
 
             // Extract here, Extract to "<name>\", Extract files… (to a chosen folder)
             await On(archives, "plain.zip");
+            async Task Extracted() { await Until(() => lastExtractJob != null, "extract job submitted"); await lastExtractJob.Completion; }
+            lastExtractJob = null;
             Click(MenuOn(Left), i => i.Header as string == "Extract here", "Extract here");
-            await lastExtractJob.Completion;
+            await Extracted();
             check(lastExtractJob.Phase == Phase.Done && lastExtractJob.Errors.IsEmpty && SameTree(Path.Combine(archives, "photos 子")), "ARCHIVE-13: Extract here writes the archive's contents beside it through Transfers");
             await On(archives, "plain.zip");
+            lastExtractJob = null;
             Click(MenuOn(Left), i => i.Header as string == "Extract to \"plain\\\"", "Extract to");
-            await lastExtractJob.Completion;
+            await Extracted();
             check(lastExtractJob.Errors.IsEmpty && SameTree(Path.Combine(archives, "plain", "photos 子")), "ARCHIVE-13: Extract to \"plain\\\" makes the folder and extracts into it");
             string chosen = Path.Combine(work, "chosen"); Directory.CreateDirectory(chosen);
             int asked = 0;
             ArchivePasswordAnswerForVerification = _ => { asked++; return secret; };
             ExtractFolderForVerification = _ => chosen;
             await On(archives, "sealed.7z");
+            lastExtractJob = null;
             Click(MenuOn(Left), i => i.Header as string == "Extract files…", "Extract files…");
-            await Until(() => lastExtractJob != null && lastExtractJob.Completion.IsCompleted && Directory.Exists(Path.Combine(chosen, "photos 子")), "Extract files…");
+            await Extracted();
             check(asked >= 1 && lastExtractJob.Errors.IsEmpty && SameTree(Path.Combine(chosen, "photos 子")), "ARCHIVE-13: Extract files… asks the password of a name-encrypting 7z and extracts to the chosen folder");
             ExtractFolderForVerification = null;
 
@@ -147,7 +151,9 @@ public partial class MainWindow
             {
                 await On(archives, name);
                 int before = reports.Count;
+                lastTest = null;
                 Click(MenuOn(Left), i => i.Header as string == "Test archive", "Test archive " + name);
+                await Until(() => lastTest != null, "Test archive started " + name);
                 var result = await lastTest;
                 await Until(() => reports.Count > before, "Test report " + name);
                 return result;
