@@ -1,0 +1,31 @@
+[package]
+name = "pathweft-index"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.89"
+license = "GPL-3.0-or-later"
+publish = false
+description = "Pathweft's file-name index service (NTFS MFT + USN journal), client library and CLI"
+
+[lib]
+name = "pathweft_index"
+crate-type = ["rlib", "cdylib"]
+
+[[bin]]
+name = "pathweft-indexd"
+path = "src/bin/pathweft-indexd/main.rs"
+
+[[bin]]
+name = "pwindex"
+path = "src/bin/pwindex.rs"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+regex = "1"
+memchr = "2"
+
+[profile.release]
+codegen-units = 2
+lto = "thin"
+debug = "line-tables-only"
