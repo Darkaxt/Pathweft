@@ -319,8 +319,8 @@ public partial class MainWindow
             string archive = Path.Combine(containers, rarWriterTrial ? "writable.rar" : "sample.7z");
             await S1Verification.Navigate(Left, archive);
             int priorTabs = Left.OpenTabs.Count;
-            await Listed(Left, archive, () => Click((Button)Left.FindName("NewTabButton")));
-            Check(Left.OpenTabs.Count == priorTabs + 1 && Left.OpenTabs[Left.ActiveTab] == archive, "ARCHIVE-02 the actual new-tab action preserves its virtual archive location");
+            await Listed(Left, archive, () => Left.DuplicateTab(Left.ActiveTab)); // TABS-08: + opens This PC; Duplicate keeps the place
+            Check(Left.OpenTabs.Count == priorTabs + 1 && Left.OpenTabs[Left.ActiveTab] == archive, "ARCHIVE-02 Duplicate tab preserves its virtual archive location");
             Left.CloseTab();
             await S1Verification.Navigate(Left, archive);
             var sizes = Left.Items.Where(e => !e.IsDir && !e.IsUp).OrderByDescending(e => e.Size).Select(e => e.Name).ToArray();
