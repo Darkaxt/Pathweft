@@ -82,7 +82,10 @@ foreach($case in @(@{name='dark100';scale=100;back=0x141414;ink=0xF6EEE8;accent=
                 $aside=@(Get-ChildItem -LiteralPath $destination -Filter 'PathweftShell-x64.dll.*.old')
                 Check ($aside.Count -eq 1) 'The update moved the held handler aside instead of failing or closing its caller'
                 Check (!@(Get-ChildItem -LiteralPath $destination -Filter 'PathweftShell-1.1.13-*').Count) 'The update removed the per-version handlers of the earlier release'
-                Check (@((Get-Process -Id $PID).Modules|Where-Object{$_.FileName -eq $aside[0].FullName}).Count -eq 1) 'The caller keeps its loaded handler from the moved copy'
+                # Windows keeps reporting a loaded module under the name it was loaded from.
+                Check (@((Get-Process -Id $PID).Modules|Where-Object{$_.BaseAddress -eq $held}).Count -eq 1) 'The caller keeps its handler loaded through the update'
+                try{Remove-Item -LiteralPath $aside[0].FullName -ErrorAction Stop;$freed=$true}catch{$freed=$false}
+                Check (!$freed) 'The moved copy is the one the caller still has loaded'
             }
         }
     }finally{

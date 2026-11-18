@@ -158,7 +158,10 @@ var
   Aside: String;
 begin
   if not FileExists(Path) then Exit;
-  if DeleteFile(Path) then Exit;
+  if DeleteFile(Path) then begin
+    Log('Removed the shell handler: ' + Path);
+    Exit;
+  end;
   if CompareText(ExtractFileExt(Path), '.old') = 0 then
     Aside := Path
   else begin
@@ -185,12 +188,13 @@ var
   Directory: String;
 begin
   Directory := ExpandConstant('{app}');
+  Log('Removing earlier shell handlers from ' + Directory);
   if FindFirst(Directory + '\PathweftShell-*', Found) then
     try
       repeat
         if (CompareText(Found.Name, 'PathweftShell-x64.dll') <> 0) and
            (CompareText(Found.Name, 'PathweftShell-x86.dll') <> 0) then
-          RetireHandler(Directory + '' + Found.Name);
+          RetireHandler(AddBackslash(Directory) + Found.Name);
       until not FindNext(Found);
     finally
       FindClose(Found);
