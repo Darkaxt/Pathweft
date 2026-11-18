@@ -212,6 +212,17 @@ pub struct SERVICE_STATUS {
     pub dwWaitHint: u32,
 }
 
+#[repr(C)]
+#[derive(Default)]
+pub struct SERVICE_STATUS_PROCESS {
+    pub status: SERVICE_STATUS,
+    pub dwProcessId: u32,
+    pub dwServiceFlags: u32,
+}
+
+pub const SC_STATUS_PROCESS_INFO: u32 = 0;
+pub const SYNCHRONIZE: u32 = 0x0010_0000;
+
 pub type ServiceMain = unsafe extern "system" fn(argc: u32, argv: *mut *mut u16);
 pub type HandlerEx = unsafe extern "system" fn(control: u32, event: u32, data: *mut c_void, context: *mut c_void) -> u32;
 
@@ -271,6 +282,7 @@ extern "system" {
     pub fn CreateEventW(sa: *const SECURITY_ATTRIBUTES, manual_reset: BOOL, initial: BOOL, name: *const u16) -> HANDLE;
     pub fn ResetEvent(h: HANDLE) -> BOOL;
     pub fn WaitForSingleObject(h: HANDLE, ms: u32) -> u32;
+    pub fn OpenProcess(access: u32, inherit: BOOL, pid: u32) -> HANDLE;
     pub fn GetOverlappedResult(h: HANDLE, ov: *mut OVERLAPPED, transferred: *mut u32, wait: BOOL) -> BOOL;
     pub fn CancelIoEx(h: HANDLE, ov: *mut OVERLAPPED) -> BOOL;
 }
@@ -307,6 +319,7 @@ extern "system" {
     pub fn StartServiceW(service: HANDLE, argc: u32, argv: *const *const u16) -> BOOL;
     pub fn ControlService(service: HANDLE, control: u32, status: *mut SERVICE_STATUS) -> BOOL;
     pub fn QueryServiceStatus(service: HANDLE, status: *mut SERVICE_STATUS) -> BOOL;
+    pub fn QueryServiceStatusEx(service: HANDLE, level: u32, buffer: *mut u8, size: u32, needed: *mut u32) -> BOOL;
     pub fn DeleteService(service: HANDLE) -> BOOL;
     pub fn CloseServiceHandle(h: HANDLE) -> BOOL;
     pub fn ChangeServiceConfig2W(service: HANDLE, level: u32, info: *mut c_void) -> BOOL;
