@@ -106,7 +106,8 @@ impl Store {
     fn slot(&mut self, key: u32) -> u32 {
         let k = key as usize;
         if self.keys.len() <= k {
-            room(&mut self.keys, k + 1 - self.keys.len());
+            let extra = k + 1 - self.keys.len();
+            room(&mut self.keys, extra);
             self.keys.resize(k + 1, NONE);
         }
         let i = self.keys[k];
