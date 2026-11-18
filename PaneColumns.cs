@@ -93,7 +93,7 @@ public partial class PaneView
         text.SetBinding(TextBlock.TextProperty,new Binding("["+key+"]"));
         text.SetValue(OpacityProperty,0.55);
         text.SetValue(TextBlock.TextTrimmingProperty,TextTrimming.CharacterEllipsis);
-        text.SetValue(Typography.NumeralAlignmentProperty,FontNumeralAlignment.Tabular);
+        text.SetValue(System.Windows.Documents.Typography.NumeralAlignmentProperty,FontNumeralAlignment.Tabular);
         if(!ColumnCatalog.IsHash(key))return new DataTemplate{VisualTree=text};
         var row=new FrameworkElementFactory(typeof(DockPanel));
         var link=new FrameworkElementFactory(typeof(TextBlock));
