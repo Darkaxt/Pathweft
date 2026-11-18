@@ -178,3 +178,8 @@ Drive, Tresorit and the SMB share is still not observed. Resolution condition:
 a "changes in" line for that root in `service.log` after a file is saved or
 renamed there. Until then those roots are covered at least by the periodic
 rescans.
+Owner test, 2026-11-18 23:11 UTC: renamed `H:\My Drive\Roms\Nintendo - Switch 2\Pokopia.nup`
+to `[0400A3A01EE4C000] Pokopia.nup`. The service logged "H:: 2 changes in 1 folders
+(1 added, 1 removed, 0 updated) in 167 ms" and the query returned the new path
+only, so Google Drive (H:) delivery is observed. T: and the share remain
+unobserved; they keep the periodic-rescan fallback.
