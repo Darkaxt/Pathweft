@@ -9,14 +9,18 @@ namespace FileExplorer;
 // the real grouped menus. Everything stays under `root`.
 public partial class MainWindow
 {
-    internal async Task VerifyTools20(string root, Action<bool, string> check)
+    internal async Task VerifyTools20(string root, Action<bool, string> strict)
     {
+        // a census: every check is recorded, a failure doesn't stop the others; the run fails at the end with all of them
+        var failures = new List<string>();
+        void check(bool ok, string label) { if (ok) strict(true, label); else failures.Add(label); }
         await Step("archive", () => VerifyArchiveTools20(Path.Combine(root, "archive"), check));
         await Step("rename-locksmith", () => VerifyRenameLocksmith20(Path.Combine(root, "rename-locksmith"), check));
         await Step("resize", () => VerifyImageResize20(Path.Combine(root, "resize"), check));
         await Step("paste-new", () => VerifyPasteNew20(Path.Combine(root, "paste-new"), check));
         await Step("preview", () => VerifyPreviewTools20(Path.Combine(root, "preview"), check));
         await Step("menus", () => VerifyToolMenus20(Path.Combine(root, "menus"), check));
+        strict(failures.Count == 0, "S20: every tools check passed" + string.Concat(failures.Select(f => " | failed: " + f)));
 
         async Task Step(string name, Func<Task> run)
         {

@@ -105,7 +105,8 @@ public partial class MainWindow
 
             // Open archive browses into it
             await On(archives, "plain.zip");
-            Click(MenuOn(Left), i => i.Header as string == "Open archive", "Open archive");
+            var openMenu = MenuOn(Left); Left.Listed = false;
+            Click(openMenu, i => i.Header as string == "Open archive", "Open archive");
             await Until(() => Left.Listed && Left.Dir.Equals(zip, StringComparison.OrdinalIgnoreCase), "Open archive");
             check(Left.Items.Any(e => e.Name == "photos 子"), "ARCHIVE-13: Open archive browses into the archive");
 
