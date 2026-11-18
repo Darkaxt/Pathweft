@@ -39,14 +39,13 @@ internal static class S4NativeClipboard
     static S4Verification.ClipboardPart[] ReadOpen()
     {
         var parts = new List<S4Verification.ClipboardPart>();
-        uint format = 0; var seen = new HashSet<uint>();
+        uint format = 0;
         // An image's CF_BITMAP/CF_PALETTE handles are what Windows synthesizes from its DIB, so saving the DIB bytes
         // restores the same picture and the same handle formats.
         bool dib = IsClipboardFormatAvailable(8) || IsClipboardFormatAvailable(17);
         while ((format = EnumClipboardFormats(format)) != 0)
         {
             if (dib && format is 2 or 9) continue;
-            if (!seen.Add(format)) continue; // some owners list a format twice; one copy restores it
             // Bitmap/palette/metafile/private handles cannot be serialized as bytes.
             if (format < 0xC000 && format is not (1 or 6 or 7 or 8 or 11 or 12 or 13 or 15 or 16 or 17)) throw new IOException("Unsupported clipboard handle format; no trial mutation permitted.");
             IntPtr memory = GetClipboardData(format); nuint length = GlobalSize(memory);
@@ -56,7 +55,8 @@ internal static class S4NativeClipboard
             byte[] bytes = new byte[(int)length];
             try { Marshal.Copy(pointer, bytes, 0, bytes.Length); }
             finally { GlobalUnlock(memory); }
-            parts.Add(new(DataFormats.GetFormat((int)format).Name, "native", Convert.ToBase64String(bytes)));
+            // Standard formats by number: an app may register a custom format named like WPF's "Format17" for CF_DIBV5.
+            parts.Add(new(format < 0xC000 ? "#" + format : DataFormats.GetFormat((int)format).Name, "native", Convert.ToBase64String(bytes)));
         }
         return parts.ToArray();
     }
@@ -65,7 +65,7 @@ internal static class S4NativeClipboard
         Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
         int locale = parts.FirstOrDefault(p => p.Format == DataFormats.Locale) is { Kind: "stream" } saved ? BitConverter.ToInt32(Convert.FromBase64String(saved.Value)) : System.Globalization.CultureInfo.CurrentCulture.LCID;
         var culture = System.Globalization.CultureInfo.GetCultureInfo(locale);
-        return parts.ToDictionary(p => (uint)DataFormats.GetFormat(p.Format).Id, p => p.Kind switch
+        return parts.ToDictionary(p => p.Format.StartsWith('#') ? uint.Parse(p.Format[1..]) : (uint)DataFormats.GetFormat(p.Format).Id, p => p.Kind switch
         {
             "native" or "stream" or "bytes" => Convert.FromBase64String(p.Value),
             "text" when p.Format == DataFormats.UnicodeText => Encoding.Unicode.GetBytes(p.Value + '\0'),
