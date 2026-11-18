@@ -133,6 +133,9 @@ sizes, folder add/remove, rescan, bench, churn and Everything comparison.
 **IDX-10 Compact memory.** Per entry: a fixed 40-byte record plus the UTF-8 name.
 Target: process private bytes at most half of Everything's working set for the
 same NTFS volumes. *Accept:* measured and reported, with the Everything figure.
+Owner revision (2026-11-18): the half target is advisory; any footprint is
+accepted while the service improves on Everything ("as long as it is an
+improvement over Everything, I accept whatever resources it may be using").
 
 **IDX-11 Metadata only.** The service never reads file contents and never opens a
 file for data access. Volume reads cover only MFT records. Directory and security

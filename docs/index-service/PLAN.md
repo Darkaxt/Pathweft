@@ -21,7 +21,7 @@ is recorded in SPEC.md.
 | IS1 | COMPLETE (source) | – | – | Readiness record below |
 | IS2 | COMPLETE | – | – | IS2 record below |
 | IS3 | COMPLETE | – | – | IS3 record below |
-| IS4 | BLOCKED (owner decision) | IDX-10: 677 MB private against a 565 MB target. Needs the owner's decision: accept, or trade timestamp precision or attribute bits | – | IS4 record below; `MEASUREMENTS.md` |
+| IS4 | COMPLETE | – (IDX-10 footprint accepted by the owner 2026-11-18) | – | IS4 record below; `MEASUREMENTS.md` |
 | IS5 | COMPLETE | – | – | `INTEGRATION.md`; message sent to the Pathweft thread 2026-11-18 |
 | IS6 | ACTIVE | – | – | IS6 record below |
 
@@ -168,3 +168,7 @@ subtree. All appeared in queries without a rescan; batches were applied about
 1.3 s after the changes, and the folder size matched the remaining files.
 Installed through the admin broker (exit 0); the installed service logged
 "watching for changes" for H:, J:, T: and the share at start-up.
+After the install (service restart 22:04 UTC) the first scans finished while
+watching: H: 386,708 entries in 163 s, T: 174,700 in 122 s, J: 7, the share
+30,204 in 1,098 s (one folder could not be listed). With every root loaded the
+service used 713 MB private; the self-test's W: entry was gone.
