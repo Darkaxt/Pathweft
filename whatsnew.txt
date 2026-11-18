@@ -1,6 +1,12 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.78 | 2026-11-18 | Pathweft's own file index
+
+- Searches and folder sizes now use the Pathweft index service when it is running, and stay fast while files change. Everything is used when the service is not running.
+- Search results show which index answered, and "index updating" while a drive or folder is still being indexed.
+- Settings → Windows integration → Pathweft index shows each drive and folder, and lets you add folders (other drives, network shares), rescan them or remove them, and install, update or remove the service.
+
 ## 1.1.77 | 2026-11-18 | Columns, file hashes and Copy details
 
 - Right-click a column header to choose columns, size them to fit, or pick More… from all of Windows' properties. Folders, search results, archives and the space analyzer each keep their own columns, in every tab.

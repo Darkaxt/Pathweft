@@ -84,6 +84,11 @@ Name: "{autodesktop}\Pathweft"; Filename: "{app}\{#AppExe}"; AppUserModelID: "Da
 [Run]
 Filename: "{app}\{#AppExe}"; Parameters: "--desktop-launch"; Description: "Launch Pathweft"; Flags: nowait postinstall skipifsilent
 
+; SEARCH-08: removing Pathweft removes the index service it installed (its
+; settings in ProgramData are kept); "not installed" is a successful no-op.
+[UninstallRun]
+Filename: "{app}\index\pathweft-indexd.exe"; Parameters: "uninstall"; Flags: runhidden waituntilterminated skipifdoesntexist; RunOnceId: "PathweftIndexUninstall"
+
 ; User settings, tabs, history, caches and recovery records are never swept by
 ; the uninstaller. The executable restores only registrations it still owns.
 [Code]

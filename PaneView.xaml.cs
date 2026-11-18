@@ -1460,7 +1460,7 @@ public partial class PaneView : UserControl
                 cts.Token.ThrowIfCancellationRequested();
                 var indexed=new Dictionary<string,long>(StringComparer.OrdinalIgnoreCase);
                 var candidates=todo.Where(e=>!dirty.Any(path=>path==null||SizeCache.Within(path,e.Path)||SizeCache.Within(e.Path,path))).Select(e=>e.Path).ToArray();
-                if(candidates.Length>0)try{indexed=await FileExplorer.Search.EverythingSearchClient.Shared.FolderSizesAsync(candidates,SearchInstance,cts.Token);}
+                if(candidates.Length>0)try{indexed=await FileExplorer.Search.IndexedSearch.FolderSizesAsync(candidates,SearchInstance,cts.Token);}
                 catch(Exception ex)when(ex is InvalidOperationException or System.ComponentModel.Win32Exception or DllNotFoundException or EntryPointNotFoundException){} // unavailable metadata: actual scoped traversal below
                 await Task.Run(()=>Parallel.ForEach(todo,new ParallelOptions{MaxDegreeOfParallelism=2,CancellationToken=cts.Token},e=>
                 {
@@ -1473,7 +1473,7 @@ public partial class PaneView : UserControl
                     Dispatcher.InvokeAsync(()=>
                     {
                         if(cts.IsCancellationRequested||sizing!=cts||!items.Contains(e)||publication.Invalid)return;
-                        e.SizeSource=fromIndex?"Everything index · excluded files may be omitted":"Filesystem measurement";
+                        e.SizeSource=fromIndex?FileExplorer.Search.IndexedSearch.SizeSource:"Filesystem measurement";
                         e.Size=total;StatsSoon(sizeArrival:true);
                     }).Task.GetAwaiter().GetResult();
                 }),cts.Token);
@@ -1634,7 +1634,7 @@ public partial class PaneView : UserControl
         }
         if (indexedSearch)
         {
-            Footer.Text = $"{items.Count:N0} visible · {indexedOffset:N0} / {indexedTotal:N0} indexed matches checked{(searching ? " · searching…" : "")} · Esc returns";
+            Footer.Text = $"{items.Count:N0} visible · {indexedOffset:N0} / {indexedTotal:N0} indexed matches checked{(indexedUpdating ? " · index updating" : "")}{(searching ? " · searching…" : "")} · Esc returns";
             return;
         }
         var sel = Selected;
@@ -1646,7 +1646,7 @@ public partial class PaneView : UserControl
             long size=e.DisplaySize;
             if(size==-1)left++;else if(e.IsDir&&size>=0)cached++;
             total+=Math.Max(0,size);
-            indexed|=e.SizeSource.StartsWith("Everything",StringComparison.Ordinal);
+            indexed|=FileExplorer.Search.IndexedSearch.IsIndexSource(e.SizeSource);
         }
         Footer.Text = sel.Count > 0
             ? $"{sel.Count} selected  ·  {(sel.Any(e=>e.DisplaySize<0)?sel.Count==1?"measuring…":MainWindow.Fmt(sel.Sum(e=>Math.Max(0,e.DisplaySize)))+"+":MainWindow.Fmt(sel.Sum(e=>e.DisplaySize)))}"
@@ -2416,7 +2416,7 @@ public partial class PaneView : UserControl
         if(SpaceAnalyzing)return; // sibling usage order belongs to this temporary view
         if (indexedSearch)
         {
-            if (key == "Version") { SearchCoverage.Text = "Everything does not index file versions. Choose Name, Size, Type or Modified."; return; }
+            if (key == "Version") { SearchCoverage.Text = "The index does not hold file versions. Choose Name, Size, Type or Modified."; return; }
             if (key is not ("Name" or "Size" or "Type" or "Modified"))
             {   // Everything sorts by what it indexes; any other column sorts the results already shown
                 ShowSort(key, desc);

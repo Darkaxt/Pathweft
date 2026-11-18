@@ -25,7 +25,7 @@ internal sealed class SpaceEntry:Entry
     public Visibility LoadingVisible=>Loading&&Expanded?Visibility.Visible:Visibility.Collapsed;
     public bool Spinning=>Loading&&Expanded&&Motion.On;
     public string SpaceStatus=>Loading&&Expanded?"Loading folder…":Refreshing&&State==SpaceState.Changed?"Updating…":State switch{SpaceState.Pending=>"Pending",SpaceState.Scanning=>"Measuring…",SpaceState.Complete=>"Measured",SpaceState.Indexed=>"Indexed",SpaceState.Denied=>"Access denied",SpaceState.Reparse=>"Link skipped",SpaceState.Incomplete=>"Partially measured",SpaceState.Changed=>"Changed during scan",SpaceState.Cancelled=>"Cancelled",_=>"Unavailable"};
-    public string SpaceTip=>State==SpaceState.Indexed?"Everything index · excluded files may be omitted":Failure;
+    public string SpaceTip=>State==SpaceState.Indexed?FileExplorer.Search.IndexedSearch.SizeSource:Failure;
     public double Usage=>RootBytes>0?Math.Clamp(DisplaySize/RootBytes*100,0,100):0;
     public string UsageText=>RootBytes>0?$"{Usage:0.#}%":"";
     internal void Updated(){Changed(nameof(TreeIndent));Changed(nameof(ExpandGlyph));Changed(nameof(LoadingVisible));Changed(nameof(Spinning));Changed(nameof(ExpandVisible));Changed(nameof(SpaceStatus));Changed(nameof(SpaceTip));Changed(nameof(Usage));Changed(nameof(UsageText));Changed("Item[]");}
@@ -272,7 +272,7 @@ public partial class PaneView
             row.State=update.State;row.Failure=update.Error;row.Files=update.Files;row.Folders=update.Folders;
             row.Refreshing=current.RefreshRequested;
             if(update.State is SpaceState.Complete or SpaceState.Indexed||update.State!=SpaceState.Pending&&(row.DisplaySize<0||update.Bytes>=row.DisplaySize))row.Size=update.Bytes;
-            row.SizeSource=update.State==SpaceState.Indexed?"Everything index · excluded files may be omitted":"Filesystem measurement";
+            row.SizeSource=update.State==SpaceState.Indexed?FileExplorer.Search.IndexedSearch.SizeSource:"Filesystem measurement";
         }
         RebuildSpace(current);
     }
@@ -343,7 +343,7 @@ public partial class PaneView
         if(preferIndex&&missing.Length>0)
         {
             using var indexWait=CancellationTokenSource.CreateLinkedTokenSource(token);indexWait.CancelAfter(IndexWait);
-            try{sizes=await FileExplorer.Search.EverythingSearchClient.Shared.FolderSizesAsync(missing.Select(member=>member.Path),SearchInstance,indexWait.Token);}
+            try{sizes=await FileExplorer.Search.IndexedSearch.FolderSizesAsync(missing.Select(member=>member.Path),SearchInstance,indexWait.Token);}
             catch(OperationCanceledException)when(!token.IsCancellationRequested){}
             catch(Exception error)when(error is InvalidOperationException or System.ComponentModel.Win32Exception or DllNotFoundException or EntryPointNotFoundException){}
         }

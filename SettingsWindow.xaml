@@ -319,6 +319,32 @@
             <CheckBox x:Name="ActivityBox" Content="Record app activity" Click="Activity_Click" Margin="0,8,0,0"/>
             <TextBlock Style="{StaticResource Hint}" Text="Records which programs run, from sign-in to sign-out, with their CPU, memory and disk use, for performance history and its MCP tools. Runs as an elevated sign-in task, approved with administrator access. Program paths only: no file contents, command lines or network."/>
             <TextBlock x:Name="ActivityStatus" Style="{StaticResource Hint}" AutomationProperties.LiveSetting="Polite"/>
+            <TextBlock Text="Pathweft index" FontWeight="SemiBold" Margin="0,12,0,6"/>
+            <TextBlock Style="{StaticResource Hint}" Text="Pathweft's own file index answers searches and folder sizes. NTFS drives are indexed completely and kept current; other drives, network shares and folders are added as folder roots and rescanned every 6 hours. When the service is not running, Everything is used."/>
+            <TextBlock x:Name="IndexStatus" TextWrapping="Wrap" Margin="0,6,0,4" AutomationProperties.Name="Pathweft index status" AutomationProperties.LiveSetting="Polite"/>
+            <ItemsControl x:Name="IndexStores" AutomationProperties.Name="Indexed drives and folders">
+              <ItemsControl.ItemTemplate><DataTemplate>
+                <Grid Margin="0,0,0,4">
+                  <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="34"/><ColumnDefinition Width="34"/></Grid.ColumnDefinitions>
+                  <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="{Binding Title}" TextTrimming="CharacterEllipsis" ToolTip="{Binding Title}"/>
+                    <TextBlock Text="{Binding Detail}" Style="{StaticResource Hint}" TextWrapping="Wrap"/>
+                  </StackPanel>
+                  <Border Grid.Column="1" CornerRadius="4" Padding="7,2" Margin="8,0,6,0" VerticalAlignment="Center" Background="{DynamicResource Palette.14FFFFFF}">
+                    <TextBlock Text="{Binding State}" FontSize="11" Foreground="{Binding StateBrush}"/>
+                  </Border>
+                  <Button Grid.Column="2" Style="{StaticResource Ghost}" Padding="7,5" Content="&#xE72C;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" ToolTip="Rescan" AutomationProperties.Name="Rescan" Visibility="{Binding RescanVisible}" Click="IndexRescan_Click"/>
+                  <Button Grid.Column="3" Style="{StaticResource Ghost}" Padding="7,5" Content="&#xE74D;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" ToolTip="Remove folder root" AutomationProperties.Name="Remove folder root" Visibility="{Binding RemoveVisible}" Click="IndexRemove_Click"/>
+                </Grid>
+              </DataTemplate></ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <WrapPanel Margin="0,2,0,0">
+              <Button x:Name="IndexAddFolder" Content="Add folder…" Style="{StaticResource Tab}" Click="IndexAddFolder_Click"/>
+              <Button x:Name="IndexRefresh" Content="Refresh" Style="{StaticResource Tab}" Click="IndexRefresh_Click"/>
+              <Button x:Name="IndexInstall" Content="Install service" Style="{StaticResource Tab}" Click="IndexInstall_Click"/>
+              <Button x:Name="IndexUninstall" Content="Remove service" Style="{StaticResource Tab}" Click="IndexUninstall_Click"/>
+            </WrapPanel>
+            <TextBlock x:Name="IndexActionStatus" Style="{StaticResource Hint}" Margin="0,6,0,0" TextWrapping="Wrap" AutomationProperties.LiveSetting="Polite"/>
           </StackPanel>
         </Border>
 

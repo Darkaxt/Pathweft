@@ -109,6 +109,7 @@ $mpv=Get-Content -LiteralPath (Join-Path $root 'vendor/MPV/runtime-manifest.json
 foreach($file in $mpv.runtime.PSObject.Properties){
     if((Get-FileHash -LiteralPath (Join-Path $publish ('MPV/'+$file.Name))).Hash -ne $file.Value){throw "Pinned media library differs: $($file.Name)"}
 }
+foreach($member in 'index/pathweft-indexd.exe','index/pwindex.exe','index/THIRD-PARTY-LICENSES.txt'){if(!(Test-Path -LiteralPath (Join-Path $publish $member) -PathType Leaf)){throw "The index service member is missing: $member (publish with -p:IndexServiceRoot)"}}
 Copy-Item -LiteralPath (Join-Path $root 'docs/RELEASE-USAGE.md') -Destination (Join-Path $publish 'README.txt')
 Copy-Item -LiteralPath (Join-Path $root 'docs/THIRD-PARTY-NOTICES.md') -Destination (Join-Path $publish 'THIRD-PARTY-NOTICES.md')
 $runtimeNotices=Join-Path $publish 'licenses/Microsoft'

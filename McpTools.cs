@@ -144,25 +144,25 @@ internal static class McpTools
             string root=Path.TrimEndingDirectorySeparator(Path.GetFullPath(target.Root));
             try
             {
-                var client=EverythingSearchClient.Shared;var plain=new SearchSwitches(false,false,false,false);
-                var indexed=await client.SearchAsync(EverythingSearchClient.FolderExpression([root]),0,1,"name",false,plain,cancel);
+                var plain=new SearchSwitches(false,false,false,false);
+                var indexed=await IndexedSearch.SearchAsync(IndexedSearch.FolderExpression([root]),0,1,"name",false,plain,cancel);
                 if(indexed.Total>0)
                 {
                     string expression=$"file: path:\"{root}\\\""+(target.Pattern=="*"?"":" "+target.Pattern);
-                    var first=await client.SearchAsync(expression,0,1000,"name",false,plain,cancel);
-                    if(target.Pattern=="*"&&(await client.FolderSizesAsync([root],"",cancel)).TryGetValue(root,out long folder))
-                        return Row(folder,first.Total,"Everything index (folder size)");
+                    var first=await IndexedSearch.SearchAsync(expression,0,1000,"name",false,plain,cancel);
+                    if(target.Pattern=="*"&&(await IndexedSearch.FolderSizesAsync([root],"",cancel)).TryGetValue(root,out long folder))
+                        return Row(folder,first.Total,first.Engine.Split(' ')[0]+" index (folder size)");
                     long sum=0;bool unknown=false;var page=first;
                     for(uint at=0;;)
                     {
                         foreach(var hit in page.Hits)if(hit.Size>=0)sum+=hit.Size;else unknown=true;
                         at+=(uint)page.Hits.Count;if(page.Hits.Count==0||at>=page.Total)break;
-                        page=await client.SearchAsync(expression,at,1000,"name",false,plain,cancel);
+                        page=await IndexedSearch.SearchAsync(expression,at,1000,"name",false,plain,cancel);
                     }
-                    return Row(sum,first.Total,"Everything index (sum of indexed files)",unknown?"Some indexed files have no size; the total is a lower bound.":null);
+                    return Row(sum,first.Total,first.Engine.Split(' ')[0]+" index (sum of indexed files)",unknown?"Some indexed files have no size; the total is a lower bound.":null);
                 }
             }
-            catch(InvalidOperationException ex){return await Measured(target,"Measured directly; Everything: "+ex.Message,cancel);}
+            catch(InvalidOperationException ex){return await Measured(target,"Measured directly; index: "+ex.Message,cancel);}
             return await Measured(target,"Measured directly; Everything does not index this folder",cancel);
         }
         string how=ManagerCleanup.IsManager(target)?"The package manager's own cache report":target.Id=="scoop-versions"?null:"Measured directly";
@@ -175,7 +175,7 @@ internal static class McpTools
         try{await Task.Run(()=>review.Analyze(cancel),cancel);}
         catch(Exception ex)when(ex is IOException or UnauthorizedAccessException or InvalidOperationException or System.ComponentModel.Win32Exception)
         {return new{id=target.Id,name=target.Name,description=target.Description,location=Empty(target.Root),size_bytes=(long?)null,files=(long?)null,method=method??"Measured directly",issue=ex.Message};}
-        method??=review.IndexedVersions?"Everything index (version folder sizes)":"Measured directly";
+        method??=review.IndexedVersions?IndexedSearch.SizeSource.Split(' ')[0]+" index (version folder sizes)":"Measured directly";
         string issue=review.Unreadable>0?$"{review.Unreadable:N0} items could not be read and are not counted.":review.UnknownVersionSizes>0?$"{review.UnknownVersionSizes:N0} versions have no indexed size.":null;
         return new{id=target.Id,name=target.Name,description=target.Description,location=Empty(target.Root),size_bytes=(long?)review.Bytes,files=(long?)review.Count,method,issue};
     }
@@ -231,8 +231,8 @@ internal static class McpTools
     {
         var folder=new DirectoryInfo(path);if(!folder.Exists)throw new ArgumentException("Folder not found: "+path);
         string key=Path.TrimEndingDirectorySeparator(folder.FullName),everything=null;
-        try{if((await EverythingSearchClient.Shared.FolderSizesAsync([key],"",cancel)).TryGetValue(key,out long size))return new{path=key,size_bytes=(long?)size,method="Everything index"};everything="Everything does not index this folder's size";}
-        catch(InvalidOperationException ex){everything="Everything: "+ex.Message;}
+        try{var sizes=await IndexedSearch.FolderSizesAsync([key],"",cancel);string engine=IndexedSearch.SizeSource.Split(' ')[0];if(sizes.TryGetValue(key,out long size))return new{path=key,size_bytes=(long?)size,method=engine+" index"};everything=engine+" does not index this folder's size";}
+        catch(InvalidOperationException ex){everything="Index: "+ex.Message;}
         // Pathweft's own cache, opened read-only; valid only for the folder's current modification time.
         if(File.Exists(SizeCache.FilePath))
         {
@@ -247,11 +247,11 @@ internal static class McpTools
     static async Task<object> Search(string query,SearchSwitches switches,string sort,bool descending,int offset,int limit,CancellationToken cancel)
     {
         if(switches.Regex)_=new Regex(query.StartsWith("regex:",StringComparison.OrdinalIgnoreCase)?query[6..]:query);
-        var page=await EverythingSearchClient.Shared.SearchAsync(query,(uint)offset,(uint)limit,sort.ToLowerInvariant(),descending,switches,cancel);
+        var page=await IndexedSearch.SearchAsync(query,(uint)offset,(uint)limit,sort.ToLowerInvariant(),descending,switches,cancel);
         return new
         {
-            status=page.Engine+(page.FolderSizesIndexed?"":" · folder sizes are not indexed"),total=page.Total,offset,truncated=offset+page.Hits.Count<page.Total,
-            rows=page.Hits.Select(x=>new{path=x.Path,type=x.IsFolder?"folder":"file",size_bytes=x.Size>=0?x.Size:(long?)null,created=Time(x.Created),modified=Time(x.Modified),attributes=x.Attributes is {} a?((FileAttributes)a).ToString():null}).ToArray()
+            status=page.Engine+(page.FolderSizesIndexed?"":" · folder sizes are not indexed")+(page.Updating?" · index updating, results may be incomplete":""),total=page.Total,offset,truncated=offset+page.Hits.Count<page.Total,
+            rows=page.Hits.Select(x=>new{path=x.Path,type=x.IsFolder?"folder":"file",size_bytes=x.Size>=0?x.Size:(long?)null,created=Time(x.Created),modified=Time(x.Modified),attributes=x.Attributes is {} a?((FileAttributes)a).ToString():null,visible=x.Visible}).ToArray()
         };
     }
 
@@ -275,7 +275,7 @@ internal static class McpTools
             "category"=>new{type="string",@enum=Categories},
             "target"=>new{type="string",maxLength=200,description="Cleanup target id, e.g. user-temp"},
             "path"=>new{type="string",maxLength=32767,description="Absolute local or UNC path"},
-            "query"=>new{type="string",maxLength=8192,description="Everything search syntax"},
+            "query"=>new{type="string",maxLength=8192,description="Everything-style search syntax (the Pathweft index accepts the subset in its PROTOCOL.md; Everything is used when the index service is not running)"},
             "sort"=>new{type="string",@enum=new[]{"name","path","size","extension","created","modified"}},
             "match_path" or "match_case" or "whole_word" or "regex" or "descending"=>new{type="boolean"},
             "offset"=>new{type="integer",minimum=0},

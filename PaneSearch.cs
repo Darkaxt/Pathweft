@@ -18,6 +18,7 @@ public partial class PaneView
     CancellationTokenSource indexedCancellation;
     bool indexedSearch;
     uint indexedTotal;
+    bool indexedUpdating; // SEARCH-06: the index service is still loading or scanning
     uint indexedOffset;
     bool indexedShowHidden;
     Dictionary<string, bool> visibilityParents = new(StringComparer.OrdinalIgnoreCase);
@@ -82,6 +83,9 @@ public partial class PaneView
     // Historical engine regression scenarios can still qualify the retired
     // filesystem backend; release UI has only location-derived Everything scope.
     internal int? VerificationSearchScope;
+#if DEBUG
+    internal IReadOnlyList<Entry> IndexedResultsForVerification => indexedResults;
+#endif
 #endif
     bool updatingSearchOptions;
     internal SearchMatchOptions MatchOptions => (MatchCase.IsChecked==true?SearchMatchOptions.Case:0)
@@ -216,7 +220,7 @@ public partial class PaneView
         try
         {
             if (SearchScopeIndex == 0 && IsVirtual(Dir))
-                throw new ArgumentException("Everything cannot search inside this virtual location. Search from its containing folder or This PC.");
+                throw new ArgumentException("The index cannot search inside this virtual location. Search from its containing folder or This PC.");
             indexedExpression = IndexedQuery.Compose(query, SearchScopeIndex == 0 ? Dir : null,MatchOptions);
         }
         catch (ArgumentException ex) { if(IsWidget){indexedSearch=false;searchQuery=query;ShowItems(new List<Entry>(),null,animate:false);} SearchCoverage.Text = ex.Message; SearchCoverage.Visibility = Visibility.Visible; return; }
@@ -231,7 +235,7 @@ public partial class PaneView
         StopFolderWatch();
         indexedResults = new(); indexedTotal = indexedOffset = 0;
         indexedShowHidden = ShowHidden; visibilityParents = new(StringComparer.OrdinalIgnoreCase);
-        searchNotice = "Querying the selected Everything index…";
+        searchNotice = "Querying the index…";indexedUpdating=false;
         SearchCoverage.Visibility = IsWidget?Visibility.Collapsed:Visibility.Visible;
         ShowItems(indexedResults, null, animate: false);
         SearchCompletion = LoadIndexedPage(indexedCancellation.Token, navVersion);
@@ -246,7 +250,7 @@ public partial class PaneView
         UpdateFooter();
         try
         {
-            var page = await EverythingSearchClient.Shared.QueryAsync(indexedExpression, SearchInstance,
+            var page = await IndexedSearch.QueryAsync(indexedExpression, SearchInstance,
                 indexedOffset, SearchPageSize, sortKey, sortDesc, token);
             if (token.IsCancellationRequested || generation != navVersion) return;
             // Inspect only the requested page. A separate raw cursor ensures a
@@ -258,6 +262,7 @@ public partial class PaneView
             if (token.IsCancellationRequested || generation != navVersion) return;
             indexedOffset += (uint)page.Hits.Count;
             indexedTotal = page.Total;
+            indexedUpdating = page.Updating;
             // The index can change between pages. Refresh is explicit; never
             // present a changing, deduplicated page set as a stable snapshot.
             var known = indexedResults.Select(e => e.Path).ToHashSet(StringComparer.OrdinalIgnoreCase);
@@ -266,7 +271,7 @@ public partial class PaneView
             {
                 var hit = page.Hits[index];
                 if (!known.Add(hit.Path)) { changed = true; continue; }
-                if (visibility != null && !visibility[index]) continue;
+                if (!hit.Visible || visibility != null && !visibility[index]) continue;
                 indexedResults.Add(new Entry
                 {
                     Name = System.IO.Path.GetFileName(hit.Path), Path = hit.Path, IsDir = hit.IsFolder,
@@ -274,7 +279,9 @@ public partial class PaneView
                     Location = System.IO.Path.GetDirectoryName(hit.Path) ?? "", IsCut = CutPaths.Contains(hit.Path),
                 });
             }
-            searchNotice = "Everything index · Unindexed locations may be absent.";
+            searchNotice = page.Engine.StartsWith(IndexServiceClient.Engine, StringComparison.Ordinal)
+                ? IndexServiceClient.Engine + (page.Updating ? " · updating; some drives or folders are still being indexed." : " · Unindexed locations may be absent.")
+                : "Everything index · Unindexed locations may be absent.";
             if (changed) searchNotice += " Index changed during paging; refresh to restart.";
             // A duplicate page must not repeatedly request the same offset.
             indexedCanLoadMore=!changed&&page.Hits.Count>0&&indexedOffset<indexedTotal;

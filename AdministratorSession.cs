@@ -186,6 +186,13 @@ internal sealed class AdministratorSession : IAsyncDisposable
         var session=current??throw new IOException("Administrator session ended");
         await session.Call(on?"activity-on":"activity-off","",cancel).ConfigureAwait(false);
     }
+    // SEARCH-07: install/update or remove the Pathweft index service through the approved session.
+    internal static async Task SetIndexService(bool install,CancellationToken cancel=default)
+    {
+        if(!await Enable(cancel).ConfigureAwait(false))throw new Win32Exception(1223,"Administrator permission cancelled. Nothing changed.");
+        var session=current??throw new IOException("Administrator session ended");
+        await session.Call(install?"index-install":"index-uninstall","",cancel).ConfigureAwait(false);
+    }
     // Settings: turning automatic access off removes the task through the session it started.
     internal static async Task SetSessionTask(bool on,CancellationToken cancel=default)
     {
@@ -260,6 +267,11 @@ internal sealed class AdministratorSession : IAsyncDisposable
                     // ACTIVITY-01: the approved session registers or removes the elevated recorder task; no second prompt.
                     try{StartupTasks.SetRecorder(request.Kind=="activity-on");reply=new(true,request.Kind=="activity-on"?"App activity recording is on":"App activity recording is off");}
                     catch(Exception error)when(error is IOException or UnauthorizedAccessException or InvalidOperationException or COMException or System.Security.SecurityException or ArgumentException){reply=new(false,error.Message);}
+                }
+                else if(request.Kind is "index-install" or "index-uninstall"&&request.Pipe=="")
+                {
+                    try{reply=new(true,await Task.Run(()=>Search.IndexServiceSetup.Run(request.Kind=="index-install")).ConfigureAwait(false));}
+                    catch(Exception error)when(error is IOException or UnauthorizedAccessException or InvalidOperationException or Win32Exception or TimeoutException){reply=new(false,error.Message);}
                 }
                 else reply=new(false,"Unsupported administrator request");
                 await write.WriteLineAsync(JsonSerializer.Serialize(reply)).ConfigureAwait(false);

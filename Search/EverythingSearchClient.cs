@@ -11,10 +11,11 @@ using System.Windows.Threading;
 
 namespace FileExplorer.Search;
 
-internal sealed record IndexedHit(string Path, bool IsFolder, long Size, DateTime Modified, DateTime Created = default, uint? Attributes = null);
+internal sealed record IndexedHit(string Path, bool IsFolder, long Size, DateTime Modified, DateTime Created = default, uint? Attributes = null, bool Visible = true);
 // MCP-03: the es.exe-equivalent switches; Everything resets them before every query.
 internal sealed record SearchSwitches(bool MatchPath, bool MatchCase, bool WholeWord, bool Regex);
-internal sealed record IndexedPage(IReadOnlyList<IndexedHit> Hits, uint Total, string Engine, bool FolderSizesIndexed=false);
+// Updating: SEARCH-06, the index service is still loading or scanning a store.
+internal sealed record IndexedPage(IReadOnlyList<IndexedHit> Hits, uint Total, string Engine, bool FolderSizesIndexed=false, bool Updating=false);
 
 // One SDK state owner for both panes. Native SendMessage calls and the reply
 // window live on a dedicated STA dispatcher; an indexing stall never blocks WPF.

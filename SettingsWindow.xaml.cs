@@ -133,6 +133,7 @@ public partial class SettingsWindow : Window
         ActivityBox.IsEnabled = StartupTasks.ProtectedInstall;
         ActivityBox.IsChecked = StartupTasks.RecorderRegistered != false;
         if (!StartupTasks.ProtectedInstall) ActivityStatus.Text = StartupTasks.UnprotectedRecorder;
+        _ = RefreshIndex();
         AnimationsBox.IsChecked = Settings.Animations;
         SmoothScrollBox.IsChecked = Settings.SmoothScroll;
         SinglePaneBox.IsChecked = Settings.SinglePane;

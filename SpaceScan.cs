@@ -97,7 +97,7 @@ internal static class SpaceScan
                         if(preferIndex&&frame.Children.Count>0)
                         {
                             Dictionary<string,long> sizes=null;
-                            try{sizes=EverythingSearchClient.Shared.FolderSizesAsync(frame.Children.Select(child=>child.Path),instance,token).GetAwaiter().GetResult();}
+                            try{sizes=IndexedSearch.FolderSizesAsync(frame.Children.Select(child=>child.Path),instance,token).GetAwaiter().GetResult();}
                             catch(Exception ex)when(ex is InvalidOperationException or Win32Exception or DllNotFoundException or EntryPointNotFoundException){
 #if DEBUG
                                 IndexObserved?.Invoke(frame.Path,ex.ToString());
