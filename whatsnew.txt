@@ -1,6 +1,14 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.77 | 2026-11-18 | Columns, file hashes and Copy details
+
+- Right-click a column header to choose columns, size them to fit, or pick More… from all of Windows' properties. Folders, search results, archives and the space analyzer each keep their own columns, in every tab.
+- Hash columns (CRC-32, MD5, SHA-1, SHA-256 and more) fill in as you look, quietly in the background. Large files, online-only files and network folders show a Hash link instead.
+- Right-click files → Copy SHA-1, Copy Size and so on, for every column shown, or Copy… to choose a format: lines, TSV, CSV, JSON, Markdown or a checksum file.
+- Right-click a tab → Duplicate. + and Ctrl+T open a new tab at This PC.
+- If Everything stops answering, Pathweft restarts it instead of waiting.
+
 ## 1.1.76 | 2026-11-18 | Rename options, file tools and NanaZip's archive commands
 
 - Rename all (F2 on several items) has PowerRename's options: regular expressions, match case, every occurrence, ${} numbering, name or extension only, UPPERCASE, lowercase, Title Case, files or folders, and date tokens. It remembers them.
