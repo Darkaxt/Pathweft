@@ -38,6 +38,7 @@ internal static partial class Archive
         }
         using var reader = Open(archive);
         Exception stop = null;
+        if (reader.IsSolid) return TestSolid(reader, files, job);
         CheckedOutput current = null;
         try
         {
@@ -79,6 +80,55 @@ internal static partial class Archive
         if (stop is OperationCanceledException) throw stop;
         if (stop != null) throw new IOException("Testing stopped: " + stop.Message, stop);
         return new(tested, bytes, failures);
+    }
+
+    // A solid block decodes as one stream, so 7-Zip's test mode runs once over the archive: each entry it finishes
+    // passed its CRC; the first one it doesn't is where the data (or the password) failed, and what follows it in
+    // the block can't be decoded past that point.
+    static TestResult TestSolid(SharpSevenZipExtractor reader, Dictionary<int, Raw> files, Job job)
+    {
+        var order = files.Keys.Order().ToList();
+        var passed = new HashSet<int>();
+        Exception stop = null;
+        long bytes = 0, reported = 0, total = files.Values.Sum(e => e.Size);
+        void Point(int next) { if (job != null && next < order.Count) { var e = files[order[next]]; job.Current = e.Path; job.CurrentSize = e.Size; job.CurrentDone = 0; } }
+        Point(0);
+        reader.FileExtractionFinished += (_, e) =>
+        {
+            try
+            {
+                Check(job);
+                if (!files.TryGetValue(e.FileInfo.Index, out var entry)) return;
+                passed.Add(entry.Index); bytes += entry.Size;
+                if (job != null) job.DoneFiles++;
+                Point(passed.Count);
+            }
+            catch (Exception ex) { stop = ex; e.Cancel = true; }
+        };
+        if (job != null)
+            reader.Extracting += (_, e) =>
+            {
+                long done = total * e.PercentDone / 100;
+                if (done > reported) { job.AddBytes(done - reported); reported = done; }
+            };
+        bool ok = reader.Check();
+        Check(job);
+        if (stop is OperationCanceledException) throw stop;
+        if (stop != null) throw new IOException("Testing stopped: " + stop.Message, stop);
+        var failures = new List<(string, string)>();
+        if (!ok || passed.Count < files.Count)
+        {
+            var failed = order.Where(i => !passed.Contains(i)).ToList();
+            if (failed.Count == 0) failures.Add(("(archive)", "The archive's structure is damaged"));
+            else
+            {
+                var first = files[failed[0]];
+                failures.Add((first.Path, first.Encrypted ? "Wrong password, or the data is damaged" : "Data error: the data is damaged"));
+                foreach (int i in failed.Skip(1)) failures.Add((files[i].Path, "Can't be decoded past the damage in its solid block"));
+                if (job != null) job.DoneFiles += failed.Count;
+            }
+        }
+        return new(passed.Count, bytes, failures);
     }
 
     static string Describe(Exception ex, Raw entry)

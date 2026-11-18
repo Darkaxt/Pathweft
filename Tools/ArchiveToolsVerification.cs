@@ -24,7 +24,7 @@ public partial class MainWindow
         File.WriteAllText(text, string.Concat(Enumerable.Repeat("Pathweft ARCHIVE-13 子\n", 5000)));
         var noise = new byte[1 << 20]; new Random(13).NextBytes(noise); File.WriteAllBytes(Path.Combine(folder, "inner", "noise.bin"), noise);
         const string secret = "archive-13 secret";
-        string zip = Path.Combine(archives, "plain.zip"), sealed7z = Path.Combine(archives, "sealed.7z"), damaged = Path.Combine(archives, "damaged.zip");
+        string zip = Path.Combine(archives, "plain.zip"), sealed7z = Path.Combine(archives, "sealed.7z"), damaged = Path.Combine(archives, "damaged.zip"), damaged7z = Path.Combine(archives, "damaged-solid.7z");
         await Task.Run(() =>
         {
             Archive.Create(zip, Archive.Files(new[] { folder }, ""));
@@ -32,6 +32,10 @@ public partial class MainWindow
             var bytes = File.ReadAllBytes(zip);
             for (int i = 0; i < 64; i++) bytes[bytes.Length / 2 + i] ^= 0x5A;
             File.WriteAllBytes(damaged, bytes);
+            Archive.Create(damaged7z, Archive.Files(new[] { folder }, ""), null, new ArchiveOptions { Format = "7z", Solid = "on" });
+            var solid = File.ReadAllBytes(damaged7z);
+            for (int i = 0; i < 64; i++) solid[solid.Length / 2 + i] ^= 0x5A;
+            File.WriteAllBytes(damaged7z, solid);
         });
         Archive.SetPassword(sealed7z, null);
 
@@ -162,6 +166,8 @@ public partial class MainWindow
             check(good != null && good.Failures.Count == 0 && good.Tested == 2 && reports[^1].VerificationRows.All(r => r.State == 1), "ARCHIVE-13: Test archive passes a good archive and says so");
             var bad = await Test("damaged.zip");
             check(bad != null && bad.Failures.Count > 0 && reports[^1].VerificationRows.Any(r => r.State == -1), "ARCHIVE-13: Test archive reports the entry that fails its stored check" + string.Concat((bad?.Failures ?? Array.Empty<(string, string)>()).Select(f => $" | {f.Entry}: {f.Problem}")));
+            var badSolid = await Test("damaged-solid.7z");
+            check(badSolid != null && badSolid.Failures.Count > 0 && badSolid.Failures[0].Entry != "(archive)" && reports[^1].VerificationRows.Any(r => r.State == -1), "ARCHIVE-13: Test archive tests a solid 7z in one pass and names the damaged entry" + string.Concat((badSolid?.Failures ?? Array.Empty<(string, string)>()).Select(f => $" | {f.Entry}: {f.Problem}")));
             Archive.SetPassword(sealed7z, null);
             var sealedResult = await Test("sealed.7z");
             check(sealedResult != null && sealedResult.Failures.Count == 0 && sealedResult.Tested == 2, "ARCHIVE-13: Test archive tests a password-protected 7z after asking for its password"
