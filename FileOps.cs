@@ -305,7 +305,10 @@ public partial class MainWindow
     // Off the UI thread, the count in the status line. Before the first name changes, a record of where each item may
     // end up (its temporary name or its new one, and how it looks) is saved in the Undo history, so if Pathweft stops
     // halfway Ctrl+Z can still put every name back; it is replaced by the plain entry once the rename is done.
-    async void RenameMany()
+    async void RenameMany() => await RenameManyAsync();
+
+    // Awaitable for the TOOLS-01 verification, which drives this same path.
+    async Task RenameManyAsync()
     {
         var sel = active.Selected;
         var plan = MultiRenameDialog.Ask(this, sel);
@@ -488,26 +491,6 @@ public partial class MainWindow
         Right.SetSelection(e => Differs(e, l));
         int nl = Left.Selected.Count, nr = Right.Selected.Count;
         Status.Text = nl + nr == 0 ? "The two folders have the same files" : $"Different: {nl} on the left, {nr} on the right  ·  Ctrl+F5 copies the selection across";
-    }
-
-    // ---- Checksum ----
-    async void Checksum(Entry e)
-    {
-        Status.Text = $"Calculating SHA-256 of {e.Name}…";
-        string hash;
-        try { hash = await Task.Run(() => { using var s = new FileStream(e.Path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite, 1 << 20); return Convert.ToHexString(SHA256.HashData(s)).ToLowerInvariant(); }); }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { Status.Text = ex.Message; return; }
-        ShowChecksum(e.Name, hash);
-    }
-    void ShowChecksum(string name, string hash)
-    {
-        Status.Text = "";
-        // A hash copied from a download page is compared automatically.
-        var clip = Clipboard.ContainsText() ? Clipboard.GetText().Trim() : "";
-        var label = clip.Length == 64 && clip.All(Uri.IsHexDigit)
-            ? clip.Equals(hash, StringComparison.OrdinalIgnoreCase) ? "SHA-256 — matches the hash on the clipboard ✓" : "SHA-256 — does NOT match the hash on the clipboard ✗"
-            : "SHA-256 (copy a published hash first and it is compared automatically)";
-        if (PromptDialog.Ask(this, name, label, hash, "Copy", selectAll: true) != null) Clipboard.SetText(hash);
     }
 
     // ---- Shortcuts ----

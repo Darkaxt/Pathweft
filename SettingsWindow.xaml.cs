@@ -115,6 +115,11 @@ public partial class SettingsWindow : Window
         VerifyBox.IsChecked = Settings.Verify;
         ParallelBox.IsChecked = Settings.ParallelCopy;
         EditorBox.IsChecked = Settings.InternalEditor;
+        TemplatesFolderText.Text = Settings.NewPlusFolder is { Length: > 0 } chosenTemplates ? chosenTemplates : NewPlus.DefaultFolder;
+        TemplatesFolderText.ToolTip = TemplatesFolderText.Text;
+        TemplatesHideExtBox.IsChecked = Settings.NewPlusHideExtension;
+        TemplatesHideDigitsBox.IsChecked = Settings.NewPlusHideDigits;
+        TemplatesVariablesBox.IsChecked = Settings.NewPlusVariables;
         DefaultBox.IsEnabled = WinEBox.IsEnabled = Settings.Profile == null;
         RefreshFolderIntegration();
         WinEBox.IsChecked = Settings.TakeWinE;
@@ -169,7 +174,7 @@ public partial class SettingsWindow : Window
         "scale.sidebar", "scale.tabs", "scale.path", "scale.list", "singlepane", "closeemptypane", "stats", "animations", "smoothscroll",
         "autoscroll", "autoscrollx", "theme.native", "theme.mode", "theme.windowsaccent",
     };
-    internal static readonly string[] FilesKeys = { "hidden", "shortcutfolders", "internaleditor", "preview.modules.disabled", "itemtips", "tipdelay", "deletesound", "nativemenu" };
+    internal static readonly string[] FilesKeys = { "hidden", "shortcutfolders", "internaleditor", "preview.modules.disabled", "itemtips", "tipdelay", "deletesound", "nativemenu", "newplus.folder", "newplus.hideext", "newplus.hidedigits", "newplus.variables" };
     internal static readonly string[] TransfersKeys = { "verify", "parallel" };
     /// Choices outside these cards retain their own controls: Windows integration,
     /// history retention in System analysis, and remembered state.
@@ -548,6 +553,24 @@ public partial class SettingsWindow : Window
     void Hidden_Click(object s, RoutedEventArgs e) { Settings.ShowHidden = HiddenBox.IsChecked == true; Settings.Save(); main.RefreshPanes(); }
     void ShortcutFolders_Click(object s, RoutedEventArgs e) { Settings.ShortcutsWithFolders = ShortcutFoldersBox.IsChecked == true; Settings.Save(); main.ResortPanes(); }
     void Editor_Click(object s, RoutedEventArgs e) { Settings.InternalEditor = EditorBox.IsChecked == true; Settings.Save(); }
+    void Templates_Click(object s, RoutedEventArgs e)
+    {
+        Settings.NewPlusHideExtension = TemplatesHideExtBox.IsChecked == true;
+        Settings.NewPlusHideDigits = TemplatesHideDigitsBox.IsChecked == true;
+        Settings.NewPlusVariables = TemplatesVariablesBox.IsChecked == true;
+        Settings.Save();
+    }
+    void TemplatesBrowse_Click(object s, RoutedEventArgs e)
+    {
+        var pick = new Microsoft.Win32.OpenFolderDialog { Title = "Templates folder", InitialDirectory = MainWindow.TemplateFolder() };
+        if (pick.ShowDialog(this) != true) return;
+        // picking the default folder keeps the setting at its default
+        Settings.NewPlusFolder = pick.FolderName.Equals(NewPlus.DefaultFolder, StringComparison.OrdinalIgnoreCase) ? "" : pick.FolderName;
+        Settings.Save();
+        TemplatesFolderText.Text = MainWindow.TemplateFolder();
+        TemplatesFolderText.ToolTip = TemplatesFolderText.Text;
+    }
+    void TemplatesOpen_Click(object s, RoutedEventArgs e) { main.OpenTemplatesFolder(); Close(); }
     void ArchiveWorkingCopies_Click(object s, RoutedEventArgs e) => main.ShowArchiveWorkingCopies();
     readonly List<System.Windows.Controls.CheckBox> previewModuleControls = new();
     void BuildPreviewModuleControls()

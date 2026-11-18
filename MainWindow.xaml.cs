@@ -1604,7 +1604,7 @@ public partial class MainWindow : Window
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException) { error = ex.Message; }
             Dispatcher.BeginInvoke(() =>
             {
-                if (error != null) MessageBox.Show(this, error, "Delete");
+                if (error != null) ShowFailure(error, paths, "Delete"); // TOOLS-02: a file in use offers What's using it?
                 Left.SpaceRemoved(paths); Right.SpaceRemoved(paths); // a space analysis drops what was deleted at once
                 Left.Refresh(); Right.Refresh();
                 RefreshDrives(); UpdateStats();
@@ -1630,7 +1630,16 @@ public partial class MainWindow : Window
     {
         if (active.ArchiveRoot != null) { ArchiveNewFolder(active); return; }
         if (PaneView.IsVirtual(active.Dir)) return; // This PC holds drives, an archive its own entries
-        var name = PromptDialog.Ask(this, "New folder", "Folder name", "New folder", "Create");
+        string name;
+        // with folder templates (New+), the New file window lists them under a plain folder; else just the name
+        if (Templates().Where(t => t.Template.IsFolder).ToList() is { Count: > 0 } folders)
+        {
+            var choice = NewFileDialog.Ask(this, folders, folder: true);
+            if (choice == null) return;
+            if (choice.ChosenTemplate is { } template) { _ = CreateFromTemplate(template); return; }
+            name = choice.Result;
+        }
+        else name = PromptDialog.Ask(this, "New folder", "Folder name", "New folder", "Create");
         if (name == null) return;
         var path = Path.Combine(active.Dir, name);
         bool existed = Directory.Exists(path);
@@ -1644,8 +1653,9 @@ public partial class MainWindow : Window
     {
         if (active.ArchiveRoot != null) { ArchiveNewFile(active); return; }
         if (PaneView.IsVirtual(active.Dir)) return;
-        var dialog = new NewFileDialog(this);
-        if (dialog.ShowDialog() != true) return;
+        var dialog = NewFileDialog.Ask(this, Templates());
+        if (dialog == null) return;
+        if (dialog.ChosenTemplate is { } template) { _ = CreateFromTemplate(template); return; }
         string created = null;
         Run(() => created = dialog.Create(active.Dir));
         if (created == null) return;

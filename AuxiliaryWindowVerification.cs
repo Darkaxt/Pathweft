@@ -115,10 +115,14 @@ public partial class MainWindow
                 var create=new NewFileDialog(this);
                 try{await Render(create,"new-file",scale==1.5);}
                 finally{create.Close();}
+                var templated=new NewFileDialog(this,new (NewTemplate,string)[]{(new(Path.Combine(fixture,"rename-me.txt"),"Report",false),"Report"),(new(Path.Combine(fixture,"rename-me"),"Project",true),"Project")},false);
+                try{await Render(templated,"new-file-templates",scale==1.5);}
+                finally{templated.Close();}
                 var compress=new CompressDialog(this,Path.Combine(fixture,"rename-me"),new[]{Path.Combine(fixture,"rename-me.txt")});
                 try
                 {
                     await Render(compress,"compress",scale==1.5);
+                    check(compress.Body.ScrollableHeight<1&&compress.Body.ExtentHeight<=compress.Body.ViewportHeight+1,"ARCHIVE-14 Compress… fits its two columns without scrolling: "+theme+scale);
                     void Format(string format)=>compress.FormatBox.SelectedItem=compress.FormatBox.Items.Cast<ComboBoxItem>().Single(i=>(string)i.Tag==format);
                     Format("tar");
                     check(!compress.LevelBox.IsEnabled&&!compress.MethodBox.IsEnabled&&!compress.PasswordField.IsEnabled&&compress.PathBox.Text.EndsWith(".tar"),"ARCHIVE-12 TAR offers no level, method or password and renames the archive: "+theme+scale);
@@ -130,6 +134,16 @@ public partial class MainWindow
                     check(compress.Result==null&&compress.Problem.Visibility==Visibility.Visible,"ARCHIVE-12 passwords that don't match are refused in the dialog: "+theme+scale);
                 }
                 finally{compress.Close();}
+                var resize=new ImageResizeDialog(this,fixture,3);
+                try{await Render(resize,"resize-images",scale==1.5);}
+                finally{resize.Close();}
+                var report=ToolReport.Open(this,"Checksum","rename-me.txt",new ReportRow[]{new("CRC-32","CBF43926",null,0,true),new("SHA-256","15e2b0d3c33891ebb0f1ef609ec419420c20e320ce94c65fbc8c3312448eb225","Matches the hash on the clipboard ✓",1,true),new("SHA3-256","Windows here has no SHA3-256",null,-1)},"The hash on the clipboard matches ✓",nameWidth:90);
+                try
+                {
+                    await Render(report,"tool-report",scale==1.5);
+                    check(report.VerificationRows.Count==3&&report.Body.ScrollableHeight<1,"TOOLS-10 the tools' results window renders its rows in Pathweft's style: "+theme+scale);
+                }
+                finally{report.Close();}
                 var duplicates=new DuplicatesWindow(this,new[]{fixture});
                 try
                 {

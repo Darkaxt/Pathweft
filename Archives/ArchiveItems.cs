@@ -71,7 +71,7 @@ public partial class MainWindow
             if (rarUnavailable.Length > 0) { rarCreate.ToolTip = rarUnavailable; ToolTipService.SetShowOnDisabled(rarCreate, true); }
             am.Items.Add(rarCreate);
             am.Items.Add(Item("Compress…", "", "", () => ArchiveCompress(p, null)));
-            if (one && !dir) am.Items.Add(Item("Checksum (SHA-256)", "", "", () => ArchiveChecksum(p, first)));
+            if (one && !dir) am.Items.Add(ChecksumMenu(names => ArchiveChecksum(p, first, names)));
         }
         else
         {
@@ -120,8 +120,8 @@ public partial class MainWindow
         Take(menu, item => Named(item, "Refresh", "Show hidden files", "Hide hidden files"));
         Group("Transfer", "", item => Named(item, "Copy to other pane", "Move to other pane", "Copy to", "Move to", "Group into new folder…", "Add to Drop bin"));
         Group("Copy details", "", item => Named(item, "Copy path", "Copy name"));
-        Group("Archive", "", item => Starts(item, "Compress"));
-        Group("Tools", "", item => Named(item, "Run as administrator", "Compare in editor", "Edit with Notepad++", "Checksum (SHA-256)"));
+        Group("Archive", "", item => IsArchiveCommand(item.Header as string));
+        Group("Tools", "", item => Named(item, "Run as administrator", "Compare in editor", "Edit with Notepad++"));
         Group("Archive tools", "", _ => true);
         Separate(); menu.Items.Add(show); menu.Items.Add(properties);
     }
@@ -255,14 +255,25 @@ public partial class MainWindow
         Status.Text = $"Creating {Path.GetFileName(target)} beside {Path.GetFileName(outer)}";
     }
 
-    async void ArchiveChecksum(PaneView p, Entry e)
+    void ArchiveChecksum(PaneView p, Entry e, IReadOnlyCollection<string> names) => checksumWork = ArchiveChecksumAsync(p, e, names);
+    async Task ArchiveChecksumAsync(PaneView p, Entry e, IReadOnlyCollection<string> names)
     {
         if (p.ArchiveRoot is not { } at || !ArchivePasswords(new[] { e.Path })) return;
-        Status.Text = $"Calculating SHA-256 of {e.Name}…";
-        string hash;
-        try { hash = await Task.Run(() => Archive.EntryHash(at.Archive, Archive.EntriesOf(at.Archive, at.Inner, e.Name).Single(x => !x.IsDir)).ToLowerInvariant()); }
+        Status.Text = $"Calculating {(names.Count == 1 ? names.First() : "checksums")} of {e.Name}…";
+        Dictionary<string, string> values;
+        try
+        {
+            values = await Task.Run(() =>
+            {
+                var raw = Archive.EntriesOf(at.Archive, at.Inner, e.Name).Single(x => !x.IsDir);
+                var sink = new Checksums.Sink(names, CancellationToken.None);
+                Archive.CopyEntry(at.Archive, raw, sink);
+                return sink.Values();
+            });
+        }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException) { Status.Text = ex.Message; return; }
-        ShowChecksum(e.Name, hash);
+        Status.Text = "";
+        ShowChecksums(new() { (e.Name, values) }, names);
     }
 
     // ---- Properties of archive entries: what the archive records about them, and about itself ----

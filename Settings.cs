@@ -56,6 +56,8 @@ public static class Settings
     public static bool TakeWinE;         // with Windows integration on, Win+E opens Pathweft; off = File Explorer
     public static bool CloseToTray;             // closing hides the window to the notification area; the next open is instant
     public static bool CloseEmptyPane;          // closing the second pane's last tab hides that pane (one pane), as Ctrl+P does
+    public static string NewPlusFolder = "";    // New from template's folder; "" = NewPlus.DefaultFolder
+    public static bool NewPlusHideExtension = true, NewPlusHideDigits = true, NewPlusVariables; // how templates are listed and named
     public static int TipDelay = 1500;          // ms before a tooltip shows; WPF's own wait was 1000 (1.0.51: "a little slower")
     public static bool Autoscroll;              // a middle click on the list's empty space scrolls it by moving the mouse, as in a browser
     public static bool AutoscrollSideways = true; // ... sideways too; off: up and down only
@@ -78,6 +80,8 @@ public static class Settings
     public static bool FolderCrc;          // CRC32 column in folders: opt-in, hashed lazily in the background
     public static bool ArchiveCrc = true;  // CRC32 column inside archives: stored metadata, shown by default
     public static string Compress = "";    // ARCHIVE-12: Compress…'s last settings (ArchiveOptions.Serialize), never the password
+    public static int RenameOptions = 0x2; // TOOLS-01: Rename all's PowerRename options (RenameFlags), every occurrence by default
+    public static string ImageResize = ""; // TOOLS-03: Resize images' last settings (ImageResizeDialog.Serialize), never Replace the originals
     public static readonly Dictionary<string, PaneView.ViewMode> Views = new();
     public static readonly Dictionary<string, List<string>> Tabs = new();   // "Left" → folders open in that pane
     public static readonly Dictionary<string, int> ActiveTab = new(); // "Left" → Details
@@ -163,11 +167,17 @@ public static class Settings
                 case "tray": CloseToTray = v == "1"; break;
                 case "adminatstart": AdminAtStart = v != "0"; break;
                 case "closeemptypane": CloseEmptyPane = v == "1"; break;
+                case "newplus.folder": NewPlusFolder = v; break;
+                case "newplus.hideext": NewPlusHideExtension = v != "0"; break;
+                case "newplus.hidedigits": NewPlusHideDigits = v != "0"; break;
+                case "newplus.variables": NewPlusVariables = v == "1"; break;
                 case "tipdelay" when int.TryParse(v, out var td): TipDelay = Math.Clamp(td, 0, 3000); break;
                 case "autoscroll": Autoscroll = v == "1"; break;
                 case "crcfolders": FolderCrc = v == "1"; break;
                 case "crcarchives": ArchiveCrc = v != "0"; break;
                 case "compress": Compress = v; break;
+                case "imageresize": ImageResize = v; break;
+                case "renameoptions" when int.TryParse(v, out var ro): RenameOptions = ro; break;
                 case "autoscrollx": AutoscrollSideways = v != "0"; break;
                 case "quicklist" when int.TryParse(v, out var ql) && ql >= 0: QuickList = ql; break;
                 // paths can't hold |, so it separates them
@@ -248,11 +258,17 @@ public static class Settings
             $"tray={(CloseToTray ? 1 : 0)}",
             $"adminatstart={(AdminAtStart ? 1 : 0)}",
             $"closeemptypane={(CloseEmptyPane ? 1 : 0)}",
+            $"newplus.folder={NewPlusFolder}",
+            $"newplus.hideext={(NewPlusHideExtension ? 1 : 0)}",
+            $"newplus.hidedigits={(NewPlusHideDigits ? 1 : 0)}",
+            $"newplus.variables={(NewPlusVariables ? 1 : 0)}",
             $"tipdelay={TipDelay}",
             $"autoscroll={(Autoscroll ? 1 : 0)}",
             $"crcfolders={(FolderCrc ? 1 : 0)}",
             $"crcarchives={(ArchiveCrc ? 1 : 0)}",
             $"compress={Compress}",
+            $"imageresize={ImageResize}",
+            $"renameoptions={RenameOptions}",
             $"autoscrollx={(AutoscrollSideways ? 1 : 0)}",
             $"quicklist={QuickList}",
             $"recent={string.Join("|", RecentFolders)}",

@@ -1,6 +1,16 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.76 | 2026-11-18 | Rename options, file tools and NanaZip's archive commands
+
+- Rename all (F2 on several items) has PowerRename's options: regular expressions, match case, every occurrence, ${} numbering, name or extension only, UPPERCASE, lowercase, Title Case, files or folders, and date tokens. It remembers them.
+- Right-click → What's using this? shows the programs holding a file or folder open. When a copy, move or delete fails because a file is in use, the Transfers card has What's using it?.
+- Right-click pictures → Resize images…: presets or your own size, fit, fill or stretch, quality settings, and where to save. Ctrl+Z undoes it.
+- The preview can pick out the text in a picture and copy it, and shows .reg files as a tree of keys and values.
+- Right-click an empty spot → Paste as file saves the clipboard's text, HTML or picture as a new file. New → New from template copies your own templates (Settings → Files → Templates).
+- The Archive menu now has everything NanaZip's offered: Open archive, Extract files…, Extract here, Extract to "name\", Test archive, Compress to ZIP or 7z and email, and a Checksum submenu with ten hashes. NanaZip's own entry is no longer repeated in Pathweft's menu (Ctrl+right-click still shows Windows' menu).
+- Every archive command has its icon, and Compress… is laid out in two columns, so it no longer scrolls.
+
 ## 1.1.75 | 2026-11-17 | Space analysis stays with its tab
 
 - Clicking the tab you are on no longer leaves the space analysis.

@@ -41,7 +41,7 @@ internal sealed class BuiltinViewer(PreviewModule module, MainWindow owner, Entr
         {
             case "text": content = Text(await ReadText(path, 256 * 1024, context.Token)); break;
             case "markdown": content = MarkdownContent.Render(await ReadText(path, 1024 * 1024, context.Token)); break;
-            case "image": content = await Image(path, context.Token); break;
+            case "image": content = new OcrOverlay(owner, (System.Windows.Controls.Image)await Image(path, context.Token), context); break;
             case "pdf": await Pdf(path, context); return;
             case "executable": content = ExecutableDetails.View(await Task.Run(()=>ExecutableDetails.Read(path,context.Token),context.Token)); break;
             case "archive":

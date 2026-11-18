@@ -1,0 +1,342 @@
+{
+  "component": "PowerToys selected file tools (PowerRename, File Locksmith, Registry Preview, New+, Image Resizer, Text Extractor)",
+  "repository": "https://github.com/microsoft/PowerToys",
+  "revision": "2d817b0a3a7e16cce7f66820932d91a86c863cc7",
+  "license": "MIT",
+  "files": [
+    {
+      "module": "PowerRename",
+      "upstream": "src/modules/powerrename/lib/PowerRenameRegEx.cpp",
+      "sha256": "DFA2A4A8B2D3B2D6B1D0470E7472D05C0AB90CBF0A553C6080FF9E3EB773E9E5"
+    },
+    {
+      "module": "PowerRename",
+      "upstream": "src/modules/powerrename/lib/PowerRenameRegEx.h",
+      "sha256": "FAD3CB0226593F5D0123CEC6B59F35C780F82014EE5BABF9573D4DBE1E8D496C"
+    },
+    {
+      "module": "PowerRename",
+      "upstream": "src/modules/powerrename/lib/Enumerating.cpp",
+      "sha256": "E221517B7772C1A5AA3658CD16689DBF36C6424A80352D4C65E4A9915C2A9541"
+    },
+    {
+      "module": "PowerRename",
+      "upstream": "src/modules/powerrename/lib/Enumerating.h",
+      "sha256": "05B97490857C0C289D25B1C870AABF34B916ED9E04088DFDEEE6A66D72AF8007"
+    },
+    {
+      "module": "PowerRename",
+      "upstream": "src/modules/powerrename/lib/Randomizer.cpp",
+      "sha256": "5ECC20741969B5C241EAA4B3EE000612E9926F62FC888C7989874AB0F8860A3E"
+    },
+    {
+      "module": "PowerRename",
+      "upstream": "src/modules/powerrename/lib/Randomizer.h",
+      "sha256": "9D18F18571617DF641EE81ADC4530D33B30EDBE27F75B7956E8AE43E89F2336D"
+    },
+    {
+      "module": "PowerRename",
+      "upstream": "src/modules/powerrename/lib/Helpers.cpp",
+      "sha256": "2E6B8CF514912F69131FF296C2F0F1F7B6F0B4AF24D773AF8D8EC208BB295FB3"
+    },
+    {
+      "module": "PowerRename",
+      "upstream": "src/modules/powerrename/lib/Helpers.h",
+      "sha256": "A3C1F0D7633AF13A506F417F2E175247B2929943D9D73C18AE0043F9375CBCF4"
+    },
+    {
+      "module": "PowerRename",
+      "upstream": "src/modules/powerrename/lib/Renaming.cpp",
+      "sha256": "1F77BD86B2791796EF89246424727647AE8E919652E6866499754E247AACCE52"
+    },
+    {
+      "module": "PowerRename",
+      "upstream": "src/modules/powerrename/lib/PowerRenameInterfaces.h",
+      "sha256": "9B4266F25E5078920F240572AA84BAEC1F67E322A55DF380DCEC67287A6ADA57"
+    },
+    {
+      "module": "PowerRename",
+      "upstream": "src/modules/powerrename/lib/PowerRenameItem.cpp",
+      "sha256": "03E19705A09E2C891DB94638634A4C8B402B769809182017073AD559DF882187"
+    },
+    {
+      "module": "PowerRename",
+      "upstream": "src/modules/powerrename/unittests/PowerRenameRegExTests.cpp",
+      "sha256": "09299E43728112835B0B386B39162A08724910BD5560D77815FDA242C86DF396"
+    },
+    {
+      "module": "PowerRename",
+      "upstream": "src/modules/powerrename/unittests/PowerRenameManagerTests.cpp",
+      "sha256": "DBD964E992DDBEB1B415DF05EFA9EAC2B615763DCB23990AA22E35FBE001FFB3"
+    },
+    {
+      "module": "File Locksmith",
+      "upstream": "src/modules/FileLocksmith/FileLocksmithLibInterop/NtdllBase.cpp",
+      "sha256": "D4AE3F0759FB66E54DD5F75D3081A45D596C406EF834D27C803AD3302E2CCE21"
+    },
+    {
+      "module": "File Locksmith",
+      "upstream": "src/modules/FileLocksmith/FileLocksmithLibInterop/NtdllBase.h",
+      "sha256": "F91E5449CA0D3B3AB3A353EE4486BB3BCEFBF6D2964B3C12CC15C7E5C651AE0F"
+    },
+    {
+      "module": "File Locksmith",
+      "upstream": "src/modules/FileLocksmith/FileLocksmithLibInterop/NtdllExtensions.cpp",
+      "sha256": "F1D2F8CEF85EC37942259F2D28D936F3ECDD974BEB9EC6F2FC80D3AE842F7B28"
+    },
+    {
+      "module": "File Locksmith",
+      "upstream": "src/modules/FileLocksmith/FileLocksmithLibInterop/NtdllExtensions.h",
+      "sha256": "878E4D866628522F3F2C2850E3297DA5720EC48E3CAD3A619BE42924D3C5F12C"
+    },
+    {
+      "module": "File Locksmith",
+      "upstream": "src/modules/FileLocksmith/FileLocksmithLibInterop/FileLocksmith.cpp",
+      "sha256": "79063E4AC0A6E70D50821CE91811613A483A5B9E942DE01616EE01A0E2177BCD"
+    },
+    {
+      "module": "File Locksmith",
+      "upstream": "src/modules/FileLocksmith/FileLocksmithLibInterop/FileLocksmith.h",
+      "sha256": "69E17A572452ED85915598411D0AB95E3FBD03EFD60122C2826A10C2683ECCAD"
+    },
+    {
+      "module": "File Locksmith",
+      "upstream": "src/modules/FileLocksmith/FileLocksmithLibInterop/NativeMethods.cpp",
+      "sha256": "D1C1F2B6EAB6ED8681CA652B323C365A63697B69594E5918768F5C586D723C23"
+    },
+    {
+      "module": "Registry Preview",
+      "upstream": "src/modules/registrypreview/RegistryPreviewUILib/RegistryPreviewMainPage.Utilities.cs",
+      "sha256": "E115923A8B4BE0500188EE1C3A37C299609E948EFB8928842965C4AA999F7DEC"
+    },
+    {
+      "module": "Registry Preview",
+      "upstream": "src/modules/registrypreview/RegistryPreviewUILib/ParseHelper.cs",
+      "sha256": "A731804C44343CA60FE6375C8E57AB51D8DA2ADC1D06F4819144D53D22F81DAC"
+    },
+    {
+      "module": "Registry Preview",
+      "upstream": "src/modules/registrypreview/RegistryPreviewUILib/RegistryKey.xaml.cs",
+      "sha256": "72C99080B4DC4E8FD83E263FC4D4DF25D425ACE104543DE51B28A9EB5C9A4466"
+    },
+    {
+      "module": "Registry Preview",
+      "upstream": "src/modules/registrypreview/RegistryPreviewUILib/RegistryValue.xaml.cs",
+      "sha256": "8EA8D066F248A35B7B7D6ED3B58BF8F537DA5E1B367D29D21AB696028811585C"
+    },
+    {
+      "module": "Registry Preview",
+      "upstream": "src/modules/registrypreview/RegistryPreviewUILib/RegistryPreviewMainPage.xaml.cs",
+      "sha256": "F1609E69FC6C79E5273B895ED37B08329A93A39F976D16A718759112CCF3C386"
+    },
+    {
+      "module": "Registry Preview",
+      "upstream": "src/modules/registrypreview/RegistryPreviewUILib/Strings/en-US/Resources.resw",
+      "sha256": "2B3FC367FF10D8B5219A0813A6486CAFF17E7179DB5F7930F201BB65E35E9C66"
+    },
+    {
+      "module": "New+",
+      "upstream": "src/modules/NewPlus/NewShellExtensionContextMenu/helpers_variables.h",
+      "sha256": "011D438EFB63D748F0973356B5BBAE555B6AA097AFFD646C9D2A5740CD6FDCB2"
+    },
+    {
+      "module": "New+",
+      "upstream": "src/modules/NewPlus/NewShellExtensionContextMenu/Helpers.cpp",
+      "sha256": "DE4C443F9F1DCDB3BF5B90CFCC1D72A9575B0B113FB6FC91EBF7922506AE767B"
+    },
+    {
+      "module": "New+",
+      "upstream": "src/modules/NewPlus/NewShellExtensionContextMenu/template_item.cpp",
+      "sha256": "B24CB21974DC40B07168D69D3891C6F15C728BDA8DA080BA0E45F61DCD9B8205"
+    },
+    {
+      "module": "New+",
+      "upstream": "src/modules/NewPlus/NewShellExtensionContextMenu/template_folder.cpp",
+      "sha256": "68FF2BF3A5B83C10D8EE643FC8946754ADFC55B9E618DB3F2397B2C7FD9C16D2"
+    },
+    {
+      "module": "New+",
+      "upstream": "src/modules/NewPlus/NewShellExtensionContextMenu/helpers_filesystem.h",
+      "sha256": "2543CFA19D740E27502D37A54CD70F9AE4A69F16381CD256E15B370B7ADC8EAC"
+    },
+    {
+      "module": "New+",
+      "upstream": "src/modules/NewPlus/NewShellExtensionContextMenu/new_utilities.h",
+      "sha256": "D47A226A8C6F9BDE910E25B1DCCF49BC3BFABB07016F103B8B07882E230E0041"
+    },
+    {
+      "module": "New+",
+      "upstream": "src/modules/NewPlus/NewShellExtensionContextMenu/settings.cpp",
+      "sha256": "701E38FD0BD41447AD64CC199B6C4AD584C91B690A068910EA01612FCA4B0076"
+    },
+    {
+      "module": "New+",
+      "upstream": "src/modules/NewPlus/NewShellExtensionContextMenu/settings.h",
+      "sha256": "45600EFA067A1037DC2B5BF7BC6EC846694D3AFBEB93E34CE85F2FC3AC136DE4"
+    },
+    {
+      "module": "New+",
+      "upstream": "src/modules/NewPlus/NewShellExtensionContextMenu/constants.h",
+      "sha256": "C2346B8EB6435B9D172D82D29F223AB736790A68CC858B5AE901A742B3FA93AF"
+    },
+    {
+      "module": "Image Resizer",
+      "upstream": "src/modules/imageresizer/ui/Models/ResizeOperation.cs",
+      "sha256": "1507C2D9B61177E6BF447B658986BAC9F6AD425384671729454019B04895B6F4"
+    },
+    {
+      "module": "Image Resizer",
+      "upstream": "src/modules/imageresizer/ui/Models/ResizeBatch.cs",
+      "sha256": "59510B1567E6FF37A97FAB37B55DF84CB0587C8034B485BCCE6BBC0CC6EFE4DE"
+    },
+    {
+      "module": "Image Resizer",
+      "upstream": "src/modules/imageresizer/ui/Models/ResizeSize.cs",
+      "sha256": "31A229DF98155E6ABA4255FC24D40212BCF5A0897F78B9D69BF7D318876BF864"
+    },
+    {
+      "module": "Image Resizer",
+      "upstream": "src/modules/imageresizer/ui/Models/CustomSize.cs",
+      "sha256": "22844F010A6AC4458F0C622A3CCD87BC6D0BCF1FB1ED818F5E82078DC8EFC617"
+    },
+    {
+      "module": "Image Resizer",
+      "upstream": "src/modules/imageresizer/ui/Models/ResizeFit.cs",
+      "sha256": "6DB183ED229F87097D1AD6EBA6D8648EFFADE4C54B35130268E3B8F6E569858B"
+    },
+    {
+      "module": "Image Resizer",
+      "upstream": "src/modules/imageresizer/ui/Models/ResizeUnit.cs",
+      "sha256": "BC7CCFA3FDB8820B4DDC537B18A593F1B16F670D45E3E965C28A18EA2D107C28"
+    },
+    {
+      "module": "Image Resizer",
+      "upstream": "src/modules/imageresizer/ui/Models/ImagingEnums.cs",
+      "sha256": "7510D108B13C6927C2022C8FB5ACCB156381B43AA3FD231BDE252C3097570A14"
+    },
+    {
+      "module": "Image Resizer",
+      "upstream": "src/modules/imageresizer/ui/Models/ResizeError.cs",
+      "sha256": "2932EC6327BE391236097C9984FAA77398FC452E12A646574C9D85AA0619A9DB"
+    },
+    {
+      "module": "Image Resizer",
+      "upstream": "src/modules/imageresizer/ui/Utilities/CodecHelper.cs",
+      "sha256": "6559533424F625BBCF702DF087805EBFA9951B563B4417DA4CAEB5243DD6E0A2"
+    },
+    {
+      "module": "Image Resizer",
+      "upstream": "src/modules/imageresizer/ui/Properties/Settings.cs",
+      "sha256": "BEB70042DD5839359D2F82CBE341C657E448F9069868DFFBA17AAF48D9BE230F"
+    },
+    {
+      "module": "Text Extractor",
+      "upstream": "src/modules/PowerOCR/PowerOCR.Core/Formatting/OcrTextFormatter.cs",
+      "sha256": "13FCDF78EF31034F71E116F98FC3CBC0A0E4AD9CC3034EED410BB7F7F96E65B5"
+    },
+    {
+      "module": "Text Extractor",
+      "upstream": "src/modules/PowerOCR/PowerOCR.Core/Formatting/TableTextFormatter.cs",
+      "sha256": "A4024AE00943CCA6D9596F695317F5A83F8861405DBEC6FCF3EAD7993B960FC8"
+    },
+    {
+      "module": "Text Extractor",
+      "upstream": "src/modules/PowerOCR/PowerOCR.Core/Geometry/SelectionGeometry.cs",
+      "sha256": "AE162A89D156E7F263FEE9F3BA65B49D41188D5912D2E03F0C7F27E8C248D095"
+    },
+    {
+      "module": "Text Extractor",
+      "upstream": "src/modules/PowerOCR/PowerOCR.Core/Imaging/BitmapPreprocessor.cs",
+      "sha256": "639CD0875A2A4958C0695867CB1CA8265C0954E3A6D45BA8A64256D34AE4698F"
+    },
+    {
+      "module": "Text Extractor",
+      "upstream": "src/modules/PowerOCR/PowerOCR.Core/Imaging/IBitmapPreprocessor.cs",
+      "sha256": "3DBD68419584E3C77133DD63C306F7D9B9FBA286E44B39CD86781C008BF17DEE"
+    },
+    {
+      "module": "Text Extractor",
+      "upstream": "src/modules/PowerOCR/PowerOCR.Core/Imaging/PreparedBitmap.cs",
+      "sha256": "C6EAE1A931EF539B3A0BF442A6A2F3D2D2A8D973392B64F225C5BEB93C5A5634"
+    },
+    {
+      "module": "Text Extractor",
+      "upstream": "src/modules/PowerOCR/PowerOCR.Core/Models/DisplayBounds.cs",
+      "sha256": "6586DE2344E7104FF7BFDEB4CA168D4E85B786069EF1F124944E0059C3C09044"
+    },
+    {
+      "module": "Text Extractor",
+      "upstream": "src/modules/PowerOCR/PowerOCR.Core/Models/OcrCaptureMode.cs",
+      "sha256": "35D867226FBB051EFE3B1151692F64DE2DEBBBFD8238869C3AFE1D05DE1814DE"
+    },
+    {
+      "module": "Text Extractor",
+      "upstream": "src/modules/PowerOCR/PowerOCR.Core/Models/OcrDocument.cs",
+      "sha256": "600B8A34A950A148464A325F243962C556B147CFF5EA652BB646B5FC6E5045CF"
+    },
+    {
+      "module": "Text Extractor",
+      "upstream": "src/modules/PowerOCR/PowerOCR.Core/Models/OcrLineData.cs",
+      "sha256": "E7AB7540BEB7C72347D27681565C777687C439A754AB97DD4BD111E99F5E8303"
+    },
+    {
+      "module": "Text Extractor",
+      "upstream": "src/modules/PowerOCR/PowerOCR.Core/Models/OcrPoint.cs",
+      "sha256": "09712B3DE0D731AEDACC430CB8A9FF10B5365B8CA2FC456DD6F480C007798CC0"
+    },
+    {
+      "module": "Text Extractor",
+      "upstream": "src/modules/PowerOCR/PowerOCR.Core/Models/OcrRect.cs",
+      "sha256": "758B83063756D179B08D6007DE5B4DA9BD74AD9144C7B538C27B9562817D6F88"
+    },
+    {
+      "module": "Text Extractor",
+      "upstream": "src/modules/PowerOCR/PowerOCR.Core/Models/OcrWordData.cs",
+      "sha256": "CB6EF65F691353B74D505D0CC4E41BB0A8EFB39ABC05C9FCD0E7B6E904A35C28"
+    },
+    {
+      "module": "Text Extractor",
+      "upstream": "src/modules/PowerOCR/PowerOCR.Core/Models/PixelRect.cs",
+      "sha256": "FC81F7386338359049F6FC9AE4710A40DF23A8E29D34855595ADC49FA3377FEA"
+    },
+    {
+      "module": "Text Extractor",
+      "upstream": "src/modules/PowerOCR/PowerOCR.Core/Models/PixelSelection.cs",
+      "sha256": "873A491143E865F45F3DB74C4804001FAEBCE2CC226E67D5100199CBB9A0B17F"
+    },
+    {
+      "module": "Text Extractor",
+      "upstream": "src/modules/PowerOCR/PowerOCR.Core/Ocr/IOcrRecognizer.cs",
+      "sha256": "F5C915B3FEBE5127EE98F672CA9F26F73AB3D1F6A1830FC121AF9F8C0F2BB719"
+    },
+    {
+      "module": "Text Extractor",
+      "upstream": "src/modules/PowerOCR/PowerOCR.Core/Ocr/WindowsOcrRecognizer.cs",
+      "sha256": "6D8B0CC310CA19D7D6A217C3009147819D23AD91F9C3DFBA69A96F11CD0BFD3B"
+    },
+    {
+      "module": "Text Extractor",
+      "upstream": "src/modules/PowerOCR/PowerOCR.Core/Services/ITextExtractorService.cs",
+      "sha256": "F75ED8FDE02B3F9F248ABB3F8C2110F256A98DE87EDCEA608875CE51C51FC26F"
+    },
+    {
+      "module": "Text Extractor",
+      "upstream": "src/modules/PowerOCR/PowerOCR.Core/Services/OcrExtractionRequest.cs",
+      "sha256": "F9F007CCC7E83AF842B2DD399195BE840EFEBAC26CBC23DFEAF82D4FE10DFC31"
+    },
+    {
+      "module": "Text Extractor",
+      "upstream": "src/modules/PowerOCR/PowerOCR.Core/Services/TextExtractorService.cs",
+      "sha256": "4063E1788583F5A073705383A5A2F8C8C7E679193AF8696350739E5F484E5E38"
+    }
+  ],
+  "adaptations": [
+    "Tools/PowerRename.cs",
+    "Tools/FileLocksmith.cs",
+    "Tools/RegistryFile.cs",
+    "Tools/NewPlus.cs",
+    "Tools/ImageResizer.cs",
+    "Tools/TextExtractor.cs"
+  ],
+  "scope": "Managed C# ports of the selected engines only, compiled into Pathweft; no PowerToys runner, settings, shell extension, telemetry, WinUI or native module ships. PowerRename EXIF/XMP tokens and the boost regex engine are not ported."
+}

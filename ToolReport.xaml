@@ -1,0 +1,45 @@
+<Window x:Class="FileExplorer.ToolReport"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Width="720" SizeToContent="Height" MinWidth="480" MaxHeight="760"
+        WindowStartupLocation="CenterOwner" ShowInTaskbar="False" Background="Transparent"
+        Foreground="{DynamicResource Palette.E8EEF6}" FontFamily="Segoe UI Variable Text, Segoe UI" FontSize="12">
+  <!-- One results surface for the S20/ARCHIVE-13 tools (checksums, Test archive, What's using this): the rename
+       dialog's field and actions, rows of name and value, the state of each in the value's colour. -->
+  <Grid x:Name="Root" Background="{DynamicResource Palette.B30A0D13}">
+    <DockPanel Margin="{StaticResource AuxiliaryMargin}">
+      <TextBlock x:Name="Caption" DockPanel.Dock="Top" Foreground="{DynamicResource Palette.8A97AA}" Margin="2,0,0,8" TextWrapping="Wrap"/>
+      <DockPanel DockPanel.Dock="Bottom" Margin="0,14,0,0">
+        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+          <Button x:Name="ExtraButton" Style="{StaticResource AuxiliaryAction}" Margin="0,0,6,0" Visibility="Collapsed" Click="Extra_Click"/>
+          <Button x:Name="CopyButton" Content="Copy" Style="{StaticResource AuxiliaryAction}" Margin="0,0,6,0" Click="Copy_Click"/>
+          <Button x:Name="CloseButton" Content="Close" Style="{StaticResource AuxiliaryAction}" Tag="on" IsCancel="True" Click="Close_Click"/>
+        </StackPanel>
+        <TextBlock x:Name="Summary" Foreground="{DynamicResource Palette.8A97AA}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+      </DockPanel>
+      <Border Style="{StaticResource AuxiliaryField}">
+        <ScrollViewer x:Name="Body" MaxHeight="520" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+          <ItemsControl x:Name="Rows">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <Grid Margin="0,3">
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="{Binding NameWidth}"/>
+                    <ColumnDefinition Width="12"/>
+                    <ColumnDefinition/>
+                  </Grid.ColumnDefinitions>
+                  <TextBlock Text="{Binding Name}" Foreground="{DynamicResource Palette.8A97AA}" TextTrimming="CharacterEllipsis" ToolTip="{Binding Name}"/>
+                  <StackPanel Grid.Column="2">
+                    <TextBox Text="{Binding Value, Mode=OneWay}" Style="{StaticResource Bare}" IsReadOnly="True" Foreground="{Binding Brush}" TextWrapping="Wrap"
+                             FontFamily="{Binding Font}" AutomationProperties.Name="{Binding Name}"/>
+                    <TextBlock Text="{Binding Detail}" Foreground="{DynamicResource Palette.6E7A8C}" TextWrapping="Wrap" Visibility="{Binding DetailVisibility}"/>
+                  </StackPanel>
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </ScrollViewer>
+      </Border>
+    </DockPanel>
+  </Grid>
+</Window>

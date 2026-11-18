@@ -150,8 +150,13 @@
               </Style>
             </TextBlock.Style>
           </TextBlock>
-          <Expander Header="Details" Visibility="{Binding HasErrors, Converter={StaticResource Vis}}" Margin="0,2,0,8" Foreground="{DynamicResource Muted}">
-            <TextBlock Text="{Binding ErrorDetail}" TextWrapping="Wrap" Margin="0,6,0,2" FontSize="11"/>
+          <Expander Header="Details" Visibility="{Binding HasErrors, Converter={StaticResource Vis}}" Margin="0,2,0,8" Foreground="{DynamicResource Muted}" Expanded="JobDetails_Expanded">
+            <StackPanel>
+              <TextBlock Text="{Binding ErrorDetail}" TextWrapping="Wrap" Margin="0,6,0,2" FontSize="11"/>
+              <!-- TOOLS-02: shown on expanding when a file was in use -->
+              <Button Style="{StaticResource JobAction}" HorizontalAlignment="Left" Margin="0,4,0,0" Visibility="Collapsed" Click="JobWhatsUsing_Click" AutomationProperties.Name="What's using it?">
+                <local:TransferActionLabel Glyph="&#xE7EF;" Text="What's using it?"/></Button>
+            </StackPanel>
           </Expander>
           <!-- Current work/outcomes on the left; separately centered glyphs and labels on the right. -->
           <DockPanel>

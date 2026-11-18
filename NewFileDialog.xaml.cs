@@ -11,22 +11,49 @@ namespace FileExplorer;
 
 // "New file" (Ctrl+N): the same list Explorer's New menu offers, which is whatever installed apps
 // registered under HKCR\.ext\...\ShellNew — so Office, editors and the rest show up by themselves.
+// New+ templates (TOOLS-07) are listed first; New folder uses the same window when there are folder templates.
 public partial class NewFileDialog : Window
 {
-    public record FileType(string Name, string Extension, ImageSource Icon, RegistryKey ShellNew);
+    internal record FileType(string Name, string Extension, ImageSource Icon, RegistryKey ShellNew, NewTemplate Template = null);
 
-    /// The created file's name, or null when cancelled.
+    /// The created file's name, or null when cancelled or a template was chosen.
     public string Result { get; private set; }
+    /// The chosen template: created by New+ under its own name, then renamed in place.
+    internal NewTemplate ChosenTemplate { get; private set; }
 
-    public NewFileDialog(Window owner)
+#if DEBUG
+    /// Verification answers the dialog instead of a person: it picks an entry (Choose) and calls Accept.
+    internal static Action<NewFileDialog> VerificationAnswer;
+#endif
+    bool modal, accepted;
+
+    /// The answered dialog, or null when cancelled. `folder`: New folder, a plain folder plus the folder templates.
+    internal static NewFileDialog Ask(Window owner, IReadOnlyList<(NewTemplate Template, string Title)> templates, bool folder = false)
+    {
+        var dialog = new NewFileDialog(owner, templates, folder);
+#if DEBUG
+        HiddenTrialPresentation.Prepare(dialog);
+        if (VerificationAnswer is { } answer) { answer(dialog); dialog.Close(); return dialog.accepted ? dialog : null; }
+#endif
+        dialog.modal = true;
+        return dialog.ShowDialog() == true ? dialog : null;
+    }
+
+    public NewFileDialog(Window owner) : this(owner, Array.Empty<(NewTemplate, string)>(), false) { }
+
+    internal NewFileDialog(Window owner, IReadOnlyList<(NewTemplate Template, string Title)> templates, bool folder)
     {
         InitializeComponent();
         AuxiliaryWindows.Prepare(this,Root);
         Owner = owner;
         SourceInitialized += (_, _) => MainWindow.ApplyAcrylic(this);
         Root.Background = MainWindow.Tint();
-        Types.ItemsSource = ReadShellNewTypes();
-        Types.SelectedIndex = 0;
+        var own = templates.Where(t => !folder || t.Template.IsFolder)
+            .Select(t => new FileType(t.Title, t.Template.IsFolder ? "Folder template" : "Template", t.Template.IsFolder ? FolderIcon() : ExtensionIcon(Path.GetExtension(t.Template.Path)), null, t.Template)).ToList();
+        var types = folder ? new List<FileType> { new("Folder", "", FolderIcon(), null) } : ReadShellNewTypes();
+        if (folder) { Title = "New folder"; TypeLabel.Text = "Folder type"; }
+        Types.ItemsSource = own.Concat(types).ToList();
+        Types.SelectedIndex = own.Count; // Explorer's first type, as before: a template is a choice, not the default
         Loaded += (_, _) => {
 #if DEBUG
             if(!HiddenTrialPresentation.SuppressFocus(this))
@@ -72,10 +99,13 @@ public partial class NewFileDialog : Window
     }
 
     // Icon for a file type without a file: ask the shell about the extension alone.
-    static ImageSource ExtensionIcon(string ext)
+    static ImageSource ExtensionIcon(string ext) => ShellIcon("x" + ext, 0x80 /* FILE_ATTRIBUTE_NORMAL */);
+    static ImageSource FolderIcon() => ShellIcon("x", 0x10 /* FILE_ATTRIBUTE_DIRECTORY */);
+
+    static ImageSource ShellIcon(string name, uint attributes)
     {
         var info = new SHFILEINFO();
-        if (SHGetFileInfo("x" + ext, 0x80 /* FILE_ATTRIBUTE_NORMAL */, ref info, Marshal.SizeOf<SHFILEINFO>(), 0x100 | 0x10 | 0x1) == IntPtr.Zero)
+        if (SHGetFileInfo(name, attributes, ref info, Marshal.SizeOf<SHFILEINFO>(), 0x100 | 0x10 | 0x1) == IntPtr.Zero || info.hIcon == IntPtr.Zero)
             return null;
         try
         {
@@ -91,7 +121,9 @@ public partial class NewFileDialog : Window
     void Type_Changed(object s, SelectionChangedEventArgs e)
     {
         if (Selected is not { } t) return;
-        NameBox.Text = $"New {t.Name}{t.Extension}";
+        // a template keeps its own name until the rename that follows its creation
+        NameBox.IsEnabled = t.Template == null;
+        NameBox.Text = t.Template != null ? Path.GetFileName(t.Template.Path) : t.Extension == "" ? "New folder" : $"New {t.Name}{t.Extension}";
         SelectBaseName();
     }
 
@@ -109,13 +141,29 @@ public partial class NewFileDialog : Window
 
     void Cancel_Click(object s, RoutedEventArgs e) => Close();
 
-    void Create_Click(object s, RoutedEventArgs e)
+    void Create_Click(object s, RoutedEventArgs e) => Accept();
+
+    internal void Accept()
     {
-        if (Selected is not { } t || NameBox.Text.Trim() == "") return;
-        Result = NameBox.Text.Trim();
-        Template = t.ShellNew;
-        DialogResult = true;
+        if (Selected is not { } t) return;
+        if (t.Template != null) ChosenTemplate = t.Template;
+        else if (NameBox.Text.Trim() == "") return;
+        else { Result = NameBox.Text.Trim(); Template = t.ShellNew; }
+        accepted = true;
+        if (modal) DialogResult = true;
     }
+
+#if DEBUG
+    /// Selects the first entry `match` accepts; false when there is none.
+    internal bool Choose(Func<FileType, bool> match)
+    {
+        var found = Types.Items.Cast<FileType>().FirstOrDefault(match);
+        if (found != null) Types.SelectedItem = found;
+        return found != null;
+    }
+    internal IEnumerable<FileType> Entries => Types.Items.Cast<FileType>();
+    internal TextBox NameField => NameBox;
+#endif
 
     RegistryKey Template;
 

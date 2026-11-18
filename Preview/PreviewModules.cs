@@ -33,6 +33,7 @@ internal static class PreviewModules
         new("dump", "Crash dumps", "Windows minidump process, exception, thread and module information; no symbol downloads.",95,new[]{".dmp",".dump",".mdmp",".hdmp",".minidump"}),
         new("prefetch", "Prefetch records", "Windows Prefetch executable, run count, times and referenced files.",95,new[]{".pf"}),
         new("chm", "Compiled help", "Isolated static CHM topics, internal navigation and local images.",95,new[]{".chm"}),
+        new("registry", "Registry files", "Read-only .reg key and value tree with the source text; nothing is imported into the registry.",95,new[]{".reg"}),
         new("shortcut", "Shortcuts", "What a .lnk or .url shortcut points to, read from the shortcut; nothing is launched or repaired.",95,ShortcutInspection.Extensions),
         new("clsid", "Shell class details", "Read-only ::{GUID} registration inspection without activating the inspected class.",110,Array.Empty<string>()),
         new("office", "Office documents", "Read-only document pages, workbook sheets and presentation slides, with embedded navigation.",95,new[]{".doc",".docx",".docm",".odt",".xls",".xlsx",".xlsm",".xlsb",".ods",".ppt",".pptx",".odp",".vsd",".vsdx"}),

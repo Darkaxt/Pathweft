@@ -1,0 +1,129 @@
+<Window x:Class="FileExplorer.ImageResizeDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Resize images" Width="820" SizeToContent="Height" MinWidth="700" MinHeight="340"
+        WindowStartupLocation="CenterOwner" ShowInTaskbar="False" Background="Transparent"
+        Foreground="{DynamicResource Palette.E8EEF6}" FontFamily="Segoe UI Variable Text, Segoe UI" FontSize="12">
+  <Window.Resources>
+    <Style x:Key="Label" TargetType="TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource Palette.8A97AA}"/>
+      <Setter Property="Width" Value="130"/>
+      <Setter Property="VerticalAlignment" Value="Center"/>
+      <Setter Property="TextWrapping" Value="Wrap"/>
+      <Setter Property="DockPanel.Dock" Value="Left"/>
+    </Style>
+    <Style x:Key="Row" TargetType="DockPanel">
+      <Setter Property="Margin" Value="0,0,0,8"/>
+      <Setter Property="LastChildFill" Value="True"/>
+    </Style>
+    <Style x:Key="Section" TargetType="TextBlock">
+      <Setter Property="FontWeight" Value="SemiBold"/>
+      <Setter Property="Margin" Value="0,0,0,8"/>
+    </Style>
+    <Style x:Key="Under" TargetType="CheckBox" BasedOn="{StaticResource {x:Type CheckBox}}">
+      <Setter Property="Margin" Value="130,0,0,8"/>
+    </Style>
+    <Style x:Key="Hint" TargetType="TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource Palette.6E7A8C}"/>
+      <Setter Property="TextWrapping" Value="Wrap"/>
+      <Setter Property="Margin" Value="130,0,0,8"/>
+    </Style>
+  </Window.Resources>
+  <Grid x:Name="Root" Background="{DynamicResource Palette.B30A0D13}">
+    <DockPanel Margin="{StaticResource AuxiliaryMargin}">
+      <TextBlock x:Name="Caption" DockPanel.Dock="Top" Foreground="{DynamicResource Palette.8A97AA}" Margin="2,0,0,12" TextTrimming="CharacterEllipsis"/>
+      <DockPanel DockPanel.Dock="Bottom" Margin="0,12,0,0">
+        <TextBlock x:Name="Problem" DockPanel.Dock="Top" Foreground="{DynamicResource PreviewWarning}" TextWrapping="Wrap" Margin="2,0,0,8" Visibility="Collapsed"/>
+        <Button x:Name="ResizeButton" DockPanel.Dock="Right" Content="Resize" Style="{StaticResource AuxiliaryAction}" Tag="on" IsDefault="True" Click="Resize_Click"/>
+        <Button DockPanel.Dock="Right" Content="Cancel" Style="{StaticResource AuxiliaryAction}" Margin="0,0,6,0" IsCancel="True"/>
+        <TextBlock x:Name="Summary" Foreground="{DynamicResource Palette.6E7A8C}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+      </DockPanel>
+      <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,6,0">
+        <Grid>
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="28"/>
+            <ColumnDefinition Width="*"/>
+          </Grid.ColumnDefinitions>
+          <StackPanel Grid.Column="0">
+            <TextBlock Style="{StaticResource Section}" Text="Size"/>
+            <DockPanel Style="{StaticResource Row}">
+              <TextBlock Style="{StaticResource Label}" Text="Size"/>
+              <ComboBox x:Name="PresetBox" Style="{StaticResource PreviewClipCombo}" AutomationProperties.Name="Size" SelectionChanged="Setting_Changed"/>
+            </DockPanel>
+            <DockPanel x:Name="CustomRow" Style="{StaticResource Row}">
+              <TextBlock Style="{StaticResource Label}" Text="Width × height"/>
+              <ComboBox x:Name="UnitBox" DockPanel.Dock="Right" Width="120" Margin="6,0,0,0" Style="{StaticResource PreviewClipCombo}" AutomationProperties.Name="Unit" SelectionChanged="Setting_Changed"/>
+              <Grid>
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="*"/>
+                  <ColumnDefinition Width="Auto"/>
+                  <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Border Style="{StaticResource AuxiliaryField}">
+                  <TextBox x:Name="WidthBox" Style="{StaticResource Bare}" AutomationProperties.Name="Width" ToolTip="Empty or 0: follows the height" TextChanged="Text_Changed"/>
+                </Border>
+                <TextBlock Grid.Column="1" Text="×" Foreground="{DynamicResource Palette.8A97AA}" VerticalAlignment="Center" Margin="6,0"/>
+                <Border x:Name="HeightField" Grid.Column="2" Style="{StaticResource AuxiliaryField}">
+                  <TextBox x:Name="HeightBox" Style="{StaticResource Bare}" AutomationProperties.Name="Height" ToolTip="Empty or 0: follows the width" TextChanged="Text_Changed"/>
+                </Border>
+              </Grid>
+            </DockPanel>
+            <DockPanel Style="{StaticResource Row}">
+              <TextBlock Style="{StaticResource Label}" Text="Fit"/>
+              <ComboBox x:Name="FitBox" Style="{StaticResource PreviewClipCombo}" AutomationProperties.Name="Fit" SelectionChanged="Setting_Changed"/>
+            </DockPanel>
+            <CheckBox x:Name="ShrinkBox" Content="Only make pictures smaller" Style="{StaticResource Under}" Click="Setting_Click"/>
+            <CheckBox x:Name="OrientationBox" Content="Ignore the orientation of pictures" Style="{StaticResource Under}" Click="Setting_Click"
+                      ToolTip="A portrait picture is fitted to the size turned on its side, so 1920 × 1080 also makes a portrait 1080 × 1920"/>
+
+            <TextBlock Style="{StaticResource Section}" Text="Quality" Margin="0,10,0,8"/>
+            <DockPanel Style="{StaticResource Row}">
+              <TextBlock Style="{StaticResource Label}" Text="JPEG quality"/>
+              <TextBlock x:Name="QualityText" DockPanel.Dock="Right" Width="34" TextAlignment="Right" VerticalAlignment="Center"/>
+              <Slider x:Name="QualitySlider" Minimum="1" Maximum="100" IsSnapToTickEnabled="True" TickFrequency="1" VerticalAlignment="Center"
+                      AutomationProperties.Name="JPEG quality" ValueChanged="Quality_Changed"/>
+            </DockPanel>
+            <DockPanel Style="{StaticResource Row}">
+              <TextBlock Style="{StaticResource Label}" Text="PNG interlacing"/>
+              <ComboBox x:Name="PngBox" Style="{StaticResource PreviewClipCombo}" AutomationProperties.Name="PNG interlacing" SelectionChanged="Setting_Changed"/>
+            </DockPanel>
+            <DockPanel Style="{StaticResource Row}">
+              <TextBlock Style="{StaticResource Label}" Text="TIFF compression"/>
+              <ComboBox x:Name="TiffBox" Style="{StaticResource PreviewClipCombo}" AutomationProperties.Name="TIFF compression" SelectionChanged="Setting_Changed"/>
+            </DockPanel>
+          </StackPanel>
+          <StackPanel Grid.Column="2">
+            <TextBlock Style="{StaticResource Section}" Text="Output"/>
+            <DockPanel Style="{StaticResource Row}">
+              <TextBlock Style="{StaticResource Label}" Text="Save to"/>
+              <ComboBox x:Name="DestinationBox" Style="{StaticResource PreviewClipCombo}" AutomationProperties.Name="Save to" SelectionChanged="Setting_Changed"/>
+            </DockPanel>
+            <DockPanel x:Name="FolderRow" Style="{StaticResource Row}">
+              <TextBlock Style="{StaticResource Label}" Text="Folder"/>
+              <Button DockPanel.Dock="Right" Content="Browse…" Style="{StaticResource AuxiliaryAction}" Margin="6,0,0,0" Click="Browse_Click"/>
+              <Border Style="{StaticResource AuxiliaryField}">
+                <TextBox x:Name="FolderBox" Style="{StaticResource Bare}" AutomationProperties.Name="Output folder" TextChanged="Text_Changed"/>
+              </Border>
+            </DockPanel>
+            <DockPanel x:Name="NameRow" Style="{StaticResource Row}">
+              <TextBlock Style="{StaticResource Label}" Text="File name"/>
+              <Border Style="{StaticResource AuxiliaryField}">
+                <TextBox x:Name="NameBox" Style="{StaticResource Bare}" AutomationProperties.Name="File name pattern" TextChanged="Text_Changed"
+                         ToolTip="%1 original name · %2 size name · %3 × %4 chosen width and height · %5 × %6 resized width and height"/>
+              </Border>
+            </DockPanel>
+            <TextBlock x:Name="NameHint" Style="{StaticResource Hint}" Text="%1 name, %2 size, %3 %4 chosen width and height, %5 %6 resized width and height. A name already taken gets (2), (3)…"/>
+            <TextBlock x:Name="ReplaceHint" Style="{StaticResource Hint}" Foreground="{DynamicResource PreviewWarning}" Visibility="Collapsed"
+                       Text="Each picture is resized into a new file first; then the original goes to the Recycle Bin and the resized one takes its name. Ctrl+Z puts the originals back."/>
+
+            <TextBlock Style="{StaticResource Section}" Text="Options" Margin="0,10,0,8"/>
+            <CheckBox x:Name="MetadataBox" Content="Remove metadata (camera, place, dates)" Style="{StaticResource Under}" Click="Setting_Click"
+                      ToolTip="The orientation and colour space stay, so the picture still shows the same"/>
+            <CheckBox x:Name="DateBox" Content="Keep the original date modified" Style="{StaticResource Under}" Click="Setting_Click"/>
+          </StackPanel>
+        </Grid>
+      </ScrollViewer>
+    </DockPanel>
+  </Grid>
+</Window>

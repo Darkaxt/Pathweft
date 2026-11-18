@@ -128,7 +128,7 @@ public partial class MainWindow
         var mi = new MenuItem
         {
             Header = header, InputGestureText = gesture, IsEnabled = enabled,
-            Icon = new TextBlock { Text = glyph, FontFamily = new FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"), FontSize = 13 },
+            Icon = new TextBlock { Text = glyph is { Length: > 0 } ? glyph : ArchiveGlyph(header) ?? "", FontFamily = new FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"), FontSize = 13 },
         };
         string icon=header switch{
             "Open"=>"Open","Copy"=>"Copy","Cut"=>"Cut","Paste" or "Paste into folder"=>"Paste",
@@ -198,6 +198,7 @@ public partial class MainWindow
         m.Items.Add(Item("Delete", "", "Del", () => Delete()));
         m.Items.Add(Item("Delete permanently", "", "Shift+Del", () => Delete(permanent: true)));
         m.Items.Add(new Separator());
+        AddArchiveOpeners(m, p, sel);
         m.Items.Add(Item("Compress to ZIP", "", "", Compress));
         m.Items.Add(Item("Compress to 7z", "", "", () => CompressArchive(".7z")));
         string rarUnavailable = RarNative.AvailabilityReason();
@@ -208,7 +209,9 @@ public partial class MainWindow
         if (one && DiskImageExt.Contains(ext)) m.Items.Add(Item("Mount", "", "", () => MountImage(first.Path)));
         AddShell(m, shell, "7-zip");
         AddShell(m, shell, "winrar");
-        if (one && !dir) m.Items.Add(Item("Checksum (SHA-256)", "", "", () => Checksum(first)));
+        AddArchiveSenders(m, sel);
+        if (CanResizeSelection(sel)) m.Items.Add(Item("Resize images…", "\uE799", "", ResizeImages));
+        m.Items.Add(Item("What's using this?", "\uE7EF", "", () => WhatsUsing(sel.Select(x => x.Path).ToList())));
         m.Items.Add(Item("Create shortcut", "", "", CreateShortcuts));
         m.Items.Add(new Separator());
         if (sel.Any(x => x.IsDir)) m.Items.Add(Item("Pin to Quick access", "", "Ctrl+D", PinSelected));
@@ -241,8 +244,8 @@ public partial class MainWindow
         menu.Items.Add(new Separator());
         Group("Transfer","\uE8DE",item=>Named(item,"Copy to other pane","Move to other pane","Copy to","Move to","Group into new folder…","Add to Drop bin"));
         Group("Copy details","\uE8C8",item=>Named(item,"Copy path","Copy name"));
-        Group("Archive","\uF012",item=>(item.Header as string)?.StartsWith("Compress")==true||item.Tag as string is "shell:7-zip" or "shell:winrar");
-        Group("Tools","\uE713",item=>Named(item,"Run as administrator","Compare in editor","Edit with Notepad++","Checksum (SHA-256)","Create shortcut","Mount")||(item.Header as string)?.StartsWith("Find duplicates")==true);
+        Group("Archive","\uF012",item=>item.Tag==null&&IsArchiveCommand(item.Header as string)||item.Tag as string is "shell:7-zip" or "shell:winrar");
+        Group("Tools","\uE713",item=>Named(item,"Run as administrator","Compare in editor","Edit with Notepad++","Resize images…","What's using this?","Create shortcut","Mount")||(item.Header as string)?.StartsWith("Find duplicates")==true);
         Group("More actions","\uE712",_=>true);
         menu.Items.Add(new Separator());menu.Items.Add(properties);
     }
@@ -258,7 +261,7 @@ public partial class MainWindow
         foreach (var node in shell.Others)
         {
             var key = ShellMenu.Comparable(node.Text);
-            if (key.Length == 0 || !taken.Add(key)) continue;
+            if (key.Length == 0 || IsNanaZip(node) || !taken.Add(key)) continue;
             if (ShellItem(node) is not MenuItem item) continue;
             item.Tag = OpensInApp(key) ? "shell:apps" : "shell:other";
             menu.Items.Add(item);
@@ -293,9 +296,16 @@ public partial class MainWindow
         m.Closed += (_, _) => Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.ApplicationIdle, shell.Dispose); // after a Click
         if (undo.Count > 0) m.Items.Add(Item($"Undo {undo[^1].What}", "", "Ctrl+Z", Undo));
         m.Items.Add(Item("Paste", "", "Ctrl+V", () => ClipboardPaste(), HasTransferClipboard()));
+        bool writable = !p.InSearch && !PaneView.IsVirtual(p.Dir);
+        var pasteAs = Item("Paste as file", "\uE77F", "", () => { }, writable && CanPasteAsFile());
+        if (pasteAs.IsEnabled) foreach (var item in PasteAsFileMenuItems()) pasteAs.Items.Add(item);
+        m.Items.Add(pasteAs);
         m.Items.Add(new Separator());
         m.Items.Add(Item("New folder", "", "Ctrl+Shift+N", MkDir));
         m.Items.Add(Item("New file…", "", "Ctrl+N", NewFile));
+        var fromTemplate = Item("New from template", "\uE8F4", "", () => { }, writable);
+        if (writable) foreach (var item in TemplateMenuItems()) fromTemplate.Items.Add(item);
+        m.Items.Add(fromTemplate);
         m.Items.Add(new Separator());
         // View, as in Explorer's own menu for a folder (the Windows menu gets the same from ShellMenu.Show)
         var view = new MenuItem { Header = $"View  ·  {p.ViewModeName}", Icon = new TextBlock { Text = "", FontFamily = new FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"), FontSize = 13 } };
@@ -337,8 +347,8 @@ public partial class MainWindow
         var remaining=menu.Items.OfType<MenuItem>().ToList();menu.Items.Clear();
         void Take(ItemsControl target,Func<MenuItem,bool> predicate){foreach(var item in remaining.Where(predicate).ToArray()){remaining.Remove(item);target.Items.Add(item);}}
         void Group(string name,string glyph,Func<MenuItem,bool> predicate){var group=Item(name,glyph,"",()=>{});Take(group,predicate);if(group.Items.Count>0)menu.Items.Add(group);}
-        Take(menu,item=>item.Header as string=="Paste"||(item.Header as string)?.StartsWith("Undo ")==true);
-        Group("New","\uE710",item=>item.Header as string is "New folder" or "New file…");
+        Take(menu,item=>item.Header as string is "Paste" or "Paste as file"||(item.Header as string)?.StartsWith("Undo ")==true);
+        Group("New","\uE710",item=>item.Header as string is "New folder" or "New file…" or "New from template");
         menu.Items.Add(new Separator());
         Take(menu,item=>(item.Header as string)?.StartsWith("View  ·")==true||(item.Header as string)?.StartsWith("Sort by  ·")==true);
         Group("Select","\uE762",item=>item.Header as string is "Select by pattern…" or "Invert selection");

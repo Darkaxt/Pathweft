@@ -12,6 +12,9 @@
       <Setter Property="Foreground" Value="{DynamicResource Palette.8A97AA}"/>
       <Setter Property="Margin" Value="2,0,0,5"/>
     </Style>
+    <Style x:Key="Option" TargetType="CheckBox" BasedOn="{StaticResource {x:Type CheckBox}}">
+      <Setter Property="Margin" Value="0,0,16,0"/>
+    </Style>
   </Window.Resources>
   <Grid x:Name="Root" Background="{DynamicResource Palette.B30A0D13}">
     <StackPanel Margin="{StaticResource AuxiliaryMargin}">
@@ -43,7 +46,7 @@
           <ColumnDefinition/>
         </Grid.ColumnDefinitions>
         <StackPanel>
-          <TextBlock Style="{StaticResource Caption}" Text="Find"/>
+          <TextBlock Style="{StaticResource Caption}" Text="Find  ·  after the pattern"/>
           <Border Style="{StaticResource Field}"><TextBox x:Name="FindBox" Style="{StaticResource Bare}" FontSize="13" TextChanged="Changed"/></Border>
         </StackPanel>
         <StackPanel Grid.Column="2">
@@ -51,6 +54,52 @@
           <Border Style="{StaticResource Field}"><TextBox x:Name="ReplaceBox" Style="{StaticResource Bare}" FontSize="13" TextChanged="Changed"/></Border>
         </StackPanel>
       </Grid>
+
+      <WrapPanel Margin="2,0,0,8">
+        <CheckBox x:Name="RegexBox" Content="Regular expression" Style="{StaticResource Option}" Click="Option_Changed"/>
+        <CheckBox x:Name="CaseBox" Content="Match case" Style="{StaticResource Option}" Click="Option_Changed"/>
+        <CheckBox x:Name="AllBox" Content="Every occurrence" Style="{StaticResource Option}" Click="Option_Changed"/>
+        <CheckBox x:Name="EnumBox" Content="Enumerate ${}" Style="{StaticResource Option}" Click="Option_Changed"/>
+        <CheckBox x:Name="FilesBox" Content="Files" Style="{StaticResource Option}" Click="Option_Changed"/>
+        <CheckBox x:Name="FoldersBox" Content="Folders" Style="{StaticResource Option}" Click="Option_Changed"/>
+      </WrapPanel>
+      <Grid Margin="0,0,0,10">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition/>
+          <ColumnDefinition Width="12"/>
+          <ColumnDefinition/>
+          <ColumnDefinition Width="12"/>
+          <ColumnDefinition/>
+        </Grid.ColumnDefinitions>
+        <StackPanel>
+          <TextBlock Style="{StaticResource Caption}" Text="Apply to"/>
+          <ComboBox x:Name="ApplyBox" Style="{StaticResource PreviewClipCombo}" AutomationProperties.Name="Apply to" SelectionChanged="Choice_Changed">
+            <ComboBoxItem Content="Name and extension" Tag="0"/>
+            <ComboBoxItem Content="Name only" Tag="128"/>
+            <ComboBoxItem Content="Extension only" Tag="256"/>
+          </ComboBox>
+        </StackPanel>
+        <StackPanel Grid.Column="2">
+          <TextBlock Style="{StaticResource Caption}" Text="Text case"/>
+          <ComboBox x:Name="CaseModeBox" Style="{StaticResource PreviewClipCombo}" AutomationProperties.Name="Text case" SelectionChanged="Choice_Changed">
+            <ComboBoxItem Content="Unchanged" Tag="0"/>
+            <ComboBoxItem Content="UPPERCASE" Tag="512"/>
+            <ComboBoxItem Content="lowercase" Tag="1024"/>
+            <ComboBoxItem Content="Title Case" Tag="2048"/>
+            <ComboBoxItem Content="Capitalize Each Word" Tag="4096"/>
+          </ComboBox>
+        </StackPanel>
+        <StackPanel Grid.Column="4">
+          <TextBlock Style="{StaticResource Caption}" Text="Dates from"/>
+          <ComboBox x:Name="TimeBox" Style="{StaticResource PreviewClipCombo}" AutomationProperties.Name="Dates from" SelectionChanged="Choice_Changed">
+            <ComboBoxItem Content="Created" Tag="16384"/>
+            <ComboBoxItem Content="Modified" Tag="32768"/>
+            <ComboBoxItem Content="Accessed" Tag="65536"/>
+          </ComboBox>
+        </StackPanel>
+      </Grid>
+      <TextBlock Style="{StaticResource Caption}" Margin="2,0,0,10" TextWrapping="Wrap"
+                 Text="Replace with: $YYYY $MM $DD $hh $mm $ss date tokens ($$ for a $), $1 groups with Regular expression, ${start=1,increment=1,padding=3} with Enumerate"/>
 
       <!-- before → after, live -->
       <Border Style="{StaticResource AuxiliaryField}">
