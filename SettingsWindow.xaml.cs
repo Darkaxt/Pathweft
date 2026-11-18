@@ -183,6 +183,7 @@ public partial class SettingsWindow : Window
         "wine", "tray", "adminatstart", "taskbarsearch", "taskbarsearchbox", "preview", "previewwidth", "lastseen", "recent", "destinations", "sidebar", "sidebarorder", "sidebarcollapsed", "split", "maximized", "window", "quicklist",
         "performance.days", "crcfolders", "crcarchives", // chosen from a Details column header, like the other remembered view state
         "compress", // Compress…'s last choices, remembered as 7-Zip's Add to archive does
+        "imageresize", "renameoptions", // Resize images' and Rename all's last choices, remembered as PowerToys does
     };
 
     void ResetAll_Click(object s, RoutedEventArgs e) =>
