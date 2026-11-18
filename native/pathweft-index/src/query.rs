@@ -303,7 +303,9 @@ fn build_term(text: String, m: Mods) -> Result<Node, String> {
     if text.is_empty() {
         return Ok(wrap(Node::All, m));
     }
-    let on_path = m.path || text.contains('\\');
+    // A backslash in a regex is an escape; only an escaped literal one (`\\`)
+    // names a path separator.
+    let on_path = m.path || if m.regex { text.contains(r"\\") } else { text.contains('\\') };
     let matcher = if m.regex {
         let re = regex::RegexBuilder::new(&text)
             .case_insensitive(!m.case)
