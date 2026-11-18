@@ -8,20 +8,50 @@ namespace FileExplorer.Search;
 // SendMessageTimeout so a hung Everything window cannot block this check too.
 // A restart only helps a hung or silently stuck instance: while Everything
 // loads or updates its index, restarting would start that work over.
+// The monitor checks Everything's window twice a minute whether or not anyone is
+// searching, so a hung instance is restarted even when no query is waiting on it.
 internal static class EverythingRecovery
 {
     internal enum State { Missing, Loading, Busy, Ready, Hung }
-    internal static TimeSpan ReplyTimeout = TimeSpan.FromSeconds(45), RestartAfter = TimeSpan.FromMinutes(3);
-    static int restarted;
+    internal static TimeSpan ReplyTimeout = TimeSpan.FromSeconds(45), RestartAfter = TimeSpan.FromMinutes(3),
+        HungRestartAfter = TimeSpan.FromMinutes(2), RestartCooldown = TimeSpan.FromMinutes(30), MonitorInterval = TimeSpan.FromSeconds(30);
+    // Environment.TickCount64 of the first of a run of hung checks (0: answering), and of the last restart.
+    static long hungSince, lastRestart;
+    static int restarting;
+    static Timer monitor;
     // MCP-01: the read-only MCP server reports a stuck Everything but never restarts it.
     internal static bool RestartAllowed = true;
 #if DEBUG
     internal static Func<State> ProbeOverride;
     internal static Func<Task<bool>> RestartOverride;
-    internal static void ResetForVerification() => restarted = 0;
+    internal static Func<long> ClockOverride;
+    internal static void ResetForVerification() { hungSince = 0; lastRestart = 0; }
 #endif
+    static long Now()
+    {
+#if DEBUG
+        if (ClockOverride != null) return ClockOverride();
+#endif
+        return Environment.TickCount64;
+    }
     const string WindowClass = "EVERYTHING_TASKBAR_NOTIFICATION";
     const uint IpcMessage = 0x400, IsDbLoaded = 401, IsDbBusy = 402, AbortIfHung = 0x2, Block = 0x1;
+
+    // The app's own window starts this; verification profiles and the MCP server never do.
+    internal static void StartMonitor() => monitor ??= new Timer(_ => _ = CheckAsync(), null, MonitorInterval, MonitorInterval);
+    internal static void StopMonitor() { monitor?.Dispose(); monitor = null; }
+
+    // One monitor check: a hung window is restarted once it has stayed hung for
+    // HungRestartAfter; any answer (even loading or busy) ends the run.
+    internal static async Task<string> CheckAsync()
+    {
+        var state = Probe();
+        if (state != State.Hung) { Interlocked.Exchange(ref hungSince, 0); return null; }
+        long now = Now();
+        Interlocked.CompareExchange(ref hungSince, now, 0);
+        if (now - Interlocked.Read(ref hungSince) < HungRestartAfter.TotalMilliseconds) return null;
+        return await RestartOnceAsync().ConfigureAwait(false);
+    }
 
     internal static async Task<string> AfterTimeoutAsync(TimeSpan unanswered)
     {
@@ -32,13 +62,45 @@ internal static class EverythingRecovery
             case State.Missing: return "Everything is unavailable. Start Everything, then search again.";
             case State.Loading: return waited + " because it is still loading its index. Search again when it's ready.";
             case State.Busy: return waited + " because it is busy updating its index. Search again in a moment.";
+            case State.Hung:
+                // The query already waited ReplyTimeout on a window that no longer answers status
+                // messages: that is the hang, whatever the caller's cancellations did to the clock.
+                Interlocked.CompareExchange(ref hungSince, Now() - (long)ReplyTimeout.TotalMilliseconds, 0);
+                return await RestartOnceAsync().ConfigureAwait(false) ?? "Everything has stopped responding. Restart Everything, then search again.";
         }
         if (unanswered < RestartAfter) return waited + ". Search again in a moment.";
+        return await RestartOnceAsync().ConfigureAwait(false) ?? "Everything still isn't answering. Restart Everything, then search again.";
+    }
+
+    // At most one restart per RestartCooldown: a restarted Everything rebuilds or reloads its
+    // index, and an instance that hangs again straight away needs its owner, not a restart loop.
+    static async Task<string> RestartOnceAsync()
+    {
         if (!RestartAllowed) return "Everything has stopped answering. Restart Everything, then search again.";
-        if (Interlocked.Exchange(ref restarted, 1) == 1) return "Everything still isn't answering. Restart Everything, then search again.";
-        bool done = await RestartAsync().ConfigureAwait(false);
-        return done ? "Everything stopped answering, so Pathweft restarted it. Search again once it has loaded its index."
-                    : "Everything stopped answering and Pathweft couldn't restart it. Restart Everything, then search again.";
+        long now = Now(), last = Interlocked.Read(ref lastRestart);
+        if (last != 0 && now - last < RestartCooldown.TotalMilliseconds) return null;
+        if (Interlocked.Exchange(ref restarting, 1) == 1) return "Everything stopped answering; Pathweft is restarting it. Search again once it has loaded its index.";
+        try
+        {
+            Interlocked.Exchange(ref lastRestart, now);
+            bool done = await RestartAsync().ConfigureAwait(false);
+            Interlocked.Exchange(ref hungSince, 0);
+            return done ? "Everything stopped answering, so Pathweft restarted it. Search again once it has loaded its index."
+                        : "Everything stopped answering and Pathweft couldn't restart it. Restart Everything, then search again.";
+        }
+        finally { Interlocked.Exchange(ref restarting, 0); }
+    }
+
+    // Bounded IsDBLoaded for the IPC dispatcher: the SDK's own call waits on a hung window forever.
+    internal static State Loaded()
+    {
+#if DEBUG
+        if (ProbeOverride != null) return ProbeOverride();
+#endif
+        var window = FindWindowW(WindowClass, null);
+        if (window == IntPtr.Zero) return State.Missing;
+        if (!Ask(window, IsDbLoaded, out var loaded)) return State.Hung;
+        return loaded == 0 ? State.Loading : State.Ready;
     }
 
     internal static State Probe()

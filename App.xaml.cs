@@ -324,6 +324,8 @@ public partial class App : Application
         sizeSaver.Tick += (_, _) => Task.Run(SizeCache.SaveIfChanged); // off the UI thread: up to 50 000 lines
         sizeSaver.Start();
         base.OnStartup(e);
+        // SEARCH-05: verification profiles never restart the owner's real Everything.
+        if(Settings.Profile==null)Search.EverythingRecovery.StartMonitor();
         var window = new MainWindow(); // opened here, not via StartupUri, so --agent etc. never build it
         if(e.Args.Contains("--storage-result"))window.ContentRendered+=(_,_)=>window.OpenStorageSettings();
         if(folderUpgradeIssue!=null&&window.FindName("Status") is System.Windows.Controls.TextBlock status)status.Text=folderUpgradeIssue;
@@ -368,6 +370,7 @@ public partial class App : Application
         try{updateRetirement.GetAwaiter().GetResult();}catch(OperationCanceledException)when(updateRetirementCancellation.IsCancellationRequested){}
         updateRetirementCancellation.Dispose();
         PerformanceMonitor.Stop();
+        Search.EverythingRecovery.StopMonitor();
         AdministratorSession.End().GetAwaiter().GetResult();
 #if DEBUG
         HiddenTrialPresentation.StopObserver();

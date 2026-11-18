@@ -184,7 +184,16 @@ internal sealed class EverythingSearchClient
                 // redirect a named-instance request into another user's index.
                 if (request.Instance.Length != 0) throw new InvalidOperationException("This build supports the existing default Everything instance only.");
                 request.Token.ThrowIfCancellationRequested();
-                if (!Native.Everything_IsDBLoaded()) throw new InvalidOperationException("Everything is loading its index. Search again after it is ready; no filesystem fallback was started.");
+                // Bounded: the SDK's IsDBLoaded waits forever on a hung window and would hold
+                // this dispatcher, and every later query, behind it.
+                switch (EverythingRecovery.Loaded())
+                {
+                    case EverythingRecovery.State.Missing: throw new InvalidOperationException("Everything is unavailable. Start Everything, then search again.");
+                    case EverythingRecovery.State.Hung: throw new InvalidOperationException(EverythingRecovery.RestartAllowed
+                        ? "Everything isn't responding. Pathweft restarts it if it stays that way; search again in a moment."
+                        : "Everything isn't responding. Restart Everything, then search again.");
+                    case EverythingRecovery.State.Loading: throw new InvalidOperationException("Everything is loading its index. Search again after it is ready; no filesystem fallback was started.");
+                }
                 request.Token.ThrowIfCancellationRequested();
                 request.FolderSizesIndexed=Native.Everything_IsFileInfoIndexed(2);
                 request.Token.ThrowIfCancellationRequested();
@@ -282,7 +291,6 @@ internal sealed class EverythingSearchClient
         const string Dll = "Everything64.dll";
         [DllImport("user32.dll", CharSet = CharSet.Unicode)] internal static extern IntPtr FindWindowW(string cls, string title);
         [DllImport("user32.dll")] internal static extern uint GetWindowThreadProcessId(IntPtr hwnd, out uint pid);
-        [DllImport(Dll)] internal static extern bool Everything_IsDBLoaded();
         [DllImport(Dll)] internal static extern bool Everything_IsFileInfoIndexed(uint information);
         [DllImport(Dll)] internal static extern void Everything_Reset();
         [DllImport(Dll, CharSet = CharSet.Unicode)] internal static extern void Everything_SetSearchW(string search);

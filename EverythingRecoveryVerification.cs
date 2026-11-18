@@ -47,19 +47,39 @@ public partial class MainWindow
             state=EverythingRecovery.State.Busy;string busy=await Unanswered();
             check(busy.Contains("busy updating its index")&&restarts==0,"While Everything updates its index the query says so and nothing is restarted: "+busy);
             state=EverythingRecovery.State.Hung;string hung=await Unanswered();
-            check(hung.Contains("Pathweft restarted it")&&restarts==1,"After the restart threshold a hung Everything is restarted once: "+hung);
+            check(hung.Contains("Pathweft restarted it")&&restarts==1,"A query that times out on a window that no longer answers status messages restarts Everything at once: "+hung);
             string again=await Unanswered();
-            check(again.Contains("still isn't answering")&&restarts==1,"A second hang in the same session is reported, not restarted again: "+again);
+            check(again.Contains("stopped responding")&&restarts==1,"A second hang within the cooldown is reported, not restarted again: "+again);
+            state=EverythingRecovery.State.Ready;string idle=await Unanswered();
+            check(idle.Contains("still isn't answering")&&restarts==1,"An idle Everything that leaves queries unanswered past the threshold is not restarted within the cooldown: "+idle);
+            long shift=(long)(EverythingRecovery.RestartCooldown+TimeSpan.FromMinutes(1)).TotalMilliseconds;
+            EverythingRecovery.ClockOverride=()=>Environment.TickCount64+shift;
+            string later=await Unanswered();
+            check(later.Contains("Pathweft restarted it")&&restarts==2,"After the cooldown, an idle Everything with queries unanswered past the threshold is restarted: "+later);
+            // The monitor: no query is waiting, Everything's window simply stops answering.
+            EverythingRecovery.ResetForVerification();long t=10_000_000;EverythingRecovery.ClockOverride=()=>t;
+            state=EverythingRecovery.State.Hung;
+            string first=await EverythingRecovery.CheckAsync();t+=60_000;string minute=await EverythingRecovery.CheckAsync();
+            check(first==null&&minute==null&&restarts==2,"The monitor does not restart a window that has been hung for less than two minutes");
+            state=EverythingRecovery.State.Busy;await EverythingRecovery.CheckAsync();
+            state=EverythingRecovery.State.Hung;t+=90_000;string resumed=await EverythingRecovery.CheckAsync();
+            check(resumed==null&&restarts==2,"Any answer (busy updating its index) ends the hung run, so the two minutes start again");
+            t+=(long)EverythingRecovery.HungRestartAfter.TotalMilliseconds;string monitored=await EverythingRecovery.CheckAsync();
+            check(monitored?.Contains("Pathweft restarted it")==true&&restarts==3,"The monitor restarts Everything once its window has stayed hung for two minutes: "+monitored);
+            t+=(long)EverythingRecovery.HungRestartAfter.TotalMilliseconds*2;string cooled=await EverythingRecovery.CheckAsync();t+=(long)EverythingRecovery.HungRestartAfter.TotalMilliseconds*2;cooled??=await EverythingRecovery.CheckAsync();
+            check(cooled==null&&restarts==3,"The monitor does not restart again within the cooldown");
+            EverythingRecovery.ClockOverride=null;
             using var cancel=new CancellationTokenSource(TimeSpan.FromMilliseconds(200));
             bool cancelled=false;try{await Unanswered(cancel.Token);}catch(OperationCanceledException){cancelled=true;}
-            check(cancelled&&restarts==1,"A caller's own cancellation stays a cancellation and does not count as Everything failing");
+            check(cancelled&&restarts==3,"A caller's own cancellation stays a cancellation and does not count as Everything failing");
         }
         finally
         {
             EverythingSearchClient.BeforeNativeSend=null;release.Set();
-            EverythingRecovery.ProbeOverride=null;EverythingRecovery.RestartOverride=null;
+            EverythingRecovery.ProbeOverride=null;EverythingRecovery.RestartOverride=null;EverythingRecovery.ClockOverride=null;
             EverythingRecovery.ReplyTimeout=replyTimeout;EverythingRecovery.RestartAfter=restartAfter;
-            // The once-per-session restart stays spent, so nothing later in this verification process can restart the real Everything.
+            // Nothing later in this verification process may restart the owner's real Everything.
+            EverythingRecovery.RestartAllowed=false;
         }
     }
 }
