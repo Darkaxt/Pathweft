@@ -16,7 +16,7 @@ public partial class MainWindow
         async Task Settle()=>await Dispatcher.InvokeAsync(UpdateLayout,System.Windows.Threading.DispatcherPriority.ApplicationIdle);
         string[] Columns()=>((GridView)Left.List.View).Columns.Select(c=>(string)((Dictionary<GridViewColumn,string>)typeof(PaneView).GetField("colKey",flags).GetValue(Left))[c]).ToArray();
         async Task Show(IList<Entry> entries)
-        {typeof(PaneView).GetMethod("ShowItems",flags).Invoke(Left,new object[]{entries,null,false,false});await Settle();}
+        {typeof(PaneView).GetMethod("ShowItems",flags).Invoke(Left,new object[]{entries,null,false,false,0});await Settle();}
         SetSinglePane(true);SetActive(Left);
         await S1Verification.Navigate(Left,PaneView.ThisPC);await Left.driveListingWork;await Settle();
         RefreshDrives();await driveRefreshWork;await Settle();
