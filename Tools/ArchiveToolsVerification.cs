@@ -164,7 +164,8 @@ public partial class MainWindow
             check(bad != null && bad.Failures.Count > 0 && reports[^1].VerificationRows.Any(r => r.State == -1), "ARCHIVE-13: Test archive reports the entry that fails its stored check" + string.Concat((bad?.Failures ?? Array.Empty<(string, string)>()).Select(f => $" | {f.Entry}: {f.Problem}")));
             Archive.SetPassword(sealed7z, null);
             var sealedResult = await Test("sealed.7z");
-            check(sealedResult != null && sealedResult.Failures.Count == 0 && sealedResult.Tested == 2, "ARCHIVE-13: Test archive tests a password-protected 7z after asking for its password");
+            check(sealedResult != null && sealedResult.Failures.Count == 0 && sealedResult.Tested == 2, "ARCHIVE-13: Test archive tests a password-protected 7z after asking for its password"
+                + $" | tested {sealedResult?.Tested.ToString() ?? "null"} | report: {reports[^1].VerificationSummary}" + string.Concat((sealedResult?.Failures ?? Array.Empty<(string, string)>()).Select(f => $" | {f.Entry}: {f.Problem}")) + string.Concat(reports[^1].VerificationRows.Select(r => $" | row {r.Name}: {r.Value}")));
             ArchivePasswordAnswerForVerification = null;
 
             // every checksum against NanaZipC, on a file and on a folder
