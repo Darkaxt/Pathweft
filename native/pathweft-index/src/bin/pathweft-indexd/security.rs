@@ -5,7 +5,7 @@
 //! caller's impersonation token. Results are cached per (caller SID, store,
 //! NTFS security ID).
 
-use crate::log::warn;
+use crate::log::warning;
 use crate::state::{Kind, Service};
 use pathweft_index::ffi::*;
 use pathweft_index::query::{Access, Unknown};
@@ -243,7 +243,7 @@ pub fn list_access(path: &str, token: HANDLE) -> Option<bool> {
         let Some(h) = Handle::valid(h) else {
             let e = last_error();
             if e != ERROR_FILE_NOT_FOUND && e != ERROR_PATH_NOT_FOUND {
-                warn!("security descriptor of {path} unreadable: {e}");
+                warning!("security descriptor of {path} unreadable: {e}");
             }
             return None;
         };
@@ -272,7 +272,7 @@ pub fn list_access(path: &str, token: HANDLE) -> Option<bool> {
             &mut status,
         );
         if ok == 0 {
-            warn!("AccessCheck on {path} failed: {}", last_error());
+            warning!("AccessCheck on {path} failed: {}", last_error());
             return Some(false);
         }
         Some(status != 0)

@@ -3,7 +3,7 @@
 //! Directory enumeration only; reparse points are listed but not followed.
 
 use crate::config::FolderRoot;
-use crate::log::{info, warn};
+use crate::log::{info, warning};
 use crate::state::{Service, Slot};
 use pathweft_index::ffi::*;
 use pathweft_index::store::{Entry, Store, ATTR_DIRECTORY, ATTR_REPARSE};
@@ -116,7 +116,7 @@ pub fn scan(root: &FolderRoot, slot: &Slot) -> Result<Store, String> {
         }
     }
     if errors > 0 {
-        warn!("{name}: {errors} folders could not be listed");
+        warning!("{name}: {errors} folders could not be listed");
     }
     Ok(store)
 }
@@ -159,7 +159,7 @@ pub fn run(svc: Arc<Service>, slot: Arc<Slot>, root: FolderRoot) {
                 if slot.stopping() {
                     return;
                 }
-                warn!("{}: {e}", slot.name);
+                warning!("{}: {e}", slot.name);
                 slot.fail(if have_tree { "ready" } else { "error" }, e);
                 slot.wait(Duration::from_secs(60));
                 continue;

@@ -1,7 +1,7 @@
 //! The local named pipe (SPEC IDX-07) and request handling.
 
 use crate::config::FolderRoot;
-use crate::log::{info, warn};
+use crate::log::{info, warning};
 use crate::scan;
 use crate::security::{self, CallerAccess, ClientToken, LocalSd};
 use crate::state::{Kind, Service, Slot};
@@ -76,7 +76,7 @@ fn connection(svc: &Arc<Service>, mut stream: PipeStream) {
                     client = Some(c);
                 }
                 Err(e) => {
-                    warn!("caller identity: {e}");
+                    warning!("caller identity: {e}");
                     let reply = serde_json::to_vec(&Response::failure(format!("caller identity unavailable: {e}"))).unwrap_or_default();
                     let _ = write_frame(&mut stream, &reply);
                     break;

@@ -1,7 +1,7 @@
 //! Service core (workers, volume discovery, pipe) and the SCM entry points.
 
 use crate::config::{self, Config, FolderRoot};
-use crate::log::{info, warn};
+use crate::log::{info, warning};
 use crate::state::{Kind, Options, Service, Slot};
 use crate::{ntfs, pipe, scan, security};
 use pathweft_index::ffi::*;
@@ -45,7 +45,7 @@ fn discover(svc: &Arc<Service>) {
 pub fn run(opts: Options) -> Result<Arc<Service>, String> {
     let config = Config::load(&opts.config_path)?;
     if !security::enable_privilege("SeBackupPrivilege") {
-        warn!("SeBackupPrivilege is not available; some folders' permissions cannot be read");
+        warning!("SeBackupPrivilege is not available; some folders' permissions cannot be read");
     }
     let svc = Arc::new(Service::new(opts, config));
     if svc.opts.folders {
@@ -75,7 +75,7 @@ pub fn run(opts: Options) -> Result<Arc<Service>, String> {
             .name("pipe".into())
             .spawn(move || {
                 if let Err(e) = pipe::serve(svc2.clone()) {
-                    warn!("pipe server stopped: {e}");
+                    warning!("pipe server stopped: {e}");
                 }
             })
             .expect("spawn");
@@ -153,7 +153,7 @@ unsafe extern "system" fn service_main(_argc: u32, _argv: *mut *mut u16) {
             report(SERVICE_STOPPED, 0, 0);
         }
         Err(e) => {
-            warn!("service failed to start: {e}");
+            warning!("service failed to start: {e}");
             report(SERVICE_STOPPED, 1064, 0); // ERROR_EXCEPTION_IN_SERVICE
         }
     }

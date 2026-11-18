@@ -68,8 +68,8 @@ pub fn write(level: &str, message: &str) {
 macro_rules! info {
     ($($t:tt)*) => { $crate::log::write("INFO", &format!($($t)*)) };
 }
-macro_rules! warn {
+macro_rules! warning {
     ($($t:tt)*) => { $crate::log::write("WARN", &format!($($t)*)) };
 }
 pub(crate) use info;
-pub(crate) use warn;
+pub(crate) use warning;

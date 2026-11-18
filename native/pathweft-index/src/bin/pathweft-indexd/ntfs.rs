@@ -4,7 +4,7 @@
 //! slot's store is held only to apply one journal buffer's changes or to swap
 //! in a re-read store (IDX-04).
 
-use crate::log::{info, warn};
+use crate::log::{info, warning};
 use crate::state::{Service, Slot};
 use pathweft_index::ffi::*;
 use pathweft_index::mft::{self, AttrList, RecordInfo, Run};
@@ -519,7 +519,7 @@ fn follow(svc: &Service, slot: &Slot) -> Result<(), String> {
                 }
             }
         };
-        warn!("{}: re-reading the volume ({reason})", slot.name);
+        warning!("{}: re-reading the volume ({reason})", slot.name);
     }
 }
 
@@ -532,7 +532,7 @@ pub fn run(svc: Arc<Service>, slot: Arc<Slot>) {
                 if slot.stopping() || svc.stopping() {
                     return;
                 }
-                warn!("{}: {e}", slot.name);
+                warning!("{}: {e}", slot.name);
                 slot.fail("offline", e);
                 // Its entries are no longer reachable; answer with nothing.
                 slot.install(Store::new(0, &slot.name, 1));
