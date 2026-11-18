@@ -1232,7 +1232,7 @@ mod tests {
         assert_eq!(run_req(&s, req).len(), 5);
         let req = QueryRequest { query: "regex:\"^n.*e$\"".into(), count: 10, regex: true, ..Default::default() };
         assert_eq!(run_req(&s, req), vec![r"C:\Windows\notepad.exe"]);
-        let req = QueryRequest { query: "^n.*e\\.exe$".into(), count: 10, regex: true, ..Default::default() };
+        let req = QueryRequest { query: "^n.*d\\.exe$".into(), count: 10, regex: true, ..Default::default() };
         assert_eq!(run_req(&s, req), vec![r"C:\Windows\notepad.exe"]);
     }
 
