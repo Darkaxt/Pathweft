@@ -275,7 +275,7 @@ public partial class MainWindow
     static bool AddShell(ItemsControl menu, ShellMenu.Extensions shell, string name)
     {
         if (!shell.Found.TryGetValue(name, out var nodes)) return false;
-        foreach (var n in nodes){var item=ShellItem(n);if(item is MenuItem command)command.Tag="shell:"+name;menu.Items.Add(item);}
+        foreach (var n in nodes){if(name!="openwith"&&n.Text!=null&&IsNanaZip(n))continue;var item=ShellItem(n);if(item is MenuItem command)command.Tag="shell:"+name;menu.Items.Add(item);}
         return true;
     }
 

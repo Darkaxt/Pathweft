@@ -97,7 +97,10 @@ public partial class MainWindow
                 bool offered = shell.Others.Any(IsNanaZip) || shell.Found.Values.SelectMany(n => n).Any(IsNanaZip);
                 check(offered, "ARCHIVE-13: NanaZip is installed here and still offers its command to Windows' menu");
             }
-            check(!All(menu).Any(i => i.Header is string h && ShellMenu.Comparable(h).StartsWith("nanazip", StringComparison.Ordinal)), "ARCHIVE-13: NanaZip's command is not in Pathweft's menu");
+            // NanaZip as an app in Open with (Explorer's own list for .zip) is not its command and stays
+            var openWith = menu.Items.OfType<MenuItem>().Where(i => (i.Header as string)?.StartsWith("Open with", StringComparison.Ordinal) == true).SelectMany(All).ToHashSet();
+            var nana = All(menu).Where(i => !openWith.Contains(i)).Where(i => i.Header is string h && ShellMenu.Comparable(h).Contains("nanazip", StringComparison.Ordinal)).Select(i => $"{i.Header} ({i.Tag})").ToList();
+            check(nana.Count == 0, "ARCHIVE-13: NanaZip's command is not in Pathweft's menu" + string.Concat(nana.Select(n => " | found: " + n)));
             menu.RaiseEvent(new RoutedEventArgs(ContextMenu.ClosedEvent));
 
             // Open archive browses into it

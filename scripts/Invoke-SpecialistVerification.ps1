@@ -42,7 +42,7 @@ if($Scenario -in @('menus','menus-properties','menus-shell','indexed-sizes','spa
     $start.ArgumentList.Clear()
     $start.ArgumentList.Add([IO.Path]::GetFullPath($Executable))
     $start.ArgumentList.Add($run)
-    if($Scenario -in @('menus-shell','indexed-sizes','space-ui','performance-native')){$start.ArgumentList.Add('--shell-only')}
+    if($Scenario -in @('menus-shell','indexed-sizes','space-ui','performance-native','tools')){$start.ArgumentList.Add('--shell-only')}
 }
 $start.UseShellExecute=$false
 $start.CreateNoWindow=$true
