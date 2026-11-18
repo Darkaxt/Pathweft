@@ -1,0 +1,3 @@
+# Cargo binaries live in src/bin; the repository-wide bin/ rule targets .NET output.
+!src/bin/
+target/
