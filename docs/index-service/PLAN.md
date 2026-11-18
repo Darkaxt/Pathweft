@@ -183,3 +183,16 @@ to `[0400A3A01EE4C000] Pokopia.nup`. The service logged "H:: 2 changes in 1 fold
 (1 added, 1 removed, 0 updated) in 167 ms" and the query returned the new path
 only, so Google Drive (H:) delivery is observed. T: and the share remain
 unobserved; they keep the periodic-rescan fallback.
+Canary test (owner's suggestion, 2026-11-18 23:14 UTC): a small file was created,
+renamed and deleted in `T:\`, `T:\Documents`, the share root and `Staging` on the
+share. Every step appeared in queries within 1-2 s, and each was logged as a
+change batch; no canary file remained. T: and the share therefore deliver
+notifications for changes made through them.
+
+Gap found on the share: `.music-lifecycle-recovery\.music-lifecycle-state-checkpoint`
+was rewritten at 22:45:04 UTC (178,195 bytes), after the scan, but no batch was
+logged and the index still holds 178,192 bytes. That file is written by a process
+on the server itself, not over SMB; Samba apparently does not forward those
+changes to a subtree watch. Such changes are picked up only by the periodic
+rescan (every 360 minutes). Not changed; a shorter `rescan_minutes` for the share
+is the owner's choice.
