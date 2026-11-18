@@ -39,13 +39,14 @@ internal static class S4NativeClipboard
     static S4Verification.ClipboardPart[] ReadOpen()
     {
         var parts = new List<S4Verification.ClipboardPart>();
-        uint format = 0;
+        uint format = 0; var seen = new HashSet<uint>();
         // An image's CF_BITMAP/CF_PALETTE handles are what Windows synthesizes from its DIB, so saving the DIB bytes
         // restores the same picture and the same handle formats.
         bool dib = IsClipboardFormatAvailable(8) || IsClipboardFormatAvailable(17);
         while ((format = EnumClipboardFormats(format)) != 0)
         {
             if (dib && format is 2 or 9) continue;
+            if (!seen.Add(format)) continue; // some owners list a format twice; one copy restores it
             // Bitmap/palette/metafile/private handles cannot be serialized as bytes.
             if (format < 0xC000 && format is not (1 or 6 or 7 or 8 or 11 or 12 or 13 or 15 or 16 or 17)) throw new IOException("Unsupported clipboard handle format; no trial mutation permitted.");
             IntPtr memory = GetClipboardData(format); nuint length = GlobalSize(memory);
