@@ -3,7 +3,7 @@
 //! ```text
 //! pwindex [--pipe NAME] status [--json]
 //! pwindex query EXPR [--offset N] [--count N] [--sort name|path|size|extension|created|modified]
-//!               [--desc] [--path] [--case] [--ww] [--regex] [--json]
+//!               [--desc] [--path] [--case] [--ww] [--regex] [--visible-only] [--json]
 //! pwindex sizes FOLDER...
 //! pwindex folder add PATH [--rescan-minutes N] | folder remove PATH
 //! pwindex rescan TARGET                         (a drive letter or a folder root)
@@ -116,6 +116,7 @@ mod cli {
             match_case: a.flag("--case"),
             whole_word: a.flag("--ww"),
             regex: a.flag("--regex"),
+            visible_only: a.flag("--visible-only"),
         })
     }
 
@@ -207,7 +208,8 @@ mod cli {
         }
         for h in r.hits.unwrap_or_default() {
             let size = if h.size < 0 { "-".to_string() } else { h.size.to_string() };
-            println!("{}{}\t{size}", h.path, if h.folder { "\\" } else { "" });
+            // Third column only for entries the caller cannot list.
+            println!("{}{}\t{size}{}", h.path, if h.folder { "\\" } else { "" }, if h.visible { "" } else { "\tnot-visible" });
         }
         eprintln!(
             "{} matches; {:.2} ms round trip, {} us in the service{}",

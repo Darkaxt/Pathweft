@@ -53,11 +53,16 @@ pub struct QueryRequest {
     pub match_case: bool,
     pub whole_word: bool,
     pub regex: bool,
+    /// Drop matches the caller cannot list before counting and paging.
+    pub visible_only: bool,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default, PartialEq)]
 pub struct Hit {
     pub path: String,
+    /// Whether the caller may list the parent folder.
+    #[serde(default = "visible_default")]
+    pub visible: bool,
     pub folder: bool,
     pub size: i64,
     pub modified: u64,
@@ -65,10 +70,14 @@ pub struct Hit {
     pub attributes: u32,
 }
 
+fn visible_default() -> bool {
+    true
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone, Default, PartialEq)]
 pub struct FolderSize {
     pub path: String,
-    /// Absent when the folder is not indexed or not visible to the caller.
+    /// Recursive size of everything indexed below it; absent when the folder is not indexed.
     pub size: Option<u64>,
 }
 

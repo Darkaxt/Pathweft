@@ -4,7 +4,7 @@
 use crate::config::{Config, FolderRoot};
 use crate::log::info;
 use crate::security::{AccessCache, TokenCache};
-use pathweft_index::query::{RestrictedCache, StoreRef};
+use pathweft_index::query::StoreRef;
 use pathweft_index::store::Store;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering};
@@ -127,7 +127,6 @@ pub struct Service {
     next_id: AtomicUsize,
     pub tokens: TokenCache,
     pub access: AccessCache,
-    pub restricted: RestrictedCache,
     pub started: Instant,
     pub shutdown: AtomicBool,
     pub connections: AtomicUsize,
@@ -142,7 +141,6 @@ impl Service {
             next_id: AtomicUsize::new(0),
             tokens: TokenCache::default(),
             access: AccessCache::default(),
-            restricted: RestrictedCache::default(),
             started: Instant::now(),
             shutdown: AtomicBool::new(false),
             connections: AtomicUsize::new(0),

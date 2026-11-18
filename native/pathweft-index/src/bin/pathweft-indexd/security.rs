@@ -153,11 +153,6 @@ impl AccessCache {
     fn put(&self, sid: &str, slot: usize, sec: u32, value: bool) {
         self.map.lock().unwrap().1.insert((sid.to_string(), slot, sec), value);
     }
-    /// Whether the cache was cleared since `since` (folder-size caches built
-    /// on older answers must be dropped too).
-    pub fn epoch(&self) -> Instant {
-        self.map.lock().unwrap().0
-    }
 }
 
 /// The visibility oracle for one request.
@@ -167,8 +162,6 @@ pub struct CallerAccess<'a> {
     /// Answers decided for this request only (descriptor unreadable).
     local: Mutex<HashMap<(usize, u32), bool>>,
     folder_owner: HashMap<usize, String>,
-    /// `visibility: all` in the config: NTFS entries need no access check.
-    all: bool,
 }
 
 impl<'a> CallerAccess<'a> {
@@ -181,8 +174,7 @@ impl<'a> CallerAccess<'a> {
                 Kind::Ntfs => None,
             })
             .collect();
-        let all = svc.config.lock().unwrap().visibility == crate::config::Visibility::All;
-        CallerAccess { svc, client, local: Mutex::new(HashMap::new()), folder_owner, all }
+        CallerAccess { svc, client, local: Mutex::new(HashMap::new()), folder_owner }
     }
 
     /// Evaluates the unknown security IDs reported by a query.
@@ -214,9 +206,6 @@ impl Access for CallerAccess<'_> {
     fn listable(&self, slot: usize, sec: u32) -> Option<bool> {
         if let Some(owner) = self.folder_owner.get(&slot) {
             return Some(owner.eq_ignore_ascii_case(&self.client.sid));
-        }
-        if self.all {
-            return Some(true);
         }
         if let Some(&v) = self.local.lock().unwrap().get(&(slot, sec)) {
             return Some(v);

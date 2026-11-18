@@ -18,17 +18,6 @@ fn default_rescan() -> u32 {
     360
 }
 
-/// Who sees an indexed NTFS entry (SPEC IDX-08).
-#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Default)]
-#[serde(rename_all = "lowercase")]
-pub enum Visibility {
-    /// Only entries whose folder the calling user may list (default).
-    #[default]
-    Caller,
-    /// Every entry, for any allowed pipe user. Owner opt-in per machine.
-    All,
-}
-
 fn yes() -> bool {
     true
 }
@@ -49,13 +38,11 @@ pub struct Config {
     pub create_journals: bool,
     #[serde(default)]
     pub folders: Vec<FolderRoot>,
-    #[serde(default)]
-    pub visibility: Visibility,
 }
 
 impl Default for Config {
     fn default() -> Config {
-        Config { allowed_users: Vec::new(), ntfs_include: Vec::new(), ntfs_exclude: Vec::new(), create_journals: true, folders: Vec::new(), visibility: Visibility::Caller }
+        Config { allowed_users: Vec::new(), ntfs_include: Vec::new(), ntfs_exclude: Vec::new(), create_journals: true, folders: Vec::new() }
     }
 }
 

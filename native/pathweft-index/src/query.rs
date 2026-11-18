@@ -772,9 +772,10 @@ fn worker_threads(jobs: usize) -> usize {
     cores.min(8).min(jobs).max(1)
 }
 
-/// Runs a query. Entries whose parent directory's security ID is not yet
-/// evaluated for the caller make the outcome `NeedAccess`; evaluate them and
-/// run the query again.
+/// Runs a query. Every match is returned with `visible` telling whether the
+/// caller may list its parent folder; `visible_only` drops the others before
+/// counting and paging. Security IDs not yet evaluated for the caller make the
+/// outcome `NeedAccess`; evaluate them and run the query again.
 pub fn query(stores: &[StoreRef], req: &QueryRequest, access: &dyn Access) -> Result<Outcome<QueryResult>, String> {
     let mut node = compile(req)?;
     resolve(&mut node, stores);
@@ -785,6 +786,7 @@ pub fn query(stores: &[StoreRef], req: &QueryRequest, access: &dyn Access) -> Re
     let keep = req.offset as usize + count;
     let desc = req.descending;
     let sort = req.sort;
+    let visible_only = req.visible_only;
 
     let mut jobs: Vec<(usize, usize)> = Vec::new();
     for (i, sr) in stores.iter().enumerate() {
@@ -821,13 +823,15 @@ pub fn query(stores: &[StoreRef], req: &QueryRequest, access: &dyn Access) -> Re
                             if !eval(node, &mut c) {
                                 continue;
                             }
-                            let psec = st.recs.get(rec.parent as usize).map(|p| p.sec).unwrap_or(0);
-                            match access.listable(sr.slot, psec) {
-                                Some(true) => {}
-                                Some(false) => continue,
-                                None => {
-                                    w.unknown.entry((sr.slot, psec)).or_insert(rec.parent);
-                                    continue;
+                            if visible_only {
+                                let psec = st.recs.get(rec.parent as usize).map(|p| p.sec).unwrap_or(0);
+                                match access.listable(sr.slot, psec) {
+                                    Some(true) => {}
+                                    Some(false) => continue,
+                                    None => {
+                                        w.unknown.entry((sr.slot, psec)).or_insert(rec.parent);
+                                        continue;
+                                    }
                                 }
                             }
                             w.total += 1;
@@ -893,8 +897,8 @@ pub fn query(stores: &[StoreRef], req: &QueryRequest, access: &dyn Access) -> Re
     // Build the page under one short read lock per store.
     let by_slot: HashMap<usize, &StoreRef> = stores.iter().map(|s| (s.slot, s)).collect();
     let mut hits: Vec<Option<Hit>> = vec![None; page.len()];
-    let mut folders: HashMap<usize, Vec<(usize, u32)>> = HashMap::new();
     let mut path = String::new();
+    let mut unknown: HashMap<(usize, u32), u32> = HashMap::new();
     for slot in page.iter().map(|t| t.slot as usize).collect::<HashSet<_>>() {
         let Some(sr) = by_slot.get(&slot) else { continue };
         let st = sr.store.read().unwrap();
@@ -903,10 +907,17 @@ pub fn query(stores: &[StoreRef], req: &QueryRequest, access: &dyn Access) -> Re
             if !st.full_path(t.r, &mut path) {
                 continue;
             }
-            if rec.is_dir() {
-                folders.entry(slot).or_default().push((i, t.r));
-            }
+            let visible = if t.r == st.root {
+                true
+            } else {
+                let psec = st.recs.get(rec.parent as usize).map(|p| p.sec).unwrap_or(0);
+                access.listable(slot, psec).unwrap_or_else(|| {
+                    unknown.entry((slot, psec)).or_insert(rec.parent);
+                    false
+                })
+            };
             hits[i] = Some(Hit {
+                visible,
                 path: path.clone(),
                 folder: rec.is_dir(),
                 size: rec.size as i64,
@@ -916,204 +927,28 @@ pub fn query(stores: &[StoreRef], req: &QueryRequest, access: &dyn Access) -> Re
             });
         }
     }
-    // Folder sizes count only what the caller can list.
-    for (slot, list) in folders {
-        let sr = by_slot[&slot];
-        let targets: Vec<u32> = list.iter().map(|&(_, r)| r).collect();
-        match visible_sizes(sr, &targets, access, None)? {
-            Outcome::Done(sizes) => {
-                for ((i, _), size) in list.iter().zip(sizes) {
-                    if let Some(h) = hits[*i].as_mut() {
-                        h.size = size.map(|s| s as i64).unwrap_or(-1);
-                    }
-                }
-            }
-            Outcome::NeedAccess(u) => return Ok(Outcome::NeedAccess(u)),
-        }
+    if !unknown.is_empty() {
+        return Ok(Outcome::NeedAccess(unknown.into_iter().map(|((slot, sec), dir)| Unknown { slot, sec, dir }).collect()));
     }
     Ok(Outcome::Done(QueryResult { total, hits: hits.into_iter().flatten().collect() }))
 }
 
 // ---------------------------------------------------------------- folder sizes
 
-/// A directory the caller may not list, with its child directories.
-#[derive(Clone, Debug)]
-pub struct Restricted {
-    pub dir: u32,
-    pub children: Vec<u32>,
-}
-
-/// Caches restricted-directory lists per store, caller and folder generation.
-#[derive(Default)]
-pub struct RestrictedCache {
-    map: Mutex<HashMap<(usize, String), (u64, Arc<Vec<Restricted>>)>>,
-}
-
-impl RestrictedCache {
-    pub fn clear(&self) {
-        self.map.lock().unwrap().clear();
-    }
-}
-
-fn restricted(sr: &StoreRef, access: &dyn Access, cache: Option<&RestrictedCache>) -> Outcome<Arc<Vec<Restricted>>> {
-    let gen = sr.store.read().unwrap().dir_gen;
-    let key = (sr.slot, access.principal().to_string());
-    if let Some(c) = cache {
-        if let Some((g, list)) = c.map.lock().unwrap().get(&key) {
-            if *g == gen {
-                return Outcome::Done(list.clone());
-            }
-        }
-    }
-    let len = sr.store.read().unwrap().recs.len();
-    let mut denied: Vec<u32> = Vec::new();
-    let mut unknown: HashMap<u32, u32> = HashMap::new();
-    let mut start = 0;
-    while start < len {
-        let st = sr.store.read().unwrap();
-        let end = (start + CHUNK).min(st.recs.len());
-        for r in start as u32..end as u32 {
-            let rec = &st.recs[r as usize];
-            if !rec.live() || !rec.is_dir() {
-                continue;
-            }
-            match access.listable(sr.slot, rec.sec) {
-                Some(true) => {}
-                Some(false) => denied.push(r),
-                None => {
-                    unknown.entry(rec.sec).or_insert(r);
-                }
-            }
-        }
-        start = end;
-    }
-    if !unknown.is_empty() {
-        return Outcome::NeedAccess(unknown.into_iter().map(|(sec, dir)| Unknown { slot: sr.slot, sec, dir }).collect());
-    }
-    let mut children: HashMap<u32, Vec<u32>> = denied.iter().map(|&d| (d, Vec::new())).collect();
-    if !denied.is_empty() {
-        let mut start = 0;
-        while start < len {
+/// Recursive sizes of exact folder paths, counting everything indexed (the
+/// administrator view, for disk analysis). `None` for a path that is not an
+/// indexed folder.
+pub fn folder_sizes(stores: &[StoreRef], paths: &[String]) -> Vec<Option<u64>> {
+    resolve_paths(stores, paths, true)
+        .into_iter()
+        .map(|f| {
+            let (slot, r) = f?;
+            let sr = stores.iter().find(|s| s.slot == slot)?;
             let st = sr.store.read().unwrap();
-            let end = (start + CHUNK).min(st.recs.len());
-            for r in start as u32..end as u32 {
-                let rec = &st.recs[r as usize];
-                if rec.live() && rec.is_dir() {
-                    if let Some(list) = children.get_mut(&rec.parent) {
-                        list.push(r);
-                    }
-                }
-            }
-            start = end;
-        }
-    }
-    let list: Arc<Vec<Restricted>> =
-        Arc::new(denied.into_iter().map(|dir| Restricted { dir, children: children.remove(&dir).unwrap_or_default() }).collect());
-    if let Some(c) = cache {
-        c.map.lock().unwrap().insert(key, (gen, list.clone()));
-    }
-    Outcome::Done(list)
-}
-
-/// Sizes of the folders `targets` in one store counting only files whose
-/// parent directory the caller may list. `None` for a target that is not a
-/// live folder or is itself not visible.
-pub fn visible_sizes(
-    sr: &StoreRef,
-    targets: &[u32],
-    access: &dyn Access,
-    cache: Option<&RestrictedCache>,
-) -> Result<Outcome<Vec<Option<u64>>>, String> {
-    let list = match restricted(sr, access, cache) {
-        Outcome::Done(l) => l,
-        Outcome::NeedAccess(u) => return Ok(Outcome::NeedAccess(u)),
-    };
-    let st = sr.store.read().unwrap();
-    let index: HashMap<u32, usize> = targets.iter().enumerate().map(|(i, &t)| (t, i)).collect();
-    let mut adjust = vec![0u64; targets.len()];
-    for d in list.iter() {
-        let Some(rec) = st.get(d.dir) else { continue };
-        let child_sum: u64 = d.children.iter().filter_map(|&c| st.get(c)).filter(|c| c.parent == d.dir).map(|c| c.size).sum();
-        let direct = rec.size.saturating_sub(child_sum);
-        if direct == 0 {
-            continue;
-        }
-        let mut cur = d.dir;
-        for _ in 0..1024 {
-            if let Some(&i) = index.get(&cur) {
-                adjust[i] += direct;
-            }
-            let Some(c) = st.get(cur) else { break };
-            if cur == st.root {
-                break;
-            }
-            cur = c.parent;
-        }
-    }
-    let mut out = Vec::with_capacity(targets.len());
-    let mut unknown = Vec::new();
-    for (i, &t) in targets.iter().enumerate() {
-        let Some(rec) = st.get(t) else {
-            out.push(None);
-            continue;
-        };
-        if !rec.is_dir() {
-            out.push(None);
-            continue;
-        }
-        let visible = if t == st.root {
-            Some(true)
-        } else {
-            let psec = st.recs.get(rec.parent as usize).map(|p| p.sec).unwrap_or(0);
-            let v = access.listable(sr.slot, psec);
-            if v.is_none() {
-                unknown.push(Unknown { slot: sr.slot, sec: psec, dir: rec.parent });
-            }
-            v
-        };
-        out.push(match visible {
-            Some(true) => Some(rec.size.saturating_sub(adjust[i])),
-            _ => None,
-        });
-    }
-    if !unknown.is_empty() {
-        return Ok(Outcome::NeedAccess(unknown));
-    }
-    Ok(Outcome::Done(out))
-}
-
-/// Recursive sizes of exact folder paths, as the caller may see them.
-pub fn folder_sizes(
-    stores: &[StoreRef],
-    paths: &[String],
-    access: &dyn Access,
-    cache: Option<&RestrictedCache>,
-) -> Result<Outcome<Vec<Option<u64>>>, String> {
-    let found = resolve_paths(stores, paths, true);
-    let mut out = vec![None; paths.len()];
-    let mut per_slot: HashMap<usize, Vec<(usize, u32)>> = HashMap::new();
-    for (i, f) in found.iter().enumerate() {
-        if let Some((slot, rec)) = f {
-            per_slot.entry(*slot).or_default().push((i, *rec));
-        }
-    }
-    let mut unknown = Vec::new();
-    for (slot, list) in per_slot {
-        let Some(sr) = stores.iter().find(|s| s.slot == slot) else { continue };
-        let targets: Vec<u32> = list.iter().map(|&(_, r)| r).collect();
-        match visible_sizes(sr, &targets, access, cache)? {
-            Outcome::Done(sizes) => {
-                for ((i, _), s) in list.iter().zip(sizes) {
-                    out[*i] = s;
-                }
-            }
-            Outcome::NeedAccess(u) => unknown.extend(u),
-        }
-    }
-    if !unknown.is_empty() {
-        return Ok(Outcome::NeedAccess(unknown));
-    }
-    Ok(Outcome::Done(out))
+            let rec = st.get(r)?;
+            rec.is_dir().then_some(rec.size)
+        })
+        .collect()
 }
 
 #[cfg(test)]
@@ -1271,12 +1106,13 @@ mod tests {
         assert_eq!(h.created, 5);
         assert_eq!(h.attributes & 0x10, 0x10);
         let paths = vec![r"C:\Projects".to_string(), r"c:\projects\pathweft\".to_string(), r"C:\Nope".into(), r"C:\".into(), r"C:\Windows\notepad.exe".into()];
-        let Outcome::Done(sizes) = folder_sizes(&s, &paths, &open(), None).unwrap() else { panic!() };
+        let sizes = folder_sizes(&s, &paths);
         assert_eq!(sizes, vec![Some(560), Some(550), None, Some(4561), None]);
+        assert!(h.visible);
     }
 
     #[test]
-    fn visibility_hides_unlistable_children_and_their_sizes() {
+    fn visibility_flags_unlistable_children_and_sizes_stay_full() {
         let s = sample();
         {
             let mut st = s[0].store.write().unwrap();
@@ -1286,16 +1122,24 @@ mod tests {
             st.set(21, Some(&x));
         }
         let fake = Fake { denied: vec![2], known: true };
-        let req = QueryRequest { query: "*.cs".into(), count: 10, ..Default::default() };
+        // Default: both matches; PaneSearch.cs (parent Pathweft) is flagged not visible,
+        // Search\EverythingSearchClient.cs is visible (its parent Search is listable).
+        let req = QueryRequest { query: "*.cs".into(), count: 10, sort: SortKey::Path, ..Default::default() };
         let Outcome::Done(r) = query(&s, &req, &fake).unwrap() else { panic!() };
-        // PaneSearch.cs (parent Pathweft) is hidden; Search\EverythingSearchClient.cs stays visible:
-        // its parent Search is listable.
+        assert_eq!(r.total, 2);
+        let flags: Vec<(&str, bool)> = r.hits.iter().map(|h| (h.path.as_str(), h.visible)).collect();
+        assert_eq!(
+            flags,
+            vec![(r"C:\Projects\Pathweft\PaneSearch.cs", false), (r"C:\Projects\Pathweft\Search\EverythingSearchClient.cs", true)]
+        );
+        // visible_only filters before counting.
+        let req = QueryRequest { visible_only: true, ..req };
+        let Outcome::Done(r) = query(&s, &req, &fake).unwrap() else { panic!() };
         assert_eq!(r.total, 1);
         assert_eq!(r.hits[0].path, r"C:\Projects\Pathweft\Search\EverythingSearchClient.cs");
+        // Folder sizes are the full (administrator) view.
         let paths = vec![r"C:\Projects".to_string(), r"C:\Projects\Pathweft".into()];
-        let Outcome::Done(sizes) = folder_sizes(&s, &paths, &fake, None).unwrap() else { panic!() };
-        // Pathweft's direct files (200 + 50) are not counted.
-        assert_eq!(sizes, vec![Some(310), Some(300)]);
+        assert_eq!(folder_sizes(&s, &paths), vec![Some(560), Some(550)]);
         // Unknown security IDs are reported with a sample directory.
         {
             let mut st = s[0].store.write().unwrap();

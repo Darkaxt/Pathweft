@@ -175,29 +175,36 @@ pub fn run(volume: &str, report_path: Option<PathBuf>) -> Result<bool, String> {
     let r = r.map(|d| format!("{d} after {} ms", s.elapsed().as_millis()));
     t.record("churn-within-2s", s, r);
 
-    // 3. folder sizes match the file system (visible part only)
+    // 3. folder sizes match the file system (full administrator view)
     let s = Instant::now();
     let r = t.until(Duration::from_secs(2), |t| {
         let r = t.req(&Request::FolderSizes { paths: vec![b(""), b("b"), b(r"b\deep-moved"), b("missing-folder")] })?;
         let sizes = r.sizes.unwrap_or_default();
-        // The walk itself may or may not be able to list the secret folder.
-        let hidden = if secret_file && fs::read_dir(&secret).is_ok() { 5000 } else { 0 };
-        let want = [tree_size(&base) - hidden, tree_size(&base.join("b")), tree_size(&base.join(r"b\deep-moved"))];
+        // The walk itself may not be able to list the secret folder; the index counts it anyway.
+        let unseen = if secret_file && fs::read_dir(&secret).is_err() { 5000 } else { 0 };
+        let want = [tree_size(&base) + unseen, tree_size(&base.join("b")), tree_size(&base.join(r"b\deep-moved"))];
         let got: Vec<Option<u64>> = sizes.iter().map(|f| f.size).collect();
         let ok = got.len() == 4 && got[0] == Some(want[0]) && got[1] == Some(want[1]) && got[2] == Some(want[2]) && got[3].is_none();
         expect(ok, format!("sizes {got:?}"), format!("got {got:?}, want {want:?} and none"))
     });
     t.record("folder-sizes", s, r);
 
-    // 4. visibility: entries of a folder the caller cannot list are hidden
+    // 4. visibility: entries of a folder the caller cannot list are flagged, and dropped with visible_only
     let s = Instant::now();
     let r = if !secret_file {
         Err("could not create the unlistable test folder".to_string())
     } else {
         (|| {
-            let hidden = t.paths("hidden-item")?;
-            let folder = t.paths("secret")?;
-            expect(hidden.is_empty() && folder == vec![b("secret")], "unlistable folder's entry hidden, folder itself listed".into(), format!("hidden {hidden:?} folder {folder:?}"))
+            let flagged: Vec<(String, bool)> = t.hits("hidden-item")?.into_iter().map(|h| (h.path, h.visible)).collect();
+            let r = t.req(&Request::Query(QueryRequest { query: "hidden-item".into(), count: 100, visible_only: true, ..Default::default() }))?;
+            let filtered = r.hits.unwrap_or_default().len();
+            let folder: Vec<(String, bool)> = t.hits("secret")?.into_iter().map(|h| (h.path, h.visible)).collect();
+            let want_flagged = vec![(b(r"secret\hidden-item.txt"), false)];
+            expect(
+                flagged == want_flagged && filtered == 0 && folder == vec![(b("secret"), true)],
+                "unlistable folder's entry returned with visible=false, dropped by visible_only; folder itself visible".into(),
+                format!("flagged {flagged:?} visible_only {filtered} folder {folder:?}"),
+            )
         })()
     };
     t.record("visibility", s, r);

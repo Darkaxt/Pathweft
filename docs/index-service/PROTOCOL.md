@@ -22,7 +22,8 @@ allow impersonation: in C# create the stream with
 ```json
 {"op":"query","query":"*.cs path:\"D:\\Projects\\\"","offset":0,"count":100,
  "sort":"modified","descending":true,
- "match_path":false,"match_case":false,"whole_word":false,"regex":false}
+ "match_path":false,"match_case":false,"whole_word":false,"regex":false,
+ "visible_only":false}
 {"op":"folder_sizes","paths":["D:\\Projects","C:\\Windows"]}
 {"op":"status"}
 {"op":"folder_add","path":"H:\\","rescan_minutes":360}
@@ -31,7 +32,7 @@ allow impersonation: in C# create the stream with
 ```
 
 Query fields other than `query` are optional (defaults: offset 0, count 0 =
-total only, sort `name` ascending, switches off). `count` is capped at 100,000.
+total only, sort `name` ascending, switches off, `visible_only` false). `count` is capped at 100,000.
 Sort keys: `name`, `path`, `size`, `extension`, `created`, `modified`.
 
 The expression language is the subset of Everything's syntax Pathweft uses
@@ -45,7 +46,7 @@ an error, never a silently different result.
 
 ```json
 {"ok":true,"updating":false,"elapsed_us":812,"total":1234,
- "hits":[{"path":"D:\\Projects\\x.cs","folder":false,"size":2048,
+ "hits":[{"path":"D:\\Projects\\x.cs","visible":true,"folder":false,"size":2048,
           "modified":133700000000000000,"created":133600000000000000,
           "attributes":32}]}
 {"ok":true,"sizes":[{"path":"D:\\Projects","size":123456789},{"path":"X:\\nope"}]}
@@ -54,8 +55,8 @@ an error, never a silently different result.
 
 `updating` is true while any store is loading, re-reading or scanning, and
 `updating_stores` names them; the answer is what the index has at that moment.
-A folder size is absent (`size` missing) when the folder is not indexed or not
-visible to the caller; it is never reported as 0 in that case.
+A folder size is absent (`size` missing) when the folder is not indexed; it is
+never reported as 0 in that case.
 
 `status` returns `status`: version, protocol, pid, uptime, working set and
 private bytes, the caller's SID, and per store: name, kind (`ntfs`/`folder`),
@@ -63,13 +64,18 @@ state (`loading`, `ready`, `reloading`, `scanning`, `waiting-for-user`,
 `offline`, `error`), items, folders, journal ID, next USN, load time,
 re-reads, applied changes, estimated memory, last error, owner (folders).
 
-## Visibility rule
+## Visibility flag
 
-An entry is returned and counted only if the caller may list its parent
-directory (`FILE_LIST_DIRECTORY`, evaluated with `AccessCheck` on the caller's
-token, cached per caller and NTFS security ID for 15 minutes). Folder sizes
-count only files the caller can see. Folder roots added with `folder_add` are
-visible only to the user who added them.
+Every match is returned. Each hit carries `visible`: whether the caller may
+list its parent directory (`FILE_LIST_DIRECTORY`, evaluated with `AccessCheck`
+on the caller's token, cached per caller and NTFS security ID for 15 minutes).
+Entries of folder roots added by another user are `visible: false`. The client
+decides what to show; `"visible_only": true` drops the others before counting
+and paging, so `total` and pages stay consistent when the client filters.
+
+Folder sizes are always the administrator view: the recursive size of
+everything indexed below the folder, including folders the caller cannot open.
+This is what disk analysis needs to find problem folders.
 
 ## Clients
 

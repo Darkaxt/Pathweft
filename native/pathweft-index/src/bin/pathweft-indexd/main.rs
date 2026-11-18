@@ -84,7 +84,7 @@ fn main() {
     let result: Result<i32, String> = match cmd {
         "service" => service::dispatch().map(|_| 0),
         "console" => console(rest).map(|_| 0),
-        "install" => install::install(&values(rest, "--allow"), value(rest, "--visibility").as_deref()).map(|_| 0),
+        "install" => install::install(&values(rest, "--allow")).map(|_| 0),
         "uninstall" => install::uninstall(rest.iter().any(|a| a == "--purge")).map(|_| 0),
         "selftest" => {
             log::init(None, true);
@@ -94,7 +94,7 @@ fn main() {
             }
         }
         _ => {
-            eprintln!("usage: pathweft-indexd service | console [options] | install [--allow SID] [--visibility caller|all] | uninstall [--purge] | selftest --volume X: [--report PATH]");
+            eprintln!("usage: pathweft-indexd service | console [options] | install [--allow SID] | uninstall [--purge] | selftest --volume X: [--report PATH]");
             Ok(1)
         }
     };

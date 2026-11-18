@@ -9,7 +9,7 @@ use pathweft_index::ffi::*;
 use pathweft_index::protocol::*;
 use pathweft_index::query::{self, Outcome};
 use std::sync::atomic::Ordering;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use std::time::Instant;
 
 const MAX_CONNECTIONS: usize = 16;
@@ -101,18 +101,6 @@ fn connection(svc: &Arc<Service>, mut stream: PipeStream) {
     }
 }
 
-/// Folder-size caches depend on access answers; drop them when those expire.
-static RESTRICTED_EPOCH: Mutex<Option<Instant>> = Mutex::new(None);
-
-fn sync_caches(svc: &Service) {
-    let epoch = svc.access.epoch();
-    let mut last = RESTRICTED_EPOCH.lock().unwrap();
-    if *last != Some(epoch) {
-        svc.restricted.clear();
-        *last = Some(epoch);
-    }
-}
-
 fn mark_updating(slots: &[Arc<Slot>], r: &mut Response) {
     r.updating_stores = slots.iter().filter(|s| s.updating()).map(|s| s.name.clone()).collect();
     r.updating = !r.updating_stores.is_empty();
@@ -133,7 +121,6 @@ fn with_access<T>(
 }
 
 pub fn handle(svc: &Arc<Service>, client: &ClientToken, req: Request) -> Response {
-    sync_caches(svc);
     match req {
         Request::Query(q) => {
             let (slots, refs) = svc.snapshot();
@@ -149,16 +136,11 @@ pub fn handle(svc: &Arc<Service>, client: &ClientToken, req: Request) -> Respons
         }
         Request::FolderSizes { paths } => {
             let (slots, refs) = svc.snapshot();
-            let access = CallerAccess::new(svc, client);
-            match with_access(&access, || query::folder_sizes(&refs, &paths, &access, Some(&svc.restricted))) {
-                Ok(sizes) => {
-                    let sizes = paths.into_iter().zip(sizes).map(|(path, size)| FolderSize { path, size }).collect();
-                    let mut r = Response { ok: true, sizes: Some(sizes), ..Default::default() };
-                    mark_updating(&slots, &mut r);
-                    r
-                }
-                Err(e) => Response::failure(e),
-            }
+            let sizes = query::folder_sizes(&refs, &paths);
+            let sizes = paths.into_iter().zip(sizes).map(|(path, size)| FolderSize { path, size }).collect();
+            let mut r = Response { ok: true, sizes: Some(sizes), ..Default::default() };
+            mark_updating(&slots, &mut r);
+            r
         }
         Request::Status => {
             let slots = svc.all();

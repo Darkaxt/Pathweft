@@ -94,25 +94,22 @@ for direct use from C# (`NamedPipeClientStream`). A Rust client library and a C 
 DLL (`pwi_request`/`pwi_free`) wrap it. No network listeners.
 *Accept:* CLI round trip as the interactive user; documented protocol.
 
-**IDX-08 Results limited to what the caller can list.** Chosen rule (per result,
-not per query): an entry is returned and counted only if the caller's token is
-granted `FILE_LIST_DIRECTORY` on the entry's parent directory. The check is
-`AccessCheck` of the caller's impersonation token against the parent's security
-descriptor, cached per caller SID and NTFS security ID (security descriptors are
-shared by ID). Folder sizes count only files whose parent directory the caller
-can list, and a folder's own size is returned only if the folder itself is
-visible. Scanned roots are visible only to the SID that added them (they were
-listed with that user's token). Raw volume handles never leave the service.
-*Accept:* unit test of the filtering rule with a fake access oracle; live test
-that a directory the user cannot list (e.g. `C:\System Volume Information`)
-contributes no results.
-*Owner-approved exception (2026-11-18):* the config field `"visibility"`
-(`"caller"` by default, or `"all"`, set with `pathweft-indexd install
---visibility all`) can turn the per-result check off for NTFS entries on one
-machine; any allowed pipe user then sees every indexed path. The owner chose
-`all` for this machine ("I don't find much risk in knowing the file paths of my
-files"). The default stays `caller`, so other installations are unchanged;
-scanned roots keep their owner rule, and only names and metadata are exposed.
+**IDX-08 Per-result visibility flag; the client filters.** Revised by the
+owner on 2026-11-18 ("Just return a visibility flag so we can decide in the
+client to filter them out or not. But features like the disk analyzer should
+always run with admin view, since its purpose is to enumerate problematic
+folders"). Every match is returned with `visible`: whether the caller's token
+is granted `FILE_LIST_DIRECTORY` on the entry's parent directory (`AccessCheck`
+of the caller's impersonation token against the parent's security descriptor,
+cached per caller SID and NTFS security ID). Entries of a scanned root added by
+another SID are `visible: false`. The request option `visible_only` filters
+before counting and paging. Folder sizes are always the administrator view
+(everything indexed). Only names and metadata are exposed; raw volume handles
+never leave the service and the pipe still admits only the configured users.
+*Accept:* unit test of the flag, `visible_only` and full folder sizes with a
+fake access oracle; live self-test that an entry of a folder the user cannot
+list is returned with `visible: false`, dropped by `visible_only`, and counted
+in its ancestors' sizes.
 
 **IDX-09 Health and CLI.** `status` reports per store: kind, state
 (loading/ready/reloading/scanning/waiting-for-user/offline/error), items, folders,
