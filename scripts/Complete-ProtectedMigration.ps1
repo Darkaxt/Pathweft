@@ -33,7 +33,7 @@ foreach($arch in @('x64','x86')){
     try{
         $class=$machine.OpenSubKey("Software\Classes\CLSID\$clsid\InprocServer32")
         try{
-            $expected=Join-Path $new "PathweftShell-$Version-$arch.dll"
+            $expected=Join-Path $new "PathweftShell-$arch.dll"
             if($null -eq $class -or $class.GetValue('') -cne $expected -or $class.GetValue('ThreadingModel') -cne 'Apartment'){throw "The protected $arch machine COM registration differs."}
             $routerFiles+= $expected
         }finally{if($null -ne $class){$class.Dispose()}}

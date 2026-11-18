@@ -1,6 +1,11 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.79 | 2026-11-18 | One shell handler file
+
+- Pathweft's folder handler is now always PathweftShell-x64.dll (and -x86), without a version in its name. Updates no longer leave a new pair of handler files in the Pathweft folder each time; the old ones are removed.
+- When Explorer or another app still has the previous handler loaded, the update moves it aside and Windows deletes it at the next restart. No app is closed.
+
 ## 1.1.78 | 2026-11-18 | Pathweft's own file index
 
 - Searches and folder sizes now use the Pathweft index service when it is running, and stay fast while files change. Everything is used when the service is not running.

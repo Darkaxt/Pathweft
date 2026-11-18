@@ -9,7 +9,7 @@
     <AssemblyName>Pathweft</AssemblyName>
     <Product>Pathweft</Product>
     <Company>Darkaxt</Company>
-    <Version>1.1.78</Version>
+    <Version>1.1.79</Version>
     <!-- WPF windows without their own Icon use this one, so every window gets it -->
     <ApplicationIcon>app.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
@@ -31,8 +31,8 @@
     <EmbeddedResource Include="MaintenanceGuidance.json" />
     <EmbeddedResource Include="vendor\HardeningKitty\lists\finding_list_0x6d69636b_machine.csv" LogicalName="FileExplorer.SecurityChecks.csv" />
     <None Update="scripts\Maintenance-Windows.ps1" Link="Maintenance-Windows.ps1" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="$(ShellRouterRoot)\x64\PathweftShell.dll" Link="PathweftShell-$(Version)-x64.dll" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="$(ShellRouterRoot)\x86\PathweftShell.dll" Link="PathweftShell-$(Version)-x86.dll" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="$(ShellRouterRoot)\x64\PathweftShell.dll" Link="PathweftShell-x64.dll" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="$(ShellRouterRoot)\x86\PathweftShell.dll" Link="PathweftShell-x86.dll" CopyToOutputDirectory="PreserveNewest" />
     <!-- SEARCH-08: the Pathweft index service, built from native/pathweft-index through the Rust gate. -->
     <None Condition="'$(IndexServiceRoot)' != ''" Include="$(IndexServiceRoot)\pathweft-indexd.exe" Link="index\pathweft-indexd.exe" CopyToOutputDirectory="PreserveNewest" />
     <None Condition="'$(IndexServiceRoot)' != ''" Include="$(IndexServiceRoot)\pwindex.exe" Link="index\pwindex.exe" CopyToOutputDirectory="PreserveNewest" />

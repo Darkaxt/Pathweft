@@ -24,8 +24,7 @@ internal sealed class ShellFolderViews : IDisposable
     internal ShellFolderViews(MainWindow window)
     {
         owner=window;
-        string version=typeof(App).Assembly.GetName().Version.ToString(3);
-        library=NativeLibrary.Load(Path.Combine(AppContext.BaseDirectory,$"PathweftShell-{version}-x64.dll"));
+        library=NativeLibrary.Load(Path.Combine(AppContext.BaseDirectory,"PathweftShell-x64.dll"));
         register=Marshal.GetDelegateForFunctionPointer<Register>(NativeLibrary.GetExport(library,"PathweftRegisterFolder"));
         revoke=Marshal.GetDelegateForFunctionPointer<Revoke>(NativeLibrary.GetExport(library,"PathweftRevokeFolder"));
         WindowsIntegration.Changed+=Refresh;

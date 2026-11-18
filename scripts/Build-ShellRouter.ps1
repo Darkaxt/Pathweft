@@ -44,7 +44,7 @@ foreach($arch in @('x64','x86')){
     $dll=@('/LD',(Join-Path $root 'native/pathweft-shell/Router.cpp'),('/Fo'+$output+'\'))+$link+@(('/DEF:'+(Join-Path $root 'native/pathweft-shell/Router.def')),('/OUT:'+(Join-Path $output 'PathweftShell.dll')),('/IMPLIB:'+(Join-Path $output 'PathweftShell.lib')))
     if($ProductDirectory){
         $manifest=Get-Content (Join-Path $ProductDirectory 'release-manifest.json') -Raw|ConvertFrom-Json
-        $name="PathweftShell-$($manifest.version)-$arch.dll"
+        $name="PathweftShell-$arch.dll"
         $member=@($manifest.files|Where-Object path -eq $name)
         if($member.Count -ne 1 -or (Get-FileHash (Join-Path $ProductDirectory $name)).Hash -ne $member[0].sha256){throw 'Delivered native Shell identity differs.'}
         Copy-Item (Join-Path $ProductDirectory $name) -Destination (Join-Path $output 'PathweftShell.dll')

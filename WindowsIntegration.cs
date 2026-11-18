@@ -70,7 +70,8 @@ internal static class WindowsIntegration
         }
     }
 
-    static string RouterPath(string arch)=>Path.Combine(AppContext.BaseDirectory,$"PathweftShell-{typeof(WindowsIntegration).Assembly.GetName().Version.ToString(3)}-{arch}.dll");
+    // SHELL-06: one fixed name; Setup moves a copy still loaded by a Shell caller aside.
+    static string RouterPath(string arch)=>Path.Combine(AppContext.BaseDirectory,$"PathweftShell-{arch}.dll");
 
     internal static void SetEnabled(bool enabled)
     {
@@ -197,6 +198,8 @@ internal static class WindowsIntegration
         }
         if(version>=2&&prior.Name==""&&prior.Key.EndsWith(@"\InprocServer32",StringComparison.Ordinal))
         {
+            if(prior.Written==current)return true;
+            // Earlier versions wrote PathweftShell-<version>-<arch>.dll beside the executable.
             var parts=Path.GetFileName(prior.Written)?.Split('-');
             return parts?.Length==3&&parts[0]=="PathweftShell"&&Version.TryParse(parts[1],out var parsed)&&parsed.Build>=0&&parsed.Revision<0&&
                 parts[2]==(prior.Key.Contains("WOW6432Node",StringComparison.Ordinal)?"x86.dll":"x64.dll")&&

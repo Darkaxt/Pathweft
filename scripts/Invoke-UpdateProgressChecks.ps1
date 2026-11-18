@@ -15,7 +15,9 @@ if($LASTEXITCODE -ne 0){throw 'Installer fixture compilation failed.'}
 $payload=Join-Path $run 'payload';$delivery=Join-Path $run 'delivery'
 foreach($path in @($payload,$delivery)){[void][IO.Directory]::CreateDirectory($path)}
 Copy-Item (Join-Path $run 'native/x64/InstallerProgressReceiver.exe') (Join-Path $payload 'Pathweft.exe')
-foreach($arch in @('x64','x86')){Copy-Item (Join-Path $run ('native/'+$arch+'/PathweftShell.dll')) (Join-Path $payload ('PathweftShell-1.1.14-'+$arch+'.dll'))}
+foreach($arch in @('x64','x86')){Copy-Item (Join-Path $run ('native/'+$arch+'/PathweftShell.dll')) (Join-Path $payload ('PathweftShell-'+$arch+'.dll'))}
+# SHELL-06: this process holds an installed handler loaded, as Explorer or a browser would.
+Add-Type -Namespace Fixture -Name Loader -MemberDefinition '[DllImport("kernel32.dll",CharSet=CharSet.Unicode,SetLastError=true)] public static extern IntPtr LoadLibraryW(string path); [DllImport("kernel32.dll")] public static extern bool FreeLibrary(IntPtr module);'
 $bytes=New-Object byte[] (1024*1024);[Security.Cryptography.RandomNumberGenerator]::Fill($bytes)
 [IO.File]::WriteAllBytes((Join-Path $payload 'deployed.bin'),$bytes)
 & $Compiler '/DAppVersion=1.1.14' ('/DAppIdGuid='+$id) '/DProgressVerification' ('/DPublishRoot='+$payload) ('/DDeliveryRoot='+$delivery) (Join-Path $repo 'installer/Pathweft.iss') /Q
@@ -28,6 +30,15 @@ foreach($case in @(@{name='dark100';scale=100;back=0x141414;ink=0xF6EEE8;accent=
     $folder=Join-Path $run $case.name;$destination=Join-Path $folder 'installed'
     [void][IO.Directory]::CreateDirectory($destination)
     Copy-Item (Join-Path $payload 'Pathweft.exe') (Join-Path $destination 'Pathweft.exe')
+    $held=[IntPtr]::Zero
+    if($case.name -eq 'dark100'){
+        Copy-Item (Join-Path $payload 'PathweftShell-x64.dll') (Join-Path $destination 'PathweftShell-x64.dll')
+        foreach($arch in @('x64','x86')){Copy-Item (Join-Path $payload ('PathweftShell-'+$arch+'.dll')) (Join-Path $destination ('PathweftShell-1.1.13-'+$arch+'.dll'))}
+        $held=[Fixture.Loader]::LoadLibraryW((Join-Path $destination 'PathweftShell-x64.dll'))
+        Check ($held -ne [IntPtr]::Zero) 'The fixture holds the previous handler loaded before the update'
+        try{Remove-Item -LiteralPath (Join-Path $destination 'PathweftShell-x64.dll') -ErrorAction Stop;$replaceable=$true}catch{$replaceable=$false}
+        Check (!$replaceable) 'A loaded handler cannot be deleted in place'
+    }
     if($case.name -eq 'failed-prepare'){[IO.File]::WriteAllText((Join-Path $destination 'prepare-fail.flag'),'Deliberate fixture-only preparation refusal.')}
     $eventName='Local\Pathweft-Progress114-'+[guid]::NewGuid().ToString('N')
     $observer=[UpdateProgressObserver]::new($eventName)
@@ -66,14 +77,23 @@ foreach($case in @(@{name='dark100';scale=100;back=0x141414;ink=0xF6EEE8;accent=
             Check ((Get-FileHash (Join-Path $destination 'deployed.bin')).Hash -eq (Get-FileHash (Join-Path $payload 'deployed.bin')).Hash) ('Actual '+$case.name+' deployment preserves source payload bytes')
             $calls=Get-Content (Join-Path $destination 'calls.txt')
             Check (@($calls|Where-Object{$_ -eq '--desktop-launch --resume-agent '}).Count -eq 1 -and @($calls|Where-Object{$_ -eq '--desktop-launch '}).Count -eq 1) ('Actual '+$case.name+' deployment invokes helper restoration and reopening once')
+            foreach($arch in @('x64','x86')){Check ((Get-FileHash (Join-Path $destination ('PathweftShell-'+$arch+'.dll'))).Hash -eq (Get-FileHash (Join-Path $payload ('PathweftShell-'+$arch+'.dll'))).Hash) ('Actual '+$case.name+' deployment installs the fixed-name '+$arch+' handler')}
+            if($held -ne [IntPtr]::Zero){
+                $aside=@(Get-ChildItem -LiteralPath $destination -Filter 'PathweftShell-x64.dll.*.old')
+                Check ($aside.Count -eq 1) 'The update moved the held handler aside instead of failing or closing its caller'
+                Check (!@(Get-ChildItem -LiteralPath $destination -Filter 'PathweftShell-1.1.13-*').Count) 'The update removed the per-version handlers of the earlier release'
+                Check (@((Get-Process -Id $PID).Modules|Where-Object{$_.FileName -eq $aside[0].FullName}).Count -eq 1) 'The caller keeps its loaded handler from the moved copy'
+            }
         }
     }finally{
         $observer.Dispose()
+        if($held -ne [IntPtr]::Zero){[void][Fixture.Loader]::FreeLibrary($held)}
         $key=[Microsoft.Win32.Registry]::CurrentUser.OpenSubKey($registration)
         try{$installed=$null -ne $key;if($key -and $key.GetValue('InstallLocation').TrimEnd('\') -ne $destination){throw 'Test installation ownership changed; preserve it.'}}finally{if($key){$key.Dispose()}}
         if($installed){
             $uninstall=Start-Process -FilePath (Join-Path $destination 'unins000.exe') -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART') -WindowStyle Hidden -PassThru
             $uninstall.WaitForExit();if($uninstall.ExitCode -ne 0){throw 'Owned fixture uninstall did not complete.'};$uninstall.Dispose()
+            Check (!@(Get-ChildItem -LiteralPath $destination -Filter 'PathweftShell-*' -ErrorAction SilentlyContinue).Count) ('Uninstalling '+$case.name+' leaves no handler file')
         }
     }
 }

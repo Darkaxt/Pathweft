@@ -1,6 +1,6 @@
 # Pathweft specification
 
-Version 1.37 - 2026-11-18. Owner: Darkaxt.
+Version 1.38 - 2026-11-18. Owner: Darkaxt.
 
 ### Read-only MCP expansion (S48)
 
@@ -1635,8 +1635,9 @@ complete. S9 remains NOT STARTED.
 The correction uses a native DelegateExecute handler: a Shell browser site routes
 through that browser's BrowseObject, while an external filesystem request launches
 Pathweft. Keep 32/64-bit COM registration reversible, migrate only wholly owned
-old opt-ins, and retain disabled/third-party owners. Version native handler files
-so an update never needs to terminate an Explorer caller holding the previous DLL.
+old opt-ins, and retain disabled/third-party owners. An update never needs to
+terminate an Explorer caller holding the previous DLL (SHELL-06: one fixed file name,
+a held copy is moved aside; the earlier per-version file names are superseded).
 Refresh folder integration's Settings state when its window activates; its old
 constructor-time label is not evidence of current handler ownership.
 Earlier S8 is COMPLETE through the user-requested1.1.5 refinements
@@ -2339,6 +2340,7 @@ disposable fixtures the owner creates. A tresor is a folder directly on Tresorit
 | TRES-07 | Deleting items inside a tresor asks with Tresorit's terms instead of Windows' "permanently delete": they go to Tresorit's deleted files and can be restored in the Tresorit app (Show deleted). Verify with disposable files in a disposable tresor; the owner confirms the restore in the client. |
 | TRES-08 | The drive's space is labelled as the Tresorit account's storage (shared tresors count toward it), not a disk. |
 | SHELL-05 | When the folder router hands a request back to Windows (Setup is running, a virtual location such as This PC, or several folders without a browser site), it forwards what the Shell gave it (the verb's association element and initialization) to Windows' own folder command, so the calling app never crashes. Verify with the router probe's hand-off check against the built DLLs and a real ShellExecuteEx of This PC through a test-only class registration. |
+| SHELL-06 | Owner direction 2026-11-18 (repeated complaint about `PathweftShell-1.1.75-x64.dll`): the native shell handlers have one fixed name, `PathweftShell-x64.dll` and `PathweftShell-x86.dll`, with no version in it. Setup deletes the previous copy; when a Shell caller (Explorer, a browser) still has it loaded, Setup renames it aside (Windows allows renaming a loaded DLL, not replacing it) and schedules it for deletion at the next restart, so no app is closed or restarted. Setup also removes the earlier per-version copies the same way, and uninstall removes every handler file it can. The machine class and Pathweft's per-user registration name the fixed files; a per-user registration written by an earlier version is recognised and rewritten. Verify with the actual installer: a held old handler is moved aside and stays loaded, the new one is installed under the fixed name, per-version copies are gone, and uninstall leaves no handler file; the registration upgrade from a per-version path in an isolated registry; and, after the owner installs the update, the Program Files folder and the class registration. |
 
 ### Archive parity (S4P)
 

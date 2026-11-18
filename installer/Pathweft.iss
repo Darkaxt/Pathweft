@@ -58,11 +58,12 @@ Name: "defaultfm"; Description: "Open filesystem folders and drives in Pathweft"
 Name: "desktopicon"; Description: "Create a desktop shortcut"; GroupDescription: "Shortcuts:"; Flags: unchecked
 
 [Files]
-; Versioned native handlers can coexist with a prior version still loaded in a
-; Shell caller. Uninstall never force-closes that caller to remove its DLL.
-; They are copied first: the new Pathweft.exe loads the handler named for its
-; own version, so it must never exist without it, even if Setup stops early.
-Source: "{#PublishRoot}\PathweftShell-*.dll"; DestDir: "{app}"; Flags: ignoreversion uninsrestartdelete
+; SHELL-06: the native handlers keep one fixed name. A Shell caller (Explorer,
+; a browser) may still have the previous copy loaded: it is moved aside just
+; before the new copy is written, so no app is closed. Uninstall never
+; force-closes that caller to remove its DLL. They are copied first, so the new
+; Pathweft.exe never runs without its handler, even if Setup stops early.
+Source: "{#PublishRoot}\PathweftShell-*.dll"; DestDir: "{app}"; Flags: ignoreversion uninsrestartdelete; BeforeInstall: MoveHandlerAside
 Source: "{#PublishRoot}\*"; DestDir: "{app}"; Excludes: "PathweftShell-*.dll"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Registry]
@@ -70,12 +71,16 @@ Source: "{#PublishRoot}\*"; DestDir: "{app}"; Excludes: "PathweftShell-*.dll"; F
 ; Packaged desktop callers cannot see the per-user CLSID but can see the
 ; machine class. The DLL and adjacent executable live under protected {app}.
 Root: HKLM64; Subkey: "Software\Classes\CLSID\{{CF5ABF8B-73EA-4DF9-A991-C163D76FE2A2}"
-Root: HKLM64; Subkey: "Software\Classes\CLSID\{{CF5ABF8B-73EA-4DF9-A991-C163D76FE2A2}\InprocServer32"; ValueType: string; ValueName: ""; ValueData: "{app}\PathweftShell-{#AppVersion}-x64.dll"
+Root: HKLM64; Subkey: "Software\Classes\CLSID\{{CF5ABF8B-73EA-4DF9-A991-C163D76FE2A2}\InprocServer32"; ValueType: string; ValueName: ""; ValueData: "{app}\PathweftShell-x64.dll"
 Root: HKLM64; Subkey: "Software\Classes\CLSID\{{CF5ABF8B-73EA-4DF9-A991-C163D76FE2A2}\InprocServer32"; ValueType: string; ValueName: "ThreadingModel"; ValueData: "Apartment"
 Root: HKLM32; Subkey: "Software\Classes\CLSID\{{CF5ABF8B-73EA-4DF9-A991-C163D76FE2A2}"
-Root: HKLM32; Subkey: "Software\Classes\CLSID\{{CF5ABF8B-73EA-4DF9-A991-C163D76FE2A2}\InprocServer32"; ValueType: string; ValueName: ""; ValueData: "{app}\PathweftShell-{#AppVersion}-x86.dll"
+Root: HKLM32; Subkey: "Software\Classes\CLSID\{{CF5ABF8B-73EA-4DF9-A991-C163D76FE2A2}\InprocServer32"; ValueType: string; ValueName: ""; ValueData: "{app}\PathweftShell-x86.dll"
 Root: HKLM32; Subkey: "Software\Classes\CLSID\{{CF5ABF8B-73EA-4DF9-A991-C163D76FE2A2}\InprocServer32"; ValueType: string; ValueName: "ThreadingModel"; ValueData: "Apartment"
 #endif
+
+[UninstallDelete]
+; Copies moved aside while a Shell caller held them; still-held ones go at restart.
+Type: files; Name: "{app}\PathweftShell-*"
 
 [Icons]
 Name: "{group}\Pathweft"; Filename: "{app}\{#AppExe}"; AppUserModelID: "Darkaxt.Pathweft"
@@ -134,7 +139,7 @@ var
 begin
   Key := MachineClassKey() + '\InprocServer32';
   if RegQueryStringValue(Root, Key, '', Existing) and
-     (CompareText(Existing, ExpandConstant('{app}\PathweftShell-{#AppVersion}-' + Architecture + '.dll')) = 0) then begin
+     (CompareText(Existing, ExpandConstant('{app}\PathweftShell-' + Architecture + '.dll')) = 0) then begin
     RegDeleteValue(Root, Key, '');
     if RegQueryStringValue(Root, Key, 'ThreadingModel', Existing) and (CompareText(Existing, 'Apartment') = 0) then
       RegDeleteValue(Root, Key, 'ThreadingModel');
@@ -144,6 +149,53 @@ begin
 end;
 
 #include "UpdateProgress.iss"
+
+{ SHELL-06: delete a handler file, or, while a Shell caller still has it
+  loaded, rename it aside (Windows allows that for a loaded DLL) and delete it
+  at the next restart. }
+procedure RetireHandler(const Path: String);
+var
+  Aside: String;
+begin
+  if not FileExists(Path) then Exit;
+  if DeleteFile(Path) then Exit;
+  if CompareText(ExtractFileExt(Path), '.old') = 0 then
+    Aside := Path
+  else begin
+    Aside := Path + '.' + GetDateTimeString('yyyymmddhhnnss', #0, #0) + '.old';
+    if not RenameFile(Path, Aside) then begin
+      Log('The shell handler in use could not be moved aside: ' + Path);
+      Exit;
+    end;
+    Log('Moved the shell handler in use aside: ' + Aside);
+  end;
+  if IsAdmin() then RestartReplace(Aside, '');
+end;
+
+procedure MoveHandlerAside;
+begin
+  RetireHandler(ExpandConstant(CurrentFileName));
+end;
+
+{ Removes the per-version copies of earlier releases and any copy moved aside
+  that is no longer loaded. The fixed-name handlers just installed stay. }
+procedure RetireOldHandlers;
+var
+  Found: TFindRec;
+  Directory: String;
+begin
+  Directory := ExpandConstant('{app}');
+  if FindFirst(Directory + '\PathweftShell-*', Found) then
+    try
+      repeat
+        if (CompareText(Found.Name, 'PathweftShell-x64.dll') <> 0) and
+           (CompareText(Found.Name, 'PathweftShell-x86.dll') <> 0) then
+          RetireHandler(Directory + '' + Found.Name);
+      until not FindNext(Found);
+    finally
+      FindClose(Found);
+    end;
+end;
 
 var
   IntegrationExitCode: Integer;
@@ -239,6 +291,7 @@ var
   Code: Integer;
 begin
   if CurStep = ssPostInstall then begin
+    RetireOldHandlers;
     if MigrationRequested() then begin
       DeploymentPhase('Installing protected files', 'The account migration will restore your enabled routes after the old installation is retired.');
       DeploymentFailure := 'Protected files were installed, but account migration has not completed.';

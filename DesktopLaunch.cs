@@ -15,8 +15,7 @@ static class DesktopLaunch
     delegate int Launch([MarshalAs(UnmanagedType.LPWStr)]string file,[MarshalAs(UnmanagedType.LPWStr)]string arguments,[MarshalAs(UnmanagedType.LPWStr)]string directory,int show);
     internal static void Start(string arguments,int show=1)
     {
-        string version=typeof(App).Assembly.GetName().Version.ToString(3);
-        var library=NativeLibrary.Load(Path.Combine(AppContext.BaseDirectory,$"PathweftShell-{version}-x64.dll"));
+        var library=NativeLibrary.Load(Path.Combine(AppContext.BaseDirectory,"PathweftShell-x64.dll"));
         try{Marshal.ThrowExceptionForHR(Marshal.GetDelegateForFunctionPointer<Launch>(NativeLibrary.GetExport(library,"PathweftLaunchDesktop"))(Environment.ProcessPath,arguments,AppContext.BaseDirectory,show));}
         finally{NativeLibrary.Free(library);}
     }
