@@ -98,8 +98,17 @@ tighter than AND), `!` = NOT, `< >` grouping, `"..."` quoting (with `""` for a
 literal quote), `*`/`?` wildcards (whole-name match), substring otherwise; a term
 containing `\` matches the full path; modifiers `path:` `nopath:` `case:` `nocase:`
 `ww:` `wfn:` `regex:` `file:` `folder:` applied to a term or a group, standalone
-`file:`/`folder:`, `ext:a;b`, and `size:` comparisons. Unsupported functions
-return an explicit error, never a silently different result.
+`file:`/`folder:`, `ext:a;b`, `size:` comparisons, dates and `parent:` (Pathweft
+request 2026-11-19). `dm:`/`datemodified:` and `dc:`/`datecreated:` take `today`, `yesterday`,
+`thisweek`, `lastweek`, `thismonth`, `lastmonth`, `thisyear`, `lastyear`, `YYYY`,
+`YYYY-MM` or `YYYY-MM-DD` (`/` also accepted), a range `a..b` (both ends
+inclusive) or `>`, `>=`, `<`, `<=`, `=` one of those. Days are local-time days
+(daylight saving applied by Windows), weeks start on Monday, and an unknown time
+never matches. `parent:<folder>` matches the folder's direct children only
+(a drive, a folder-root path or a UNC root also works); a folder that is not
+indexed matches nothing.
+Unsupported functions (`dupe:`, `content:`, ...) return an explicit error, never
+a silently different result.
 *Accept:* unit tests cover parsing and matching for every listed construct,
 including `IndexedQuery.Compose` output and `FolderExpression`; live parity on
 sample queries against Everything.

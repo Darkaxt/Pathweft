@@ -39,8 +39,17 @@ The expression language is the subset of Everything's syntax Pathweft uses
 (SPEC IDX-05): space = AND, `|` = OR, `!` = NOT, `< >` grouping, `"..."`
 quoting, `*`/`?` wildcards, substrings, terms containing `\` match the full
 path, modifiers `path: nopath: case: nocase: ww: wfn: regex: file: folder:`,
-`ext:a;b`, `size:` comparisons. Anything else (date functions, `dupe:` ...) is
-an error, never a silently different result.
+`ext:a;b`, `size:` comparisons, `dm:`/`datemodified:` and `dc:`/`datecreated:`
+dates, and `parent:<folder>`. `dm:`/`datemodified:` and `dc:`/`datecreated:` take `today`, `yesterday`,
+`thisweek`, `lastweek`, `thismonth`, `lastmonth`, `thisyear`, `lastyear`, `YYYY`,
+`YYYY-MM` or `YYYY-MM-DD` (`/` also accepted), a range `a..b` (both ends
+inclusive) or `>`, `>=`, `<`, `<=`, `=` one of those. Days are local-time days
+(daylight saving applied by Windows), weeks start on Monday, and an unknown time
+never matches. `parent:<folder>` matches the folder's direct children only
+(a drive, a folder-root path or a UNC root also works); a folder that is not
+indexed matches nothing.
+Anything else (`dupe:`, `content:` ...) is an error, never a silently different
+result.
 
 ## Response
 

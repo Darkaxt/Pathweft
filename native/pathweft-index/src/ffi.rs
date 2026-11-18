@@ -130,6 +130,19 @@ pub struct OVERLAPPED {
 
 #[repr(C)]
 #[derive(Clone, Copy, Default)]
+pub struct SYSTEMTIME {
+    pub year: u16,
+    pub month: u16,
+    pub day_of_week: u16,
+    pub day: u16,
+    pub hour: u16,
+    pub minute: u16,
+    pub second: u16,
+    pub milliseconds: u16,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy, Default)]
 pub struct FILETIME {
     pub low: u32,
     pub high: u32,
@@ -283,6 +296,9 @@ extern "system" {
     pub fn ResetEvent(h: HANDLE) -> BOOL;
     pub fn WaitForSingleObject(h: HANDLE, ms: u32) -> u32;
     pub fn OpenProcess(access: u32, inherit: BOOL, pid: u32) -> HANDLE;
+    pub fn GetLocalTime(st: *mut SYSTEMTIME);
+    pub fn TzSpecificLocalTimeToSystemTime(tz: *const c_void, local: *const SYSTEMTIME, utc: *mut SYSTEMTIME) -> BOOL;
+    pub fn SystemTimeToFileTime(st: *const SYSTEMTIME, ft: *mut FILETIME) -> BOOL;
     pub fn GetOverlappedResult(h: HANDLE, ov: *mut OVERLAPPED, transferred: *mut u32, wait: BOOL) -> BOOL;
     pub fn CancelIoEx(h: HANDLE, ov: *mut OVERLAPPED) -> BOOL;
 }

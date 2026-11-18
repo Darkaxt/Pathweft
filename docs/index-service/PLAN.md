@@ -14,6 +14,7 @@ is recorded in SPEC.md.
 | IS5 integration | Integration note; message to the Pathweft thread | IDX-13 | INTEGRATION.md, message sent |
 | IS6 folder changes | Follow folder roots with change notifications while running (owner request 2026-11-18) | IDX-03 (live changes) | Unit tests; console-mode test on a local folder root; installed service log on the real roots |
 | IS7 adaptive checks | Per-folder adaptive re-listing, 15 min to 6 h, replacing the fixed full rescan (owner request 2026-11-18) | IDX-03 (scheduled checks) | Unit tests; console-mode test with a short schedule; installed service log (schedule summary, changes found by a scheduled check on the share) |
+| IS8 query additions | `dm:`/`dc:` date filters and `parent:` (Pathweft thread request 2026-11-19, to replace Everything completely) | IDX-05 (dates, parent) | Unit tests; installed service queries |
 
 ## Ledger
 
@@ -25,7 +26,8 @@ is recorded in SPEC.md.
 | IS4 | COMPLETE | – (IDX-10 footprint accepted by the owner 2026-11-18) | – | IS4 record below; `MEASUREMENTS.md` |
 | IS5 | COMPLETE | – | – | `INTEGRATION.md`; message sent to the Pathweft thread 2026-11-18 |
 | IS6 | COMPLETE | – | – | IS6 record below |
-| IS7 | ACTIVE | – | – | IS7 record below |
+| IS7 | ACTIVE (code verified and installed; real-share evidence pending) | – | – | IS7 record below |
+| IS8 | ACTIVE | – | – | IS8 record below |
 
 ## IS1 readiness record (2026-11-18)
 
@@ -212,3 +214,31 @@ whether it changed, plus new, missing, unlistable and touched subfolders),
 256; a full rescan only at start-up, on `rescan` and after an overflow; hourly
 summary in the log). Changes found by notifications also mark their folder as
 recently changed.
+
+Build and install (Rust gate ticket 8de04be8, renewing 134347a3): attempt 1
+(workflow 2758f16f) failed two watch tests because `relist` could not build the
+root folder's path (`full_path` does not resolve the root record); correction 1
+uses the store name for the root. Attempt 3: `cargo test` 30/30. Attempt 4: the
+release build passed but installing failed with a sharing violation (os error
+32): the service reports SERVICE_STOPPED before its process has exited while it
+frees about 700 MB; correction 2 makes `install` wait for that process
+(QueryServiceStatusEx + OpenProcess SYNCHRONIZE) (5c6ed7c). Attempts 5 and 6:
+release build and `cargo test` 30/30 (19 lib + 11 daemon), no warnings. Installed
+through the admin broker (exit 0: "stopping the running service… installed
+binaries… service running"); service started 2026-11-18T23:38:04Z. Schedules
+after the first scans: J: 7 folders (0 at least hourly), T: 17,766 (0), H: 86,821
+(2).
+
+## IS8 record (2026-11-19)
+
+The Pathweft thread asked for `dm:`/`dc:` (today, yesterday, thisweek, lastweek,
+thismonth, YYYY-MM-DD, ranges, `>`/`<`) and `parent:<folder>` (direct children
+only) so the next Pathweft release can replace Everything completely; `dupe:`
+and similar may stay refused. Source: `query.rs` (`Node::Date` with UTC FILETIME
+bounds of local midnights, `Node::Parent` resolved like path terms to
+`Node::Children`, date parser with an injected "today"; also `lastmonth`,
+`thisyear`, `lastyear`, `YYYY`, `YYYY-MM`, `>=`, `<=`, `=` and the long forms
+`datemodified:`/`datecreated:`), `ffi.rs` (GetLocalTime,
+TzSpecificLocalTimeToSystemTime, SystemTimeToFileTime). Weeks start on Monday;
+unknown times never match. Docs: SPEC IDX-05, PROTOCOL, INTEGRATION (also the
+install and private-instance facts the Pathweft thread asked about).

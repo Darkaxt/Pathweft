@@ -102,14 +102,22 @@ pub enum Node {
     Size(SizeRange),
     Subtree { slot: usize, rec: u32 },
     Exact { slot: usize, rec: u32 },
+    /// Modified (`created: false`) or created time in `lo..hi` (UTC FILETIME).
+    Date { created: bool, lo: u64, hi: u64 },
+    /// `parent:` before resolution: the folder's path.
+    Parent(String),
+    /// Direct children of an indexed folder.
+    Children { slot: usize, rec: u32 },
 }
 
-const FUNCTIONS: &str = "path:, nopath:, case:, nocase:, ww:, noww:, wfn:, nowfn:, regex:, noregex:, file:, folder:, ext:, size:";
+const FUNCTIONS: &str = "path:, nopath:, case:, nocase:, ww:, noww:, wfn:, nowfn:, regex:, noregex:, file:, folder:, ext:, size:, dm:, dc:, parent:";
 
 struct Parser {
     s: Vec<char>,
     i: usize,
     depth: usize,
+    /// Today's local date (days since 1970-01-01), for relative dates.
+    today: i64,
 }
 
 impl Parser {
@@ -220,8 +228,23 @@ impl Parser {
                 }
                 "size" => {
                     self.i = after;
-                    let arg = self.read_text(false)?;
+                    let arg = self.read_comparison()?;
                     return Ok(wrap(Node::Size(parse_size(&arg)?), m));
+                }
+                "dm" | "datemodified" | "dc" | "datecreated" => {
+                    self.i = after;
+                    let arg = self.read_comparison()?;
+                    let (lo, hi) = parse_date(&arg, self.today)?;
+                    let created = name.starts_with("dc") || name == "datecreated";
+                    return Ok(wrap(Node::Date { created, lo: local_midnight(lo), hi: local_midnight(hi) }, m));
+                }
+                "parent" => {
+                    self.i = after;
+                    let arg = self.read_text(true)?;
+                    if arg.is_empty() {
+                        return Err("parent: needs a folder, for example parent:\"C:\\Users\".".into());
+                    }
+                    return Ok(wrap(Node::Parent(arg), m));
                 }
                 other => {
                     return Err(format!(
@@ -237,6 +260,18 @@ impl Parser {
         }
         let text = self.read_text(true)?;
         build_term(text, m)
+    }
+
+    /// Reads a function argument that may start with a comparison (`>`, `>=`,
+    /// `<`, `<=`, `=`); a later `>` still closes a group.
+    fn read_comparison(&mut self) -> Result<String, String> {
+        let mut out = String::new();
+        while let Some(c @ ('<' | '>' | '=')) = self.peek() {
+            out.push(c);
+            self.i += 1;
+        }
+        out.push_str(&self.read_text(true)?);
+        Ok(out)
     }
 
     /// Reads a term; quotes may appear anywhere and `""` inside quotes is a
@@ -383,12 +418,163 @@ pub fn compile(req: &QueryRequest) -> Result<Node, String> {
         let q = q.strip_prefix('"').and_then(|x| x.strip_suffix('"')).map(|x| x.replace("\"\"", "\"")).unwrap_or(q.to_string());
         return build_term(q, Mods { regex: true, ..base });
     }
-    let mut p = Parser { s: req.query.chars().collect(), i: 0, depth: 0 };
+    let mut p = Parser { s: req.query.chars().collect(), i: 0, depth: 0, today: local_today() };
     let node = p.parse_and(base)?;
     if p.i < p.s.len() {
         return Err("Unbalanced Everything search groups.".into());
     }
     Ok(node)
+}
+
+// ---------------------------------------------------------------- dates
+
+/// Days since 1970-01-01 of a proleptic Gregorian date.
+fn days_from_civil(y: i64, m: i64, d: i64) -> i64 {
+    let y = if m <= 2 { y - 1 } else { y };
+    let era = y.div_euclid(400);
+    let yoe = y - era * 400;
+    let mp = (m + 9) % 12;
+    let doy = (153 * mp + 2) / 5 + d - 1;
+    let doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
+    era * 146_097 + doe - 719_468
+}
+
+fn civil_from_days(z: i64) -> (i64, i64, i64) {
+    let z = z + 719_468;
+    let era = z.div_euclid(146_097);
+    let doe = z - era * 146_097;
+    let yoe = (doe - doe / 1460 + doe / 36_524 - doe / 146_096) / 365;
+    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+    let mp = (5 * doy + 2) / 153;
+    let d = doy - (153 * mp + 2) / 5 + 1;
+    let m = if mp < 10 { mp + 3 } else { mp - 9 };
+    (if m <= 2 { yoe + era * 400 + 1 } else { yoe + era * 400 }, m, d)
+}
+
+/// The local days `lo..hi` that one date word covers.
+fn date_period(w: &str, today: i64) -> Option<(i64, i64)> {
+    let (y, m, _) = civil_from_days(today);
+    let monday = today - (today + 3).rem_euclid(7); // 1970-01-01 was a Thursday
+    let month = |y: i64, m: i64| {
+        let (ny, nm) = if m == 12 { (y + 1, 1) } else { (y, m + 1) };
+        (days_from_civil(y, m, 1), days_from_civil(ny, nm, 1))
+    };
+    Some(match w {
+        "today" => (today, today + 1),
+        "yesterday" => (today - 1, today),
+        "thisweek" => (monday, monday + 7),
+        "lastweek" => (monday - 7, monday),
+        "thismonth" => month(y, m),
+        "lastmonth" => if m == 1 { month(y - 1, 12) } else { month(y, m - 1) },
+        "thisyear" => (days_from_civil(y, 1, 1), days_from_civil(y + 1, 1, 1)),
+        "lastyear" => (days_from_civil(y - 1, 1, 1), days_from_civil(y, 1, 1)),
+        _ => {
+            let parts: Vec<&str> = w.split(['-', '/']).collect();
+            let num = |s: &str, len: std::ops::RangeInclusive<usize>| (len.contains(&s.len()) && s.bytes().all(|b| b.is_ascii_digit())).then(|| s.parse::<i64>().ok()).flatten();
+            match parts.as_slice() {
+                [ys] => {
+                    let y = num(ys, 4..=4)?;
+                    (days_from_civil(y, 1, 1), days_from_civil(y + 1, 1, 1))
+                }
+                [ys, ms] => {
+                    let (y, m) = (num(ys, 4..=4)?, num(ms, 1..=2)?);
+                    if !(1..=12).contains(&m) {
+                        return None;
+                    }
+                    month(y, m)
+                }
+                [ys, ms, ds] => {
+                    let (y, m, d) = (num(ys, 4..=4)?, num(ms, 1..=2)?, num(ds, 1..=2)?);
+                    let day = days_from_civil(y, m, d);
+                    if !(1..=12).contains(&m) || civil_from_days(day) != (y, m, d) {
+                        return None;
+                    }
+                    (day, day + 1)
+                }
+                _ => return None,
+            }
+        }
+    })
+}
+
+/// Parses a `dm:`/`dc:` argument into local days `lo..hi` (`i64::MIN`/`MAX`
+/// for open ends): a date word, `a..b`, or `>`, `>=`, `<`, `<=`, `=` a date.
+fn parse_date(arg: &str, today: i64) -> Result<(i64, i64), String> {
+    let bad = || {
+        format!(
+            "Unsupported date '{arg}'. Use dm:today, yesterday, thisweek, lastweek, thismonth, lastmonth, thisyear, lastyear, \
+             YYYY, YYYY-MM or YYYY-MM-DD, a range a..b, or >, >=, <, <= a date."
+        )
+    };
+    let a = arg.trim().to_ascii_lowercase();
+    let period = |w: &str| date_period(w.trim(), today).ok_or_else(bad);
+    if let Some((x, y)) = a.split_once("..") {
+        let (lo, _) = period(x)?;
+        let (_, hi) = period(y)?;
+        return Ok((lo, hi));
+    }
+    for (op, rest) in [(">=", a.strip_prefix(">=")), ("<=", a.strip_prefix("<=")), (">", a.strip_prefix('>')), ("<", a.strip_prefix('<')), ("=", a.strip_prefix('='))] {
+        if let Some(r) = rest {
+            let (lo, hi) = period(r)?;
+            return Ok(match op {
+                ">=" => (lo, i64::MAX),
+                ">" => (hi, i64::MAX),
+                "<=" => (i64::MIN, hi),
+                "<" => (i64::MIN, lo),
+                _ => (lo, hi),
+            });
+        }
+    }
+    period(&a)
+}
+
+/// UTC FILETIME of local midnight starting `day`; open ends map to 1 (so an
+/// unknown time, 0, never matches) and `u64::MAX`.
+fn local_midnight(day: i64) -> u64 {
+    if day == i64::MIN {
+        return 1;
+    }
+    if day == i64::MAX {
+        return u64::MAX;
+    }
+    local_midnight_impl(day)
+}
+
+#[cfg(windows)]
+fn local_midnight_impl(day: i64) -> u64 {
+    use crate::ffi::{SystemTimeToFileTime, TzSpecificLocalTimeToSystemTime, FILETIME, SYSTEMTIME};
+    let (y, m, d) = civil_from_days(day);
+    let y = y.clamp(1601, 30_000);
+    let local = SYSTEMTIME { year: y as u16, month: m as u16, day: d as u16, ..Default::default() };
+    let mut utc = SYSTEMTIME::default();
+    let mut ft = FILETIME::default();
+    unsafe {
+        if TzSpecificLocalTimeToSystemTime(std::ptr::null(), &local, &mut utc) == 0 || SystemTimeToFileTime(&utc, &mut ft) == 0 {
+            return utc_midnight(day);
+        }
+    }
+    ft.value()
+}
+
+#[cfg(not(windows))]
+fn local_midnight_impl(day: i64) -> u64 {
+    utc_midnight(day)
+}
+
+fn utc_midnight(day: i64) -> u64 {
+    ((day + 134_774).max(0) as u64) * 86_400 * 10_000_000 // 1601-01-01 is day -134774
+}
+
+#[cfg(windows)]
+fn local_today() -> i64 {
+    let mut st = crate::ffi::SYSTEMTIME::default();
+    unsafe { crate::ffi::GetLocalTime(&mut st) };
+    days_from_civil(st.year as i64, st.month as i64, st.day as i64)
+}
+
+#[cfg(not(windows))]
+fn local_today() -> i64 {
+    (std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(0, |d| d.as_secs()) / 86_400) as i64
 }
 
 // ---------------------------------------------------------------- matching
@@ -557,6 +743,12 @@ fn eval(n: &Node, c: &mut Cand) -> bool {
         Node::Size(range) => !c.rec.is_dir() && c.rec.size >= range.lo && c.rec.size <= range.hi,
         Node::Subtree { slot, rec } => c.slot == *slot && c.st.is_below(c.r, *rec),
         Node::Exact { slot, rec } => c.slot == *slot && c.r == *rec,
+        Node::Date { created, lo, hi } => {
+            let t = if *created { c.rec.ctime } else { c.rec.mtime };
+            t != 0 && t >= *lo && t < *hi
+        }
+        Node::Children { slot, rec } => c.slot == *slot && c.rec.parent == *rec && c.r != *rec,
+        Node::Parent(_) => false, // replaced during resolution
         Node::Text(t) => {
             if t.on_path {
                 let p = c.path();
@@ -646,6 +838,7 @@ pub fn resolve_paths(stores: &[StoreRef], paths: &[String], dirs_only: bool) -> 
 /// Replaces path terms that name a folder by drive-letter prefix (`path:"D:\x\"`)
 /// or exactly (`path:wfn:"D:\x"`) with record checks.
 fn resolve(node: &mut Node, stores: &[StoreRef]) {
+    resolve_parents(node, stores);
     let mut wanted: Vec<(String, bool)> = Vec::new();
     collect(node, &mut wanted);
     if wanted.is_empty() {
@@ -665,6 +858,39 @@ fn resolve(node: &mut Node, stores: &[StoreRef]) {
         .chain(exact.iter().zip(re).map(|(p, r)| ((fold_path(p), false), r)))
         .collect();
     replace(node, &map);
+}
+
+/// Replaces `parent:` folders with record checks (`Never` if not indexed).
+fn resolve_parents(node: &mut Node, stores: &[StoreRef]) {
+    fn gather(n: &Node, out: &mut Vec<String>) {
+        match n {
+            Node::And(v) | Node::Or(v) => v.iter().for_each(|x| gather(x, out)),
+            Node::Not(x) => gather(x, out),
+            Node::Parent(p) => out.push(p.clone()),
+            _ => {}
+        }
+    }
+    fn put(n: &mut Node, map: &HashMap<String, Option<(usize, u32)>>) {
+        match n {
+            Node::And(v) | Node::Or(v) => v.iter_mut().for_each(|x| put(x, map)),
+            Node::Not(x) => put(x, map),
+            Node::Parent(p) => {
+                *n = match map.get(&fold_path(p)) {
+                    Some(Some((slot, rec))) => Node::Children { slot: *slot, rec: *rec },
+                    _ => Node::Never,
+                }
+            }
+            _ => {}
+        }
+    }
+    let mut paths = Vec::new();
+    gather(node, &mut paths);
+    if paths.is_empty() {
+        return;
+    }
+    let found = resolve_paths(stores, &paths, true);
+    let map: HashMap<String, Option<(usize, u32)>> = paths.iter().map(|p| fold_path(p)).zip(found).collect();
+    put(node, &map);
 }
 
 fn path_term(t: &Text) -> Option<(String, bool)> {
@@ -1032,14 +1258,92 @@ mod tests {
         assert_eq!(run(&s, "folder: p"), vec![r"C:\Projects", r"C:\Projects\Pathweft"]);
         assert_eq!(run(&s, "ext:md;exe"), vec![r"C:\Projects\Other\readme.md", r"C:\Windows\notepad.exe"]);
         assert_eq!(run(&s, "size:>1kb"), vec![r"C:\Windows\notepad.exe"]);
+        assert_eq!(run(&s, "<size:>1kb>"), vec![r"C:\Windows\notepad.exe"]);
         assert_eq!(run(&s, "size:10..60"), vec![r"C:\Projects\Other\readme.md", r"C:\Projects\Pathweft\notes.TXT"]);
         assert_eq!(run(&s, "ww:search"), vec![r"C:\Projects\Pathweft\Search"]);
         assert_eq!(run(&s, "wfn:readme.md"), vec![r"C:\Projects\Other\readme.md"]);
         assert_eq!(run(&s, r#"regex:"^note.*\.(exe|txt)$""#),vec![r"C:\Projects\Pathweft\notes.TXT", r"C:\Windows\notepad.exe"]);
         assert_eq!(run(&s, "a|"), run(&s, "a"));
-        assert!(compile(&QueryRequest { query: "dm:today".into(), ..Default::default() }).unwrap_err().contains("dm:"));
+        assert!(compile(&QueryRequest { query: "dupe:".into(), ..Default::default() }).unwrap_err().contains("dupe:"));
+        assert!(compile(&QueryRequest { query: "dm:someday".into(), ..Default::default() }).unwrap_err().contains("someday"));
         assert!(compile(&QueryRequest { query: "<abc".into(), ..Default::default() }).is_err());
         assert!(compile(&QueryRequest { query: "\"abc".into(), ..Default::default() }).is_err());
+    }
+
+    #[test]
+    fn date_words_ranges_and_operators() {
+        let d = |y, m, dd| days_from_civil(y, m, dd);
+        let today = d(2026, 11, 19); // a Thursday
+        for day in [d(1970, 1, 1), d(2000, 2, 29), today, d(2100, 3, 1)] {
+            let (y, m, dd) = civil_from_days(day);
+            assert_eq!(days_from_civil(y, m, dd), day);
+        }
+        assert_eq!(d(1970, 1, 1), 0);
+        let p = |a: &str| parse_date(a, today);
+        assert_eq!(p("today"), Ok((today, today + 1)));
+        assert_eq!(p("Yesterday"), Ok((today - 1, today)));
+        assert_eq!(p("thisweek"), Ok((d(2026, 11, 16), d(2026, 11, 23))), "weeks start on Monday");
+        assert_eq!(p("lastweek"), Ok((d(2026, 11, 9), d(2026, 11, 16))));
+        assert_eq!(p("thismonth"), Ok((d(2026, 11, 1), d(2026, 12, 1))));
+        assert_eq!(p("lastmonth"), Ok((d(2026, 10, 1), d(2026, 11, 1))));
+        assert_eq!(parse_date("lastmonth", d(2026, 1, 5)), Ok((d(2025, 12, 1), d(2026, 1, 1))));
+        assert_eq!(parse_date("thismonth", d(2026, 12, 31)), Ok((d(2026, 12, 1), d(2027, 1, 1))));
+        assert_eq!(p("thisyear"), Ok((d(2026, 1, 1), d(2027, 1, 1))));
+        assert_eq!(p("lastyear"), Ok((d(2025, 1, 1), d(2026, 1, 1))));
+        assert_eq!(p("2024"), Ok((d(2024, 1, 1), d(2025, 1, 1))));
+        assert_eq!(p("2024-02"), Ok((d(2024, 2, 1), d(2024, 3, 1))));
+        assert_eq!(p("2024-2-29"), Ok((d(2024, 2, 29), d(2024, 3, 1))));
+        assert_eq!(p("2024/02/29"), p("2024-02-29"));
+        assert_eq!(p("2024-01-10..2024-01-12"), Ok((d(2024, 1, 10), d(2024, 1, 13))), "both ends inclusive");
+        assert_eq!(p("2023..lastmonth"), Ok((d(2023, 1, 1), d(2026, 11, 1))));
+        assert_eq!(p(">2026-11-01"), Ok((d(2026, 11, 2), i64::MAX)));
+        assert_eq!(p(">=2026-11"), Ok((d(2026, 11, 1), i64::MAX)));
+        assert_eq!(p("<2026"), Ok((i64::MIN, d(2026, 1, 1))));
+        assert_eq!(p("<=yesterday"), Ok((i64::MIN, today)));
+        assert_eq!(p("=today"), p("today"));
+        for bad in ["", "someday", "2025-02-29", "2026-13", "2026-00-10", "26-01-01", "2026-1-1-1", ">", "..2026", "2026-11-19x"] {
+            assert!(p(bad).is_err(), "{bad}");
+        }
+        assert_eq!(local_midnight(i64::MIN), 1);
+        assert_eq!(local_midnight(i64::MAX), u64::MAX);
+        assert!(local_midnight(d(2026, 11, 20)) > local_midnight(d(2026, 11, 19)));
+    }
+
+    #[test]
+    fn date_filters_on_modified_and_created_times() {
+        let d = |y, m, dd| days_from_civil(y, m, dd);
+        let at = |day: i64, hours: u64| local_midnight(day) + hours * 3600 * 10_000_000;
+        let mut s = Store::new(5, "C:", 64);
+        let mut f = |r: u32, name: &str, mtime: u64, ctime: u64| {
+            s.set(r, Some(&Entry { parent: 5, name: name.into(), size: 1, mtime, ctime, attrs: 0x20, sec: 1 }));
+        };
+        f(20, "early.txt", at(d(2026, 11, 18), 0), at(d(2024, 3, 1), 12));
+        f(21, "late.txt", at(d(2026, 11, 18), 23), at(d(2026, 11, 18), 1));
+        f(22, "next.txt", at(d(2026, 11, 19), 0), at(d(2026, 11, 19), 0));
+        f(23, "unknown.txt", 0, 0);
+        let s = vec![StoreRef { slot: 0, store: Arc::new(RwLock::new(s)) }];
+        assert_eq!(run(&s, "dm:2026-11-18"), vec![r"C:\early.txt", r"C:\late.txt"]);
+        assert_eq!(run(&s, "datemodified:>=2026-11-19"), vec![r"C:\next.txt"]);
+        assert_eq!(run(&s, "dm:<2026-11-19"), vec![r"C:\early.txt", r"C:\late.txt"], "unknown times never match");
+        assert_eq!(run(&s, "dm:2026-11-18..2026-11-19 !late"), vec![r"C:\early.txt", r"C:\next.txt"]);
+        assert_eq!(run(&s, "dc:2024"), vec![r"C:\early.txt"]);
+        assert_eq!(run(&s, "datecreated:2026-11"), vec![r"C:\late.txt", r"C:\next.txt"]);
+        assert_eq!(run(&s, "<dc:2024 | dm:2026-11-19> *.txt"), vec![r"C:\early.txt", r"C:\next.txt"]);
+        assert_eq!(run(&s, "!dm:2026"), vec![r"C:\unknown.txt"]);
+    }
+
+    #[test]
+    fn parent_matches_direct_children_only() {
+        let s = sample();
+        assert_eq!(run(&s, r"parent:C:\Projects"), vec![r"C:\Projects\Other", r"C:\Projects\Pathweft"]);
+        assert_eq!(run(&s, r#"parent:"c:\projects\pathweft\" *.cs"#), vec![r"C:\Projects\Pathweft\PaneSearch.cs"]);
+        assert_eq!(run(&s, r"folder: parent:C:\"), vec![r"C:\Data Ä", r"C:\Projects", r"C:\Windows"]);
+        assert_eq!(run(&s, r"parent:C:"), run(&s, r"parent:C:\"));
+        assert_eq!(run(&s, r"parent:C:\Missing"), Vec::<String>::new());
+        assert_eq!(run(&s, r"parent:C:\Projects\Pathweft\notes.TXT"), Vec::<String>::new(), "a file has no children");
+        assert_eq!(run(&s, r"<parent:C:\Windows | parent:C:\Projects\Other> file:"), vec![r"C:\Projects\Other\readme.md", r"C:\Windows\notepad.exe"]);
+        assert_eq!(run(&s, r"file: *.cs !parent:C:\Projects\Pathweft"), vec![r"C:\Projects\Pathweft\Search\EverythingSearchClient.cs"]);
+        assert!(compile(&QueryRequest { query: "parent:".into(), ..Default::default() }).is_err());
     }
 
     #[test]
