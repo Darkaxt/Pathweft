@@ -19,7 +19,8 @@ is recorded in SPEC.md.
 | --- | --- | --- | --- | --- |
 | IS1 | COMPLETE (source) | – | – | Readiness record below |
 | IS2 | COMPLETE | – | – | IS2 record below |
-| IS3 | ACTIVE | Admin approval of the self-test (first request `approval_timeout`, not launched) | – | – |
+| IS3 | COMPLETE | – | – | IS3 record below |
+| IS4 | ACTIVE | Memory over IDX-10 on the first install; fix c691a3d built (ticket `1660ee7c`), reinstall pending admin approval | – | IS4 record below |
 
 ## IS1 readiness record (2026-11-18)
 
@@ -68,3 +69,39 @@ Rust gate ticket `9dbb5ac8a13bcb74868b9889f715191b`:
 Unit tests cover the store, query language, MFT parsing and protocol only;
 the service's volume, journal, pipe and security paths are first exercised
 by the IS3 self-test.
+
+## IS3 record (2026-11-18)
+
+Admin ticket 1 timed out without launching; ticket 5 failed in the wrapper
+(Windows PowerShell turned the daemon's first stderr line into a terminating
+error; fixed in 2dc545a). Ticket 6 ran `scripts/selftest-vhd.ps1` elevated on a
+1 GB VHDX mounted as W: (binary from 228dbd9). All 8 checks passed:
+
+| Check | Result |
+| --- | --- |
+| load | ready in 2 ms, 14 items, journal read |
+| query-after-load | `W:\pwtestlpha.txt` size 100 |
+| churn-within-2s | create, rename, move, resize, delete visible after 217 ms |
+| folder-sizes | recursive sizes correct; missing folder unknown |
+| visibility | entry of an unlistable folder hidden, the folder itself listed |
+| bulk-churn | 5000 files; 2063 queries during churn, p50 0 ms, p95 1 ms, max 3 ms |
+| forced-reread | re-read in 5 ms; queries answered during and after |
+| status-round-trip | status over the pipe, private 4.7 MB |
+
+The VHDX was detached and deleted (`vhdx removed: True`). Limitation: the
+visibility check ran with an elevated token; AccessCheck ignores privileges,
+so the per-caller rule was still exercised.
+
+## IS4 record (2026-11-18)
+
+Admin ticket 7 installed the service (LocalSystem, automatic start). First
+load of C:, D:, E:, G: (11.9 M items) took about 10.4 s in parallel. Service
+private memory was 1,132 MB against Everything's working set of 1,127 MB, so
+IDX-10 (private at most half of Everything's working set) failed. Cause: record
+slots were indexed by MFT record number and sized to the MFT's record count,
+about 1.6 slots per live entry. Fix c691a3d keeps records dense behind a key
+map, shares repeated names while building and logs a breakdown on install.
+Rust gate ticket `1660ee7c9c1130f205f149952f562bbb` (renews the closed
+`9dbb5ac8`): attempt 1 `cargo test` 18/18 pass (workflow `a8899256`), attempt 2
+release build exit 0, no warnings (workflow `b1d514d0`). The first reinstall
+request returned `approval_timeout` (not launched).
