@@ -50,8 +50,20 @@ credentials apply). A rescan builds a new tree and swaps it in; the old tree kee
 answering. Reparse points are not followed. Default rescan interval 6 h, plus an
 explicit `rescan`. Nothing is scanned by default; T: is never indexed unless the
 owner adds it.
+While the service runs, each folder root is followed through Windows change
+notifications (`ReadDirectoryChangesW` on the whole tree, opened as the same
+user): the folders containing changed paths are re-listed and the difference is
+applied, so additions, deletions, renames and size or date changes appear without
+a rescan. Notifications start before the scan, so changes made during it are
+applied when it finishes. A lost-notification overflow triggers a full rescan; a
+root whose notifications cannot start or stop working falls back to rescans only.
+After a service restart the first scan still runs from scratch (owner, 2026-11-18:
+"lets assume that challenge, delayed update for cloud services after a restart.
+As long as we can monitor updates while running").
 *Accept:* a folder root added through the CLI reaches `ready` with items, queries
-return its entries, and queries stay responsive while it scans.
+return its entries, and queries stay responsive while it scans. While running,
+files created, modified, renamed and deleted below a folder root, and a folder
+created with content, are reflected in queries within seconds without a rescan.
 
 **IDX-04 Queries never wait on indexing.** Each volume or folder root is a separate
 store with its own lock. Indexing holds a store's write lock only to apply a

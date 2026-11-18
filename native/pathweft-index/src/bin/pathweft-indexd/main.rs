@@ -35,6 +35,8 @@ mod selftest;
 mod service;
 #[cfg(windows)]
 mod state;
+#[cfg(windows)]
+mod watch;
 
 #[cfg(windows)]
 fn value(args: &[String], flag: &str) -> Option<String> {

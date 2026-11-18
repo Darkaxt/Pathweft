@@ -12,6 +12,7 @@ is recorded in SPEC.md.
 | IS3 disposable | Elevated self-test on a disposable VHDX via the admin broker | IDX-02, IDX-04, IDX-06, IDX-07, IDX-14 | Self-test JSON report; VHDX removed |
 | IS4 install + measure | Install through the broker; live status, parity, churn latency, memory | IDX-01, IDX-02, IDX-03, IDX-08, IDX-09, IDX-10, IDX-12 | MEASUREMENTS.md |
 | IS5 integration | Integration note; message to the Pathweft thread | IDX-13 | INTEGRATION.md, message sent |
+| IS6 folder changes | Follow folder roots with change notifications while running (owner request 2026-11-18) | IDX-03 (live changes) | Unit tests; console-mode test on a local folder root; installed service log on the real roots |
 
 ## Ledger
 
@@ -20,8 +21,9 @@ is recorded in SPEC.md.
 | IS1 | COMPLETE (source) | – | – | Readiness record below |
 | IS2 | COMPLETE | – | – | IS2 record below |
 | IS3 | COMPLETE | – | – | IS3 record below |
-| IS4 | ACTIVE | IDX-10: 677 MB private against a 565 MB target. Needs the owner's decision: accept, or trade timestamp precision or attribute bits | – | IS4 record below; `MEASUREMENTS.md` |
-| IS5 | ACTIVE (parallel documentation only) | – | – | `INTEGRATION.md`; message to the Pathweft thread |
+| IS4 | BLOCKED (owner decision) | IDX-10: 677 MB private against a 565 MB target. Needs the owner's decision: accept, or trade timestamp precision or attribute bits | – | IS4 record below; `MEASUREMENTS.md` |
+| IS5 | COMPLETE | – | – | `INTEGRATION.md`; message sent to the Pathweft thread 2026-11-18 |
+| IS6 | ACTIVE | – | – | IS6 record below |
 
 ## IS1 readiness record (2026-11-18)
 
@@ -138,3 +140,31 @@ Continued (same day):
   volume and keeps it `offline` until restart, logging a memory line every 15 s
   retry; folder-root rescans after the restart took 6–8× longer than the first
   scans, cause not established.
+
+## IS6 record (2026-11-18)
+
+Owner: folder-root rescans after a restart may stay delayed, "as long as we can
+monitor updates while running". Folder modified times were checked first and are
+not a usable change signal: on H: `Roms\Nintendo - Switch 2` (2026-11-16 01:02)
+is newer than `Roms` (00:03), so changes do not propagate upwards, and every T:
+folder reports 1970/1980.
+
+Source: `watch.rs` (watcher thread per root, `ReadDirectoryChangesW` with a 64 KB
+buffer, overflow -> rescan, failure -> rescans only; `reconcile` re-lists the
+folders containing changed paths and applies additions, removals with their
+subtrees, updates and new subtrees), `scan.rs` (shared `list_dir`/`walk`; the
+watcher starts before the scan, its changes are applied after it and then as they
+arrive). A passive 2-minute probe started watchers on H:, J:, T: and the share
+without error but saw no events, so delivery on those drives is not yet observed.
+
+Validation: ticket `134347a3` (renews `c7328f39`). Attempt 1 `cargo test`: 24/24
+(5 new `watch::` tests: adds/removals/updates/renames match a rescan, subtree
+removal, no-op listing, case-only rename, notification parsing), no warnings.
+Attempt 2 release build exit 0, no warnings. Console-mode end-to-end test on a
+local folder root (`pathweft-indexd console`, private pipe, no NTFS volumes):
+9/9 pass. Created, modified, renamed and deleted files; a folder renamed with
+content; a folder moved in with nested content; a folder deleted with its
+subtree. All appeared in queries without a rescan; batches were applied about
+1.3 s after the changes, and the folder size matched the remaining files.
+Installed through the admin broker (exit 0); the installed service logged
+"watching for changes" for H:, J:, T: and the share at start-up.

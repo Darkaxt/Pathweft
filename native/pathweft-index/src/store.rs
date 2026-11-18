@@ -121,6 +121,13 @@ impl Store {
         i
     }
 
+    /// One more than the highest external key ever used (folder trees use
+    /// sequential keys, so this is the next free key).
+    #[inline]
+    pub fn key_count(&self) -> u32 {
+        self.keys.len() as u32
+    }
+
     /// The internal index of an external key, if the key was ever set.
     #[inline]
     pub fn index_of(&self, key: u32) -> Option<u32> {

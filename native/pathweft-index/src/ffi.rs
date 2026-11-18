@@ -267,7 +267,24 @@ extern "system" {
     pub fn WaitNamedPipeW(name: *const u16, timeout: u32) -> BOOL;
     pub fn LocalFree(mem: *mut c_void) -> *mut c_void;
     pub fn CreateDirectoryW(path: *const u16, sa: *const SECURITY_ATTRIBUTES) -> BOOL;
+    pub fn ReadDirectoryChangesW(h: HANDLE, buf: *mut c_void, len: u32, subtree: BOOL, filter: u32, returned: *mut u32, ov: *mut OVERLAPPED, completion: *const c_void) -> BOOL;
+    pub fn CreateEventW(sa: *const SECURITY_ATTRIBUTES, manual_reset: BOOL, initial: BOOL, name: *const u16) -> HANDLE;
+    pub fn ResetEvent(h: HANDLE) -> BOOL;
+    pub fn WaitForSingleObject(h: HANDLE, ms: u32) -> u32;
+    pub fn GetOverlappedResult(h: HANDLE, ov: *mut OVERLAPPED, transferred: *mut u32, wait: BOOL) -> BOOL;
+    pub fn CancelIoEx(h: HANDLE, ov: *mut OVERLAPPED) -> BOOL;
 }
+
+pub const FILE_FLAG_OVERLAPPED: u32 = 0x4000_0000;
+pub const FILE_NOTIFY_CHANGE_FILE_NAME: u32 = 0x1;
+pub const FILE_NOTIFY_CHANGE_DIR_NAME: u32 = 0x2;
+pub const FILE_NOTIFY_CHANGE_ATTRIBUTES: u32 = 0x4;
+pub const FILE_NOTIFY_CHANGE_SIZE: u32 = 0x8;
+pub const FILE_NOTIFY_CHANGE_LAST_WRITE: u32 = 0x10;
+pub const FILE_NOTIFY_CHANGE_CREATION: u32 = 0x40;
+pub const WAIT_OBJECT_0: u32 = 0;
+pub const ERROR_OPERATION_ABORTED: u32 = 995;
+pub const ERROR_NOTIFY_ENUM_DIR: u32 = 1022;
 
 #[link(name = "advapi32")]
 extern "system" {

@@ -73,10 +73,16 @@ path can show the message as it is.
   Tresorit databases or interfaces). No file contents are read anywhere: folder
   scans only enumerate directories, and directory security descriptors are read
   with `FILE_FLAG_OPEN_NO_RECALL`.
-- Folder roots are rescanned from scratch after a service restart and every
+- Folder roots are scanned from scratch after a service restart and every
   `rescan_minutes` (default 360). Until a root's first scan finishes it appears
   in `updating_stores` and contributes nothing. Measured first scans: H: 386 k
   entries in 2–15 min, T: 175 k in 1.5–14 min, the network share in 21 min.
+- While the service runs, folder roots follow Windows change notifications:
+  created, modified, renamed and deleted files and folders appear in queries
+  within about a second, without a rescan (`service.log` records each applied
+  batch as "N changes in M folders"). If notifications overflow, the root is
+  rescanned; if they cannot start on a drive, that drive falls back to the
+  periodic rescans.
 - Not-always-attached NTFS volumes (F:, I:) are picked up within 30 s of
   appearing; a volume that disappears after loading is reported `offline` and
   retried every 15 s.
