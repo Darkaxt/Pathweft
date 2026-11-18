@@ -2,6 +2,7 @@
 //! the query side uses.
 
 use crate::config::{Config, FolderRoot};
+use crate::log::info;
 use crate::security::{AccessCache, TokenCache};
 use pathweft_index::query::{RestrictedCache, StoreRef};
 use pathweft_index::store::Store;
@@ -66,6 +67,9 @@ impl Slot {
     pub fn install(&self, mut store: Store) {
         store.dir_gen = GENERATION.fetch_add(1, Ordering::Relaxed) << 40;
         store.shrink();
+        let (recs, names, keys) = store.memory_parts();
+        let mb = |b: u64| b as f64 / (1u64 << 20) as f64;
+        info!("{}: memory {:.1} MB records ({} slots, {} live), {:.1} MB names, {:.1} MB key map", self.name, mb(recs), store.recs.len(), store.live, mb(names), mb(keys));
         *self.store.lock().unwrap() = Arc::new(RwLock::new(store));
     }
 

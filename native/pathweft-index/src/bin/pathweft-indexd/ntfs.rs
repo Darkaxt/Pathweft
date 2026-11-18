@@ -424,7 +424,8 @@ fn apply(vol: &Volume, slot: &Slot, frns: &[u64], buf: &mut Vec<u8>) -> Result<u
     // Entries that do not hang below the root ($Extend metadata) are removed.
     let mut path = String::new();
     for (r, e) in &changes {
-        if e.is_some() && *r != st.root && !st.full_path(*r, &mut path) {
+        let Some(i) = st.index_of(*r) else { continue };
+        if e.is_some() && i != st.root && !st.full_path(i, &mut path) {
             st.set(*r, None);
         }
     }

@@ -1305,8 +1305,9 @@ mod tests {
         }
         let fake = Fake { denied: vec![], known: false };
         let req = QueryRequest { query: "readme".into(), count: 10, ..Default::default() };
+        let other = s[0].store.read().unwrap().index_of(23).unwrap();
         match query(&s, &req, &fake).unwrap() {
-            Outcome::NeedAccess(u) => assert_eq!(u, vec![Unknown { slot: 0, sec: 99, dir: 23 }]),
+            Outcome::NeedAccess(u) => assert_eq!(u, vec![Unknown { slot: 0, sec: 99, dir: other }]),
             _ => panic!("expected NeedAccess"),
         }
     }

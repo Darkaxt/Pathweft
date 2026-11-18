@@ -1,9 +1,15 @@
 //! One store per NTFS volume or scanned folder root.
 //!
-//! Records are indexed by NTFS file record number (or a synthetic number for
-//! scanned trees). Each record is 40 bytes; names live in one UTF-8 arena as a
-//! 2-byte length followed by the bytes. A folder's `size` is the recursive sum
-//! of the file sizes below it, maintained incrementally on every change.
+//! Records are stored densely. `set` takes an external key (the NTFS file
+//! record number, or a synthetic number for scanned trees) and maps it to an
+//! internal index through a 4-byte-per-key table, so unused MFT records cost 4
+//! bytes instead of a whole record. Every other accessor, and `Rec::parent`,
+//! uses internal indices. Each record is 40 bytes; names live in one UTF-8
+//! arena as a 2-byte length followed by the bytes, and while a store is being
+//! built (until `shrink`) equal names share one arena copy. A folder's `size`
+//! is the recursive sum of the file sizes below it, maintained incrementally.
+
+use std::collections::HashMap;
 
 pub const NONE: u32 = u32::MAX;
 pub const ATTR_DIRECTORY: u32 = 0x10;
@@ -51,8 +57,13 @@ pub struct Entry {
 }
 
 pub struct Store {
+    /// Indexed by internal index.
     pub recs: Vec<Rec>,
+    /// External key -> internal index (`NONE` when unknown).
+    keys: Vec<u32>,
     arena: Vec<u8>,
+    /// Name hash -> arena offset while the store is being built.
+    shared: Option<HashMap<u64, u32>>,
     garbage: usize,
     pub root: u32,
     pub live: u64,
@@ -63,28 +74,55 @@ pub struct Store {
 }
 
 impl Store {
-    pub fn new(root: u32, root_name: &str, capacity: usize) -> Store {
+    /// `root_key` is the external key of the root (internal index 0);
+    /// `capacity` is the expected number of keys.
+    pub fn new(root_key: u32, root_name: &str, capacity: usize) -> Store {
         let mut store = Store {
-            recs: Vec::with_capacity(capacity.max(root as usize + 1)),
-            arena: Vec::with_capacity(capacity.saturating_mul(24)),
+            recs: Vec::with_capacity(capacity.max(1)),
+            keys: Vec::with_capacity(capacity.max(root_key as usize + 1)),
+            arena: Vec::with_capacity(capacity.saturating_mul(16)),
+            shared: Some(HashMap::new()),
             garbage: 0,
-            root,
+            root: 0,
             live: 0,
             dirs: 0,
             dir_gen: 1,
         };
-        store.ensure(root);
+        let root = store.slot(root_key);
         let name = store.push_name(root_name);
         store.recs[root as usize] = Rec { name, parent: root, attrs: ATTR_DIRECTORY, ..EMPTY };
         store
     }
 
-    #[inline]
-    fn ensure(&mut self, r: u32) {
-        let need = r as usize + 1;
-        if self.recs.len() < need {
-            self.recs.resize(need, EMPTY);
+    /// The internal index of `key`, allocating an empty record if new.
+    fn slot(&mut self, key: u32) -> u32 {
+        let k = key as usize;
+        if self.keys.len() <= k {
+            self.keys.resize(k + 1, NONE);
         }
+        let i = self.keys[k];
+        if i != NONE {
+            return i;
+        }
+        let i = self.recs.len() as u32;
+        self.recs.push(EMPTY);
+        self.keys[k] = i;
+        i
+    }
+
+    /// The internal index of an external key, if the key was ever set.
+    #[inline]
+    pub fn index_of(&self, key: u32) -> Option<u32> {
+        self.keys.get(key as usize).copied().filter(|&i| i != NONE)
+    }
+
+    fn name_hash(bytes: &[u8]) -> u64 {
+        // FNV-1a
+        let mut h: u64 = 0xcbf2_9ce4_8422_2325;
+        for &b in bytes {
+            h = (h ^ b as u64).wrapping_mul(0x0000_0100_0000_01b3);
+        }
+        h
     }
 
     fn push_name(&mut self, name: &str) -> u32 {
@@ -96,18 +134,34 @@ impl Store {
             }
             bytes = &bytes[..end];
         }
+        let hash = self.shared.as_ref().map(|_| Self::name_hash(bytes));
+        if let (Some(map), Some(h)) = (self.shared.as_ref(), hash) {
+            if let Some(&o) = map.get(&h) {
+                if self.name_bytes_at(o) == bytes {
+                    return o;
+                }
+            }
+        }
         let offset = self.arena.len() as u32;
         self.arena.extend_from_slice(&(bytes.len() as u16).to_le_bytes());
         self.arena.extend_from_slice(bytes);
+        if let (Some(map), Some(h)) = (self.shared.as_mut(), hash) {
+            map.entry(h).or_insert(offset);
+        }
         offset
     }
 
     #[inline]
-    fn name_at(&self, offset: u32) -> &str {
+    fn name_bytes_at(&self, offset: u32) -> &[u8] {
         let o = offset as usize;
         let len = u16::from_le_bytes([self.arena[o], self.arena[o + 1]]) as usize;
+        &self.arena[o + 2..o + 2 + len]
+    }
+
+    #[inline]
+    fn name_at(&self, offset: u32) -> &str {
         // Only whole `&str` values are pushed, so every stored slice is UTF-8.
-        unsafe { std::str::from_utf8_unchecked(&self.arena[o + 2..o + 2 + len]) }
+        unsafe { std::str::from_utf8_unchecked(self.name_bytes_at(offset)) }
     }
 
     /// Name of a live record ("" if not live).
@@ -195,10 +249,27 @@ impl Store {
         }
     }
 
-    /// Sets (`Some`) or removes (`None`) record `r`, keeping folder sizes and
+    /// Sets (`Some`) or removes (`None`) the record with external key `key`
+    /// (`Entry::parent` is an external key too), keeping folder sizes and
     /// counters consistent in any application order.
-    pub fn set(&mut self, r: u32, new: Option<&Entry>) {
-        self.ensure(r);
+    pub fn set(&mut self, key: u32, new: Option<&Entry>) {
+        match new {
+            None => {
+                if let Some(r) = self.index_of(key) {
+                    self.set_index(r, None, NONE);
+                }
+            }
+            Some(e) => {
+                let r = self.slot(key);
+                let parent = self.slot(e.parent);
+                self.set_index(r, Some(e), parent);
+            }
+        }
+    }
+
+    /// `set` on an internal index; `parent` is the internal index of
+    /// `new.parent`.
+    fn set_index(&mut self, r: u32, new: Option<&Entry>, parent: u32) {
         if r == self.root {
             if let Some(e) = new {
                 let rec = &mut self.recs[r as usize];
@@ -244,7 +315,7 @@ impl Store {
                     self.push_name(&e.name)
                 };
                 if is_dir
-                    && (!was_live || !old.is_dir() || old.parent != e.parent || old.name != name || old.sec != e.sec)
+                    && (!was_live || !old.is_dir() || old.parent != parent || old.name != name || old.sec != e.sec)
                 {
                     self.dir_gen += 1;
                 }
@@ -260,8 +331,8 @@ impl Store {
                     _ => {}
                 }
                 self.recs[r as usize] =
-                    Rec { size, mtime: e.mtime, ctime: e.ctime, parent: e.parent, name, attrs: e.attrs, sec: e.sec };
-                self.add_up(e.parent, size as i64);
+                    Rec { size, mtime: e.mtime, ctime: e.ctime, parent, name, attrs: e.attrs, sec: e.sec };
+                self.add_up(parent, size as i64);
             }
         }
     }
@@ -308,7 +379,7 @@ impl Store {
         }
         // Children before parents does not matter: `set` keeps sizes consistent.
         for &r in &orphans {
-            self.set(r, None);
+            self.set_index(r, None, NONE);
         }
         orphans.len() as u64
     }
@@ -324,12 +395,26 @@ impl Store {
     /// Builds a compacted arena and the new offset of every record without
     /// modifying the store (run under a read lock).
     pub fn compacted(&self) -> (Vec<u8>, Vec<u32>) {
-        let mut arena = Vec::with_capacity(self.arena.len() - self.garbage + 1024);
+        let mut arena: Vec<u8> = Vec::with_capacity(self.arena.len().saturating_sub(self.garbage) + 1024);
         let mut offsets = Vec::with_capacity(self.recs.len());
+        // Equal names share one copy, as after a load.
+        let mut seen: HashMap<u64, u32> = HashMap::new();
         for rec in &self.recs {
             if rec.live() {
-                let name = self.name_at(rec.name).as_bytes();
-                offsets.push(arena.len() as u32);
+                let name = self.name_bytes_at(rec.name);
+                let h = Self::name_hash(name);
+                let existing = seen.get(&h).copied().filter(|&o| {
+                    let o = o as usize;
+                    let len = u16::from_le_bytes([arena[o], arena[o + 1]]) as usize;
+                    &arena[o + 2..o + 2 + len] == name
+                });
+                if let Some(o) = existing {
+                    offsets.push(o);
+                    continue;
+                }
+                let o = arena.len() as u32;
+                seen.entry(h).or_insert(o);
+                offsets.push(o);
                 arena.extend_from_slice(&(name.len() as u16).to_le_bytes());
                 arena.extend_from_slice(name);
             } else {
@@ -351,12 +436,26 @@ impl Store {
         self.garbage = 0;
     }
 
-    pub fn memory_bytes(&self) -> u64 {
-        (self.recs.capacity() * std::mem::size_of::<Rec>() + self.arena.capacity()) as u64
+    /// (records, names, key map) bytes.
+    pub fn memory_parts(&self) -> (u64, u64, u64) {
+        (
+            (self.recs.capacity() * std::mem::size_of::<Rec>()) as u64,
+            self.arena.capacity() as u64,
+            (self.keys.capacity() * 4) as u64,
+        )
     }
 
+    pub fn memory_bytes(&self) -> u64 {
+        let (r, n, k) = self.memory_parts();
+        r + n + k
+    }
+
+    /// Ends the build phase (drops the name-sharing table) and releases spare
+    /// capacity. Names set later are appended without sharing.
     pub fn shrink(&mut self) {
+        self.shared = None;
         self.recs.shrink_to_fit();
+        self.keys.shrink_to_fit();
         self.arena.shrink_to_fit();
     }
 }
@@ -364,6 +463,10 @@ impl Store {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn ix(s: &Store, key: u32) -> u32 {
+        s.index_of(key).expect("key was set")
+    }
 
     pub fn entry(parent: u32, name: &str, size: u64, dir: bool) -> Entry {
         Entry {
@@ -391,15 +494,15 @@ mod tests {
     #[test]
     fn folder_sizes_are_order_independent() {
         let s = sample();
-        assert_eq!(s.recs[21].size, 1000);
-        assert_eq!(s.recs[20].size, 1100);
-        assert_eq!(s.recs[5].size, 1107);
+        assert_eq!(s.recs[ix(&s, 21) as usize].size, 1000);
+        assert_eq!(s.recs[ix(&s, 20) as usize].size, 1100);
+        assert_eq!(s.recs[ix(&s, 5) as usize].size, 1107);
         assert_eq!(s.live, 5);
         assert_eq!(s.dirs, 2);
         let mut p = String::new();
-        assert!(s.full_path(31, &mut p));
+        assert!(s.full_path(ix(&s, 31), &mut p));
         assert_eq!(p, r"C:\dir\sub\c.bin");
-        assert!(s.full_path(5, &mut p));
+        assert!(s.full_path(ix(&s, 5), &mut p));
         assert_eq!(p, r"C:\");
     }
 
@@ -408,21 +511,21 @@ mod tests {
         let mut s = sample();
         // Move sub (1000) to the root.
         s.set(21, Some(&entry(5, "sub", 0, true)));
-        assert_eq!(s.recs[20].size, 100);
-        assert_eq!(s.recs[21].size, 1000);
-        assert_eq!(s.recs[5].size, 1107);
+        assert_eq!(s.recs[ix(&s, 20) as usize].size, 100);
+        assert_eq!(s.recs[ix(&s, 21) as usize].size, 1000);
+        assert_eq!(s.recs[ix(&s, 5) as usize].size, 1107);
         // Resize b.txt.
         s.set(30, Some(&entry(20, "b.txt", 150, false)));
-        assert_eq!(s.recs[20].size, 150);
-        assert_eq!(s.recs[5].size, 1157);
+        assert_eq!(s.recs[ix(&s, 20) as usize].size, 150);
+        assert_eq!(s.recs[ix(&s, 5) as usize].size, 1157);
         // Delete c.bin.
         s.set(31, None);
-        assert_eq!(s.recs[21].size, 0);
-        assert_eq!(s.recs[5].size, 157);
+        assert_eq!(s.recs[ix(&s, 21) as usize].size, 0);
+        assert_eq!(s.recs[ix(&s, 5) as usize].size, 157);
         assert_eq!(s.live, 4);
-        assert!(s.is_below(30, 20));
-        assert!(s.is_below(30, 5));
-        assert!(!s.is_below(20, 20));
+        assert!(s.is_below(ix(&s, 30), ix(&s, 20)));
+        assert!(s.is_below(ix(&s, 30), ix(&s, 5)));
+        assert!(!s.is_below(ix(&s, 20), ix(&s, 20)));
     }
 
     #[test]
@@ -431,7 +534,7 @@ mod tests {
         s.set(40, Some(&entry(11, "$Orphan", 5, false)));
         s.set(41, Some(&entry(40, "deeper", 5, false)));
         assert_eq!(s.drop_orphans(), 2);
-        assert!(s.get(40).is_none());
+        assert!(s.get(ix(&s, 40)).is_none());
         for i in 0..2000u32 {
             s.set(30, Some(&entry(20, &format!("renamed-{i}"), 100, false)));
         }
@@ -439,8 +542,41 @@ mod tests {
         let (arena, offsets) = s.compacted();
         s.install_compacted(arena, offsets);
         assert_eq!(s.garbage(), 0);
-        assert_eq!(s.name(30), "renamed-1999");
-        assert_eq!(s.name(21), "sub");
-        assert_eq!(s.recs[5].size, 1107);
+        assert_eq!(s.name(ix(&s, 30)), "renamed-1999");
+        assert_eq!(s.name(ix(&s, 21)), "sub");
+        assert_eq!(s.recs[ix(&s, 5) as usize].size, 1107);
+    }
+
+    #[test]
+    fn sparse_keys_and_shared_names() {
+        let mut s = Store::new(5, "C:", 16);
+        s.set(2_000_000, Some(&entry(5, "dir", 0, true)));
+        s.set(1_500_000, Some(&entry(2_000_000, "index.js", 10, false)));
+        s.set(900_000, Some(&entry(5, "index.js", 20, false)));
+        // Only the keys that were set have records.
+        assert_eq!(s.recs.len(), 4);
+        assert_eq!(s.index_of(7), None);
+        let (a, b) = (ix(&s, 1_500_000), ix(&s, 900_000));
+        // Equal names share one arena copy while the store is built.
+        assert_eq!(s.recs[a as usize].name, s.recs[b as usize].name);
+        let mut p = String::new();
+        assert!(s.full_path(a, &mut p));
+        assert_eq!(p, r"C:\dir\index.js");
+        assert_eq!(s.recs[ix(&s, 5) as usize].size, 30);
+        // After the build phase a rename of one copy leaves the other intact.
+        s.shrink();
+        s.set(900_000, Some(&entry(5, "main.js", 20, false)));
+        assert_eq!(s.name(a), "index.js");
+        assert_eq!(s.name(b), "main.js");
+        // Compaction shares equal names again.
+        s.set(900_000, Some(&entry(5, "index.js", 20, false)));
+        assert_ne!(s.recs[a as usize].name, s.recs[b as usize].name);
+        let (arena, offsets) = s.compacted();
+        s.install_compacted(arena, offsets);
+        assert_eq!(s.recs[a as usize].name, s.recs[b as usize].name);
+        assert_eq!(s.name(b), "index.js");
+        // Removing a key that was never set is a no-op.
+        s.set(42, None);
+        assert_eq!(s.live, 3);
     }
 }
