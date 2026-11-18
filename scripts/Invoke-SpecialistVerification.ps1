@@ -36,7 +36,7 @@ if($WithoutMediaInfo){
 }
 $start=[Diagnostics.ProcessStartInfo]::new([IO.Path]::GetFullPath($Executable))
 $start.ArgumentList.Add('--verify-s8-appearance='+$run)
-if($Scenario -in @('menus','menus-properties','menus-shell','indexed-sizes','space-ui','performance-native','transfers-clipboard')){
+if($Scenario -in @('menus','menus-properties','menus-shell','indexed-sizes','space-ui','performance-native','transfers-clipboard','tools')){
     if(!$MenuDesktop -or !(Test-Path -LiteralPath $MenuDesktop)){throw 'Menu checks require the private native desktop launcher.'}
     $start.FileName=[IO.Path]::GetFullPath($MenuDesktop)
     $start.ArgumentList.Clear()
@@ -70,7 +70,7 @@ $receiptPath=Join-Path $run 'results.json'
 if(!(Test-Path -LiteralPath $receiptPath)){throw "Original verification process $($process.Id) exited $($process.ExitCode) without a receipt: $run"}
 $receipt=Get-Content -LiteralPath $receiptPath -Raw | ConvertFrom-Json
 $expectedPid=$process.Id
-if($Scenario -in @('menus','menus-properties','menus-shell','indexed-sizes','space-ui','performance-native','transfers-clipboard')){
+if($Scenario -in @('menus','menus-properties','menus-shell','indexed-sizes','space-ui','performance-native','transfers-clipboard','tools')){
     $desktop=Get-Content (Join-Path $run 'desktop-receipt.json') -Raw|ConvertFrom-Json
     if(!$desktop.jobEmpty -or $desktop.exitCode -ne $process.ExitCode){throw 'Private native desktop tree is not verified empty.'}
     $expectedPid=$desktop.childPid

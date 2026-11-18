@@ -1,5 +1,6 @@
 using System.IO;
 using SharpSevenZip;
+using SharpSevenZip.EventArguments;
 using SharpSevenZip.Exceptions;
 
 namespace FileExplorer;
