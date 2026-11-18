@@ -38,8 +38,16 @@ try {
     )
     $attached = $true
     Start-Sleep -Seconds 2
-    & $Exe selftest --volume "${letter}:" --report $Report 2>&1 | Tee-Object -FilePath $log -Append
+    # Windows PowerShell turns native stderr lines into errors; with 'Stop'
+    # the first log line would abort the run, so capture streams to files.
+    $outFile = Join-Path $Root 'selftest.out.log'
+    $errFile = Join-Path $Root 'selftest.err.log'
+    $ErrorActionPreference = 'Continue'
+    & $Exe selftest --volume "${letter}:" --report $Report > $outFile 2> $errFile
     $exit = $LASTEXITCODE
+    $ErrorActionPreference = 'Stop'
+    Get-Content $outFile, $errFile | Add-Content -Path $log
+    Get-Content $outFile
 }
 finally {
     if ($attached -or (Test-Path $vhd)) {
