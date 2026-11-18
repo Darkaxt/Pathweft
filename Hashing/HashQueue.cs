@@ -35,7 +35,7 @@ internal static class HashQueue
     static readonly Dictionary<string, string> diskOfRoot = new(StringComparer.OrdinalIgnoreCase);
     static long order;
 #if DEBUG
-    /// Verification: the order files were read in, and which disk each reader served.
+    /// Verification: the files actually read (not those the cache answered), in order, and the disk each was read from.
     internal static readonly List<(string Disk, string Path)> ReadLog = new();
 #endif
 
@@ -106,9 +106,6 @@ internal static class HashQueue
                 }
                 try
                 {
-#if DEBUG
-                    lock (ReadLog) ReadLog.Add((name, job.Path));
-#endif
                     var values = HashCache.OfFile(job.Path, job.Names, cancel.Token, recall: job.Recall);
                     if (!cancel.IsCancellationRequested) job.Done(values);
                 }

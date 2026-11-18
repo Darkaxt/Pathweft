@@ -161,6 +161,9 @@ internal static class HashCache
         if (missing.Count > 0 && (recall || !IsPlaceholder(attributes)))
         {
             Interlocked.Increment(ref Reads);
+#if DEBUG
+            lock (HashQueue.ReadLog) HashQueue.ReadLog.Add((HashQueue.DiskOf(path), path));
+#endif
             var computed = Checksums.OfFile(path, missing, token, progress);
             // written while it was read: the values belong to no single version of the file, so they are not kept
             if (key is { } before && Identify(path) == before) Put(before, computed);
