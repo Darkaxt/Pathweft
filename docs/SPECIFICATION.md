@@ -1,6 +1,6 @@
 # Pathweft specification
 
-Version 1.35 - 2026-11-18. Owner: Darkaxt.
+Version 1.36 - 2026-11-18. Owner: Darkaxt.
 
 ### Read-only MCP expansion (S48)
 
@@ -2381,7 +2381,7 @@ authorized by registration of this stage.
 
 ### Integrated PowerToys file tools (S20)
 
-Planned after S49 and before S21; NOT STARTED. Scope is the seven capabilities
+Released in 1.1.76 (COMPLETE). Scope is the seven capabilities
 accepted in the brainstorming discussion, with New+ last in implementation
 priority. This registration does not activate implementation or any live action.
 Use the [PowerToys source](https://github.com/microsoft/PowerToys/tree/main/src/modules)
@@ -2411,6 +2411,32 @@ and [license](https://github.com/microsoft/PowerToys/blob/main/LICENSE).
 These main-branch links are research pointers, not adopted pins. No implementation
 criterion has passed; module extraction, runtime compatibility and resource costs
 remain unqualified. No tracked deferral or ACTIVE stage is introduced.
+
+### Details columns, file hashes and Copy details (S50)
+
+Owner requests 2026-11-18, authorized for the release after 1.1.76 and ahead of S21:
+"I would like to be able add more columns to the disk view like the modified date";
+"When I right click in the column header I just get usual folder context menu instead
+of a table customization menu"; "I also requested to be able to render the file hashes,
+at least the CRC32 for sure"; HashTab-like hashes as columns; "a hash resolution cache
+per file"; hash and attribute entries under Copy details shown as `Copy <name>`, and a
+`Copy...` popup to choose among all available properties and the output format. Agreed
+design: the column is the hashing switch, column sets are kept per view kind, only
+on-screen tabs hash, and one cache and queue serve the whole app.
+
+| ID | Requirement and acceptance |
+| --- | --- |
+| COLS-01 | Right-clicking a column header in Details (folders, search results, archives and the space analyzer) opens Pathweft's column menu, never the folder's context menu: Size column to fit, Size all columns to fit, then checkable columns with Name fixed, then More... . Keyboard and accessible names as other Pathweft menus. |
+| COLS-02 | Common columns: Date modified, Type, Size, Date created, Date accessed, Attributes, Version, Owner and the hash columns. More... opens a two-column Pathweft dialog listing every Windows property column (property system descriptions, grouped, searchable) to add or remove, as Explorer's Choose Details. Values come from the shell property store without opening file content beyond what the property handler reads. |
+| COLS-03 | Chosen columns, order and widths are remembered per view kind (folders, archives, search, space analyzer, This PC), as Explorer keeps one layout per folder type, and apply at once to every open tab of that kind. A column that no row can fill stays shown when the owner chose it. |
+| COLS-04 | The space analyzer offers the same column menu, with Date modified, Date created, Type, Version, file and folder counts and hashes beside Space used; its rows keep SPACE-02 ordering and progressive totals. |
+| HASH-01 | Hash columns use the Checksum algorithms (CRC-32, CRC-64, MD5, SHA-1, SHA-256, SHA-384, SHA-512, SHA3-256 where Windows has it, XXH64, XXH3-64), chosen from a Hashes submenu of the column menu, with an upper/lower case option. Inside archives CRC-32 comes from the stored values without reading data. |
+| HASH-02 | Each file is read once for all chosen hashes. Only tabs on screen hash: the active tab first, its visible rows first, then the rest of its folder; background tabs read nothing and show cached values. One low-priority app-wide queue reads one file at a time per physical disk. Leaving a folder or removing the column stops its work. |
+| HASH-03 | Automatic hashing skips files above a configurable size (default 256 MB, the cell offers Hash), cloud placeholders (never hydrated; shown as online-only) and network locations; the user can still hash them explicitly. |
+| HASH-04 | A persistent cache in Pathweft's data folder keyed by volume serial, file ID, size and last write time holds every computed hash of a file; a changed size or time recomputes, a rename or move on the volume keeps it. It is capped (default 100 MB, least recently used pruned first), never writes into files or alternate streams, shows its size in Settings with Clear, and is shared with the Checksum command. |
+| COPY-01 | Copy details lists Copy path, Copy name, then `Copy <column>` for each column shown in that view (for example Copy size, Copy date modified, Copy CRC-32, Copy SHA-1), then Copy... . One file copies the value; several copy one line per file (hashes as `hash *name`). A hash not yet computed is computed through the transfer popup, then copied. Same in archives and the space analyzer. |
+| COPY-02 | Copy... opens a two-column Pathweft dialog: left, every available property grouped (basic, hashes, version, media, document and the Windows property list) with search and check boxes, starting from the visible columns; right, the output format (Name: value blocks, values per line, tab-separated, CSV, JSON, Markdown table, checksum file), header row, relative or full paths, hash case, and a live preview of the first files. Copy writes the clipboard; choices are remembered. |
+| COLS-05 | TOOLS-10 design applies: Pathweft glyphs, dialog chrome and themes (dark, light, original at 100% and 150%). Verify the header menu routing, column persistence across tabs, More... and Copy... renders, hashing order and per-disk queue, cache hits without reads (file-read counts), size and placeholder limits, archive CRC, Copy details entries and every Copy... format on owned fixtures, then one normal release. |
 
 ### Browsing productivity and smart destinations (S21)
 
