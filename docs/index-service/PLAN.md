@@ -172,3 +172,9 @@ After the install (service restart 22:04 UTC) the first scans finished while
 watching: H: 386,708 entries in 163 s, T: 174,700 in 122 s, J: 7, the share
 30,204 in 1,098 s (one folder could not be listed). With every root loaded the
 service used 713 MB private; the self-test's W: entry was gone.
+From the end of the scans to 22:36 UTC no change batch, overflow or watcher
+error was logged for any folder root, so delivery of notifications from Google
+Drive, Tresorit and the SMB share is still not observed. Resolution condition:
+a "changes in" line for that root in `service.log` after a file is saved or
+renamed there. Until then those roots are covered at least by the periodic
+rescans.
