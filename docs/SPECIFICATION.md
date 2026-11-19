@@ -1,6 +1,6 @@
 # Pathweft specification
 
-Version 1.44 - 2026-11-19. Owner: Darkaxt.
+Version 1.45 - 2026-11-19. Owner: Darkaxt.
 
 ### Read-only MCP expansion (S48)
 
@@ -2642,6 +2642,7 @@ qualification remains future stage work, not a reason to activate it now.
 | DELIVERY-01 | One installation, settings owner and update channel. Pin/package Everything and native preview dependencies; preserve external instances/data and prevent upstream updates replacing Pathweft. Under the user's 2026-10-31 instruction stopping Sandbox work, use the completed isolated-directory per-user host install/update/uninstall and preservation trials, then verify the final published and actual host-installed package. Do not reopen a guest environment as a delivery gate. |
 | DELIVERY-02 | After S8 core-release criteria pass under the user's core-first scope, publish one normal versioned Pathweft release here: usable Windows x64 installer and portable package, source/tag, checksums, accurate notes and required source/notices. State signing identity/status honestly. Independently retrieve both assets and verify hashes/version/commit and packaged search/preview/transfer behavior. Identify S6/S7 as undelivered later integration work. Future implementation outcomes, including S13, own equivalent normal release, independent retrieval/qualification and applicable installed verification within their stage after the whole authorized outcome passes; do not publish partial modules or reopen completed S8 as their delivery owner. Plan/investigation-only work does not trigger software publication. No setup/intermediate commit is an application release. |
 | DELIVERY-03 | Preserve original notices, exact donor/dependency revisions and terms; provide applicable GPL source/distribution materials when QuickLook code is imported. Keep private traces, credentials, personal sample paths and machine records out of public source/assets. |
+| DELIVERY-05 | Owner decision 2026-11-19 (spec 1.45), on seeing about 330 files in the installation root: "is better practice to trigger the .Net dependency installation over bundling the libraries in each insalled program". Pathweft is published framework-dependent on the Microsoft .NET 10 Desktop Runtime (x64), not self-contained. Setup detects the runtime and, when it is missing, downloads Microsoft's runtime installer, refuses it unless it carries a valid Microsoft Corporation signature, installs it quietly and checks it again before any Pathweft file is replaced; the portable package requires it to be installed. An update removes the runtime copy and satellite folders earlier self-contained releases left in the installation (an app-local hostfxr.dll would keep Pathweft on that copy). English only: no runtime satellite folders and no reference API-doc XML files; the MCP notes ship as docs\Performance-MCP.md. Verify the published package has no bundled runtime, Pathweft starts on the installed shared runtime, and the installed update from 1.1.82 leaves no runtime member behind. |
 
 ## 5. Acceptance, stages and completion
 

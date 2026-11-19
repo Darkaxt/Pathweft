@@ -148,11 +148,13 @@ Indexed totals are labelled accordingly. Folder history lives in SQLite under th
 cache root, with a bounded hot memory cache. Existing text history migrates in
 the background; displayed sizes remain visible during a refresh.
 
-Windows 11 x64 is the qualified host. The .NET 10 desktop runtime and native
-archive/preview libraries are included. WebView2 Evergreen is required for the
+Windows 11 x64 is the qualified host. Pathweft runs on the Microsoft .NET 10
+Desktop Runtime (x64): Setup installs it from Microsoft when it is missing, and
+the portable package needs it installed. Native archive/preview libraries are
+included. WebView2 Evergreen is required for the
 optional F4 editor; the application reports when that runtime is unavailable.
 
-The installer runs for the current user without administrator privileges.
+Setup installs into Program Files and asks for Windows administrator consent.
 After installation/update, application and helper activation use the existing
 desktop's context so they do not inherit Setup's RedirectionGuard restriction.
 Setup retains its protection and user file associations remain unchanged.

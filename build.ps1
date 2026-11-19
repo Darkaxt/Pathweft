@@ -56,7 +56,7 @@ if($ResumeCandidateRun){
     foreach($file in $existing.files){if((Get-FileHash -LiteralPath (Join-Path $publish $file.path)).Hash -ne $file.sha256){throw "Interrupted candidate member changed: $($file.path)"}}
 }elseif(!$PrebuiltPublishRoot){
     & (Join-Path $root 'scripts/Build-Development.ps1') -ScratchRoot $run -CacheRoot $CacheRoot -Operation Publish -PublishDirectory $publish -Configuration Release -BuildProperty @('ContinuousIntegrationBuild=true','DebugType=embedded','DebugSymbols=false')
-    if($LASTEXITCODE -ne 0){throw 'Self-contained publish failed.'}
+    if($LASTEXITCODE -ne 0){throw 'Publish failed.'}
 }
 
 # Verify native library bytes against the qualified source/runtime inventory.
@@ -115,9 +115,6 @@ Copy-Item -LiteralPath (Join-Path $root 'docs/THIRD-PARTY-NOTICES.md') -Destinat
 $runtimeNotices=Join-Path $publish 'licenses/Microsoft'
 [void][IO.Directory]::CreateDirectory($runtimeNotices)
 $noticeFiles=@(
-    @('microsoft.netcore.app.runtime.win-x64/10.0.14/LICENSE.TXT','DotNet-LICENSE.txt'),
-    @('microsoft.netcore.app.runtime.win-x64/10.0.14/THIRD-PARTY-NOTICES.TXT','DotNet-THIRD-PARTY-NOTICES.txt'),
-    @('microsoft.windowsdesktop.app.runtime.win-x64/10.0.14/LICENSE','Desktop-LICENSE.txt'),
     @('microsoft.web.webview2/1.0.4314.35/LICENSE.txt','WebView2-LICENSE.txt'),
     @('microsoft.web.webview2/1.0.4314.35/NOTICE.txt','WebView2-NOTICE.txt'),
     @('system.io.hashing/10.0.14/THIRD-PARTY-NOTICES.TXT','Hashing-THIRD-PARTY-NOTICES.txt')
@@ -126,7 +123,7 @@ foreach($notice in $noticeFiles){Copy-Item -LiteralPath (Join-Path $CacheRoot ('
 $files=@(Get-ChildItem -LiteralPath $publish -File -Recurse | Where-Object Name -NE 'release-manifest.json' | Sort-Object FullName | ForEach-Object{
     [ordered]@{path=[IO.Path]::GetRelativePath($publish,$_.FullName).Replace('\','/');bytes=$_.Length;sha256=(Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash}
 })
-$receipt=[ordered]@{product='Pathweft';version=$version;sourceCommit=$commit;sourceState=$(if($Candidate){'qualification candidate; not a published release'}else{'clean committed source'});target='win-x64';framework='net10.0-windows10.0.19041.0';runtime='10.0.14';signing='Pathweft executable and installer are unsigned';files=$files}
+$receipt=[ordered]@{product='Pathweft';version=$version;sourceCommit=$commit;sourceState=$(if($Candidate){'qualification candidate; not a published release'}else{'clean committed source'});target='win-x64';framework='net10.0-windows10.0.19041.0';runtime='framework-dependent: Microsoft.WindowsDesktop.App 10.0 x64, installed by Setup when missing';signing='Pathweft executable and installer are unsigned';files=$files}
 $receipt | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath (Join-Path $publish 'release-manifest.json') -Encoding utf8
 & $Compiler "/DAppVersion=$version" "/DPublishRoot=$publish" "/DDeliveryRoot=$delivery" (Join-Path $root 'installer/Pathweft.iss') /Q
 if($LASTEXITCODE -ne 0){throw 'Installer compilation failed.'}

@@ -69,6 +69,10 @@ Type: files; Name: "{app}\mscordaccore_amd64_amd64_*.dll"
 ; S19 (1.1.83): the index service runs from {app}\services\file_index; `install` moves an older
 ; registration from %ProgramFiles%\PathweftIndex there and removes that copy.
 Type: filesandordirs; Name: "{app}\index"
+; DELIVERY-05 (1.1.83): the MCP notes moved to docs; the runtime earlier releases bundled is removed.
+Type: files; Name: "{app}\Performance-MCP.md"
+Type: files; Name: "{app}\*.xml"
+#include "BundledRuntime.iss"
 
 [Files]
 ; SHELL-06: the native handlers keep one fixed name. A Shell caller (Explorer,
@@ -247,6 +251,55 @@ begin
     Result := 'Pathweft could not stop its helper or restore its integration. Keep the installation and recovery record, resolve the integration in Settings, then try again.';
 end;
 
+// DELIVERY-05: Pathweft is framework-dependent. Setup installs the Microsoft .NET 10 Desktop Runtime (x64)
+// when it is missing, from Microsoft's download, only after checking that Microsoft signed it.
+function DesktopRuntimeInstalled: Boolean;
+var
+  Find: TFindRec;
+begin
+  Result := False;
+  if FindFirst(ExpandConstant('{commonpf64}\dotnet\shared\Microsoft.WindowsDesktop.App\10.*'), Find) then begin
+    try
+      repeat
+        if (Find.Attributes and FILE_ATTRIBUTE_DIRECTORY) <> 0 then Result := True;
+      until Result or not FindNext(Find);
+    finally
+      FindClose(Find);
+    end;
+  end;
+end;
+
+function EnsureDesktopRuntime: String;
+var
+  Installer: String;
+  Code: Integer;
+begin
+  Result := '';
+  if DesktopRuntimeInstalled then Exit;
+  DeploymentPhase('Installing the .NET Desktop Runtime', 'Downloading the Microsoft .NET 10 Desktop Runtime (x64).');
+  try
+    DownloadTemporaryFile('https://aka.ms/dotnet/10.0/windowsdesktop-runtime-win-x64.exe', 'windowsdesktop-runtime-win-x64.exe', '', nil);
+  except
+    Result := 'The Microsoft .NET 10 Desktop Runtime could not be downloaded (' + GetExceptionMessage + '). Install it from https://dotnet.microsoft.com/download/dotnet/10.0 and run Setup again. No files have been replaced.';
+    Exit;
+  end;
+  Installer := ExpandConstant('{tmp}\windowsdesktop-runtime-win-x64.exe');
+  if not Exec(ExpandConstant('{sys}\WindowsPowerShell\v1.0\powershell.exe'),
+      '-NoProfile -NonInteractive -Command "$s=Get-AuthenticodeSignature -LiteralPath ''' + Installer + '''; if($s.Status -eq ''Valid'' -and $s.SignerCertificate.Subject -like ''*O=Microsoft Corporation*''){exit 0}; exit 1"',
+      '', SW_HIDE, ewWaitUntilTerminated, Code) or (Code <> 0) then begin
+    Result := 'The downloaded .NET Desktop Runtime installer does not carry a valid Microsoft signature. Nothing has been installed.';
+    Exit;
+  end;
+  DeploymentPhase('Installing the .NET Desktop Runtime', 'Installing the Microsoft .NET 10 Desktop Runtime (x64).');
+  { 3010: installed, restart recommended; 1638: this or a newer version is already installed. }
+  if not Exec(Installer, '/install /quiet /norestart', '', SW_HIDE, ewWaitUntilTerminated, Code) or ((Code <> 0) and (Code <> 3010) and (Code <> 1638)) then begin
+    Result := Format('The Microsoft .NET 10 Desktop Runtime could not be installed (exit %d). No Pathweft files have been replaced.', [Code]);
+    Exit;
+  end;
+  if not DesktopRuntimeInstalled then
+    Result := 'The Microsoft .NET 10 Desktop Runtime is still missing after its installer finished. No Pathweft files have been replaced.';
+end;
+
 function PrepareToInstall(var NeedsRestart: Boolean): String;
 var
   Pid, Code: Integer;
@@ -265,6 +318,8 @@ begin
     Result := 'Another application owns the shell class. No registration has been replaced.';
     Exit;
   end;
+  Result := EnsureDesktopRuntime;
+  if Result <> '' then Exit;
 #endif
   DeploymentPhase('Closing Pathweft', 'Waiting for the current window to finish closing.');
   DeploymentFailure := 'The updating process could not finish preparing its installation.';

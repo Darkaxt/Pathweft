@@ -5,6 +5,7 @@
 
 - The Pathweft index service now runs from Pathweft's own folder (Program Files\Pathweft\services\file_index) instead of a separate PathweftIndex copy. The update moves it, keeps your indexed folder roots and removes the old copy.
 - Analyze space is the command bar button only; the right-click menus no longer repeat it.
+- Pathweft now uses the shared Microsoft .NET 10 Desktop Runtime instead of carrying its own copy: Setup installs the runtime from Microsoft when it is missing, and the update removes the roughly 260 runtime files earlier versions placed in Pathweft's folder.
 
 ## 1.1.82 | 2026-11-19 | Folder tools in the folder's own menu
 

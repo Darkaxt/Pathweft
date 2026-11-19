@@ -20,6 +20,11 @@
     <DefaultItemExcludes>$(DefaultItemExcludes);dist\**;installer\**;.local\**</DefaultItemExcludes>
     <Nullable>disable</Nullable>
     <PlatformTarget>x64</PlatformTarget>
+    <!-- DELIVERY-05: framework-dependent on the Microsoft .NET 10 Desktop Runtime, which Setup installs when it
+         is missing. English only: no runtime satellite folders; reference API docs (*.xml) are not shipped. -->
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <PublishReferencesDocumentationFiles>false</PublishReferencesDocumentationFiles>
+    <AllowedReferenceRelatedFileExtensions>.pdb</AllowedReferenceRelatedFileExtensions>
     <!-- Program.Main: a second launch hands off before WPF loads (App.xaml.cs) -->
     <StartupObject>FileExplorer.Program</StartupObject>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -79,7 +84,7 @@
     <None Update="vendor\HardeningKitty\source-manifest.json" CopyToOutputDirectory="PreserveNewest" />
     <None Update="vendor\HardenWindowsSecurity\source-manifest.json" CopyToOutputDirectory="PreserveNewest" />
     <None Update="vendor\PowerToys\source-manifest.json" CopyToOutputDirectory="PreserveNewest" />
-    <None Update="docs\PERFORMANCE-MCP.md" Link="Performance-MCP.md" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="docs\PERFORMANCE-MCP.md" Link="docs\Performance-MCP.md" CopyToOutputDirectory="PreserveNewest" />
     <None Update="COPYING-GPL-3.0.txt" CopyToOutputDirectory="PreserveNewest" />
     <None Update="LICENSE" CopyToOutputDirectory="PreserveNewest" />
     <Using Remove="System.Windows.Forms" />

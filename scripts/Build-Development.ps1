@@ -73,7 +73,7 @@ try {
         )
         if($Operation -eq 'Publish'){
             if(!$PublishDirectory -or ![IO.Path]::GetFullPath($PublishDirectory).StartsWith($scratch+'\',[StringComparison]::OrdinalIgnoreCase)){throw 'Publish output must remain inside this exact task scratch.'}
-            $buildArguments+=@('-r','win-x64','--self-contained','true','--output',([IO.Path]::GetFullPath($PublishDirectory)))
+            $buildArguments+=@('-r','win-x64','--self-contained','false','--output',([IO.Path]::GetFullPath($PublishDirectory)))
         }
         foreach ($property in $BuildProperty) { $buildArguments += '-p:' + $property }
         & dotnet @buildArguments
