@@ -1,6 +1,20 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.81 | 2026-11-19 | Smarter address bar, terminal panel, remote folders
+
+- The address bar suggests open tabs, Quick access, saved searches, recent folders and matching paths as you type. Tab completes, Enter opens, Escape keeps what you typed. Settings → Privacy → Clear history empties the list.
+- Save a search and find it again in the sidebar and in suggestions.
+- Actions: your own commands under right-click → Actions, edited in Settings → Actions.
+- View → Folder view remembers a folder's view, sorting and columns, optionally for its subfolders.
+- Synchronize with other pane compares both panes and lets you choose each file's direction before anything is copied.
+- Tags, rating and comment for files and folders, as columns and in the filter (tag:, rating:, comment:).
+- View → Terminal panel (Ctrl+Shift+`) opens a terminal under the pane that follows the folder you browse, and the other way round.
+- SFTP and WebDAV folders open in a pane, with copy, move, rename and delete.
+- View → Filter (Ctrl+Shift+F) filters the current folder as you type.
+- Symbolic links, hard links and junctions: create them, see their target, and Properties shows where a link points.
+- Performance: the process filter sits at the top and filters both the graph and the table, and Pause stops refreshing while you look.
+
 ## 1.1.80 | 2026-11-19 | Pathweft index only
 
 - Searches, the search popup, folder sizes and the space analyzer now use only the Pathweft index service. Pathweft no longer ships or talks to Everything; an Everything you run yourself is left alone.
