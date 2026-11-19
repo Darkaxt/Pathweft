@@ -310,6 +310,13 @@ impl Store {
                     self.garbage += 2 + self.name_at(old.name).len();
                     let rec = &mut self.recs[r as usize];
                     rec.name = NONE;
+                    // A dead record keeps only what live children still
+                    // contribute (none for a file): NTFS reuses record
+                    // numbers, and a folder created in a reused record starts
+                    // from this size.
+                    if !old.is_dir() {
+                        rec.size = 0;
+                    }
                     self.live -= 1;
                     if old.is_dir() {
                         self.dirs -= 1;
@@ -558,6 +565,29 @@ mod tests {
         assert!(s.is_below(ix(&s, 30), ix(&s, 20)));
         assert!(s.is_below(ix(&s, 30), ix(&s, 5)));
         assert!(!s.is_below(ix(&s, 20), ix(&s, 20)));
+    }
+
+    #[test]
+    fn reused_records_do_not_inherit_old_sizes() {
+        let mut s = sample();
+        let total = s.recs[ix(&s, 5) as usize].size;
+        // c.bin (1000 bytes) is deleted and its record number reused for an
+        // empty folder, then for a folder that receives a 7-byte file.
+        s.set(31, None);
+        s.set(31, Some(&entry(5, "neutral", 0, true)));
+        assert_eq!(s.recs[ix(&s, 31) as usize].size, 0);
+        assert_eq!(s.recs[ix(&s, 5) as usize].size, total - 1000);
+        s.set(31, None);
+        s.set(40, Some(&entry(31, "one.bin", 7, false))); // child seen first
+        s.set(31, Some(&entry(5, "fixture", 0, true)));
+        assert_eq!(s.recs[ix(&s, 31) as usize].size, 7);
+        assert_eq!(s.recs[ix(&s, 5) as usize].size, total - 1000 + 7);
+        // A deleted folder whose child is deleted afterwards ends at 0 too.
+        s.set(31, None);
+        s.set(40, None);
+        s.set(31, Some(&entry(5, "again", 0, true)));
+        assert_eq!(s.recs[ix(&s, 31) as usize].size, 0);
+        assert_eq!(s.recs[ix(&s, 5) as usize].size, total - 1000);
     }
 
     #[test]

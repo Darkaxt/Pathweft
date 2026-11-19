@@ -26,8 +26,9 @@ is recorded in SPEC.md.
 | IS4 | COMPLETE | – (IDX-10 footprint accepted by the owner 2026-11-18) | – | IS4 record below; `MEASUREMENTS.md` |
 | IS5 | COMPLETE | – | – | `INTEGRATION.md`; message sent to the Pathweft thread 2026-11-18 |
 | IS6 | COMPLETE | – | – | IS6 record below |
-| IS7 | ACTIVE (code verified and installed; real-share evidence pending) | – | – | IS7 record below |
-| IS8 | ACTIVE | – | – | IS8 record below |
+| IS7 | COMPLETE | – | – | IS7 record below |
+| IS8 | COMPLETE | – | – | IS8 record below |
+| FIX1 | ACTIVE | – | – | FIX1 record below |
 
 ## IS1 readiness record (2026-11-18)
 
@@ -229,6 +230,14 @@ binaries… service running"); service started 2026-11-18T23:38:04Z. Schedules
 after the first scans: J: 7 folders (0 at least hourly), T: 17,766 (0), H: 86,821
 (2).
 
+Real-share evidence (IS8 build, same scheduling code): after the restart the
+share scanned 30,381 entries in 1,131 s and scheduled 5,131 folders (35 checked
+at least hourly). At 2026-11-19T00:25:54Z scheduled checks found changes that no
+notification had reported: "91 changes in 1 folders (11 added, 78 removed, 2
+updated) ... (found by a scheduled check)" and "21 changes in 2 folders ...
+(found by a scheduled check)". This closes the IS6 gap for changes made on the
+share's server itself (now caught within 15 minutes for active folders).
+
 ## IS8 record (2026-11-19)
 
 The Pathweft thread asked for `dm:`/`dc:` (today, yesterday, thisweek, lastweek,
@@ -242,3 +251,29 @@ bounds of local midnights, `Node::Parent` resolved like path terms to
 TzSpecificLocalTimeToSystemTime, SystemTimeToFileTime). Weeks start on Monday;
 unknown times never match. Docs: SPEC IDX-05, PROTOCOL, INTEGRATION (also the
 install and private-instance facts the Pathweft thread asked about).
+
+Build (Rust gate ticket 0677b660, renewing 8de04be8): attempt 1 (workflow
+6e87949d) failed 1 of 22 lib tests: `<dc:2024 | dm:2026-11-19>` read the
+group-closing `>` into the date. Correction 1: comparison arguments (`dm:`,
+`dc:`, `size:`) take only leading `<`/`>`/`=` characters, then a group-safe
+term; new grouped `size:` test. Attempt 3: `cargo test` 33/33 (22 lib + 11
+daemon), no warnings; attempt 4: release build, no warnings. Installed through
+the admin broker (exit 0). Live checks on the installed service: `dm:today file:`
+143 hits in 22 ms, `dc:thisweek ext:rs` 509, `dm:2026-11-18..yesterday *.md`
+641, `parent:"D:\Projects\Pathweft-index\docs\index-service"` 5 direct
+children, `folder: parent:D:\` 33, `dupe:` refused with the supported list.
+Commit ef3f204; merged by the Pathweft thread (2c82aee) for 1.1.80.
+
+## FIX1 record (2026-11-19): folder sizes of new NTFS folders
+
+Reported by the Pathweft thread (blocking 1.1.80; IDX-06): folders created at
+01:11 under `D:\Temp\pathweft-s13-s9-s11\...` reported 17,259 / 17,704 / 346,771
+bytes for contents of 579 / 0 / 579 bytes, stable for 20 minutes; file sizes were
+right. Cause (`store.rs` `set_index`): deleting a record marked it dead but kept
+its `size`; when NTFS reused the record number for a new folder, the folder kept
+that size as if its children had contributed it, and added it to every
+ancestor. D:\Temp's create/delete churn reuses record numbers constantly. Fix: a
+deleted file record's size is reset to 0, so a dead record holds only what live
+children still contribute (a dead folder's children subtract their sizes when
+they are deleted). Regression test `reused_records_do_not_inherit_old_sizes`.
+A restart (install) reloads the MFT, which clears sizes already corrupted.
