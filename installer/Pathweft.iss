@@ -253,6 +253,8 @@ end;
 
 // DELIVERY-05: Pathweft is framework-dependent. Setup installs the Microsoft .NET 10 Desktop Runtime (x64)
 // when it is missing, from Microsoft's download, only after checking that Microsoft signed it.
+// The check resets PSModulePath: an inherited PowerShell 7 module path stops Windows PowerShell loading
+// Microsoft.PowerShell.Security, and the signature check would then refuse a valid installer.
 function DesktopRuntimeInstalled: Boolean;
 var
   Find: TFindRec;
@@ -285,7 +287,7 @@ begin
   end;
   Installer := ExpandConstant('{tmp}\windowsdesktop-runtime-win-x64.exe');
   if not Exec(ExpandConstant('{sys}\WindowsPowerShell\v1.0\powershell.exe'),
-      '-NoProfile -NonInteractive -Command "$s=Get-AuthenticodeSignature -LiteralPath ''' + Installer + '''; if($s.Status -eq ''Valid'' -and $s.SignerCertificate.Subject -like ''*O=Microsoft Corporation*''){exit 0}; exit 1"',
+      '-NoProfile -NonInteractive -Command "$env:PSModulePath=[Environment]::GetEnvironmentVariable(''PSModulePath'',''Machine''); $s=Get-AuthenticodeSignature -LiteralPath ''' + Installer + '''; if($s.Status -eq ''Valid'' -and $s.SignerCertificate.Subject -like ''*O=Microsoft Corporation*''){exit 0}; exit 1"',
       '', SW_HIDE, ewWaitUntilTerminated, Code) or (Code <> 0) then begin
     Result := 'The downloaded .NET Desktop Runtime installer does not carry a valid Microsoft signature. Nothing has been installed.';
     Exit;
