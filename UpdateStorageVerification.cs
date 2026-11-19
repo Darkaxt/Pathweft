@@ -59,7 +59,7 @@ public partial class MainWindow
         finally{release.TrySetResult();await Left.SpaceCompletion;SpaceScan.BeforeEnumeration=null;await Left.EndSpaceAsync();}
         var updates=new Dictionary<string,SpaceUpdate>(StringComparer.OrdinalIgnoreCase);
         bool invalidated=false;
-        await SpaceScan.RunAsync(folder,false,"",update=>
+        await SpaceScan.RunAsync(folder,false,update=>
         {updates[update.Path]=update;if(!invalidated&&update.Path==folder&&update.State==SpaceState.Scanning){invalidated=true;SizeCache.Invalidate(Path.Combine(folder,"direct.txt"));}},CancellationToken.None);
         check(updates[folder].State==SpaceState.Changed&&new SpaceEntry{State=SpaceState.Changed,Refreshing=true}.SpaceStatus=="Updating…",
             "A changed active snapshot is distinct from terminal partial coverage and presents a queued refresh as Updating");

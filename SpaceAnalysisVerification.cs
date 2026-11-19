@@ -188,7 +188,7 @@ public partial class MainWindow
         using(var process=Process.Start(start)){await process.WaitForExitAsync();check(process.ExitCode==0,"The test creates only its owned directory junction without administrator changes");}
         string longPath=fixture;for(int i=0;i<24;i++)longPath=Path.Combine(longPath,"long é 子 segment"+i);Directory.CreateDirectory(longPath);File.WriteAllBytes(Path.Combine(longPath,"end.bin"),new byte[23]);
         var updates=new System.Collections.Concurrent.ConcurrentDictionary<string,SpaceUpdate>(StringComparer.OrdinalIgnoreCase);
-        await SpaceScan.RunAsync(fixture,false,"",update=>updates[update.Path]=update,CancellationToken.None);
+        await SpaceScan.RunAsync(fixture,false,update=>updates[update.Path]=update,CancellationToken.None);
         File.WriteAllText(Path.Combine(root,"space-boundaries.json"),JsonSerializer.Serialize(updates.Values,new JsonSerializerOptions{WriteIndented=true}));
         check(updates[fixture].State==SpaceState.Complete&&updates[fixture].Bytes==23&&updates[link].State==SpaceState.Reparse,"Real Unicode/long-path traversal skips junction contents and measures exact logical lengths");
         string denied=Directory.CreateDirectory(Path.Combine(fixture,"denied")).FullName;File.WriteAllBytes(Path.Combine(denied,"hidden.bin"),new byte[99]);
@@ -198,13 +198,13 @@ public partial class MainWindow
         try
         {
             System.IO.FileSystemAclExtensions.SetAccessControl(info,security);updates.Clear();
-            await SpaceScan.RunAsync(fixture,false,"",update=>updates[update.Path]=update,CancellationToken.None);
+            await SpaceScan.RunAsync(fixture,false,update=>updates[update.Path]=update,CancellationToken.None);
             File.WriteAllText(Path.Combine(root,"space-denied.json"),JsonSerializer.Serialize(new{root=updates[fixture],denied=updates[denied]},new JsonSerializerOptions{WriteIndented=true}));
             check(updates[denied].State==SpaceState.Denied&&updates[fixture].State==SpaceState.Incomplete&&SizeCache.Get(fixture,Directory.GetLastWriteTimeUtc(fixture))<0,"A real denied child marks ancestors incomplete and cannot promote a complete cached total");
         }
         finally{System.IO.FileSystemAclExtensions.SetAccessControl(info,original);}
         using var cancel=new CancellationTokenSource();bool cancelled=false;
-        try{await SpaceScan.RunAsync(fixture,false,"",update=>{updates[update.Path]=update;if(update.Path==fixture&&update.State==SpaceState.Scanning)cancel.Cancel();},cancel.Token);}
+        try{await SpaceScan.RunAsync(fixture,false,update=>{updates[update.Path]=update;if(update.Path==fixture&&update.State==SpaceState.Scanning)cancel.Cancel();},cancel.Token);}
         catch(OperationCanceledException)when(cancel.IsCancellationRequested){cancelled=true;}
         check(cancelled&&updates[fixture].State==SpaceState.Cancelled,"Actual traversal cancellation reaches a terminal cancelled state");
     }

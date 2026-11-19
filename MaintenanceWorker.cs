@@ -160,7 +160,7 @@ internal static class MaintenanceWorker
                     var channel=System.Threading.Channels.Channel.CreateBounded<SpaceUpdate>(512);
                     var scan=Task.Run(async()=>
                     {
-                        try{await SpaceScan.RunAsync(folder,false,null,update=>channel.Writer.WriteAsync(update,lost.Token).AsTask().GetAwaiter().GetResult(),lost.Token).ConfigureAwait(false);channel.Writer.TryComplete();}
+                        try{await SpaceScan.RunAsync(folder,false,update=>channel.Writer.WriteAsync(update,lost.Token).AsTask().GetAwaiter().GetResult(),lost.Token).ConfigureAwait(false);channel.Writer.TryComplete();}
                         catch(Exception error){channel.Writer.TryComplete(error);throw;}
                     });
                     try
