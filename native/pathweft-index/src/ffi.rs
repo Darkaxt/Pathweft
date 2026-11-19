@@ -99,6 +99,7 @@ pub const SERVICE_QUERY_STATUS: u32 = 4;
 pub const SERVICE_WIN32_OWN_PROCESS: u32 = 0x10;
 pub const SERVICE_AUTO_START: u32 = 2;
 pub const SERVICE_ERROR_NORMAL: u32 = 1;
+pub const SERVICE_NO_CHANGE: u32 = 0xFFFF_FFFF;
 pub const SERVICE_CONTROL_STOP: u32 = 1;
 pub const SERVICE_CONTROL_INTERROGATE: u32 = 4;
 pub const SERVICE_CONTROL_SHUTDOWN: u32 = 5;
@@ -339,6 +340,7 @@ extern "system" {
     pub fn DeleteService(service: HANDLE) -> BOOL;
     pub fn CloseServiceHandle(h: HANDLE) -> BOOL;
     pub fn ChangeServiceConfig2W(service: HANDLE, level: u32, info: *mut c_void) -> BOOL;
+    pub fn ChangeServiceConfigW(service: HANDLE, service_type: u32, start: u32, error: u32, binary: *const u16, group: *const u16, tag: *mut u32, dependencies: *const u16, account: *const u16, password: *const u16, display: *const u16) -> BOOL;
     pub fn StartServiceCtrlDispatcherW(table: *const SERVICE_TABLE_ENTRYW) -> BOOL;
     pub fn RegisterServiceCtrlHandlerExW(name: *const u16, handler: HandlerEx, context: *mut c_void) -> HANDLE;
     pub fn SetServiceStatus(handle: HANDLE, status: *const SERVICE_STATUS) -> BOOL;
