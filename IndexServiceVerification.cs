@@ -205,7 +205,7 @@ public partial class MainWindow
             check(commands.Length == 3 && (string)commands[0]["op"] == "folder_add" && (string)commands[0]["path"] == "H:\\" && (string)commands[1]["op"] == "folder_remove" && (string)commands[2]["op"] == "rescan" && (string)commands[2]["target"] == "C:",
                 "SEARCH-07: folder-root add, remove and rescan send their pipe commands");
             var install = IndexServiceSetup.Command(true); var remove = IndexServiceSetup.Command(false);
-            check(install.Arguments == "install" && remove.Arguments == "uninstall" && install.FileName.EndsWith(@"\index\pathweft-indexd.exe", StringComparison.OrdinalIgnoreCase) && install.CreateNoWindow && !install.UseShellExecute,
+            check(install.Arguments == "install" && remove.Arguments == "uninstall" && install.FileName.EndsWith(@"\services\file_index\pathweft-indexd.exe", StringComparison.OrdinalIgnoreCase) && install.CreateNoWindow && !install.UseShellExecute,
                 "SEARCH-07: the elevated commands run the shipped service binary hidden with install/uninstall");
             string refused = null;
             try { IndexServiceSetup.Run(true); } catch (InvalidOperationException ex) { refused = ex.Message; }

@@ -66,6 +66,9 @@ Type: filesandordirs; Name: "{app}\Everything"
 Type: files; Name: "{app}\Everything64.dll"
 Type: filesandordirs; Name: "{app}\vendor\EverythingSDK"
 Type: files; Name: "{app}\mscordaccore_amd64_amd64_*.dll"
+; S19 (1.1.83): the index service runs from {app}\services\file_index; `install` moves an older
+; registration from %ProgramFiles%\PathweftIndex there and removes that copy.
+Type: filesandordirs; Name: "{app}\index"
 
 [Files]
 ; SHELL-06: the native handlers keep one fixed name. A Shell caller (Explorer,
@@ -103,7 +106,7 @@ Filename: "{app}\{#AppExe}"; Parameters: "--desktop-launch"; Description: "Launc
 ; it (its settings and folder roots in ProgramData are kept); "not installed" is
 ; a successful no-op.
 [UninstallRun]
-Filename: "{app}\index\pathweft-indexd.exe"; Parameters: "uninstall"; Flags: runhidden waituntilterminated skipifdoesntexist; RunOnceId: "PathweftIndexUninstall"
+Filename: "{app}\services\file_index\pathweft-indexd.exe"; Parameters: "uninstall"; Flags: runhidden waituntilterminated skipifdoesntexist; RunOnceId: "PathweftIndexUninstall"
 
 ; User settings, tabs, history, caches and recovery records are never swept by
 ; the uninstaller. The executable restores only registrations it still owns.
@@ -246,7 +249,7 @@ end;
 
 function PrepareToInstall(var NeedsRestart: Boolean): String;
 var
-  Pid: Integer;
+  Pid, Code: Integer;
   Handle: THandle;
   Created, Exited, Kernel, User: TCreationTime;
   Expected: String;
@@ -297,6 +300,14 @@ begin
     end;
   end;
   Result := PrepareExisting('--prepare-update');
+#ifndef ProgressVerification
+  { The service runs from the files this update replaces: stop it first; `install` starts it again. }
+  if (Result = '') and FileExists(ExpandConstant('{app}\services\file_index\pathweft-indexd.exe')) then begin
+    DeploymentPhase('Stopping the index service', 'The Pathweft index service restarts once the update is installed.');
+    if not Exec(ExpandConstant('{app}\services\file_index\pathweft-indexd.exe'), 'stop', ExpandConstant('{app}\services\file_index'), SW_HIDE, ewWaitUntilTerminated, Code) or (Code <> 0) then
+      Result := Format('The Pathweft index service could not be stopped for the update (exit %d). No files have been replaced.', [Code]);
+  end;
+#endif
   DeploymentFailure := Result;
   if Result = '' then DeploymentPhase('Installing update', 'Replacing application files.');
 end;
@@ -318,9 +329,9 @@ begin
 #ifndef ProgressVerification
   // SEARCH-09: the index service is Pathweft's only file index. `install` is
   // idempotent: it updates a running service in place and keeps its folder roots.
-  if (CurStep = ssPostInstall) and FileExists(ExpandConstant('{app}\index\pathweft-indexd.exe')) then begin
+  if (CurStep = ssPostInstall) and FileExists(ExpandConstant('{app}\services\file_index\pathweft-indexd.exe')) then begin
     DeploymentPhase('Updating the index service', 'Installing or updating the Pathweft index service.');
-    if not Exec(ExpandConstant('{app}\index\pathweft-indexd.exe'), 'install', ExpandConstant('{app}\index'), SW_HIDE, ewWaitUntilTerminated, Code) or (Code <> 0) then begin
+    if not Exec(ExpandConstant('{app}\services\file_index\pathweft-indexd.exe'), 'install', ExpandConstant('{app}\services\file_index'), SW_HIDE, ewWaitUntilTerminated, Code) or (Code <> 0) then begin
       Log(Format('Pathweft index service install failed (exit %d).', [Code]));
       SuppressibleMsgBox('Pathweft was installed, but its index service could not be installed or updated (exit ' + IntToStr(Code) + '). Searches stay unavailable until Settings > Windows integration > Pathweft index installs it.', mbError, MB_OK, IDOK);
     end;

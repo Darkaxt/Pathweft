@@ -34,9 +34,9 @@
     <None Include="$(ShellRouterRoot)\x64\PathweftShell.dll" Link="PathweftShell-x64.dll" CopyToOutputDirectory="PreserveNewest" />
     <None Include="$(ShellRouterRoot)\x86\PathweftShell.dll" Link="PathweftShell-x86.dll" CopyToOutputDirectory="PreserveNewest" />
     <!-- SEARCH-08: the Pathweft index service, built from native/pathweft-index through the Rust gate. -->
-    <None Condition="'$(IndexServiceRoot)' != ''" Include="$(IndexServiceRoot)\pathweft-indexd.exe" Link="index\pathweft-indexd.exe" CopyToOutputDirectory="PreserveNewest" />
-    <None Condition="'$(IndexServiceRoot)' != ''" Include="$(IndexServiceRoot)\pwindex.exe" Link="index\pwindex.exe" CopyToOutputDirectory="PreserveNewest" />
-    <None Condition="'$(IndexServiceRoot)' != ''" Include="native\pathweft-index\THIRD-PARTY-LICENSES.txt" Link="index\THIRD-PARTY-LICENSES.txt" CopyToOutputDirectory="PreserveNewest" />
+    <None Condition="'$(IndexServiceRoot)' != ''" Include="$(IndexServiceRoot)\pathweft-indexd.exe" Link="services\file_index\pathweft-indexd.exe" CopyToOutputDirectory="PreserveNewest" />
+    <None Condition="'$(IndexServiceRoot)' != ''" Include="$(IndexServiceRoot)\pwindex.exe" Link="services\file_index\pwindex.exe" CopyToOutputDirectory="PreserveNewest" />
+    <None Condition="'$(IndexServiceRoot)' != ''" Include="native\pathweft-index\THIRD-PARTY-LICENSES.txt" Link="services\file_index\THIRD-PARTY-LICENSES.txt" CopyToOutputDirectory="PreserveNewest" />
     <None Include="$(F3DRuntimeRoot)\bin\*.dll" Link="F3D\bin\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <None Include="$(SevenZipRuntimeRoot)\7z.dll" Link="SevenZip\7z.dll" CopyToOutputDirectory="PreserveNewest" />
     <None Include="$(RarsRuntimeRoot)\pathweft_rars.dll" Link="Rars\pathweft_rars.dll" CopyToOutputDirectory="PreserveNewest" />

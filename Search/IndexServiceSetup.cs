@@ -4,24 +4,39 @@ using System.Security.Cryptography;
 
 namespace FileExplorer.Search;
 
-// SEARCH-07/08: the service binaries ship in <app>\index; `install` copies them to
-// %ProgramFiles%\PathweftIndex and registers the LocalSystem service. Installing,
-// updating and removing run only inside the approved administrator session and
-// only from the Program Files installation.
+// SEARCH-07/08: the service binaries ship in <app>\services\file_index, and `install` registers the LocalSystem
+// service where they are (S19; an earlier registration in %ProgramFiles%\PathweftIndex is moved here and that copy
+// removed). Installing, updating and removing run only inside the approved administrator session and only from the
+// Program Files installation.
 internal static class IndexServiceSetup
 {
-    internal static string ShippedExecutable => Path.Combine(AppContext.BaseDirectory, "index", "pathweft-indexd.exe");
-    internal static string InstalledExecutable => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "PathweftIndex", "pathweft-indexd.exe");
+    internal static string ShippedExecutable => Path.Combine(AppContext.BaseDirectory, "services", "file_index", "pathweft-indexd.exe");
+    // The binary the registered service runs, from its service entry; null when it is not installed.
+    internal static string InstalledExecutable
+    {
+        get
+        {
+            try
+            {
+                using var key = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\Services\PathweftIndex");
+                if (key?.GetValue("ImagePath") is not string image) return null;
+                image = Environment.ExpandEnvironmentVariables(image.Trim());
+                return image.StartsWith('"') ? image[1..Math.Max(1, image.IndexOf('"', 1))] : image.Split(' ')[0];
+            }
+            catch (Exception ex) when (ex is System.Security.SecurityException or UnauthorizedAccessException or IOException) { return null; }
+        }
+    }
     internal static bool Shipped => File.Exists(ShippedExecutable);
-    internal static bool Installed => File.Exists(InstalledExecutable);
+    internal static bool Installed => InstalledExecutable is { } path && File.Exists(path);
 
     // True when the installed service binary differs from the one this Pathweft ships.
     internal static bool UpdateAvailable
     {
         get
         {
-            if (!Shipped || !Installed) return false;
-            try { return !Hash(ShippedExecutable).AsSpan().SequenceEqual(Hash(InstalledExecutable)); }
+            if (!Shipped || InstalledExecutable is not { } installed || !File.Exists(installed)) return false;
+            if (!Path.GetFullPath(installed).Equals(Path.GetFullPath(ShippedExecutable), StringComparison.OrdinalIgnoreCase)) return true; // the earlier separate copy
+            try { return !Hash(ShippedExecutable).AsSpan().SequenceEqual(Hash(installed)); }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return false; }
         }
     }

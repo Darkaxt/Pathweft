@@ -1,6 +1,6 @@
 # Pathweft specification
 
-Version 1.43 - 2026-11-19. Owner: Darkaxt.
+Version 1.44 - 2026-11-19. Owner: Darkaxt.
 
 ### Read-only MCP expansion (S48)
 
@@ -2382,12 +2382,28 @@ documents, hydrating cloud files, starting indexers or installing components.
 | CONTENT-05 | Expose content search through Pathweft's existing browsing/search workflow with clear selected-root coverage, freshness and filename-versus-content semantics. Return original file identity and matching line/page/sheet/cell/slide/paragraph locations; navigate via the appropriate original-file viewer/open boundary where supported. A cached index can answer while its source is offline, but never claim the original is accessible or the result is freshly verified. Do not silently hydrate files merely to draw result rows. |
 | CONTENT-06 | Qualify a real folder-toggle -> extraction -> persisted strings/location index -> query -> original-location workflow, including current badges, changed/deleted/renamed files, mixed supported/unsupported formats, large/actively appended JSONL, extraction failure, offline/cloud-cache independence and restart recovery. Measure index size, query/update latency and peak/idle CPU/memory on representative corpora; establish concrete resource budgets and bounded background ownership before acceptance. Verify settings scope, overlapping roots, disable/purge, cancellation/app-exit cleanup, themes/scaling and source preservation. S19 owns normal release, independent retrieval and applicable installed verification after implementation is separately authorized. |
 
-Owner decisions 2026-11-19 (spec 1.43), with the index service thread's review of its draft CONTENT-INDEX.md:
-- **Split by where it runs.** The index service keeps what it already runs: the file-name index kept current from the NTFS journal, notifications and scheduled checks, including catch-up after a restart while Pathweft is closed. Pathweft owns everything that runs on its side: content scopes, the extraction worker, the terms/locations store, content queries, badges and the UI. S19 needs no new service operation: Pathweft reconciles a scope against the service's ordinary query results (path, size, modified time) when the service covers it, and lists the folder itself (metadata only, no hydration) when it does not.
-- **Store location.** CONTENT-03 is unchanged: the index lives in Pathweft's own data location, written as the user, so it holds only what the user can read.
+Owner decisions 2026-11-19 (spec 1.44; supersedes the 1.43 split and store bullets, which read the owner's
+storage answer as choosing who owns the store, a reading he corrected: "I selected were the information would be
+stored but not how", and "I understand that this index is also Pathweft"). Owner's words, relayed by the index
+service thread: "S19 should move the installer and its dependencies inside ... "C:\Program Files\Pathweft\services\file_index\"
+in case I add more features in the future ... Once that is corrected, the database with the file paths and the file
+contents should be stored together. For speed C: makes more sense if we can keep, as per our design, the contents
+index under control."
+- **Install location (S19a).** The index service ships and is registered in place from `{app}\services\file_index\`
+  (the `services` folder is for future Pathweft services). Setup stops the service before replacing its files and
+  `install` starts it again; an earlier registration in `%ProgramFiles%\PathweftIndex` is moved there and that copy
+  removed; `{app}\index` is deleted on update. The service name and pipe (`PathweftIndex`) are unchanged.
+- **Store (S19b).** The terms/locations index (CONTENT-03) is stored with the file-path index, owned and queried by
+  the index service on C: (its ProgramData folder, SYSTEM/Administrators only), and kept under control: only the
+  selected scopes, terms and location arrays, no extracted text, its size reported in status and Settings. `content:`
+  is evaluated in the same service query as name, path and date filters, for every client; content hits are
+  filtered by the caller's read access. This replaces CONTENT-03's "Pathweft's configured data/cache location".
+- **Split by where it runs.** Service: change tracking, per-scope queue and staleness, the store and content
+  queries. Pathweft (as the user): the extraction worker, which reads (and hydrates) files and pushes terms with
+  locations to the service; the scope toggle, badges, Settings and results UI.
 - **Cloud folders.** Google Drive (H:, J:) and Tresorit (T:) folders can be content-indexed when the owner enables them; the first read fetches each file through the provider (CONTENT-04). The service still never reads contents.
 - **Extraction.** An on-demand worker mode of Pathweft.exe (like the Office preview worker), below-normal priority, in a job with a memory cap, per-file timeout; it exits when its queue is empty. Text readers for plain text, Markdown, JSON/JSONL, CSV/TSV, logs and source code; the Craft cores' qualified text extraction (the Office worker's `extract` action) for Word, Excel, PowerPoint and PDF formats.
-- **Query.** A `content:` term in the address search (words, prefixes with `*`, "phrases"). Other terms keep their filename/path meaning and are evaluated by the index service on the content matches. Results show the matching locations (line, page, sheet, slide, paragraph).
+- **Query.** A `content:` term in the address search (words, prefixes with `*`, "phrases"). Other terms keep their filename/path meaning, in the same service query. Results show the matching locations (line, page, sheet, slide, paragraph).
 - Post-S19 options from the draft, not S19 requirements: SHA-256 dedup of extracted documents, the shared hash cache, `dupe:`.
 
 No implementation criterion is satisfied yet. Extractor APIs, search granularity,
