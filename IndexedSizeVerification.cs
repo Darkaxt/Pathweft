@@ -52,6 +52,10 @@ public partial class MainWindow
         var previous=IndexedSearch.ServiceOverride;IndexedSearch.ServiceOverride=new IndexServiceClient(fake.Name);
         try
         {
+            // SEARCH-10: the folder was just written, so the index may not have it yet: its size is measured
+            var fresh=await IndexedSearch.FolderSizesAsync([folder],CancellationToken.None);
+            check(fresh.Count==0,"A folder written in the last two seconds is not taken from the index (SEARCH-10)");
+            Directory.SetLastWriteTimeUtc(folder,DateTime.UtcNow-TimeSpan.FromMinutes(1)); // settled, as after the index caught up
             var totals=await IndexedSearch.FolderSizesAsync([folder,Path.Combine(fixture,"absent")],CancellationToken.None);
             check(totals.Count==1&&totals[folder]==579,"Batched folder-size lookup distinguishes indexed data from absent paths");
             await IndexedRows15(root,fixture,folder,check);
