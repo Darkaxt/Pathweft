@@ -19,6 +19,7 @@ preview fix PREVIEW-39 (issue #4).
 | MCP-05 | Verify with the real built executable as a subprocess: tools/list contains old and new tools with read-only annotations; each new tool answers on a fixture profile and on this PC; invalid arguments, unknown categories, relative paths and missing files give structured errors; Cleanup measurement leaves no files behind and the Maintenance journal, settings and baseline files are byte-identical before and after; no elevated or windowed process starts; stdin close mid-request exits promptly. Document the tools in PERFORMANCE-MCP.md. |
 | MCP-06 | Owner direction 2026-11-15 ("There is no point in restricting read-only operations"): read-only queries that Windows restricts to administrators use the approved administrator session. That covers boot diagnostics (`get_boots`, the boot comparison in `get_insights`, and the Boot diagnostics and Insights views), the Security check, and `list_folder` on a folder only administrators can list. The Pathweft window uses its session when one is running. The MCP server starts its own session through the installed on-demand task (ACCESS-08), which never shows a prompt, and ends it when the server exits. Without a session (portable copy, never approved, or turned off) these read as the signed-in user, as before, and say so. The session adds read-only worker actions only; nothing is changed. Verify that the worker's boot action exists, that an unapproved MCP launches no helper and reports the limit, and that the installed copy's MCP reads boots after the update. |
 | MONITOR-24 | Owner feedback 2026-11-15 on the live process table. The process filter, Handle types, End process and a compact column chooser sit on a bar directly above the table, not in the graph toolbar. Right-clicking the header row opens the column chooser; right-clicking blank space opens nothing. CPU and RAM keep separate column choices, saved in settings across restarts. The analysis footer shows only a history recording problem; the normal retention summary is not shown. |
+| MONITOR-25 | Owner proposal 2026-11-19 ("move the process filter to the top-center area and use it to filter both the graph and the table ... add a pause button? The constant refresh makes it difficult to analyze"); delivered with the S21 release. In the CPU and RAM views the process filter moves from the table bar (MONITOR-24) to the centre of the top toolbar. A non-empty filter applies to the table and to the graph: the graph then plots the summed CPU or memory of the matching processes from the recorded per-process history (the heavier processes sampled every 10 s, so the plot says "recorded matching processes" and never claims full coverage), live and historical ranges alike; clearing it restores the device total. A Pause button beside Now freezes the graph, the table and their values (sampling and history recording continue); Resume or Now catches up to the present. Pause also holds the table's order, so rows do not move while read. Verify filtering of graph and table on live and historical ranges, the coverage label, pause/resume with recording continuing, and the toolbar in dark, light and original themes at 100% and 150%. |
 | PREVIEW-39 | Issue #4: closing an Office preview tolerates a LibreOffice temporary file that is briefly locked; it never throws; the leftover temporary files are removed when the next preview closes after they are released. |
 
 ### Maintenance tweaks by goal with risk colours (S47a)
@@ -2447,7 +2448,7 @@ on-screen tabs hash, and one cache and queue serve the whole app.
 
 ### Browsing productivity and smart destinations (S21)
 
-Planned after S20 and before S19; NOT STARTED. The user registered the Linux
+ACTIVE since 2026-11-19 (owner: "You may start with S21"); after S20, before S19. The user registered the Linux
 comparison's suggested features and the agreed browser-style address dropdown
 as one future stage. This extends existing browsing rather than replacing its
 working commands or importing a whole donor application. Scope registration
@@ -2467,6 +2468,85 @@ does not activate implementation or authorize changes to source/user/remote data
 | BROWSE-10 | Add an explicitly invoked temporary live filter of entries in the current listing, distinct from recursive Everything search. Keep the unified address/search design; no permanently added second search bar. Make scope/state clear, retain hidden-file policy, and restore the unfiltered listing/selection appropriately when dismissed. Qualify typing/keyboard/cancellation, navigation, active background refresh and interaction with search/archive/analysis modes without silently changing recursive search semantics. |
 | BROWSE-11 | Add contextual symbolic-link, hard-link and directory-junction creation with target inspection and honest type/eligibility, separate from existing .lnk shortcuts. Qualify actual Windows/filesystem/privilege/volume support, relative versus absolute targets, conflicts and broken links. Preserve existing non-following traversal/deletion policies; removing a link must not remove its target. Reuse current operation/Undo ownership where applicable and clearly report unsupported combinations instead of substituting copied contents or .lnk files. |
 | BROWSE-12 | Verify every complete registered workflow through its real UI/state/filesystem/terminal/protocol boundaries, including coexistence with S19/S20, errors/cancellation, restart/privacy, source preservation and app-exit cleanup. Inspect any donor's actual code, dependency/license/runtime fit and retain exact adopted pins/notices; Linux feature parity does not imply importing KDE/GNOME runtime infrastructure. Establish measured resource budgets for suggestions, metadata, remote and terminal work; no unbounded corpus/connection polling or performance claims from feature lists. S21 owns one normal final release, corresponding source/notices, independent retrieval and applicable installed verification after implementation is separately authorized. No per-feature intermediate release. |
+
+#### S21 design decisions (2026-11-19, owner start "You may start with S21")
+
+- **BROWSE-01/02 sources.** One suggestion list fed by the open tabs of both panes
+  (switch-to-tab action), every Quick access list (pinned), `RecentFolders`,
+  saved searches and the existing filesystem completion. Matching is
+  case-insensitive on the folder name and the full path, no absolute prefix
+  needed; rank: name prefix, name substring, path substring, then kind order
+  (tab, pinned, saved search, recent, completion) and recency. Equal paths
+  collapse into one row, except that an open tab keeps its own switch row. An
+  empty focused field lists recent destinations. Only completion touches the
+  disk (one directory listing per typed parent, as today); every other source
+  is in memory. A recent row has a remove button that removes only that history
+  entry; Settings > Privacy gets Clear history. Results of an older keystroke
+  never replace newer ones and never touch the draft, caret or focus.
+- **BROWSE-03 storage.** `saved-searches.json` in Pathweft's data folder: name,
+  query, scope folder (or This PC), match options. A Saved searches sidebar
+  section and the address suggestions open one by rerunning it through the
+  normal pane search. Rename, edit and remove change only that entry. Content
+  queries arrive with S19; until then a saved search is a filename/path query.
+- **BROWSE-04 actions.** `actions.json` in the data folder, documented in
+  docs/CUSTOM-ACTIONS.md, edited in Settings > Actions. Fields: name, Fluent
+  glyph, submenu, executable, arguments, working folder, file patterns,
+  applies to files/folders, selection count (one, several, any). Placeholders:
+  `%f` first selected path, `%F` every selected path, `%n`/`%N` names, `%d`
+  current folder; each expands to one argument quoted by the Windows
+  command-line rules. Actions appear in Pathweft's menu under Actions; they run
+  only when clicked; a start failure is shown, the process is not owned past
+  its start (as Open with).
+- **BROWSE-05 profiles.** A folder profile holds view mode, shown columns with
+  order and widths, sort, date grouping, folders first and hidden files. View >
+  Folder view: Save for this folder, Save for this folder and its subfolders,
+  Reset. The nearest saved ancestor that applies to subfolders, or the folder's
+  own profile, wins; otherwise the user's current defaults apply. Existing
+  per-folder sorts and date groups become profiles. Space analysis and search
+  results are never saved into a profile; each pane and tab applies profiles on
+  its own.
+- **BROWSE-06 sync.** Compare with other pane gains Compare subfolders and
+  Compare contents (xxHash3 through the hash cache). The result window lists
+  each difference with a direction (copy left->right, right->left, delete,
+  skip); conflicts (both changed or newer destination) default to skip. Apply
+  runs through the normal transfer engine, deletions to the Recycle Bin, with
+  Undo; nothing runs in the background.
+- **BROWSE-07 storage.** A SQLite database in the data folder keyed by volume
+  serial and NTFS/ReFS file ID (survives rename and move on the volume), with
+  the path stored for display and for filesystems without stable IDs (FAT,
+  network, cloud), where a rename loses the record. Nothing is written into
+  files, alternate streams or sidecars. Tags, Rating and Comment are columns;
+  the live filter (BROWSE-10) accepts `tag:`, `rating:` and `comment:`.
+  Records whose file is gone are shown as stale in Settings and can be pruned.
+- **BROWSE-08 terminal.** Windows Terminal's WPF control with ConPTY (donor
+  inspected and pinned with notices before adoption), hosting the user's
+  PowerShell 7 (falling back to Windows PowerShell) with shell integration:
+  the prompt reports its folder with OSC 9;9 and prompt/command marks with OSC
+  133. The browser follows a reported folder; the terminal follows the browser
+  only while it sits at an empty prompt (Set-Location -LiteralPath). One
+  session per pane, kept across tab switches and hide, ended on close or exit.
+  Archive, search and remote folders show "not a local folder".
+- **BROWSE-09 remote.** SFTP through SSH.NET (MIT); WebDAV through Pathweft's
+  own PROPFIND/GET/PUT/MOVE/DELETE client on HttpClient. Saved connections in
+  `connections.json`; passwords and key passphrases in Windows Credential
+  Manager. SSH host keys: first connection shows the fingerprint and asks;
+  a changed key is refused. TLS uses Windows validation with no bypass.
+  Remote folders browse in a pane under `sftp://` and `webdav(s)://` addresses;
+  preview and open download to a task temp copy; copy and move in both
+  directions go through the transfer window with cancellation. No Undo and no
+  local-path claims for remote items. Mutation tests use local rclone
+  endpoints serving a disposable folder, never user servers.
+- **BROWSE-10 filter.** Ctrl+Shift+F (and View > Filter) shows a filter chip in
+  the address field: typing narrows the current listing by name (and the
+  BROWSE-07 fields); Escape or leaving the folder restores the full listing
+  and keeps the selection that is still visible. Hidden-file policy and
+  background refresh keep applying; recursive search is unchanged.
+- **BROWSE-11 links.** New > Link... creates a symbolic link (file or folder),
+  hard link (file, same volume) or junction (folder, local volume) with an
+  absolute or relative target; unavailable kinds are disabled with the reason
+  (Developer Mode or administrator for symbolic links). Properties shows a
+  link's kind and target, broken links are marked, and deleting a link never
+  touches its target.
 
 Reference behaviors: [Dolphin filtering/saved searches](https://docs.kde.org/stable_kf6/en/dolphin/dolphin/quick-tips.html),
 [Dolphin metadata/terminal panels](https://docs.kde.org/stable_kf6/en/dolphin/dolphin/panels.html),
