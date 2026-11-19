@@ -54,6 +54,9 @@ fn stop(svc: &ScHandle) -> Result<(), String> {
     if state(svc) == SERVICE_STOPPED {
         return Ok(());
     }
+    // The service reports STOPPED before its process has exited (freeing a
+    // large index takes a moment), and the binary stays locked until it has.
+    let process = service_process(svc);
     let mut st = SERVICE_STATUS::default();
     if unsafe { ControlService(svc.0, SERVICE_CONTROL_STOP, &mut st) } == 0 && last_error() != ERROR_SERVICE_NOT_ACTIVE {
         return Err(format!("stopping the service failed: error {}", last_error()));
@@ -61,7 +64,26 @@ fn stop(svc: &ScHandle) -> Result<(), String> {
     if !wait_for(svc, SERVICE_STOPPED, Duration::from_secs(30)) {
         return Err("the service did not stop within 30 s".into());
     }
+    if let Some(h) = process {
+        if unsafe { WaitForSingleObject(h.raw(), 30_000) } != WAIT_OBJECT_0 {
+            return Err("the service process did not exit within 30 s".into());
+        }
+    }
     Ok(())
+}
+
+/// A handle to wait on the service's process, if it is running.
+fn service_process(svc: &ScHandle) -> Option<Handle> {
+    let mut sp = SERVICE_STATUS_PROCESS::default();
+    let mut needed = 0u32;
+    let ok = unsafe {
+        QueryServiceStatusEx(svc.0, SC_STATUS_PROCESS_INFO, &mut sp as *mut _ as *mut u8, std::mem::size_of::<SERVICE_STATUS_PROCESS>() as u32, &mut needed)
+    };
+    if ok == 0 || sp.dwProcessId == 0 {
+        return None;
+    }
+    let h = unsafe { OpenProcess(SYNCHRONIZE, 0, sp.dwProcessId) };
+    (!h.is_null()).then(|| Handle(h))
 }
 
 fn ensure_data_dir() -> Result<(), String> {

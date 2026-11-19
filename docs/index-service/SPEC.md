@@ -47,11 +47,35 @@ completes and swaps; live service reports per-volume `ready` with a moving USN.
 listed recursively on a background thread in Windows background-priority mode,
 impersonating the user who added them (so the user's drive mappings and
 credentials apply). A rescan builds a new tree and swaps it in; the old tree keeps
-answering. Reparse points are not followed. Default rescan interval 6 h, plus an
-explicit `rescan`. Nothing is scanned by default; T: is never indexed unless the
+answering. Reparse points are not followed. A full rescan runs at start-up, on an
+explicit `rescan` and after a notification overflow. Nothing is scanned by default; T: is never indexed unless the
 owner adds it.
+While the service runs, each folder root is followed through Windows change
+notifications (`ReadDirectoryChangesW` on the whole tree, opened as the same
+user): the folders containing changed paths are re-listed and the difference is
+applied, so additions, deletions, renames and size or date changes appear without
+a rescan. Notifications start before the scan, so changes made during it are
+applied when it finishes. A lost-notification overflow triggers a full rescan; a
+root whose notifications cannot start or stop working keeps the scheduled checks.
+Notifications miss some changes (a share does not forward changes made on the
+server itself), so every folder is also listed again on its own adaptive
+schedule: after half the time since it last changed, at least every 15 minutes
+and at most every `rescan_minutes` (default 6 h). The folder's own modified time
+seeds the schedule when it is believable (after 2000, not in the future); a check
+that finds a change resets the folder to 15 minutes; a subfolder whose entry
+changed is checked at once (owner, 2026-11-18: "make it learn how often a branch
+is updated and refresh that path ... by a minimum of 15 minutes and a maximun of 6
+hours").
+After a service restart the first scan still runs from scratch (owner, 2026-11-18:
+"lets assume that challenge, delayed update for cloud services after a restart.
+As long as we can monitor updates while running").
 *Accept:* a folder root added through the CLI reaches `ready` with items, queries
-return its entries, and queries stay responsive while it scans.
+return its entries, and queries stay responsive while it scans. While running,
+files created, modified, renamed and deleted below a folder root, and a folder
+created with content, are reflected in queries within seconds without a rescan.
+A change that produces no notification is picked up by the folder's scheduled
+check: within 15 minutes for a folder that changed recently, within 6 hours at
+most.
 
 **IDX-04 Queries never wait on indexing.** Each volume or folder root is a separate
 store with its own lock. Indexing holds a store's write lock only to apply a
@@ -74,8 +98,17 @@ tighter than AND), `!` = NOT, `< >` grouping, `"..."` quoting (with `""` for a
 literal quote), `*`/`?` wildcards (whole-name match), substring otherwise; a term
 containing `\` matches the full path; modifiers `path:` `nopath:` `case:` `nocase:`
 `ww:` `wfn:` `regex:` `file:` `folder:` applied to a term or a group, standalone
-`file:`/`folder:`, `ext:a;b`, and `size:` comparisons. Unsupported functions
-return an explicit error, never a silently different result.
+`file:`/`folder:`, `ext:a;b`, `size:` comparisons, dates and `parent:` (Pathweft
+request 2026-11-19). `dm:`/`datemodified:` and `dc:`/`datecreated:` take `today`, `yesterday`,
+`thisweek`, `lastweek`, `thismonth`, `lastmonth`, `thisyear`, `lastyear`, `YYYY`,
+`YYYY-MM` or `YYYY-MM-DD` (`/` also accepted), a range `a..b` (both ends
+inclusive) or `>`, `>=`, `<`, `<=`, `=` one of those. Days are local-time days
+(daylight saving applied by Windows), weeks start on Monday, and an unknown time
+never matches. `parent:<folder>` matches the folder's direct children only
+(a drive, a folder-root path or a UNC root also works); a folder that is not
+indexed matches nothing.
+Unsupported functions (`dupe:`, `content:`, ...) return an explicit error, never
+a silently different result.
 *Accept:* unit tests cover parsing and matching for every listed construct,
 including `IndexedQuery.Compose` output and `FolderExpression`; live parity on
 sample queries against Everything.
@@ -121,6 +154,9 @@ sizes, folder add/remove, rescan, bench, churn and Everything comparison.
 **IDX-10 Compact memory.** Per entry: a fixed 40-byte record plus the UTF-8 name.
 Target: process private bytes at most half of Everything's working set for the
 same NTFS volumes. *Accept:* measured and reported, with the Everything figure.
+Owner revision (2026-11-18): the half target is advisory; any footprint is
+accepted while the service improves on Everything ("as long as it is an
+improvement over Everything, I accept whatever resources it may be using").
 
 **IDX-11 Metadata only.** The service never reads file contents and never opens a
 file for data access. Volume reads cover only MFT records. Directory and security

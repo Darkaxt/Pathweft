@@ -12,6 +12,9 @@ is recorded in SPEC.md.
 | IS3 disposable | Elevated self-test on a disposable VHDX via the admin broker | IDX-02, IDX-04, IDX-06, IDX-07, IDX-14 | Self-test JSON report; VHDX removed |
 | IS4 install + measure | Install through the broker; live status, parity, churn latency, memory | IDX-01, IDX-02, IDX-03, IDX-08, IDX-09, IDX-10, IDX-12 | MEASUREMENTS.md |
 | IS5 integration | Integration note; message to the Pathweft thread | IDX-13 | INTEGRATION.md, message sent |
+| IS6 folder changes | Follow folder roots with change notifications while running (owner request 2026-11-18) | IDX-03 (live changes) | Unit tests; console-mode test on a local folder root; installed service log on the real roots |
+| IS7 adaptive checks | Per-folder adaptive re-listing, 15 min to 6 h, replacing the fixed full rescan (owner request 2026-11-18) | IDX-03 (scheduled checks) | Unit tests; console-mode test with a short schedule; installed service log (schedule summary, changes found by a scheduled check on the share) |
+| IS8 query additions | `dm:`/`dc:` date filters and `parent:` (Pathweft thread request 2026-11-19, to replace Everything completely) | IDX-05 (dates, parent) | Unit tests; installed service queries |
 
 ## Ledger
 
@@ -20,8 +23,11 @@ is recorded in SPEC.md.
 | IS1 | COMPLETE (source) | – | – | Readiness record below |
 | IS2 | COMPLETE | – | – | IS2 record below |
 | IS3 | COMPLETE | – | – | IS3 record below |
-| IS4 | ACTIVE | IDX-10: 677 MB private against a 565 MB target. Needs the owner's decision: accept, or trade timestamp precision or attribute bits | – | IS4 record below; `MEASUREMENTS.md` |
-| IS5 | ACTIVE (parallel documentation only) | – | – | `INTEGRATION.md`; message to the Pathweft thread |
+| IS4 | COMPLETE | – (IDX-10 footprint accepted by the owner 2026-11-18) | – | IS4 record below; `MEASUREMENTS.md` |
+| IS5 | COMPLETE | – | – | `INTEGRATION.md`; message sent to the Pathweft thread 2026-11-18 |
+| IS6 | COMPLETE | – | – | IS6 record below |
+| IS7 | ACTIVE (code verified and installed; real-share evidence pending) | – | – | IS7 record below |
+| IS8 | ACTIVE | – | – | IS8 record below |
 
 ## IS1 readiness record (2026-11-18)
 
@@ -138,3 +144,101 @@ Continued (same day):
   volume and keeps it `offline` until restart, logging a memory line every 15 s
   retry; folder-root rescans after the restart took 6–8× longer than the first
   scans, cause not established.
+
+## IS6 record (2026-11-18)
+
+Owner: folder-root rescans after a restart may stay delayed, "as long as we can
+monitor updates while running". Folder modified times were checked first and are
+not a usable change signal: on H: `Roms\Nintendo - Switch 2` (2026-11-16 01:02)
+is newer than `Roms` (00:03), so changes do not propagate upwards, and every T:
+folder reports 1970/1980.
+
+Source: `watch.rs` (watcher thread per root, `ReadDirectoryChangesW` with a 64 KB
+buffer, overflow -> rescan, failure -> rescans only; `reconcile` re-lists the
+folders containing changed paths and applies additions, removals with their
+subtrees, updates and new subtrees), `scan.rs` (shared `list_dir`/`walk`; the
+watcher starts before the scan, its changes are applied after it and then as they
+arrive). A passive 2-minute probe started watchers on H:, J:, T: and the share
+without error but saw no events, so delivery on those drives is not yet observed.
+
+Validation: ticket `134347a3` (renews `c7328f39`). Attempt 1 `cargo test`: 24/24
+(5 new `watch::` tests: adds/removals/updates/renames match a rescan, subtree
+removal, no-op listing, case-only rename, notification parsing), no warnings.
+Attempt 2 release build exit 0, no warnings. Console-mode end-to-end test on a
+local folder root (`pathweft-indexd console`, private pipe, no NTFS volumes):
+9/9 pass. Created, modified, renamed and deleted files; a folder renamed with
+content; a folder moved in with nested content; a folder deleted with its
+subtree. All appeared in queries without a rescan; batches were applied about
+1.3 s after the changes, and the folder size matched the remaining files.
+Installed through the admin broker (exit 0); the installed service logged
+"watching for changes" for H:, J:, T: and the share at start-up.
+After the install (service restart 22:04 UTC) the first scans finished while
+watching: H: 386,708 entries in 163 s, T: 174,700 in 122 s, J: 7, the share
+30,204 in 1,098 s (one folder could not be listed). With every root loaded the
+service used 713 MB private; the self-test's W: entry was gone.
+From the end of the scans to 22:36 UTC no change batch, overflow or watcher
+error was logged for any folder root, so delivery of notifications from Google
+Drive, Tresorit and the SMB share is still not observed. Resolution condition:
+a "changes in" line for that root in `service.log` after a file is saved or
+renamed there. Until then those roots are covered at least by the periodic
+rescans.
+Owner test, 2026-11-18 23:11 UTC: renamed `H:\My Drive\Roms\Nintendo - Switch 2\Pokopia.nup`
+to `[0400A3A01EE4C000] Pokopia.nup`. The service logged "H:: 2 changes in 1 folders
+(1 added, 1 removed, 0 updated) in 167 ms" and the query returned the new path
+only, so Google Drive (H:) delivery is observed. T: and the share remain
+unobserved; they keep the periodic-rescan fallback.
+Canary test (owner's suggestion, 2026-11-18 23:14 UTC): a small file was created,
+renamed and deleted in `T:\`, `T:\Documents`, the share root and `Staging` on the
+share. Every step appeared in queries within 1-2 s, and each was logged as a
+change batch; no canary file remained. T: and the share therefore deliver
+notifications for changes made through them.
+
+Gap found on the share: `.music-lifecycle-recovery\.music-lifecycle-state-checkpoint`
+was rewritten at 22:45:04 UTC (178,195 bytes), after the scan, but no batch was
+logged and the index still holds 178,192 bytes. That file is written by a process
+on the server itself, not over SMB; Samba apparently does not forward those
+changes to a subtree watch. Such changes are picked up only by the periodic
+rescan (every 360 minutes). Not changed; a shorter `rescan_minutes` for the share
+is the owner's choice.
+
+## IS7 record (2026-11-18)
+
+Owner: instead of fixed rescans, "make it learn how often a branch is updated and
+refresh that path ... by a minimum of 15 minutes and a maximun of 6 hours".
+Source: `sched.rs` (per-folder schedule: interval = half the time since the last
+observed change, clamped to 15 min .. `rescan_minutes`; seeded from believable
+folder modified times; first checks spread over the second half of the
+interval), `watch.rs` (`relist` re-lists folders by key and reports, per folder,
+whether it changed, plus new, missing, unlistable and touched subfolders),
+`scan.rs` (worker loop: notifications first, then due folders in batches of
+256; a full rescan only at start-up, on `rescan` and after an overflow; hourly
+summary in the log). Changes found by notifications also mark their folder as
+recently changed.
+
+Build and install (Rust gate ticket 8de04be8, renewing 134347a3): attempt 1
+(workflow 2758f16f) failed two watch tests because `relist` could not build the
+root folder's path (`full_path` does not resolve the root record); correction 1
+uses the store name for the root. Attempt 3: `cargo test` 30/30. Attempt 4: the
+release build passed but installing failed with a sharing violation (os error
+32): the service reports SERVICE_STOPPED before its process has exited while it
+frees about 700 MB; correction 2 makes `install` wait for that process
+(QueryServiceStatusEx + OpenProcess SYNCHRONIZE) (5c6ed7c). Attempts 5 and 6:
+release build and `cargo test` 30/30 (19 lib + 11 daemon), no warnings. Installed
+through the admin broker (exit 0: "stopping the running service… installed
+binaries… service running"); service started 2026-11-18T23:38:04Z. Schedules
+after the first scans: J: 7 folders (0 at least hourly), T: 17,766 (0), H: 86,821
+(2).
+
+## IS8 record (2026-11-19)
+
+The Pathweft thread asked for `dm:`/`dc:` (today, yesterday, thisweek, lastweek,
+thismonth, YYYY-MM-DD, ranges, `>`/`<`) and `parent:<folder>` (direct children
+only) so the next Pathweft release can replace Everything completely; `dupe:`
+and similar may stay refused. Source: `query.rs` (`Node::Date` with UTC FILETIME
+bounds of local midnights, `Node::Parent` resolved like path terms to
+`Node::Children`, date parser with an injected "today"; also `lastmonth`,
+`thisyear`, `lastyear`, `YYYY`, `YYYY-MM`, `>=`, `<=`, `=` and the long forms
+`datemodified:`/`datecreated:`), `ffi.rs` (GetLocalTime,
+TzSpecificLocalTimeToSystemTime, SystemTimeToFileTime). Weeks start on Monday;
+unknown times never match. Docs: SPEC IDX-05, PROTOCOL, INTEGRATION (also the
+install and private-instance facts the Pathweft thread asked about).

@@ -10,6 +10,8 @@ pub struct FolderRoot {
     /// SID of the user who added it; the scan runs with that user's token and
     /// only that user sees the results.
     pub owner: String,
+    /// Longest time between two checks of any folder below the root; folders
+    /// that change are checked more often, down to every 15 minutes.
     #[serde(default = "default_rescan")]
     pub rescan_minutes: u32,
 }

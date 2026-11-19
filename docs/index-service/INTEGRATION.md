@@ -35,7 +35,9 @@ has been changed; this note describes the wiring that remains.
 | `IndexedPage(Hits, Total, Engine, FolderSizesIndexed)` | `hits`, `total`; Engine `"Pathweft index"`; FolderSizesIndexed = true |
 | SDK error / unanswered Everything | `{"ok":false,"error":…}`, or connect timeout when the service is absent |
 
-Unsupported syntax (date functions such as `dm:`, `dupe:`, …) returns an error
+Date filters (`dm:`, `dc:` and their long forms) and `parent:` are supported;
+see PROTOCOL.md for the accepted date forms (local-time days, weeks start on
+Monday). Other unsupported syntax (`dupe:`, `content:`, …) returns an error
 instead of a different result, so the existing "Everything rejected the query"
 path can show the message as it is.
 
@@ -52,12 +54,28 @@ path can show the message as it is.
    or `pwindex status`), the per-store state and the folder roots, with Add/Remove
    for folder roots. Installing and removing the service needs elevation:
    `pathweft-indexd.exe install` / `uninstall` through Pathweft's existing
-   elevated-session path.
+   elevated-session path. Both are silent (progress lines on stdout, exit code 0
+   on success, 1 with a message on failure, no prompts). `install` over an
+   existing installation stops the service, waits for its process to exit,
+   replaces the binaries and starts it again; the config and folder roots are
+   kept and the roots are rescanned. It grants pipe access to the installing
+   user's SID; when the elevated installer runs as another account, pass
+   `--allow <SID>` (repeatable) for the desktop user. `uninstall` keeps
+   `%ProgramData%\PathweftIndex` (config, log) unless `--purge` is given.
 4. Packaging: ship `pathweft-indexd.exe`, `pwindex.exe` and (optionally)
    `pathweft_index.dll` from `native/pathweft-index` (`cargo build --release`
    through the Rust gate). `install` copies them to
    `%ProgramFiles%\PathweftIndex` and keeps config and logs in
    `%ProgramData%\PathweftIndex`.
+
+5. Private instance (tests, or running without the installed service):
+   `pathweft-indexd.exe console --pipe NAME --volumes "" --config PATH
+   [--exit-after SECS]`, where the config lists
+   `folders: [{path, owner SID, rescan_minutes}]`. No elevation is needed
+   (`--volumes ""` skips raw NTFS volumes), the log goes to stderr only, nothing
+   is written to `%ProgramData%`, and the config file is the only state. Folder
+   roots start scanning after their owner connects (any request, for example
+   `status`).
 
 ## Behaviour Pathweft should know about
 
@@ -73,10 +91,20 @@ path can show the message as it is.
   Tresorit databases or interfaces). No file contents are read anywhere: folder
   scans only enumerate directories, and directory security descriptors are read
   with `FILE_FLAG_OPEN_NO_RECALL`.
-- Folder roots are rescanned from scratch after a service restart and every
-  `rescan_minutes` (default 360). Until a root's first scan finishes it appears
+- Folder roots are scanned from scratch after a service restart, on `rescan`
+  and after a notification overflow. Until a root's first scan finishes it appears
   in `updating_stores` and contributes nothing. Measured first scans: H: 386 k
   entries in 2–15 min, T: 175 k in 1.5–14 min, the network share in 21 min.
+- While the service runs, folder roots follow Windows change notifications:
+  created, modified, renamed and deleted files and folders appear in queries
+  within about a second, without a rescan (`service.log` records each applied
+  batch as "N changes in M folders"). If notifications overflow, the root is
+  rescanned. Changes that produce no notification (for example files written on
+  the share's server itself) are found by scheduled checks: each folder is
+  listed again after half the time since it last changed, between every 15
+  minutes and every `rescan_minutes` (6 h), so busy folders catch up within
+  15 minutes and quiet ones cost almost nothing. `service.log` reports an hourly
+  summary of these checks.
 - Not-always-attached NTFS volumes (F:, I:) are picked up within 30 s of
   appearing; a volume that disappears after loading is reported `offline` and
   retried every 15 s.

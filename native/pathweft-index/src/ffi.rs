@@ -130,6 +130,19 @@ pub struct OVERLAPPED {
 
 #[repr(C)]
 #[derive(Clone, Copy, Default)]
+pub struct SYSTEMTIME {
+    pub year: u16,
+    pub month: u16,
+    pub day_of_week: u16,
+    pub day: u16,
+    pub hour: u16,
+    pub minute: u16,
+    pub second: u16,
+    pub milliseconds: u16,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy, Default)]
 pub struct FILETIME {
     pub low: u32,
     pub high: u32,
@@ -212,6 +225,17 @@ pub struct SERVICE_STATUS {
     pub dwWaitHint: u32,
 }
 
+#[repr(C)]
+#[derive(Default)]
+pub struct SERVICE_STATUS_PROCESS {
+    pub status: SERVICE_STATUS,
+    pub dwProcessId: u32,
+    pub dwServiceFlags: u32,
+}
+
+pub const SC_STATUS_PROCESS_INFO: u32 = 0;
+pub const SYNCHRONIZE: u32 = 0x0010_0000;
+
 pub type ServiceMain = unsafe extern "system" fn(argc: u32, argv: *mut *mut u16);
 pub type HandlerEx = unsafe extern "system" fn(control: u32, event: u32, data: *mut c_void, context: *mut c_void) -> u32;
 
@@ -267,7 +291,28 @@ extern "system" {
     pub fn WaitNamedPipeW(name: *const u16, timeout: u32) -> BOOL;
     pub fn LocalFree(mem: *mut c_void) -> *mut c_void;
     pub fn CreateDirectoryW(path: *const u16, sa: *const SECURITY_ATTRIBUTES) -> BOOL;
+    pub fn ReadDirectoryChangesW(h: HANDLE, buf: *mut c_void, len: u32, subtree: BOOL, filter: u32, returned: *mut u32, ov: *mut OVERLAPPED, completion: *const c_void) -> BOOL;
+    pub fn CreateEventW(sa: *const SECURITY_ATTRIBUTES, manual_reset: BOOL, initial: BOOL, name: *const u16) -> HANDLE;
+    pub fn ResetEvent(h: HANDLE) -> BOOL;
+    pub fn WaitForSingleObject(h: HANDLE, ms: u32) -> u32;
+    pub fn OpenProcess(access: u32, inherit: BOOL, pid: u32) -> HANDLE;
+    pub fn GetLocalTime(st: *mut SYSTEMTIME);
+    pub fn TzSpecificLocalTimeToSystemTime(tz: *const c_void, local: *const SYSTEMTIME, utc: *mut SYSTEMTIME) -> BOOL;
+    pub fn SystemTimeToFileTime(st: *const SYSTEMTIME, ft: *mut FILETIME) -> BOOL;
+    pub fn GetOverlappedResult(h: HANDLE, ov: *mut OVERLAPPED, transferred: *mut u32, wait: BOOL) -> BOOL;
+    pub fn CancelIoEx(h: HANDLE, ov: *mut OVERLAPPED) -> BOOL;
 }
+
+pub const FILE_FLAG_OVERLAPPED: u32 = 0x4000_0000;
+pub const FILE_NOTIFY_CHANGE_FILE_NAME: u32 = 0x1;
+pub const FILE_NOTIFY_CHANGE_DIR_NAME: u32 = 0x2;
+pub const FILE_NOTIFY_CHANGE_ATTRIBUTES: u32 = 0x4;
+pub const FILE_NOTIFY_CHANGE_SIZE: u32 = 0x8;
+pub const FILE_NOTIFY_CHANGE_LAST_WRITE: u32 = 0x10;
+pub const FILE_NOTIFY_CHANGE_CREATION: u32 = 0x40;
+pub const WAIT_OBJECT_0: u32 = 0;
+pub const ERROR_OPERATION_ABORTED: u32 = 995;
+pub const ERROR_NOTIFY_ENUM_DIR: u32 = 1022;
 
 #[link(name = "advapi32")]
 extern "system" {
@@ -290,6 +335,7 @@ extern "system" {
     pub fn StartServiceW(service: HANDLE, argc: u32, argv: *const *const u16) -> BOOL;
     pub fn ControlService(service: HANDLE, control: u32, status: *mut SERVICE_STATUS) -> BOOL;
     pub fn QueryServiceStatus(service: HANDLE, status: *mut SERVICE_STATUS) -> BOOL;
+    pub fn QueryServiceStatusEx(service: HANDLE, level: u32, buffer: *mut u8, size: u32, needed: *mut u32) -> BOOL;
     pub fn DeleteService(service: HANDLE) -> BOOL;
     pub fn CloseServiceHandle(h: HANDLE) -> BOOL;
     pub fn ChangeServiceConfig2W(service: HANDLE, level: u32, info: *mut c_void) -> BOOL;

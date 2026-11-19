@@ -21,12 +21,14 @@ sizes). Raw logs: `C:\ProgramData\PathweftIndex\service.log`.
 | Typical query (round trip) | 85–225 ms p50 | 0.4–1.3 s via `es.exe` including process start, before the hang; then no answer within 10 s |
 | Query during heavy churn | 127/127 answered, p50 213 ms, p95 246 ms, max 272 ms | 5 of 9 queries timed out (> 5 s), then no answer within 10 s for the next hour (11:47 to 12:42 local, still hung) |
 
-**IDX-10 is not met.** The target is service private memory at most half of
+**IDX-10: accepted by the owner over the target.** The target is service private memory at most half of
 Everything's working set: 565 MB against 1,131 MB. The service uses 677 MB for
 NTFS, 43% below Everything's working set and 2.3× lower than its own first
 build, but 112 MB over the target. Getting below it would need less precise
 timestamps or dropping attribute bits (cloud-placeholder flags among them).
-That trade was not made without the owner's decision.
+That trade was not made. The owner then accepted the footprint (2026-11-18:
+"as long as it is an improvement over Everything, I accept whatever resources
+it may be using"). With every root loaded after the IS6 install: 713 MB private.
 
 ## Memory
 
