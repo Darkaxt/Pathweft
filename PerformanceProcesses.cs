@@ -123,16 +123,16 @@ internal sealed partial class PerformancePanel
     PerformanceProcessRow PinnedTarget=>ReferenceEquals(table.ItemsSource,processItems)&&table.SelectedItem is PerformanceProcessRow {Pinned:true,Observed:true} row?row:null;
     readonly Dictionary<(int Pid,long Started),PerformanceProcessRow> processRows=new();
     readonly ObservableCollection<PerformanceProcessRow> processItems=new();
-    readonly TextBox processFilter=new(){MinWidth=150,MaxWidth=220,ToolTip="Filter processes, PIDs and visible metadata"};
+    readonly TextBox processFilter=new(){MinWidth=120,MaxWidth=300,ToolTip="Filter processes, PIDs and visible metadata"};
     readonly CancellationTokenSource metadataStopped=new();
     Task metadataWork=Task.CompletedTask,metadataRead=Task.CompletedTask;
     void BuildProcessControls()
     {
         columnsButton.SetResourceReference(StyleProperty,"AuxiliaryAction");
         AutomationProperties.SetName(columnsButton,"Choose process columns");
-        AutomationProperties.SetName(processFilter,"Filter CPU processes");
+        AutomationProperties.SetName(processFilter,"Filter processes in the graph and table");
         processFilter.SetResourceReference(StyleProperty,"PerformanceFilter");
-        processFilter.TextChanged+=(_,_)=>SortRows();
+        processFilter.TextChanged+=(_,_)=>ProcessFilterChanged();
         var rowStyle=new Style(typeof(ListViewItem),table.TryFindResource(typeof(ListViewItem)) as Style);
         rowStyle.Setters.Add(new Setter(AutomationProperties.ItemStatusProperty,new Binding("State")));
         table.ItemContainerStyle=rowStyle;

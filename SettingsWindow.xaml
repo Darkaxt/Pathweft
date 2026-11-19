@@ -348,6 +348,38 @@
           </StackPanel>
         </Border>
 
+        <Border x:Name="ActionsCard" Style="{StaticResource Card}">
+          <StackPanel>
+            <TextBlock Text="Actions" Style="{StaticResource H}"/>
+            <TextBlock Style="{StaticResource Hint}" Text="Your own commands, in Pathweft's menu under Actions for the files and folders they apply to. They run only when you click them. Kept in actions.json in the settings folder; see docs/CUSTOM-ACTIONS.md."/>
+            <StackPanel x:Name="ActionRows" AutomationProperties.Name="Custom actions"/>
+            <WrapPanel Margin="0,2,0,0">
+              <Button x:Name="AddAction" Content="Add action…" Style="{StaticResource Tab}" Click="AddAction_Click"/>
+              <Button x:Name="OpenActionsJson" Content="Open JSON" Style="{StaticResource Tab}" Click="OpenActionsJson_Click"/>
+            </WrapPanel>
+            <TextBlock x:Name="ActionsStatus" Style="{StaticResource Hint}" Margin="0,6,0,0" AutomationProperties.LiveSetting="Polite"/>
+          </StackPanel>
+        </Border>
+
+        <Border x:Name="PrivacyCard" Style="{StaticResource Card}">
+          <StackPanel>
+            <TextBlock Text="Privacy" Style="{StaticResource H}"/>
+            <TextBlock Text="History" FontWeight="SemiBold" Margin="0,0,0,6"/>
+            <TextBlock x:Name="HistoryStatus" Style="{StaticResource Hint}" AutomationProperties.LiveSetting="Polite"/>
+            <Button x:Name="ClearHistory" Content="Clear history" Style="{StaticResource Tab}" HorizontalAlignment="Left" Click="ClearHistory_Click"/>
+            <TextBlock Style="{StaticResource Hint}" Text="Forgets the recent folders that the address suggestions and the history menu offer, and the recently closed tabs. Folders, Quick access, saved searches and open tabs stay."/>
+            <TextBlock Text="Tags, ratings and comments" FontWeight="SemiBold" Margin="0,8,0,6"/>
+            <TextBlock x:Name="NotesStatus" Style="{StaticResource Hint}" AutomationProperties.LiveSetting="Polite"/>
+            <ItemsControl x:Name="StaleNotes" AutomationProperties.Name="Records whose file is gone" Margin="0,0,0,6">
+              <ItemsControl.ItemTemplate><DataTemplate>
+                <TextBlock Text="{Binding}" TextTrimming="CharacterEllipsis" ToolTip="{Binding}" Margin="0,0,0,2"/>
+              </DataTemplate></ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <Button x:Name="PruneNotes" Content="Forget missing" Style="{StaticResource Tab}" HorizontalAlignment="Left" Click="PruneNotes_Click"/>
+            <TextBlock Style="{StaticResource Hint}" Text="Kept in notes.sqlite in Pathweft's settings folder, never written into your files. A record follows its file when it is renamed or moved on the same NTFS or ReFS drive; elsewhere a rename loses it, and it is listed here."/>
+          </StackPanel>
+        </Border>
+
         <Border x:Name="StorageCard" Style="{StaticResource Card}">
           <StackPanel>
             <TextBlock Text="Storage" Style="{StaticResource H}"/>

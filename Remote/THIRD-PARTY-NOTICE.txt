@@ -1,0 +1,8 @@
+Pathweft remote browsing (BROWSE-09) uses:
+
+SSH.NET 2026.0.1
+NuGet package: SSH.NET (https://www.nuget.org/packages/SSH.NET/2026.0.1)
+Source: https://github.com/sshnet/SSH.NET
+License: MIT (https://github.com/sshnet/SSH.NET/blob/develop/LICENSE)
+
+The WebDAV client is Pathweft's own code on .NET HttpClient; no third-party WebDAV library is included.

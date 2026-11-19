@@ -18,7 +18,7 @@ internal static class ColumnCatalog
         Drives => new[] { "Capacity", "Free space", "Filesystem", "Connection", "Location" },
         Space => new[] { "Modified", "Created", "Type", "Version", "Files", "Folders" },
         Archive => new[] { "Modified", "Type", "Size", "Attributes" },
-        _ => new[] { "Modified", "Type", "Size", "Created", "Accessed", "Attributes", "Version", "Owner" },
+        _ => new[] { "Modified", "Type", "Size", "Created", "Accessed", "Attributes", "Version", "Owner", "Tags", "Rating", "Comment", "Link target" },
     };
 
     internal static bool IsHash(string key) => key.StartsWith('#');
@@ -38,6 +38,7 @@ internal static class ColumnCatalog
     {
         "Modified" or "Created" or "Accessed" => 150, "Type" => 50, "Size" => 80, "Version" => 90, "Attributes" => 80, "Owner" => 160,
         "Files" or "Folders" => 70,
+        "Tags" => 140, "Rating" => 80, "Comment" => 220, "Link target" => 260,
         "#CRC-32" => 80, "#CRC-64" or "#XXH64" or "#XXH3-64" => 140, "#MD5" => 250, "#SHA-1" => 300,
         _ when IsHash(key) => 420,
         _ when IsProperty(key) => ShellProperties.Find(key)?.Width ?? 140,
@@ -99,6 +100,12 @@ internal static class ColumnCatalog
             case "Size": return e.SizeText;
             case "Type": return e.Ext;
             case "Version": return e.Version;
+            // BROWSE-07: Pathweft's own notes, read from memory
+            case "Tags": return FileNotes.Find(e.Path)?.TagText ?? "";
+            case "Rating": return FileNotes.Find(e.Path)?.Stars ?? "";
+            case "Comment": return FileNotes.Find(e.Path)?.Comment ?? "";
+            // BROWSE-11: the link's kind and target, marked when broken
+            case "Link target": return Links.Describe(e.Path, e.Attributes);
         }
         if (IsHash(key))
         {
@@ -127,6 +134,7 @@ internal static class ColumnCatalog
             case "Accessed": return x.Accessed.CompareTo(y.Accessed);
             case "Files": return ((x as SpaceEntry)?.Files ?? -1).CompareTo((y as SpaceEntry)?.Files ?? -1);
             case "Folders": return ((x as SpaceEntry)?.Folders ?? -1).CompareTo((y as SpaceEntry)?.Folders ?? -1);
+            case "Rating": return (FileNotes.Find(x.Path)?.Rating ?? 0).CompareTo(FileNotes.Find(y.Path)?.Rating ?? 0);
         }
         if (IsProperty(key) && x.SortValue(key) is { } a && y.SortValue(key) is { } b && a.GetType() == b.GetType()) return a.CompareTo(b);
         if (IsProperty(key) && (x.SortValue(key) == null) != (y.SortValue(key) == null)) return x.SortValue(key) == null ? -1 : 1;
@@ -148,6 +156,7 @@ internal static class ColumnCatalog
         "Space used" => e.DisplaySize < 0 ? "" : e.DisplaySize.ToString(),
         "Capacity" => e.HasDriveCapacity ? e.DriveTotal.ToString() : "",
         "Free space" => e.HasDriveCapacity ? e.DriveFree.ToString() : "",
+        "Rating" => FileNotes.Find(e.Path)?.Rating is > 0 and var r ? r.ToString() : "",
         "Filesystem" => e.DriveFormat, "Connection" => e.DriveConnection, "Location" => e.DriveLocation,
         _ when IsHash(key) => HashValue(e, key) is { } hash ? Case(hash) : "",
         _ => Text(e, key),

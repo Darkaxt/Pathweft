@@ -50,7 +50,7 @@ public class Entry : INotifyPropertyChanged
     // A folder, or a shortcut to one: where a middle-click opens and a drop on the row lands. The shortcut is
     // read once, the first time it is asked (a drag asks on every move).
     string shortcutFolder;
-    public string FolderTarget => IsDir ? Path : !Path.EndsWith(".lnk", StringComparison.OrdinalIgnoreCase) ? null
+    public string FolderTarget => IsDir ? Path : !Path.EndsWith(".lnk", StringComparison.OrdinalIgnoreCase) || RemoteAddress.IsRemote(Path) ? null
         : (shortcutFolder ??= MainWindow.ShortcutFolder(Path) ?? "") is { Length: > 0 } t ? t : null;
     public string Location { get; init; } = ""; // search results: the folder it was found in, relative to where the search started
     public string Where => Location == "" ? "" : "   in " + Location;
@@ -367,7 +367,9 @@ public partial class PaneView : UserControl
         InitializeComponent();
         details = List.View;
         SetSort(sortKey, sortDesc);
-        Loaded += (_, _) => SetView(Settings.Views.TryGetValue(Name, out var v) ? v : ViewMode.Details);        List.GotKeyboardFocus += (_, _) => Activated?.Invoke();
+        Loaded += (_, _) => { ApplyStartView(); FolderProfiles.Changed += ProfilesChanged; FileNotes.Changed += NotesChanged; };
+        Unloaded += (_, _) => { FolderProfiles.Changed -= ProfilesChanged; FileNotes.Changed -= NotesChanged; };
+        List.GotKeyboardFocus += (_, _) => Activated?.Invoke();
         PreviewMouseDown += (_, _) => Activated?.Invoke(); // anywhere in the pane: tabs, path, list
         renameTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(GetDoubleClickTime()) };
         renameTimer.Tick += (_, _) => ClickRename();
@@ -622,6 +624,7 @@ public partial class PaneView : UserControl
     {
         if(SpaceAnalyzing){AfterSpace(()=>Navigate(dir,select,record));return;}
         if (dir.Equals(ThisPC, StringComparison.OrdinalIgnoreCase)) { NavigateThisPC(select ?? Dir, record); return; }
+        if (RemoteAddress.IsRemote(dir)) { NavigateRemote(dir, select, record); return; } // BROWSE-09
         if (ArchiveOf(dir) is { } inArchive) { NavigateArchive(dir.TrimEnd('\\'), inArchive, select ?? ChildToward(dir, Dir), record); return; }
         select ??= ChildToward(dir, Dir);
         if (IsServer(dir)) { NavigateServer(dir.TrimEnd('\\'), select, record); return; }
@@ -647,7 +650,7 @@ public partial class PaneView : UserControl
 
         // Show the folder as we last saw it, immediately; the read below replaces it a moment later.
         // Without this, every tab switch waits on the disk — measured at 1.2 s for a cold folder.
-        bool hidden = ShowHidden;
+        bool hidden = ShowsHidden;
         var cached = Cached(di.FullName);
         // A refresh of the folder on screen: its rows are the cached ones, and showing them again would
         // rebuild the list, drop the selection and jump the scroll — every 400 ms in a busy folder.
@@ -739,7 +742,7 @@ public partial class PaneView : UserControl
     {
         lock (listCache)
         {
-            if (!listCache.TryGetValue(path, out var hit) || hit.Hidden != ShowHidden||hit.Administrator!=AdministratorSession.Browsing) return null;
+            if (!listCache.TryGetValue(path, out var hit) || hit.Hidden != ShowsHidden||hit.Administrator!=AdministratorSession.Browsing) return null;
             hit.UsedAt = DateTime.UtcNow.Ticks;
             return hit;
         }
@@ -749,7 +752,7 @@ public partial class PaneView : UserControl
     {
         lock (listCache)
         {
-            if (hidden != ShowHidden) return;
+            if (hidden != ShowsHidden) return;
             listCache[path] = new Listing { Items = list, Stamp = stamp, UsedAt = DateTime.UtcNow.Ticks, Hidden = hidden,Administrator=AdministratorSession.Browsing, Concealed = concealed };
             while (listCache.Count > MaxFolders || listCache.Values.Sum(l => l.Items.Count) > MaxEntries)
             {
@@ -812,7 +815,7 @@ public partial class PaneView : UserControl
             .Concat(tabs.Where(t => t != "" && t != ThisPC && !t.Equals(Dir, StringComparison.OrdinalIgnoreCase)))
             .Concat(items.Where(e => e.IsDir && !e.IsUp).Select(e => e.Path).Take(40))
             .Distinct(StringComparer.OrdinalIgnoreCase).ToList();
-        bool hidden = ShowHidden;
+        bool hidden = ShowsHidden;
         bool administrator=AdministratorSession.Browsing;
         Task.Run(() =>
         {
@@ -842,6 +845,8 @@ public partial class PaneView : UserControl
         VerificationQueryEvents?.Add("NAVIGATE " + path + "\n" + Environment.StackTrace);
 #endif
         LeaveSearch();
+        if(liveFiltering&&!Dir.Equals(path,StringComparison.OrdinalIgnoreCase))StopLiveFilter();
+        LeaveRemote(path);
         loadingListing=-1;
         if (!Dir.Equals(path, StringComparison.OrdinalIgnoreCase) || searchQuery != null) StopFolderWatch();
         if (record && tabs[tab] != "" && !tabs[tab].Equals(path, StringComparison.OrdinalIgnoreCase)) { back.Push(tabs[tab]); fwd.Clear(); }
@@ -851,10 +856,12 @@ public partial class PaneView : UserControl
         ReadOnlyWatermark.Visibility = Visibility.Collapsed;
         ClearFolderFailure();
         Visited?.Invoke(path);
+        if(terminal!=null)Dispatcher.BeginInvoke(SyncTerminal); // BROWSE-08: after an archive root is known
         if(!string.Equals(lastVisitedFolder,path,StringComparison.OrdinalIgnoreCase))
         {lastVisitedFolder=path;FolderVisited?.Invoke(path);}
         // each folder keeps the order it was last sorted in; the rest are by name. Set before its rows are shown.
-        var (key, desc) = Settings.FolderSorts.TryGetValue(path, out var sort) ? sort : ("Name", false);
+        ApplyProfile(path); // BROWSE-05: before the folder is read (hidden files) and sorted
+        var (key, desc) = FolderSort(path);
         if (key != sortKey || desc != sortDesc) ShowSort(key, desc);
         // A reread owns the listing, not the user's address editor. Only actual
         // navigation may replace that text or end its focus/edit lifetime.
@@ -1119,7 +1126,9 @@ public partial class PaneView : UserControl
     /// This PC (Favorites, and Up from a drive): the drives, as rows. Its path is the shell's parsing name, which every
     /// file call refuses, so nothing can be pasted, dropped or created "in" it.
     public const string ThisPC = "::{20D04FE0-3AEA-1069-A2D8-08002B30309D}";
-    public static string NameOf(string path) => path.Equals(ThisPC, StringComparison.OrdinalIgnoreCase) ? "This PC" : System.IO.Path.GetFileName(path.TrimEnd('\\'));
+    public static string NameOf(string path) => path.Equals(ThisPC, StringComparison.OrdinalIgnoreCase) ? "This PC"
+        : RemoteAddress.TryParse(path, out var remote) ? (remote.Path == "/" ? remote.Host : RemotePath.Name(remote.Path))
+        : System.IO.Path.GetFileName(path.TrimEnd('\\'));
 
     // ---- inside a ZIP or TAR (1.0.60): its folders as rows; the path goes on past the archive, "C:\a\b.zip\docs" ----
     /// The archive this pane shows, and the folder inside it ('/'-separated, "" = its top); null on a real folder.
@@ -1142,7 +1151,7 @@ public partial class PaneView : UserControl
     }
 
     /// This PC and the inside of an archive: shown like folders, but nothing can be copied, moved or created "in" them.
-    public static bool IsVirtual(string dir) => dir == ThisPC || ArchiveOf(dir) != null;
+    public static bool IsVirtual(string dir) => dir == ThisPC || RemoteAddress.IsRemote(dir) || ArchiveOf(dir) != null;
 
     void NavigateArchive(string dir, (string Archive, string Inner) at, string select, bool record)
     {
@@ -1174,7 +1183,7 @@ public partial class PaneView : UserControl
             }
             at = reading; ArchiveRoot = at; // the archive really read (a nested one's working copy)
             string changeReason = Archive.ChangeReason(at.Archive);
-            var shownMembers = items.Where(i => FileVisibility.Visible(i.Name, i.Attributes, ShowHidden)).ToList();
+            var shownMembers = items.Where(i => FileVisibility.Visible(i.Name, i.Attributes, ShowsHidden)).ToList();
             ShowItems(shownMembers.Select(i => new Entry { Name = i.Name, Path = dir + "\\" + i.Name, IsDir = i.IsDir, Size = i.Size, Modified = i.Modified, Crc = i.Crc,
                 ReadOnlyReason = changeReason.Length > 0 ? "Archive contents are read-only: " + changeReason : ReadOnlyIcons.AttributeReason(i.IsDir, i.Attributes), RestrictionChecked = true }).ToList(), select, concealed: items.Count - shownMembers.Count);
             if (pendingSelect != null) ApplyPendingSelect();
@@ -1341,6 +1350,7 @@ public partial class PaneView : UserControl
         if (find.Error != null) { Error?.Invoke(find.Error); return; }
         searchQuery = query;
         searching = true;
+        SyncTerminal();
         int v = ++navVersion;
         SearchLoading(v);
         sizing?.Cancel();
@@ -1348,7 +1358,7 @@ public partial class PaneView : UserControl
         var results = new System.Collections.ObjectModel.ObservableCollection<Entry>();
         ShowItems(results, null);
         string root = Dir;
-        bool hidden = ShowHidden;
+        bool hidden = ShowsHidden;
         await Task.Run(() =>
         {
             var batch = new List<Entry>();
@@ -1548,6 +1558,8 @@ public partial class PaneView : UserControl
         // Closing is the end of this view's ownership, including reads already
         // queued on the dispatcher. A hidden/tray window has not closed.
         ++navVersion;++suggestVersion;
+        CloseRemote();
+        CloseTerminal(); // BROWSE-08: the shell tree ends with the pane
         loadingListing=loadingSearch=-1;addressIsResolving=false;UpdateAddressLoading();
         SizeCache.Invalidated-=SizeInvalidated;
         StopFolderWatch();
@@ -1656,7 +1668,7 @@ public partial class PaneView : UserControl
                 ? $"{items.Count} found for “{searchQuery}”{(searching ? "  ·  searching…" : items.Count >= MaxResults ? $"  ·  stopped at {MaxResults}" : "")}  ·  Esc goes back"
             : view?.Filter != null
                 ? $"{view.Cast<Entry>().Count(e => !e.IsUp):N0} of {folders + files:N0} match “{FilterBox.Text.Trim()}”"
-            : $"{folders} folders  ·  {files} files  ·  {MainWindow.Fmt(total)}{(concealedCount>0&&!ShowHidden?$"  ·  {concealedCount:N0} hidden":"")}{(left==0?"":cached>0?$"  ·  measuring {left} folders ({cached} cached)":$"  ·  measuring {left} folders")}";
+            : $"{folders} folders  ·  {files} files  ·  {MainWindow.Fmt(total)}{(concealedCount>0&&!ShowsHidden?$"  ·  {concealedCount:N0} hidden":"")}{(left==0?"":cached>0?$"  ·  measuring {left} folders ({cached} cached)":$"  ·  measuring {left} folders")}";
         if(indexed)Footer.Text+=" · indexed sizes";
         bool filtered=view?.Filter!=null;
         if(Listed&&loadingListing<0&&!searching&&FolderFailurePanel.Visibility!=Visibility.Visible
@@ -1671,7 +1683,9 @@ public partial class PaneView : UserControl
     {
         Crumbs.Children.Clear();
         var parts = new List<(string Name, string Path)>();
+        bool remote = RemoteAddress.TryParse(Dir, out var remoteAt);
         if (Dir == ThisPC) parts.Add(("This PC", ThisPC));
+        else if (remote) parts.AddRange(RemoteCrumbs(remoteAt));
         else if (!IsServer(Dir))
             for (var d = new DirectoryInfo(Dir); d != null; d = d.Parent)
                 parts.Insert(0, (d.Parent != null ? d.Name : d.Name.TrimEnd('\\').Split('\\')[^1], d.FullName)); // "C:", or the share's name
@@ -1683,6 +1697,7 @@ public partial class PaneView : UserControl
             b.Click += (_, _) => { Navigate(path); List.Focus(); };
             b.PreviewMouseDown += (_, e) => { if (e.ChangedButton == MouseButton.Middle) { OpenInBackgroundTab(path); e.Handled = true; } };
             Crumbs.Children.Add(b);
+            if (remote) continue; // a server's folders are listed by opening them
             // Explorer's chevron: the folders inside this one, to jump sideways without going up first
             var next = i + 1 < parts.Count ? parts[i + 1].Path : null;
             var chevron = new Button
@@ -1697,7 +1712,7 @@ public partial class PaneView : UserControl
 
     async void ShowSubfolders(Button anchor, string folder, string current)
     {
-        bool hidden = ShowHidden;
+        bool hidden = ShowsHidden;
         var opts = new EnumerationOptions { IgnoreInaccessible = true, AttributesToSkip = hidden ? 0 : FileAttributes.Hidden };
         var dirs = await Task.Run(() =>
         {
@@ -1709,7 +1724,7 @@ public partial class PaneView : UserControl
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return new List<string>(); }
         });
-        if (hidden != ShowHidden || dirs.Count == 0) return;
+        if (hidden != ShowsHidden || dirs.Count == 0) return;
         var menu = new ContextMenu { PlacementTarget = anchor, Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom, MaxHeight = 480 };
         foreach (var d in dirs.OrderBy(d => d, ExplorerOrder.Instance))
         {
@@ -2019,6 +2034,7 @@ public partial class PaneView : UserControl
     public void Forward() { if (fwd.Count > 0) { back.Push(Dir); Navigate(fwd.Pop(), record: false); } }
     public void Up()
     {
+        if (RemoteAddress.TryParse(Dir, out var remote)) { if (RemoteParent(remote) is { } parent) Navigate(parent, RemotePath.Name(remote.Path)); return; }
         if (IsServer(Dir) || Dir == ThisPC) return;
         var name = System.IO.Path.GetFileName(Dir.TrimEnd('\\'));
         if (Directory.GetParent(Dir) is { } p) Navigate(p.FullName, name);
@@ -2104,6 +2120,7 @@ public partial class PaneView : UserControl
     }
 
     string UpTarget() =>
+        RemoteAddress.TryParse(Dir, out var remote) ? RemoteParent(remote) :
         IsServer(Dir) || Dir == ThisPC ? null : Directory.GetParent(Dir)?.FullName ?? (Dir.StartsWith(@"\\") ? ServerOf(Dir) : ThisPC);
 
     // ---- selection by pattern (TC's Num+ / Num- / Num*), and "select these" for Compare ----
@@ -2224,6 +2241,7 @@ public partial class PaneView : UserControl
         if(IsWidget&&(e.FolderTarget!=null||Archive.IsArchiveName(e.Path)))
         {WidgetLocationOpened?.Invoke(e.FolderTarget??e.Path);return;}
         if (e.IsUp) Up();
+        else if (RemoteAddress.IsRemote(e.Path)) { if (e.IsDir) Navigate(e.Path); else OpenRemote(e); } // BROWSE-09
         else if (ArchiveRoot != null) { if (e.IsDir || Archive.IsArchiveName(e.Name)) Navigate(e.Path); else OpenArchived?.Invoke(e); }
         else if (!e.IsDir && Archive.IsArchiveName(e.Path)) Navigate(e.Path); // a ZIP or TAR opens like a folder
         else if (e.FolderTarget is { } folder) Navigate(folder); // a shortcut to a folder opens here, as in Explorer
@@ -2256,6 +2274,7 @@ public partial class PaneView : UserControl
 
     public void EditPath()
     {
+        StopLiveFilter();
         PathBox.Text = Dir==ThisPC ? "This PC" : Dir;
         PathBox.Visibility = Visibility.Visible;
         Crumbs.Visibility = Visibility.Hidden;
@@ -2265,6 +2284,7 @@ public partial class PaneView : UserControl
     TextBox PathBox=>FilterBox;
     void EndEditPath()
     {
+        if(liveFiltering){Suggest.IsOpen=false;FilterBox.Visibility=Visibility.Visible;Crumbs.Visibility=Visibility.Hidden;FilterHint.Visibility=FilterBox.Text.Length==0?Visibility.Visible:Visibility.Collapsed;return;}
         if(IsWidget){Suggest.IsOpen=false;FilterBox.Visibility=Visibility.Visible;Crumbs.Visibility=Visibility.Collapsed;FilterHint.Visibility=FilterBox.Text.Length==0?Visibility.Visible:Visibility.Collapsed;return;}
         Suggest.IsOpen=false;FilterHint.Visibility=Visibility.Collapsed;
         PathBox.Visibility=InSearch?Visibility.Visible:Visibility.Collapsed;
@@ -2302,81 +2322,46 @@ public partial class PaneView : UserControl
             }
             return;
         }
+        if(liveFiltering)
+        {
+            switch(e.Key)
+            {
+                case Key.Escape: StopLiveFilter(); FocusList(); break;
+                case Key.Enter or Key.Down: FocusList(); break;
+                default: return;
+            }
+            e.Handled=true;return;
+        }
         bool open = Suggest.IsOpen && SuggestList.Items.Count > 0;
         switch (e.Key)
         {
             case Key.Down when open: SuggestList.SelectedIndex = Math.Min(SuggestList.SelectedIndex + 1, SuggestList.Items.Count - 1); break;
             case Key.Up when open: SuggestList.SelectedIndex = Math.Max(SuggestList.SelectedIndex - 1, -1); break;
-            case Key.Tab when open: Complete((string)(SuggestList.SelectedItem ?? SuggestList.Items[0])); break;
+            case Key.Tab when open: CompleteSuggestion(); break;
             case Key.Enter:
-                var target = open && SuggestList.SelectedItem is string pick ? pick : TypedPath;
                 e.Handled=true;
-                if(open&&SuggestList.SelectedItem is string){EndEditPath();Navigate(target);FocusList();}
+                // BROWSE-01/02: a chosen suggestion switches to its tab, runs its saved search or goes to its folder
+                if(open&&SuggestionOf(SuggestList.SelectedItem) is { } pick){ActivateSuggestion(pick);}
                 else await SubmitAddressAsync();
                 return;
-            case Key.Escape when open: Suggest.IsOpen = false; break;
+            case Key.Escape when open: Suggest.IsOpen = false; break; // the draft stays
             case Key.Escape: ClearFilter();EndEditPath(); List.Focus(); break;
             default: return;
         }
         e.Handled = true;
     }
     void PathBox_Lost(object s, KeyboardFocusChangedEventArgs e) => EndEditPath();
-
-    // Folders that start with what has been typed after the last backslash, as you type.
     int suggestVersion;
-    void PathBox_Changed(object s, TextChangedEventArgs e)
-    {
-        if (PathBox.Visibility != Visibility.Visible) return;
-        var text = TypedPath;
-        int v = ++suggestVersion;
-        bool hidden = ShowHidden;
-        var opts = new EnumerationOptions { IgnoreInaccessible = true, AttributesToSkip = hidden ? 0 : FileAttributes.Hidden };
-        Task.Run(() =>
-        {
-            List<string> found = new();
-            int cut = text.LastIndexOf('\\');
-            if (cut >= 0)
-            {
-                string parent = text[..(cut + 1)], prefix = text[(cut + 1)..];
-                try
-                {
-                    if (IsServer(parent)) found = NetShares(parent.TrimEnd('\\'))?.Where(x => x.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)).Select(x => parent + x).ToList() ?? new();
-                    else if (Directory.Exists(parent)) found = Directory.EnumerateDirectories(parent, prefix + "*", opts).Where(d => FileVisibility.Visible(System.IO.Path.GetFileName(d), 0, hidden)).Take(12).ToList();
-                }
-                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException) { }
-            }
-            found.RemoveAll(f => f.Equals(text.TrimEnd('\\'), StringComparison.OrdinalIgnoreCase)); // already typed in full
-            Dispatcher.BeginInvoke(() =>
-            {
-                if (v != suggestVersion || hidden != ShowHidden || PathBox.Visibility != Visibility.Visible) return;
-                SuggestList.ItemsSource = found;
-                Suggest.IsOpen = found.Count > 0;
-            });
-        });
-    }
-
-    void Complete(string path)
-    {
-        PathBox.Text = path.TrimEnd('\\') + "\\";
-        PathBox.CaretIndex = PathBox.Text.Length;
-    }
-
-    // Mouse down, handled: the list must not take focus, or the path box would lose it and close.
-    void Suggest_MouseDown(object s, MouseButtonEventArgs e)
-    {
-        var d = e.OriginalSource as DependencyObject;
-        while (d != null && d is not ListBoxItem) d = d is Visual ? VisualTreeHelper.GetParent(d) : LogicalTreeHelper.GetParent(d);
-        if (d is ListBoxItem { Content: string path }) { EndEditPath(); Navigate(path); List.Focus(); }
-        e.Handled = true;
-    }
 
     public void FocusFilter()
     {
         if(IsWidget){FilterBox.Focus();FilterBox.SelectAll();return;}
+        StopLiveFilter();
         FilterBox.Visibility=Visibility.Visible;Crumbs.Visibility=Visibility.Hidden;
         FilterBox.Text=searchQuery??"";FilterHint.Text=Dir==ThisPC?"Enter a path or search all files":"Enter a path or search this folder";
         FilterHint.Visibility=FilterBox.Text.Length==0?Visibility.Visible:Visibility.Collapsed;
         FilterBox.Focus();FilterBox.SelectAll();
+        if(FilterBox.Text.Length==0)PathBox_Changed(FilterBox,null); // an empty field offers the recent folders
     }
     // On the selected row once it is drawn, not on the list: a file handed in from outside (Open path in a search tool,
     // Open-Shell) was selected while the keyboard stayed on the list, so the arrows started elsewhere (Rico, 1.0.53).
@@ -2390,16 +2375,39 @@ public partial class PaneView : UserControl
     {
         FilterHint.Visibility = FilterBox.Visibility==Visibility.Visible&&FilterBox.Text.Length==0 ? Visibility.Visible : Visibility.Collapsed;
         if(IsWidget){Search(FilterBox.Text);return;}
+        if(liveFiltering){liveFilterText=FilterBox.Text;ApplyFilter();UpdateFooter();return;}
         PathBox_Changed(s,e);
     }
+    // BROWSE-10: the address field's temporary live filter. It narrows the rows already listed
+    // (hidden-file policy and background rereads keep applying) and never runs the recursive search.
+    bool liveFiltering;string liveFilterText="";
+    public bool LiveFiltering=>liveFiltering;
+    bool CanLiveFilter=>!IsWidget&&!SpaceAnalyzing&&!InSearch&&Dir!=ThisPC&&Dir!="";
+    public void StartLiveFilter()
+    {
+        if(IsWidget)return;
+        if(!CanLiveFilter){Error?.Invoke("The live filter narrows a folder listing. Leave search, This PC or space analysis first.");return;}
+        liveFiltering=true;Suggest.IsOpen=false;FilterChip.Visibility=Visibility.Visible;
+        FilterBox.Visibility=Visibility.Visible;Crumbs.Visibility=Visibility.Hidden;
+        FilterHint.Text="Filter this folder: name, tag:, rating: or comment:";
+        if(FilterBox.Text!=liveFilterText)FilterBox.Text=liveFilterText;
+        FilterHint.Visibility=FilterBox.Text.Length==0?Visibility.Visible:Visibility.Collapsed;
+        FilterBox.Focus();FilterBox.SelectAll();
+    }
+    public void StopLiveFilter()
+    {
+        if(!liveFiltering)return;
+        liveFilterText="";FilterBox.Text="";liveFiltering=false;FilterChip.Visibility=Visibility.Collapsed;
+        ApplyFilter();UpdateFooter();EndEditPath();
+        // the selection that stayed visible stays selected, and in sight
+        if(List.SelectedItem is { } sel)Dispatcher.BeginInvoke(()=>List.ScrollIntoView(sel),DispatcherPriority.Loaded);
+    }
+    void FilterChip_Close(object s,RoutedEventArgs e){StopLiveFilter();FocusList();}
     void ApplyFilter()
     {
         if (view == null) return;
-        var q = ""; // One address/search field: typing is a draft; Enter submits to the index.
-        // the same words and terms as the search, but contents only on Enter: the filter runs at every keystroke
-        var find = SearchQuery.Parse(q, DateTime.Now);
-        view.Filter = q.Trim() == "" || find.Error != null ? null : o => o is Entry { IsUp: true }
-            || o is Entry e && find.MatchesMeta(e.Name, e.IsDir, e.Size, e.Modified);
+        var filter = liveFiltering ? LiveFilter.Parse(liveFilterText) : null;
+        view.Filter = filter == null ? null : o => o is Entry { IsUp: true } || o is Entry e && filter.Matches(e);
     }
 
     void Header_Click(object s, RoutedEventArgs e)
@@ -2431,7 +2439,8 @@ public partial class PaneView : UserControl
         }
         if (Dir != "")
         {
-            if (key == "Name" && !desc) Settings.FolderSorts.Remove(Dir);
+            if (RememberSortInProfile(key, desc)) { }
+            else if (key == "Name" && !desc) Settings.FolderSorts.Remove(Dir);
             else Settings.FolderSorts[Dir] = (key, desc);
         }
         ShowSort(key, desc);
@@ -2480,7 +2489,7 @@ public partial class PaneView : UserControl
         reverse.Click += (_, _) => SetSort(sortKey, !sortDesc);
         yield return reverse;
         yield return new Separator();
-        var group = new MenuItem { Header = "Group by date", IsChecked = Settings.DateGroupFolders.Contains(Dir), ToolTip = "Today, Yesterday, Last week… in Details, for this folder" };
+        var group = new MenuItem { Header = "Group by date", IsChecked = GroupsByDate, ToolTip = "Today, Yesterday, Last week… in Details, for this folder" };
         group.Click += (_, _) => ToggleDateGroups();
         yield return group;
     }
@@ -2489,8 +2498,9 @@ public partial class PaneView : UserControl
     public void ToggleDateGroups()
     {
         if (Dir == "" || Dir == ThisPC) return;
-        if (!Settings.DateGroupFolders.Remove(Dir)) Settings.DateGroupFolders.Add(Dir);
-        if (Mode != ViewMode.Details && Settings.DateGroupFolders.Contains(Dir)) SetView(ViewMode.Details); // groups show only there
+        if (profile != null) { profile.GroupByDate = !profile.GroupByDate; FolderProfiles.Save(notify: false); }
+        else if (!Settings.DateGroupFolders.Remove(Dir)) Settings.DateGroupFolders.Add(Dir);
+        if (Mode != ViewMode.Details && GroupsByDate) SetView(ViewMode.Details); // groups show only there
         else ApplyGrouping();
         if (List.SelectedItem is { } sel) Dispatcher.BeginInvoke(() => List.ScrollIntoView(sel), DispatcherPriority.Loaded);
     }
@@ -2502,7 +2512,7 @@ public partial class PaneView : UserControl
     void ApplyGrouping()
     {
         if (view == null) return;
-        bool on = !SpaceAnalyzing&&Mode == ViewMode.Details && Settings.DateGroupFolders.Contains(Dir) && searchQuery == null;
+        bool on = !SpaceAnalyzing&&Mode == ViewMode.Details && GroupsByDate && searchQuery == null;
         if (on == view.GroupDescriptions.Count > 0) return;
         if (on)
         {
@@ -2570,7 +2580,7 @@ public partial class PaneView : UserControl
         PlaceNameEdge();
         var m = Modes.First(x => x.mode == mode);
         ShowViewChoice();
-        if(!IsWidget)Settings.Views[Name] = mode;
+        RememberMode(mode);
         var sel = List.SelectedItem;
         // Template, item style and panel are three separate changes, and the list would rebuild its
         // containers after each one. Detached from its items it rebuilds once, when they come back.
@@ -2688,7 +2698,7 @@ public partial class PaneView : UserControl
             Mode = mode;
             var m = Modes.First(x => x.mode == mode);
             ShowViewChoice();
-            Settings.Views[Name] = mode;
+            RememberMode(mode);
         }
         StartThumbs(); // a bigger size may want the larger thumbnails; ones already big enough are kept
     }
@@ -2723,7 +2733,25 @@ public partial class PaneView : UserControl
     }
 
     /// The five view modes, largest first, shared by the View button and the right-click menu's View submenu.
-    public IEnumerable<MenuItem> ViewMenuItems()
+    public IEnumerable<Control> ViewMenuItems()
+    {
+        foreach (var item in ViewModeItems()) yield return item;
+        yield return new Separator();
+        var filter = new MenuItem { Header = liveFiltering ? "Stop filtering" : "Filter…", InputGestureText = "Ctrl+Shift+F", IsEnabled = liveFiltering || CanLiveFilter,
+            Icon = new TextBlock { Text = "\uE71C", FontFamily = new FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"), FontSize = 13 } };
+        filter.Click += (_, _) => { if (liveFiltering) StopLiveFilter(); else StartLiveFilter(); };
+        yield return filter;
+        if (!IsWidget) yield return FolderViewMenu();
+        if (!IsWidget)
+        {
+            var term = new MenuItem { Header = "Terminal panel", InputGestureText = "Ctrl+Shift+`", IsCheckable = true, IsChecked = TerminalShown,
+                Icon = new TextBlock { Text = "\uE756", FontFamily = new FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"), FontSize = 13 } };
+            term.Click += (_, _) => ToggleTerminal();
+            yield return term;
+        }
+    }
+
+    IEnumerable<MenuItem> ViewModeItems()
     {
         int n = 0;
         foreach (var m in Modes)
@@ -3157,7 +3185,7 @@ public partial class PaneView : UserControl
         var d = e.GetPosition(List) - dragStart;
         if (Math.Abs(d.X) < SystemParameters.MinimumHorizontalDragDistance && Math.Abs(d.Y) < SystemParameters.MinimumVerticalDragDistance) return;
         dragArmed = false; keepSelection = null; deselectOnUp = null; renameCandidate = null;
-        if(Selected.Count==0)return;
+        if(Selected.Count==0||IsRemoteFolder)return; // BROWSE-09: remote rows go by Copy/Move to the other pane
         var data=CreateDragData();
         // Windows can refuse to start a drag ("a drag operation is already in progress"): 1.0.36 died of it
         // once in testing. Then there is simply no drag, as if the mouse hadn't moved far enough.

@@ -208,10 +208,12 @@ public partial class MainWindow
         if (recent.Count > 0)
         {
             menu.Items.Add(new Separator());
-            menu.Items.Add(Item("Clear history", "", "", () => { Settings.RecentFolders.Clear(); closedTabs.Clear(); Settings.Save(); }));
+            menu.Items.Add(Item("Clear history", "", "", ClearHistory));
         }
         menu.IsOpen = true;
     }
+    /// The history menu and Settings > Privacy: recent folders and closed tabs only (BROWSE-02).
+    internal void ClearHistory() { Settings.RecentFolders.Clear(); closedTabs.Clear(); Settings.Save(); }
 
     /// The folder a path is in, short enough for a menu: past 40 characters, "C:\…\Projects\Site".
     internal static string ParentForMenu(string path)

@@ -285,6 +285,21 @@ public static class Ferry
         return job;
     }
 
+    /// BROWSE-09: a copy or move with a remote side. Its lanes are the server and the local volume; no journal, no Undo.
+    public static Job SubmitRemote(List<string> sources, string destination, bool move, string description, Action<Job> operation)
+    {
+        var job = new Job { Sources = sources, Destination = destination, IsMove = move, Description = description };
+        var volumes = sources.Append(destination).Select(p => RemoteAddress.TryParse(p, out var at) ? $"{at.Kind}://{at.Host}:{at.Port}" : Path.GetPathRoot(p))
+            .Where(v => !string.IsNullOrEmpty(v)).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+        lock (lanes)
+        {
+            var previous = Task.WhenAll(volumes.Select(volume => lanes.TryGetValue(volume, out var task) ? task : Task.CompletedTask));
+            var execution = previous.ContinueWith(_ => Run(job, operation), TaskContinuationOptions.LongRunning);
+            foreach (var volume in volumes) lanes[volume] = execution;
+        }
+        return job;
+    }
+
     static void Run(Job job, Action<Job> operation)
     {
         try

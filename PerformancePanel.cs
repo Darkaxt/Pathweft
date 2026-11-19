@@ -113,7 +113,7 @@ internal sealed partial class PerformancePanel : StackPanel,IAsyncDisposable
     internal void Select(int index)
     {
         bool hadFocus=IsKeyboardFocusWithin;int previous=selected;
-        if(index!=previous){hoverCancel?.Cancel();ClearInvestigation();}
+        if(index!=previous){hoverCancel?.Cancel();ClearInvestigation();Unpause();}
         selected=index;details.Visibility=index<0?Visibility.Collapsed:Visibility.Visible;
         sortProperty=null;
         cards.Visibility=Visibility.Visible;
@@ -178,7 +178,8 @@ internal sealed partial class PerformancePanel : StackPanel,IAsyncDisposable
         graphs[Folder].Set(folderHistory.ToArray());
         if(selected<0)return;
         columnsButton.Visibility=selected is Cpu or Ram&&!Historical?Visibility.Visible:Visibility.Collapsed;
-        processFilter.Visibility=columnsButton.Visibility;
+        processFilter.Visibility=selected is Cpu or Ram?Visibility.Visible:Visibility.Collapsed;
+        pauseButton.Visibility=Historical?Visibility.Collapsed:Visibility.Visible;
         UpdateProcessActions();
         UpdateAnalysisGraph();
         RefreshDrive(history);
@@ -192,9 +193,11 @@ internal sealed partial class PerformancePanel : StackPanel,IAsyncDisposable
         enable.Visibility=!Historical&&selected>=Drive&&io?.Connected!=true?Visibility.Visible:Visibility.Collapsed;
         enable.IsEnabled=!enabling&&traceFolder!=null;
         if(Historical)return;
+        if(paused){detailState.Text=$"Paused at {pausedAt:T} · cards keep updating; Resume or Now returns to live";return;}
         if(selected<Drive)
         {
             detailState.Text=selected==Cpu?"CPU usage across all logical processors · inaccessible processes omitted":selected==Ram?"Process working sets may share pages; their sum is not system RAM usage":"Busiest GPU engine · "+adapter?.Name;
+            if(GraphFilter is {Length:>0} filter)detailState.Text=$"Graph sums sampled processes matching “{filter}”"+(selected==Ram?" as a share of physical RAM":"");
             if(selected is Cpu or Ram)RefreshProcessRows(monitor.Details);
             else table.ItemsSource=selected==Gpu?monitor.Details.Where(x=>x.Adapter==gpu).ToArray():monitor.Details.OrderByDescending(x=>x.Memory).ToArray();
         }
@@ -260,7 +263,7 @@ internal sealed partial class PerformancePanel : StackPanel,IAsyncDisposable
     static async Task Retire(PerformanceIoClient client,Task previous){await previous.ConfigureAwait(false);await client.DisposeAsync().ConfigureAwait(false);}
     public async ValueTask DisposeAsync()
     {
-        disposed=true;historyCancel?.Cancel();hoverCancel?.Cancel();metadataStopped.Cancel();appChartCancel?.Cancel();
+        disposed=true;filterDelay.Stop();historyCancel?.Cancel();hoverCancel?.Cancel();metadataStopped.Cancel();appChartCancel?.Cancel();
         // Closed can synchronously drain us on the UI thread. Wait only for
         // native/background reads, never their UI presentation continuation.
         try{await Task.WhenAll(historyWork,hoverWork,metadataRead,appChartRead,healthWork,handleWork).ConfigureAwait(false);}

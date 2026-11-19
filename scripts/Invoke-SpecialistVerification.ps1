@@ -3,7 +3,7 @@
 param(
     [Parameter(Mandatory)][string]$Executable,
     [string]$ScratchRoot='D:\Temp\pathweft-s13-s9-s11',
-    [ValidateSet('full','drive','administrator','maintenance','performance-adoption','performance','performance-ui','performance-analysis','performance-native','office','office-extraction','office-reference','office-fallback','office-formats','photo-core','vector-core','fig-core','pdf-core','policies','formats','runtime','sizes','space','space-entry','space-refresh','space-ui','indexed-sizes','live-indexed-sizes','index-service','existing','pdf','modes','preview-selection','shortcuts','missing-tabs','icons','menus','menus-ui','menus-properties','menus-shell','jump-lists','windows','transfers','transfer-progress','transfer-differences','transfers-clipboard','tools')][string]$Scenario='full',
+    [ValidateSet('full','drive','administrator','maintenance','performance-adoption','performance','performance-ui','performance-analysis','performance-native','office','office-extraction','office-reference','office-fallback','office-formats','photo-core','vector-core','fig-core','pdf-core','policies','formats','runtime','sizes','space','space-entry','space-refresh','space-ui','indexed-sizes','live-indexed-sizes','index-service','existing','pdf','modes','preview-selection','shortcuts','missing-tabs','icons','menus','menus-ui','menus-properties','menus-shell','jump-lists','windows','transfers','transfer-progress','transfer-differences','transfers-clipboard','tools','browse')][string]$Scenario='full',
     [string]$MenuDesktop,
     [string]$FixtureSource,
     [string]$MediaInputs,
@@ -36,7 +36,7 @@ if($WithoutMediaInfo){
 }
 $start=[Diagnostics.ProcessStartInfo]::new([IO.Path]::GetFullPath($Executable))
 $start.ArgumentList.Add('--verify-s8-appearance='+$run)
-if($Scenario -in @('menus','menus-properties','menus-shell','indexed-sizes','space-ui','performance-native','transfers-clipboard','tools')){
+if($Scenario -in @('menus','menus-properties','menus-shell','indexed-sizes','space-ui','performance-native','transfers-clipboard','tools','browse')){
     if(!$MenuDesktop -or !(Test-Path -LiteralPath $MenuDesktop)){throw 'Menu checks require the private native desktop launcher.'}
     $start.FileName=[IO.Path]::GetFullPath($MenuDesktop)
     $start.ArgumentList.Clear()
@@ -53,6 +53,7 @@ $start.Environment['PATHWEFT_VERIFY_SPECIALISTS13']='1'
 $start.Environment['PATHWEFT_SPECIALIST_SCENARIO']=$Scenario
 if($FixtureSource){$start.Environment['PATHWEFT_SPECIALIST_FIXTURE_SOURCE']=[IO.Path]::GetFullPath($FixtureSource)}
 if($MediaInputs){$start.Environment['PATHWEFT_SPECIALIST_MEDIA_INPUTS']=[IO.Path]::GetFullPath($MediaInputs)}
+if($Scenario -eq 'browse'){$start.Environment['PATHWEFT_RCLONE']=(Get-Command rclone -CommandType Application -ErrorAction Stop|Select-Object -First 1).Source}
 if($Scenario -eq 'performance-native'){$start.Environment['PATHWEFT_PERFORMANCE_LOAD']=Join-Path (Split-Path -Parent $MenuDesktop) 'PerformanceLoad.exe'}
 if($Scenario -eq 'existing'){
     if(!$MediaInputs){throw 'Actual SDR/audio/DV fixture inventory required.'}
@@ -70,7 +71,7 @@ $receiptPath=Join-Path $run 'results.json'
 if(!(Test-Path -LiteralPath $receiptPath)){throw "Original verification process $($process.Id) exited $($process.ExitCode) without a receipt: $run"}
 $receipt=Get-Content -LiteralPath $receiptPath -Raw | ConvertFrom-Json
 $expectedPid=$process.Id
-if($Scenario -in @('menus','menus-properties','menus-shell','indexed-sizes','space-ui','performance-native','transfers-clipboard','tools')){
+if($Scenario -in @('menus','menus-properties','menus-shell','indexed-sizes','space-ui','performance-native','transfers-clipboard','tools','browse')){
     $desktop=Get-Content (Join-Path $run 'desktop-receipt.json') -Raw|ConvertFrom-Json
     if(!$desktop.jobEmpty -or $desktop.exitCode -ne $process.ExitCode){throw 'Private native desktop tree is not verified empty.'}
     $expectedPid=$desktop.childPid

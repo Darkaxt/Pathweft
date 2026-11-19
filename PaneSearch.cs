@@ -226,6 +226,7 @@ public partial class PaneView
         indexedSearch = true;
         ArchiveRoot = null; // indexed hits are real paths, even when the origin tab is inside a ZIP
         searchQuery = query;
+        SyncTerminal();
         FilterBox.Text = query;
         FilterBox.Visibility=Visibility.Visible;Crumbs.Visibility=Visibility.Hidden;FilterHint.Visibility=Visibility.Collapsed;
         if (sortKey is not ("Name" or "Size" or "Type" or "Modified")) ShowSort("Name", false);
@@ -233,7 +234,7 @@ public partial class PaneView
         sizing?.Cancel(); icons?.Cancel(); thumbs?.Cancel();
         StopFolderWatch();
         indexedResults = new(); indexedTotal = indexedOffset = 0;
-        indexedShowHidden = ShowHidden; visibilityParents = new(StringComparer.OrdinalIgnoreCase);
+        indexedShowHidden = ShowsHidden; visibilityParents = new(StringComparer.OrdinalIgnoreCase);
         searchNotice = "Querying the index…";indexedUpdating=false;
         SearchCoverage.Visibility = IsWidget?Visibility.Collapsed:Visibility.Visible;
         ShowItems(indexedResults, null, animate: false);
@@ -318,6 +319,7 @@ public partial class PaneView
 
     void LeaveSearch()
     {
+        if(terminal!=null&&searchQuery!=null)Dispatcher.BeginInvoke(SyncTerminal); // back in a folder
         loadingSearch=-1;UpdateAddressLoading();
         indexedCancellation?.Cancel();
         indexedSearch = false;

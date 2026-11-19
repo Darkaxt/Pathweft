@@ -55,7 +55,7 @@ public partial class PaneView
         grid.Columns.CollectionChanged+=(_,e)=>
         {
             if(applyingColumns||IsWidget||e.Action!=NotifyCollectionChangedAction.Move)return;
-            ColumnCatalog.SetLayout(ColumnKind,grid.Columns.Where(c=>c!=NameColumn).Select(c=>colKey.GetValueOrDefault(c)).Where(k=>k is not null and not "Message"));
+            SetColumns(ColumnKind,grid.Columns.Where(c=>c!=NameColumn).Select(c=>colKey.GetValueOrDefault(c)).Where(k=>k is not null and not "Message").ToList());
         };
         ColumnCatalog.LayoutChanged+=kind=>
         {
@@ -69,6 +69,7 @@ public partial class PaneView
     void SaveWidth(GridViewColumn column)
     {
         if(IsWidget||applyingColumns||fittingColumns||double.IsNaN(column.Width)||!colKey.TryGetValue(column,out var key))return;
+        if(ColumnKind==ColumnCatalog.Folder&&profile!=null){profile.Widths??=new();profile.Widths[key]=column.Width;FolderProfiles.SaveSoon();return;}
         Settings.ColumnWidths[WidthKey(ColumnKind,key)]=column.Width;
     }
 
@@ -161,6 +162,14 @@ public partial class PaneView
         if(kind==ColumnCatalog.Space)return keys;
         Add("Version",data.Any(e=>e.Version.Length>0));Add("Type",data.Any(e=>e.Ext.Length>0));
         Add("Size",data.Any(e=>e.DisplaySize>=0));Add("Modified",data.Any(e=>e.Modified!=default));
+        // BROWSE-07: a folder whose rows carry notes shows them until the owner chooses columns
+        if(kind is ColumnCatalog.Folder or ColumnCatalog.Search&&FileNotes.Any)
+        {
+            var noted=data.Select(e=>FileNotes.Find(e.Path)).Where(n=>n!=null).ToArray();
+            Add("Tags",noted.Any(n=>n.Tags.Length>0));Add("Rating",noted.Any(n=>n.Rating>0));Add("Comment",noted.Any(n=>!string.IsNullOrWhiteSpace(n.Comment)));
+        }
+        // BROWSE-11: a folder holding symbolic links or junctions shows where they point
+        if(kind is ColumnCatalog.Folder or ColumnCatalog.Search)Add("Link target",data.Any(e=>(e.Attributes&FileAttributes.ReparsePoint)!=0&&Links.Describe(e.Path,e.Attributes).Length>0));
         // the CRC32 column of earlier versions: stored values in archives by default, folders when it was turned on
         Add("#CRC-32",kind==ColumnCatalog.Archive?Settings.ArchiveCrc:kind==ColumnCatalog.Folder&&Settings.FolderCrc&&!IsVirtual(Dir)&&!IsServer(Dir));
         return keys;
@@ -187,7 +196,7 @@ public partial class PaneView
         }
         string kind=ColumnKind;bool drives=kind==ColumnCatalog.Drives;
         var data=items.Where(e=>!e.IsUp).ToArray();
-        var keys=ColumnCatalog.Layout(kind)??AutoColumns(kind,data);
+        var keys=ProfileColumns(kind)??ColumnCatalog.Layout(kind)??AutoColumns(kind,data);
         var wanted=new List<GridViewColumn>{NameColumn};
         var shown=new List<string>();
         foreach(var key in keys)if(ColumnFor(key,drives) is {} column&&!wanted.Contains(column)){wanted.Add(column);shown.Add(key);}
@@ -200,7 +209,7 @@ public partial class PaneView
             bool kindChanged=widthKind!=kind;widthKind=kind;
             foreach(var column in wanted)
                 if(column!=NameColumn&&(kindChanged||!grid.Columns.Contains(column))&&colKey.TryGetValue(column,out var key))
-                    column.Width=SavedWidth(kind,key)??baseWidths.GetValueOrDefault(column,ColumnCatalog.DefaultWidth(key));
+                    column.Width=ProfileWidth(kind,key)??baseWidths.GetValueOrDefault(column,ColumnCatalog.DefaultWidth(key));
             if(!grid.Columns.SequenceEqual(wanted))
             {
                 foreach(var column in grid.Columns.Except(wanted).ToArray())grid.Columns.Remove(column);
@@ -290,16 +299,16 @@ public partial class PaneView
 
     void ToggleColumn(string kind,string key)
     {
-        var keys=(ColumnCatalog.Layout(kind)??ShownColumns.ToList()).ToList();
+        var keys=(ProfileColumns(kind)??ColumnCatalog.Layout(kind)??ShownColumns.ToList()).ToList();
         if(!keys.Remove(key))keys.Add(key);
-        ColumnCatalog.SetLayout(kind,keys);
+        SetColumns(kind,keys);
     }
 
     internal void ChooseColumns(string kind)
     {
-        var chosen=ChooseColumnsDialog.Show(Window.GetWindow(this),kind,ColumnCatalog.Layout(kind)??ShownColumns.ToList());
+        var chosen=ChooseColumnsDialog.Show(Window.GetWindow(this),kind,ProfileColumns(kind)??ColumnCatalog.Layout(kind)??ShownColumns.ToList());
         if(chosen==null)return;
-        if(chosen.Automatic)ColumnCatalog.ResetLayout(kind);else ColumnCatalog.SetLayout(kind,chosen.Keys);
+        SetColumns(kind,chosen.Automatic?null:chosen.Keys.ToList());
     }
 
     /// Size to fit: as wide as what the realized rows and the header need, then kept as the column's width.

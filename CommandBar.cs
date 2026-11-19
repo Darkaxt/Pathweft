@@ -10,13 +10,13 @@ public partial class MainWindow
         UpdateSpaceCommandState();
         PanesCommand.Tag=Settings.SinglePane?null:"on";
         PreviewCommand.Tag=Settings.Preview?"on":null;
-        System.Windows.Automation.AutomationProperties.SetItemStatus(HiddenToggle,Settings.ShowHidden?"On":"Off");
+        System.Windows.Automation.AutomationProperties.SetItemStatus(HiddenToggle,(active?.ShowsHidden??Settings.ShowHidden)?"On":"Off");
         System.Windows.Automation.AutomationProperties.SetItemStatus(PanesCommand,Settings.SinglePane?"One pane":"Two panes");
         System.Windows.Automation.AutomationProperties.SetItemStatus(PreviewCommand,Settings.Preview?"On":"Off");
-        HiddenToggle.ToolTip=Settings.ShowHidden?"Hide Windows hidden and dot-prefixed files (Ctrl+H)":"Show Windows hidden and dot-prefixed files (Ctrl+H)";
+        HiddenToggle.ToolTip=(active?.ShowsHidden??Settings.ShowHidden)?"Hide Windows hidden and dot-prefixed files (Ctrl+H)":"Show Windows hidden and dot-prefixed files (Ctrl+H)";
         PreviewCommand.ToolTip=Settings.Preview?"Hide preview (Alt+P)":"Show preview (Alt+P)";
         var eye=(System.Windows.Media.DrawingImage)FindResource("CommandIcon.Hidden");
-        ((Image)HiddenToggle.Content).Source=Settings.ShowHidden?eye:ExplorerIcons.Crossed(eye);
+        ((Image)HiddenToggle.Content).Source=(active?.ShowsHidden??Settings.ShowHidden)?eye:ExplorerIcons.Crossed(eye);
         PanesCommand.ToolTip=Settings.SinglePane?"Show two panes (Ctrl+P)":"Show one pane (Ctrl+P)";
         ((Image)PanesCommand.Content).Source=ExplorerIcons.PaneLayout(!Settings.SinglePane);
         UpdateCommandSpacing();

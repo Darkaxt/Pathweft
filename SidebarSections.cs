@@ -45,6 +45,8 @@ public partial class MainWindow
         ("favorites", "Favorites",    "", (Panel)Favorites),
         ("drives",    "Drives",       "", (Panel)Drives),
         ("tree",      "Folders",      "", (Panel)FolderTree),
+        ("searches",  "Saved searches", "\uE721", (Panel)SavedSearchList), // BROWSE-03
+        ("remote",    "Connections",  "\uE968", (Panel)RemoteList),      // BROWSE-09
     };
 
     // ---- Folders: Explorer's navigation tree, loaded one level at a time as branches open ----

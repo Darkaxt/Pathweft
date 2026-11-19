@@ -169,6 +169,34 @@ internal sealed partial class PerformanceHistory : IDisposable
         if(query.Tool=="get_app_history"&&string.IsNullOrWhiteSpace(query.Name))throw new ArgumentException("App name is required");
         if(query.From.HasValue!=query.To.HasValue||query.From>=query.To||query.To-query.From>TimeSpan.FromDays(30))throw new ArgumentException("Use an ordered from/to range of at most 30 days");
     }
+    // MONITOR-25: activity line for a process filter. Each recorded sample sums the matching
+    // processes (CPU percent, or working sets as a share of physical RAM); the line keeps
+    // each of at most 600 intervals' peak. Unrecorded processes and intervals stay absent.
+    internal static (DateTimeOffset Time,double? Value)[] FilteredActivity(string metric,string filter,DateTimeOffset from,DateTimeOffset to,long ramTotal,CancellationToken cancel=default,string source=null,PerformanceProcessSnapshot[] liveApps=null)
+    {
+        bool ram=metric=="ram";string path=source??FilePath;int pid=int.TryParse(filter,NumberStyles.None,CultureInfo.InvariantCulture,out int number)?number:-1;
+        var sums=new SortedDictionary<long,double>();
+        long liveStart=liveApps is {Length:>0}?liveApps[0].Time.ToUnixTimeMilliseconds():long.MaxValue;
+        if(File.Exists(path))
+        {
+            using var db=Open(path,true);using var command=db.CreateCommand();
+            command.CommandText=$"SELECT t,SUM(CASE WHEN instr(lower(name),lower($name))>0 OR pid=$pid THEN {(ram?"memory":"cpu")} ELSE 0 END) FROM apps WHERE t BETWEEN $from AND $to AND t<$live GROUP BY t ORDER BY t";
+            command.Parameters.AddWithValue("$name",filter);command.Parameters.AddWithValue("$pid",pid);
+            command.Parameters.AddWithValue("$from",from.ToUnixTimeMilliseconds());command.Parameters.AddWithValue("$to",to.ToUnixTimeMilliseconds());command.Parameters.AddWithValue("$live",liveStart);
+            using var reader=command.ExecuteReader();
+            while(reader.Read()){cancel.ThrowIfCancellationRequested();sums[reader.GetInt64(0)]=reader.IsDBNull(1)?0:reader.GetDouble(1);}
+        }
+        foreach(var snapshot in liveApps??[])
+        {
+            cancel.ThrowIfCancellationRequested();if(snapshot.Time<from||snapshot.Time>to)continue;
+            double sum=0;foreach(var app in snapshot.Apps)if(app.Process.Contains(filter,StringComparison.OrdinalIgnoreCase)||app.Pid==pid)sum+=ram?app.Memory:app.Usage;
+            sums[snapshot.Time.ToUnixTimeMilliseconds()]=sum;
+        }
+        double span=Math.Max(1,(to-from).TotalMilliseconds);long start=from.ToUnixTimeMilliseconds();
+        var peaks=new SortedDictionary<int,(long Time,double Value)>();
+        foreach(var (time,value) in sums){int bucket=(int)((time-start)*600/span);if(!peaks.TryGetValue(bucket,out var old)||value>old.Value)peaks[bucket]=(time,value);}
+        return peaks.Values.Select(x=>(DateTimeOffset.FromUnixTimeMilliseconds(x.Time),ram?ramTotal>0?x.Value*100/ramTotal:(double?)null:(double?)x.Value)).ToArray();
+    }
     internal static PerformanceResult Query(PerformanceQuery query,CancellationToken cancel=default,string source=null,PerformanceSample[] live=null,PerformanceProcessSnapshot[] liveApps=null)
     {
         Validate(query);cancel.ThrowIfCancellationRequested();string path=source??FilePath;

@@ -62,6 +62,7 @@ public partial class MainWindow : Window
             shellFolderViews?.Dispose();
             foreach(var pane in new[]{Left,Right})pane.CloseView();
             taskbarSearch?.Dispose();tray?.Dispose();
+            RemoteTempCopies.Cleanup(); // BROWSE-09
         };
         SourceInitialized += (_, _) => { ApplyAcrylic(this); WatchShellChanges(); taskbarSearch = new(this); taskbarSearch.ApplySettings();
             // Shell folder views are optional: a missing or mismatched handler DLL (an interrupted
@@ -81,7 +82,7 @@ public partial class MainWindow : Window
                 Left.SetSizingSuspended(analyzing);Right.SetSizingSuspended(analyzing);UpdateCommandStates();
             };
             p.StatsChanged += () => { if (p == active) { UpdateStats(); PreviewFollow(); } FilesShown(); };
-            p.NavigationChanged += () => { if(p==active)UpdateSpaceCommandState(); };
+            p.NavigationChanged += () => { if(p==active)UpdateCommandStates(); }; // BROWSE-05: a saved view may change hidden files
             p.Error += msg => Status.Text = msg;
             p.FilesDropped += (files, dest, move) => Submit(files, dest, move);
             p.OpenArchived += e => OpenFromArchive(p, e);
@@ -141,6 +142,14 @@ public partial class MainWindow : Window
         warmUp.Start();
         BuildFolderTree();
         BuildSidebar();
+        BuildSavedSearches(); SavedSearches.Changed += BuildSavedSearches;
+        BuildConnections(); RemoteConnections.Changed += BuildConnections;
+        // BROWSE-01/02: the address suggestions read the tabs and Quick access lists held here
+        PaneView.OpenTabs = () => (Settings.SinglePane ? new[] { Left } : new[] { Left, Right })
+            .SelectMany(p => p.TabPaths.Select((path, i) => (p, i, path)));
+        PaneView.PinnedFolders = () => quickLists.SelectMany(l => l.Folders.Select(f => (l.Name, f)));
+        PaneView.TabRequested = (pane, i) => { SetActive(pane); pane.ShowTab(i); pane.FocusList(); };
+        PaneView.SavedSearchRequested = search => OpenSavedSearch(search);
 
 
         active = Left;
@@ -171,6 +180,8 @@ public partial class MainWindow : Window
             RefreshDrives();
             driveTimer.Start();
             Dispatcher.BeginInvoke(SizeCache.StartLoading, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+            // BROWSE-07: notes follow files renamed or moved while Pathweft was closed (by file ID); the rest are marked stale
+            Dispatcher.BeginInvoke(() => { if (FileNotes.Any) _ = Task.Run(FileNotes.Heal); }, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
             Dispatcher.BeginInvoke(Motion.WarmPopups, System.Windows.Threading.DispatcherPriority.ApplicationIdle); // the first menu's stall, paid now
             if (startHidden) { FinishHiddenStart(); return; } // started at sign-in: shown by the notification-area icon later
             // Started by the Win+E agent (--front): Windows' foreground lock keeps a freshly started
@@ -941,6 +952,7 @@ public partial class MainWindow : Window
         Left.SetActive(p == Left);
         Right.SetActive(p == Right);
         UpdateStats();
+        UpdateCommandStates();
         PreviewFollow();
     }
 
@@ -1097,6 +1109,11 @@ public partial class MainWindow : Window
     void Transfer(bool move)
     {
         // an archive that can't be changed says why at once, rather than through a failed job
+        if (RemoteAddress.IsRemote(active.Dir) || RemoteAddress.IsRemote(Other.Dir)) // BROWSE-09
+        {
+            if (PaneView.IsVirtual(Other.Dir) && !RemoteAddress.IsRemote(Other.Dir)) { Status.Text = "Open a folder in the other pane to copy there"; return; }
+            RemoteTransfer(active.Selected.Where(e => !e.IsUp).Select(e => e.Path).ToList(), Other.Dir, move); return;
+        }
         string sourceReason = move && active.ArchiveRoot is { } source ? Archive.ChangeReason(source.Archive) : "";
         string targetReason = PaneView.ArchiveOf(Other.Dir) is { } target ? Archive.ChangeReason(target.Archive) : "";
         if (sourceReason.Length > 0 || targetReason.Length > 0) { Status.Text = sourceReason.Length > 0 ? sourceReason : targetReason; return; }
@@ -1110,6 +1127,7 @@ public partial class MainWindow : Window
     internal Job Submit(List<string> sources, string dest, bool move, bool ask = true, IReadOnlyDictionary<string, string> names = null, bool journal = true)
     {
         if (closingPreviews || sources.Count == 0 || dest == PaneView.ThisPC) return null;
+        if (RemoteAddress.IsRemote(dest) || sources.Any(RemoteAddress.IsRemote)) { RemoteTransfer(sources, dest, move); return null; } // BROWSE-09
         if (ask && !ArchivePasswords(sources)) return null;
         if (move && ask && sources.Select(s => Path.GetDirectoryName(s.TrimEnd('\\'))).Distinct(StringComparer.OrdinalIgnoreCase).Count() is var folders and > 1
             && PromptDialog.Choose(this, $"Move {sources.Count:N0} items from {folders:N0} folders into one folder?", "All of them go into " + dest, "Move", "Cancel") != 0) return null;
@@ -1325,6 +1343,7 @@ public partial class MainWindow : Window
         var pane = active;
         var sel = pane.Selected;
         if (sel.Count == 0) return;
+        if (pane.IsRemoteFolder) { Status.Text = "Remote items are not files on this PC: use Copy to other pane (F5) or Move (F6)"; return; }
         uint expectedSequence = GetClipboardSequenceNumber();
         string[] files = null; byte[] archiveSelection = null;
         var at = pane.ArchiveRoot;
@@ -1404,6 +1423,7 @@ public partial class MainWindow : Window
     void Delete(bool permanent = false)
     {
         if (active.ArchiveRoot != null) { DeleteFromArchive(active); return; } // out of the ZIP: asked there, never to the Recycle Bin
+        if (active.IsRemoteFolder) { active.RemoteDelete(); return; } // BROWSE-09: permanent, and said so
         var sel = active.Selected;
         if (sel.Count == 0) return;
         var paths = sel.Select(e => e.Path).ToList();
@@ -1629,6 +1649,7 @@ public partial class MainWindow : Window
     void MkDir()
     {
         if (active.ArchiveRoot != null) { ArchiveNewFolder(active); return; }
+        if (active.IsRemoteFolder) { active.RemoteNewFolder(); return; }
         if (PaneView.IsVirtual(active.Dir)) return; // This PC holds drives, an archive its own entries
         string name;
         // with folder templates (New+), the New file window lists them under a plain folder; else just the name
@@ -1646,6 +1667,15 @@ public partial class MainWindow : Window
         if (Run(() => Directory.CreateDirectory(path)) && !existed)
             Remember($"new folder {name}", new UndoStep("rmdir", path)); // only while still empty
         active.Navigate(active.Dir, name, record: false);
+    }
+
+    // BROWSE-11: New > Link… (and Create link… on an item): a symbolic link, hard link or junction in this folder.
+    void NewLink(string suggestedTarget = null)
+    {
+        if (active.ArchiveRoot != null || active.InSearch || PaneView.IsVirtual(active.Dir) || RemoteAddress.IsRemote(active.Dir)) { Status.Text = "Links can only be made in a local folder"; return; }
+        if (LinkDialog.Ask(this, active.Dir, suggestedTarget) is not { } made) return;
+        Remember($"new link {Path.GetFileName(made)}", Made(made));
+        active.Navigate(active.Dir, Path.GetFileName(made), record: false);
     }
 
     // Ctrl+N: pick a type (Explorer's own New list), then the name.
@@ -1679,11 +1709,13 @@ public partial class MainWindow : Window
     void Rename()
     {
         if (active.ArchiveRoot != null && active.Selected.Count > 1) { ArchiveRenameMany(active); return; }
+        if (active.IsRemoteFolder && active.Selected.Count > 1) { Status.Text = "Rename remote items one at a time"; return; }
         if (active.Selected.Count > 1) RenameMany(); else active.BeginRename();
     }
 
     void RenameCommitted(PaneView pane, Entry entry, string name)
     {
+        if (RemoteAddress.IsRemote(entry.Path)) { pane.RemoteRename(entry, name); return; }
         if (pane.ArchiveRoot is { } location)
         {
             SubmitArchiveEdit(new[] { entry.Path }, pane.Dir, "Rename archive entry", job => { Archive.Rename(location.Archive, location.Inner, entry.Name, name, job); job.Arrivals = new() { name }; });
@@ -1721,11 +1753,13 @@ public partial class MainWindow : Window
 
     void ToggleHidden()
     {
+        // BROWSE-05: a folder with a saved view keeps its own hidden-files choice
+        if (active.ToggleProfileHidden()) { UpdateCommandStates(); Status.Text = (active.ShowsHidden ? "Showing" : "Hiding") + " hidden and dot-prefixed files in this folder's saved view"; return; }
         Settings.ShowHidden = !Settings.ShowHidden;
         Settings.Save();
         UpdateCommandStates();
         RefreshPanes();
-        Status.Text = PaneView.ShowHidden ? "Showing hidden and dot-prefixed files" : "Hiding hidden and dot-prefixed files";
+        Status.Text = active.ShowsHidden ? "Showing hidden and dot-prefixed files" : "Hiding hidden and dot-prefixed files";
     }
 
     internal bool HandleHiddenShortcut(Key key, ModifierKeys modifiers, bool repeat, object source)
@@ -1762,6 +1796,9 @@ public partial class MainWindow : Window
             else base.OnPreviewKeyDown(e);
             return;
         }
+        // BROWSE-08: Ctrl+Shift+` shows or hides the active pane's terminal; while it has the keyboard, every other key is the shell's
+        if ((e.Key == Key.System ? e.SystemKey : e.Key) == Key.Oem3 && Keyboard.Modifiers == (ModifierKeys.Control | ModifierKeys.Shift)) { active.ToggleTerminal(); e.Handled = true; return; }
+        if (e.OriginalSource is DependencyObject source && PaneView.InTerminal(source)) { base.OnPreviewKeyDown(e); return; }
         if (HandleHiddenShortcut(e.Key, e.KeyboardDevice.Modifiers, e.IsRepeat, e.OriginalSource)) { e.Handled = true; return; }
         // Scope selection owns its Enter/arrows/Escape; global file commands
         // must not open a selected file while this control has the keyboard.
@@ -1771,6 +1808,8 @@ public partial class MainWindow : Window
         var alt = Keyboard.Modifiers.HasFlag(ModifierKeys.Alt);
         var key = e.Key == Key.System ? e.SystemKey : e.Key;
 
+        // BROWSE-10: Ctrl+Shift+F filters the folder on screen (Ctrl+F stays the recursive search)
+        if(ctrl&&shift&&key==Key.F){if(active.LiveFiltering)active.StopLiveFilter();else active.StartLiveFilter();e.Handled=true;return;}
         if(ctrl&&key is Key.L or Key.F){if(key==Key.L)active.EditPath();else active.FocusFilter();e.Handled=true;return;}
 
         if (e.OriginalSource is TextBox)
@@ -1812,7 +1851,7 @@ public partial class MainWindow : Window
             case Key.C when ctrl && shift:
                 Clipboard.SetText(Entry.QuotedPaths(active.Selected));
                 Status.Text = "Path copied"; break;
-            case Key.Oem3 when ctrl: OpenTerminal(); break;
+            case Key.Oem3 when ctrl && !shift: OpenTerminal(); break;
             case Key.Left when alt: active.Back(); break;
             case Key.Right when alt: active.Forward(); break;
             case Key.Up when alt: case Key.Back: active.Up(); break;

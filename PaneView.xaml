@@ -289,6 +289,16 @@
             <ToggleButton x:Name="MatchPath" Content="..\" Style="{StaticResource SearchMatchToggle}" ToolTip="Match path" AutomationProperties.Name="Match path" Checked="MatchOptions_Changed" Unchecked="MatchOptions_Changed"/>
             <ToggleButton x:Name="MatchRegex" Content=".*" FontWeight="Bold" Style="{StaticResource SearchMatchToggle}" ToolTip="Regular expression" AutomationProperties.Name="Regular expression" Checked="MatchOptions_Changed" Unchecked="MatchOptions_Changed"/>
           </StackPanel>
+          <!-- BROWSE-10: the temporary live filter of this folder's listing (Ctrl+Shift+F); not the recursive search -->
+          <Border x:Name="FilterChip" DockPanel.Dock="Left" Visibility="Collapsed" Background="{DynamicResource AccentSelect}" CornerRadius="4" Padding="6,1,2,1" Margin="0,2,4,2" VerticalAlignment="Center"
+                  ToolTip="Live filter: narrows this folder's listing by name, tag:, rating: or comment:. Esc or leaving the folder shows everything again.">
+            <StackPanel Orientation="Horizontal">
+              <TextBlock Text="&#xE71C;" FontFamily="Segoe Fluent Icons" FontSize="11" VerticalAlignment="Center" Foreground="{DynamicResource AccentSelectText}" Margin="0,0,5,0"/>
+              <TextBlock x:Name="FilterChipText" Text="Filter" FontSize="12" VerticalAlignment="Center" Foreground="{DynamicResource AccentSelectText}"/>
+              <Button Style="{StaticResource Ghost}" Content="&#xE711;" FontFamily="Segoe Fluent Icons" FontSize="9" Padding="4,2" Margin="3,0,0,0" ToolTip="Stop filtering (Esc)"
+                      AutomationProperties.Name="Stop filtering" Click="FilterChip_Close"/>
+            </StackPanel>
+          </Border>
         <Grid>
           <Border Background="Transparent" ClipToBounds="True" PreviewMouseDown="Crumbs_MiddleClick">
             <StackPanel x:Name="Crumbs" Orientation="Horizontal" VerticalAlignment="Center"/>
@@ -340,6 +350,13 @@
         </Button>
         <ProgressBar x:Name="SpaceActivity" Width="40" Height="3" Margin="0,0,8,0" VerticalAlignment="Center" Visibility="Collapsed" AutomationProperties.Name="Loading space analysis"/>
         <TextBlock x:Name="Footer" Foreground="{DynamicResource Palette.80FFFFFF}" FontSize="11" VerticalAlignment="Center" Typography.NumeralAlignment="Tabular"/>
+      </DockPanel>
+
+      <!-- BROWSE-08: the pane's terminal (PaneTerminal.cs), above the footer; the strip on top resizes it -->
+      <DockPanel x:Name="TerminalHost" DockPanel.Dock="Bottom" Visibility="Collapsed" Height="220" Margin="4,0,4,2">
+        <Thumb DockPanel.Dock="Top" Height="5" Cursor="SizeNS" DragDelta="TerminalSplitter_DragDelta" AutomationProperties.Name="Resize terminal">
+          <Thumb.Template><ControlTemplate TargetType="Thumb"><Border Background="Transparent"/></ControlTemplate></Thumb.Template>
+        </Thumb>
       </DockPanel>
 
       <Grid>

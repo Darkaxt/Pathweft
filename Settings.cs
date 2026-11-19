@@ -33,6 +33,7 @@ public static class Settings
     public static bool Preview;              // the preview pane right of the panes (Alt+P)
     public static double PreviewWidth = 380;
     public static int Stats = 2;             // the cards below the panes: 2 full, 1 compact (one line each), 0 hidden
+    public static double TerminalHeight = 220; // BROWSE-08: the panes' terminal panel
     public static double SidebarScale = 1, TabsScale = 1, PathScale = 1, ListScale = 1; // per area, on top of TextScale: 0.8–1.5
     public static HashSet<string> DisabledPreviewModules = new(new[] { "f3d" }, StringComparer.Ordinal);
     public static volatile int PerformanceRetention=7;
@@ -151,6 +152,7 @@ public static class Settings
                 case "scale.sidebar" when double.TryParse(v, CultureInfo.InvariantCulture, out var s1) && double.IsFinite(s1): SidebarScale = Math.Clamp(s1, 0.8, 1.5); break;
                 case "scale.tabs" when double.TryParse(v, CultureInfo.InvariantCulture, out var s2) && double.IsFinite(s2): TabsScale = Math.Clamp(s2, 0.8, 1.5); break;
                 case "scale.path" when double.TryParse(v, CultureInfo.InvariantCulture, out var s3) && double.IsFinite(s3): PathScale = Math.Clamp(s3, 0.8, 1.5); break;
+                case "terminal.height" when double.TryParse(v, CultureInfo.InvariantCulture, out var th) && double.IsFinite(th): TerminalHeight = Math.Clamp(th, 120, 2000); break;
                 case "scale.list" when double.TryParse(v, CultureInfo.InvariantCulture, out var s4) && double.IsFinite(s4): ListScale = Math.Clamp(s4, 0.8, 1.5); break;
                 case "preview.modules.disabled": DisabledPreviewModules = new(v.Split(',', StringSplitOptions.RemoveEmptyEntries), StringComparer.Ordinal); break;
                 case "taskbarsearch": TaskbarSearch = v == "1"; break;
@@ -248,6 +250,7 @@ public static class Settings
             $"scale.tabs={TabsScale.ToString(CultureInfo.InvariantCulture)}",
             $"scale.path={PathScale.ToString(CultureInfo.InvariantCulture)}",
             $"scale.list={ListScale.ToString(CultureInfo.InvariantCulture)}",
+            $"terminal.height={TerminalHeight.ToString(CultureInfo.InvariantCulture)}",
             $"preview.modules.disabled={string.Join(",", DisabledPreviewModules.OrderBy(id => id, StringComparer.Ordinal))}",
             $"taskbarsearch={(TaskbarSearch ? 1 : 0)}",
             $"taskbarsearchbox={(TaskbarSearchBox ? 1 : 0)}",

@@ -26,6 +26,11 @@ internal sealed partial class PerformancePanel
     DateTimeOffset? investigationMoment,investigationFrom,investigationTo,historyEnd;
     TimeSpan? historyWindow;bool changingRange;
     PerformanceFact[] selectedEvents;
+    // MONITOR-25: Pause freezes the live analysis graph and table (cards keep updating).
+    Button pauseButton;bool paused;DateTimeOffset pausedAt;PerformanceGraph frozenGraph;PerformanceProcessSnapshot[] frozenApps;
+    readonly System.Windows.Threading.DispatcherTimer filterDelay=new(){Interval=TimeSpan.FromMilliseconds(350)};
+    string GraphFilter=>selected is Cpu or Ram?processFilter.Text.Trim():"";
+    static bool ProcessMatches(string filter,string name,int? pid)=>name?.Contains(filter,StringComparison.OrdinalIgnoreCase)==true||pid?.ToString(System.Globalization.CultureInfo.InvariantCulture)==filter;
     internal bool Historical=>range.SelectedIndex>0||analysisKind.SelectedIndex>0||investigationMoment.HasValue||investigationFrom.HasValue||selectedEvents!=null||historyEnd.HasValue;
 #if DEBUG
     internal void RefreshForVerification()=>Refresh();
@@ -56,7 +61,13 @@ internal sealed partial class PerformancePanel
         var heading=new DockPanel();
         var back=Action("Back to files",()=>Select(-1));DockPanel.SetDock(back,Dock.Right);heading.Children.Add(back);
         detailTitle.FontSize=18;detailTitle.VerticalAlignment=VerticalAlignment.Center;
-        var title=new StackPanel();var category=new TextBlock{Text="System analysis",FontSize=11};category.SetResourceReference(TextBlock.ForegroundProperty,"Muted");title.Children.Add(category);title.Children.Add(detailTitle);BuildDriveHeader(title);BuildProcessHeader(title);heading.Children.Add(title);grid.Children.Add(heading);
+        var title=new StackPanel();var category=new TextBlock{Text="System analysis",FontSize=11};category.SetResourceReference(TextBlock.ForegroundProperty,"Muted");title.Children.Add(category);title.Children.Add(detailTitle);BuildDriveHeader(title);BuildProcessHeader(title);heading.Children.Add(title);
+        // MONITOR-25: one process filter, top centre, narrows both the graph and the table.
+        var top=new Grid();top.Children.Add(heading);
+        processFilter.HorizontalAlignment=HorizontalAlignment.Center;processFilter.VerticalAlignment=VerticalAlignment.Top;processFilter.Margin=new Thickness(0,4,0,0);top.Children.Add(processFilter);
+        top.SizeChanged+=(_,_)=>processFilter.Width=Math.Clamp(top.ActualWidth-2*170,120,300);
+        filterDelay.Tick+=(_,_)=>{filterDelay.Stop();if(Historical&&selected>=0)_ = LoadHistory();};
+        grid.Children.Add(top);
         var controls=new WrapPanel{Margin=new(0,10,0,0)};Grid.SetRow(controls,1);grid.Children.Add(controls);
         void Add(Control control,string name)
         {
@@ -76,6 +87,7 @@ internal sealed partial class PerformancePanel
         Add(Glyph("\uE76B",()=>MoveHistory(-1)),"Previous time range");
         Add(Glyph("\uE76C",()=>MoveHistory(1)),"Next time range");
         Add(Action("Now",ResetInvestigation),"Clear selection and return to now");
+        pauseButton=Glyph("",()=>{if(paused)Unpause();else Pause();Refresh();});Add(pauseButton,"Pause live analysis");
         BuildAdoptionControls(controls);
         enable.SetResourceReference(StyleProperty,"AuxiliaryAction");enable.Click+=async(_,_)=>await EnableIo();Add(enable,"Enable detailed I/O");
         var historyMenu=new ContextMenu();
@@ -101,10 +113,10 @@ internal sealed partial class PerformancePanel
         analysisGraph.SelectionCleared+=ResetInvestigation;
         var plots=new Grid();plots.Children.Add(analysisGraph);plots.Children.Add(appCharts);Grid.SetRow(plots,2);grid.Children.Add(plots);
         detailState.TextWrapping=TextWrapping.NoWrap;detailState.TextTrimming=TextTrimming.CharacterEllipsis;detailState.SetBinding(ToolTipProperty,new Binding(nameof(TextBlock.Text)){Source=detailState});detailState.SetResourceReference(TextBlock.ForegroundProperty,"Muted");detailState.VerticalAlignment=VerticalAlignment.Center;
-        // The process filter, pinned-process actions and column chooser act on the table, so they sit on its own bar.
+        // Pinned-process actions and the column chooser act on the table, so they sit on its own bar.
         var tableTools=new StackPanel{Orientation=Orientation.Horizontal};DockPanel.SetDock(tableTools,Dock.Right);
         void Tool(Control control,string name){control.Margin=new Thickness(8,0,0,4);control.MinHeight=32;AutomationProperties.SetName(control,name);control.ToolTip??=name;tableTools.Children.Add(control);}
-        Tool(processFilter,"Filter CPU processes");Tool(handleTypesButton,"Show handle types of the pinned process");Tool(endProcessButton,"End the pinned process");
+        Tool(handleTypesButton,"Show handle types of the pinned process");Tool(endProcessButton,"End the pinned process");
         columnsButton.Content="";columnsButton.FontFamily=new("Segoe Fluent Icons");columnsButton.FontSize=13;columnsButton.Width=columnsButton.MinWidth=32;columnsButton.Padding=new Thickness(0);Tool(columnsButton,"Choose columns");
         detailBar=new DockPanel{Margin=new(0,4,0,0)};detailBar.Children.Add(tableTools);detailBar.Children.Add(detailState);Grid.SetRow(detailBar,3);grid.Children.Add(detailBar);
         table.SetResourceReference(Control.ForegroundProperty,"Palette.E8EEF6");AutomationProperties.SetName(table,"Performance activity");
@@ -141,7 +153,9 @@ internal sealed partial class PerformancePanel
         bool processes=ReferenceEquals(table.ItemsSource,processItems);
         if(processes)view.SortDescriptions.Add(new("Pinned",ListSortDirection.Descending));
         string filter=processFilter.Text.Trim();
-        view.Filter=processes&&filter.Length>0?item=>item is PerformanceProcessRow row&&(row.Pinned||row.Process.Contains(filter,StringComparison.OrdinalIgnoreCase)||row.Pid.ToString().Contains(filter,StringComparison.OrdinalIgnoreCase)||(processColumns["ExecutablePath"]&&row.ExecutablePath.Contains(filter,StringComparison.OrdinalIgnoreCase))||(processColumns["CommandLine"]&&row.CommandLine.Contains(filter,StringComparison.OrdinalIgnoreCase))):null;
+        view.Filter=filter.Length==0||selected is not (Cpu or Ram)?null:processes?item=>item is PerformanceProcessRow row&&(row.Pinned||row.Process.Contains(filter,StringComparison.OrdinalIgnoreCase)||row.Pid.ToString().Contains(filter,StringComparison.OrdinalIgnoreCase)||(processColumns["ExecutablePath"]&&row.ExecutablePath.Contains(filter,StringComparison.OrdinalIgnoreCase))||(processColumns["CommandLine"]&&row.CommandLine.Contains(filter,StringComparison.OrdinalIgnoreCase)))
+            // Recorded rows: process facts must match; metric/event rows without a PID stay.
+            :item=>item is not PerformanceFact fact||fact.Pid==null||ProcessMatches(filter,fact.Name,fact.Pid);
         if(sortProperty!=null)view.SortDescriptions.Add(new(sortProperty,sortDirection));
         else if(processes)view.SortDescriptions.Add(new(selected==Ram?"Memory":"SortUsage",ListSortDirection.Descending));
         if(processes){view.SortDescriptions.Add(new("Process",ListSortDirection.Ascending));view.SortDescriptions.Add(new("Pid",ListSortDirection.Ascending));}
@@ -151,7 +165,7 @@ internal sealed partial class PerformancePanel
         appChartCancel?.Cancel();appCharts.Visibility=Visibility.Collapsed;analysisGraph.Visibility=Visibility.Visible;displayedApp=null;displayedResult=null;
         if(!ready)return;historyCancel?.Cancel();SetDetailKind();appFilter.Visibility=analysisKind.SelectedIndex==4?Visibility.Visible:Visibility.Collapsed;
         threshold.Visibility=analysisKind.SelectedIndex==3?Visibility.Visible:Visibility.Collapsed;
-        sortProperty=null;if(Historical&&selected>=0)_ = LoadHistory();else {ConfigureTable();Refresh();}
+        sortProperty=null;if(Historical)Unpause();if(Historical&&selected>=0)_ = LoadHistory();else {ConfigureTable();Refresh();}
         UpdateHistoryStatus();
     }
     void UpdateHistoryStatus()
@@ -163,7 +177,39 @@ internal sealed partial class PerformancePanel
     }
     void UpdateAnalysisGraph()
     {
-        UpdateHistoryStatus();if(!Historical&&selected>=0){analysisGraph.SetLive(graphs[selected]);SortRows();}
+        UpdateHistoryStatus();if(Historical||selected<0)return;
+        var source=paused?frozenGraph:graphs[selected];string filter=GraphFilter;
+        if(filter.Length==0)analysisGraph.SetLive(source);
+        else{analysisGraph.SetHistory(FilteredLive(paused?frozenApps:monitor.ProcessHistory(),filter),100,source.GapSeconds);analysisGraph.SetEvents([]);}
+        SortRows();
+    }
+    // Sum of the matching processes per sample: CPU percent, or working sets as a share of physical RAM.
+    (DateTimeOffset,double?)[] FilteredLive(PerformanceProcessSnapshot[] snapshots,string filter)
+    {
+        bool ram=selected==Ram;double total=monitor.Latest?.Ram?.Total??0;
+        return snapshots.Select(snapshot=>
+        {
+            double sum=0;foreach(var app in snapshot.Apps)if(ProcessMatches(filter,app.Process,app.Pid))sum+=ram?app.Memory:app.Usage;
+            return(snapshot.Time,ram?total>0?sum*100/total:(double?)null:sum);
+        }).ToArray();
+    }
+    void Pause()
+    {
+        if(selected<0||Historical)return;
+        paused=true;pausedAt=DateTimeOffset.Now;frozenApps=monitor.ProcessHistory();frozenGraph=new();graphs[selected].CopyTo(frozenGraph);PauseLabel();
+    }
+    void Unpause(){if(!paused)return;paused=false;frozenApps=null;frozenGraph=null;PauseLabel();}
+    void PauseLabel()
+    {
+        pauseButton.Content=paused?"":"";string name=paused?"Resume live analysis":"Pause live analysis";
+        pauseButton.ToolTip=name;AutomationProperties.SetName(pauseButton,name);
+    }
+    void ProcessFilterChanged()
+    {
+        SortRows();if(selected is not (Cpu or Ram))return;
+        if(!Historical)UpdateAnalysisGraph();
+        // Recorded activity is re-read once typing settles.
+        else if(analysisKind.SelectedIndex==0&&investigationMoment==null&&selectedEvents==null&&investigationFrom==null){filterDelay.Stop();filterDelay.Start();}
     }
     void ClearInvestigation(){investigationMoment=investigationFrom=investigationTo=null;selectedEvents=null;analysisGraph.ClearSelection();}
     async Task ReadHover(Task previous,DateTimeOffset time,CancellationTokenSource cancellation)
@@ -185,7 +231,7 @@ internal sealed partial class PerformancePanel
     }
     void ResetInvestigation()
     {
-        ClearInvestigation();historyEnd=null;historyWindow=null;
+        ClearInvestigation();historyEnd=null;historyWindow=null;Unpause();
         changingRange=true;try{range.SelectedIndex=0;}finally{changingRange=false;}
         SetDetailKind();if(Historical)_ = LoadHistory();else{ConfigureTable();Refresh();}
     }
@@ -224,30 +270,33 @@ internal sealed partial class PerformancePanel
             var apps=includeLiveHistory?monitor.ProcessHistory():null;
             detailState.Text="Reading available history…";
             int kind=analysisKind.SelectedIndex;
+            string filter=kind==0&&metric is "cpu" or "ram"?GraphFilter:"";long ramTotal=monitor.Latest?.Ram?.Total??0;
             var work=Task.Run(async()=>
             {
-                if(kind>=6)return(Result:await ReadAdoption(kind,query,cancellation.Token,live,apps),Timeline:(PerformanceTimelineData)null,Moment:(PerformanceMoment)null);
+                if(kind>=6)return(Result:await ReadAdoption(kind,query,cancellation.Token,live,apps),Timeline:(PerformanceTimelineData)null,Moment:(PerformanceMoment)null,Filtered:((DateTimeOffset,double?)[])null);
                 if(moment is {} time)
                 {
                     var snapshot=PerformanceInvestigation.Moment(query,time,cancellation.Token,historySource,apps);
-                    return (Result:new PerformanceResult(snapshot.Status,snapshot.Apps,[],snapshot.Apps.Length,false),Timeline:metric=="disk"?PerformanceInvestigation.Read(query,cancellation.Token,historySource,live,apps):null,Moment:snapshot);
+                    return (Result:new PerformanceResult(snapshot.Status,snapshot.Apps,[],snapshot.Apps.Length,false),Timeline:metric=="disk"?PerformanceInvestigation.Read(query,cancellation.Token,historySource,live,apps):null,Moment:snapshot,Filtered:((DateTimeOffset,double?)[])null);
                 }
-                if(events!=null)return(Result:new PerformanceResult("Recorded events / sampled threshold spikes · select another graph moment to inspect contemporaneous apps.",events,[],events.Length,false),Timeline:metric=="disk"?PerformanceInvestigation.Read(query,cancellation.Token,historySource,live,apps):null,Moment:(PerformanceMoment)null);
+                if(events!=null)return(Result:new PerformanceResult("Recorded events / sampled threshold spikes · select another graph moment to inspect contemporaneous apps.",events,[],events.Length,false),Timeline:metric=="disk"?PerformanceInvestigation.Read(query,cancellation.Token,historySource,live,apps):null,Moment:(PerformanceMoment)null,Filtered:((DateTimeOffset,double?)[])null);
                 var result=PerformanceHistory.Query(query,cancellation.Token,historySource,live,apps);
                 var timeline=selectedRange?null:PerformanceInvestigation.Read(query,cancellation.Token,historySource,live,apps);
-                return(Result:result,Timeline:timeline,Moment:(PerformanceMoment)null);
+                // MONITOR-25: with a process filter the activity line sums only the recorded matching processes.
+                var filtered=timeline!=null&&filter.Length>0?PerformanceHistory.FilteredActivity(metric,filter,query.From.Value,query.To.Value,ramTotal,cancellation.Token,historySource,apps):null;
+                return(Result:result,Timeline:timeline,Moment:(PerformanceMoment)null,Filtered:filtered);
             },cancellation.Token);historyWork=work;var loaded=await work;var result=loaded.Result;
             if(cancellation.IsCancellationRequested||disposed)return;
             displayedQuery=query;displayedResult=result;displayedApp=null;
             var view=new GridView{AllowsColumnReorder=false};
             foreach(var column in new[]{("Observed / peak time","When",135d),("Metric / app / event","Name",210d),("PID","Pid",65d),(moment.HasValue?metric=="ram"?"Working set (bytes)":"Usage (%)":"Average","Average",115d),("Peak","Peak",95d),("Samples","Observations",80d),("Details","Details",460d)})
                 view.Columns.Add(new(){Header=column.Item1,Width=column.Item3,DisplayMemberBinding=new Binding(column.Item2){StringFormat=column.Item2 is "Average" or "Peak"?"{0:0.##}":null}});
-            table.View=view;table.ItemsSource=result.Rows;sortProperty=null;
+            table.View=view;table.ItemsSource=result.Rows;sortProperty=null;SortRows();
             if(kind==4&&result.Rows.Length>0)table.SelectedIndex=0;
             if(loaded.Moment is {} snapshot)analysisGraph.SetMoment(snapshot,metric);
             if(loaded.Timeline is {} timeline)
             {
-                analysisGraph.SetHistory(timeline.Activity.Points.Select(x=>(x.Time,x.Peak??x.Value)).ToArray(),metric=="disk"?0:100,Math.Max(15,(query.To.Value-query.From.Value).TotalSeconds/600*2));
+                analysisGraph.SetHistory(loaded.Filtered??timeline.Activity.Points.Select(x=>(x.Time,x.Peak??x.Value)).ToArray(),metric=="disk"?0:100,Math.Max(15,(query.To.Value-query.From.Value).TotalSeconds/600*2));
                 analysisGraph.SetEvents(timeline.Events);
             }
             if(selected==Drive&&kind==0)
@@ -256,7 +305,7 @@ internal sealed partial class PerformancePanel
                 analysisGraph.SetHistory(activity.Points.Select(x=>(x.Time,x.Peak??x.Value)).ToArray(),0,Math.Max(15,(query.To.Value-query.From.Value).TotalSeconds/600*2));
                 analysisGraph.SetDrive(activity.DrivePoints);
             }
-            string status=loaded.Timeline is {}?$"{query.From.Value.ToLocalTime():g} – {query.To.Value.ToLocalTime():g} · observed peaks; gaps retained":result.Status;
+            string status=loaded.Timeline is {}?$"{query.From.Value.ToLocalTime():g} – {query.To.Value.ToLocalTime():g} · "+(loaded.Filtered!=null?$"graph sums recorded processes matching “{filter}”":"observed peaks")+"; gaps retained":result.Status;
             detailState.Text=(selectedRange?$"Selected {query.From.Value.ToLocalTime():g} – {query.To.Value.ToLocalTime():g} · ":"")+status+(result.Truncated?$" Showing {result.Rows.Length:N0} of {result.Total:N0} rows; refine the range.":"")+(loaded.Timeline is {EventCount:>0} rail?$" · {rail.Events.Length:N0} of {rail.EventCount:N0} markers":"");
             detailState.ToolTip=result.Status;
         }

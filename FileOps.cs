@@ -136,6 +136,7 @@ public partial class MainWindow
         var entry = new UndoEntry(what, when ?? DateTime.Now, steps.ToList(), then == null ? null : Path.GetFileName(then));
         undo.Add(entry);
         if (undo.Count > 50) undo.RemoveAt(0);
+        if (FileNotes.Any) _ = Task.Run(FileNotes.Heal); // BROWSE-07: notes follow what this operation renamed or moved
         SaveUndo(then);
         return entry;
     }

@@ -62,6 +62,14 @@ internal sealed class PreviewSession : IDisposable
         try
         {
             string path = entry.Path;
+            // BROWSE-09: a remote file is previewed from a copy downloaded into this run's temp folder
+            if (RemoteAddress.IsRemote(path))
+            {
+                if (entry.IsDir) { State = "unsupported"; target.Content = BuiltinViewer.Message("A folder on the server.\nOpen it to see what it holds."); return; }
+                if (entry.Size > MainWindow.RemotePreviewLimit) { State = "unsupported"; target.Content = BuiltinViewer.Message("Too large to preview from the server.\nOpen downloads a copy and opens it."); return; }
+                path = await owner.RemotePreviewCopy(entry, token);
+                if (!Current() || token.IsCancellationRequested) return;
+            }
             var candidates=PreviewModules.Candidates(entry).Where(m=>preferredModule==null||m.Id==preferredModule).ToArray();
             bool scopedHtml=candidates.FirstOrDefault()?.Id=="html";
             if (!scopedHtml && !entry.IsDir && PaneView.ArchiveOf(path) is { Inner.Length: > 0 })

@@ -119,7 +119,7 @@ public partial class MainWindow
             p.Refresh();
             return;
         }
-        var menu = sel.Count > 0 ? ItemMenu(p, sel) : FolderMenu(p);
+        var menu = p.IsRemoteFolder ? (sel.Count > 0 ? RemoteItemMenu(p, sel) : RemoteFolderMenu(p)) : sel.Count > 0 ? ItemMenu(p, sel) : FolderMenu(p);
         PrepareContextMenu(menu,p.List);
 #if DEBUG
         archiveMenuForVerification = menu;
@@ -223,6 +223,10 @@ public partial class MainWindow
         if (CanResizeSelection(sel)) m.Items.Add(Item("Resize images…", "\uE799", "", ResizeImages));
         m.Items.Add(Item("What's using this?", "\uE7EF", "", () => WhatsUsing(sel.Select(x => x.Path).ToList())));
         m.Items.Add(Item("Create shortcut", "", "", CreateShortcuts));
+        bool local=sel.All(x=>!PaneView.IsVirtual(x.Path)&&!RemoteAddress.IsRemote(x.Path));
+        if (one && local && !p.InSearch && first.Path is var linkTarget) m.Items.Add(Item("Create link…", "\uE71B", "", () => NewLink(linkTarget)));
+        m.Items.Add(Item("Tags and notes…", "\uE8EC", "", () => NotesDialog.Edit(this, sel.Select(x => x.Path).ToList()), local));
+        if (local && CustomActions.Menu(sel, p.InSearch ? Path.GetDirectoryName(first.Path) : p.Dir, error => MessageBox.Show(this, error, "Actions")) is { } actions) m.Items.Add(actions);
         m.Items.Add(new Separator());
         if (sel.Any(x => x.IsDir)) m.Items.Add(Item("Pin to Quick access", "", "Ctrl+D", PinSelected));
         m.Items.Add(Item("Show in File Explorer", "", "", () => OpenInExplorer($"/select,\"{first.Path}\"")));
@@ -255,7 +259,8 @@ public partial class MainWindow
         Group("Transfer","\uE8DE",item=>Named(item,"Copy to other pane","Move to other pane","Copy to","Move to","Group into new folder…","Add to Drop bin"));
         Group("Copy details","\uE8C8",item=>Named(item,"Copy path","Copy name")||item.Tag as string=="copy-detail");
         Group("Archive","\uF012",item=>item.Tag==null&&IsArchiveCommand(item.Header as string)||item.Tag as string is "shell:7-zip" or "shell:winrar");
-        Group("Tools","\uE713",item=>Named(item,"Run as administrator","Compare in editor","Edit with Notepad++","Resize images…","What's using this?","Create shortcut","Mount")||(item.Header as string)?.StartsWith("Find duplicates")==true);
+        Group("Tools","\uE713",item=>Named(item,"Run as administrator","Compare in editor","Edit with Notepad++","Resize images…","What's using this?","Create shortcut","Mount","Tags and notes…","Create link…")||(item.Header as string)?.StartsWith("Find duplicates")==true);
+        Take(menu,item=>item.Tag as string=="custom-actions");
         Group("More actions","\uE712",_=>true);
         menu.Items.Add(new Separator());menu.Items.Add(properties);
     }
@@ -316,6 +321,7 @@ public partial class MainWindow
         var fromTemplate = Item("New from template", "\uE8F4", "", () => { }, writable);
         if (writable) foreach (var item in TemplateMenuItems()) fromTemplate.Items.Add(item);
         m.Items.Add(fromTemplate);
+        m.Items.Add(Item("Link…", "\uE71B", "", () => NewLink(), writable && !RemoteAddress.IsRemote(p.Dir)));
         m.Items.Add(new Separator());
         // View, as in Explorer's own menu for a folder (the Windows menu gets the same from ShellMenu.Show)
         var view = new MenuItem { Header = $"View  ·  {p.ViewModeName}", Icon = new TextBlock { Text = "", FontFamily = new FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"), FontSize = 13 } };
@@ -328,9 +334,11 @@ public partial class MainWindow
         };
         foreach (var item in p.SortMenuItems()) sort.Items.Add(item);
         m.Items.Add(sort);
+        if (p.InSearch) m.Items.Add(Item("Save this search…", "\uE721", "", () => SaveCurrentSearch(p)));
         m.Items.Add(Item("Select by pattern…", "", "Num +", () => SelectByPattern(true)));
         m.Items.Add(Item("Invert selection", "", "Num *", p.InvertSelection));
         m.Items.Add(Item("Compare with other pane", "", "Shift+F2", ComparePanes));
+        m.Items.Add(Item("Synchronize with other pane…", "", "", SynchronizePanes, !Settings.SinglePane && !p.InSearch));
         m.Items.Add(Item("Find duplicates…", "", "", () => FindDuplicates(p.Dir)));
         // the other pane's folder too, when both are on screen and show different places
         var other = p == Left ? Right : Left;
@@ -358,14 +366,14 @@ public partial class MainWindow
         void Take(ItemsControl target,Func<MenuItem,bool> predicate){foreach(var item in remaining.Where(predicate).ToArray()){remaining.Remove(item);target.Items.Add(item);}}
         void Group(string name,string glyph,Func<MenuItem,bool> predicate){var group=Item(name,glyph,"",()=>{});Take(group,predicate);if(group.Items.Count>0)menu.Items.Add(group);}
         Take(menu,item=>item.Header as string is "Paste" or "Paste as file"||(item.Header as string)?.StartsWith("Undo ")==true);
-        Group("New","\uE710",item=>item.Header as string is "New folder" or "New file…" or "New from template");
+        Group("New","\uE710",item=>item.Header as string is "New folder" or "New file…" or "New from template" or "Link…");
         menu.Items.Add(new Separator());
-        Take(menu,item=>(item.Header as string)?.StartsWith("View  ·")==true||(item.Header as string)?.StartsWith("Sort by  ·")==true);
+        Take(menu,item=>(item.Header as string)?.StartsWith("View  ·")==true||(item.Header as string)?.StartsWith("Sort by  ·")==true||item.Header as string=="Save this search…");
         Group("Select","\uE762",item=>item.Header as string is "Select by pattern…" or "Invert selection");
         Take(menu,item=>item.Header as string is "Refresh" or "Show hidden files" or "Hide hidden files");
         menu.Items.Add(new Separator());
         OpenWithGroup(menu,remaining);
-        Group("Tools","\uE713",item=>item.Header as string is "Compare with other pane" or "Open terminal here"||(item.Header as string)?.StartsWith("Find duplicates")==true);
+        Group("Tools","\uE713",item=>item.Header as string is "Compare with other pane" or "Synchronize with other pane…" or "Open terminal here"||(item.Header as string)?.StartsWith("Find duplicates")==true);
         Group("More actions","\uE712",item=>item.Header as string!="Properties");
         menu.Items.Add(new Separator());Take(menu,_=>true);
     }
@@ -474,6 +482,11 @@ public partial class MainWindow
     [DllImport("shell32.dll")] static extern int SHMultiFileProperties([MarshalAs(UnmanagedType.Interface)] object dataObject, int flags);
 
     void Properties(string path) => Properties(new[] { path });
+    static string LinkDescription(string path)
+    {
+        try { return Links.Describe(path, File.GetAttributes(path)); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException) { return ""; }
+    }
 
     [DllImport("shell32.dll")] static extern IntPtr ILFindChild(IntPtr parent, IntPtr child);
 
@@ -487,6 +500,16 @@ public partial class MainWindow
 #if DEBUG
         if(PropertiesForVerification is {} dispatch){dispatch(owner,paths);return true;}
 #endif
+        if (paths.Count == 1 && LinkDescription(paths[0]) is { Length: > 0 } link)
+        {
+            string target = Links.Target(paths[0]);
+            switch (LinkPropertiesDialog.Show(owner, paths[0], link, target))
+            {
+                case 0: active.Navigate(Path.GetDirectoryName(target.TrimEnd('\\')) ?? target, select: target); active.FocusList(); return true;
+                case 1: break;
+                default: return true;
+            }
+        }
         if (paths.Count == 1) return SHObjectProperties(new System.Windows.Interop.WindowInteropHelper(owner).Handle, 2 /* SHOP_FILEPATH */, paths[0], null);
         var common = paths.Select(p => Path.GetDirectoryName(p.TrimEnd('\\')) ?? p).Aggregate(SharedFolder);
         if (common == null) { Status.Text = "Properties of items on different drives can't be shown together"; return false; }

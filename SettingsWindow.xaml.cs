@@ -14,7 +14,7 @@ public partial class SettingsWindow : Window
         Width=Math.Min(SystemParameters.WorkArea.Width,740*Math.Max(1,Settings.TextScale));
         MinWidth=Math.Min(Width,620*Math.Max(1,Settings.TextScale));
         Height=Math.Min(SystemParameters.WorkArea.Height,640*Math.Max(1,Settings.TextScale));
-        foreach(var (title,card) in new[]{("Appearance",AppearanceCard),("Files",FilesCard),("Transfers",TransfersCard),("Windows integration",IntegrationCard),("Storage",StorageCard),("Defaults",DefaultsCard),("About",AboutCard)})
+        foreach(var (title,card) in new[]{("Appearance",AppearanceCard),("Files",FilesCard),("Transfers",TransfersCard),("Windows integration",IntegrationCard),("Actions",ActionsCard),("Privacy",PrivacyCard),("Storage",StorageCard),("Defaults",DefaultsCard),("About",AboutCard)})
             SettingsCategories.Items.Add(new System.Windows.Controls.ListBoxItem{Content=title,Tag=card});
         SettingsCategories.SelectionChanged+=(_,_)=>
         {
@@ -34,6 +34,7 @@ public partial class SettingsWindow : Window
         BuildPreviewModuleControls();
         ShowValues();
         LoadFolderRoutes();
+        BuildBrowsingCards();
         Activated += (_, _) => {RefreshFolderIntegration();RefreshStorage();};
         // A double-click on a slider's handle puts it back to its default (Settings.cs), as in Frostpane: one
         // setting can be tried out and undone without a reset of them all.

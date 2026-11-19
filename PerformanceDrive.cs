@@ -33,7 +33,7 @@ internal sealed partial class PerformancePanel
         driveHealthPanel.Visibility=selected==Drive?Visibility.Visible:Visibility.Collapsed;
         bool activity=selected==Drive&&analysisKind.SelectedIndex==0;
         if(!activity)analysisGraph.SetDrive(null);
-        else if(!Historical)analysisGraph.SetDrive(samples.Select(s=>
+        else if(!Historical&&!paused)analysisGraph.SetDrive(samples.Select(s=>
         {
             var d=WindowsPerformanceCounters.ForDisk(s,diskNumber);
             return new DrivePoint(s.Time,d?.Read,d?.Write,d?.LatencyMs,d?.Busy);
