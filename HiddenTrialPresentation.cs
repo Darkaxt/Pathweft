@@ -27,7 +27,7 @@ internal static class HiddenTrialPresentation
             // A native sheet can activate on a never-switched private desktop.
             // That is not activation on the user's input desktop. Distinguish
             // the actual desktop objects rather than assuming one per station.
-            if(Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO") is "menus-shell" or "space-ui"&&IsPrivateDesktop(thread))return;
+            if(Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO") is "menus-shell" or "space-ui" or "browse"&&IsPrivateDesktop(thread))return;
             ++ForegroundViolations;
             ForegroundEvents.Add(new { phase = Phase, window = Application.Current.Windows.Cast<Window>().FirstOrDefault(w => new WindowInteropHelper(w).Handle == hwnd)?.GetType().Name, hwnd = hwnd.ToInt64(), nativeTime, callbackTime = Environment.TickCount, currentForeground = GetForegroundWindow().ToInt64() });
         }
@@ -67,7 +67,7 @@ internal static class HiddenTrialPresentation
          Settings.Profile?.StartsWith(@"D:\Temp\pathweft-s44-maintenance\", StringComparison.OrdinalIgnoreCase) == true ||
          Settings.Profile?.StartsWith(@"D:\Temp\pathweft-transfer-progress\", StringComparison.OrdinalIgnoreCase) == true ||
          Settings.Profile?.StartsWith(@"D:\Temp\pathweft-rars-native\", StringComparison.OrdinalIgnoreCase) == true || SandboxIndexTrial);
-    internal static bool PrivateSpaceTrial=>Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO") is "space-ui" or "performance-native"&&
+    internal static bool PrivateSpaceTrial=>Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO") is "space-ui" or "performance-native" or "browse"&&
         Environment.GetEnvironmentVariable("PATHWEFT_PRIVATE_MENU_DESKTOP")=="WinSta0"&&IsPrivateDesktop(GetCurrentThreadId());
     internal static bool SuppressFocus(Window window) => Enabled && !PrivateSpaceTrial && !(window is SearchWidgetWindow && Environment.GetEnvironmentVariable("PATHWEFT_S2_NATIVE_ONLY") == "1");
 
