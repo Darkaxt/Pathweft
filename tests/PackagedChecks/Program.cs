@@ -312,7 +312,7 @@ sealed partial class PackageProbe
             var settings=new SettingsWindow(owner);
             var categories=(ListBox)settings.FindName("SettingsCategories");
             var cards=(StackPanel)settings.FindName("SettingsCards");
-            Check(categories.Items.Count==7&&settings.Width>=740&&settings.FindName("ChangeDataLocation") is Button,"Delivered Settings includes Storage and its Change location action with the preserved content width");
+            Check(categories.Items.Count==9&&settings.FindName("ActionsCard") is Border&&settings.FindName("PrivacyCard") is Border&&settings.Width>=740&&settings.FindName("ChangeDataLocation") is Button,"Delivered Settings includes Actions, Privacy, Storage and its Change location action with the preserved content width");
             Check(settings.FindName("FolderRouteRows") is ItemsControl routesEditor&&routesEditor.Items.Count==5&&new[]{"AddFolderRoute","ApplyFolderRoutes","ReloadFolderRoutes","OpenFolderRoutesJson"}.All(name=>settings.FindName(name) is Button),"Delivered Windows integration includes the persisted route editor and Add/Apply/Reload/Open JSON actions");
             foreach(ListBoxItem item in categories.Items)
             {
