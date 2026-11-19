@@ -1,6 +1,6 @@
 # Pathweft specification
 
-Version 1.42 - 2026-11-19. Owner: Darkaxt.
+Version 1.43 - 2026-11-19. Owner: Darkaxt.
 
 ### Read-only MCP expansion (S48)
 
@@ -2381,6 +2381,14 @@ documents, hydrating cloud files, starting indexers or installing components.
 | CONTENT-04 | Once implementation is authorized, initial indexing reads the selected supported files and may fetch their content through the existing cloud provider. Indexed originals need not remain locally available: do not pin them offline, delete cloud/source files or force cache eviction. Periodically reconcile selected folders and incrementally re-extract only new/changed files; combine timestamp and size with stable provider revision/identity where available, qualifying providers with unreliable metadata. Handle renames/deletions, disconnected roots, in-flight writes, missed notifications and restart catch-up without classifying unavailable files as deleted. Metadata equality is a change-detection heuristic, not proof of byte identity. Keep prior failed-refresh results explicitly stale and publish only complete valid replacements. |
 | CONTENT-05 | Expose content search through Pathweft's existing browsing/search workflow with clear selected-root coverage, freshness and filename-versus-content semantics. Return original file identity and matching line/page/sheet/cell/slide/paragraph locations; navigate via the appropriate original-file viewer/open boundary where supported. A cached index can answer while its source is offline, but never claim the original is accessible or the result is freshly verified. Do not silently hydrate files merely to draw result rows. |
 | CONTENT-06 | Qualify a real folder-toggle -> extraction -> persisted strings/location index -> query -> original-location workflow, including current badges, changed/deleted/renamed files, mixed supported/unsupported formats, large/actively appended JSONL, extraction failure, offline/cloud-cache independence and restart recovery. Measure index size, query/update latency and peak/idle CPU/memory on representative corpora; establish concrete resource budgets and bounded background ownership before acceptance. Verify settings scope, overlapping roots, disable/purge, cancellation/app-exit cleanup, themes/scaling and source preservation. S19 owns normal release, independent retrieval and applicable installed verification after implementation is separately authorized. |
+
+Owner decisions 2026-11-19 (spec 1.43), with the index service thread's review of its draft CONTENT-INDEX.md:
+- **Split by where it runs.** The index service keeps what it already runs: the file-name index kept current from the NTFS journal, notifications and scheduled checks, including catch-up after a restart while Pathweft is closed. Pathweft owns everything that runs on its side: content scopes, the extraction worker, the terms/locations store, content queries, badges and the UI. S19 needs no new service operation: Pathweft reconciles a scope against the service's ordinary query results (path, size, modified time) when the service covers it, and lists the folder itself (metadata only, no hydration) when it does not.
+- **Store location.** CONTENT-03 is unchanged: the index lives in Pathweft's own data location, written as the user, so it holds only what the user can read.
+- **Cloud folders.** Google Drive (H:, J:) and Tresorit (T:) folders can be content-indexed when the owner enables them; the first read fetches each file through the provider (CONTENT-04). The service still never reads contents.
+- **Extraction.** An on-demand worker mode of Pathweft.exe (like the Office preview worker), below-normal priority, in a job with a memory cap, per-file timeout; it exits when its queue is empty. Text readers for plain text, Markdown, JSON/JSONL, CSV/TSV, logs and source code; the Craft cores' qualified text extraction (the Office worker's `extract` action) for Word, Excel, PowerPoint and PDF formats.
+- **Query.** A `content:` term in the address search (words, prefixes with `*`, "phrases"). Other terms keep their filename/path meaning and are evaluated by the index service on the content matches. Results show the matching locations (line, page, sheet, slide, paragraph).
+- Post-S19 options from the draft, not S19 requirements: SHA-256 dedup of extracted documents, the shared hash cache, `dupe:`.
 
 No implementation criterion is satisfied yet. Extractor APIs, search granularity,
 provider metadata reliability and resource budgets remain to qualify in this scope.
