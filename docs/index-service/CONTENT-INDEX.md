@@ -1,6 +1,7 @@
 # Content index and hash cache: design draft
 
-Status: DRAFT for discussion (2026-11-19). Not in development; nothing here is
+Status: DRAFT (2026-11-19), reviewed by the Pathweft thread the same day; its
+answers are folded in below. Not in development; nothing here is
 implemented or scheduled. Requirement IDs (CIX-nn) are provisional.
 
 Owner direction: the index service should later take over selective file-contents
@@ -18,7 +19,8 @@ index service (SYSTEM)                          extractor worker (user)
   scheduled checks (existing)                     reads each file once:
   content rules -> dirty queue        ------->      hashes (SHA-256 + cached extras)
   files + documents tables            <-------      text + metadata via plugins
-  Tantivy content index                           never runs as SYSTEM
+  Tantivy content index                           never runs as SYSTEM;
+                                                  a worker mode of Pathweft.exe
   query: name/date filters + content:
   hash cache
 ```
@@ -29,6 +31,13 @@ index service (SYSTEM)                          extractor worker (user)
   Pathweft's C# plugins for other formats (PDF, Office, media metadata, ...).
   It runs in the user's context at low priority, so it can only read what that
   user can read, and a malicious file attacks an unprivileged process.
+- The extractor is a worker mode of `Pathweft.exe` selected before WPF starts
+  (like the existing OfficeWorker and MaintenanceWorker), so nothing extra is
+  installed or signed. Pathweft starts it (the app, or its sign-in agent once
+  `Agent.StartAtSignIn` exists); the service never does. It exits when
+  `content_next` returns an empty queue and is started again on the next change;
+  the service's status reply says whether the queue is non-empty. No permanently
+  resident extra process.
 
 ## Requirements (provisional)
 
@@ -42,9 +51,10 @@ hash. `documents`: content hash -> extracted text and fields, indexed once, with
 a reference count. A change is detected by the stamp, without reading the file.
 
 **CIX-03 Content key.** One fixed internal algorithm, never user-configurable:
-SHA-256 (in Pathweft's list; collision-proof; typically faster than the disk).
+SHA-256 (in Pathweft's list; collision-proof; the read is disk-bound anyway).
 64-bit hashes are not used as keys (a collision would attach one file's text to
-another). Alternative under discussion: XXH3-128 (faster, not yet in Pathweft).
+another). XXH3-128 was considered and rejected (Pathweft review): no 128-bit
+non-cryptographic hash is needed anywhere.
 
 **CIX-04 No needless re-extraction.** Moves within a volume keep the file ID: no
 work. Copies, cross-volume moves and re-downloads produce a new identity whose
@@ -56,7 +66,13 @@ re-parsed; acceptable.
 identity, path, stamp), `content_put` (identity, stamp, hash, text chunks,
 fields, extractor/plugin version) and `content_fail` (identity, stamp, reason;
 retried only after the stamp changes or the plugin version changes). A stamp
-that changed since the batch was handed out is discarded.
+that changed since the batch was handed out is discarded. Plugin contract
+(Pathweft side): `extract(path, stamp) -> {extractor_id, extractor_version,
+fields{}, bounded streamed text chunks}`; plugins are versioned individually and
+a version bump re-queues only that plugin's failures and documents. The worker
+process is the isolation boundary: per-file timeout, memory cap, recycling after
+N files or a crash; a crash or timeout becomes `content_fail(reason)`. Office and
+PDF reuse Pathweft's OfficeWorker bounded `TextRecord` output (location/offset).
 
 **CIX-06 Query.** `content:<words or "phrase">` in the existing language. Cheap
 name/path/date/size terms filter first; the content index narrows within them.
@@ -79,10 +95,20 @@ on C:. Owner policy: footprint is acceptable if it beats the alternatives.
 **CIX-10 Hash cache.** The service stores hashes keyed by (file identity, stamp,
 algorithm name) -> bytes, for any algorithm Pathweft reports. Pathweft's Hashes
 column asks first (`hash_get`); on a miss it computes as today and stores the
-result (`hash_put`). The extractor may feed several cheap hashers in its single
-read; other algorithms are computed on demand only. Entries go stale with the
+result (`hash_put`). The cache serves every whole-file hash Pathweft computes,
+not only files under the content rules. `hash_get` answers only if the caller can
+read the file (a hash confirms content; same rule as CIX-07). Pathweft keeps its
+local `hashes.bin` as the fallback when the service is absent and never blocks a
+column on the pipe (short timeout, then compute locally). Pathweft's existing key
+(volume, 128-bit file ID, size, last write) matches identity + stamp, so entries
+move between both caches directly. The extractor's single read also fills
+SHA-256 and cheap extras (CRC, XXH); other algorithms are computed on demand only. Entries go stale with the
 stamp. Only true whole-file hashes are cached under an algorithm name (ED2K is
 chunked and BTIH is a torrent info-hash; they need their own names/definitions).
+
+**CIX-12 Settings.** Rule editing and status (queued, failed, per-plugin
+counts) live in Pathweft's Settings > Pathweft index, beside the folder roots; no
+separate UI.
 
 **CIX-11 `dupe:`.** Duplicate detection over content-indexed files compares the
 internal key only, so it is exact and independent of displayed columns.
@@ -90,21 +116,23 @@ internal key only, so it is exact and independent of displayed columns.
 ## Stages (when development starts)
 
 1. Rules, dirty queue, protocol, native text/code extractor, Tantivy,
-   `content:`, visibility (end to end on plain text and source code).
-2. Pathweft plugin extractor (PDF, Office, media metadata).
+   `content:` (words and phrases), visibility (end to end on text and code).
+2. Pathweft plugin extractor: PDF and Office (docx/xlsx/pptx via OfficeWorker).
 3. Hash cache for the Hashes column; `dupe:`.
-4. Optional: snippets, metadata fields, n-gram field for substring/regex search
-   in code, OCR.
+4. Optional: media metadata (last: names and tags are mostly reachable already
+   and tag edits churn hashes), snippets, metadata fields, n-gram field for
+   substring/regex search in code (earlier only if the owner asks), OCR.
 
-## Open questions
+## Decided in the Pathweft review (2026-11-19)
 
-- Extractor lifetime: only while Pathweft runs, or a headless worker started at
-  sign-in (keeps the index current; one more background process)?
-- Search style: whole words/phrases (documents) vs substrings (code); decides
-  whether stage 4's n-gram field moves earlier.
-- Which formats first (code/text, Office/PDF, media metadata)?
-- SHA-256 or XXH3-128 as the internal key (Pathweft's view on adding XXH3-128).
-- Plugin contract shape in Pathweft (stream -> text chunks + fields), plugin
-  versioning, and whether plugins can run out of process.
-- Should the hash cache also serve hashes computed for files outside the content
-  rules (any file Pathweft hashes)? Proposed: yes, it costs only storage.
+Extractor lifetime (on-demand worker mode of Pathweft.exe), plugin contract and
+isolation, SHA-256 as the key, format order (text/code, then PDF/Office, media
+last), words and phrases first, hash cache for every whole-file hash with
+read-access check and local fallback, settings placement. All post-1.1.80.
+
+## Open questions (owner)
+
+- Substring/regex search inside code: needed early, or stage 4 as planned?
+- Which folders and extensions should the first rules cover?
+- Per-drive opt-in for H:, J: and T: (locally present files only), or leave
+  cloud drives out of content indexing entirely?
