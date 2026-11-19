@@ -28,6 +28,7 @@ is recorded in SPEC.md.
 | IS6 | COMPLETE | – | – | IS6 record below |
 | IS7 | COMPLETE | – | – | IS7 record below |
 | IS8 | COMPLETE | – | – | IS8 record below |
+| FIX1 | ACTIVE | – | – | FIX1 record below |
 
 ## IS1 readiness record (2026-11-18)
 
@@ -262,3 +263,17 @@ the admin broker (exit 0). Live checks on the installed service: `dm:today file:
 641, `parent:"D:\Projects\Pathweft-index\docs\index-service"` 5 direct
 children, `folder: parent:D:\` 33, `dupe:` refused with the supported list.
 Commit ef3f204; merged by the Pathweft thread (2c82aee) for 1.1.80.
+
+## FIX1 record (2026-11-19): folder sizes of new NTFS folders
+
+Reported by the Pathweft thread (blocking 1.1.80; IDX-06): folders created at
+01:11 under `D:\Temp\pathweft-s13-s9-s11\...` reported 17,259 / 17,704 / 346,771
+bytes for contents of 579 / 0 / 579 bytes, stable for 20 minutes; file sizes were
+right. Cause (`store.rs` `set_index`): deleting a record marked it dead but kept
+its `size`; when NTFS reused the record number for a new folder, the folder kept
+that size as if its children had contributed it, and added it to every
+ancestor. D:\Temp's create/delete churn reuses record numbers constantly. Fix: a
+deleted file record's size is reset to 0, so a dead record holds only what live
+children still contribute (a dead folder's children subtract their sizes when
+they are deleted). Regression test `reused_records_do_not_inherit_old_sizes`.
+A restart (install) reloads the MFT, which clears sizes already corrupted.
