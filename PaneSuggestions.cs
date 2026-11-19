@@ -22,12 +22,10 @@ public partial class PaneView
         internal int Recency; // place in the recent folders, int.MaxValue when not there
     }
     /// What MainWindow holds: both panes' tabs and the Quick access lists.
-    internal static Func<IEnumerable<(PaneView Pane, int Index, string Path)>> OpenTabs;
+    internal static Func<IEnumerable<(PaneView Pane, int Index, string Path)>> AllTabs;
     internal static Func<IEnumerable<(string List, string Path)>> PinnedFolders;
     internal static Action<PaneView, int> TabRequested;
     internal static Action<SavedSearch> SavedSearchRequested;
-    internal IReadOnlyList<string> TabPaths => tabs;
-    internal int TabIndex => tab;
 
     const int SuggestionsShown = 30;
 
@@ -63,7 +61,7 @@ public partial class PaneView
                 Add(new(SuggestionKind.Recent, path, DisplayName(path), Location(path)), "", path);
             return found;
         }
-        foreach (var (pane, index, path) in OpenTabs?.Invoke() ?? Enumerable.Empty<(PaneView, int, string)>())
+        foreach (var (pane, index, path) in AllTabs?.Invoke() ?? Enumerable.Empty<(PaneView, int, string)>())
         {
             if (path is null or "" || pane == this && index == tab) continue; // where you already are
             Add(new(SuggestionKind.Tab, path, DisplayName(path), (pane == this ? "Tab in this pane" : "Tab in the other pane") + "  ·  " + Location(path), pane, index), DisplayName(path), path);

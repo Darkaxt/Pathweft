@@ -145,8 +145,8 @@ public partial class MainWindow : Window
         BuildSavedSearches(); SavedSearches.Changed += BuildSavedSearches;
         BuildConnections(); RemoteConnections.Changed += BuildConnections;
         // BROWSE-01/02: the address suggestions read the tabs and Quick access lists held here
-        PaneView.OpenTabs = () => (Settings.SinglePane ? new[] { Left } : new[] { Left, Right })
-            .SelectMany(p => p.TabPaths.Select((path, i) => (p, i, path)));
+        PaneView.AllTabs = () => (Settings.SinglePane ? new[] { Left } : new[] { Left, Right })
+            .SelectMany(p => p.OpenTabs.Select((path, i) => (p, i, path)));
         PaneView.PinnedFolders = () => quickLists.SelectMany(l => l.Folders.Select(f => (l.Name, f)));
         PaneView.TabRequested = (pane, i) => { SetActive(pane); pane.ShowTab(i); pane.FocusList(); };
         PaneView.SavedSearchRequested = search => OpenSavedSearch(search);
