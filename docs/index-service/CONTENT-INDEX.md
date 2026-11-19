@@ -1,23 +1,34 @@
 # Content index and hash cache: design draft
 
-Status: DRAFT (2026-11-19), reviewed by the Pathweft thread the same day; its
-answers are folded in below. Not in development; nothing here is
-implemented or scheduled. Requirement IDs (CIX-nn) are provisional.
+Status: SUPERSEDED for S19 (2026-11-19). Kept as background only.
 
-**Authority:** Pathweft `docs/SPECIFICATION.md` CONTENT-01..06 (S19, recorded
-2026-11-06) is authoritative. The following points in this draft are superseded:
-- Tantivy: FTS5 contentless qualifies first (CONTENT-03).
-- Storing extracted text: only terms and location arrays are kept (CONTENT-03).
-- "Never hydrate" (CIX-08): the user-context worker may hydrate on its first
-  read (CONTENT-04). The service itself still never reads contents or hydrates.
+**Owner decisions (2026-11-19), recorded in Pathweft `docs/SPECIFICATION.md`
+1.43, CONTENT section:**
+- "Service owns what runs in the service side, you own what runs in your side".
+- The content store is Pathweft's: FTS5 contentless, in Pathweft's data
+  folder, written as the user (CONTENT-03 unchanged).
+- T: is included when the owner enables a folder there.
 
-The SHA-256 dedup, the hash cache (CIX-10) and `dupe:` (CIX-11) are not in
-CONTENT-01..06. They are post-S19 options.
+S19 asks the service for **no new operations**:
+- Pathweft detects changes by comparing each scope against ordinary `query`
+  results (path, size, modified). Where the service does not cover a folder,
+  Pathweft lists it itself.
+- Pathweft evaluates `content:` itself. Other terms go to the service as
+  ordinary queries.
 
-Still open for the owner:
-- Is the store service-owned (needs CONTENT-03's location wording revised) or
-  Pathweft-owned?
-- Is T: included?
+Dropped from this draft:
+- Every `content_*` and content-scope operation.
+- The service-owned store and Tantivy.
+- Storing extracted text.
+- The "never hydrate" rule for the worker. CONTENT-04 lets the user-context
+  worker hydrate; the service itself still never reads contents or hydrates.
+- The CIX-07 visibility check, which is moot because the store belongs to the
+  user.
+
+The SHA-256 dedup, the hash cache (CIX-10) and `dupe:` (CIX-11) remain
+post-S19 options, each needing its own owner go-ahead.
+
+The rest of this file is the earlier draft, kept unchanged for reference.
 
 Owner direction: the index service should later take over selective file-contents
 indexing. Initial idea (owner): Pathweft's plugins read the files and export
