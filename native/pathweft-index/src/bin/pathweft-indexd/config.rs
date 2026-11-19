@@ -1,4 +1,4 @@
-//! Service configuration: `%ProgramData%\PathweftIndex\config.json`.
+//! Service configuration: `%ProgramData%\Pathweft\services\file_index\config.json`.
 
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
@@ -48,9 +48,18 @@ impl Default for Config {
     }
 }
 
+fn program_data() -> PathBuf {
+    std::env::var_os("ProgramData").map(PathBuf::from).unwrap_or_else(|| PathBuf::from(r"C:\ProgramData"))
+}
+
+/// Config, log (and later the content store), beside Pathweft's other services.
 pub fn data_dir() -> PathBuf {
-    let base = std::env::var_os("ProgramData").map(PathBuf::from).unwrap_or_else(|| PathBuf::from(r"C:\ProgramData"));
-    base.join("PathweftIndex")
+    program_data().join("Pathweft").join("services").join("file_index")
+}
+
+/// The data folder of releases up to 1.1.82; `install` moves it.
+pub fn legacy_data_dir() -> PathBuf {
+    program_data().join("PathweftIndex")
 }
 
 pub fn default_path() -> PathBuf {

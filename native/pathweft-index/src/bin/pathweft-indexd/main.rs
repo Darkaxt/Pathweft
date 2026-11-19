@@ -4,7 +4,8 @@
 //! pathweft-indexd service                      run under the service control manager
 //! pathweft-indexd console [--pipe NAME] [--volumes C:,D:] [--no-folders]
 //!                         [--config PATH] [--exit-after SECONDS]
-//! pathweft-indexd install [--allow SID]...     copy, register and start (elevated)
+//! pathweft-indexd install [--allow SID]...     register in place and start (elevated)
+//! pathweft-indexd stop                         stop and wait for exit (elevated)
 //! pathweft-indexd uninstall [--purge]          stop and remove (elevated)
 //! pathweft-indexd selftest --volume X: [--report PATH]   disposable-volume test (elevated)
 //! ```
@@ -90,6 +91,7 @@ fn main() {
         "console" => console(rest).map(|_| 0),
         "install" => install::install(&values(rest, "--allow")).map(|_| 0),
         "uninstall" => install::uninstall(rest.iter().any(|a| a == "--purge")).map(|_| 0),
+        "stop" => install::stop_service().map(|_| 0),
         "selftest" => {
             log::init(None, true);
             match value(rest, "--volume") {
@@ -98,7 +100,7 @@ fn main() {
             }
         }
         _ => {
-            eprintln!("usage: pathweft-indexd service | console [options] | install [--allow SID] | uninstall [--purge] | selftest --volume X: [--report PATH]");
+            eprintln!("usage: pathweft-indexd service | console [options] | install [--allow SID] | stop | uninstall [--purge] | selftest --volume X: [--report PATH]");
             Ok(1)
         }
     };

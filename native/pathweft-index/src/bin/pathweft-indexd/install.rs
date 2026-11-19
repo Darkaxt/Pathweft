@@ -1,11 +1,14 @@
-//! `install` / `uninstall` (SPEC IDX-01). Both need an elevated token.
+//! `install` / `uninstall` / `stop` (SPEC IDX-01). All need an elevated token.
+//!
+//! The service runs from where Pathweft's setup put it
+//! (`%ProgramFiles%\Pathweft\services\file_index`); nothing is copied.
 
 use crate::config::{self, Config};
 use crate::security::LocalSd;
 use crate::service::SERVICE_NAME;
 use pathweft_index::ffi::*;
 use std::ffi::c_void;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
 
 const DISPLAY: &str = "Pathweft Index";
@@ -13,9 +16,91 @@ const DESCRIPTION: &str = "File-name index for Pathweft: reads NTFS volumes' MFT
 /// ProgramData folder: SYSTEM and Administrators full control, users read.
 const DATA_SDDL: &str = "D:P(A;OICI;FA;;;SY)(A;OICI;FA;;;BA)(A;OICI;FR;;;BU)";
 
-pub fn install_dir() -> PathBuf {
-    let base = std::env::var_os("ProgramFiles").map(PathBuf::from).unwrap_or_else(|| PathBuf::from(r"C:\Program Files"));
-    base.join("PathweftIndex")
+fn program_files() -> PathBuf {
+    std::env::var_os("ProgramFiles").map(PathBuf::from).unwrap_or_else(|| PathBuf::from(r"C:\Program Files"))
+}
+
+/// Where releases up to 1.1.82 copied the service; removed on install.
+fn legacy_dir() -> PathBuf {
+    program_files().join("PathweftIndex")
+}
+
+/// `\\?\C:\x` -> `C:\x` (the service command line and messages use plain paths).
+fn plain(p: PathBuf) -> PathBuf {
+    let s = p.to_string_lossy();
+    match s.strip_prefix(r"\\?\") {
+        Some(rest) if !rest.starts_with(r"UNC\") => PathBuf::from(rest),
+        _ => p,
+    }
+}
+
+fn folded(p: &Path) -> String {
+    p.to_string_lossy().trim_end_matches('\\').to_lowercase()
+}
+
+/// True if `p` is `dir` or below it.
+fn is_within(p: &Path, dir: &Path) -> bool {
+    let (p, d) = (folded(p), folded(dir));
+    p == d || p.starts_with(&format!("{d}\\"))
+}
+
+/// The running executable, canonical. A LocalSystem service must run from a
+/// folder only administrators can change, so it has to be under Program Files.
+fn installed_exe() -> Result<PathBuf, String> {
+    let me = std::env::current_exe().map_err(|e| e.to_string())?;
+    let me = plain(std::fs::canonicalize(&me).map_err(|e| format!("{}: {e}", me.display()))?);
+    let pf = plain(std::fs::canonicalize(program_files()).unwrap_or_else(|_| program_files()));
+    if !is_within(&me, &pf) {
+        return Err(format!(
+            "{} is not under {}; the service runs from where it is installed, so run the copy Pathweft's setup installed",
+            me.display(),
+            pf.display()
+        ));
+    }
+    Ok(me)
+}
+
+fn remove_dir_retrying(dir: &Path) -> Result<(), String> {
+    // The SCM may hold the old image briefly after stopping.
+    let mut last = Ok(());
+    for _ in 0..20 {
+        last = std::fs::remove_dir_all(dir);
+        if last.is_ok() {
+            break;
+        }
+        std::thread::sleep(Duration::from_millis(250));
+    }
+    last.map_err(|e| format!("{}: {e}", dir.display()))?;
+    println!("removed {}", dir.display());
+    Ok(())
+}
+
+/// Removes the pre-1.1.83 copy in `%ProgramFiles%\PathweftIndex` unless `me`
+/// runs from it.
+fn remove_legacy(me: &Path) -> Result<(), String> {
+    let dir = legacy_dir();
+    if dir.exists() && !is_within(me, &dir) {
+        remove_dir_retrying(&dir)?;
+    }
+    Ok(())
+}
+
+/// Moves config and log from `%ProgramData%\PathweftIndex` (the service is
+/// stopped). An existing new config wins; the old folder is removed.
+fn migrate_data() -> Result<(), String> {
+    let old = config::legacy_data_dir();
+    if !old.exists() {
+        return Ok(());
+    }
+    let new = config::data_dir();
+    for name in ["config.json", "service.log"] {
+        let (from, to) = (old.join(name), new.join(name));
+        if from.exists() && !to.exists() {
+            std::fs::rename(&from, &to).map_err(|e| format!("move {} to {}: {e}", from.display(), to.display()))?;
+            println!("moved {} to {}", from.display(), to.display());
+        }
+    }
+    remove_dir_retrying(&old)
 }
 
 fn open_scm() -> Result<ScHandle, String> {
@@ -91,6 +176,9 @@ fn ensure_data_dir() -> Result<(), String> {
     if dir.exists() {
         return Ok(());
     }
+    if let Some(parent) = dir.parent() {
+        std::fs::create_dir_all(parent).map_err(|e| format!("{}: {e}", parent.display()))?;
+    }
     let sd = LocalSd::from_sddl(DATA_SDDL).ok_or("bad data folder descriptor")?;
     let sa = sd.attributes();
     if unsafe { CreateDirectoryW(wide(&dir.to_string_lossy()).as_ptr(), &sa) } == 0 {
@@ -99,31 +187,23 @@ fn ensure_data_dir() -> Result<(), String> {
     Ok(())
 }
 
-/// Copies the binaries, writes the config, registers and starts the service.
-/// `allow` adds pipe users (default: the user running the install).
+/// Registers the service to run this executable where it is, writes the
+/// config and starts it. An existing registration (also one pointing at the
+/// old `%ProgramFiles%\PathweftIndex` copy) is re-pointed here; the old copy
+/// and the old data folder are moved away. `allow` adds pipe users (default:
+/// the user running the install).
 pub fn install(allow: &[String]) -> Result<(), String> {
+    let me = installed_exe()?;
     let scm = open_scm()?;
     let existing = open_service(&scm);
     if let Some(s) = &existing {
         println!("stopping the running service for the update");
         stop(s)?;
     }
-
-    let dir = install_dir();
-    std::fs::create_dir_all(&dir).map_err(|e| format!("{}: {e}", dir.display()))?;
-    let me = std::env::current_exe().map_err(|e| e.to_string())?;
-    let target = dir.join("pathweft-indexd.exe");
-    std::fs::copy(&me, &target).map_err(|e| format!("copy to {}: {e}", target.display()))?;
-    let here = me.parent().map(PathBuf::from).unwrap_or_default();
-    for extra in ["pwindex.exe", "pathweft_index.dll"] {
-        let src = here.join(extra);
-        if src.exists() {
-            std::fs::copy(&src, dir.join(extra)).map_err(|e| format!("copy {extra}: {e}"))?;
-        }
-    }
-    println!("installed binaries to {}", dir.display());
+    let binary = wide(&format!("\"{}\" service", me.display()));
 
     ensure_data_dir()?;
+    migrate_data()?;
     let cfg_path = config::default_path();
     let mut cfg = Config::load(&cfg_path)?;
     let mut users: Vec<String> = allow.to_vec();
@@ -139,9 +219,29 @@ pub fn install(allow: &[String]) -> Result<(), String> {
     println!("config {} (pipe users: {})", cfg_path.display(), cfg.allowed_users.join(", "));
 
     let service = match existing {
-        Some(s) => s,
+        Some(s) => {
+            let ok = unsafe {
+                ChangeServiceConfigW(
+                    s.0,
+                    SERVICE_NO_CHANGE,
+                    SERVICE_NO_CHANGE,
+                    SERVICE_NO_CHANGE,
+                    binary.as_ptr(),
+                    std::ptr::null(),
+                    std::ptr::null_mut(),
+                    std::ptr::null(),
+                    std::ptr::null(),
+                    std::ptr::null(),
+                    std::ptr::null(),
+                )
+            };
+            if ok == 0 {
+                return Err(format!("ChangeServiceConfig failed: error {}", last_error()));
+            }
+            println!("service {SERVICE_NAME} runs {}", me.display());
+            s
+        }
         None => {
-            let binary = wide(&format!("\"{}\" service", target.display()));
             let h = unsafe {
                 CreateServiceW(
                     scm.0,
@@ -162,7 +262,7 @@ pub fn install(allow: &[String]) -> Result<(), String> {
             if h.is_null() {
                 return Err(format!("CreateService failed: error {}", last_error()));
             }
-            println!("registered service {SERVICE_NAME} (LocalSystem, automatic)");
+            println!("registered service {SERVICE_NAME} (LocalSystem, automatic): {}", me.display());
             ScHandle(h)
         }
     };
@@ -187,11 +287,26 @@ pub fn install(allow: &[String]) -> Result<(), String> {
         return Err("the service did not reach RUNNING within 30 s; see service.log".into());
     }
     println!("service running");
+    remove_legacy(&me)
+}
+
+/// Stops the service and waits until its process has exited, so setup can
+/// replace the binaries. Not installed or already stopped: success.
+pub fn stop_service() -> Result<(), String> {
+    let scm = open_scm()?;
+    match open_service(&scm) {
+        Some(s) => {
+            stop(&s)?;
+            println!("service {SERVICE_NAME} stopped");
+        }
+        None => println!("service {SERVICE_NAME} is not installed"),
+    }
     Ok(())
 }
 
-/// Stops and removes the service and its binaries. `purge` also removes the
-/// config and log folder.
+/// Stops and removes the service, and the old `%ProgramFiles%\PathweftIndex`
+/// copy if one is left; its own binaries belong to Pathweft's setup, which
+/// removes them. `purge` also removes the config and log folder (old and new).
 pub fn uninstall(purge: bool) -> Result<(), String> {
     let scm = open_scm()?;
     match open_service(&scm) {
@@ -204,23 +319,38 @@ pub fn uninstall(purge: bool) -> Result<(), String> {
         }
         None => println!("service {SERVICE_NAME} is not installed"),
     }
-    let dir = install_dir();
-    if dir.exists() {
-        // The SCM may hold the image briefly after stopping.
-        let mut last = Ok(());
-        for _ in 0..20 {
-            last = std::fs::remove_dir_all(&dir);
-            if last.is_ok() {
-                break;
-            }
-            std::thread::sleep(Duration::from_millis(250));
-        }
-        last.map_err(|e| format!("{}: {e}", dir.display()))?;
-        println!("removed {}", dir.display());
+    if let Ok(me) = std::env::current_exe() {
+        remove_legacy(&plain(std::fs::canonicalize(&me).unwrap_or(me)))?;
     }
-    if purge && config::data_dir().exists() {
-        std::fs::remove_dir_all(config::data_dir()).map_err(|e| e.to_string())?;
-        println!("removed {}", config::data_dir().display());
+    if purge {
+        for dir in [config::data_dir(), config::legacy_data_dir()] {
+            if dir.exists() {
+                remove_dir_retrying(&dir)?;
+            }
+        }
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn within_compares_whole_components_without_case() {
+        let pf = PathBuf::from(r"C:\Program Files");
+        assert!(is_within(Path::new(r"c:\program files\Pathweft\services\file_index\pathweft-indexd.exe"), &pf));
+        assert!(is_within(Path::new(r"C:\Program Files\"), &pf));
+        assert!(!is_within(Path::new(r"C:\Program Files (x86)\x.exe"), &pf));
+        assert!(!is_within(Path::new(r"D:\Temp\pathweft-indexd.exe"), &pf));
+        let legacy = PathBuf::from(r"C:\Program Files\PathweftIndex");
+        assert!(!is_within(Path::new(r"C:\Program Files\PathweftIndexer\a.exe"), &legacy));
+    }
+
+    #[test]
+    fn plain_strips_only_local_verbatim_prefixes() {
+        assert_eq!(plain(PathBuf::from(r"\\?\C:\Program Files\a.exe")), PathBuf::from(r"C:\Program Files\a.exe"));
+        assert_eq!(plain(PathBuf::from(r"\\?\UNC\srv\share\a.exe")), PathBuf::from(r"\\?\UNC\srv\share\a.exe"));
+        assert_eq!(plain(PathBuf::from(r"C:\a")), PathBuf::from(r"C:\a"));
+    }
 }

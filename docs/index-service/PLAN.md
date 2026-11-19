@@ -15,6 +15,7 @@ is recorded in SPEC.md.
 | IS6 folder changes | Follow folder roots with change notifications while running (owner request 2026-11-18) | IDX-03 (live changes) | Unit tests; console-mode test on a local folder root; installed service log on the real roots |
 | IS7 adaptive checks | Per-folder adaptive re-listing, 15 min to 6 h, replacing the fixed full rescan (owner request 2026-11-18) | IDX-03 (scheduled checks) | Unit tests; console-mode test with a short schedule; installed service log (schedule summary, changes found by a scheduled check on the share) |
 | IS8 query additions | `dm:`/`dc:` date filters and `parent:` (Pathweft thread request 2026-11-19, to replace Everything completely) | IDX-05 (dates, parent) | Unit tests; installed service queries |
+| IS9 install layout | S19 part (a), owner decision 2026-11-19: run in place from `Program Files\Pathweft\services\file_index`, data in `ProgramData\Pathweft\services\file_index`, migrate the old layout, add `stop` | IDX-01 | Unit tests and release build through the gate; the installed upgrade by Pathweft 1.1.83 setup (`sc qc`, `status`, folder roots kept, no `PathweftIndex` folders left) |
 
 ## Ledger
 
@@ -292,3 +293,42 @@ Verification:
 - Limit: these rounds should make NTFS reuse record numbers, but reuse was not
   confirmed. The release binary could not be hash-compared because the build
   output was already gone.
+
+## IS9 record (2026-11-19): install layout (S19 part a)
+
+The owner decided, relayed and confirmed in this thread:
+
+> S19 should move the installer and its dependencies inside
+> "C:\Program Files\Pathweft\index\" or better yet
+> "C:\Program Files\Pathweft\services\file_index\" in case I add more features in
+> the future.
+
+Until now, Pathweft's setup shipped the service in `{app}\index` and `install`
+copied it to `%ProgramFiles%\PathweftIndex`. That left two identical copies
+(SHA-256 1a9036f2… for both on this machine).
+
+Source changes (`install.rs`, `config.rs`, `main.rs`, `ffi.rs`):
+- `install` registers the running executable in place. It must be under
+  `%ProgramFiles%`, because a LocalSystem service must not run from a
+  user-writable folder.
+- `install` re-points an existing registration with `ChangeServiceConfigW`.
+- It moves `config.json` and `service.log` from `%ProgramData%\PathweftIndex`
+  to `%ProgramData%\Pathweft\services\file_index`, then removes the old
+  folder. If a config already exists at the new location, that config wins.
+- It removes `%ProgramFiles%\PathweftIndex` after the service is running.
+- New `stop` subcommand.
+- `uninstall` no longer deletes its own folder, because setup owns those files.
+  `--purge` removes the old and new data folders.
+- Service name and pipe are unchanged.
+
+Pathweft side (its thread): `Pathweft.iss` (files to
+`{app}\services\file_index`, PrepareToInstall `stop`, install, UninstallRun),
+`IndexServiceSetup`, verification, PackagedChecks and build.ps1.
+
+Consumer to update when 1.1.83 installs: the everything-search skill's fixed
+path `C:\Program Files\PathweftIndex\pwindex.exe`.
+
+Known limit: a non-administrator could create the new ProgramData folder
+before the first install. The leaf folder gets the protected descriptor only
+when `install` creates it. This matches the old layout's behaviour and is
+accepted on the owner's single-user setup.

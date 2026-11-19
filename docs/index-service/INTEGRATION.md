@@ -55,18 +55,26 @@ path can show the message as it is.
    for folder roots. Installing and removing the service needs elevation:
    `pathweft-indexd.exe install` / `uninstall` through Pathweft's existing
    elevated-session path. Both are silent (progress lines on stdout, exit code 0
-   on success, 1 with a message on failure, no prompts). `install` over an
-   existing installation stops the service, waits for its process to exit,
-   replaces the binaries and starts it again; the config and folder roots are
-   kept and the roots are rescanned. It grants pipe access to the installing
+   on success, 1 with a message on failure, no prompts). `install` registers
+   the service to run the executable where it is (it must be under
+   `%ProgramFiles%`); nothing is copied. Over an existing installation it
+   stops the service, waits for its process to exit, re-points the service at
+   this executable and starts it again. The config and folder roots are kept
+   and the roots are rescanned. An old copy in `%ProgramFiles%\PathweftIndex` is
+   removed, and `%ProgramData%\PathweftIndex` is moved to the new data folder.
+   Because the running binary is now Pathweft's own file, setup must run
+   `pathweft-indexd.exe stop` (the installed copy) before replacing files;
+   `stop` succeeds when the service is absent or already stopped. It grants pipe access to the installing
    user's SID; when the elevated installer runs as another account, pass
-   `--allow <SID>` (repeatable) for the desktop user. `uninstall` keeps
-   `%ProgramData%\PathweftIndex` (config, log) unless `--purge` is given.
+   `--allow <SID>` (repeatable) for the desktop user. `uninstall` removes the
+   service but not its own binaries, which belong to setup. It keeps
+   `%ProgramData%\Pathweft\services\file_index` (config, log) unless `--purge`
+   is given.
 4. Packaging: ship `pathweft-indexd.exe`, `pwindex.exe` and (optionally)
    `pathweft_index.dll` from `native/pathweft-index` (`cargo build --release`
-   through the Rust gate). `install` copies them to
-   `%ProgramFiles%\PathweftIndex` and keeps config and logs in
-   `%ProgramData%\PathweftIndex`.
+   through the Rust gate) into `{app}\services\file_index`. The service runs
+   from there and keeps config and logs in
+   `%ProgramData%\Pathweft\services\file_index`.
 
 5. Private instance (tests, or running without the installed service):
    `pathweft-indexd.exe console --pipe NAME --volumes "" --config PATH

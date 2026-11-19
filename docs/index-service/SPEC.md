@@ -23,11 +23,20 @@ full Everything search language, cases the owner's setup does not have.
 
 **IDX-01 Windows service.** One executable `pathweft-indexd.exe` runs as the Windows
 service `PathweftIndex` (LocalSystem, automatic start, restart on failure).
-`install` copies the binary to `%ProgramFiles%\PathweftIndex` (administrator-only
-write), writes a protected config under `%ProgramData%\PathweftIndex`, registers
-and starts the service. `uninstall` stops and removes it.
-*Accept:* installed only through the administrator broker; `sc qc PathweftIndex`
-shows LocalSystem/auto; the service answers `status` after start.
+Pathweft's setup places the binaries in
+`%ProgramFiles%\Pathweft\services\file_index` (owner decision 2026-11-19: Pathweft's
+services live under `services\<name>`). `install` registers the service to run
+from there, with no copy, and refuses an executable outside `%ProgramFiles%`.
+It writes a protected config under `%ProgramData%\Pathweft\services\file_index`,
+and registers and starts the service. Over an older installation it re-points the
+service and removes `%ProgramFiles%\PathweftIndex`. It moves config and log from
+`%ProgramData%\PathweftIndex`. `stop` stops the service and waits for its process
+to exit, so setup can replace locked binaries. `uninstall` stops and removes the
+service.
+*Accept:* installed only through the administrator broker or Pathweft's setup;
+`sc qc PathweftIndex` shows LocalSystem/auto and the `services\file_index` path;
+the service answers `status` after start; an upgrade from the old layout leaves
+no `PathweftIndex` folders behind and keeps the folder roots.
 
 **IDX-02 NTFS from the MFT and USN journal.** For every local NTFS volume with a
 drive letter (fixed or removable, filtered by config), the service records the
