@@ -1,22 +1,24 @@
 # Content index and hash cache: design draft
 
-Status: SUPERSEDED for S19 (2026-11-19). Kept as background only.
+Status: UNDER DISCUSSION (2026-11-19). The S19 design is disputed.
 
-**Owner decisions (2026-11-19), recorded in Pathweft `docs/SPECIFICATION.md`
-1.43, CONTENT section:**
-- "Service owns what runs in the service side, you own what runs in your side".
-- The content store is Pathweft's: FTS5 contentless, in Pathweft's data
-  folder, written as the user (CONTENT-03 unchanged).
-- T: is included when the owner enables a folder there.
+Relayed by the Pathweft thread as the owner's words: "Service owns what runs in
+the service side, you own what runs in your side". It does not say where the
+content store lives.
 
-S19 asks the service for **no new operations**:
-- Pathweft detects changes by comparing each scope against ordinary `query`
-  results (path, size, modified). Where the service does not cover a folder,
-  Pathweft lists it itself.
-- Pathweft evaluates `content:` itself. Other terms go to the service as
-  ordinary queries.
+The Pathweft thread recorded the store as Pathweft's: FTS5 contentless in
+Pathweft's data folder, written as the user (CONTENT-03 unchanged). Under that
+design S19 needs **no new service operations**: Pathweft compares each scope
+with ordinary `query` results and evaluates `content:` itself.
 
-Dropped from this draft:
+**Provenance disputed.** The owner says he does not think he requested that
+design. The store location is not traceable to his words. His earlier
+direction to this thread was: "I estimate that in the future, this same
+service should take over the selective file contents indexing, but that
+feature is not yet in development". The alternative under discussion with the
+Pathweft thread is a service-owned store with the extractor in Pathweft.
+
+If the Pathweft-owned store is confirmed, these items are dropped:
 - Every `content_*` and content-scope operation.
 - The service-owned store and Tantivy.
 - Storing extracted text.
