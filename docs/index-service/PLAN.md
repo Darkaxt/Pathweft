@@ -30,6 +30,7 @@ is recorded in SPEC.md.
 | IS7 | COMPLETE | – | – | IS7 record below |
 | IS8 | COMPLETE | – | – | IS8 record below |
 | FIX1 | COMPLETE | – | – | FIX1 record below |
+| IS9 | ACTIVE | – | – | IS9 record below; installed upgrade pending Pathweft 1.1.83 |
 
 ## IS1 readiness record (2026-11-18)
 
@@ -332,3 +333,9 @@ Known limit: a non-administrator could create the new ProgramData folder
 before the first install. The leaf folder gets the protected descriptor only
 when `install` creates it. This matches the old layout's behaviour and is
 accepted on the owner's single-user setup.
+
+Gate (ticket cd5fe818, renewing 005fbec6): cargo test 36/36 (workflow
+dbe801a3), release build 0 warnings (46722777). Release SHA-256:
+pathweft-indexd.exe 963fda5e…c109, pwindex.exe 7a962c84…a5ae,
+pathweft_index.dll 3bc7b07c…2112. Still to verify: the installed upgrade from
+1.1.82 through Pathweft 1.1.83 setup.
