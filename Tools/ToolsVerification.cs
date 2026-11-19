@@ -84,6 +84,14 @@ public partial class MainWindow
             check(pasteAs != null && HasIcon(pasteAs), "TOOLS-06: Paste as file sits beside Paste in the folder menu, with an icon");
             check(fromTemplate != null && HasIcon(fromTemplate) && fromTemplate.Items.Count > 0,
                 "TOOLS-07: New from template is in the New group, with an icon and its template entries");
+            var tools = Group(menu, "Tools");
+            var renameAll = In(tools, "Rename all…");
+            var resizeHere = In(tools, "Resize images…");
+            var usingHere = In(tools, "What's using this?");
+            check(renameAll is { IsEnabled: true } && HasIcon(renameAll) && resizeHere != null && HasIcon(resizeHere) && usingHere != null && HasIcon(usingHere),
+                "TOOLS-01..03: a folder's background menu has Rename all…, Resize images… (it holds a picture) and What's using this? in Tools, with icons");
+            check(!All(menu).Any(i => i.Header is string h && MainWindow.PathweftHasPowerToy(ShellMenu.Comparable(h))),
+                "TOOLS-01..03: the background menu has no PowerToys PowerRename, File Locksmith or Image Resizer entry");
         }
         finally { Closed(menu); }
     }

@@ -276,12 +276,17 @@ public partial class MainWindow
         foreach (var node in shell.Others)
         {
             var key = ShellMenu.Comparable(node.Text);
-            if (key.Length == 0 || IsNanaZip(node) || !taken.Add(key)) continue;
+            if (key.Length == 0 || IsNanaZip(node) || PathweftHasPowerToy(key) || !taken.Add(key)) continue;
             if (ShellItem(node) is not MenuItem item) continue;
             item.Tag = OpensInApp(key) ? "shell:apps" : "shell:other";
             menu.Items.Add(item);
         }
     }
+
+    /// TOOLS-01..03: PowerToys' own entries for the tools Pathweft has built in (Rename all…, What's using this?, Resize
+    /// images…) are left out, as NanaZip's are, so each tool is offered once, under Pathweft's name.
+    internal static bool PathweftHasPowerToy(string comparable) =>
+        comparable.Contains("powerrename") || comparable.Contains("file locksmith") || comparable.Contains("image resizer");
 
     internal static bool OpensInApp(string comparable) =>
         comparable.StartsWith("open") || comparable.StartsWith("play") || comparable.StartsWith("edit with") || comparable.EndsWith(" here");
@@ -344,6 +349,12 @@ public partial class MainWindow
         var other = p == Left ? Right : Left;
         if (!Settings.SinglePane && other.Dir is { Length: > 0 } od && od != PaneView.ThisPC && !od.Equals(p.Dir, StringComparison.OrdinalIgnoreCase))
             m.Items.Add(Item("Find duplicates here and in the other pane…", "", "", () => FindDuplicates(p.Dir, od)));
+        // TOOLS-01..03 on the folder itself, as on a selection: rename or resize what it holds, see what's using it
+        bool local = writable && !p.IsRemoteFolder && p.ArchiveRoot == null;
+        m.Items.Add(Item("Rename all…", "", "", () => RenameAllIn(p), local && p.Items.Any()));
+        var pictures = local ? p.Items.Where(ResizableImage).ToList() : new List<Entry>();
+        if (pictures.Count > 0) m.Items.Add(Item("Resize images…", "", "", () => ResizeImages(pictures)));
+        if (local) m.Items.Add(Item("What's using this?", "", "", () => WhatsUsing(new[] { p.Dir })));
         m.Items.Add(new Separator());
         m.Items.Add(Item("Refresh", "", "F5 / Ctrl+R", () => { SizeCache.Clear(); p.Refresh(force: true); }));
         m.Items.Add(Item(Settings.ShowHidden ? "Hide hidden files" : "Show hidden files", "", "Ctrl+H", ToggleHidden));
@@ -373,7 +384,7 @@ public partial class MainWindow
         Take(menu,item=>item.Header as string is "Refresh" or "Show hidden files" or "Hide hidden files");
         menu.Items.Add(new Separator());
         OpenWithGroup(menu,remaining);
-        Group("Tools","\uE713",item=>item.Header as string is "Compare with other pane" or "Synchronize with other pane…" or "Open terminal here"||(item.Header as string)?.StartsWith("Find duplicates")==true);
+        Group("Tools","\uE713",item=>item.Header as string is "Compare with other pane" or "Synchronize with other pane…" or "Rename all…" or "Resize images…" or "What's using this?" or "Open terminal here"||(item.Header as string)?.StartsWith("Find duplicates")==true);
         Group("More actions","\uE712",item=>item.Header as string!="Properties");
         menu.Items.Add(new Separator());Take(menu,_=>true);
     }

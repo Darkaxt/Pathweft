@@ -1,6 +1,12 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.82 | 2026-11-19 | Folder tools in the folder's own menu
+
+- Right-click a folder's empty space → Tools: Rename all… renames everything in the folder, Resize images… resizes its pictures, and What's using this? shows which programs hold it.
+- PowerToys' own Rename with PowerRename, File Locksmith and Image Resizer entries no longer repeat Pathweft's under More actions.
+- Space analysis and folder sizes count files written just before they ran.
+
 ## 1.1.81 | 2026-11-19 | Smarter address bar, terminal panel, remote folders
 
 - The address bar suggests open tabs, Quick access, saved searches, recent folders and matching paths as you type. Tab completes, Enter opens, Escape keeps what you typed. Settings → Privacy → Clear history empties the list.

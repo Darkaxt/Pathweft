@@ -49,9 +49,17 @@ internal static class IndexedSearch
 
     // Exact folders; a missing key means unknown, and the caller measures it.
     // An absent service answers nothing, so every folder is measured.
+    // A folder whose contents changed in the last Settle may not be in the index yet (it reads the NTFS change journal
+    // every 250 ms), so its indexed size is not taken and the caller measures it: a file written just before an analysis
+    // counts.
+    internal static readonly TimeSpan Settle = TimeSpan.FromSeconds(2);
     internal static async Task<Dictionary<string, long>> FolderSizesAsync(IEnumerable<string> paths, CancellationToken token)
     {
-        if (await Service.FolderSizesAsync(paths, token).ConfigureAwait(false) is { } sizes) return sizes;
-        return new(StringComparer.OrdinalIgnoreCase);
+        if (await Service.FolderSizesAsync(paths, token).ConfigureAwait(false) is not { } sizes) return new(StringComparer.OrdinalIgnoreCase);
+        var recent = DateTime.UtcNow - Settle;
+        foreach (var folder in sizes.Keys.ToArray())
+            try { if (System.IO.Directory.GetLastWriteTimeUtc(folder) > recent) sizes.Remove(folder); }
+            catch (Exception ex) when (ex is System.IO.IOException or UnauthorizedAccessException) { sizes.Remove(folder); }
+        return sizes;
     }
 }

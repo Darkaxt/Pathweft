@@ -63,7 +63,7 @@ public partial class HelpWindow : Window
         ("Files", new[]
         {
             ("Ctrl+C / Ctrl+X / Ctrl+V", "Copy, cut, paste, also with Explorer. Right-click a folder, or a shortcut to one, → Paste into folder puts the files in it"),
-            ("F2", "Rename in place; with several selected, rename them all: a pattern with [N] name, [C] counter and [E] extension, find and replace (PowerRename's options: regular expressions, match case, every occurrence, ${} enumeration, name or extension only, a case change, files or folders, and date tokens from the created, modified or accessed time), and a preview of every new name; it remembers the options"),
+            ("F2", "Rename in place; with several selected, rename them all: a pattern with [N] name, [C] counter and [E] extension, find and replace (PowerRename's options: regular expressions, match case, every occurrence, ${} enumeration, name or extension only, a case change, files or folders, and date tokens from the created, modified or accessed time), and a preview of every new name; it remembers the options. Right-click a folder's background → Tools → Rename all… renames everything in it"),
             ("Click a selected name", "Rename it, as in Explorer: a slow second click, not a double-click"),
             ("Drag files", "Same drive: move. Other drive: copy. Ctrl copies, Shift moves — to the other pane, Explorer or another app. The folder they would go into lights up; a shortcut to a folder takes them into that folder. The wheel scrolls the list while you drag"),
             ("Drop on the drive strip", "The thin bar between the path and the files: whatever is dropped there goes into the folder shown, whatever is selected"),

@@ -307,11 +307,12 @@ public partial class MainWindow
     // end up (its temporary name or its new one, and how it looks) is saved in the Undo history, so if Pathweft stops
     // halfway Ctrl+Z can still put every name back; it is replaced by the plain entry once the rename is done.
     async void RenameMany() => await RenameManyAsync();
+    async void RenameAllIn(PaneView pane) => await RenameManyAsync(pane.Items.ToList()); // the folder background's Rename all…
 
     // Awaitable for the TOOLS-01 verification, which drives this same path.
-    async Task RenameManyAsync()
+    async Task RenameManyAsync(List<Entry> items = null)
     {
-        var sel = active.Selected;
+        var sel = items ?? active.Selected;
         var plan = MultiRenameDialog.Ask(this, sel);
         if (plan == null || plan.Count == 0) return;
         var pane = active;

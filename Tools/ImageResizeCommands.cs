@@ -22,11 +22,13 @@ public partial class MainWindow
 
     sealed record ResizedImage(string Source, string Written, string Final);
 
-    void ResizeImages()
+    void ResizeImages() => ResizeImages(active.Selected);
+
+    // The selection, or from a folder's background the pictures it holds.
+    void ResizeImages(List<Entry> sel)
     {
         var pane = active;
         if (pane.ArchiveRoot != null || PaneView.IsVirtual(pane.Dir)) { Status.Text = "Pictures inside an archive can't be resized. Extract them first."; return; }
-        var sel = pane.Selected;
         var images = sel.Where(ResizableImage).Select(e => e.Path).ToList();
         var unsupported = sel.Where(e => !ResizableImage(e)).Select(e => e.Path).ToList();
         if (images.Count == 0) { Status.Text = "None of the selected items is a picture Resize images can read (BMP, GIF, JPEG, JPEG XR, PNG, TIFF)."; return; }

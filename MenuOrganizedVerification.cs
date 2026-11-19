@@ -61,7 +61,7 @@ public partial class MainWindow
             var labels=MenuCommands(built).Select(Label).ToHashSet();
             var explorer=ExplorerVerbs(folderOfItems,name);
             var missing=explorer.Where(verb=>!labels.Contains(verb)&&!(equivalent.TryGetValue(verb,out var own)&&labels.Contains(own))&&
-                verb is not ("open in terminal" or "open powershell window here" or "open command window here")).ToArray();
+                verb is not ("open in terminal" or "open powershell window here" or "open command window here")&&!PathweftHasPowerToy(verb)).ToArray();
             inventory[context+"-explorer"]=explorer;
             check(missing.Length==0,"MENU-06: everything in Explorer's menu for the "+context+" is in Pathweft's ("+explorer.Length+" entries)"+(missing.Length>0?"; missing: "+string.Join(", ",missing):""));
         }
@@ -73,8 +73,8 @@ public partial class MainWindow
         static bool AllAppsInOpenWith(ContextMenu built)=>MenuCommands(built).Where(item=>item.Tag as string=="shell:apps").All(item=>item.Parent is MenuItem{Header:"Open with"});
         check(AllAppsInOpenWith(single),"MENU-10: every taken-in open/play/edit-with program is in the Open with submenu (file)");
         check(!MenuCommands(single).Any(item=>Label(item).Contains("zcode")),"MENU-06: the removed ZCode leftover is gone");
-        var handlerEntry=Taken(single,key=>key.Contains("file locksmith")||key.Contains("previous versions"));
-        check(handlerEntry?.Parent is MenuItem{Header:"More actions"},"MENU-06: a handler-based entry (PowerToys File Locksmith or Previous Versions) is taken in under More actions");
+        check(MenuCommands(single).Where(item=>item.Tag as string=="shell:other").All(item=>item.Parent is MenuItem{Header:"More actions"}),"MENU-06: other programs' handler-based entries are taken in under More actions");
+        static bool NoPowerToyRepeats(ContextMenu built)=>!MenuCommands(built).Any(item=>PathweftHasPowerToy(Label(item)));
         check(MenuCommands(single).Count(item=>Label(item)=="edit with notepad++")<=1,"MENU-06: Notepad++'s own Edit with Notepad++ does not repeat Pathweft's");
         var folderMenu=await Built("folder",Path.GetFileName(folder));
         Parity(folderMenu,"folder",source,Path.GetFileName(folder));
@@ -89,6 +89,8 @@ public partial class MainWindow
         var background=await Built("background");
         var backgroundBash=Taken(background,key=>key.Contains("git bash"));
         check(backgroundBash?.Parent is MenuItem{Header:"Open with"},"MENU-10: Git Bash here is in Open with on a folder's background");
+        check(NoPowerToyRepeats(single)&&NoPowerToyRepeats(folderMenu)&&NoPowerToyRepeats(background),
+            "TOOLS-01..03: PowerToys' PowerRename, File Locksmith and Image Resizer entries are left out of the file, folder and background menus, which have Pathweft's own");
 
         // A taken-in command runs Explorer's own verb, whose registered program exists (observed instead of started)
         var invoked=new List<string>();ShellMenu.InvokeForVerification=invoked.Add;
