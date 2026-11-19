@@ -1,5 +1,5 @@
 {
-  "assets_sha256": "df36fcb28700b8e5a9b6c19a6e28a4d20d2fb2d7747f70802ed96d55d5db5f3a",
+  "assets_sha256": "9fa492c62c600d82f67f10421e300523ba292d530a10d485ce4750dbace91110",
   "packages": [
     {
       "id": "AngleSharp",
@@ -18,6 +18,18 @@
       "project_url": "https://anglesharp.github.io/",
       "targets": {
         "net10.0-windows10.0.19041.0": {
+          "compile": {
+            "lib/net10.0/AngleSharp.dll": {
+              "related": ".xml"
+            }
+          },
+          "runtime": {
+            "lib/net10.0/AngleSharp.dll": {
+              "related": ".xml"
+            }
+          }
+        },
+        "net10.0-windows10.0.19041.0/win-x64": {
           "compile": {
             "lib/net10.0/AngleSharp.dll": {
               "related": ".xml"
@@ -64,6 +76,21 @@
               "related": ".xml"
             }
           }
+        },
+        "net10.0-windows10.0.19041.0/win-x64": {
+          "dependencies": {
+            "AngleSharp": "[1.5.0, 2.0.0)"
+          },
+          "compile": {
+            "lib/net10.0/AngleSharp.Css.dll": {
+              "related": ".xml"
+            }
+          },
+          "runtime": {
+            "lib/net10.0/AngleSharp.Css.dll": {
+              "related": ".xml"
+            }
+          }
         }
       },
       "selected_files": {
@@ -72,13 +99,13 @@
     },
     {
       "id": "BouncyCastle.Cryptography",
-      "version": "2.6.2",
-      "package_sha512": "7oWOcvnntmMKNzDLsdxAYqApt+AjpRpP2CShjMfIa3umZ42UQMvH0tl1qAliYPNYO6vTdcGMqnRrCPmsfzTI1w==",
+      "version": "2.7.0",
+      "package_sha512": "U+12df8UEWHgBi04YVf/Lgi2dy3SItlIYvHjjEVa/BngCQIzDCDRBk50DDByCfDvSbe5pRNFr3b7UrVK2kMcLw==",
       "repository": {
         "type": "git",
         "url": "https://github.com/bcgit/bc-csharp",
-        "branch": "refs/heads/release/v2.6",
-        "commit": "b4f2f6ad76bcd1f11f365ee50cc7447fbce79077"
+        "branch": "refs/heads/release/v2.7",
+        "commit": "4007498b13582d90ee1eda5d9920c324428b98b3"
       },
       "license": {
         "type": "expression",
@@ -97,10 +124,95 @@
               "related": ".xml"
             }
           }
+        },
+        "net10.0-windows10.0.19041.0/win-x64": {
+          "compile": {
+            "lib/net6.0/BouncyCastle.Cryptography.dll": {
+              "related": ".xml"
+            }
+          },
+          "runtime": {
+            "lib/net6.0/BouncyCastle.Cryptography.dll": {
+              "related": ".xml"
+            }
+          }
         }
       },
       "selected_files": {
-        "lib/net6.0/BouncyCastle.Cryptography.dll": "e5eeaf6d263c493619982fd3638e6135077311d08c961e1fe128f9107d29ebc6"
+        "lib/net6.0/BouncyCastle.Cryptography.dll": "ef92fc661e8d7ba8ec4d39a7cdfcdba41f14cb327f0d24fe79d0b5bb428899b5"
+      }
+    },
+    {
+      "id": "CI.Microsoft.Terminal.Wpf",
+      "version": "1.25.260303002",
+      "package_sha512": "lz6dPTjumMvFKUdTvYa1WdlFHe3gTziWZuY4PC/1vThduVIOPMH89+bIrSs2/C5V1gdPuXwVWZV9+0Rn0BRa0Q==",
+      "repository": {
+        "type": "git",
+        "commit": "9ae724aa5b080aafbeea2bbf88db630b182cc802"
+      },
+      "license": {},
+      "project_url": null,
+      "targets": {
+        "net10.0-windows10.0.19041.0": {
+          "compile": {
+            "lib/net8.0-windows7.0/Microsoft.Terminal.Wpf.dll": {
+              "related": ".xml"
+            }
+          },
+          "runtime": {
+            "lib/net8.0-windows7.0/Microsoft.Terminal.Wpf.dll": {
+              "related": ".xml"
+            }
+          },
+          "runtimeTargets": {
+            "runtimes/win-arm64/native/Microsoft.Terminal.Control.dll": {
+              "assetType": "native",
+              "rid": "win-arm64"
+            },
+            "runtimes/win-arm64/native/Microsoft.Terminal.Control.pdb": {
+              "assetType": "native",
+              "rid": "win-arm64"
+            },
+            "runtimes/win-x64/native/Microsoft.Terminal.Control.dll": {
+              "assetType": "native",
+              "rid": "win-x64"
+            },
+            "runtimes/win-x64/native/Microsoft.Terminal.Control.pdb": {
+              "assetType": "native",
+              "rid": "win-x64"
+            },
+            "runtimes/win-x86/native/Microsoft.Terminal.Control.dll": {
+              "assetType": "native",
+              "rid": "win-x86"
+            },
+            "runtimes/win-x86/native/Microsoft.Terminal.Control.pdb": {
+              "assetType": "native",
+              "rid": "win-x86"
+            }
+          }
+        },
+        "net10.0-windows10.0.19041.0/win-x64": {
+          "compile": {
+            "lib/net8.0-windows7.0/Microsoft.Terminal.Wpf.dll": {
+              "related": ".xml"
+            }
+          },
+          "runtime": {
+            "lib/net8.0-windows7.0/Microsoft.Terminal.Wpf.dll": {
+              "related": ".xml"
+            }
+          },
+          "native": {
+            "runtimes/win-x64/native/Microsoft.Terminal.Control.dll": {},
+            "runtimes/win-x64/native/Microsoft.Terminal.Control.pdb": {}
+          }
+        }
+      },
+      "selected_files": {
+        "lib/net8.0-windows7.0/Microsoft.Terminal.Wpf.dll": "0405f2af347d5f57135800f79db322048d768a56b099525b786b2e12d20fb445",
+        "runtimes/win-arm64/native/Microsoft.Terminal.Control.dll": "9769a85590a4a337f1860440bc2076c7710e2ec021f67b32d26fe36ac7f153f1",
+        "runtimes/win-x64/native/Microsoft.Terminal.Control.dll": "37c26108dad75c1f73784184cb34e8b14de8aff8f1053319e40aa47453476e5f",
+        "runtimes/win-x86/native/Microsoft.Terminal.Control.dll": "cc575e24b32806a6e8d3a022022cc22e4179d9aba6b8aca217982a96d03a2de3"
       }
     },
     {
@@ -120,6 +232,18 @@
       "project_url": "https://joshclose.github.io/CsvHelper/",
       "targets": {
         "net10.0-windows10.0.19041.0": {
+          "compile": {
+            "lib/net9.0/CsvHelper.dll": {
+              "related": ".xml"
+            }
+          },
+          "runtime": {
+            "lib/net9.0/CsvHelper.dll": {
+              "related": ".xml"
+            }
+          }
+        },
+        "net10.0-windows10.0.19041.0/win-x64": {
           "compile": {
             "lib/net9.0/CsvHelper.dll": {
               "related": ".xml"
@@ -157,6 +281,14 @@
           "runtime": {
             "lib/netstandard2.0/ELFSharp.dll": {}
           }
+        },
+        "net10.0-windows10.0.19041.0/win-x64": {
+          "compile": {
+            "lib/netstandard2.0/ELFSharp.dll": {}
+          },
+          "runtime": {
+            "lib/netstandard2.0/ELFSharp.dll": {}
+          }
         }
       },
       "selected_files": {
@@ -179,6 +311,22 @@
       "project_url": "https://github.com/mganss/HtmlSanitizer",
       "targets": {
         "net10.0-windows10.0.19041.0": {
+          "dependencies": {
+            "AngleSharp": "1.7.2",
+            "AngleSharp.Css": "1.0.2"
+          },
+          "compile": {
+            "lib/net8.0/HtmlSanitizer.dll": {
+              "related": ".xml"
+            }
+          },
+          "runtime": {
+            "lib/net8.0/HtmlSanitizer.dll": {
+              "related": ".xml"
+            }
+          }
+        },
+        "net10.0-windows10.0.19041.0/win-x64": {
           "dependencies": {
             "AngleSharp": "1.7.2",
             "AngleSharp.Css": "1.0.2"
@@ -226,6 +374,18 @@
               "related": ".xml"
             }
           }
+        },
+        "net10.0-windows10.0.19041.0/win-x64": {
+          "compile": {
+            "lib/netstandard2.0/LiteDB.dll": {
+              "related": ".xml"
+            }
+          },
+          "runtime": {
+            "lib/netstandard2.0/LiteDB.dll": {
+              "related": ".xml"
+            }
+          }
         }
       },
       "selected_files": {
@@ -248,6 +408,18 @@
       "project_url": "https://xoofx.github.io/markdig",
       "targets": {
         "net10.0-windows10.0.19041.0": {
+          "compile": {
+            "lib/net10.0/Markdig.dll": {
+              "related": ".xml"
+            }
+          },
+          "runtime": {
+            "lib/net10.0/Markdig.dll": {
+              "related": ".xml"
+            }
+          }
+        },
+        "net10.0-windows10.0.19041.0/win-x64": {
           "compile": {
             "lib/net10.0/Markdig.dll": {
               "related": ".xml"
@@ -293,10 +465,258 @@
               "related": ".xml"
             }
           }
+        },
+        "net10.0-windows10.0.19041.0/win-x64": {
+          "dependencies": {
+            "SQLitePCLRaw.core": "2.1.11"
+          },
+          "compile": {
+            "lib/net8.0/Microsoft.Data.Sqlite.dll": {
+              "related": ".xml"
+            }
+          },
+          "runtime": {
+            "lib/net8.0/Microsoft.Data.Sqlite.dll": {
+              "related": ".xml"
+            }
+          }
         }
       },
       "selected_files": {
         "lib/net8.0/Microsoft.Data.Sqlite.dll": "1078d41c6c0f2cee48a8b706e3a54ce145705993f19f703d2b3bdf2abcc59088"
+      }
+    },
+    {
+      "id": "Microsoft.Diagnostics.NETCore.Client",
+      "version": "0.2.661903",
+      "package_sha512": "3ISv5jXar4dHBt/7Rz3YdnR3VpnC94BhSdSvuq8ZuKgCOcVuTdmgRnq0hUzJyL/z8Ge4VekFjhui2aufUXPdvg==",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/dotnet/diagnostics",
+        "commit": "d7b455b46332b31fd9ba3a3f3e020387984c511a"
+      },
+      "license": {
+        "type": "expression",
+        "text": "MIT"
+      },
+      "project_url": "https://github.com/dotnet/diagnostics",
+      "targets": {
+        "net10.0-windows10.0.19041.0": {
+          "dependencies": {
+            "Microsoft.Extensions.Logging.Abstractions": "8.0.3"
+          },
+          "compile": {
+            "lib/net8.0/Microsoft.Diagnostics.NETCore.Client.dll": {
+              "related": ".xml"
+            }
+          },
+          "runtime": {
+            "lib/net8.0/Microsoft.Diagnostics.NETCore.Client.dll": {
+              "related": ".xml"
+            }
+          }
+        },
+        "net10.0-windows10.0.19041.0/win-x64": {
+          "dependencies": {
+            "Microsoft.Extensions.Logging.Abstractions": "8.0.3"
+          },
+          "compile": {
+            "lib/net8.0/Microsoft.Diagnostics.NETCore.Client.dll": {
+              "related": ".xml"
+            }
+          },
+          "runtime": {
+            "lib/net8.0/Microsoft.Diagnostics.NETCore.Client.dll": {
+              "related": ".xml"
+            }
+          }
+        }
+      },
+      "selected_files": {
+        "lib/net8.0/Microsoft.Diagnostics.NETCore.Client.dll": "e2cc9e1f6c97b3c4ee45ebabaa92408eb9b2fc81cb08ceeb342fe48bf79db15f"
+      }
+    },
+    {
+      "id": "Microsoft.Diagnostics.Tracing.TraceEvent",
+      "version": "4.0.0",
+      "package_sha512": "uqiUXrXzIuVqm7h3G9Sr+HuwY8LNKqRDt/yHMOAOFGvzySX7ZVTgFiO0LUKFO+c92qYCn0Gml838quCOfai7RA==",
+      "repository": {},
+      "license": {
+        "type": "expression",
+        "text": "MIT"
+      },
+      "project_url": "https://github.com/Microsoft/perfview",
+      "targets": {
+        "net10.0-windows10.0.19041.0": {
+          "dependencies": {
+            "Microsoft.Diagnostics.NETCore.Client": "0.2.661903",
+            "System.Reflection.TypeExtensions": "4.7.0"
+          },
+          "compile": {
+            "lib/netstandard2.0/Dia2Lib.dll": {},
+            "lib/netstandard2.0/Microsoft.Diagnostics.FastSerialization.dll": {
+              "related": ".xml"
+            },
+            "lib/netstandard2.0/Microsoft.Diagnostics.Tracing.TraceEvent.dll": {
+              "related": ".xml"
+            },
+            "lib/netstandard2.0/TraceReloggerLib.dll": {}
+          },
+          "runtime": {
+            "lib/netstandard2.0/Dia2Lib.dll": {},
+            "lib/netstandard2.0/Microsoft.Diagnostics.FastSerialization.dll": {
+              "related": ".xml"
+            },
+            "lib/netstandard2.0/Microsoft.Diagnostics.Tracing.TraceEvent.dll": {
+              "related": ".xml"
+            },
+            "lib/netstandard2.0/TraceReloggerLib.dll": {}
+          },
+          "build": {
+            "buildTransitive/Microsoft.Diagnostics.Tracing.TraceEvent.props": {}
+          }
+        },
+        "net10.0-windows10.0.19041.0/win-x64": {
+          "dependencies": {
+            "Microsoft.Diagnostics.NETCore.Client": "0.2.661903",
+            "System.Reflection.TypeExtensions": "4.7.0"
+          },
+          "compile": {
+            "lib/netstandard2.0/Dia2Lib.dll": {},
+            "lib/netstandard2.0/Microsoft.Diagnostics.FastSerialization.dll": {
+              "related": ".xml"
+            },
+            "lib/netstandard2.0/Microsoft.Diagnostics.Tracing.TraceEvent.dll": {
+              "related": ".xml"
+            },
+            "lib/netstandard2.0/TraceReloggerLib.dll": {}
+          },
+          "runtime": {
+            "lib/netstandard2.0/Dia2Lib.dll": {},
+            "lib/netstandard2.0/Microsoft.Diagnostics.FastSerialization.dll": {
+              "related": ".xml"
+            },
+            "lib/netstandard2.0/Microsoft.Diagnostics.Tracing.TraceEvent.dll": {
+              "related": ".xml"
+            },
+            "lib/netstandard2.0/TraceReloggerLib.dll": {}
+          },
+          "build": {
+            "buildTransitive/Microsoft.Diagnostics.Tracing.TraceEvent.props": {}
+          }
+        }
+      },
+      "selected_files": {
+        "lib/netstandard2.0/Dia2Lib.dll": "6c4cac68010fe032218efe5e9fcf46eef9f77bfaa5f3bd33f03c5ff77d5a8fac",
+        "lib/netstandard2.0/Microsoft.Diagnostics.FastSerialization.dll": "ad9c4e4001b2aed5e7337188747d0791c2a8d6058fd9a7eb5f12832982f76934",
+        "lib/netstandard2.0/Microsoft.Diagnostics.Tracing.TraceEvent.dll": "9e20d3797881c237e891dd97b5137f0d738fd4ecbbda7e64568a6a21171ff4b7",
+        "lib/netstandard2.0/TraceReloggerLib.dll": "6830c0f1d3f3c17719181e73dd5cfa8ccbb3f3c575329d2120576545103467b5"
+      }
+    },
+    {
+      "id": "Microsoft.Extensions.DependencyInjection.Abstractions",
+      "version": "8.0.2",
+      "package_sha512": "3iE7UF7MQkCv1cxzCahz+Y/guQbTqieyxyaWKhrRO91itI9cOKO76OHeQDahqG4MmW5umr3CcCvGmK92lWNlbg==",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/dotnet/runtime",
+        "commit": "81cabf2857a01351e5ab578947c7403a5b128ad1"
+      },
+      "license": {
+        "type": "expression",
+        "text": "MIT"
+      },
+      "project_url": "https://dot.net/",
+      "targets": {
+        "net10.0-windows10.0.19041.0": {
+          "compile": {
+            "lib/net8.0/Microsoft.Extensions.DependencyInjection.Abstractions.dll": {
+              "related": ".xml"
+            }
+          },
+          "runtime": {
+            "lib/net8.0/Microsoft.Extensions.DependencyInjection.Abstractions.dll": {
+              "related": ".xml"
+            }
+          },
+          "build": {
+            "buildTransitive/net6.0/_._": {}
+          }
+        },
+        "net10.0-windows10.0.19041.0/win-x64": {
+          "compile": {
+            "lib/net8.0/Microsoft.Extensions.DependencyInjection.Abstractions.dll": {
+              "related": ".xml"
+            }
+          },
+          "runtime": {
+            "lib/net8.0/Microsoft.Extensions.DependencyInjection.Abstractions.dll": {
+              "related": ".xml"
+            }
+          },
+          "build": {
+            "buildTransitive/net6.0/_._": {}
+          }
+        }
+      },
+      "selected_files": {
+        "lib/net8.0/Microsoft.Extensions.DependencyInjection.Abstractions.dll": "67fa4325000db017dc0c35829b416f024f042d24efb868bcf17a895ee6500a93"
+      }
+    },
+    {
+      "id": "Microsoft.Extensions.Logging.Abstractions",
+      "version": "8.0.3",
+      "package_sha512": "dL0QGToTxggRLMYY4ZYX5AMwBb+byQBd/5dMiZE07Nv73o6I5Are3C7eQTh7K2+A4ct0PVISSr7TZANbiNb2yQ==",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/dotnet/runtime",
+        "commit": "eba546b0f0d448e0176a2222548fd7a2fbf464c0"
+      },
+      "license": {
+        "type": "expression",
+        "text": "MIT"
+      },
+      "project_url": "https://dot.net/",
+      "targets": {
+        "net10.0-windows10.0.19041.0": {
+          "dependencies": {
+            "Microsoft.Extensions.DependencyInjection.Abstractions": "8.0.2"
+          },
+          "compile": {
+            "lib/net8.0/Microsoft.Extensions.Logging.Abstractions.dll": {
+              "related": ".xml"
+            }
+          },
+          "runtime": {
+            "lib/net8.0/Microsoft.Extensions.Logging.Abstractions.dll": {
+              "related": ".xml"
+            }
+          },
+          "build": {
+            "buildTransitive/net6.0/Microsoft.Extensions.Logging.Abstractions.targets": {}
+          }
+        },
+        "net10.0-windows10.0.19041.0/win-x64": {
+          "dependencies": {
+            "Microsoft.Extensions.DependencyInjection.Abstractions": "8.0.2"
+          },
+          "compile": {
+            "lib/net8.0/Microsoft.Extensions.Logging.Abstractions.dll": {
+              "related": ".xml"
+            }
+          },
+          "runtime": {
+            "lib/net8.0/Microsoft.Extensions.Logging.Abstractions.dll": {
+              "related": ".xml"
+            }
+          },
+          "build": {
+            "buildTransitive/net6.0/Microsoft.Extensions.Logging.Abstractions.targets": {}
+          }
+        }
+      },
+      "selected_files": {
+        "lib/net8.0/Microsoft.Extensions.Logging.Abstractions.dll": "bb853130f5afaf335be7858d661f8212ec653835100f5a4e3aa2c66a4d4f685d"
       }
     },
     {
@@ -328,12 +748,67 @@
           "build": {
             "buildTransitive/Microsoft.Web.WebView2.targets": {}
           }
+        },
+        "net10.0-windows10.0.19041.0/win-x64": {
+          "native": {
+            "runtimes/win-x64/native/WebView2Loader.dll": {}
+          },
+          "build": {
+            "buildTransitive/Microsoft.Web.WebView2.targets": {}
+          }
         }
       },
       "selected_files": {
         "runtimes/win-arm64/native/WebView2Loader.dll": "05429881d918fd64a3fe4955155c1af79e66d7b7d944034467874f420bc2265a",
         "runtimes/win-x64/native/WebView2Loader.dll": "d3fce90bdeecb08596e377dea6a316354dd8949e32ff09b89d51be00c14e21b6",
         "runtimes/win-x86/native/WebView2Loader.dll": "1d348d3c0a5cb0d985389b68a0fd9bf966c2aed65f5e44bbc0233739b7a57f9e"
+      }
+    },
+    {
+      "id": "Microsoft.Windows.Console.ConPTY",
+      "version": "1.24.260710001",
+      "package_sha512": "JR1xAkZbNnAALBjzFpqSwEx7YZfD1LI228jF9j9cgKknBPCiFy9mpphlgH+TpTN8vajTUpcgg9Miy5Y8eUAH9g==",
+      "repository": {},
+      "license": {
+        "type": "expression",
+        "text": "MIT"
+      },
+      "project_url": "https://github.com/microsoft/terminal",
+      "targets": {
+        "net10.0-windows10.0.19041.0": {
+          "runtimeTargets": {
+            "runtimes/win-arm64/native/conpty.dll": {
+              "assetType": "native",
+              "rid": "win-arm64"
+            },
+            "runtimes/win-x64/native/conpty.dll": {
+              "assetType": "native",
+              "rid": "win-x64"
+            },
+            "runtimes/win-x86/native/conpty.dll": {
+              "assetType": "native",
+              "rid": "win-x86"
+            }
+          },
+          "build": {
+            "build/Microsoft.Windows.Console.ConPTY.props": {},
+            "build/Microsoft.Windows.Console.ConPTY.targets": {}
+          }
+        },
+        "net10.0-windows10.0.19041.0/win-x64": {
+          "native": {
+            "runtimes/win-x64/native/conpty.dll": {}
+          },
+          "build": {
+            "build/Microsoft.Windows.Console.ConPTY.props": {},
+            "build/Microsoft.Windows.Console.ConPTY.targets": {}
+          }
+        }
+      },
+      "selected_files": {
+        "runtimes/win-arm64/native/conpty.dll": "db3d173640b172bafd42d5b541b638a9aeec1c7d0e40dd636bf02822a32c912c",
+        "runtimes/win-x64/native/conpty.dll": "39fba2713e2495117b1591ae8c32a3b904bea7aa66069cf7815e2844c76d75d8",
+        "runtimes/win-x86/native/conpty.dll": "11c4d8b3015e593f9f9f6872500bd37a076517cb33092422571c0a28bbd25347"
       }
     },
     {
@@ -351,6 +826,21 @@
       "project_url": "https://www.mimekit.net/",
       "targets": {
         "net10.0-windows10.0.19041.0": {
+          "dependencies": {
+            "BouncyCastle.Cryptography": "2.6.2"
+          },
+          "compile": {
+            "lib/net10.0/MimeKit.dll": {
+              "related": ".dll.config;.pdb;.xml"
+            }
+          },
+          "runtime": {
+            "lib/net10.0/MimeKit.dll": {
+              "related": ".dll.config;.pdb;.xml"
+            }
+          }
+        },
+        "net10.0-windows10.0.19041.0/win-x64": {
           "dependencies": {
             "BouncyCastle.Cryptography": "2.6.2"
           },
@@ -386,6 +876,18 @@
       "project_url": "https://openmcdf.github.io/openmcdf/",
       "targets": {
         "net10.0-windows10.0.19041.0": {
+          "compile": {
+            "lib/net10.0/OpenMcdf.dll": {
+              "related": ".xml"
+            }
+          },
+          "runtime": {
+            "lib/net10.0/OpenMcdf.dll": {
+              "related": ".xml"
+            }
+          }
+        },
+        "net10.0-windows10.0.19041.0/win-x64": {
           "compile": {
             "lib/net10.0/OpenMcdf.dll": {
               "related": ".xml"
@@ -432,6 +934,21 @@
               "related": ".xml"
             }
           }
+        },
+        "net10.0-windows10.0.19041.0/win-x64": {
+          "dependencies": {
+            "Serilog": "4.3.1"
+          },
+          "compile": {
+            "lib/netstandard2.0/Prefetch.dll": {
+              "related": ".xml"
+            }
+          },
+          "runtime": {
+            "lib/netstandard2.0/Prefetch.dll": {
+              "related": ".xml"
+            }
+          }
         }
       },
       "selected_files": {
@@ -454,6 +971,18 @@
       "project_url": "https://github.com/Soar360/apk-reader",
       "targets": {
         "net10.0-windows10.0.19041.0": {
+          "compile": {
+            "lib/netstandard2.1/_._": {
+              "related": ".xml"
+            }
+          },
+          "runtime": {
+            "lib/netstandard2.1/_._": {
+              "related": ".xml"
+            }
+          }
+        },
+        "net10.0-windows10.0.19041.0/win-x64": {
           "compile": {
             "lib/netstandard2.1/_._": {
               "related": ".xml"
@@ -492,6 +1021,14 @@
           "runtime": {
             "lib/net10.0/QuickLook.MediaInfo.dll": {}
           }
+        },
+        "net10.0-windows10.0.19041.0/win-x64": {
+          "compile": {
+            "lib/net10.0/QuickLook.MediaInfo.dll": {}
+          },
+          "runtime": {
+            "lib/net10.0/QuickLook.MediaInfo.dll": {}
+          }
         }
       },
       "selected_files": {
@@ -510,6 +1047,14 @@
       "project_url": "https://github.com/erdomke/RtfPipe",
       "targets": {
         "net10.0-windows10.0.19041.0": {
+          "compile": {
+            "lib/netstandard2.0/RtfPipe.dll": {}
+          },
+          "runtime": {
+            "lib/netstandard2.0/RtfPipe.dll": {}
+          }
+        },
+        "net10.0-windows10.0.19041.0/win-x64": {
           "compile": {
             "lib/netstandard2.0/RtfPipe.dll": {}
           },
@@ -552,6 +1097,21 @@
           "build": {
             "buildTransitive/Serilog.targets": {}
           }
+        },
+        "net10.0-windows10.0.19041.0/win-x64": {
+          "compile": {
+            "lib/net10.0/Serilog.dll": {
+              "related": ".xml"
+            }
+          },
+          "runtime": {
+            "lib/net10.0/Serilog.dll": {
+              "related": ".xml"
+            }
+          },
+          "build": {
+            "buildTransitive/Serilog.targets": {}
+          }
         }
       },
       "selected_files": {
@@ -573,6 +1133,14 @@
       "project_url": null,
       "targets": {
         "net10.0-windows10.0.19041.0": {
+          "compile": {
+            "lib/netstandard2.0/SQLitePCLRaw.core.dll": {}
+          },
+          "runtime": {
+            "lib/netstandard2.0/SQLitePCLRaw.core.dll": {}
+          }
+        },
+        "net10.0-windows10.0.19041.0/win-x64": {
           "compile": {
             "lib/netstandard2.0/SQLitePCLRaw.core.dll": {}
           },
@@ -609,10 +1177,73 @@
           "runtime": {
             "lib/netstandard2.0/SQLitePCLRaw.provider.winsqlite3.dll": {}
           }
+        },
+        "net10.0-windows10.0.19041.0/win-x64": {
+          "dependencies": {
+            "SQLitePCLRaw.core": "2.1.11"
+          },
+          "compile": {
+            "lib/netstandard2.0/SQLitePCLRaw.provider.winsqlite3.dll": {}
+          },
+          "runtime": {
+            "lib/netstandard2.0/SQLitePCLRaw.provider.winsqlite3.dll": {}
+          }
         }
       },
       "selected_files": {
         "lib/netstandard2.0/SQLitePCLRaw.provider.winsqlite3.dll": "9eb05d6065cffb66a5a5489316dfd9e2f595098069fb33d04a02b50052dc2209"
+      }
+    },
+    {
+      "id": "SSH.NET",
+      "version": "2026.0.1",
+      "package_sha512": "74/nnq/n7EZLGLsUTt4aEE+/iet3B6ahi2iFfXgRXb6rNAvxsxLwbhLZ6lzITfAEB1vkmuAI3gXxOp2HcUMa2g==",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/sshnet/SSH.NET",
+        "commit": "eaa52dba9555ca1ce57972557277c46733987dc5"
+      },
+      "license": {
+        "type": "expression",
+        "text": "MIT"
+      },
+      "project_url": null,
+      "targets": {
+        "net10.0-windows10.0.19041.0": {
+          "dependencies": {
+            "BouncyCastle.Cryptography": "2.7.0",
+            "Microsoft.Extensions.Logging.Abstractions": "8.0.3"
+          },
+          "compile": {
+            "lib/net10.0/Renci.SshNet.dll": {
+              "related": ".xml"
+            }
+          },
+          "runtime": {
+            "lib/net10.0/Renci.SshNet.dll": {
+              "related": ".xml"
+            }
+          }
+        },
+        "net10.0-windows10.0.19041.0/win-x64": {
+          "dependencies": {
+            "BouncyCastle.Cryptography": "2.7.0",
+            "Microsoft.Extensions.Logging.Abstractions": "8.0.3"
+          },
+          "compile": {
+            "lib/net10.0/Renci.SshNet.dll": {
+              "related": ".xml"
+            }
+          },
+          "runtime": {
+            "lib/net10.0/Renci.SshNet.dll": {
+              "related": ".xml"
+            }
+          }
+        }
+      },
+      "selected_files": {
+        "lib/net10.0/Renci.SshNet.dll": "a429ae31ee62789e8c6ada3bd2cfa972f8112e154f941a24f908996d41919c29"
       }
     },
     {
@@ -644,11 +1275,56 @@
           "build": {
             "buildTransitive/net8.0/_._": {}
           }
+        },
+        "net10.0-windows10.0.19041.0/win-x64": {
+          "compile": {
+            "lib/net10.0/System.IO.Hashing.dll": {
+              "related": ".xml"
+            }
+          },
+          "runtime": {
+            "lib/net10.0/System.IO.Hashing.dll": {
+              "related": ".xml"
+            }
+          },
+          "build": {
+            "buildTransitive/net8.0/_._": {}
+          }
         }
       },
       "selected_files": {
         "lib/net10.0/System.IO.Hashing.dll": "649ad5b26c96c3e4494a0879ffa8d1e7cce296754b40bb207c3ca938e3567a4e"
       }
+    },
+    {
+      "id": "System.Reflection.TypeExtensions",
+      "version": "4.7.0",
+      "package_sha512": "VybpaOQQhqE6siHppMktjfGBw1GCwvCqiufqmP8F1nj7fTUNtW35LOEt3UZTEsECfo+ELAl/9o9nJx3U91i7vA==",
+      "repository": {},
+      "license": {
+        "type": "expression",
+        "text": "MIT"
+      },
+      "project_url": "https://github.com/dotnet/corefx",
+      "targets": {
+        "net10.0-windows10.0.19041.0": {
+          "compile": {
+            "ref/netcoreapp2.0/_._": {}
+          },
+          "runtime": {
+            "lib/netcoreapp2.0/_._": {}
+          }
+        },
+        "net10.0-windows10.0.19041.0/win-x64": {
+          "compile": {
+            "ref/netcoreapp2.0/_._": {}
+          },
+          "runtime": {
+            "lib/netcoreapp2.0/_._": {}
+          }
+        }
+      },
+      "selected_files": {}
     }
   ]
 }
