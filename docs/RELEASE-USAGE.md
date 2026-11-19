@@ -199,7 +199,7 @@ remain unavailable; older Windows stacks can expose only a speed category.
 Detail columns without data are hidden and restored as asynchronous metadata
 or results arrive, retaining widths. This PC uses populated drive columns.
 
-Search uses the Pathweft index service (`index\pathweft-indexd.exe`). Setup
+Search uses the Pathweft index service (`services\file_index\pathweft-indexd.exe`, registered where it is installed). Setup
 installs or updates it silently; uninstalling Pathweft removes it and keeps its
 folder-root settings. It indexes the NTFS drives through their change journals and
 any folder roots added in Settings > Windows integration > Pathweft index, where

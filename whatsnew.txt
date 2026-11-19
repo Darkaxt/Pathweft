@@ -1,6 +1,11 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.83 | 2026-11-19 | Index service inside Pathweft's folder
+
+- The Pathweft index service now runs from Pathweft's own folder (Program Files\Pathweft\services\file_index) instead of a separate PathweftIndex copy. The update moves it, keeps your indexed folder roots and removes the old copy.
+- Analyze space is the command bar button only; the right-click menus no longer repeat it.
+
 ## 1.1.82 | 2026-11-19 | Folder tools in the folder's own menu
 
 - Right-click a folder's empty space → Tools: Rename all… renames everything in the folder, Resize images… resizes its pictures, and What's using this? shows which programs hold it.
