@@ -57,6 +57,16 @@ Name: "en"; MessagesFile: "compiler:Default.isl"
 Name: "defaultfm"; Description: "Open filesystem folders and drives in Pathweft"; GroupDescription: "Windows integration (optional):"; Flags: unchecked
 Name: "desktopicon"; Description: "Create a desktop shortcut"; GroupDescription: "Shortcuts:"; Flags: unchecked
 
+[InstallDelete]
+; An update only overwrites files, so members earlier releases shipped stay
+; behind. These run before [Files] copies the current set: S56 (1.1.80) removed
+; the bundled Everything engine and SDK, and each .NET servicing update renames
+; the versioned DAC (the current one is copied back right after).
+Type: filesandordirs; Name: "{app}\Everything"
+Type: files; Name: "{app}\Everything64.dll"
+Type: filesandordirs; Name: "{app}\vendor\EverythingSDK"
+Type: files; Name: "{app}\mscordaccore_amd64_amd64_*.dll"
+
 [Files]
 ; SHELL-06: the native handlers keep one fixed name. A Shell caller (Explorer,
 ; a browser) may still have the previous copy loaded: it is moved aside just
