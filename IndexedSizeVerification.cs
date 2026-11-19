@@ -38,6 +38,10 @@ public partial class MainWindow
     // The same pane and analysis paths against a substituted service, for the private-desktop profile.
     internal async Task VerifyIndexedSizes15(string root,Action<bool,string> check)
     {
+        // No pane watches the fixture while it is created: their notifications would
+        // correctly mark it changed, and a changed folder is measured, not indexed.
+        string neutral=Directory.CreateDirectory(Path.Combine(root,"neutral")).FullName;
+        await S1Verification.Navigate(Left,neutral);await S1Verification.Navigate(Right,neutral);await Task.WhenAll(Left.StopSizingAsync(),Right.StopSizingAsync());
         string fixture=Directory.CreateDirectory(Path.Combine(root,"indexed fixture é 子")).FullName;
         string folder=Directory.CreateDirectory(Path.Combine(fixture,"child")).FullName;
         File.WriteAllBytes(Path.Combine(folder,"one.bin"),new byte[123]);File.WriteAllBytes(Path.Combine(folder,"two.bin"),new byte[456]);

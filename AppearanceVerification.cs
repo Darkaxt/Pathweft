@@ -116,7 +116,7 @@ public partial class MainWindow
                 Check(widget.WindowStyle==WindowStyle.None&&widget.Pane.Dir==PaneView.ThisPC&&!widget.Pane.Items.Any(),"The compact widget opens to an empty global query without a caption/header or drive listing");
                 Check(((DockPanel)widget.Content).Children.Count==2&&widget.Notice.Visibility==Visibility.Collapsed&&((DockPanel)widget.Pane.FindName("PathBar")).Children.OfType<Button>().All(b=>!b.IsVisible)&&!((FrameworkElement)((TextBlock)widget.Pane.FindName("Footer")).Parent).IsVisible,"Only search/match controls and results are visible; navigation, destination and action/view/sort bars are absent");
                 var widgetHeaders=((GridView)list.View).Columns.Select(c=>c.Header is Panel header?header.Children.OfType<TextBlock>().Last().Text:c.Header?.ToString()).ToArray();
-                Check(widgetHeaders.SequenceEqual(new[]{"Name","Location","Size","Modified"}),"The real result view has the four restrained reference columns: "+string.Join(" | ",widgetHeaders));
+                Check(widgetHeaders.SequenceEqual(new[]{"Name","Location","Size","Date modified"}),"The real result view has the four restrained reference columns: "+string.Join(" | ",widgetHeaders));
                 input.Text="no_such_widget_result";input.Text="path:\"D:\\Projects\\Pathweft\" \"README.md\"";
                 await widget.Pane.SearchCompletion;await Settled();
                 File.WriteAllText(Path.Combine(root,"widget-query-state.json"),JsonSerializer.Serialize(new{known=Known(),request=widget.Pane.SearchRequest,text=input.Text,notice=widget.Pane.SearchNotice,items=widget.Pane.Items.Select(entry=>new{entry.Path,entry.Message})}));

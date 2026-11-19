@@ -35,7 +35,7 @@ sealed partial class PackageProbe
         var updates=new List<object>();var updateType=Type("SpaceUpdate");
         var parameter=Expression.Parameter(updateType);
         var collect=Expression.Lambda(typeof(Action<>).MakeGenericType(updateType),Expression.Call(Expression.Constant(updates),typeof(List<object>).GetMethod("Add"),Expression.Convert(parameter,typeof(object))),parameter).Compile();
-        await (Task)Call(Type("SpaceScan"),null,"RunAsync",folder,false,"",collect,CancellationToken.None);
+        await (Task)Call(Type("SpaceScan"),null,"RunAsync",folder,false,collect,CancellationToken.None);
         var terminal=updates.Last(update=>(string)Get(update,"Path")==folder);
         Check((long)Get(terminal,"Bytes")==579&&Get(terminal,"State").ToString()=="Complete","Delivered Diskweft-derived metadata traversal reaches the exact real recursive total");
         var pane=(PaneView)owner.FindName("Left");

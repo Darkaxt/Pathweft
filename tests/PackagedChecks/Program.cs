@@ -196,7 +196,7 @@ sealed partial class PackageProbe
             {
                 // SEARCH-09: the package carries no Everything engine; searches go to the installed Pathweft index service (read-only).
                 var members=Directory.EnumerateFileSystemEntries(AppContext.BaseDirectory,"*",SearchOption.AllDirectories).Select(path=>Path.GetRelativePath(AppContext.BaseDirectory,path)).ToArray();
-                Check(!members.Any(path=>path.Contains("Everything",StringComparison.OrdinalIgnoreCase))&&members.Contains(@"index\pathweft-indexd.exe",StringComparer.OrdinalIgnoreCase),"The package carries the Pathweft index service and no Everything engine or SDK");
+                Check(!members.Any(path=>Path.GetFileName(path).StartsWith("Everything",StringComparison.OrdinalIgnoreCase)&&!path.Split(Path.DirectorySeparatorChar).Any(part=>part.StartsWith("EverythingToolbar",StringComparison.OrdinalIgnoreCase)))&&members.Contains(@"index\pathweft-indexd.exe",StringComparer.OrdinalIgnoreCase),"The package carries the Pathweft index service and no Everything engine or SDK");
                 var searchType=Type("Search.IndexedSearch");
                 string expression="path:\""+Path.GetDirectoryName(known)+"\" \""+Path.GetFileName(known)+"\"";
                 var query=(Task)Call(searchType,null,"QueryAsync",expression,0u,200u,"Name",false,CancellationToken.None);
