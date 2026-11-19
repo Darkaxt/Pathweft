@@ -17,15 +17,19 @@ public partial class MainWindow
         string fixture=Directory.CreateDirectory(Path.Combine(root,"live indexed fixture é 子")).FullName;
         string folder=Directory.CreateDirectory(Path.Combine(fixture,"child")).FullName;
         File.WriteAllBytes(Path.Combine(folder,"one.bin"),new byte[123]);File.WriteAllBytes(Path.Combine(folder,"two.bin"),new byte[456]);
-        // The service applies journal changes asynchronously; poll its answers (no deadline, no rescan, no settings change).
+        // The service applies journal changes asynchronously; poll its answers for up to two minutes
+        // (no rescan, no settings change), so a wrong answer fails with what the service said.
         Dictionary<string,long> totals;
+        var deadline=DateTime.UtcNow.AddMinutes(2);
         using(var monitor=new PeriodicTimer(TimeSpan.FromMilliseconds(100)))
         {
             do{totals=await IndexedSearch.FolderSizesAsync([folder,Path.Combine(fixture,"absent")],CancellationToken.None);
                 if(totals.TryGetValue(folder,out long size)&&size==579)break;
-            }while(await monitor.WaitForNextTickAsync());
+            }while(DateTime.UtcNow<deadline&&await monitor.WaitForNextTickAsync());
         }
-        check(totals.Count==1&&totals[folder]==579,"The installed index service reports the exact recursive total and leaves an absent path unknown");
+        var neutralTotal=await IndexedSearch.FolderSizesAsync([neutral],CancellationToken.None);
+        check(totals.Count==1&&totals[folder]==579,"The installed index service reports the exact recursive total and leaves an absent path unknown: "+string.Join(", ",totals.Select(pair=>pair.Value)));
+        check(neutralTotal.TryGetValue(neutral,out long empty)&&empty==0,"A new empty folder has an indexed total of 0: "+string.Join(", ",neutralTotal.Select(pair=>pair.Value)));
         var page=await IndexedSearch.QueryAsync(IndexedSearch.FolderExpression([folder]),0,2,"Name",false,CancellationToken.None);
         check(page.Engine==IndexServiceClient.Engine&&page.Total==1&&page.Hits.Single().IsFolder,"The production folder expression finds exactly the fixture folder in the installed index");
         await IndexedRows15(root,fixture,folder,check);
@@ -48,11 +52,15 @@ public partial class MainWindow
             check(totals.Count==1&&totals[folder]==579,"Batched folder-size lookup distinguishes indexed data from absent paths");
             await IndexedRows15(root,fixture,folder,check);
         }
-        finally{IndexedSearch.ServiceOverride=previous;}
+        finally{IndexedSearch.ServiceOverride=previous;File.WriteAllLines(Path.Combine(root,"indexed-requests.txt"),fake.Requests.Select(request=>request.ToJsonString()));}
     }
 
     async Task IndexedRows15(string root,string fixture,string folder,Action<bool,string> check)
     {
+        // Finish a notification refresh already queued while the fixture was created: a genuinely
+        // changed folder is measured from the filesystem; a settled one takes the indexed total.
+        await S1Verification.Navigate(Left,fixture);await Left.SizingCompletion;
+        if(typeof(PaneView).GetField("folderRefresh",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic).GetValue(Left) is System.Windows.Threading.DispatcherOperation queued)await queued.Task;
         await S1Verification.Navigate(Left,fixture);await Left.SizingCompletion;
         File.WriteAllText(Path.Combine(root,"indexed-row.json"),System.Text.Json.JsonSerializer.Serialize(new{Left.Items.Single().Size,Left.Items.Single().SizeSource}));
         check(Left.Items.Single().Size==579&&Left.Items.Single().SizeSource==IndexedSearch.SizeSource,"The ordinary pane uses the indexed total with an explicit coverage label");

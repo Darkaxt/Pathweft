@@ -109,6 +109,12 @@ public partial class MainWindow
             check(sizes.Count == 1 && sizes.TryGetValue(root, out long size) && size == 4096
                 && sent["paths"].AsArray().Select(p => (string)p).SequenceEqual([root, Path.Combine(root, "unindexed")]),
                 "SEARCH-06: folder sizes come from the service, unknown sizes stay absent and paths are normalized");
+            // A reply missing its members is an ordinary index error (callers then measure), never an unhandled exception.
+            var normal = fake.Reply; fake.Reply = _ => new JsonObject { ["ok"] = true };
+            string broken = null;
+            try { await IndexedSearch.FolderSizesAsync([root], CancellationToken.None); } catch (InvalidOperationException ex) { broken = ex.Message; }
+            fake.Reply = normal;
+            check(broken == "The index service sent an invalid reply.", "SEARCH-09: a malformed folder-size reply is reported as an index error, not a crash: " + broken);
 
             // Lost connection: the request fails with a message, the next one reconnects.
             fake.Reply = request => null;

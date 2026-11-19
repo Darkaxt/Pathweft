@@ -211,6 +211,8 @@ public partial class MainWindow
     static async Task CompareDiskweft15(string root,string fixture,long expected,List<object> measurements,Action<bool,string> check)
     {
         const string donor=@"C:\Program Files (x86)\Darkaxt\Diskweft\Diskweft.exe";
+        // A comparison against the installed donor, when it is installed; its absence is recorded, not a product failure.
+        if(!File.Exists(donor)){measurements.Add(new{diskweft="not installed; comparison skipped"});return;}
         string output=Path.Combine(root,"donor.csv");
         var start=new ProcessStartInfo(donor){UseShellExecute=false,CreateNoWindow=true,WindowStyle=ProcessWindowStyle.Hidden,RedirectStandardOutput=true,RedirectStandardError=true};
         foreach(string argument in new[]{fixture,"--csv",output})start.ArgumentList.Add(argument);

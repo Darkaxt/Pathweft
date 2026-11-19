@@ -100,6 +100,8 @@ internal sealed class IndexServiceClient(string pipeName)
             whole_word = switches?.WholeWord ?? false, regex = switches?.Regex ?? false, visible_only = visibleOnly,
         }, token).ConfigureAwait(false);
         if (reply == null) return null;
+        return Parsed(() =>
+        {
         var root = reply.RootElement;
         var hits = new List<IndexedHit>();
         if (root.TryGetProperty("hits", out var array))
@@ -111,7 +113,16 @@ internal sealed class IndexServiceClient(string pipeName)
                     !hit.TryGetProperty("visible", out var v) || v.GetBoolean()));
             }
         ulong total = root.TryGetProperty("total", out var t) ? t.GetUInt64() : (ulong)hits.Count;
-        return new(hits, (uint)Math.Min(total, uint.MaxValue), Engine, true, Updating(root));
+        return new IndexedPage(hits, (uint)Math.Min(total, uint.MaxValue), Engine, true, Updating(root));
+        });
+    }
+
+    // A reply that lacks a required member is a broken service, reported like a lost
+    // connection (callers then measure or show the message), never an unexpected exception.
+    static T Parsed<T>(Func<T> parse)
+    {
+        try { return parse(); }
+        catch (Exception ex) when (ex is KeyNotFoundException or FormatException or OverflowException or InvalidOperationException) { throw new InvalidOperationException("The index service sent an invalid reply.", ex); }
     }
 
     static DateTime Time(JsonElement hit, string name)
@@ -126,9 +137,13 @@ internal sealed class IndexServiceClient(string pipeName)
         {
             using var reply = await TryRequestAsync(new { op = "folder_sizes", paths = batch }, token).ConfigureAwait(false);
             if (reply == null) return null;
-            foreach (var item in reply.RootElement.GetProperty("sizes").EnumerateArray())
-                if (item.TryGetProperty("size", out var size) && size.ValueKind == JsonValueKind.Number)
-                    result[Path.TrimEndingDirectorySeparator(item.GetProperty("path").GetString())] = size.GetInt64();
+            Parsed(() =>
+            {
+                foreach (var item in reply.RootElement.GetProperty("sizes").EnumerateArray())
+                    if (item.TryGetProperty("size", out var size) && size.ValueKind == JsonValueKind.Number)
+                        result[Path.TrimEndingDirectorySeparator(item.GetProperty("path").GetString())] = size.GetInt64();
+                return true;
+            });
         }
         return result;
     }
@@ -137,7 +152,7 @@ internal sealed class IndexServiceClient(string pipeName)
     {
         ForgetAbsence();
         using var reply = await TryRequestAsync(new { op = "status" }, token).ConfigureAwait(false);
-        return reply == null ? null : IndexServiceStatus.Parse(reply.RootElement.GetProperty("status"));
+        return reply == null ? null : Parsed(() => IndexServiceStatus.Parse(reply.RootElement.GetProperty("status")));
     }
 
     internal Task FolderAddAsync(string path, CancellationToken token) => Command(new { op = "folder_add", path }, token);
