@@ -225,6 +225,7 @@ public partial class SettingsWindow : Window
         "performance.days", "crcfolders", "crcarchives", "hashlower", // chosen from a Details column header, like the other remembered view state
         "copydetails", // Copy…'s last choices
         "compress", // Compress…'s last choices, remembered as 7-Zip's Add to archive does
+        "terminal.height", // the terminal panel's remembered height, like the preview width
         "imageresize", "renameoptions", // Resize images' and Rename all's last choices, remembered as PowerToys does
     };
 
