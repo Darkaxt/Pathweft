@@ -46,7 +46,7 @@ internal static class ScoopCleanup
         if(groups.Count==0)return(sizes,false);
         try
         {
-            sizes=IndexedSearch.FolderSizesAsync(groups.Select(g=>g.Folder),"",cancel).GetAwaiter().GetResult();
+            sizes=IndexedSearch.FolderSizesAsync(groups.Select(g=>g.Folder),cancel).GetAwaiter().GetResult();
         }
         catch(Exception error)when(error is InvalidOperationException or System.ComponentModel.Win32Exception){ }
         cancel.ThrowIfCancellationRequested();

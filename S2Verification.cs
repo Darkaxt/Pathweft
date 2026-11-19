@@ -135,7 +135,7 @@ public partial class MainWindow
             await Query(widget.Pane, "pwfts2_évidence space.txt", 0);
             Check(widget.Pane.IndexedTotal == 1, "WIDGET-01 widget Unicode/space query against real index");
             await Query(widget.Pane, "pwfts2_hit_*.txt", 0);
-            Check(widget.Pane.IndexedTotal == 220 && widget.Pane.Items.Count() == 200, "WIDGET-01 actual Everything query in widget with paged results");
+            Check(widget.Pane.IndexedTotal == 220 && widget.Pane.Items.Count() == 200, "WIDGET-01 actual index query in widget with paged results");
             widget.Pane.SetSort("Size", true);
             await widget.Pane.SearchCompletion;
             Check(widget.Pane.Items.First().Size == 220, "WIDGET-01 widget sorts the real indexed set");

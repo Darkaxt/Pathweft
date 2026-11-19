@@ -43,46 +43,11 @@ sealed partial class PackageProbe
     object session;
     [STAThread] static void Main(string[] args)
     {
-        if(args.Length==3&&args[0]=="--engine-query")
-        {
-            string target=Path.GetFullPath(args[1]),file=Path.GetFullPath(args[2]);
-            if(!target.StartsWith(@"D:\Temp\pathweft-s8-delivery\verification-",StringComparison.OrdinalIgnoreCase)||!File.Exists(file))throw new ArgumentException("Owned read-only diagnostics and known file required.");
-            object Health(){var hwnd=FindWindowW("EVERYTHING_TASKBAR_NOTIFICATION",null);return new{window=hwnd.ToInt64(),hung=hwnd!=IntPtr.Zero&&IsHungAppWindow(hwnd)};}
-            var main=Health();var clientType=Type("Search.EverythingSearchClient");var client=clientType.GetProperty("Shared",Flags).GetValue(null);
-            var sdkDispatcher=((TaskCompletionSource<Dispatcher>)clientType.GetField("ready",Flags).GetValue(client)).Task.GetAwaiter().GetResult();
-            var worker=sdkDispatcher.Invoke(Health);object outcome;
-            try
-            {
-                string expression="path:\""+Path.GetDirectoryName(file)+"\" \""+Path.GetFileName(file)+"\"";
-                var query=(Task)Call(clientType,client,"QueryAsync",expression,"",0u,200u,"Name",false,CancellationToken.None);query.GetAwaiter().GetResult();
-                var page=Get(query,"Result");outcome=new{success=true,total=Get(page,"Total")};
-            }
-            catch(Exception error){outcome=new{success=false,failure=error.ToString()};}
-            var after=sdkDispatcher.Invoke(Health);
-            ((Task)Call(clientType,null,"StopIfStartedAsync")).GetAwaiter().GetResult();
-            var state=new{main,worker,after,outcome};File.WriteAllText(Path.Combine(target,"engine-query.json"),JsonSerializer.Serialize(state));Console.WriteLine(JsonSerializer.Serialize(state));return;
-        }
         if(args.Length==2&&args[0]=="--native-info")
         {
             string target=Path.GetFullPath(args[1]);
             if(!target.StartsWith(@"D:\Temp\pathweft-s8-delivery\verification-",StringComparison.OrdinalIgnoreCase))throw new ArgumentException("Owned metadata output required.");
             WriteNativeInfo(target);return;
-        }
-        if(args.Length==2&&args[0]=="--engine-state")
-        {
-            string target=Path.GetFullPath(args[1]);
-            if(!target.StartsWith(@"D:\Temp\pathweft-s8-delivery\verification-",StringComparison.OrdinalIgnoreCase))throw new ArgumentException("Owned diagnostics output required.");
-            var window=FindWindowW("EVERYTHING_TASKBAR_NOTIFICATION",null);
-            bool before=window!=IntPtr.Zero&&IsHungAppWindow(window);
-            var library=NativeLibrary.Load(Path.Combine(AppContext.BaseDirectory,"Everything64.dll"));
-            try
-            {
-                bool loaded=Marshal.GetDelegateForFunctionPointer<NativeBool>(NativeLibrary.GetExport(library,"Everything_IsDBLoaded"))();
-                var state=new{window=window.ToInt64(),hungBefore=before,databaseLoaded=loaded,hungAfter=window!=IntPtr.Zero&&IsHungAppWindow(window)};
-                File.WriteAllText(Path.Combine(target,"engine-state.json"),JsonSerializer.Serialize(state));Console.WriteLine(JsonSerializer.Serialize(state));
-            }
-            finally{NativeLibrary.Free(library);}
-            return;
         }
         if(args.Length==3&&args[0]=="--wait-owner")
         {
@@ -119,9 +84,6 @@ sealed partial class PackageProbe
         Dispatcher.Run();
     }
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]delegate IntPtr NativeText();
-    [UnmanagedFunctionPointer(CallingConvention.StdCall)][return:MarshalAs(UnmanagedType.Bool)]delegate bool NativeBool();
-    [DllImport("user32.dll",CharSet=CharSet.Unicode)]static extern IntPtr FindWindowW(string name,string title);
-    [DllImport("user32.dll")]static extern bool IsHungAppWindow(IntPtr window);
     [DllImport("shell32.dll",CharSet=CharSet.Unicode)]static extern uint ExtractIconExW(string file,int index,out IntPtr large,out IntPtr small,uint count);
     [DllImport("user32.dll")]static extern bool DestroyIcon(IntPtr icon);
     void VerifyIcon(System.Windows.Media.Imaging.BitmapSource source,string criterion)
@@ -232,14 +194,16 @@ sealed partial class PackageProbe
             bool searchPassed=false;
             try
             {
-                var clientType=Type("Search.EverythingSearchClient");
-                var client=clientType.GetProperty("Shared",Flags).GetValue(null);
+                // SEARCH-09: the package carries no Everything engine; searches go to the installed Pathweft index service (read-only).
+                var members=Directory.EnumerateFileSystemEntries(AppContext.BaseDirectory,"*",SearchOption.AllDirectories).Select(path=>Path.GetRelativePath(AppContext.BaseDirectory,path)).ToArray();
+                Check(!members.Any(path=>path.Contains("Everything",StringComparison.OrdinalIgnoreCase))&&members.Contains(@"index\pathweft-indexd.exe",StringComparer.OrdinalIgnoreCase),"The package carries the Pathweft index service and no Everything engine or SDK");
+                var searchType=Type("Search.IndexedSearch");
                 string expression="path:\""+Path.GetDirectoryName(known)+"\" \""+Path.GetFileName(known)+"\"";
-                var query=(Task)Call(clientType,client,"QueryAsync",expression,"",0u,200u,"Name",false,CancellationToken.None);
+                var query=(Task)Call(searchType,null,"QueryAsync",expression,0u,200u,"Name",false,CancellationToken.None);
                 await query;
                 var page=Get(query,"Result");
                 var paths=((IEnumerable)Get(page,"Hits")).Cast<object>().Select(hit=>(string)Get(hit,"Path")).ToArray();
-                Check(paths.Contains(known,StringComparer.OrdinalIgnoreCase),"Packaged Everything SDK queries the real existing index and finds the exact known file");
+                Check(paths.Contains(known,StringComparer.OrdinalIgnoreCase),"The packaged search queries the installed Pathweft index service and finds the exact known file");
                 checks.Add(new{engine=Get(page,"Engine"),query=expression});searchPassed=true;
             }
             catch(Exception error)

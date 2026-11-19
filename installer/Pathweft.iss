@@ -89,8 +89,9 @@ Name: "{autodesktop}\Pathweft"; Filename: "{app}\{#AppExe}"; AppUserModelID: "Da
 [Run]
 Filename: "{app}\{#AppExe}"; Parameters: "--desktop-launch"; Description: "Launch Pathweft"; Flags: nowait postinstall skipifsilent
 
-; SEARCH-08: removing Pathweft removes the index service it installed (its
-; settings in ProgramData are kept); "not installed" is a successful no-op.
+; SEARCH-08/09: setup installs the index service and removing Pathweft removes
+; it (its settings and folder roots in ProgramData are kept); "not installed" is
+; a successful no-op.
 [UninstallRun]
 Filename: "{app}\index\pathweft-indexd.exe"; Parameters: "uninstall"; Flags: runhidden waituntilterminated skipifdoesntexist; RunOnceId: "PathweftIndexUninstall"
 
@@ -304,6 +305,17 @@ begin
       DeploymentFailure := 'Files were installed, but Windows integration could not be restored. Reopen Pathweft to review its status.';
     end;
   end;
+#ifndef ProgressVerification
+  // SEARCH-09: the index service is Pathweft's only file index. `install` is
+  // idempotent: it updates a running service in place and keeps its folder roots.
+  if (CurStep = ssPostInstall) and FileExists(ExpandConstant('{app}\index\pathweft-indexd.exe')) then begin
+    DeploymentPhase('Updating the index service', 'Installing or updating the Pathweft index service.');
+    if not Exec(ExpandConstant('{app}\index\pathweft-indexd.exe'), 'install', ExpandConstant('{app}\index'), SW_HIDE, ewWaitUntilTerminated, Code) or (Code <> 0) then begin
+      Log(Format('Pathweft index service install failed (exit %d).', [Code]));
+      SuppressibleMsgBox('Pathweft was installed, but its index service could not be installed or updated (exit ' + IntToStr(Code) + '). Searches stay unavailable until Settings > Windows integration > Pathweft index installs it.', mbError, MB_OK, IDOK);
+    end;
+  end;
+#endif
   if (CurStep = ssPostInstall) and (not MigrationRequested()) and WizardIsTaskSelected('defaultfm') then begin
     if not Exec(ExpandConstant('{app}\{#AppExe}'), '--desktop-launch --set-default', '', SW_HIDE, ewWaitUntilTerminated, Code) or (Code <> 0) then
     begin

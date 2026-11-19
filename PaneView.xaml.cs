@@ -1336,7 +1336,7 @@ public partial class PaneView : UserControl
 
     async Task SearchFileSystem(string query)
     {
-        if (IsServer(Dir) || IsVirtual(Dir)) { Error?.Invoke("Filesystem search needs a real folder. Choose Everything · All, or leave this virtual location."); return; }
+        if (IsServer(Dir) || IsVirtual(Dir)) { Error?.Invoke("Filesystem search needs a real folder. Search from This PC, or leave this virtual location."); return; }
         var find = SearchQuery.Parse(query, DateTime.Now);
         if (find.Error != null) { Error?.Invoke(find.Error); return; }
         searchQuery = query;
@@ -1460,8 +1460,10 @@ public partial class PaneView : UserControl
                 cts.Token.ThrowIfCancellationRequested();
                 var indexed=new Dictionary<string,long>(StringComparer.OrdinalIgnoreCase);
                 var candidates=todo.Where(e=>!dirty.Any(path=>path==null||SizeCache.Within(path,e.Path)||SizeCache.Within(e.Path,path))).Select(e=>e.Path).ToArray();
-                if(candidates.Length>0)try{indexed=await FileExplorer.Search.IndexedSearch.FolderSizesAsync(candidates,SearchInstance,cts.Token);}
-                catch(Exception ex)when(ex is InvalidOperationException or System.ComponentModel.Win32Exception or DllNotFoundException or EntryPointNotFoundException){} // unavailable metadata: actual scoped traversal below
+                // A slow index must not hold the row sizes: after IndexWait the folders are measured.
+                if(candidates.Length>0)try{using var indexWait=CancellationTokenSource.CreateLinkedTokenSource(cts.Token);indexWait.CancelAfter(IndexWait);indexed=await FileExplorer.Search.IndexedSearch.FolderSizesAsync(candidates,indexWait.Token);}
+                catch(OperationCanceledException)when(!cts.Token.IsCancellationRequested){}
+                catch(Exception ex)when(ex is InvalidOperationException or System.ComponentModel.Win32Exception){} // unavailable metadata: actual scoped traversal below
                 await Task.Run(()=>Parallel.ForEach(todo,new ParallelOptions{MaxDegreeOfParallelism=2,CancellationToken=cts.Token},e=>
                 {
                     using var publication=new SizeCache.Measurement(e.Path);
@@ -2376,7 +2378,7 @@ public partial class PaneView : UserControl
         FilterHint.Visibility=FilterBox.Text.Length==0?Visibility.Visible:Visibility.Collapsed;
         FilterBox.Focus();FilterBox.SelectAll();
     }
-    // On the selected row once it is drawn, not on the list: a file handed in from outside (Open path in Everything,
+    // On the selected row once it is drawn, not on the list: a file handed in from outside (Open path in a search tool,
     // Open-Shell) was selected while the keyboard stayed on the list, so the arrows started elsewhere (Rico, 1.0.53).
     // A folder read from the cache is shown before this runs, and a fresh read that changes nothing only patches it.
     public void FocusList()
@@ -2393,7 +2395,7 @@ public partial class PaneView : UserControl
     void ApplyFilter()
     {
         if (view == null) return;
-        var q = ""; // One address/search field: typing is a draft; Enter submits to Everything.
+        var q = ""; // One address/search field: typing is a draft; Enter submits to the index.
         // the same words and terms as the search, but contents only on Enter: the filter runs at every keystroke
         var find = SearchQuery.Parse(q, DateTime.Now);
         view.Filter = q.Trim() == "" || find.Error != null ? null : o => o is Entry { IsUp: true }
@@ -2418,7 +2420,7 @@ public partial class PaneView : UserControl
         {
             if (key == "Version") { SearchCoverage.Text = "The index does not hold file versions. Choose Name, Size, Type or Modified."; return; }
             if (key is not ("Name" or "Size" or "Type" or "Modified"))
-            {   // Everything sorts by what it indexes; any other column sorts the results already shown
+            {   // The index sorts by what it indexes; any other column sorts the results already shown
                 ShowSort(key, desc);
                 if (view != null) view.CustomSort = new EntrySort(key, desc);
                 return;

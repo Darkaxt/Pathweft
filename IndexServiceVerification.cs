@@ -86,50 +86,46 @@ public partial class MainWindow
             JsonObject Last() { JsonObject last = null; while (fake.Requests.TryDequeue(out var r)) last = r; return last; }
 
             // Router: pane query goes to the service with visible_only and column mapping.
-            var page = await IndexedSearch.QueryAsync("visible", "", 0, 50, "Modified", true, CancellationToken.None);
+            var page = await IndexedSearch.QueryAsync("visible", 0, 50, "Modified", true, CancellationToken.None);
             var sent = Last();
             check(page.Engine == IndexServiceClient.Engine && page.Updating && page.Total == 2 && page.Hits.Count == 2 && page.Hits[0].Visible && !page.Hits[1].Visible && page.Hits[0].Size == 2048 && page.Hits[0].Modified == DateTime.FromFileTime(133700000000000000L),
                 "SEARCH-06: a pane query is answered by the index service with engine, updating, visibility, size and time");
             check((string)sent["op"] == "query" && (bool)sent["visible_only"] && (string)sent["sort"] == "modified" && (bool)sent["descending"] && (uint)sent["count"] == 50,
                 "SEARCH-06: pane queries ask for visible_only and map Modified to modified, descending");
-            await IndexedSearch.QueryAsync("visible", "", 0, 1, "Type", false, CancellationToken.None);
+            await IndexedSearch.QueryAsync("visible", 0, 1, "Type", false, CancellationToken.None);
             check((string)Last()["sort"] == "extension", "SEARCH-06: the Type column sorts by extension");
             // MCP search: every match with switches and no visible_only.
             page = await IndexedSearch.SearchAsync("visible", 5, 10, "path", false, new SearchSwitches(true, true, false, true), CancellationToken.None);
             sent = Last();
             check(page.Hits.Count == 2 && !(bool)sent["visible_only"] && (bool)sent["match_path"] && (bool)sent["match_case"] && !(bool)sent["whole_word"] && (bool)sent["regex"] && (uint)sent["offset"] == 5 && (string)sent["sort"] == "path",
                 "SEARCH-06: the MCP search sends the switches, offset and sort and keeps every match");
-            // Refusal is shown as is, never retried on Everything.
+            // Refusal is shown as is, never retried.
             string refusal = null;
-            try { await IndexedSearch.QueryAsync("refuse", "", 0, 10, "Name", false, CancellationToken.None); } catch (InvalidOperationException ex) { refusal = ex.Message; }
+            try { await IndexedSearch.QueryAsync("refuse", 0, 10, "Name", false, CancellationToken.None); } catch (InvalidOperationException ex) { refusal = ex.Message; }
             check(refusal == "unsupported search function dm:", "SEARCH-06: a service refusal is reported as is: " + refusal);
             // Folder sizes: unknown stays absent; the source names the engine.
-            var sizes = await IndexedSearch.FolderSizesAsync([root + "\\", Path.Combine(root, "unindexed")], "", CancellationToken.None);
+            var sizes = await IndexedSearch.FolderSizesAsync([root + "\\", Path.Combine(root, "unindexed")], CancellationToken.None);
             sent = Last();
-            check(sizes.Count == 1 && sizes.TryGetValue(root, out long size) && size == 4096 && IndexedSearch.SizeSource == IndexedSearch.ServiceSizeSource && IndexedSearch.IsIndexSource(IndexedSearch.SizeSource)
+            check(sizes.Count == 1 && sizes.TryGetValue(root, out long size) && size == 4096
                 && sent["paths"].AsArray().Select(p => (string)p).SequenceEqual([root, Path.Combine(root, "unindexed")]),
                 "SEARCH-06: folder sizes come from the service, unknown sizes stay absent and paths are normalized");
-            // A named Everything instance never reaches the service.
-            fake.Requests.Clear();
-            try { await IndexedSearch.QueryAsync("visible", "Pathweft-index-absent-instance", 0, 1, "Name", false, CancellationToken.None); } catch (InvalidOperationException) { }
-            check(fake.Requests.IsEmpty, "SEARCH-06: a named Everything instance goes to Everything only");
 
             // Lost connection: the request fails with a message, the next one reconnects.
             fake.Reply = request => null;
             string lost = null;
-            try { await IndexedSearch.QueryAsync("visible", "", 0, 1, "Name", false, CancellationToken.None); } catch (InvalidOperationException ex) { lost = ex.Message; }
+            try { await IndexedSearch.QueryAsync("visible", 0, 1, "Name", false, CancellationToken.None); } catch (InvalidOperationException ex) { lost = ex.Message; }
             check(lost?.Contains("connection to the Pathweft index was lost") == true, "SEARCH-06: a lost connection ends that request with a message: " + lost);
             fake.Reply = request => new JsonObject { ["ok"] = true, ["total"] = 0, ["hits"] = new JsonArray() };
-            page = await IndexedSearch.QueryAsync("visible", "", 0, 1, "Name", false, CancellationToken.None);
+            page = await IndexedSearch.QueryAsync("visible", 0, 1, "Name", false, CancellationToken.None);
             check(page.Engine == IndexServiceClient.Engine && page.Total == 0 && !page.Updating, "SEARCH-06: the next request reconnects");
             // Unanswered request: bounded by the reply timeout.
             IndexServiceClient.ReplyTimeout = TimeSpan.FromSeconds(1); fake.Hold = true;
             string unanswered = null; var watch = Stopwatch.StartNew();
-            try { await IndexedSearch.QueryAsync("visible", "", 0, 1, "Name", false, CancellationToken.None); } catch (InvalidOperationException ex) { unanswered = ex.Message; }
+            try { await IndexedSearch.QueryAsync("visible", 0, 1, "Name", false, CancellationToken.None); } catch (InvalidOperationException ex) { unanswered = ex.Message; }
             check(unanswered?.Contains("didn't answer within 1 seconds") == true && watch.Elapsed < TimeSpan.FromSeconds(5), $"SEARCH-06: an unanswered request ends after the reply timeout ({watch.ElapsedMilliseconds} ms): {unanswered}");
             fake.Hold = false; IndexServiceClient.ReplyTimeout = reply;
 
-            // Absent service: null from the client, remembered, Everything answers instead.
+            // Absent service (SEARCH-09): null from the client, remembered; search says so and folder sizes are left to measurement.
             var missing = new IndexServiceClient("Pathweft-IndexVerify-absent-" + Guid.NewGuid().ToString("N"));
             watch.Restart();
             var first = await missing.QueryAsync("x", 0, 1, "name", false, null, true, CancellationToken.None);
@@ -138,10 +134,14 @@ public partial class MainWindow
             check(first == null && second == null && firstMs < 2000 && watch.ElapsedMilliseconds < 50 && missing.LastConnectError != null,
                 $"SEARCH-06: an absent service returns no answer within the connect bound ({firstMs} ms) and is remembered ({watch.ElapsedMilliseconds} ms)");
             IndexedSearch.ServiceOverride = missing;
-            string fallback = null;
-            try { fallback = (await IndexedSearch.QueryAsync("pathweft-index-verification-unlikely-name", "", 0, 1, "Name", false, CancellationToken.None)).Engine; }
-            catch (InvalidOperationException ex) { fallback = "Everything: " + ex.Message; }
-            check(fallback?.StartsWith("Everything", StringComparison.Ordinal) == true, "SEARCH-06: without the service the query goes to Everything: " + fallback);
+            string absentMessage = null;
+            try { await IndexedSearch.QueryAsync("pathweft-index-verification-unlikely-name", 0, 1, "Name", false, CancellationToken.None); }
+            catch (InvalidOperationException ex) { absentMessage = ex.Message; }
+            check(absentMessage == IndexedSearch.Absent, "SEARCH-09: without the service a search says the index service is not running: " + absentMessage);
+            string mcpAbsent = null;
+            try { await IndexedSearch.SearchAsync("x", 0, 1, "name", false, null, CancellationToken.None); } catch (InvalidOperationException ex) { mcpAbsent = ex.Message; }
+            var absentSizes = await IndexedSearch.FolderSizesAsync([root], CancellationToken.None);
+            check(mcpAbsent == IndexedSearch.Absent && absentSizes.Count == 0, "SEARCH-09: the MCP search reports the absent service and folder sizes are left to measurement");
             IndexedSearch.ServiceOverride = new IndexServiceClient(fake.Name);
 
             // Pane search: hidden protected hit, engine status and updating hint.
@@ -221,11 +221,11 @@ public partial class MainWindow
         {
             string windows = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
             check(status.Stores.Any(s => s.Kind == "ntfs" && s.State == "ready" && s.Items > 0), "SEARCH-06: the installed service reports a ready NTFS store: " + string.Join(", ", status.Stores.Select(s => $"{s.Name} {s.State} {s.Items}")));
-            var hit = await IndexedSearch.QueryAsync(IndexedSearch.FolderExpression([windows]), "", 0, 5, "Name", false, CancellationToken.None);
+            var hit = await IndexedSearch.QueryAsync(IndexedSearch.FolderExpression([windows]), 0, 5, "Name", false, CancellationToken.None);
             check(hit.Engine == IndexServiceClient.Engine && hit.Hits.Any(h => h.IsFolder && string.Equals(h.Path, windows, StringComparison.OrdinalIgnoreCase)), "SEARCH-06: the installed service finds the Windows folder by exact path");
-            var liveSizes = await IndexedSearch.FolderSizesAsync([windows], "", CancellationToken.None);
+            var liveSizes = await IndexedSearch.FolderSizesAsync([windows], CancellationToken.None);
             check(liveSizes.TryGetValue(windows, out long windowsBytes) && windowsBytes > 1L << 30, $"SEARCH-06: the installed service sizes the Windows folder ({windowsBytes:N0} bytes)");
-            var fixture = await IndexedSearch.QueryAsync("visible.txt " + "path:\"" + root + "\\\"", "", 0, 5, "Name", false, CancellationToken.None);
+            var fixture = await IndexedSearch.QueryAsync("visible.txt " + "path:\"" + root + "\\\"", 0, 5, "Name", false, CancellationToken.None);
             check(fixture.Hits.Any(h => string.Equals(h.Path, Path.Combine(root, "visible.txt"), StringComparison.OrdinalIgnoreCase)) || fixture.Updating,
                 "SEARCH-06: a file created by this run is found through the USN journal: " + string.Join(";", fixture.Hits.Select(h => h.Path)));
         }

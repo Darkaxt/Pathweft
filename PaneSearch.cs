@@ -29,7 +29,6 @@ public partial class PaneView
     internal Task AddressCompletion { get; private set; } = Task.CompletedTask;
     internal uint IndexedTotal => indexedTotal;
     internal string SearchNotice => searchNotice;
-    internal string SearchInstance = ""; // default existing instance; diagnostics can exercise an unavailable selection
     internal bool IsWidget { get; set; }
     internal event Action<string> WidgetLocationOpened;
     bool widgetColumnsConfigured,indexedCanLoadMore;
@@ -52,7 +51,7 @@ public partial class PaneView
             PathBar.Margin=new(0,0,0,12);
             AddressField.ClearValue(Border.CornerRadiusProperty);AddressField.ClearValue(Border.PaddingProperty);
             AddressField.SetResourceReference(StyleProperty,"AuxiliaryField");AddressField.MinHeight=34;
-            AddressField.ToolTip="Search files and folders with Everything";
+            AddressField.ToolTip="Search files and folders with the Pathweft index";
             var field=AddressContents;
             var icon=new TextBlock{Text="\uE721",FontFamily=new("Segoe Fluent Icons"),VerticalAlignment=VerticalAlignment.Center,Margin=new(0,0,8,0),IsHitTestVisible=false};
             DockPanel.SetDock(icon,Dock.Left);field.Children.Insert(0,icon);
@@ -81,7 +80,7 @@ public partial class PaneView
         (IsWidget||Dir==ThisPC ? 1 : 0);
 #if DEBUG
     // Historical engine regression scenarios can still qualify the retired
-    // filesystem backend; release UI has only location-derived Everything scope.
+    // filesystem backend; release UI has only location-derived index scope.
     internal int? VerificationSearchScope;
 #if DEBUG
     internal IReadOnlyList<Entry> IndexedResultsForVerification => indexedResults;
@@ -250,7 +249,7 @@ public partial class PaneView
         UpdateFooter();
         try
         {
-            var page = await IndexedSearch.QueryAsync(indexedExpression, SearchInstance,
+            var page = await IndexedSearch.QueryAsync(indexedExpression,
                 indexedOffset, SearchPageSize, sortKey, sortDesc, token);
             if (token.IsCancellationRequested || generation != navVersion) return;
             // Inspect only the requested page. A separate raw cursor ensures a
@@ -279,9 +278,7 @@ public partial class PaneView
                     Location = System.IO.Path.GetDirectoryName(hit.Path) ?? "", IsCut = CutPaths.Contains(hit.Path),
                 });
             }
-            searchNotice = page.Engine.StartsWith(IndexServiceClient.Engine, StringComparison.Ordinal)
-                ? IndexServiceClient.Engine + (page.Updating ? " · updating; some drives or folders are still being indexed." : " · Unindexed locations may be absent.")
-                : "Everything index · Unindexed locations may be absent.";
+            searchNotice = IndexServiceClient.Engine + (page.Updating ? " · updating; some drives or folders are still being indexed." : " · Unindexed locations may be absent.");
             if (changed) searchNotice += " Index changed during paging; refresh to restart.";
             // A duplicate page must not repeatedly request the same offset.
             indexedCanLoadMore=!changed&&page.Hits.Count>0&&indexedOffset<indexedTotal;

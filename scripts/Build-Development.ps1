@@ -69,7 +69,6 @@ try {
             ('-p:MpvRuntimeRoot=' + (Join-Path $cache 'mpv/e471496c56-pathweft.2'))
             ('-p:MediaInfoRuntimeRoot=' + (Join-Path $cache 'mediainfo/26.10'))
             ('-p:OfficeRuntimeRoot=' + (Join-Path $cache 'office'))
-            ('-p:EverythingRuntimeRoot=' + (Join-Path $cache 'everything/1.4.1.1032'))
             ('-p:ShellRouterRoot=' + $shellOutput)
         )
         if($Operation -eq 'Publish'){

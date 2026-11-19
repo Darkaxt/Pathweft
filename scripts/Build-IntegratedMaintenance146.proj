@@ -5,7 +5,7 @@
   <PropertyGroup>
     <PathweftProject>$(MSBuildThisFileDirectory)..\FileExplorer.csproj</PathweftProject>
     <DotNetHost>C:\Program Files\dotnet\dotnet.exe</DotNetHost>
-    <CommonBuildArgs>--disable-build-servers --nologo --verbosity minimal -maxcpucount:1 -nodeReuse:false -p:UseSharedCompilation=false -p:F3DRuntimeRoot=$(F3DRuntimeRoot) -p:SevenZipRuntimeRoot=$(SevenZipRuntimeRoot) -p:SharpSevenZipRuntimeRoot=$(SharpSevenZipRuntimeRoot) -p:RarsRuntimeRoot=$(RarsRuntimeRoot) -p:MpvRuntimeRoot=$(MpvRuntimeRoot) -p:MediaInfoRuntimeRoot=$(MediaInfoRuntimeRoot) -p:OfficeRuntimeRoot=$(OfficeRuntimeRoot) -p:EverythingRuntimeRoot=$(EverythingRuntimeRoot) -p:ShellRouterRoot=$(ShellRouterRoot)</CommonBuildArgs>
+    <CommonBuildArgs>--disable-build-servers --nologo --verbosity minimal -maxcpucount:1 -nodeReuse:false -p:UseSharedCompilation=false -p:F3DRuntimeRoot=$(F3DRuntimeRoot) -p:SevenZipRuntimeRoot=$(SevenZipRuntimeRoot) -p:SharpSevenZipRuntimeRoot=$(SharpSevenZipRuntimeRoot) -p:RarsRuntimeRoot=$(RarsRuntimeRoot) -p:MpvRuntimeRoot=$(MpvRuntimeRoot) -p:MediaInfoRuntimeRoot=$(MediaInfoRuntimeRoot) -p:OfficeRuntimeRoot=$(OfficeRuntimeRoot) -p:ShellRouterRoot=$(ShellRouterRoot)</CommonBuildArgs>
   </PropertyGroup>
   <Target Name="Restore" />
   <Target Name="Build">

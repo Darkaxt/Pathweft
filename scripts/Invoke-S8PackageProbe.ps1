@@ -1,5 +1,5 @@
 [CmdletBinding()]
-param([Parameter(Mandatory)][string]$ProductDirectory,[Parameter(Mandatory)][string]$RunRoot,[switch]$EngineStateOnly,[switch]$OfficeCoreOnly,[switch]$WidgetOnly,[string]$PrebuiltProbeRoot)
+param([Parameter(Mandatory)][string]$ProductDirectory,[Parameter(Mandatory)][string]$RunRoot,[switch]$OfficeCoreOnly,[switch]$WidgetOnly,[string]$PrebuiltProbeRoot)
 $ErrorActionPreference='Stop'
 $project=Split-Path -Parent $PSScriptRoot
 $run=[IO.Path]::GetFullPath($RunRoot)
@@ -29,10 +29,6 @@ if($PrebuiltProbeRoot){
     $probeOutput=Join-Path $run 'probe-build/artifacts/bin/PackagedChecks/release'
 }
 foreach($name in @('PackagedChecks.exe','PackagedChecks.dll','PackagedChecks.deps.json','PackagedChecks.runtimeconfig.json')){Copy-Item -LiteralPath (Join-Path $probeOutput $name) -Destination $product}
-if($EngineStateOnly){
-    & dotnet (Join-Path $product 'PackagedChecks.dll') --engine-state $run
-    exit $LASTEXITCODE
-}
 $probe=Start-Process -FilePath (Get-Command dotnet.exe).Source -ArgumentList @(('"'+(Join-Path $product 'PackagedChecks.dll')+'"'),('"'+$fixture+'"'),('"'+(Join-Path $project 'README.md')+'"')) -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $fixture 'stdout.txt') -RedirectStandardError (Join-Path $fixture 'stderr.txt')
 $probe.WaitForExit();$probe.Refresh()
 if($probe.ExitCode -ne 0){Get-Content (Join-Path $fixture 'stderr.txt');throw "Delivered assembly integration check failed: $fixture"}

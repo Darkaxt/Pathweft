@@ -102,7 +102,7 @@ internal static class ScoopCleanupVerification
             try
             {
                 using var review=Review(fixture,false);review.Analyze(default);
-                check(review.Count==3&&review.UnknownVersionSizes==3&&review.Row.Bytes==null&&review.Row.Details.Contains(version.Old),"Missing Everything estimates retain all obsolete folders without recursive sizing or pretending their size is zero");
+                check(review.Count==3&&review.UnknownVersionSizes==3&&review.Row.Bytes==null&&review.Row.Details.Contains(version.Old),"Missing index estimates retain all obsolete folders without recursive sizing or pretending their size is zero");
                 var updates=new List<CleanupProgress>();var outcome=review.Clean(default,updates.Add);
                 check(outcome.Deleted==3&&updates.First().Phase=="Deleting obsolete versions"&&updates.Last().Completed==3&&updates.All(x=>x.Total==3),"Unindexed obsolete folders begin direct deletion with real completed/total progress");
             }

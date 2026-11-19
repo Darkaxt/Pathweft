@@ -33,7 +33,7 @@ internal sealed class SpaceEntry:Entry
 
 public partial class PaneView
 {
-    /// How long the analyzer waits for Everything's folder sizes before measuring on disk (SPACE: slow index).
+    /// How long the analyzer waits for the index's folder sizes before measuring on disk (SPACE: slow index).
     internal static TimeSpan IndexWait=TimeSpan.FromSeconds(5);
     sealed class SpaceView
     {
@@ -247,7 +247,7 @@ public partial class PaneView
     }
     Task ScanWithAccess(SpaceView current,string path,bool preferIndex,Action<SpaceUpdate> publish)=>current.Administrator
         ? MaintenanceClient.ScanSpace(path,publish,current.Cancellation.Token)
-        : SpaceScan.RunAsync(path,preferIndex,SearchInstance,publish,current.Cancellation.Token);
+        : SpaceScan.RunAsync(path,preferIndex,publish,current.Cancellation.Token);
     void QueueSpace(SpaceView current,SpaceUpdate update)
     {
         lock(current.Mailbox)
@@ -338,14 +338,14 @@ public partial class PaneView
         foreach(var absent in current.Nodes.Values.Where(row=>row.ParentPath==path&&!present.Contains(row.Path)).ToArray())RemoveSpaceRow(current,absent);
         var missing=members.Where(member=>member.Directory&&!member.Reparse&&!current.Nodes.ContainsKey(member.Path)).ToArray();
         Dictionary<string,long> sizes=new(StringComparer.OrdinalIgnoreCase);
-        // A slow Everything must not leave the analysis Pending (and F5 queued behind it) for its whole reply
+        // A slow index must not leave the analysis Pending (and F5 queued behind it) for its whole reply
         // timeout: after IndexWait the folders are measured on disk instead.
         if(preferIndex&&missing.Length>0)
         {
             using var indexWait=CancellationTokenSource.CreateLinkedTokenSource(token);indexWait.CancelAfter(IndexWait);
-            try{sizes=await FileExplorer.Search.IndexedSearch.FolderSizesAsync(missing.Select(member=>member.Path),SearchInstance,indexWait.Token);}
+            try{sizes=await FileExplorer.Search.IndexedSearch.FolderSizesAsync(missing.Select(member=>member.Path),indexWait.Token);}
             catch(OperationCanceledException)when(!token.IsCancellationRequested){}
-            catch(Exception error)when(error is InvalidOperationException or System.ComponentModel.Win32Exception or DllNotFoundException or EntryPointNotFoundException){}
+            catch(Exception error)when(error is InvalidOperationException or System.ComponentModel.Win32Exception){}
         }
         foreach(var member in members)
         {

@@ -37,7 +37,7 @@ public partial class MainWindow
         await S1Verification.Navigate(Left,PaneView.ThisPC);
         var query=(TextBox)Left.FindName("FilterBox");query.Text="path:\"D:\\Projects\\Pathweft\" \"README.md\"";
         await Left.SubmitAddressAsync();await Settle();
-        check(Left.InSearch&&Left.Items.Any()&&StatsRow.Visibility==Visibility.Visible,"Global Everything results from This PC restore useful search statistics");
+        check(Left.InSearch&&Left.Items.Any()&&StatsRow.Visibility==Visibility.Visible,"Global index results from This PC restore useful search statistics");
         Settings.Stats=0;ApplyStats();await S1Verification.Navigate(Left,folder);await Settle();
         check(StatsRow.Visibility==Visibility.Collapsed&&Settings.Stats==0,"Navigation never overrides the user's disabled statistics preference");
         Settings.Stats=1;ApplyStats();await Settle();

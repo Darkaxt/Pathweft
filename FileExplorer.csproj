@@ -9,7 +9,7 @@
     <AssemblyName>Pathweft</AssemblyName>
     <Product>Pathweft</Product>
     <Company>Darkaxt</Company>
-    <Version>1.1.79</Version>
+    <Version>1.1.80</Version>
     <!-- WPF windows without their own Icon use this one, so every window gets it -->
     <ApplicationIcon>app.ico</ApplicationIcon>
     <ApplicationManifest>app.manifest</ApplicationManifest>
@@ -37,9 +37,6 @@
     <None Condition="'$(IndexServiceRoot)' != ''" Include="$(IndexServiceRoot)\pathweft-indexd.exe" Link="index\pathweft-indexd.exe" CopyToOutputDirectory="PreserveNewest" />
     <None Condition="'$(IndexServiceRoot)' != ''" Include="$(IndexServiceRoot)\pwindex.exe" Link="index\pwindex.exe" CopyToOutputDirectory="PreserveNewest" />
     <None Condition="'$(IndexServiceRoot)' != ''" Include="native\pathweft-index\THIRD-PARTY-LICENSES.txt" Link="index\THIRD-PARTY-LICENSES.txt" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="$(EverythingRuntimeRoot)\Everything.exe" Link="Everything\Everything.exe" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="$(EverythingRuntimeRoot)\Everything.lng" Link="Everything\Everything.lng" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="$(EverythingRuntimeRoot)\License.txt" Link="Everything\License.txt" CopyToOutputDirectory="PreserveNewest" />
     <None Include="$(F3DRuntimeRoot)\bin\*.dll" Link="F3D\bin\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <None Include="$(SevenZipRuntimeRoot)\7z.dll" Link="SevenZip\7z.dll" CopyToOutputDirectory="PreserveNewest" />
     <None Include="$(RarsRuntimeRoot)\pathweft_rars.dll" Link="Rars\pathweft_rars.dll" CopyToOutputDirectory="PreserveNewest" />
@@ -64,7 +61,6 @@
     <Compile Remove="vendor\**\*.cs" />
     <Compile Include="tests\Dependency117Checks.cs" Condition="'$(Configuration)' == 'Debug'" />
     <Compile Include="tests\UpdateProgressObserver.cs" Condition="'$(Configuration)' == 'Debug'" />
-    <None Include="vendor\EverythingSDK\Everything64.dll" CopyToOutputDirectory="PreserveNewest" Link="Everything64.dll" />
     <None Include="vendor\**\*.txt" Exclude="vendor\Office\licenses\**\*" CopyToOutputDirectory="PreserveNewest" />
     <None Update="vendor\Marked\LICENSE.md" CopyToOutputDirectory="PreserveNewest" />
     <None Update="vendor\Performance\source-manifest.json" CopyToOutputDirectory="PreserveNewest" />

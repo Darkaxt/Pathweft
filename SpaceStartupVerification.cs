@@ -19,27 +19,23 @@ public partial class MainWindow
         Left.SetSizingSuspended(true);Right.SetSizingSuspended(true);
         await Task.WhenAll(Left.StopSizingAsync(),Right.StopSizingAsync());
         await S1Verification.Navigate(Left,folder);
-        using var release=new ManualResetEventSlim();
-        using var cancel=new CancellationTokenSource();
-        var entered=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        EverythingSearchClient.BeforeNativeSend=token=>{entered.TrySetResult();release.Wait();};
-        var query=EverythingSearchClient.Shared.QueryAsync("folder:","",0,1,"Name",false,cancel.Token);
-        await entered.Task;
+        // A held index service (it reads requests and never answers) must not keep
+        // the analysis waiting: after IndexWait the folders are measured on disk.
+        using var slow=new FakeIndexService{Hold=true};
+        var service=IndexedSearch.ServiceOverride;var wait=PaneView.IndexWait;
+        IndexedSearch.ServiceOverride=new IndexServiceClient(slow.Name);PaneView.IndexWait=TimeSpan.FromSeconds(1);
         try
         {
-            cancel.Cancel();
-            await Task.WhenAny(query,Task.Delay(1000)); // observation only; finally drains the original owner
-            check(query.IsCanceled,"Cancelled callers complete while their native dispatcher remains owned and occupied");
             AnalyzeSpaceCommand.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             check(Left.SpaceActivity.Visibility==Visibility.Visible&&!Left.SpaceActivity.IsIndeterminate,"Reduced-motion initial loading remains visible while startup is active");
             await Left.SpaceCompletion;
-            check(Left.FolderTotal==321&&Left.Items.Count()==2&&Left.Items.OfType<SpaceEntry>().All(row=>row.State==SpaceState.Complete),"Analysis traverses the actual nested fixture to exact totals while a cancelled optional native request remains occupied");
+            check(Left.FolderTotal==321&&Left.Items.Count()==2&&Left.Items.OfType<SpaceEntry>().All(row=>row.State==SpaceState.Complete),"Analysis traverses the actual nested fixture to exact totals while the index service does not answer");
+            check(!slow.Requests.IsEmpty,"The analysis asked the index service first");
             check(Left.SpaceActivity.Visibility==Visibility.Collapsed,"Actual completion ends the initial loading indicator");
         }
         finally
         {
-            EverythingSearchClient.BeforeNativeSend=null;release.Set();
-            try{await query;}catch(OperationCanceledException){}
+            IndexedSearch.ServiceOverride=service;PaneView.IndexWait=wait;slow.Hold=false;
             await Left.EndSpaceAsync();
         }
         var previous=Left.SpaceAdmission;

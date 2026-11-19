@@ -62,9 +62,9 @@ internal static class SpaceScan
         internal long Bytes,Files,Folders;
         internal SizeCache.Measurement Measurement;
     }
-    internal static Task RunAsync(string root,bool preferIndex,string instance,Action<SpaceUpdate> publish,CancellationToken token)
-        =>Task.Run(()=>Walk(root,preferIndex,instance,publish,token),token);
-    static void Walk(string root,bool preferIndex,string instance,Action<SpaceUpdate> publish,CancellationToken token)
+    internal static Task RunAsync(string root,bool preferIndex,Action<SpaceUpdate> publish,CancellationToken token)
+        =>Task.Run(()=>Walk(root,preferIndex,publish,token),token);
+    static void Walk(string root,bool preferIndex,Action<SpaceUpdate> publish,CancellationToken token)
     {
         var stack=new Stack<Frame>();stack.Push(new(root,Path.GetDirectoryName(Path.TrimEndingDirectorySeparator(root))));
         void Send(Frame frame,SpaceState state,string error="")=>publish(new(frame.Path,frame.Parent,frame.Bytes,frame.Files,frame.Folders,state,error));
@@ -97,8 +97,11 @@ internal static class SpaceScan
                         if(preferIndex&&frame.Children.Count>0)
                         {
                             Dictionary<string,long> sizes=null;
-                            try{sizes=IndexedSearch.FolderSizesAsync(frame.Children.Select(child=>child.Path),instance,token).GetAwaiter().GetResult();}
-                            catch(Exception ex)when(ex is InvalidOperationException or Win32Exception or DllNotFoundException or EntryPointNotFoundException){
+                            // A slow index must not hold the walk: after IndexWait the children are measured.
+                            using var indexWait=CancellationTokenSource.CreateLinkedTokenSource(token);indexWait.CancelAfter(PaneView.IndexWait);
+                            try{sizes=IndexedSearch.FolderSizesAsync(frame.Children.Select(child=>child.Path),indexWait.Token).GetAwaiter().GetResult();}
+                            catch(OperationCanceledException)when(!token.IsCancellationRequested){}
+                            catch(Exception ex)when(ex is InvalidOperationException or Win32Exception){
 #if DEBUG
                                 IndexObserved?.Invoke(frame.Path,ex.ToString());
 #endif

@@ -4,7 +4,7 @@ using Microsoft.Data.Sqlite;
 
 namespace FileExplorer;
 
-// Fallback measurements only. Everything owns its index; Pathweft retains at
+// Fallback measurements only. The index service owns its index; Pathweft retains at
 // most HotLimit recent records, never a second disk-wide in-memory dictionary.
 public static class SizeCache
 {

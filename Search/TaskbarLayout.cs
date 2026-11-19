@@ -1,5 +1,5 @@
 // Selected layout measurement adapted from EverythingToolbar, MIT,
-// Copyright (c) 2023 Stephan Rumswinkel. Pinned source: vendor/EverythingSDK/NOTICES.txt.
+// Copyright (c) 2023 Stephan Rumswinkel. Pinned source: vendor/EverythingToolbar/NOTICES.txt.
 using System.Windows;
 using System.Windows.Automation;
 

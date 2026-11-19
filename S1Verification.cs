@@ -137,12 +137,12 @@ internal static class S1Verification
             await Query(left, "pwfts1_hit_0001", 2);
             Check(left.Items.Single().Name == "pwfts1_hit_0001.txt" && left.SearchNotice.Contains("Filesystem"), "SEARCH-04 explicit filesystem subtree mode");
 
-            left.SearchInstance = "Pathweft-S1-absent-instance";
+            FileExplorer.Search.IndexedSearch.ServiceOverride = new FileExplorer.Search.IndexServiceClient("Pathweft-S1-absent-" + Guid.NewGuid().ToString("N"));
             await Query(left, "pwfts1_hit_0001", 0);
-            Check(!left.Items.Any() && left.SearchNotice.Contains("unavailable"), "SEARCH-04 unavailable selected engine does not crawl silently");
-            left.SearchInstance = "";
+            Check(!left.Items.Any() && left.SearchNotice == FileExplorer.Search.IndexedSearch.Absent, "SEARCH-04/09 an absent index service is reported and nothing is crawled: " + left.SearchNotice);
+            FileExplorer.Search.IndexedSearch.ServiceOverride = null;
             await Query(left, "pwfts1_hit_0001", 0);
-            Check(left.Items.Count() == 1, "SEARCH-03 explicit reconnect to unchanged existing instance");
+            Check(left.Items.Count() == 1, "SEARCH-03 explicit reconnect to the running index service");
             StartQuery(left, "pwfts1_hit_*.txt", 0);
             var departing = left.SearchCompletion;
             await Navigate(left, Path.Combine(root, "large"));

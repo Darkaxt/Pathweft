@@ -172,7 +172,7 @@ public partial class MainWindow
         var size=await Tool("get_folder_size",new{path=folder});
         check(!size.GetProperty("isError").GetBoolean()&&Text(size).Contains("\"method\""),"MCP get_folder_size answers without starting a scan and states its method");
         var search=await Tool("search_files",new{query="\""+Path.GetFileName(Program.Executable)+"\"",limit=5});
-        check(!search.GetProperty("isError").GetBoolean()?Text(search).Contains("\"total\""):Text(search).StartsWith("Query unavailable:"),"MCP search_files pages Everything results or states why Everything cannot answer");
+        check(!search.GetProperty("isError").GetBoolean()?Text(search).Contains("\"total\""):Text(search).StartsWith("Query unavailable:"),"MCP search_files pages index results or states why the index cannot answer");
         foreach(string tool in new[]{"get_maintenance_changes","get_boots","get_system_changes","get_insights"})
             check(!(await Tool(tool,new{})).GetProperty("isError").GetBoolean(),"MCP read-only tool answers: "+tool);
         var startup=await Tool("get_maintenance",new{category="Startup",limit=5});

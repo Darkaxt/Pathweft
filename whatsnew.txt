@@ -1,6 +1,13 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.80 | 2026-11-19 | Pathweft index only
+
+- Searches, the search popup, folder sizes and the space analyzer now use only the Pathweft index service. Pathweft no longer ships or talks to Everything; an Everything you run yourself is left alone.
+- Setup installs and updates the index service by itself. Settings → Windows integration → Pathweft index still shows its state and can repair it.
+- Search by date and folder: dm: and dc: (dm:today, dm:>=2026-11-01, dc:2024..lastmonth) and parent: for a folder's direct contents.
+- Folders on Google Drive, Tresorit or a network share are rechecked on their own schedule, so changes made elsewhere show up.
+
 ## 1.1.79 | 2026-11-18 | One shell handler file
 
 - Pathweft's folder handler is now always PathweftShell-x64.dll (and -x86), without a version in its name. Updates no longer leave a new pair of handler files in the Pathweft folder each time; the old ones are removed.

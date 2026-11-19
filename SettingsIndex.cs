@@ -25,8 +25,7 @@ public partial class SettingsWindow
         IndexStatus.Text = "Reading the index status…";
         IndexServiceStatus status = null; string failure = null;
         var service = IndexedSearch.Service;
-        if (service == null) failure = "This verification profile searches with Everything.";
-        else try { status = await service.StatusAsync(CancellationToken.None); }
+        try { status = await service.StatusAsync(CancellationToken.None); }
         catch (InvalidOperationException ex) { failure = ex.Message; }
         if (generation != indexRefresh) return;
         IndexServiceState = status;
@@ -40,7 +39,7 @@ public partial class SettingsWindow
         }
         else
         {
-            IndexStatus.Text = failure ?? (IndexServiceSetup.Installed ? service?.LastConnectError ?? "Installed, but not answering." : "Not installed. Searches and folder sizes use Everything.");
+            IndexStatus.Text = failure ?? (IndexServiceSetup.Installed ? service.LastConnectError ?? "Installed, but not answering." : "Not installed. Searches are unavailable and folder sizes are measured on disk.");
             IndexStores.ItemsSource = null;
         }
         IndexAddFolder.IsEnabled = status != null;
@@ -100,7 +99,7 @@ public partial class SettingsWindow
     async void IndexInstall_Click(object sender, RoutedEventArgs e) => await IndexSetup(true);
     async void IndexUninstall_Click(object sender, RoutedEventArgs e)
     {
-        if (MessageBox.Show(this, "Remove the Pathweft index service? Searches and folder sizes use Everything again. Its folder roots are kept for a later install.", "Pathweft index", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK) return;
+        if (MessageBox.Show(this, "Remove the Pathweft index service? Searches are unavailable and folder sizes are measured on disk until it is installed again. Its folder roots are kept for a later install.", "Pathweft index", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK) return;
         await IndexSetup(false);
     }
 

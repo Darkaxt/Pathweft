@@ -104,7 +104,7 @@ foreach($file in $f3d.files){
     $relative=if($file.path.StartsWith('share\licenses\')){'F3D/licenses/'+$file.path.Substring('share\licenses\'.Length)}else{'F3D/'+$file.path}
     if((Get-FileHash -LiteralPath (Join-Path $publish $relative) -Algorithm SHA256).Hash -ne $file.sha256){throw "F3D dependency changed: $relative"}
 }
-if((Get-FileHash -LiteralPath (Join-Path $publish 'Everything/Everything.exe')).Hash -ne 'F191F756996A14A11E5445FA7103D302EFD510CF2FBF920E6C0C8ED51D512E36'){throw 'Bundled Everything engine changed.'}
+if(Get-ChildItem -LiteralPath $publish -Recurse -Filter 'Everything*' | Where-Object Name -notmatch '^EverythingToolbar'){throw 'An Everything engine or SDK member is in the publish (SEARCH-09 removed them).'}
 $mpv=Get-Content -LiteralPath (Join-Path $root 'vendor/MPV/runtime-manifest.json') -Raw|ConvertFrom-Json
 foreach($file in $mpv.runtime.PSObject.Properties){
     if((Get-FileHash -LiteralPath (Join-Path $publish ('MPV/'+$file.Name))).Hash -ne $file.Value){throw "Pinned media library differs: $($file.Name)"}

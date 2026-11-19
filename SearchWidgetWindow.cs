@@ -1,5 +1,5 @@
 // Selected search-box keyboard/focus handling adapted from EverythingToolbar,
-// MIT, Copyright (c) 2023 Stephan Rumswinkel. See vendor/EverythingSDK/NOTICES.txt.
+// MIT, Copyright (c) 2023 Stephan Rumswinkel. See vendor/EverythingToolbar/NOTICES.txt.
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;

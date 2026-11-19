@@ -70,30 +70,29 @@ sealed partial class PackageProbe
         finally{held.TrySetResult();admission.SetValue(pane,previous);}
     }
 
+    // A caller cancelling a request to an index service that is not answering
+    // completes promptly (the pane and analysis rely on this bound).
     async Task VerifyCancelledIndexDispatch()
     {
-        var type=Type("Search.EverythingSearchClient");var client=type.GetProperty("Shared",Flags).GetValue(null);
-        var dispatcher=await ((TaskCompletionSource<Dispatcher>)type.GetField("ready",Flags).GetValue(client)).Task;
-        using var release=new ManualResetEventSlim();
-        var entered=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        var held=dispatcher.InvokeAsync(()=>{entered.TrySetResult();release.Wait();});
-        await entered.Task;
+        string name="Pathweft-PackageProbe-"+Guid.NewGuid().ToString("N");
+        using var server=new System.IO.Pipes.NamedPipeServerStream(name,System.IO.Pipes.PipeDirection.InOut,1,System.IO.Pipes.PipeTransmissionMode.Byte,System.IO.Pipes.PipeOptions.Asynchronous);
+        using var stop=new CancellationTokenSource();
+        var held=Task.Run(async()=>{await server.WaitForConnectionAsync(stop.Token);var buffer=new byte[4096];while(await server.ReadAsync(buffer,stop.Token)>0){}});
+        var type=Type("Search.IndexServiceClient");
+        var client=Activator.CreateInstance(type,System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Public,null,new object[]{name},null);
         using var cancel=new CancellationTokenSource();
-        var query=(Task)Call(type,client,"QueryAsync","folder:","",0u,1u,"Name",false,cancel.Token);
-        bool cancelledWithoutDispatch=false;
+        var query=(Task)Call(type,client,"QueryAsync","folder:",0u,1u,"name",false,null,true,cancel.Token);
+        bool cancelled=false;
         try
         {
+            await Task.WhenAny(query,Task.Delay(500));
+            bool waiting=!query.IsCompleted;
             cancel.Cancel();
-            // Observation bound only: never cancels or abandons the native owner.
-            // The held dispatcher is released and the original task drained below.
+            // Observation bound only.
             await Task.WhenAny(query,Task.Delay(1000));
-            cancelledWithoutDispatch=query.IsCanceled;
+            cancelled=waiting&&query.IsCanceled;
         }
-        finally
-        {
-            release.Set();await held;
-            try{await query;}catch(OperationCanceledException){}
-        }
-        Check(cancelledWithoutDispatch,"Cancelling an index request completes its caller while the SDK dispatcher is occupied, without releasing or abandoning the original dispatcher operation");
+        finally{stop.Cancel();try{await held;}catch(OperationCanceledException){}catch(IOException){}try{await query;}catch(OperationCanceledException){}}
+        Check(cancelled,"Cancelling a request to an index service that does not answer completes its caller promptly");
     }
 }

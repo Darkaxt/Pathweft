@@ -10,11 +10,11 @@ namespace FileExplorer.Search;
 // SEARCH-06: client of the Pathweft index service (docs/index-service/PROTOCOL.md).
 // Each message is a 4-byte little-endian length and UTF-8 JSON. Connections are
 // pooled; one is used by one request at a time. A pipe that does not connect
-// within ConnectTimeout means "absent" (null result), remembered for AbsentFor,
-// and the caller falls back to Everything.
+// within ConnectTimeout means "absent" (null result), remembered for AbsentFor;
+// searches then report it and folder sizes are measured (SEARCH-09).
 internal sealed class IndexServiceClient(string pipeName)
 {
-    internal const string Engine = "Pathweft index";
+    internal const string Engine = "Pathweft index", NotRunning = "The index service is not running.";
     internal static IndexServiceClient Shared { get; } = new("PathweftIndex");
     internal static TimeSpan ConnectTimeout = TimeSpan.FromMilliseconds(250), ReplyTimeout = TimeSpan.FromSeconds(30), AbsentFor = TimeSpan.FromSeconds(10);
     readonly ConcurrentBag<NamedPipeClientStream> idle = new();
@@ -41,7 +41,7 @@ internal sealed class IndexServiceClient(string pipeName)
                 catch (Exception ex) when (ex is TimeoutException or IOException or UnauthorizedAccessException)
                 {
                     pipe.Dispose();
-                    LastConnectError = ex is UnauthorizedAccessException ? "The index service does not admit this user." : ex is TimeoutException ? "The index service is not running." : ex.Message;
+                    LastConnectError = ex is UnauthorizedAccessException ? "The index service does not admit this user." : ex is TimeoutException ? NotRunning : ex.Message;
                     Interlocked.Exchange(ref absentUntil, Environment.TickCount64 + (long)AbsentFor.TotalMilliseconds);
                     return null;
                 }
@@ -147,7 +147,7 @@ internal sealed class IndexServiceClient(string pipeName)
     {
         ForgetAbsence();
         using var reply = await TryRequestAsync(request, token).ConfigureAwait(false);
-        if (reply == null) throw new InvalidOperationException(LastConnectError ?? "The index service is not running.");
+        if (reply == null) throw new InvalidOperationException(LastConnectError ?? NotRunning);
     }
 }
 

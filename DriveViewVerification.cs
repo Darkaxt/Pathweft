@@ -95,7 +95,7 @@ public partial class MainWindow
         check(Columns().Contains("Capacity")&&!Columns().Contains("Version"),"Returning to This PC restores its drive-specific columns");
         Left.Search("path:\"D:\\Projects\\Pathweft\" \"README.md\"");await Left.SearchCompletion;await Settle();
         File.WriteAllText(Path.Combine(root,"search-columns.json"),JsonSerializer.Serialize(new{notice=Left.SearchNotice,columns=Columns(),sort=Left.SortKey,items=Left.Items.Select(e=>e.Name).ToArray()}));
-        check(Left.Items.Any(e=>e.Name=="README.md")&&!Columns().Intersect(new[]{"Capacity","Connection","Version"}).Any()&&Columns().Contains("Size"),"Actual Everything results replace drive columns with populated file metadata");
+        check(Left.Items.Any(e=>e.Name=="README.md")&&!Columns().Intersect(new[]{"Capacity","Connection","Version"}).Any()&&Columns().Contains("Size"),"Actual index results replace drive columns with populated file metadata");
         check(HiddenTrialPresentation.ForegroundViolations==0,"Drive and dynamic-column verification activates no desktop window");
     }
 }

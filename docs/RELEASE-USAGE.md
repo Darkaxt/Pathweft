@@ -1,8 +1,10 @@
-# Pathweft 1.1.68
+# Pathweft 1.1.80
+
+Pathweft 1.1.80 replaces Everything with the Pathweft index service: searches, the search popup, folder sizes, the space analyzer and the MCP server use it alone, and setup installs and updates it. Pathweft no longer ships Everything and never stops, changes or removes an Everything you run yourself.
 
 Pathweft 1.1.69 lets reads that only administrators may make (boot diagnostics, the Security check, protected folders) use administrator access, in the app and the MCP server. 1.1.68 extends the read-only MCP server (`Pathweft.exe --performance-mcp`) to Maintenance rows and Cleanup sizes,
-file and folder metadata, Everything search, Windows boots, system changes and insights, and puts the process table's controls on the table. 1.1.67 starts administrator access in the background after one approval, with no further UAC prompts
-(Settings › Start administrator access with Pathweft). It also shows handle growth under RAM in System analysis, recovers when Everything stops answering,
+file and folder metadata, indexed search, Windows boots, system changes and insights, and puts the process table's controls on the table. 1.1.67 starts administrator access in the background after one approval, with no further UAC prompts
+(Settings › Start administrator access with Pathweft). It also shows handle growth under RAM in System analysis, recovers when the index stops answering,
 copies downloaded files to drives without alternate streams, and shows a loading ring in the space analyzer. 1.1.65 runs PowerShell scripts from the context menu
 (Run with PowerShell, and Run as administrator under Tools). 1.1.64 adds Maintenance › Security check, a read-only comparison with the
 HardeningKitty machine list, eight opt-in hardening tweaks with Restore, and a
@@ -51,7 +53,7 @@ file browser remains usable. The cards select
 Cleanup, Startup, Services, Windows tweaks and optional Windows apps. Cleanup
 automatically analyzes six categories, including obsolete Scoop versions and
 completed old downloads. Temporary files and downloads use exact reviewed-file
-removal. Obsolete Scoop versions use Everything size estimates without
+removal. Obsolete Scoop versions use Pathweft index size estimates without
 recursively enumerating package members. Clean starts removing each reviewed
 obsolete version folder directly. It unlinks ReadOnly junction names into
 Scoop's persistent data without changing that data. If native deletion stops
@@ -140,10 +142,9 @@ installed identity and pinned state; uninstall removes only its owned list.
 
 Analyze space beside Terminal turns the current filesystem folder into an
 expandable tree of logical sizes. Toggle it again to restore the original view.
-Available Everything file/folder-size indexes provide totals; disabled indexing
-or uncovered paths use filesystem metadata. Indexed totals may omit excluded
-files and are labelled accordingly. Pathweft does not silently change an existing
-Everything configuration. Folder history lives in SQLite under the selected bulk
+The Pathweft index service provides folder totals; when it is not running, or a
+path is not indexed, Pathweft measures the folder from filesystem metadata.
+Indexed totals are labelled accordingly. Folder history lives in SQLite under the selected bulk
 cache root, with a bounded hot memory cache. Existing text history migrates in
 the background; displayed sizes remain visible during a refresh.
 
@@ -181,8 +182,8 @@ belongs to the postponed StartAllBack stage. With folder integration enabled,
 SHOpenFolderAndSelectItems uses registered filesystem tabs to preserve the
 supplied file selection, including an inactive tab whose listing loads later.
 Folder-plus-selection requests sent to Pathweft's /select command are supported.
-StartAllBack's grouped Everything results and the wider Windows Search migration
-are later unfinished integrations; this release does not change Windows Search.
+StartAllBack's grouped search results are a later integration; this release does
+not change Windows Search.
 
 Settings > Appearance selects Original or Native.
 Settings categories are selected from the left column; only that category is
@@ -198,20 +199,18 @@ remain unavailable; older Windows stacks can expose only a speed category.
 Detail columns without data are hidden and restored as asynchronous metadata
 or results arrive, retaining widths. This PC uses populated drive columns.
 
-Search shares the existing default Everything instance; Pathweft does not start
-a second index, change its service or alter its settings. The unchanged pinned
-Everything 1.4.1.1032 portable engine is included in Everything/. If there is no
-existing instance, configure/start that engine explicitly using its own UI and
-license; indexing privileges and indexed folders remain an explicit choice.
-For indexed sizing, enable file-size and folder-size indexing in Everything's
-index options (`index_size=1` and `index_folder_size=1`) and include the desired
-paths in its index. Merely having the executable installed is insufficient.
-Pathweft detects the capability through the SDK and labels indexed totals; it
-uses metadata sizing for disabled or uncovered paths, preserving basic browsing
-without requiring index configuration. This release does not add automatic
-Everything installation/configuration or silently expand an existing index.
+Search uses the Pathweft index service (`index\pathweft-indexd.exe`). Setup
+installs or updates it silently; uninstalling Pathweft removes it and keeps its
+folder-root settings. It indexes the NTFS drives through their change journals and
+any folder roots added in Settings > Windows integration > Pathweft index, where
+Install, Update and Remove remain available as repair. When the service is not
+running, searches say so and folder sizes are measured on disk. Pathweft does not
+use Everything; an Everything installation of your own keeps running untouched.
+Query syntax: wildcards, quotes, space for AND, | for OR, ! for NOT, < > groups,
+path:, nopath:, parent:, file:, folder:, ext:, size:, dm:, dc:, case:, ww:, wfn:
+and regex:. Other functions are refused with a message.
 The single address/search field resolves existing paths first on Enter, then
-searches Everything in the current folder. Search from This PC for all indexed
+searches the index in the current folder. Search from This PC for all indexed
 files. Four inline switches control case, whole words, path matching and Regex.
 There is no separate filesystem-scan mode or second search row.
 The optional Ctrl+Alt+Space popup searches all indexed files while typing. It

@@ -30,7 +30,7 @@ internal static class IndexedQuery
             // Numeric comparison operators after a function colon aren't groups.
             if (c is '<' or '>' && i > 0 && input[i - 1] is ':' or '=') continue;
             if (c == '<') depth++;
-            if (c == '>' && --depth < 0) throw new ArgumentException("Unbalanced Everything search groups.");
+            if (c == '>' && --depth < 0) throw new ArgumentException("Unbalanced search groups.");
         }
         if (quoted || depth != 0) throw new ArgumentException("Close the search quotes and groups.");
         string root = Path.GetFullPath(folder).TrimEnd('\\', '/') + "\\";

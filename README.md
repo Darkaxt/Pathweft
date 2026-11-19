@@ -14,17 +14,16 @@ Native appearance. Installer and portable packages include matching source,
 dependency notices and checksums through [Pathweft releases](https://github.com/Darkaxt/Pathweft/releases).
 Inherited File Labs releases are separate products.
 
-StartAllBack search replacement and the wider Everything/Outlook-preserving
-indexing migration remain unfinished later integrations. Pathweft does not change
-the Windows Search service or indexing configuration.
+StartAllBack search replacement remains a later integration. Pathweft does not
+change the Windows Search service or indexing configuration.
 
 ## Core workflows
 
-- Pane search and the compact taskbar popup share the existing default Everything
-  instance. The pane's single address/search field tries paths first, then searches
-  within the folder; This PC searches the full index. Ctrl+Alt+Space opens the
+- Pane search and the compact taskbar popup share the Pathweft index service,
+  which setup installs and updates. The pane's single address/search field tries
+  paths first, then searches within the folder; This PC searches the full index. Ctrl+Alt+Space opens the
   optional global live-search popup with four matching switches and a plain results
-  list. No second indexer starts automatically. Transfers stay in the main manager.
+  list. Transfers stay in the main manager.
 - Eight internal preview modules serve the side pane, Space preview and widget.
   Standalone QuickLook is unnecessary. The opt-in native F3D viewer supports its
   bundled model readers, external resources, mouse/keyboard camera interaction

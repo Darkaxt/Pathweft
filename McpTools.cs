@@ -94,7 +94,7 @@ internal static class McpTools
     }
     static string Time(DateTime value)=>value==default||value.Year<1602?null:new DateTimeOffset(value.ToUniversalTime()).ToString("O",CultureInfo.InvariantCulture);
 
-    // MCP-02 Maintenance: the rows the tab shows; Cleanup sizes from Everything's index.
+    // MCP-02 Maintenance: the rows the tab shows; Cleanup sizes from the Pathweft index.
     static async Task<object> Maintenance(string category,string target,int offset,int limit,CancellationToken cancel)
     {
         category=Categories.FirstOrDefault(x=>x.Equals(category,StringComparison.OrdinalIgnoreCase))??throw new ArgumentException("Category must be one of: "+string.Join(", ",Categories));
@@ -150,7 +150,7 @@ internal static class McpTools
                 {
                     string expression=$"file: path:\"{root}\\\""+(target.Pattern=="*"?"":" "+target.Pattern);
                     var first=await IndexedSearch.SearchAsync(expression,0,1000,"name",false,plain,cancel);
-                    if(target.Pattern=="*"&&(await IndexedSearch.FolderSizesAsync([root],"",cancel)).TryGetValue(root,out long folder))
+                    if(target.Pattern=="*"&&(await IndexedSearch.FolderSizesAsync([root],cancel)).TryGetValue(root,out long folder))
                         return Row(folder,first.Total,first.Engine.Split(' ')[0]+" index (folder size)");
                     long sum=0;bool unknown=false;var page=first;
                     for(uint at=0;;)
@@ -163,7 +163,7 @@ internal static class McpTools
                 }
             }
             catch(InvalidOperationException ex){return await Measured(target,"Measured directly; index: "+ex.Message,cancel);}
-            return await Measured(target,"Measured directly; Everything does not index this folder",cancel);
+            return await Measured(target,"Measured directly; the Pathweft index does not cover this folder",cancel);
         }
         string how=ManagerCleanup.IsManager(target)?"The package manager's own cache report":target.Id=="scoop-versions"?null:"Measured directly";
         return await Measured(target,how,cancel);
@@ -230,9 +230,9 @@ internal static class McpTools
     static async Task<object> FolderSize(string path,CancellationToken cancel)
     {
         var folder=new DirectoryInfo(path);if(!folder.Exists)throw new ArgumentException("Folder not found: "+path);
-        string key=Path.TrimEndingDirectorySeparator(folder.FullName),everything=null;
-        try{var sizes=await IndexedSearch.FolderSizesAsync([key],"",cancel);string engine=IndexedSearch.SizeSource.Split(' ')[0];if(sizes.TryGetValue(key,out long size))return new{path=key,size_bytes=(long?)size,method=engine+" index"};everything=engine+" does not index this folder's size";}
-        catch(InvalidOperationException ex){everything="Index: "+ex.Message;}
+        string key=Path.TrimEndingDirectorySeparator(folder.FullName),index=null;
+        try{var sizes=await IndexedSearch.FolderSizesAsync([key],cancel);string engine=IndexedSearch.SizeSource.Split(' ')[0];if(sizes.TryGetValue(key,out long size))return new{path=key,size_bytes=(long?)size,method=engine+" index"};index=engine+" index has no size for this folder";}
+        catch(InvalidOperationException ex){index="Index: "+ex.Message;}
         // Pathweft's own cache, opened read-only; valid only for the folder's current modification time.
         if(File.Exists(SizeCache.FilePath))
         {
@@ -240,9 +240,9 @@ internal static class McpTools
             using var connection=new SqliteConnection(new SqliteConnectionStringBuilder{DataSource=SizeCache.FilePath,Mode=SqliteOpenMode.ReadOnly,Pooling=false}.ToString());connection.Open();
             using var command=connection.CreateCommand();command.CommandText="SELECT bytes,stamp FROM sizes WHERE path=$path";command.Parameters.AddWithValue("$path",key.ToUpperInvariant());
             using var reader=command.ExecuteReader();
-            if(reader.Read()&&reader.GetInt64(1)==folder.LastWriteTimeUtc.Ticks)return new{path=key,size_bytes=(long?)reader.GetInt64(0),method="Pathweft's cached folder size ("+everything+")"};
+            if(reader.Read()&&reader.GetInt64(1)==folder.LastWriteTimeUtc.Ticks)return new{path=key,size_bytes=(long?)reader.GetInt64(0),method="Pathweft's cached folder size ("+index+")"};
         }
-        return new{path=key,size_bytes=(long?)null,method="Unknown: "+everything+" and Pathweft has no current cached size. No scan was started."};
+        return new{path=key,size_bytes=(long?)null,method="Unknown: "+index+" and Pathweft has no current cached size. No scan was started."};
     }
     static async Task<object> Search(string query,SearchSwitches switches,string sort,bool descending,int offset,int limit,CancellationToken cancel)
     {
@@ -250,7 +250,7 @@ internal static class McpTools
         var page=await IndexedSearch.SearchAsync(query,(uint)offset,(uint)limit,sort.ToLowerInvariant(),descending,switches,cancel);
         return new
         {
-            status=page.Engine+(page.FolderSizesIndexed?"":" · folder sizes are not indexed")+(page.Updating?" · index updating, results may be incomplete":""),total=page.Total,offset,truncated=offset+page.Hits.Count<page.Total,
+            status=page.Engine+(page.Updating?" · index updating, results may be incomplete":""),total=page.Total,offset,truncated=offset+page.Hits.Count<page.Total,
             rows=page.Hits.Select(x=>new{path=x.Path,type=x.IsFolder?"folder":"file",size_bytes=x.Size>=0?x.Size:(long?)null,created=Time(x.Created),modified=Time(x.Modified),attributes=x.Attributes is {} a?((FileAttributes)a).ToString():null,visible=x.Visible}).ToArray()
         };
     }
@@ -260,12 +260,12 @@ internal static class McpTools
         name,
         description=name switch
         {
-            "get_maintenance"=>"Rows of a Maintenance category as Pathweft's Maintenance tab shows them: Startup, Services, Windows tweaks, Windows apps, Security check, or Cleanup (each target's size and file count, from Everything's index where possible; target selects one). Read-only; nothing is applied, cleaned or uninstalled.",
+            "get_maintenance"=>"Rows of a Maintenance category as Pathweft's Maintenance tab shows them: Startup, Services, Windows tweaks, Windows apps, Security check, or Cleanup (each target's size and file count, from the Pathweft index where possible; target selects one). Read-only; nothing is applied, cleaned or uninstalled.",
             "get_maintenance_changes"=>"Pathweft's Maintenance change journal: the items whose original settings it saved and can restore.",
             "list_folder"=>"Entries of one folder (name, file/folder, size, modified, attributes, link target), folders first. Metadata only.",
             "get_file_details"=>"Size, created/modified/accessed times, attributes, link target and, for executables, version, product, company and description.",
-            "get_folder_size"=>"A folder's total size from Everything's index or Pathweft's current cached size; never starts a scan, unknown when neither has it.",
-            "search_files"=>"Search all indexed files and folders with the running Everything, full Everything search syntax (wildcards, path:, parent:, ext:, size:, dm:, dc:, regex:, operators, functions). Paged with offset/limit and the total; never restarts Everything.",
+            "get_folder_size"=>"A folder's total size from the Pathweft index or Pathweft's current cached size; never starts a scan, unknown when neither has it.",
+            "search_files"=>"Search all indexed files and folders with the Pathweft index service, in Everything-style syntax (wildcards, quotes, AND by space, | OR, ! NOT, < > groups, path:, nopath:, parent:, file:, folder:, ext:, size:, dm:, dc:, case:, ww:, wfn:, regex:). Unsupported functions are refused with a message. Paged with offset/limit and the total.",
             "get_boots"=>"Recorded Windows starts from Windows' boot diagnostics: seconds to desktop, settled seconds, startup apps, and what slowed it. Defaults to the last 30 days.",
             "get_system_changes"=>"Windows updates and driver/feature changes from Windows' logs plus installed-app changes Pathweft already saved (no new baseline is taken). Defaults to the last 30 days.",
             _=>"Derived findings as in Pathweft's Insights view: memory pressure, large memory holders, sustained CPU, slower Windows startup. Defaults to the last 30 days."
@@ -275,7 +275,7 @@ internal static class McpTools
             "category"=>new{type="string",@enum=Categories},
             "target"=>new{type="string",maxLength=200,description="Cleanup target id, e.g. user-temp"},
             "path"=>new{type="string",maxLength=32767,description="Absolute local or UNC path"},
-            "query"=>new{type="string",maxLength=8192,description="Everything-style search syntax (the Pathweft index accepts the subset in its PROTOCOL.md; Everything is used when the index service is not running)"},
+            "query"=>new{type="string",maxLength=8192,description="Everything-style search syntax as accepted by the Pathweft index (docs/index-service/PROTOCOL.md)"},
             "sort"=>new{type="string",@enum=new[]{"name","path","size","extension","created","modified"}},
             "match_path" or "match_case" or "whole_word" or "regex" or "descending"=>new{type="boolean"},
             "offset"=>new{type="integer",minimum=0},

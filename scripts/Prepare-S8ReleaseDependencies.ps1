@@ -21,16 +21,5 @@ if(!(Test-Path -LiteralPath (Join-Path $CompilerRoot 'ISCC.exe'))){
     $process.Dispose()
 }
 if(!(Test-Path -LiteralPath (Join-Path $CompilerRoot 'ISCC.exe'))){throw 'Compiler installation produced no ISCC.exe.'}
-$indexerZip=Join-Path $inputs 'Everything-1.4.1.1032.x64.zip'
-$hashes=Join-Path $inputs 'Everything-1.4.1.1032.sha256'
-if(!(Test-Path -LiteralPath $hashes)){Invoke-WebRequest -Uri 'https://www.voidtools.com/Everything-1.4.1.1032.sha256' -OutFile $hashes}
-if(!(Test-Path -LiteralPath $indexerZip)){Invoke-WebRequest -Uri 'https://www.voidtools.com/Everything-1.4.1.1032.x64.zip' -OutFile $indexerZip}
-$expected=(Get-Content -LiteralPath $hashes | Where-Object {$_ -match '\s\*?Everything-1\.4\.1\.1032\.x64\.zip$'}).Split(' ',[StringSplitOptions]::RemoveEmptyEntries)[0]
-if(!$expected -or (Get-FileHash -LiteralPath $indexerZip -Algorithm SHA256).Hash -ne $expected){throw 'Official Everything portable archive digest differs.'}
-$target=Join-Path $CacheRoot 'everything/1.4.1.1032'
-if(!(Test-Path -LiteralPath $target)){Expand-Archive -LiteralPath $indexerZip -DestinationPath $target}
-$indexer=Join-Path $target 'Everything.exe'
-if((Get-FileHash -LiteralPath $indexer -Algorithm SHA256).Hash -ne 'F191F756996A14A11E5445FA7103D302EFD510CF2FBF920E6C0C8ED51D512E36'){throw 'Pinned Everything engine differs from the qualified executable.'}
-if(!(Test-Path -LiteralPath (Join-Path $target 'License.txt'))){Invoke-WebRequest -Uri 'https://www.voidtools.com/License.txt' -OutFile (Join-Path $target 'License.txt')}
-[ordered]@{compiler='6.7.4';compilerRoot=$CompilerRoot;compilerSha256=(Get-FileHash -LiteralPath $compiler).Hash;publisher=$signature.SignerCertificate.Subject;indexer='1.4.1.1032';indexerArchiveSha256=$expected;indexerSha256=(Get-FileHash -LiteralPath $indexer).Hash;indexerUse='Packaged unchanged; existing default instance remains selected. No automatic index creation or service installation.'} | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $inputs 'dependencies.json')
+[ordered]@{compiler='6.7.4';compilerRoot=$CompilerRoot;compilerSha256=(Get-FileHash -LiteralPath $compiler).Hash;publisher=$signature.SignerCertificate.Subject;indexer='Pathweft index service, built from native/pathweft-index (SEARCH-09); Everything is no longer packaged'} | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $inputs 'dependencies.json')
 Get-Content -LiteralPath (Join-Path $inputs 'dependencies.json')

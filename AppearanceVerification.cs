@@ -119,7 +119,7 @@ public partial class MainWindow
                 input.Text="no_such_widget_result";input.Text="path:\"D:\\Projects\\Pathweft\" \"README.md\"";
                 await widget.Pane.SearchCompletion;await Settled();
                 File.WriteAllText(Path.Combine(root,"widget-query-state.json"),JsonSerializer.Serialize(new{known=Known(),request=widget.Pane.SearchRequest,text=input.Text,notice=widget.Pane.SearchNotice,items=widget.Pane.Items.Select(entry=>new{entry.Path,entry.Message})}));
-                Check(Known()&&widget.Pane.SearchRequest.Scope==1&&widget.Pane.SearchRequest.Query==input.Text,"Actual text changes query the global Everything index and a superseded query cannot overwrite newer results");
+                Check(Known()&&widget.Pane.SearchRequest.Scope==1&&widget.Pane.SearchRequest.Query==input.Text,"Actual text changes query the global Pathweft index and a superseded query cannot overwrite newer results");
                 widget.Pane.List.SelectedItem=widget.Pane.Items.Single(entry=>entry.Path.Equals(known,StringComparison.OrdinalIgnoreCase));
                 bool originalAutoEditor=Settings.InternalEditor;Settings.InternalEditor=false;
                 var failedRow=widget.Pane.Selected.Single();var errorDelivered=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -136,16 +136,16 @@ public partial class MainWindow
                 }
                 finally{Settings.InternalEditor=originalAutoEditor;widget.Pane.ExternalOpenForVerification=null;failedRow.PropertyChanged-=OpeningFailed;}
                 Check(ReferenceEquals(list.ItemContainerStyle,widget.Pane.FindResource("WidgetResultRow")),"Live query results retain their plain popup row template without file-pane stripes or age bars");
-                widget.Pane.SearchInstance="Pathweft-missing-widget-verification-instance";
+                FileExplorer.Search.IndexedSearch.ServiceOverride=new FileExplorer.Search.IndexServiceClient("Pathweft-missing-widget-verification-"+Guid.NewGuid().ToString("N"));
                 await Query("README");
                 Check(!widget.Pane.Items.Any()&&((FrameworkElement)widget.Pane.FindName("SearchCoverage")).IsVisible&&!string.IsNullOrWhiteSpace(widget.Pane.SearchNotice),"An unavailable index shows a concise error and clears stale results");
-                widget.Pane.SearchInstance="";
+                FileExplorer.Search.IndexedSearch.ServiceOverride=null;
                 await Query(@"D:\Projects\Pathweft");
                 Check(widget.Pane.Dir==PaneView.ThisPC,"Typing an existing path stays a global search rather than navigating a mini file browser");
                 await Query("path:\"D:\\Projects\\Pathweft\" readme.md");Check(Known(),"Default widget matching is case insensitive");
                 await Flip("MatchCase");Check(!Known(),"The compact Match case control changes actual indexed results");await Flip("MatchCase");
                 await Query(@"^D:\\Projects\\Pathweft\\README\.md$");await Flip("MatchPath");await Flip("MatchRegex");await Flip("MatchCase");
-                Check(Known()&&!((Control)widget.Pane.FindName("MatchWord")).IsEnabled,"Regex, path and case controls retain their actual Everything semantics in the compact input");
+                Check(Known()&&!((Control)widget.Pane.FindName("MatchWord")).IsEnabled,"Regex, path and case controls retain their actual index semantics in the compact input");
                 var options=widget.Pane.MatchOptions;widget.Handoff();await Left.SearchCompletion;await Settled();
                 Check(!widget.IsVisible&&Left.MatchOptions==options&&Left.Items.Any(e=>e.Path.Equals(known,StringComparison.OrdinalIgnoreCase)),"The Ctrl+Enter handoff command preserves the real query/options and dismisses the popup");
                 widget.ShowSearch();await widget.Pane.SearchCompletion;
@@ -317,7 +317,7 @@ public partial class MainWindow
             await Task.WhenAll(superseded,latest);await Settled();
             Check(Left.Dir==@"D:\Projects\Pathweft"&&!Left.InSearch,"A superseded asynchronous path resolution cannot navigate over the newer submission");
             await Enter("README*.md");
-            Check(Left.InSearch&&Left.Items.Any(e=>e.Path.Equals(@"D:\Projects\Pathweft\README.md",StringComparison.OrdinalIgnoreCase))&&Left.SearchRequest.Scope==0,"A non-path address queries the real Everything index scoped to the current folder");
+            Check(Left.InSearch&&Left.Items.Any(e=>e.Path.Equals(@"D:\Projects\Pathweft\README.md",StringComparison.OrdinalIgnoreCase))&&Left.SearchRequest.Scope==0,"A non-path address queries the real Pathweft index scoped to the current folder");
             async Task Toggle(PaneView pane,string name)
             {
                 var button=(System.Windows.Controls.Primitives.ToggleButton)pane.FindName(name);
@@ -326,10 +326,10 @@ public partial class MainWindow
                 checks.Add(new{toggle=name,options=pane.MatchOptions.ToString(),query=pane.SearchRequest.Query,expression=typeof(PaneView).GetField("indexedExpression",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic).GetValue(pane),notice=pane.SearchNotice,paths=pane.Items.Take(4).Select(e=>e.Path).ToArray()});
             }
             bool HasReadme(PaneView pane)=>pane.Items.Any(e=>e.Path.Equals(@"D:\Projects\Pathweft\README.md",StringComparison.OrdinalIgnoreCase));
-            await Enter("readme*.md");Check(HasReadme(Left),"Default Everything matching is case insensitive");
+            await Enter("readme*.md");Check(HasReadme(Left),"Default index matching is case insensitive");
             await Toggle(Left,"MatchCase");Check(!HasReadme(Left),"The real Match case toggle changes actual indexed results");
             await Toggle(Left,"MatchCase");
-            await Enter("READ");Check(HasReadme(Left),"Default Everything matching accepts partial words");
+            await Enter("READ");Check(HasReadme(Left),"Default index matching accepts partial words");
             await Toggle(Left,"MatchWord");Check(!HasReadme(Left),"The real Match whole word toggle excludes partial-name matches");
             await Toggle(Left,"MatchWord");
             await Enter("Projects");Check(!HasReadme(Left),"Name matching does not include a parent folder name");
@@ -343,7 +343,7 @@ public partial class MainWindow
             await Enter("This PC");
             Check(Left.Dir==PaneView.ThisPC,"The same input navigates to This PC for global search");
             await Enter("path:\"D:\\Projects\\Pathweft\" \"README.md\"");
-            Check(Left.InSearch&&Left.SearchRequest.Scope==1&&Left.Items.Any(e=>e.Path.Equals(@"D:\Projects\Pathweft\README.md",StringComparison.OrdinalIgnoreCase)),"Searching from This PC queries the real global Everything index");
+            Check(Left.InSearch&&Left.SearchRequest.Scope==1&&Left.Items.Any(e=>e.Path.Equals(@"D:\Projects\Pathweft\README.md",StringComparison.OrdinalIgnoreCase)),"Searching from This PC queries the real global Pathweft index");
             Check(Left.FindName("SearchBar")==null&&Left.FindName("SearchScope")==null&&Left.FindName("SearchOptions")==null&&Left.FindName("SearchSubmit")==null,"The second row, mode selector, funnel and search icon are absent");
             widget=new SearchWidgetWindow(this);
             widget.ShowSearch(@"^D:\\Projects\\Pathweft\\README\.md$");

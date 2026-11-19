@@ -320,7 +320,7 @@
             <TextBlock Style="{StaticResource Hint}" Text="Records which programs run, from sign-in to sign-out, with their CPU, memory and disk use, for performance history and its MCP tools. Runs as an elevated sign-in task, approved with administrator access. Program paths only: no file contents, command lines or network."/>
             <TextBlock x:Name="ActivityStatus" Style="{StaticResource Hint}" AutomationProperties.LiveSetting="Polite"/>
             <TextBlock Text="Pathweft index" FontWeight="SemiBold" Margin="0,12,0,6"/>
-            <TextBlock Style="{StaticResource Hint}" Text="Pathweft's own file index answers searches and folder sizes. NTFS drives are indexed completely and kept current; other drives, network shares and folders are added as folder roots and rescanned every 6 hours. When the service is not running, Everything is used."/>
+            <TextBlock Style="{StaticResource Hint}" Text="Pathweft's own file index answers searches and folder sizes. NTFS drives are indexed completely and kept current; other drives, network shares and folders are added as folder roots and checked again as often as they change, at least every 6 hours. Setup installs and updates the service."/>
             <TextBlock x:Name="IndexStatus" TextWrapping="Wrap" Margin="0,6,0,4" AutomationProperties.Name="Pathweft index status" AutomationProperties.LiveSetting="Polite"/>
             <ItemsControl x:Name="IndexStores" AutomationProperties.Name="Indexed drives and folders">
               <ItemsControl.ItemTemplate><DataTemplate>

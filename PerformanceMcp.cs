@@ -16,7 +16,6 @@ internal static class PerformanceMcp
     internal static async Task<int> Run()
     {
         Settings.Load();
-        Search.EverythingRecovery.RestartAllowed=false;
         // MCP-06: reads only administrators may make use the session the installed task starts without a prompt.
         ElevatedReads.StartSilently=true;
         try{return await Serve();}
@@ -49,7 +48,7 @@ internal static class PerformanceMcp
                     if(initialized)throw new ArgumentException("Already initialized");
                     string proposed=request.GetProperty("params").GetProperty("protocolVersion").GetString();
                     string selected=proposed is "2025-06-18" or "2024-11-05"?proposed:"2025-06-18";
-                    result=new{protocolVersion=selected,capabilities=new{tools=new{listChanged=false}},serverInfo=new{name="Pathweft",version=typeof(PerformanceMcp).Assembly.GetName().Version?.ToString()},instructions="Read-only Pathweft data. Performance: saved local observations; Pathweft collects and saves automatically while running, and the optional app activity recorder adds program runs, workloads and per-executable usage; this endpoint does not start collection, and missing or stale observations are not live usage. Also Maintenance rows and Cleanup sizes, file and folder metadata, Everything search, Windows boots, system changes and insights. Nothing is changed, cleaned or uninstalled, and file contents are never read; reads only administrators may make (boot diagnostics, Security check, protected folders) use Pathweft's approved administrator session when the installed copy has one, without a prompt."};initialized=true;
+                    result=new{protocolVersion=selected,capabilities=new{tools=new{listChanged=false}},serverInfo=new{name="Pathweft",version=typeof(PerformanceMcp).Assembly.GetName().Version?.ToString()},instructions="Read-only Pathweft data. Performance: saved local observations; Pathweft collects and saves automatically while running, and the optional app activity recorder adds program runs, workloads and per-executable usage; this endpoint does not start collection, and missing or stale observations are not live usage. Also Maintenance rows and Cleanup sizes, file and folder metadata, Pathweft index search, Windows boots, system changes and insights. Nothing is changed, cleaned or uninstalled, and file contents are never read; reads only administrators may make (boot diagnostics, Security check, protected folders) use Pathweft's approved administrator session when the installed copy has one, without a prompt."};initialized=true;
                 }
                 else if(method=="ping")result=new{};
                 else if(!ready){response=Error(id,-32002,"Initialize and send notifications/initialized first");await output.WriteLineAsync(response.ToJsonString());continue;}

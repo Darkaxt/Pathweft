@@ -147,7 +147,7 @@ public partial class MainWindow
             Left.ListForVerification.SelectedItems.Clear();
             Check(!Left.Footer.Text.Contains(" hidden"), "With hidden files shown the footer has no hidden count: " + Left.Footer.Text);
             await Hidden(Left.ListForVerification);
-            Left.Search("pwfui_hit_"); // Everything subtree, real selected index
+            Left.Search("pwfui_hit_"); // index subtree, real index service
             await Left.SearchCompletion;
             int total = 217;
             while (Left.IndexedTotal != total)

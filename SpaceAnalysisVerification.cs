@@ -114,15 +114,13 @@ public partial class MainWindow
             Left.SetView(mode);await Left.ToggleSpaceAsync();await Left.SpaceCompletion;await Left.EndSpaceAsync();
             check(Left.Mode==mode&&!Left.SpaceAnalyzing&&Left.Dir==folder,"Analysis restores the actual standard view mode: "+mode);
         }
-        // Actual Everything IPC, no live settings changes. A disabled index is
-        // an observed unavailable capability, never reported as zero/complete.
-        var client=Search.EverythingSearchClient.Shared;
-        var page=await client.QueryAsync(Search.EverythingSearchClient.FolderExpression(new[]{@"C:\Windows"}),"",0,2,"Name",false,CancellationToken.None);
-        var indexed=await client.FolderSizesAsync(new[]{@"C:\Windows",Path.Combine(folder,"not indexed and absent")},"",CancellationToken.None);
-        check(page.Hits.Any(hit=>hit.Path.Equals(@"C:\Windows",StringComparison.OrdinalIgnoreCase)),"The real existing Everything index returns an exact known folder using the production size-query expression");
+        // The installed Pathweft index service, read-only. An absent index
+        // result is an unknown size, never reported as zero/complete.
+        var page=await Search.IndexedSearch.SearchAsync(Search.IndexedSearch.FolderExpression(new[]{@"C:\Windows"}),0,2,"name",false,new Search.SearchSwitches(false,false,false,false),CancellationToken.None);
+        var indexed=await Search.IndexedSearch.FolderSizesAsync(new[]{@"C:\Windows",Path.Combine(folder,"not indexed and absent")},CancellationToken.None);
+        check(page.Hits.Any(hit=>hit.Path.Equals(@"C:\Windows",StringComparison.OrdinalIgnoreCase)),"The installed index service returns an exact known folder using the production size-query expression");
         check(!indexed.ContainsKey(Path.Combine(folder,"not indexed and absent")),"An absent index result never turns into a zero-byte folder");
-        if(page.FolderSizesIndexed)check(indexed.TryGetValue(@"C:\Windows",out long indexedBytes)&&indexedBytes>=0,"Production folder-size query retrieves the real enabled indexed total");
-        else check(indexed.Count==0,"Disabled folder-size indexing is detected and leaves actual traversal available");
+        check(indexed.TryGetValue(@"C:\Windows",out long indexedBytes)&&indexedBytes>0,"Production folder-size query retrieves the real indexed total");
         measurements.Add(new{engine=page.Engine,folderSizesIndexed=page.FolderSizesIndexed,knownFolderSize=indexed.GetValueOrDefault(@"C:\Windows",-1)});
         // Successful completed results persist; invalidated/cancelled snapshots
         // cannot overwrite them, including after a branch rename/removal.
