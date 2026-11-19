@@ -28,7 +28,7 @@ is recorded in SPEC.md.
 | IS6 | COMPLETE | – | – | IS6 record below |
 | IS7 | COMPLETE | – | – | IS7 record below |
 | IS8 | COMPLETE | – | – | IS8 record below |
-| FIX1 | ACTIVE | – | – | FIX1 record below |
+| FIX1 | COMPLETE | – | – | FIX1 record below |
 
 ## IS1 readiness record (2026-11-18)
 
@@ -277,3 +277,18 @@ deleted file record's size is reset to 0, so a dead record holds only what live
 children still contribute (a dead folder's children subtract their sizes when
 they are deleted). Regression test `reused_records_do_not_inherit_old_sizes`.
 A restart (install) reloads the MFT, which clears sizes already corrupted.
+
+Verification:
+- Gate ticket 005fbec6: tests 34/34 (workflow 4f5009e4), release build with 0
+  warnings (c22ef6b3).
+- Install: Pathweft merged it as ed56333. Its setup installed the bundled
+  service (binaries dated 2026-11-19 14:29 local).
+- Live check at about 21:45Z, service up 6.6 h:
+  - In `D:\Temp\pwfix1-verify`, three rounds each created and deleted 200
+    files, then created `rN\empty` and `rN\sub\a.bin` (579 bytes).
+  - `pwindex sizes` gave root 1737, r1 579, each `empty` 0, and r3\sub 579.
+    These equal `du -sb` (1737).
+  - The folder was removed afterwards.
+- Limit: these rounds should make NTFS reuse record numbers, but reuse was not
+  confirmed. The release binary could not be hash-compared because the build
+  output was already gone.

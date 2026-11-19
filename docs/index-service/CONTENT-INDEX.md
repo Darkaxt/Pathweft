@@ -4,6 +4,21 @@ Status: DRAFT (2026-11-19), reviewed by the Pathweft thread the same day; its
 answers are folded in below. Not in development; nothing here is
 implemented or scheduled. Requirement IDs (CIX-nn) are provisional.
 
+**Authority:** Pathweft `docs/SPECIFICATION.md` CONTENT-01..06 (S19, recorded
+2026-11-06) is authoritative. The following points in this draft are superseded:
+- Tantivy: FTS5 contentless qualifies first (CONTENT-03).
+- Storing extracted text: only terms and location arrays are kept (CONTENT-03).
+- "Never hydrate" (CIX-08): the user-context worker may hydrate on its first
+  read (CONTENT-04). The service itself still never reads contents or hydrates.
+
+The SHA-256 dedup, the hash cache (CIX-10) and `dupe:` (CIX-11) are not in
+CONTENT-01..06. They are post-S19 options.
+
+Still open for the owner:
+- Is the store service-owned (needs CONTENT-03's location wording revised) or
+  Pathweft-owned?
+- Is T: included?
+
 Owner direction: the index service should later take over selective file-contents
 indexing. Initial idea (owner): Pathweft's plugins read the files and export
 their strings; an index holds the strings and the file. Refined in discussion:
