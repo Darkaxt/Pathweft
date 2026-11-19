@@ -343,7 +343,7 @@ public partial class PaneView
         if(preferIndex&&missing.Length>0)
         {
             using var indexWait=CancellationTokenSource.CreateLinkedTokenSource(token);indexWait.CancelAfter(IndexWait);
-            try{sizes=await FileExplorer.Search.IndexedSearch.FolderSizesAsync(missing.Select(member=>member.Path),indexWait.Token);}
+            try{sizes=await FileExplorer.Search.IndexedSearch.SettledFolderSizesAsync(missing.Select(member=>member.Path),indexWait.Token);}
             catch(OperationCanceledException)when(!token.IsCancellationRequested){}
             catch(Exception error)when(error is InvalidOperationException or System.ComponentModel.Win32Exception){}
         }

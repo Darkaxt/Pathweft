@@ -5,7 +5,7 @@
 
 - Right-click a folder's empty space → Tools: Rename all… renames everything in the folder, Resize images… resizes its pictures, and What's using this? shows which programs hold it.
 - PowerToys' own Rename with PowerRename, File Locksmith and Image Resizer entries no longer repeat Pathweft's under More actions.
-- Space analysis and folder sizes count files written just before they ran.
+- Space analysis counts files written just before it ran.
 
 ## 1.1.81 | 2026-11-19 | Smarter address bar, terminal panel, remote folders
 

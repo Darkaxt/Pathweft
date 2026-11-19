@@ -53,8 +53,8 @@ public partial class MainWindow
         try
         {
             // SEARCH-10: the folder was just written, so the index may not have it yet: its size is measured
-            var fresh=await IndexedSearch.FolderSizesAsync([folder],CancellationToken.None);
-            check(fresh.Count==0,"A folder written in the last two seconds is not taken from the index (SEARCH-10)");
+            var fresh=await IndexedSearch.SettledFolderSizesAsync([folder],CancellationToken.None);
+            check(fresh.Count==0,"Space analysis does not take the index size of a folder written in the last two seconds (SEARCH-10)");
             Directory.SetLastWriteTimeUtc(folder,DateTime.UtcNow-TimeSpan.FromMinutes(1)); // settled, as after the index caught up
             var totals=await IndexedSearch.FolderSizesAsync([folder,Path.Combine(fixture,"absent")],CancellationToken.None);
             check(totals.Count==1&&totals[folder]==579,"Batched folder-size lookup distinguishes indexed data from absent paths");
@@ -69,6 +69,9 @@ public partial class MainWindow
         // changed folder is measured from the filesystem; a settled one takes the indexed total.
         // NTFS can report the fixture's writes late (lazy metadata flush), so reopen until no
         // notification is pending and the settled row shows, bounded.
+        // SEARCH-10: the analysis takes indexed sizes of settled folders only; settle the fixture as time would,
+        // before the pane watches it, so its notification is not mistaken for a change
+        if(DateTime.UtcNow-Directory.GetLastWriteTimeUtc(folder)<IndexedSearch.Settle)Directory.SetLastWriteTimeUtc(folder,DateTime.UtcNow-TimeSpan.FromMinutes(1));
         var settle=DateTime.UtcNow.AddSeconds(30);
         do
         {

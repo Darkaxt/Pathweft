@@ -99,7 +99,7 @@ internal static class SpaceScan
                             Dictionary<string,long> sizes=null;
                             // A slow index must not hold the walk: after IndexWait the children are measured.
                             using var indexWait=CancellationTokenSource.CreateLinkedTokenSource(token);indexWait.CancelAfter(PaneView.IndexWait);
-                            try{sizes=IndexedSearch.FolderSizesAsync(frame.Children.Select(child=>child.Path),indexWait.Token).GetAwaiter().GetResult();}
+                            try{sizes=IndexedSearch.SettledFolderSizesAsync(frame.Children.Select(child=>child.Path),indexWait.Token).GetAwaiter().GetResult();}
                             catch(OperationCanceledException)when(!token.IsCancellationRequested){}
                             catch(Exception ex)when(ex is InvalidOperationException or Win32Exception){
 #if DEBUG
