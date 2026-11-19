@@ -196,7 +196,14 @@ sealed partial class PackageProbe
             {
                 // SEARCH-09: the package carries no Everything engine; searches go to the installed Pathweft index service (read-only).
                 var members=Directory.EnumerateFileSystemEntries(AppContext.BaseDirectory,"*",SearchOption.AllDirectories).Select(path=>Path.GetRelativePath(AppContext.BaseDirectory,path)).ToArray();
-                Check(!members.Any(path=>Path.GetFileName(path).StartsWith("Everything",StringComparison.OrdinalIgnoreCase)&&!path.Split(Path.DirectorySeparatorChar).Any(part=>part.StartsWith("EverythingToolbar",StringComparison.OrdinalIgnoreCase)))&&members.Contains(@"index\pathweft-indexd.exe",StringComparer.OrdinalIgnoreCase),"The package carries the Pathweft index service and no Everything engine or SDK");
+                Check(!members.Any(path=>Path.GetFileName(path).StartsWith("Everything",StringComparison.OrdinalIgnoreCase)&&!path.Split(Path.DirectorySeparatorChar).Any(part=>part.StartsWith("EverythingToolbar",StringComparison.OrdinalIgnoreCase)))&&members.Contains(@"services\file_index\pathweft-indexd.exe",StringComparer.OrdinalIgnoreCase)&&!members.Any(path=>path.StartsWith(@"index\",StringComparison.OrdinalIgnoreCase)),"The package carries the Pathweft index service in services\\file_index and no Everything engine or SDK");
+                // DELIVERY-05: framework-dependent; the shared .NET 10 Desktop Runtime is not carried, nor satellites or reference XML docs.
+                var runtimeConfig=File.ReadAllText(Path.Combine(AppContext.BaseDirectory,"Pathweft.runtimeconfig.json"));
+                Check(!members.Any(path=>Path.GetFileName(path) is var name&&(name.Equals("hostfxr.dll",StringComparison.OrdinalIgnoreCase)||name.Equals("coreclr.dll",StringComparison.OrdinalIgnoreCase)||name.Equals("System.Private.CoreLib.dll",StringComparison.OrdinalIgnoreCase)||name.Equals("PresentationFramework.dll",StringComparison.OrdinalIgnoreCase)))
+                    &&!runtimeConfig.Contains("includedFrameworks",StringComparison.Ordinal)&&runtimeConfig.Contains("\"Microsoft.WindowsDesktop.App\"",StringComparison.Ordinal)
+                    &&!members.Any(path=>!path.Contains(Path.DirectorySeparatorChar)&&path.EndsWith(".xml",StringComparison.OrdinalIgnoreCase))&&!Directory.Exists(Path.Combine(AppContext.BaseDirectory,"de"))
+                    &&members.Contains(@"docs\Performance-MCP.md",StringComparer.OrdinalIgnoreCase)&&!members.Contains("Performance-MCP.md",StringComparer.OrdinalIgnoreCase),
+                    "DELIVERY-05: the package runs on the shared .NET 10 Desktop Runtime and carries no runtime copy, satellite folders, reference XML docs or root MCP notes");
                 var searchType=Type("Search.IndexedSearch");
                 string expression="path:\""+Path.GetDirectoryName(known)+"\" \""+Path.GetFileName(known)+"\"";
                 var query=(Task)Call(searchType,null,"QueryAsync",expression,0u,200u,"Name",false,CancellationToken.None);
