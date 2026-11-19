@@ -13,6 +13,9 @@ public partial class PaneView
     FolderProfile profile;
     string profileFolder;
     bool applyingProfile;
+    // The pane defaults as they were when this folder was opened: a first save takes what was changed here
+    // into the folder's profile and gives the defaults back, so other folders keep their view.
+    string entryPath; ViewMode? entryMode; List<string> entryColumns;
 
     /// Hidden files for this pane: the profile's choice, else the global setting (Ctrl+H).
     internal bool ShowsHidden => profile?.Hidden ?? ShowHidden;
@@ -23,6 +26,12 @@ public partial class PaneView
     void ApplyProfile(string path)
     {
         var (folder, found) = ProfileEligible(path) && searchQuery == null ? FolderProfiles.Find(path) : (null, null);
+        if (!string.Equals(path, entryPath, StringComparison.OrdinalIgnoreCase))
+        {
+            entryPath = path;
+            entryMode = Settings.Views.TryGetValue(Name, out var current) ? current : null;
+            entryColumns = ColumnCatalog.Layout(ColumnCatalog.Folder)?.ToList();
+        }
         if (found == profile && folder == profileFolder) return;
         profile = found; profileFolder = folder;
         widthKind = null; // widths come from the profile now, or back from the defaults
@@ -116,7 +125,15 @@ public partial class PaneView
             foreach (var column in grid.Columns)
                 if (column != NameColumn && colKey.TryGetValue(column, out var key) && key != "Message" && !double.IsNaN(column.Width)) saved.Widths[key] = column.Width;
         Settings.FolderSorts.Remove(Dir); Settings.DateGroupFolders.Remove(Dir); // now part of the profile
+        bool wasDefault = profile == null && string.Equals(Dir, entryPath, StringComparison.OrdinalIgnoreCase);
         FolderProfiles.Set(Dir, saved);
+        if (wasDefault)
+        {
+            if (entryMode is { } mode) Settings.Views[Name] = mode; else Settings.Views.Remove(Name);
+            if (!(ColumnCatalog.Layout(ColumnCatalog.Folder) ?? new()).SequenceEqual(entryColumns ?? new()))
+            { if (entryColumns == null) ColumnCatalog.ResetLayout(ColumnCatalog.Folder); else ColumnCatalog.SetLayout(ColumnCatalog.Folder, entryColumns); }
+            Settings.Save();
+        }
         Error?.Invoke(subfolders ? "View saved for this folder and its subfolders" : "View saved for this folder");
     }
     void ResetProfile()

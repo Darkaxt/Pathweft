@@ -26,8 +26,8 @@ public partial class PaneView
             TerminalHost.Children.Add(terminal);
         }
         TerminalHost.Height = Math.Clamp(Settings.TerminalHeight, 120, Math.Max(120, ActualHeight - 160));
+        SyncTerminal(); // the folder first: the session starts there when the panel shows
         TerminalHost.Visibility = Visibility.Visible;
-        SyncTerminal();
         Dispatcher.BeginInvoke(() => terminal?.FocusShell(), System.Windows.Threading.DispatcherPriority.Input);
     }
 

@@ -109,6 +109,14 @@ internal sealed class WebDavFileSystem : IRemoteFileSystem
 
     public async Task Upload(string localFile,string remotePath,bool replace,IProgress<long> progress,CancellationToken cancel)
     {
+        if(!replace)
+        {
+            // If-None-Match below is ignored by some servers (rclone among them): ask first, so nothing is overwritten
+            using var probe=new HttpRequestMessage(HttpMethod.Head,UriOf(remotePath));
+            using var found=await http.SendAsync(probe,cancel);
+            if(found.StatusCode==HttpStatusCode.Unauthorized)await Check(found,"upload to "+remotePath);
+            if(found.IsSuccessStatusCode)throw new IOException($"WebDAV upload to {remotePath}: the destination already exists.");
+        }
         await using var input=new FileStream(localFile,FileMode.Open,FileAccess.Read,FileShare.Read,1<<16,true);
         using var request=new HttpRequestMessage(HttpMethod.Put,UriOf(remotePath)){Content=new ProgressContent(input,progress,cancel)};
         request.Content.Headers.ContentType=new("application/octet-stream");

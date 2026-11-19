@@ -58,7 +58,14 @@ internal sealed class TerminalPanel : Border,IDisposable
         browserFolder=path;
         if(session==null){if(IsVisible)EnsureSession();return;}
         if(Same(path,terminalFolder))return; // the shell is there already (or just told us it went there)
-        if(session.SendCommand($"Set-Location -LiteralPath '{Quote(path)}' {ConPtyConnection.FollowMarker}"))terminalFolder=path;
+        Follow();
+    }
+
+    /// Sends the browser's folder to the shell when it sits at an empty prompt; otherwise the next empty prompt does.
+    void Follow()
+    {
+        if(disposed||session==null||unsupported!=null||browserFolder==null||Same(browserFolder,terminalFolder))return;
+        if(session.SendCommand($"Set-Location -LiteralPath '{Quote(browserFolder)}' {ConPtyConnection.FollowMarker}"))terminalFolder=browserFolder;
     }
 
     /// Archive, search, remote and virtual places: the session stays, and says why it does not follow.
@@ -76,6 +83,7 @@ internal sealed class TerminalPanel : Border,IDisposable
         var connection=new ConPtyConnection(start);
         connection.FolderReported+=folder=>Dispatcher.BeginInvoke(()=>Reported(connection,folder));
         connection.Exited+=code=>Dispatcher.BeginInvoke(()=>Ended(connection,code));
+        connection.EmptyPromptChanged+=empty=>{if(empty)Dispatcher.BeginInvoke(()=>{if(ReferenceEquals(connection,session))Follow();});};
         session=connection;terminalFolder=start;
         try{terminal.Connection=connection;} // the control calls Start once it is ready
         catch(Exception ex)when(ex is IOException or InvalidOperationException or DllNotFoundException or EntryPointNotFoundException)
@@ -86,8 +94,9 @@ internal sealed class TerminalPanel : Border,IDisposable
     void Reported(ConPtyConnection from,string folder)
     {
         if(disposed||!ReferenceEquals(from,session))return;
+        bool moved=!Same(folder,terminalFolder); // a prompt repeating the same folder is not a move
         terminalFolder=folder;
-        if(Same(folder,browserFolder))return; // the shell followed the browser: no echo back
+        if(!moved||Same(folder,browserFolder))return; // the shell followed the browser: no echo back
         browserFolder=folder;FolderReported?.Invoke(folder);
     }
 

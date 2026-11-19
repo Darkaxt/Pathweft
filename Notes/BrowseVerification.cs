@@ -67,7 +67,9 @@ public partial class MainWindow
         check(SavedSearchList.Children.OfType<FrameworkElement>().Any(), "BROWSE-03: a saved search appears in the sidebar section");
 
         List<PaneView.Suggestion> Shown() => Left.SuggestList.Items.Cast<FrameworkElement>().Select(r => r.Tag as PaneView.Suggestion).Where(s => s != null).ToList();
+        Activate(); // the list opens only for a focused address, as when the user clicks it
         Left.FocusFilter();
+        check(await Until(() => IsActive && Left.FilterBox.IsKeyboardFocusWithin, 5000), "BROWSE-01: the address field has keyboard focus (precondition)");
         check(await Until(() => Shown().Count > 0 && Shown().All(s => s.Kind == PaneView.SuggestionKind.Recent)), "BROWSE-01: an empty focused address lists recent destinations");
         Left.FilterBox.Text = "alpha";
         var shown = Shown();
@@ -81,14 +83,14 @@ public partial class MainWindow
         // completion: one listing of the typed parent, merged later; an older keystroke never replaces it
         Left.FilterBox.Text = root + "\\compl";
         check(await Until(() => Shown().Any(s => s.Kind == PaneView.SuggestionKind.Completion && s.Path.EndsWith("complete-me"))), "BROWSE-01: filesystem completion still supplements a typed path");
-        check(Left.FilterBox.Text == root + "\\compl" && Left.FilterBox.IsKeyboardFocusWithin, "BROWSE-02: background completion leaves the draft and focus alone");
+        check(Left.FilterBox.Text == root + "\\compl" && Left.FilterBox.IsKeyboardFocusWithin && Left.Suggest.IsOpen, "BROWSE-02: background completion leaves the draft and focus alone");
         // Escape closes the list and keeps the draft
         var esc = new System.Windows.Input.KeyEventArgs(System.Windows.Input.Keyboard.PrimaryDevice, PresentationSource.FromVisual(Left.FilterBox), Environment.TickCount, System.Windows.Input.Key.Escape) { RoutedEvent = System.Windows.Input.Keyboard.PreviewKeyDownEvent };
         Left.FilterBox.RaiseEvent(esc);
         check(!Left.Suggest.IsOpen && Left.FilterBox.Text == root + "\\compl", "BROWSE-02: Escape dismisses suggestions without discarding the draft");
         // remove one history row: only that entry goes
         Left.FilterBox.Text = "";
-        Left.FilterBox.Text = "deep";
+        Left.FilterBox.Text = "soup"; // names match, not the folders above them
         var recent = Shown().First(s => s.Path == deep);
         Left.RemoveFromHistory(recent);
         check(!Settings.RecentFolders.Contains(deep) && Directory.Exists(deep) && Settings.RecentFolders.Contains(a), "BROWSE-02: removing a history row removes only that entry, never the folder");
@@ -289,7 +291,7 @@ public partial class MainWindow
                 using (var wrong = RemoteFileSystems.Create(c, "wrong password", (_, _) => Task.FromResult(true)))
                 {
                     bool denied = false;
-                    try { await wrong.Connect(CancellationToken.None); await wrong.List("/", CancellationToken.None); } catch (Exception e) when (e is UnauthorizedAccessException or IOException or InvalidOperationException) { denied = true; }
+                    try { await wrong.Connect(CancellationToken.None); await wrong.List("/", CancellationToken.None); } catch (Exception e) when (e is UnauthorizedAccessException or IOException or Renci.SshNet.Common.SshAuthenticationException) { denied = true; }
                     check(denied, $"BROWSE-09 {kind}: a wrong password is refused");
                 }
                 // the pane: a saved connection browses under its address; the password stays in memory only
@@ -322,7 +324,8 @@ public partial class MainWindow
         Left.ToggleTerminal();
         var panel = Left.TerminalForVerification;
         check(await Until(() => panel?.Running == true && panel.Synchronized, 30000), "BROWSE-08: the pane's terminal starts a shell with shell integration (OSC 9;9 / 133)");
-        check(await Until(() => panel.FolderForVerification?.TrimEnd('\\').Equals(first, StringComparison.OrdinalIgnoreCase) == true, 15000), "BROWSE-08: the terminal starts in (or follows to) the pane's folder, quotes included");
+        check(await Until(() => panel.FolderForVerification?.TrimEnd('\\').Equals(first, StringComparison.OrdinalIgnoreCase) == true, 15000)
+            && Left.Dir.TrimEnd('\\').Equals(first, StringComparison.OrdinalIgnoreCase), "BROWSE-08: the terminal starts in the pane's folder (quotes included) and the pane stays there");
         check(panel.SendForVerification($"Set-Location -LiteralPath '{TerminalPanel.Quote(second)}'") && await Until(() => Left.Dir.TrimEnd('\\').Equals(second, StringComparison.OrdinalIgnoreCase), 15000),
             "BROWSE-08: a directory change in the shell navigates the pane");
         await S1Verification.Navigate(Left, PaneView.ThisPC);
@@ -341,6 +344,7 @@ public partial class MainWindow
         await S1Verification.Navigate(Left, root);
         PerformanceCommand.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         await Until(() => AnalysisVisible, 5000);
+        performance.Select(PerformancePanel.Cpu); UpdateLayout(); // the analysis view holds the filter and Pause
         await Task.Delay(500);
         var nodes = Tree(this).ToList();
         var filter = nodes.OfType<TextBox>().FirstOrDefault(t => AutomationProperties.GetName(t) == "Filter processes in the graph and table");
