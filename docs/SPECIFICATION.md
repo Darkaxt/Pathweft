@@ -1,6 +1,6 @@
 # Pathweft specification
 
-Version 1.41 - 2026-11-19. Owner: Darkaxt.
+Version 1.42 - 2026-11-19. Owner: Darkaxt.
 
 ### Read-only MCP expansion (S48)
 
@@ -2217,7 +2217,7 @@ scanner source, not Diskweft's application UI, installation, settings or MCP.
 
 | ID | Required outcome and acceptance |
 | --- | --- |
-| SPACE-01 | A compact Analyze space toggle beside Terminal uses Pathweft's existing proportions, theme, tooltip, accessible name and keyboard/focus conventions; use a disk/blocks motif reflecting the supplied defrag reference. Analyze only the active pane's current filesystem path. Replace the old external Scan with SpaceScan menu/Help routes with this same action. State unsupported virtual/search/This PC eligibility honestly; do not silently extract archives or scan all drives. |
+| SPACE-01 | A compact Analyze space toggle beside Terminal uses Pathweft's existing proportions, theme, tooltip, accessible name and keyboard/focus conventions; use a disk/blocks motif reflecting the supplied defrag reference. Analyze only the active pane's current filesystem path. Replace the old external Scan with SpaceScan menu/Help routes with this same action; owner decision 2026-11-19 (spec 1.42): the button is the only route, and the file, folder and background menus have no Analyze space item (it only repeated the button, and on a selection it analyzed the current folder, not the one right-clicked). State unsupported virtual/search/This PC eligibility honestly; do not silently extract archives or scan all drives. |
 | SPACE-02 | Morph that pane into a virtualized expandable directory/file tree with Space used totals and root-relative usage bars/percentages, descending size ordering among siblings and stable selection/viewport while totals grow. Publish useful progressive recursive totals before completion. Distinguish pending, measured empty, incomplete/denied, cancelled and failed results. The current donor measures logical file lengths: do not present them as allocated disk clusters or cloud account quota. |
 | SPACE-03 | The same toggle restores the prior standard view mode, exact columns/order/widths, sort/direction, path, selection and scroll. Own each pane's root/session, reject old generations, and await actual cancellation/worker completion on exit/navigation/close. Preserve ordinary navigation, selection, preview and real file actions; do not create a second mutation owner or let updates from an old scan overwrite the restored view. |
 | SPACE-04 | Borrow and pin selected Diskweft traversal/accounting/progressive source with MIT provenance/notices and upstream-review inventory. Scope mutable state/cancellation/statistics to the scan; do not import shared static donor application state, a new endpoint app, background service or Coordinator/MCP requirement. Do not follow reparse points or read cloud file contents merely for sizing. Avoid duplicate measurement of the same scope through existing SizeCache; promote only complete valid totals under its invalidation contract. Ordinary subtree traversal is required; no automatic raw-volume elevation or unrelated donor search/duplicate/history/reporting features. |

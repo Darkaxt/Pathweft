@@ -232,7 +232,6 @@ public partial class MainWindow
         m.Items.Add(Item("Show in File Explorer", "", "", () => OpenInExplorer($"/select,\"{first.Path}\"")));
         AddShell(m, shell, "drive");
         AddShell(m, shell, "tresorit");
-        m.Items.Add(Item(p.SpaceAnalyzing?"Restore previous view":"Analyze space in this folder","\uE9F5","",()=>AnalyzeSpace_Click(null,new()),p.CanAnalyzeSpace));
         var paths=sel.Select(entry=>entry.Path).ToArray();
         var properties=Item("Properties", "", "Alt+Enter", () => Properties(paths),SupportsProperties(paths));
         if(!properties.IsEnabled){properties.ToolTip="Select items on the same drive or share for combined Properties.";ToolTipService.SetShowOnDisabled(properties,true);}m.Items.Add(properties);
@@ -361,7 +360,6 @@ public partial class MainWindow
         m.Items.Add(Item("Pin to Quick access", "", "Ctrl+D", PinSelected));
         m.Items.Add(Item("Open terminal here", "", "Ctrl+`", OpenTerminal));
         m.Items.Add(Item("Open in File Explorer", "", "", () => OpenInExplorer($"\"{p.Dir}\"")));
-        m.Items.Add(Item(p.SpaceAnalyzing?"Restore previous view":"Analyze space in this folder","\uE9F5","",()=>AnalyzeSpace_Click(null,new()),p.CanAnalyzeSpace));
         AddShell(m, shell, "drive");
         AddShell(m, shell, "tresorit");
         m.Items.Add(new Separator());

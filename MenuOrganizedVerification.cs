@@ -91,6 +91,8 @@ public partial class MainWindow
         check(backgroundBash?.Parent is MenuItem{Header:"Open with"},"MENU-10: Git Bash here is in Open with on a folder's background");
         check(NoPowerToyRepeats(single)&&NoPowerToyRepeats(folderMenu)&&NoPowerToyRepeats(background),
             "TOOLS-01..03: PowerToys' PowerRename, File Locksmith and Image Resizer entries are left out of the file, folder and background menus, which have Pathweft's own");
+        check(new[]{single,folderMenu,background}.All(menu=>!MenuCommands(menu).Any(item=>item.Header is string header&&(header.StartsWith("Analyze space")||header=="Restore previous view"))),
+            "SPACE-01 (spec 1.42): the file, folder and background menus have no Analyze space item; the command bar button is its only route");
 
         // A taken-in command runs Explorer's own verb, whose registered program exists (observed instead of started)
         var invoked=new List<string>();ShellMenu.InvokeForVerification=invoked.Add;

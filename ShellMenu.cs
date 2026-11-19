@@ -318,7 +318,7 @@ public static class ShellMenu
 
     // What Pathweft has itself, by Windows' verb names: Open, Edit, Open with (its dialog), Run as administrator, Cut, Copy,
     // Paste, Delete, Rename, Create shortcut, Copy as path, Properties, Pin to Quick access (folders), the folder windows
-    // and tabs, Undo, Open terminal here (cmd, PowerShell), Pathweft itself and Diskweft / RidNacs (Analyze space).
+    // and tabs, Undo, Open terminal here (cmd, PowerShell), Pathweft itself and Diskweft / RidNacs (the Analyze space button).
     static readonly HashSet<string> OwnVerbs = new(StringComparer.OrdinalIgnoreCase)
     {
         "open", "opennew", "explore", "find", "edit", "runas", "openas", "cut", "copy", "paste", "delete", "rename", "link", "copyaspath",
