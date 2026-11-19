@@ -185,8 +185,12 @@ public partial class MainWindow
                 Left.StatsChanged+=FolderLocated;Right.StatsChanged+=FolderLocated;
                 try{widget.Pane.OpenSelected();FolderLocated();await navigated.Task;}finally{Left.StatsChanged-=FolderLocated;Right.StatsChanged-=FolderLocated;}
                 Check(!widget.IsVisible&&widget.Pane.Dir==PaneView.ThisPC,"Folder results open in the main manager and dismiss the global search popup");
-                string archive=@"D:\Projects\Pathweft\dist\1.1.1\Pathweft-1.1.1-source.zip";
-                widget.ShowSearch("path:\"D:\\Projects\\Pathweft\\dist\\1.1.1\" \"Pathweft-1.1.1-source.zip\"");await widget.Pane.SearchCompletion;
+                // An owned archive (old release folders are not kept): poll the installed index, bounded, until it lists it.
+                string archive=Path.Combine(root,"widget archive.zip");
+                using(var zip=System.IO.Compression.ZipFile.Open(archive,System.IO.Compression.ZipArchiveMode.Create))using(var entry=new StreamWriter(zip.CreateEntry("inside.txt").Open()))entry.Write("indexed archive");
+                var archiveDeadline=DateTime.UtcNow.AddMinutes(2);
+                do{widget.ShowSearch("path:\""+root+"\" \"widget archive.zip\"");await widget.Pane.SearchCompletion;}
+                while(!widget.Pane.Items.Any(e=>e.Path.Equals(archive,StringComparison.OrdinalIgnoreCase))&&DateTime.UtcNow<archiveDeadline&&await Task.Delay(250).ContinueWith(_=>true));
                 list.SelectedItem=widget.Pane.Items.Single(e=>e.Path.Equals(archive,StringComparison.OrdinalIgnoreCase));
                 var archiveOpened=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
                 void ArchiveLocated(){if(new[]{Left,Right}.Any(p=>p.ArchiveRoot?.Archive==archive&&p.Listed&&p.Items.Any()))archiveOpened.TrySetResult();}

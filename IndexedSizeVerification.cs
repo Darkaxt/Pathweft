@@ -63,9 +63,14 @@ public partial class MainWindow
     {
         // Finish a notification refresh already queued while the fixture was created: a genuinely
         // changed folder is measured from the filesystem; a settled one takes the indexed total.
-        await S1Verification.Navigate(Left,fixture);await Left.SizingCompletion;
-        if(typeof(PaneView).GetField("folderRefresh",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic).GetValue(Left) is System.Windows.Threading.DispatcherOperation queued)await queued.Task;
-        await S1Verification.Navigate(Left,fixture);await Left.SizingCompletion;
+        // NTFS can report the fixture's writes late (lazy metadata flush), so reopen until no
+        // notification is pending and the settled row shows, bounded.
+        var settle=DateTime.UtcNow.AddSeconds(30);
+        do
+        {
+            await S1Verification.Navigate(Left,fixture);await Left.SizingCompletion;
+            if(typeof(PaneView).GetField("folderRefresh",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic).GetValue(Left) is System.Windows.Threading.DispatcherOperation queued){await queued.Task;await Left.SizingCompletion;}
+        }while(Left.Items.Single().SizeSource!=IndexedSearch.SizeSource&&DateTime.UtcNow<settle&&await Task.Delay(250).ContinueWith(_=>true));
         File.WriteAllText(Path.Combine(root,"indexed-row.json"),System.Text.Json.JsonSerializer.Serialize(new{Left.Items.Single().Size,Left.Items.Single().SizeSource}));
         check(Left.Items.Single().Size==579&&Left.Items.Single().SizeSource==IndexedSearch.SizeSource,"The ordinary pane uses the indexed total with an explicit coverage label");
         // Finish a notification refresh already queued while the fixture was
