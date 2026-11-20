@@ -209,7 +209,8 @@ public partial class MainWindow
                 && Text(bigFile).Replace("\n", "") == bigText.ToString().Replace("\n", ""),
                 $"CONTENT-02: a 1.5 MB log goes in {bigFile.Puts.Count} puts of whole chunks within the 64 KiB limit, nothing lost");
             var wordFile = File_(word);
-            check(wordFile.State == "current" && Stamped(wordFile) && Chunks(wordFile).Any() && Chunks(wordFile).All(c => (int?)c["location"]["engine"] == 1),
+            check(wordFile.State == "current" && Stamped(wordFile) && Chunks(wordFile).Any() && Chunks(wordFile).All(c => (int?)c["location"]["engine"] == 1)
+                && ContentExtractors.Describe(Chunks(wordFile).First()["location"].ToJsonString()).StartsWith("paragraph ", StringComparison.Ordinal),
                 "CONTENT-02: a Word document is indexed through its Craft core with engine-marked locations: " + string.Join(" | ", Chunks(wordFile).Take(3).Select(c => c["location"].ToJsonString())));
             var imageFile = File_(image); var binaryFile = File_(binary); var refusedFile = File_(refused);
             check(imageFile.State == "unsupported" && (bool)imageFile.Fail["unsupported"] && imageFile.Puts.Count == 0 && Read(imageFile.Fail["read"]) == imageFile.Stamp,

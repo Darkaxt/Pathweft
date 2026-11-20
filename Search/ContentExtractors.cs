@@ -97,7 +97,11 @@ internal static class ContentExtractors
     internal static string Compact(JsonElement location)
     {
         var compact = new Dictionary<string, JsonElement>();
-        foreach (var name in kept) if (location.TryGetProperty(name, out var value) && value.ValueKind is JsonValueKind.Number or JsonValueKind.String) compact[name] = value;
+        // WordCraft gives a paragraph as an index path ([3] in the body, [3,1,0] inside a table cell): kept whole.
+        foreach (var name in kept)
+            if (location.TryGetProperty(name, out var value) && (value.ValueKind is JsonValueKind.Number or JsonValueKind.String
+                || value.ValueKind == JsonValueKind.Array && value.GetArrayLength() > 0 && value.EnumerateArray().All(i => i.ValueKind == JsonValueKind.Number)))
+                compact[name] = value;
         if (compact.Count == 0) return location.GetRawText();
         compact["engine"] = JsonDocument.Parse("1").RootElement; // marks Craft coordinates, which count from 0
         return JsonSerializer.Serialize(compact);
@@ -110,7 +114,10 @@ internal static class ContentExtractors
         {
             using var json = JsonDocument.Parse(location);
             var root = json.RootElement;
-            string Value(string name) => root.TryGetProperty(name, out var value) ? value.ValueKind == JsonValueKind.Number ? value.GetRawText() : value.ToString() : null;
+            // An index path reads as its first (top-level) index.
+            string Value(string name) => !root.TryGetProperty(name, out var value) ? null
+                : value.ValueKind == JsonValueKind.Array ? value.GetArrayLength() > 0 ? value[0].GetRawText() : null
+                : value.ValueKind == JsonValueKind.Number ? value.GetRawText() : value.ToString();
             bool craft = root.TryGetProperty("engine", out _);
             string Display(string index) => craft && int.TryParse(index, out int n) ? (n + 1).ToString() : index;
             if (Value("page") is { } page) return "page " + Display(page);
