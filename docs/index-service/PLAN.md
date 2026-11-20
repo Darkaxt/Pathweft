@@ -15,6 +15,7 @@ is recorded in SPEC.md.
 | IS6 folder changes | Follow folder roots with change notifications while running (owner request 2026-11-18) | IDX-03 (live changes) | Unit tests; console-mode test on a local folder root; installed service log on the real roots |
 | IS7 adaptive checks | Per-folder adaptive re-listing, 15 min to 6 h, replacing the fixed full rescan (owner request 2026-11-18) | IDX-03 (scheduled checks) | Unit tests; console-mode test with a short schedule; installed service log (schedule summary, changes found by a scheduled check on the share) |
 | IS8 query additions | `dm:`/`dc:` date filters and `parent:` (Pathweft thread request 2026-11-19, to replace Everything completely) | IDX-05 (dates, parent) | Unit tests; installed service queries |
+| IS10 content index | S19 part b, owner decisions 2026-11-19: service-owned terms store beside the file index on C:, content scopes, change tracking from the name index, worker ops, `content:` with read-access filtering, reference worker in `pwindex` | IDX-15..19 | Unit tests and release build through the gate; console-instance end-to-end with the reference worker; installed service after Pathweft's release |
 | IS9 install layout | S19 part (a), owner decision 2026-11-19: run in place from `Program Files\Pathweft\services\file_index`, data in `ProgramData\Pathweft\services\file_index`, migrate the old layout, add `stop` | IDX-01 | Unit tests and release build through the gate; the installed upgrade by Pathweft 1.1.83 setup (`sc qc`, `status`, folder roots kept, no `PathweftIndex` folders left) |
 
 ## Ledger
@@ -31,6 +32,7 @@ is recorded in SPEC.md.
 | IS8 | COMPLETE | – | – | IS8 record below |
 | FIX1 | COMPLETE | – | – | FIX1 record below |
 | IS9 | COMPLETE | – | – | IS9 record below |
+| IS10 | ACTIVE | – | – | IS10 record below |
 
 ## IS1 readiness record (2026-11-18)
 
@@ -353,3 +355,19 @@ result, and this thread checked it independently:
 - The everything-search skill copies (the Claude plugin cache, the marketplace
   and Codex) now point at the new pwindex path. A skill query answered from
   the pathweft-index backend.
+
+## IS10 record (content index, S19 part b)
+
+Specified in SPEC IDX-15..19 and PROTOCOL version 2. The design was agreed with
+the Pathweft thread on 2026-11-19/20:
+- its schema;
+- states 0-5;
+- staged publish;
+- global scopes;
+- SYSTEM/Administrators-only store ACL;
+- read-access filtering;
+- no terms or snippets in replies.
+
+Change from what was offered: no NTFS file-reference column. The name index does
+not keep the reverse key map, so moves use the extension/size/modified
+heuristic on all stores.
