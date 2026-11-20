@@ -387,8 +387,8 @@ public partial class PaneView : UserControl
         InitializeComponent();
         details = List.View;
         SetSort(sortKey, sortDesc);
-        Loaded += (_, _) => { ApplyStartView(); FolderProfiles.Changed += ProfilesChanged; FileNotes.Changed += NotesChanged; Search.ContentIndexing.Changed += ContentIndexChanged; };
-        Unloaded += (_, _) => { FolderProfiles.Changed -= ProfilesChanged; FileNotes.Changed -= NotesChanged; Search.ContentIndexing.Changed -= ContentIndexChanged; };
+        Loaded += (_, _) => { ApplyStartView(); FolderProfiles.Changed += ProfilesChanged; FileNotes.Changed += NotesChanged; FileExplorer.Search.ContentIndexing.Changed += ContentIndexChanged; };
+        Unloaded += (_, _) => { FolderProfiles.Changed -= ProfilesChanged; FileNotes.Changed -= NotesChanged; FileExplorer.Search.ContentIndexing.Changed -= ContentIndexChanged; };
         List.GotKeyboardFocus += (_, _) => Activated?.Invoke();
         PreviewMouseDown += (_, _) => Activated?.Invoke(); // anywhere in the pane: tabs, path, list
         renameTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(GetDoubleClickTime()) };
