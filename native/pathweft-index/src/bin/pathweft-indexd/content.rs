@@ -159,7 +159,7 @@ impl ContentStore {
     }
 
     fn rows_below(conn: &Connection, dir: &str) -> Result<Vec<Row>, String> {
-        let mut st = conn.prepare_cached("SELECT id, path, size, modified, state, prior FROM files WHERE path LIKE ?1 ESCAPE '^'").map_err(db)?;
+        let mut st = conn.prepare("SELECT id, path, size, modified, state, prior FROM files WHERE path LIKE ?1 ESCAPE '^'").map_err(db)?;
         let rows = st
             .query_map([below(dir)], |r| {
                 Ok(Row { id: r.get(0)?, path: r.get(1)?, size: r.get::<_, i64>(2)? as u64, modified: r.get::<_, i64>(3)? as u64, state: r.get(4)?, prior: r.get(5)? })
@@ -188,7 +188,7 @@ impl ContentStore {
 
     pub fn scopes(&self) -> Result<Vec<ContentScope>, String> {
         let conn = self.conn.lock().unwrap();
-        let mut st = conn.prepare_cached("SELECT path, added, reconciled, error FROM scopes ORDER BY path").map_err(db)?;
+        let mut st = conn.prepare("SELECT path, added, reconciled, error FROM scopes ORDER BY path").map_err(db)?;
         let v = st
             .query_map([], |r| Ok(ContentScope { path: r.get(0)?, added: r.get::<_, i64>(1)? as u64, reconciled: r.get::<_, i64>(2)? as u64, error: r.get(3)? }))
             .map_err(db)?
@@ -332,7 +332,7 @@ impl ContentStore {
         leases.retain(|_, l| l.until > t);
         let conn = self.conn.lock().unwrap();
         let mut st = conn
-            .prepare_cached(
+            .prepare(
                 "SELECT id, path, size, modified FROM files
                  WHERE state = 0 OR (state = 2 AND (error IS NULL OR version < ?1)) OR (state IN (3, 4) AND version < ?1)
                  ORDER BY id LIMIT ?2",
@@ -391,8 +391,8 @@ impl ContentStore {
         }
         let tx = conn.transaction().map_err(db)?;
         {
-            let mut chunk = tx.prepare_cached("INSERT INTO chunks(file, location) VALUES(?1, ?2)").map_err(db)?;
-            let mut term = tx.prepare_cached("INSERT INTO terms(rowid, text) VALUES(?1, ?2)").map_err(db)?;
+            let mut chunk = tx.prepare("INSERT INTO chunks(file, location) VALUES(?1, ?2)").map_err(db)?;
+            let mut term = tx.prepare("INSERT INTO terms(rowid, text) VALUES(?1, ?2)").map_err(db)?;
             for c in chunks {
                 let location = serde_json::to_string(&c.location).unwrap_or_else(|_| "null".into());
                 chunk.execute(params![-id, location]).map_err(db)?;
@@ -449,7 +449,7 @@ impl ContentStore {
     pub fn state(&self, folder: &str) -> Result<Vec<Value>, String> {
         let dir = folder.trim_end_matches('\\');
         let conn = self.conn.lock().unwrap();
-        let mut st = conn.prepare_cached("SELECT path, state, indexed, error FROM files WHERE path LIKE ?1 ESCAPE '^' ORDER BY path").map_err(db)?;
+        let mut st = conn.prepare("SELECT path, state, indexed, error FROM files WHERE path LIKE ?1 ESCAPE '^' ORDER BY path").map_err(db)?;
         let rows = st
             .query_map([below(dir)], |r| Ok((r.get::<_, String>(0)?, r.get::<_, i64>(1)?, r.get::<_, i64>(2)?, r.get::<_, Option<String>>(3)?)))
             .map_err(db)?
@@ -498,7 +498,7 @@ impl query::Content for ContentStore {
     fn matching(&self, expr: &str) -> Result<Vec<String>, String> {
         let conn = self.conn.lock().unwrap();
         let mut st = conn
-            .prepare_cached("SELECT DISTINCT f.path FROM terms JOIN chunks c ON c.id = terms.rowid JOIN files f ON f.id = c.file WHERE terms MATCH ?1 AND f.state IN (1, 2)")
+            .prepare("SELECT DISTINCT f.path FROM terms JOIN chunks c ON c.id = terms.rowid JOIN files f ON f.id = c.file WHERE terms MATCH ?1 AND f.state IN (1, 2)")
             .map_err(db)?;
         let v = st.query_map([expr], |r| r.get(0)).map_err(db)?.collect::<Result<Vec<String>, _>>().map_err(|e| format!("content search failed: {e}"))?;
         Ok(v)
@@ -514,12 +514,12 @@ impl query::Content for ContentStore {
             };
             let (lo, hi): (Option<i64>, Option<i64>) = conn.query_row("SELECT min(id), max(id) FROM chunks WHERE file = ?1", [id], |r| Ok((r.get(0)?, r.get(1)?)))?;
             let (Some(lo), Some(hi)) = (lo, hi) else { return Ok(Vec::new()) };
-            let mut st = conn.prepare_cached(
+            let mut st = conn.prepare(
                 "SELECT location FROM chunks WHERE file = ?1 AND id IN (SELECT rowid FROM terms WHERE terms MATCH ?2 AND rowid BETWEEN ?3 AND ?4) ORDER BY id LIMIT ?5",
             )?;
             let v = st
                 .query_map(params![id, expr, lo, hi, limit as i64], |r| r.get::<_, String>(0))?
-                .filter_map(|s| s.ok().and_then(|s| serde_json::from_str(&s).ok()))
+                .filter_map(|s| s.ok().and_then(|s| serde_json::from_str::<Value>(&s).ok()))
                 .collect();
             Ok(v)
         };
