@@ -576,31 +576,37 @@ fn listing(scope: &str, slots: &[Arc<Slot>], refs: &[StoreRef]) -> Result<Vec<(S
     }
 }
 
-pub fn reconcile_all(svc: &Service) {
-    let Some(store) = &svc.content else { return };
+/// Reconciles every scope. Returns whether a scope's store is still loading,
+/// so its files should be restored soon rather than at the next minute.
+pub fn reconcile_all(svc: &Service) -> bool {
+    let Some(store) = &svc.content else { return false };
     let scopes = match store.scopes() {
         Ok(s) => s,
         Err(e) => {
             warning!("{e}");
-            return;
+            return false;
         }
     };
-    if scopes.is_empty() {
-        return;
-    }
     let (slots, refs) = svc.snapshot();
+    let mut loading = false;
     for s in scopes {
+        loading |= covering(&slots, &s.path).is_some_and(|slot| slot.state() == "loading");
         if let Err(e) = store.reconcile(&s.path, listing(&s.path, &slots, &refs)) {
             warning!("content {}: {e}", s.path);
         }
     }
+    loading
 }
 
-/// The reconcile loop: every minute, and when poked.
+/// While a store is loading (after a start or restart).
+const RECONCILE_LOADING: Duration = Duration::from_secs(2);
+
+/// The reconcile loop: every minute, when poked, and every 2 s while a
+/// scope's store is loading.
 pub fn run(svc: Arc<Service>) {
     while !svc.stopping() {
-        reconcile_all(&svc);
-        svc.content_wait(RECONCILE);
+        let loading = reconcile_all(&svc);
+        svc.content_wait(if loading { RECONCILE_LOADING } else { RECONCILE });
     }
 }
 
