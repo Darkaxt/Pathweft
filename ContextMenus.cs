@@ -183,7 +183,7 @@ public partial class MainWindow
             m.Items.Add(Item("Open file location", "", "", () => { p.Navigate(Path.GetDirectoryName(first.Path), first.Name); p.FocusList(); }));
         // CONTENT-05: a content hit in a text file opens in the editor at each matching line.
         if (p.InSearch && one && !dir && first.Matches is { Count: > 0 } matches && EditorWindow.IsText(first.Path))
-            foreach (int line in matches.Select(Search.ContentExtractors.Line).OfType<int>().Distinct().Take(5))
+            foreach (int line in Search.ContentExtractors.ExactLines(first.Path, matches.Select(Search.ContentExtractors.Line).OfType<int>(), first.MatchTerms).Take(5))
                 m.Items.Add(Item($"Open at line {line}", "", "", () => EditorWindow.OpenAt(first.Path, line)));
         if (sel.Any(x => !x.IsDir)) m.Items.Add(Item("Edit", "", "F4", EditSelected));
         if (sel.Count == 2 && sel.All(x => !x.IsDir)) m.Items.Add(Item("Compare in editor", "", "", () => EditorWindow.Compare(sel[0].Path, sel[1].Path)));

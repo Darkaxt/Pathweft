@@ -55,7 +55,11 @@ public class Entry : INotifyPropertyChanged
     public string Location { get; init; } = ""; // search results: the folder it was found in, relative to where the search started
     // CONTENT-05: a content search hit's match locations as stored (raw JSON), and how they read.
     internal IReadOnlyList<string> Matches { get; init; }
-    string MatchText => Matches is { Count: > 0 } m ? string.Join(", ", m.Select(Search.ContentExtractors.Describe).Distinct()) : "";
+    internal IReadOnlyList<string> MatchTerms { get; init; }
+    // Text locations are chunk starts, so they read "near line 3, 40"; Open at line finds the exact line.
+    string MatchText => Matches is not { Count: > 0 } m ? ""
+        : m.Select(Search.ContentExtractors.Line).ToList() is var lines && lines.All(l => l != null) ? "near line " + string.Join(", ", lines.Distinct())
+        : string.Join(", ", m.Select(Search.ContentExtractors.Describe).Distinct());
     public string Where => (Location == "" ? "" : "   in " + Location) + (MatchText.Length > 0 ? "   · " + MatchText : "");
 
     long size = -1; // -1 = folder size still computing, -2 = not measured (network shares)

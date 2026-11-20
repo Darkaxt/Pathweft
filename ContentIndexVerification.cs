@@ -128,7 +128,7 @@ public partial class MainWindow
                             lastQuery = (JsonObject)request.DeepClone();
                             var hit = new JsonObject { ["path"] = notes, ["visible"] = true, ["folder"] = false, ["size"] = new FileInfo(notes).Length, ["modified"] = 133700000000000000L, ["attributes"] = 32 };
                             if (request["locations"] != null)
-                                hit["locations"] = new JsonArray(new JsonObject { ["line"] = 3, ["column"] = 1, ["offset"] = 23 }, new JsonObject { ["line"] = 40, ["column"] = 1, ["offset"] = 330 });
+                                hit["locations"] = new JsonArray(new JsonObject { ["line"] = 3, ["column"] = 1, ["offset"] = 23 }, new JsonObject { ["line"] = 38, ["column"] = 1, ["offset"] = 300 });
                             return new JsonObject { ["ok"] = true, ["total"] = 1, ["hits"] = new JsonArray(hit) };
                         }
                     default:
@@ -240,14 +240,16 @@ public partial class MainWindow
             Left.Search("content:pathweftneedle");
             await Left.SearchCompletion;
             var results = Left.IndexedResultsForVerification;
-            check((int?)lastQuery?["locations"] == PaneView.MatchLocations && results.Count == 1 && results[0].Matches?.Count == 2 && results[0].Where.Contains("line 3, line 40") && results[0].Tip.Contains("Content matches: line 3, line 40"),
+            check((int?)lastQuery?["locations"] == PaneView.MatchLocations && results.Count == 1 && results[0].Matches?.Count == 2 && results[0].Where.Contains("near line 3, 38") && results[0].Tip.Contains("Content matches: near line 3, 38"),
                 "CONTENT-05: a content search asks for match locations and each result shows them: " + (results.Count > 0 ? results[0].Where : "no result"));
             var menu = ItemMenu(Left, new() { results[0] });
             var headers = new List<string>();
             void Collect(ItemsControl items) { foreach (var item in items.Items.OfType<MenuItem>()) { headers.Add(item.Header as string); Collect(item); } }
             Collect(menu);
             check(headers.Contains("Open at line 3") && headers.Contains("Open at line 40") && headers.IndexOf("Open at line 3") > headers.IndexOf("Open file location"),
-                "CONTENT-05: a text match offers Open at line for each matching line, after Open file location");
+                "CONTENT-05: a text match offers Open at line at each exact matching line (chunk at 38, match on 40), after Open file location: " + string.Join(", ", headers.Where(h => h?.StartsWith("Open at") == true)));
+            check(ContentExtractors.Terms("report content:Needle content:\"two words\" content:pre* name").SequenceEqual(["needle", "two words", "pre"]),
+                "CONTENT-05: the content terms of a query are its words, phrases and prefixes");
             ((TextBox)Left.FindName("FilterBox")).Text = "plainname";
             Left.Search("plainname");
             await Left.SearchCompletion;

@@ -211,6 +211,12 @@ public sealed class EditorWindow : Window
         File.WriteAllText(path+".json",document.RootElement.GetRawText());
         using var image=File.Create(path+".png");await core.CapturePreviewAsync(CoreWebView2CapturePreviewImageFormat.Png,image);
     }
+    // The status bar's cursor position ("Ln 5, Col 1"), as the user sees it.
+    internal static async Task<string> PositionForVerification()
+    {
+        await instance.appearanceReady.Task;await instance.documentReady.Task;
+        return JsonSerializer.Deserialize<string>(await instance.web.CoreWebView2.ExecuteScriptAsync("document.getElementById('pos').textContent"));
+    }
     internal static async Task CloseForVerification()
     {
         var editor=instance;var done=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);

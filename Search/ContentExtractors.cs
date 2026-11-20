@@ -12,7 +12,7 @@ internal static class ContentExtractors
     // Raise when an extractor changes, so failed and unsupported files are tried again.
     internal const int Version = 1;
     internal const long TextLimit = 512L << 20, DocumentLimit = 64L << 20; // the Office worker's own input limit
-    const int ChunkCharacters = 2048, ChunkLines = 8;
+    internal const int ChunkCharacters = 2048, ChunkLines = 8;
 
     static readonly HashSet<string> text = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -130,6 +130,39 @@ internal static class ContentExtractors
             return string.Join(", ", root.EnumerateObject().Select(p => p.Name + " " + p.Value));
         }
         catch (JsonException) { return location; }
+    }
+
+    // The words and phrases of an expression's content: terms, lower-cased, without a prefix's '*'.
+    internal static IReadOnlyList<string> Terms(string expression) =>
+        System.Text.RegularExpressions.Regex.Matches(expression, @"(?:^|[\s<|])content:(?:""([^""]*)""|([^\s|<>""]+))", System.Text.RegularExpressions.RegexOptions.IgnoreCase)
+            .Select(m => (m.Groups[1].Success ? m.Groups[1].Value : m.Groups[2].Value).TrimEnd('*').ToLowerInvariant())
+            .Where(t => t.Length > 0).Distinct().ToList();
+
+    // A text location is the first line of its chunk (up to ChunkLines lines). On request (opening a match),
+    // the file is read to find the line in each chunk that holds a term; a chunk without one keeps its first line.
+    // Files a cloud provider would have to fetch are not read; their chunk lines are returned as they are.
+    internal static List<int> ExactLines(string path, IEnumerable<int> chunkLines, IReadOnlyList<string> terms)
+    {
+        var starts = chunkLines.Distinct().Order().ToList();
+        if (starts.Count == 0 || terms is not { Count: > 0 }) return starts;
+        try
+        {
+            const FileAttributes cloud = FileAttributes.Offline | (FileAttributes)0x40000 | (FileAttributes)0x400000; // RECALL_ON_OPEN, RECALL_ON_DATA_ACCESS
+            if ((File.GetAttributes(path) & cloud) != 0) return starts;
+            var found = new List<int>();
+            using var reader = new StreamReader(path, Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
+            int number = 0, last = starts[^1] + ChunkLines - 1, next = 0; int? hit = null;
+            string line;
+            while (next < starts.Count && number < last && (line = reader.ReadLine()) != null)
+            {
+                number++;
+                while (next < starts.Count && number >= starts[next] + ChunkLines) { found.Add(hit ?? starts[next]); hit = null; next++; }
+                if (next < starts.Count && number >= starts[next] && hit == null && terms.Any(t => line.Contains(t, StringComparison.OrdinalIgnoreCase))) hit = number;
+            }
+            for (; next < starts.Count; next++, hit = null) found.Add(hit ?? starts[next]);
+            return found.Distinct().ToList();
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException) { return starts; }
     }
 
     internal static int? Line(string location)
