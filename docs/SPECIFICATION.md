@@ -2638,9 +2638,9 @@ Behavior references: [tab groups](https://docs.dopus.com/doku.php?id=preferences
 and [metadata editing](https://docs.dopus.com/doku.php?id=file_operations:editing_metadata).
 These are reference documentation, not adopted source pins or runtime acceptance.
 
-No S22 criterion is implemented or verified. No stage is ACTIVE, no blocker is
-asserted unresolvable and no tracked deferral is introduced. Artifact/API/format
-qualification remains future stage work, not a reason to activate it now.
+S22 (OPUS-01..08) is complete: implemented, verified and released in 1.1.86
+(docs/verification/2026-11-20-release-1.1.86.md), with no blockers and no tracked
+deferrals. OPUS-09 (batch metadata) is S58, the next stage, followed by S6 and S7.
 
 ### Lifecycle, shell integration and final delivery
 
