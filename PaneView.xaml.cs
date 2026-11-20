@@ -301,7 +301,7 @@ class EntrySort(string key, bool desc) : IComparer
             "Free space"=>x.DriveFree.CompareTo(y.DriveFree),
             "Filesystem"=>ExplorerOrder.Instance.Compare(x.DriveFormat,y.DriveFormat),
             "Connection"=>ExplorerOrder.Instance.Compare(x.DriveConnection,y.DriveConnection),
-            "Location"=>ExplorerOrder.Instance.Compare(x.DriveLocation is {Length:>0} a?a:x.Location,y.DriveLocation is {Length:>0} b?b:y.Location) is var l && l != 0 ? l : ExplorerOrder.Instance.Compare(x.Name, y.Name),
+            "Location"=>ExplorerOrder.Instance.Compare(x.DriveLocation is {Length:>0} dl?dl:x.Location,y.DriveLocation is {Length:>0} dr?dr:y.Location) is var l && l != 0 ? l : ExplorerOrder.Instance.Compare(x.Name, y.Name),
             "Message"=>ExplorerOrder.Instance.Compare(x.Message,y.Message),
             "Type" => ExplorerOrder.Instance.Compare(x.Ext, y.Ext) is var t && t != 0 ? t : ExplorerOrder.Instance.Compare(x.Name, y.Name),
             "Modified" => x.Modified.CompareTo(y.Modified),
