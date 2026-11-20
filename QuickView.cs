@@ -148,6 +148,7 @@ public partial class MainWindow
             if(key.Key!=Key.Escape&&IsPreviewInput(key.OriginalSource as DependencyObject))return;
             if (key.Key is Key.Space or Key.Escape) { quick.Close(); key.Handled = true; }
             else if(quickExplicit!=null)return;
+            else if (MarkKey(key.Key)) key.Handled = true; // OPUS-08
             else if (quickPreview.HandleKey(key.Key)) key.Handled = true;
             else if (key.Key is Key.Up or Key.Down)
             {

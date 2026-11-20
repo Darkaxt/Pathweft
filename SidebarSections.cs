@@ -47,6 +47,8 @@ public partial class MainWindow
         ("tree",      "Folders",      "", (Panel)FolderTree),
         ("searches",  "Saved searches", "\uE721", (Panel)SavedSearchList), // BROWSE-03
         ("remote",    "Connections",  "\uE968", (Panel)RemoteList),      // BROWSE-09
+        ("workspaces", "Workspaces",  "\uE7C4", (Panel)WorkspaceList),   // OPUS-01
+        ("collections", "Collections", "\uE8F1", (Panel)CollectionList), // OPUS-04
     };
 
     // ---- Folders: Explorer's navigation tree, loaded one level at a time as branches open ----

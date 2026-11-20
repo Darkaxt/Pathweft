@@ -151,7 +151,7 @@ public partial class PaneView
         bool hidden = ShowsHidden;
         ApplyProfile(Dir);
         var (key, desc) = FolderSort(Dir);
-        if (key != sortKey || desc != sortDesc) { ShowSort(key, desc); if (view != null) view.CustomSort = new EntrySort(key, desc); }
+        if (key != sortKey || desc != sortDesc) { ShowSort(key, desc); if (view != null) view.CustomSort = SortFor(key, desc); }
         ApplyGrouping();
         if (hidden != ShowsHidden) RefreshVisibility();
     }

@@ -385,6 +385,10 @@
             <TextBlock x:Name="HistoryStatus" Style="{StaticResource Hint}" AutomationProperties.LiveSetting="Polite"/>
             <Button x:Name="ClearHistory" Content="Clear history" Style="{StaticResource Tab}" HorizontalAlignment="Left" Click="ClearHistory_Click"/>
             <TextBlock Style="{StaticResource Hint}" Text="Forgets the recent folders that the address suggestions and the history menu offer, and the recently closed tabs. Folders, Quick access, saved searches and open tabs stay."/>
+            <TextBlock Text="Operation history" FontWeight="SemiBold" Margin="0,8,0,6"/>
+            <TextBlock x:Name="OperationsStatus" Style="{StaticResource Hint}" AutomationProperties.LiveSetting="Polite"/>
+            <Button x:Name="ClearOperations" Content="Clear operation history" Style="{StaticResource Tab}" HorizontalAlignment="Left" Click="ClearOperations_Click"/>
+            <TextBlock Style="{StaticResource Hint}" Text="Forgets the record of copies, moves, renames and deletes (kept up to 500 operations or 90 days). Files and the Undo history stay."/>
             <TextBlock Text="Tags, ratings and comments" FontWeight="SemiBold" Margin="0,8,0,6"/>
             <TextBlock x:Name="NotesStatus" Style="{StaticResource Hint}" AutomationProperties.LiveSetting="Polite"/>
             <ItemsControl x:Name="StaleNotes" AutomationProperties.Name="Records whose file is gone" Margin="0,0,0,6">

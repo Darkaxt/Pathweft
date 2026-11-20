@@ -288,6 +288,7 @@
           <StackPanel x:Name="BinActions" DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,6,0,0">
             <Button Style="{StaticResource Tab}" Tag="on" Click="BinCopy_Click" Content="Copy here"/>
             <Button Style="{StaticResource Tab}" Click="BinMove_Click" Content="Move here"/>
+            <Button Style="{StaticResource Tab}" Click="BinSave_Click" Content="Save as collection" ToolTip="Keep these references as a named collection (the files stay where they are)"/>
           </StackPanel>
           <!-- virtualized: only the rows in sight are made (MainWindow.ShowBin) -->
           <ItemsControl x:Name="BinList" MaxHeight="190" VirtualizingPanel.IsVirtualizing="True" ScrollViewer.CanContentScroll="True">
@@ -325,6 +326,8 @@
           <StackPanel x:Name="Drives"/>
           <StackPanel x:Name="FolderTree"/>
           <StackPanel x:Name="SavedSearchList"/>
+          <StackPanel x:Name="WorkspaceList"/>
+          <StackPanel x:Name="CollectionList"/>
           <StackPanel x:Name="RemoteList"/>
         </StackPanel>
         <!-- drop position while reordering sections: drawn over the list, so it never moves anything -->
@@ -443,6 +446,13 @@
             </Button>
             <Button x:Name="PreviewPinButton" DockPanel.Dock="Right" Style="{StaticResource CompactCommand}" Width="32" Height="32" MinWidth="32" MinHeight="32" Content="&#xE718;" FontFamily="Segoe Fluent Icons" FontSize="10"
                     AutomationProperties.Name="Pin this preview" ToolTip="Pin this preview" Click="PreviewPin_Click"/>
+            <!-- OPUS-08: mark the image shown (the Marked images collection) and step through the marked ones -->
+            <Button x:Name="PreviewMarkButton" DockPanel.Dock="Right" Style="{StaticResource CompactCommand}" Width="32" Height="32" MinWidth="32" MinHeight="32" Content="&#xE734;" FontFamily="Segoe Fluent Icons" FontSize="11"
+                    Visibility="Collapsed" AutomationProperties.Name="Mark this image" ToolTip="Mark this image" Click="PreviewMark_Click"/>
+            <Button x:Name="PreviewMarkNextButton" DockPanel.Dock="Right" Style="{StaticResource CompactCommand}" Width="26" Height="32" MinWidth="26" MinHeight="32" Content="&#xE76C;" FontFamily="Segoe Fluent Icons" FontSize="9"
+                    Visibility="Collapsed" AutomationProperties.Name="Next marked image" ToolTip="Next marked image" Click="PreviewMarkNext_Click"/>
+            <Button x:Name="PreviewMarkPrevButton" DockPanel.Dock="Right" Style="{StaticResource CompactCommand}" Width="26" Height="32" MinWidth="26" MinHeight="32" Content="&#xE76B;" FontFamily="Segoe Fluent Icons" FontSize="9"
+                    Visibility="Collapsed" AutomationProperties.Name="Previous marked image" ToolTip="Previous marked image" Click="PreviewMarkPrev_Click"/>
             <Grid DockPanel.Dock="Left" Width="18" Height="18" Margin="0,0,8,0" VerticalAlignment="Center">
               <TextBlock Text="{Binding Icon}" Foreground="{Binding IconBrush}" FontFamily="Segoe Fluent Icons" FontSize="16" VerticalAlignment="Center">
                 <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding Source, ElementName=PreviewAppIcon}" Value="{x:Null}"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></TextBlock.Style>

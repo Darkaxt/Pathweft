@@ -138,6 +138,7 @@ public partial class MainWindow
         if (undo.Count > 50) undo.RemoveAt(0);
         if (FileNotes.Any) _ = Task.Run(FileNotes.Heal); // BROWSE-07: notes follow what this operation renamed or moved
         SaveUndo(then);
+        RecordOperation(entry); // OPUS-05 (a transfer is recorded with its outcome instead)
         return entry;
     }
 
@@ -242,10 +243,10 @@ public partial class MainWindow
     // Only actual arrivals belong to Undo, including for a fully successful folder transfer.
     // Later additions to that folder must never be moved or recycled with it. Worked out off the UI thread;
     // the job's journal goes once the history holding the same steps is saved.
-    async Task RememberJob(Job job)
+    async Task<UndoEntry> RememberJob(Job job)
     {
-        if (undoJobs.Remove(job, out var undone)) { undone(); return; }
-        if (job.ArchiveOperation) return;
+        if (undoJobs.Remove(job, out var undone)) { undone(); return null; }
+        if (job.ArchiveOperation) return null;
         var steps = await Task.Run(() =>
         {
             List<string> dirs, removed;
@@ -260,13 +261,17 @@ public partial class MainWindow
         if (steps.Count == 0)
         {
             if (job.Journal != null) _ = Task.Run(() => { try { File.Delete(job.Journal); } catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { } });
-            return;
+            return null;
         }
         var what = $"{(job.IsMove ? "move" : "copy")} of {(items == 1 ? Path.GetFileName(steps[0].Path) : $"{items:N0} items")}"
                    + (job.Phase == Phase.Done ? "" : job.IsCancelled ? " (cancelled)" : " (stopped)");
-        var entry = Remember(what, steps, null, job.Journal);
+        rememberingJob = true;
+        UndoEntry entry;
+        try { entry = Remember(what, steps, null, job.Journal); }
+        finally { rememberingJob = false; }
         if (jobs.Contains(job)) { jobUndo[job] = entry; job.CanUndo = true; }
         job.Refresh();
+        return entry;
     }
 
     void JobUndo_Click(object s, RoutedEventArgs e) { if (jobUndo.TryGetValue(JobOf(s), out var entry)) Undo(entry); }

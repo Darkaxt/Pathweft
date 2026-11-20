@@ -82,6 +82,9 @@ public partial class SettingsWindow
         int recent = Settings.RecentFolders.Count;
         HistoryStatus.Text = recent == 0 ? "No recent folders." : $"{recent} recent folder{(recent == 1 ? "" : "s")}.";
         ClearHistory.IsEnabled = recent > 0;
+        int operations = OperationHistory.Store.All.Count;
+        OperationsStatus.Text = operations == 0 ? "No operations recorded." : $"{operations:N0} operation{(operations == 1 ? "" : "s")} recorded.";
+        ClearOperations.IsEnabled = operations > 0;
         var stale = FileNotes.Stale();
         NotesStatus.Text = !FileNotes.Any ? "No tags, ratings or comments yet."
             : stale.Length == 0 ? "Every record still has its file." : $"{stale.Length} record{(stale.Length == 1 ? "" : "s")} whose file is gone:";
@@ -95,6 +98,7 @@ public partial class SettingsWindow
         }
     }
     void ClearHistory_Click(object s, RoutedEventArgs e) { main.ClearHistory(); ShowPrivacy(); }
+    void ClearOperations_Click(object s, RoutedEventArgs e) { OperationHistory.Clear(); ShowPrivacy(); }
     void PruneNotes_Click(object s, RoutedEventArgs e)
     {
         int removed = FileNotes.Prune();

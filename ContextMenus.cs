@@ -204,11 +204,14 @@ public partial class MainWindow
         m.Items.Add(SendTo("Move to", "\uE8DE", p, sel, move: true));
         m.Items.Add(Item("Group into new folder…", "\uE8F4", "", () => GroupIntoFolder(p, sel)));
         m.Items.Add(Item("Add to Drop bin", "\uE7B8", "Ctrl+B", () => AddToBin(sel.Select(x => x.Path))));
+        m.Items.Add(AddToCollectionMenu(sel)); // OPUS-04
         m.Items.Add(new Separator());
         m.Items.Add(Item("Copy path", "", "Ctrl+Shift+C", () => Clipboard.SetText(Entry.QuotedPaths(sel))));
         m.Items.Add(Item("Copy name", "", "", () => Clipboard.SetText(string.Join(Environment.NewLine, sel.Select(x => x.Name)))));
         foreach (var detail in CopyDetailItems(p, sel)) m.Items.Add(detail);
+        var table = Item("Copy as table", "\uE8C8", "", () => CopyAsTable(p)); table.Tag = "copy-detail"; m.Items.Add(table); // OPUS-06
         m.Items.Add(one ? Item("Rename", "", "F2", Rename) : Item("Rename all…", "", "F2", RenameMany));
+        if (p.ShownCollection != null) m.Items.Add(Item("Remove from collection", "\uE738", "", () => RemoveFromCollection(p, sel))); // OPUS-04: the files stay
         m.Items.Add(Item("Delete", "", "Del", () => Delete()));
         m.Items.Add(Item("Delete permanently", "", "Shift+Del", () => Delete(permanent: true)));
         m.Items.Add(new Separator());
@@ -257,9 +260,9 @@ public partial class MainWindow
         OpenWithGroup(menu,remaining);
         Take(menu,item=>Named(item,"Run with PowerShell","Edit","Quick View"));
         menu.Items.Add(new Separator());
-        Take(menu,item=>Named(item,"Cut","Copy","Paste","Paste into folder","Rename","Rename all…","Delete","Delete permanently"));
+        Take(menu,item=>Named(item,"Cut","Copy","Paste","Paste into folder","Rename","Rename all…","Remove from collection","Delete","Delete permanently"));
         menu.Items.Add(new Separator());
-        Group("Transfer","\uE8DE",item=>Named(item,"Copy to other pane","Move to other pane","Copy to","Move to","Group into new folder…","Add to Drop bin"));
+        Group("Transfer","\uE8DE",item=>Named(item,"Copy to other pane","Move to other pane","Copy to","Move to","Group into new folder…","Add to Drop bin","Add to collection"));
         Group("Copy details","\uE8C8",item=>Named(item,"Copy path","Copy name")||item.Tag as string=="copy-detail");
         Group("Archive","\uF012",item=>item.Tag==null&&IsArchiveCommand(item.Header as string)||item.Tag as string is "shell:7-zip" or "shell:winrar");
         Group("Tools","\uE713",item=>Named(item,"Run as administrator","Compare in editor","Edit with Notepad++","Resize images…","What's using this?","Create shortcut","Mount","Tags and notes…","Create link…")||(item.Header as string)?.StartsWith("Find duplicates")==true);
@@ -358,6 +361,19 @@ public partial class MainWindow
         var pictures = local ? p.Items.Where(ResizableImage).ToList() : new List<Entry>();
         if (pictures.Count > 0) m.Items.Add(Item("Resize images…", "", "", () => ResizeImages(pictures)));
         if (local) m.Items.Add(Item("What's using this?", "", "", () => WhatsUsing(new[] { p.Dir })));
+        // OPUS-02: linked relative navigation between the panes
+        if (PanesLinked)
+        {
+            m.Items.Add(Item("Unlink panes", "\uE71B", "", () => UnlinkPanes()));
+            m.Items.Add(Item("Re-link at current folders", "\uE71B", "", LinkPanes, !Settings.SinglePane));
+        }
+        else m.Items.Add(Item("Link panes", "\uE71B", "", LinkPanes, !Settings.SinglePane && !p.InSearch && other.Dir != PaneView.ThisPC && !PaneView.IsVirtual(other.Dir) && writable));
+        // OPUS-06: the listing as shown, as a table
+        m.Items.Add(Item("Copy as table", "\uE8C8", "", () => CopyAsTable(p), p.Items.Any()));
+        m.Items.Add(Item("Export listing…", "\uEDE1", "", () => ExportListing(p), p.Items.Any()));
+        // OPUS-07: aliases
+        if (writable && !RemoteAddress.IsRemote(p.Dir)) m.Items.Add(Item("Add alias for this folder…", "\uE8EC", "", () => AddAlias(p.Dir)));
+        m.Items.Add(Item("Path aliases…", "\uE8EC", "", ManageAliases));
         m.Items.Add(new Separator());
         m.Items.Add(Item("Refresh", "", "F5 / Ctrl+R", () => { SizeCache.Clear(); p.Refresh(force: true); }));
         m.Items.Add(Item(Settings.ShowHidden ? "Hide hidden files" : "Show hidden files", "", "Ctrl+H", ToggleHidden));
@@ -386,7 +402,8 @@ public partial class MainWindow
         Take(menu,item=>item.Header as string is "Refresh" or "Show hidden files" or "Hide hidden files");
         menu.Items.Add(new Separator());
         OpenWithGroup(menu,remaining);
-        Group("Tools","\uE713",item=>item.Header as string is "Compare with other pane" or "Synchronize with other pane…" or "Rename all…" or "Resize images…" or "What's using this?" or "Open terminal here"||(item.Header as string)?.StartsWith("Find duplicates")==true);
+        Group("Tools","\uE713",item=>item.Header as string is "Compare with other pane" or "Synchronize with other pane…" or "Link panes" or "Unlink panes" or "Re-link at current folders" or "Rename all…" or "Resize images…" or "What's using this?" or "Open terminal here" or "Add alias for this folder…" or "Path aliases…"||(item.Header as string)?.StartsWith("Find duplicates")==true);
+        Group("Copy listing","\uE8C8",item=>item.Header as string is "Copy as table" or "Export listing…");
         Group("More actions","\uE712",item=>item.Header as string!="Properties");
         menu.Items.Add(new Separator());Take(menu,_=>true);
     }
@@ -438,12 +455,11 @@ public partial class MainWindow
     MenuItem SendTo(string header, string glyph, PaneView p, List<Entry> sel, bool move)
     {
         var sub = Item(header, glyph, "", () => { });
-        var paths = sel.Select(x => x.Path).ToList();
         foreach (var dest in Settings.RecentDestinations.Where(d => !d.Equals(p.Dir, StringComparison.OrdinalIgnoreCase)
                                                                    && (PaneView.IsRemote(d) || Directory.Exists(d))))
         {
             var target = dest;
-            var mi = Item(Path.GetFileName(dest.TrimEnd('\\')) is { Length: > 0 } n ? n : dest, "", "", () => Submit(paths, target, move));
+            var mi = Item(Path.GetFileName(dest.TrimEnd('\\')) is { Length: > 0 } n ? n : dest, "", "", () => SubmitShaped(p, sel, target, move));
             mi.InputGestureText = ParentForMenu(dest); // where it is, muted at the right
             mi.ToolTip = dest;
             mi.Icon = ShellIcon(dest, "\uE8B7", 16, new Thickness(0));
@@ -453,7 +469,7 @@ public partial class MainWindow
         sub.Items.Add(Item("Choose a folder…", "\uE838", "", () =>
         {
             var pick = new Microsoft.Win32.OpenFolderDialog { Title = $"{header} which folder?", InitialDirectory = Other.Dir };
-            if (pick.ShowDialog(this) == true) Submit(paths, pick.FolderName, move);
+            if (pick.ShowDialog(this) == true) SubmitShaped(p, sel, pick.FolderName, move);
         }));
         return sub;
     }

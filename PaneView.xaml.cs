@@ -28,6 +28,14 @@ public class Entry : INotifyPropertyChanged
         set { modified = value; Changed(nameof(Modified)); Changed(nameof(DateText)); Changed(nameof(FullDate)); Changed(nameof(Age)); Changed(nameof(AgeBrush)); Changed(nameof(AgeTextBrush)); Changed(nameof(Tip)); Changed(nameof(DateGroup)); }
     }
     public bool IsUp => Name == "..";
+    // OPUS-03: a member of an expanded folder in the Details listing, and how deep it sits.
+    internal Entry NestParent { get; set; }
+    internal int NestDepth { get; set; }
+    bool nestOpen;
+    public bool NestOpen { get => nestOpen; set { nestOpen = value; Changed(nameof(NestOpen)); Changed(nameof(NestGlyph)); } }
+    public Thickness NestIndent => new(NestDepth * 16, 0, 0, 0);
+    public string NestGlyph => nestOpen ? "\uE70D" : "\uE76C";
+    public Visibility NestVisible => IsDir && !IsUp && (Attributes & FileAttributes.ReparsePoint) == 0 ? Visibility.Visible : Visibility.Hidden;
 
     /// Group by date (Details): Explorer's groups, newest first. ".." heads the list in a group of its own.
     public string DateGroup => IsUp ? "" : DateGroups[DateGroupOf(Modified, DateTime.Now)];
@@ -293,7 +301,7 @@ class EntrySort(string key, bool desc) : IComparer
             "Free space"=>x.DriveFree.CompareTo(y.DriveFree),
             "Filesystem"=>ExplorerOrder.Instance.Compare(x.DriveFormat,y.DriveFormat),
             "Connection"=>ExplorerOrder.Instance.Compare(x.DriveConnection,y.DriveConnection),
-            "Location"=>ExplorerOrder.Instance.Compare(x.DriveLocation,y.DriveLocation),
+            "Location"=>ExplorerOrder.Instance.Compare(x.DriveLocation is {Length:>0} a?a:x.Location,y.DriveLocation is {Length:>0} b?b:y.Location) is var l && l != 0 ? l : ExplorerOrder.Instance.Compare(x.Name, y.Name),
             "Message"=>ExplorerOrder.Instance.Compare(x.Message,y.Message),
             "Type" => ExplorerOrder.Instance.Compare(x.Ext, y.Ext) is var t && t != 0 ? t : ExplorerOrder.Instance.Compare(x.Name, y.Name),
             "Modified" => x.Modified.CompareTo(y.Modified),
@@ -459,6 +467,7 @@ public partial class PaneView : UserControl
             }
         };
         List.PreviewKeyDown += (_, e) => { if (autoscrolling) { StopAutoscroll(); if (e.Key == Key.Escape) e.Handled = true; } };
+        List.PreviewKeyDown += (_, e) => { if (e.Key is Key.Left or Key.Right && Keyboard.Modifiers == ModifierKeys.None && NestKey(e.Key)) e.Handled = true; };
         LostMouseCapture += (_, _) => StopAutoscroll();
         TabStrip.PreviewMouseDown += (_, e) =>
         {
@@ -551,7 +560,7 @@ public partial class PaneView : UserControl
     public IEnumerable<Entry> Items => items.Where(e => !e.IsUp);
     // This PC's rows are drive roots: nothing that copies, moves, deletes, renames or drags them may get them, so in
     // This PC the selection is empty to every command (the menu there is Windows' own, MainWindow.ShowMenu).
-    public List<Entry> Selected => !InSearch && Dir == ThisPC ? new() : List.SelectedItems.Cast<Entry>().Where(e => !e.IsUp).ToList();
+    public List<Entry> Selected => !InSearch && Dir == ThisPC ? new() : WithoutNested(List.SelectedItems.Cast<Entry>().Where(e => !e.IsUp).ToList());
     public long FolderTotal => SpaceAnalyzing?SpaceSummary.Bytes:Items.Sum(e => Math.Max(0, e.DisplaySize));
     public bool SizesPending => SpaceAnalyzing?space.Nodes[space.Root].State is SpaceState.Pending or SpaceState.Scanning||(space.RefreshRequested&&space.Nodes[space.Root].State==SpaceState.Changed):Items.Any(e => e.Size == -1);
 
@@ -915,7 +924,7 @@ public partial class PaneView : UserControl
         bool focused = List.IsKeyboardFocusWithin;
         var scroller = keep ? FindScroller(List) : null;
         double offset = scroller?.VerticalOffset ?? 0, across = scroller?.HorizontalOffset ?? 0;
-        var wasSelected = keep ? List.SelectedItems.Cast<Entry>().Select(e => e.Name).ToHashSet(StringComparer.OrdinalIgnoreCase) : null;
+        var wasSelected = keep ? List.SelectedItems.Cast<Entry>().Select(e => e.Path).ToHashSet(StringComparer.OrdinalIgnoreCase) : null;
         // where the first selected row sat: if the selection is gone (deleted), the row that moved up into its place
         int firstSelected = keep && view != null && List.SelectedItems.Count > 0 ? List.SelectedItems.Cast<object>().Min(view.IndexOf) : -1;
         var left = items;
@@ -930,7 +939,8 @@ public partial class PaneView : UserControl
         items = list;
         itemsFolder=Dir;
         TrackColumns();
-        view = new ListCollectionView((IList)items) { CustomSort = indexedSearch ? null : new EntrySort(sortKey, sortDesc) };
+        view = new ListCollectionView((IList)items) { CustomSort = indexedSearch ? null : SortFor(sortKey, sortDesc) };
+        if (!list.Any(e => e.NestDepth > 0)) RestoreNesting();
         ApplyGrouping();
         ApplyFilter();
         List.ItemsSource = view;
@@ -939,7 +949,7 @@ public partial class PaneView : UserControl
         if (left != list) foreach (var e in left) if (e.Thumb != null) { e.Thumb = null; e.ThumbSize = 0; }
         if (keep && select == null)
         {
-            SetSelection(e => wasSelected.Contains(e.Name));
+            SetSelection(e => wasSelected.Contains(e.Path));
             // Deleted (Delete, Shift+Delete → Enter, or from outside): the keyboard carries on from the next row, as in
             // Explorer, not from the first row of the folder
             if (List.SelectedItems.Count == 0 && firstSelected >= 0 && view.Count > 0)
@@ -1446,6 +1456,7 @@ public partial class PaneView : UserControl
     {
         if(SpaceAnalyzing){RefreshSpace(force);return;}
         if (force) lock (listCache) listCache.Remove(Dir); // rebuilt from scratch: folder sizes are measured again
+        if (RefreshListing()) return;
         if (searchQuery != null) Search(searchQuery);
         // Without force the rows on screen keep their own selection and scroll; rebuilt, the list is told
         // which row to put the cursor back on.
@@ -1456,6 +1467,7 @@ public partial class PaneView : UserControl
     {
         prefetching?.Cancel();
         var selected = Selected.Select(e => e.Name).ToArray();
+        if (RefreshListing()) return;
         if (searchQuery != null)
         {
             var paths = Selected.Select(e => e.Path).ToHashSet(StringComparer.OrdinalIgnoreCase);
@@ -1689,6 +1701,8 @@ public partial class PaneView : UserControl
         }
         Footer.Text = sel.Count > 0
             ? $"{sel.Count} selected  ·  {(sel.Any(e=>e.DisplaySize<0)?sel.Count==1?"measuring…":MainWindow.Fmt(sel.Sum(e=>Math.Max(0,e.DisplaySize)))+"+":MainWindow.Fmt(sel.Sum(e=>e.DisplaySize)))}"
+            : listMode != null
+                ? $"{items.Count:N0} {(FlatView ? "files" : "items")}{(searching ? "  ·  listing…" : FlatView && items.Count >= MaxResults ? $"  ·  stopped at {MaxResults:N0}" : "")}  ·  Esc goes back"
             : searchQuery != null
                 ? $"{items.Count} found for “{searchQuery}”{(searching ? "  ·  searching…" : items.Count >= MaxResults ? $"  ·  stopped at {MaxResults}" : "")}  ·  Esc goes back"
             : view?.Filter != null
@@ -2455,7 +2469,7 @@ public partial class PaneView : UserControl
             if (key is not ("Name" or "Size" or "Type" or "Modified"))
             {   // The index sorts by what it indexes; any other column sorts the results already shown
                 ShowSort(key, desc);
-                if (view != null) view.CustomSort = new EntrySort(key, desc);
+                if (view != null) view.CustomSort = SortFor(key, desc);
                 return;
             }
             ShowSort(key, desc);
@@ -2469,7 +2483,7 @@ public partial class PaneView : UserControl
             else Settings.FolderSorts[Dir] = (key, desc);
         }
         ShowSort(key, desc);
-        if (view != null) view.CustomSort = new EntrySort(key, desc);
+        if (view != null) view.CustomSort = SortFor(key, desc);
         // the selected file stays in sight and keeps the keyboard, wherever the new order put it
         if (List.SelectedItem is { } sel)
             Dispatcher.BeginInvoke(() =>
@@ -2498,7 +2512,7 @@ public partial class PaneView : UserControl
     /// The sort choices, shared by the Sort button and the right-click menu.
     public IEnumerable<object> SortMenuItems()
     {
-        foreach (var key in SortKeys)
+        foreach (var key in InSearch && !indexedSearch ? SortKeys.Append("Location") : SortKeys)
         {
             var k = key;
             var mi = new MenuItem { Header = key, IsChecked = key == sortKey, FontWeight = key == sortKey ? FontWeights.SemiBold : FontWeights.Normal };
@@ -2767,6 +2781,19 @@ public partial class PaneView : UserControl
         filter.Click += (_, _) => { if (liveFiltering) StopLiveFilter(); else StartLiveFilter(); };
         yield return filter;
         if (!IsWidget) yield return FolderViewMenu();
+        if (!IsWidget)
+        {
+            var nest = new MenuItem { Header = "Expandable folders", IsCheckable = true, IsChecked = nesting, IsEnabled = !SpaceAnalyzing,
+                ToolTip = "Details: open a folder's members below its row (Right opens, Left closes)",
+                Icon = new TextBlock { Text = "\uE8B7", FontFamily = new FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"), FontSize = 13 } };
+            nest.Click += (_, _) => ToggleNesting();
+            yield return nest;
+            var flat = new MenuItem { Header = "Flat view", IsCheckable = true, IsChecked = FlatView, IsEnabled = FlatView || !InSearch && Dir != ThisPC && !IsVirtual(Dir),
+                ToolTip = "Every file below this folder in one list, with its location",
+                Icon = new TextBlock { Text = "\uE8FD", FontFamily = new FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"), FontSize = 13 } };
+            flat.Click += (_, _) => { if (FlatView) ClearFilter(); else ShowFlat(); };
+            yield return flat;
+        }
         if (!IsWidget)
         {
             var term = new MenuItem { Header = "Terminal panel", InputGestureText = "Ctrl+Shift+`", IsCheckable = true, IsChecked = TerminalShown,

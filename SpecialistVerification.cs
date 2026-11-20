@@ -43,6 +43,7 @@ public partial class MainWindow
         if(Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO")=="performance-ui"){await VerifyPerformancePresentation18(root,check);return;}
         if(Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO")=="performance-native"){await VerifyPerformanceNative18(root,check);return;}
         if(Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO")=="missing-tabs"){await VerifyMissingTabs23(root,check);return;}
+        if(Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO")=="workflows-22"){await VerifyWorkflows22(root,check);return;}
         if(Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO")=="transfer-differences"){await VerifyTransferDifferences16(root,check);return;}
         if(Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO")=="transfer-progress"){await VerifyTransferProgress24(root,check);return;}
         if(Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO")=="preview-selection"){await VerifyPreviewSelection38(root,check);return;}

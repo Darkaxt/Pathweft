@@ -144,6 +144,8 @@ public partial class MainWindow : Window
         BuildFolderTree();
         BuildSidebar();
         BuildSavedSearches(); SavedSearches.Changed += BuildSavedSearches;
+        BuildWorkspaces(); Workspaces.Store.Changed += BuildWorkspaces; // OPUS-01
+        InitializeCollections(); // OPUS-04/08
         BuildConnections(); RemoteConnections.Changed += BuildConnections;
         // BROWSE-01/02: the address suggestions read the tabs and Quick access lists held here
         PaneView.AllTabs = () => (Settings.SinglePane ? new[] { Left } : new[] { Left, Right })
@@ -164,6 +166,7 @@ public partial class MainWindow : Window
         if (arg != "") OpenPath(Left, arg);
         folderJumpList=FolderJumpList.Create();
         foreach(var pane in new[]{Left,Right})pane.FolderVisited+=path=>folderJumpList?.Visit(path);
+        foreach (var pane in new[] { Left, Right }) { var p = pane; p.FolderVisited += path => FollowLink(p, path); } // OPUS-02
         ApplyPreview();
         Loaded += (_, _) =>
         {
@@ -1118,7 +1121,32 @@ public partial class MainWindow : Window
         string sourceReason = move && active.ArchiveRoot is { } source ? Archive.ChangeReason(source.Archive) : "";
         string targetReason = PaneView.ArchiveOf(Other.Dir) is { } target ? Archive.ChangeReason(target.Archive) : "";
         if (sourceReason.Length > 0 || targetReason.Length > 0) { Status.Text = sourceReason.Length > 0 ? sourceReason : targetReason; return; }
-        Submit(active.Selected.Select(e => e.Path).ToList(), Other.Dir, move);
+        SubmitShaped(active, active.Selected, Other.Dir, move);
+    }
+
+    /// OPUS-03: items picked from below the folder shown (expanded folders, a flat view, search results) go
+    /// either with the folders between (Keep folder structure, relative to the folder shown) or all into the
+    /// destination itself (Flatten). The choice is asked each time; each part is an ordinary transfer.
+    internal void SubmitShaped(PaneView p, List<Entry> sel, string dest, bool move)
+    {
+        var paths = sel.Select(e => e.Path).ToList();
+        string root = p.Dir.TrimEnd('\\');
+        string RelativeParent(string path) => Path.GetRelativePath(root, Path.GetDirectoryName(path.TrimEnd('\\')) ?? root) is var r && r != "." ? r : "";
+        bool below = p.ShownCollection == null && !RemoteAddress.IsRemote(dest) && !PaneView.IsVirtual(root) && p.SelectionIsNested(sel)
+            && paths.All(s => s.StartsWith(root + "\\", StringComparison.OrdinalIgnoreCase)) && paths.Select(RelativeParent).Any(r => r.Length > 0);
+        if (!below) { Submit(paths, dest, move); return; }
+        int choice = PromptDialog.Choose(this, $"{(move ? "Move" : "Copy")} {paths.Count:N0} items from folders below {root}?",
+            $"Keep folder structure recreates the folders between {root} and each item in {dest}. Flatten puts every item directly in {dest}.",
+            "Keep folder structure", "Flatten", "Cancel");
+        if (choice == 1) { Submit(paths, dest, move); return; }
+        if (choice != 0) return;
+        foreach (var group in paths.GroupBy(RelativeParent, StringComparer.OrdinalIgnoreCase))
+        {
+            var target = group.Key.Length == 0 ? dest : Path.Combine(dest, group.Key);
+            try { Directory.CreateDirectory(target); }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { Status.Text = $"Couldn't create {target}: {ex.Message}"; return; }
+            Submit(group.ToList(), target, move, ask: false);
+        }
     }
 
     /// `ask`: a move that gathers items from several folders into one (search results dropped on the search's own
@@ -1284,6 +1312,7 @@ public partial class MainWindow : Window
         var undoTask = RememberJob(job);
         undoWork.Add(undoTask);
         ObserveUndo(undoTask);
+        _ = RecordJob(job, undoTask); // OPUS-05: kept after the card closes
         // what was pasted or dropped is selected where it arrived, the first of it in sight with the keyboard on it,
         // instead of somewhere among the folder's other hundred files (Rico, 1.0.61)
         if (job.Finished)

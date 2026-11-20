@@ -103,6 +103,16 @@
         <ContentPresenter Content="{Binding}" ContentTemplate="{DynamicResource NameCell}"/>
       </DockPanel>
     </DataTemplate>
+    <!-- OPUS-03: Expandable folders in the ordinary Details listing: the expander, then the usual name cell. -->
+    <DataTemplate x:Key="NestNameCell">
+      <DockPanel Margin="{Binding NestIndent}">
+        <Button DockPanel.Dock="Left" Width="18" Height="20" Padding="0" Focusable="False" Margin="0,0,3,0" Style="{StaticResource CompactCommand}" Click="NestExpand_Click"
+                Visibility="{Binding NestVisible}" ToolTip="Expand or collapse folder" AutomationProperties.Name="Expand or collapse folder">
+          <TextBlock Text="{Binding NestGlyph}" FontFamily="Segoe Fluent Icons" FontSize="9"/>
+        </Button>
+        <ContentPresenter Content="{Binding}" ContentTemplate="{DynamicResource NameCell}"/>
+      </DockPanel>
+    </DataTemplate>
     <DataTemplate x:Key="SpaceSizeCell"><TextBlock Text="{Binding SizeText}" TextAlignment="Right" VerticalAlignment="Center" Margin="6,0,8,0"/></DataTemplate>
     <DataTemplate x:Key="SpaceStatusCell"><TextBlock Text="{Binding SpaceStatus}" ToolTip="{Binding SpaceTip}" Foreground="{DynamicResource Muted}" VerticalAlignment="Center" Margin="8,0"/></DataTemplate>
     <DataTemplate x:Key="SpaceUsageCell">

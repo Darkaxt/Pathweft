@@ -202,7 +202,7 @@ public partial class PaneView
         foreach(var key in keys)if(ColumnFor(key,drives) is {} column&&!wanted.Contains(column)){wanted.Add(column);shown.Add(key);}
         if(!drives&&data.Any(e=>e.Message.Length>0))wanted.Add(fileColumns.Single(c=>colKey[c]=="Message"));
         ShownColumns=shown.ToArray();
-        NameColumn.CellTemplate=drives?(DataTemplate)FindResource("DriveNameCell"):fileNameCell;
+        NameColumn.CellTemplate=drives?(DataTemplate)FindResource("DriveNameCell"):NestingShown?(DataTemplate)FindResource("NestNameCell"):fileNameCell;
         applyingColumns=true;
         try
         {

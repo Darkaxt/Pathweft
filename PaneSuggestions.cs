@@ -15,7 +15,7 @@ namespace FileExplorer;
 /// replace newer ones and never touch the draft, caret or focus.
 public partial class PaneView
 {
-    internal enum SuggestionKind { Tab, Pinned, SavedSearch, Recent, Completion }
+    internal enum SuggestionKind { Tab, Pinned, Alias, SavedSearch, Recent, Completion }
     internal sealed record Suggestion(SuggestionKind Kind, string Path, string Name, string Location, PaneView Pane = null, int TabIndex = -1, SavedSearch Search = null)
     {
         internal int Match;   // 0 name prefix, 1 name substring, 2 path substring, 3 recent (empty field)
@@ -68,6 +68,11 @@ public partial class PaneView
         }
         foreach (var (list, path) in PinnedFolders?.Invoke() ?? Enumerable.Empty<(string, string)>())
             Add(new(SuggestionKind.Pinned, path, DisplayName(path), list + "  ·  " + Location(path)), DisplayName(path), path);
+        // OPUS-07: @name rows for a text starting with @ (an alias's name is matched without its @)
+        if (query.StartsWith('@'))
+            foreach (var alias in Aliases.All)
+                if (alias.Name.StartsWith(query[1..], StringComparison.OrdinalIgnoreCase))
+                    found.Add(new(SuggestionKind.Alias, alias.Target, "@" + alias.Name, "Alias  ·  " + alias.Target) { Match = 0, Recency = int.MaxValue });
         foreach (var search in SavedSearches.All)
             Add(new(SuggestionKind.SavedSearch, null, search.Name, $"Saved search  ·  {search.Query} in {search.ScopeText}", Search: search), search.Name, search.Query);
         foreach (var path in recent)
@@ -200,6 +205,7 @@ public partial class PaneView
         {
             case SuggestionKind.Tab: TabRequested?.Invoke(s.Pane, s.TabIndex); return;
             case SuggestionKind.SavedSearch: SavedSearchRequested?.Invoke(s.Search); return;
+            case SuggestionKind.Alias when !Directory.Exists(s.Path): Error?.Invoke($"Alias {s.Name} points to {s.Path}, which is missing or offline now"); return;
             default: Navigate(s.Path); FocusList(); return;
         }
     }

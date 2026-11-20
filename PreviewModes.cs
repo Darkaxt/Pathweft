@@ -114,6 +114,7 @@ public partial class MainWindow
         PreviewPinButton.ToolTip=pin;AutomationProperties.SetName(PreviewPinButton,pin);
         AutomationProperties.SetItemStatus(PreviewPinButton,previewPinned?"Pinned":"Following selection");
         PreviewPinButton.Tag=previewPinned?"on":null;PreviewPinButton.IsEnabled=sidePreview?.Entry!=null;
+        UpdateMarkButtons(); // OPUS-08
         string floating=previewMode==PreviewMode.Windowed?"Return preview to sidebar":"Open preview in a floating window";
         string pip=previewMode==PreviewMode.PictureInPicture?"Return preview to sidebar":"Picture in picture inside Pathweft";
         PreviewWindowButton.ToolTip=floating;AutomationProperties.SetName(PreviewWindowButton,floating);

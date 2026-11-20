@@ -210,6 +210,8 @@ public partial class MainWindow
             menu.Items.Add(new Separator());
             menu.Items.Add(Item("Clear history", "", "", ClearHistory));
         }
+        menu.Items.Add(new Separator());
+        menu.Items.Add(Item("Operation history…", "", "", ShowOperationHistory)); // OPUS-05
         menu.IsOpen = true;
     }
     /// The history menu and Settings > Privacy: recent folders and closed tabs only (BROWSE-02).

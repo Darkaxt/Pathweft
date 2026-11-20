@@ -1,6 +1,17 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.86 | 2026-11-20 | Workspaces, linked panes, collections and more
+
+- Workspaces (sidebar): save the open tabs of both panes under a name and bring them back later. A click replaces the unpinned tabs; a middle click adds them to the open ones.
+- Link panes (right-click a folder's background → Tools): going into a folder takes the other pane to the matching folder below its own root. If there is no matching folder, the other pane says so and stays where it is.
+- View → Expandable folders opens folders in place, indented below them. View → Flat view lists every file below the folder with its location. Copying items from folders below the one shown asks whether to keep their folder structure or put them all in one place.
+- Collections (sidebar): named lists of files from anywhere, kept between sessions. Add to collection is in the right-click menu, and the Drop bin can be saved as a collection. Removing an item from a collection never touches the file.
+- History → Operation history… lists the copies, moves, renames and deletes Pathweft carried out, with how each one ended. Each entry can open its folder, and Undo is offered while it is still possible.
+- Copy as table and Export listing… (CSV or TSV) write the rows and columns shown.
+- Path aliases: name a folder, then type @name in the address bar to go there.
+- Image marking: the preview's Mark button (M in Quick View) marks images, and the arrows beside it step through the marked ones.
+
 ## 1.1.85 | 2026-11-20 | Search popup leaves your windows alone
 
 - Ctrl+Alt+Space opens the search popup without bringing the Pathweft folder window forward, and closing the popup returns you to the program you were using.

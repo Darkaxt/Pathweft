@@ -154,16 +154,24 @@ public partial class PaneView
         var resolved=await Task.Run(()=>
         {
             string raw=Environment.ExpandEnvironmentVariables(text.Trim('"'));
-            if(raw.Equals("This PC",StringComparison.OrdinalIgnoreCase)||raw.Equals("My PC",StringComparison.OrdinalIgnoreCase))return(Path:ThisPC,Folder:true);
+            if(raw.Equals("This PC",StringComparison.OrdinalIgnoreCase)||raw.Equals("My PC",StringComparison.OrdinalIgnoreCase))return(Path:ThisPC,Folder:true,Missing:(string)null);
             if(raw=="~"||raw.StartsWith("~\\")||raw.StartsWith("~/"))raw=Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)+raw[1..];
             try
             {
                 var basis=IsVirtual(origin)||IsServer(origin)?Environment.GetFolderPath(Environment.SpecialFolder.UserProfile):origin;
                 string path=Path.GetFullPath(raw,basis);
                 var attributes=File.GetAttributes(path);
-                return(Path:path,Folder:(attributes&FileAttributes.Directory)!=0);
+                return(Path:path,Folder:(attributes&FileAttributes.Directory)!=0,Missing:(string)null);
             }
-            catch(Exception error)when(error is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException or System.Security.SecurityException){return(Path:(string)null,Folder:false);}
+            catch(Exception error)when(error is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException or System.Security.SecurityException){}
+            // OPUS-07: @name, only when no real file or folder answers to the text
+            if(Aliases.Expand(raw) is {} alias)
+            {
+                try{var attributes=File.GetAttributes(alias.Path);return(Path:alias.Path,Folder:(attributes&FileAttributes.Directory)!=0,Missing:(string)null);}
+                catch(Exception error)when(error is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException or System.Security.SecurityException)
+                {return(Path:(string)null,Folder:false,Missing:$"Alias @{alias.Alias.Name} points to {alias.Path}, which is missing or offline now");}
+            }
+            return(Path:(string)null,Folder:false,Missing:(string)null);
         });
         // A same-folder metadata reread may supersede an old listing, but it
         // does not supersede an address the user has just submitted.
@@ -174,6 +182,7 @@ public partial class PaneView
             else Navigate(Path.GetDirectoryName(resolved.Path),Path.GetFileName(resolved.Path));
             EndEditPath();
         }
+        else if(resolved.Missing!=null){Error?.Invoke(resolved.Missing);return;} // the draft stays in the field
         else{Search(text);await SearchCompletion;}
         if(IsKeyboardFocusWithin)FocusList();
         }
@@ -329,6 +338,7 @@ public partial class PaneView
         indexedCancellation?.Cancel();
         indexedSearch = false;
         searching = false;
+        listMode = null;
         MoreResults.Visibility = SearchCoverage.Visibility = Visibility.Collapsed;
     }
 
