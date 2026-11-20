@@ -1,6 +1,6 @@
 # Pathweft specification
 
-Version 1.45 - 2026-11-19. Owner: Darkaxt.
+Version 1.46 - 2026-11-20. Owner: Darkaxt.
 
 ### Read-only MCP expansion (S48)
 
@@ -2617,6 +2617,14 @@ browsing, collections, operation history and listing export first; aliases,
 image marking and batch metadata afterward. Lower priority does not remove any
 registered requirement from S22 acceptance. Existing S20/S21 features remain
 with their current owners and are not duplicate implementations in S22.
+
+Owner decision 2026-11-20 (spec 1.46): S22 implements OPUS-01..08: workspaces,
+paired navigation, expandable/flat browsing, collections, operation history and
+listing export as its body, with aliases and image marking in the same stage.
+OPUS-09 (batch embedded-metadata editing and timestamps) moves to its own stage,
+S58, after S22 and before S6; S58 establishes its format/property matrix first.
+OPUS-10's verification and single final release apply to OPUS-01..08 in S22 and,
+separately, to OPUS-09 in S58. No requirement is removed.
 
 Behavior references: [tab groups](https://docs.dopus.com/doku.php?id=preferences:preferences_categories:folder_tabs:groups),
 [navigation lock](https://docs.dopus.com/doku.php?id=basic_concepts:the_lister:dual_display:navigation_lock),
