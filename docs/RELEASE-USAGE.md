@@ -211,6 +211,16 @@ use Everything; an Everything installation of your own keeps running untouched.
 Query syntax: wildcards, quotes, space for AND, | for OR, ! for NOT, < > groups,
 path:, nopath:, parent:, file:, folder:, ext:, size:, dm:, dc:, case:, ww:, wfn:
 and regex:. Other functions are refused with a message.
+Content search (1.1.84): the command bar's Index contents button adds the folder shown, with its
+subfolders, to the service's content index. A Pathweft worker below normal priority reads text files
+and the documents its Craft cores open (Word, PDF and the others) and sends their words to the
+service; images, media and binary files are marked not indexable, and cloud placeholders are not
+downloaded. content:word, content:"two words" and content:pre* find files by their contents and
+combine with every other filter; results show where the match is (near line N, page N, paragraph N)
+and Open at line opens a text match at its line. Files show a content badge; Settings lists the
+indexed folders with their counts and store size. Pressing the button again removes that folder's
+content index; files are never changed. The store is kept by the service in
+ProgramData\Pathweft\services\file_index\content.
 The single address/search field resolves existing paths first on Enter, then
 searches the index in the current folder. Search from This PC for all indexed
 files. Four inline switches control case, whole words, path matching and Regex.

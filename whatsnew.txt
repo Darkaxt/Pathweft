@@ -1,6 +1,12 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.84 | 2026-11-20 | Search inside files of the folders you choose
+
+- Index contents (command bar) indexes the text inside the files of the folder shown and its subfolders: text, logs, JSON, Word, PDF and the other documents Pathweft opens. It runs in the background at low priority and keeps up as files change.
+- Search with content:word in the address bar, together with any other filter. Results say where the word was found, and right-click → Open at line opens a text file at the matching line.
+- Files in an indexed folder show whether their contents are indexed. Settings → Windows integration lists the indexed folders with their counts and the index size; pressing Index contents again stops indexing and removes that folder's content index. Your files are never changed.
+
 ## 1.1.83 | 2026-11-19 | Index service inside Pathweft's folder
 
 - The Pathweft index service now runs from Pathweft's own folder (Program Files\Pathweft\services\file_index) instead of a separate PathweftIndex copy. The update moves it, keeps your indexed folder roots and removes the old copy.
