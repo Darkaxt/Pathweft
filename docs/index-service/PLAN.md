@@ -388,3 +388,27 @@ Source ready for validation (2026-11-20), not yet compiled or tested:
 - Checks to run through the Rust gate: `cargo test`, `cargo build --release`,
   then an end-to-end console-instance test (scope, work, query, change, move,
   delete, remove) on a scratch folder.
+
+Validation (2026-11-20), Rust gate ticket f8e5e6a3 (renews cd5fe818):
+- First `cargo test` (workflow 9f180326) did not compile: `prepare_cached`
+  needs rusqlite's cache feature. Corrected in a70b026.
+- `cargo test` passed 48/48 (workflow c32d80d3) and the release build had 0
+  warnings (4d4aa5c3).
+- End-to-end on a private console instance (pipe pwis10, `--volumes ""`,
+  `--content-dir` under E:\Temp; `E:\Temp\pwindex-is10\e2e.py`): 27/28.
+  Content did not answer right after a restart: the startup reconcile marked
+  the files unavailable while the folder root waited for its user, and the
+  next reconcile was 60 s away. A first fix (quick retry only while
+  "loading", e4b8a06) missed the waiting-for-user state; it failed the same
+  way (release 401b2fa3). Fixed in ef02295: the loop reconciles within 2 s of
+  any store becoming ready.
+- Final: `cargo test` 48/48 (8e9e7d42), release 0 warnings (8740e040), end
+  to end 28/28: scope add and covered scope, reconcile, the reference worker
+  (4 indexed, 1 unsupported), content: word, prefix, phrase, negation and
+  ext: combination, locations, change → stale with old terms answering →
+  re-read, move kept without re-read, delete purged, content_state (direct
+  files), restart persistence, scope remove purge.
+- Not yet verified: integration with Pathweft's worker (S19b) against a console
+  instance; the protected store folder and the reconcile under the installed
+  service (needs a Pathweft release; no mutation of the installed service from
+  here). IS10 stays ACTIVE until the Pathweft integration passes.
