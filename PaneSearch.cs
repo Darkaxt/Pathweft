@@ -281,7 +281,7 @@ public partial class PaneView
                     Name = System.IO.Path.GetFileName(hit.Path), Path = hit.Path, IsDir = hit.IsFolder,
                     Size = hit.Size, Modified = hit.Modified,
                     Location = System.IO.Path.GetDirectoryName(hit.Path) ?? "", IsCut = CutPaths.Contains(hit.Path),
-                    Matches = hit.Locations, MatchTerms = hit.Locations == null ? null : Search.ContentExtractors.Terms(indexedExpression),
+                    Matches = hit.Locations, MatchTerms = hit.Locations == null ? null : FileExplorer.Search.ContentExtractors.Terms(indexedExpression),
                 });
             }
             searchNotice = IndexServiceClient.Engine + (page.Updating ? " · updating; some drives or folders are still being indexed." : " · Unindexed locations may be absent.");
