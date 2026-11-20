@@ -1,34 +1,15 @@
 # Content index and hash cache: design draft
 
-Status: UNDER DISCUSSION (2026-11-19). The S19 design is disputed.
+Status: SUPERSEDED for S19 by SPEC IDX-15..19 and PROTOCOL version 2
+(2026-11-20, IS10). Owner decision (2026-11-19): "the database with the file
+paths and the file contents should be stored together. For speed C: makes more
+sense if we can keep, as per our design, the contents index under control."
+The service owns the store (SQLite FTS5, terms and locations only, beside the
+file index on C:). Pathweft's user-context worker reads and may hydrate files;
+the service never does.
 
-Relayed by the Pathweft thread as the owner's words: "Service owns what runs in
-the service side, you own what runs in your side". It does not say where the
-content store lives.
-
-The Pathweft thread recorded the store as Pathweft's: FTS5 contentless in
-Pathweft's data folder, written as the user (CONTENT-03 unchanged). Under that
-design S19 needs **no new service operations**: Pathweft compares each scope
-with ordinary `query` results and evaluates `content:` itself.
-
-**Provenance disputed.** The owner says he does not think he requested that
-design. The store location is not traceable to his words. His earlier
-direction to this thread was: "I estimate that in the future, this same
-service should take over the selective file contents indexing, but that
-feature is not yet in development". The alternative under discussion with the
-Pathweft thread is a service-owned store with the extractor in Pathweft.
-
-If the Pathweft-owned store is confirmed, these items are dropped:
-- Every `content_*` and content-scope operation.
-- The service-owned store and Tantivy.
-- Storing extracted text.
-- The "never hydrate" rule for the worker. CONTENT-04 lets the user-context
-  worker hydrate; the service itself still never reads contents or hydrates.
-- The CIX-07 visibility check, which is moot because the store belongs to the
-  user.
-
-The SHA-256 dedup, the hash cache (CIX-10) and `dupe:` (CIX-11) remain
-post-S19 options, each needing its own owner go-ahead.
+Not part of IS10: Tantivy, stored text, content-hash dedup, the hash cache
+(CIX-10) and `dupe:` (CIX-11). Each needs its own owner go-ahead.
 
 The rest of this file is the earlier draft, kept unchanged for reference.
 

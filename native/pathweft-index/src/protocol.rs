@@ -1,4 +1,4 @@
-//! Pipe protocol, version 1.
+//! Pipe protocol, version 2 (version 1 plus the content index ops).
 //!
 //! Every message is a frame: a 4-byte little-endian payload length followed by
 //! that many bytes of UTF-8 JSON. The client sends one `Request` per frame and
@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 use std::io::{self, Read, Write};
 
 pub const PIPE_NAME: &str = r"\\.\pipe\PathweftIndex";
-pub const PROTOCOL_VERSION: u32 = 1;
+pub const PROTOCOL_VERSION: u32 = 2;
 pub const MAX_FRAME: usize = 64 << 20;
 pub const MAX_COUNT: u32 = 100_000;
 
@@ -27,6 +27,83 @@ pub enum Request {
     },
     FolderRemove { path: String },
     Rescan { target: String },
+    ContentScopeAdd { path: String },
+    ContentScopeRemove { path: String },
+    ContentScopes,
+    ContentNext {
+        #[serde(default)]
+        count: u32,
+        #[serde(default)]
+        version: u32,
+    },
+    ContentPut {
+        id: i64,
+        #[serde(default)]
+        version: u32,
+        read: Stamp,
+        after: Stamp,
+        #[serde(default)]
+        chunks: Vec<ContentChunk>,
+        #[serde(default, rename = "final")]
+        last: bool,
+    },
+    ContentFail {
+        id: i64,
+        #[serde(default)]
+        version: u32,
+        read: Stamp,
+        #[serde(default)]
+        error: String,
+        #[serde(default)]
+        unsupported: bool,
+    },
+    ContentState { folder: String },
+    ContentStatus,
+}
+
+/// A file's size and modified time (UTC FILETIME, 0 unknown) as the worker saw it.
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct Stamp {
+    pub size: u64,
+    pub modified: u64,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Default, PartialEq)]
+pub struct ContentChunk {
+    /// Stored as sent and returned in query hits.
+    #[serde(default)]
+    pub location: serde_json::Value,
+    pub text: String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Default, PartialEq)]
+pub struct ContentScope {
+    pub path: String,
+    pub added: u64,
+    pub reconciled: u64,
+    pub error: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Default, PartialEq)]
+pub struct ContentScopeStatus {
+    pub path: String,
+    pub files: u64,
+    pub pending: u64,
+    pub current: u64,
+    pub stale: u64,
+    pub failed: u64,
+    pub unsupported: u64,
+    pub unavailable: u64,
+    pub reconciled: u64,
+    pub error: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Default, PartialEq)]
+pub struct ContentStatus {
+    pub scopes: Vec<ContentScopeStatus>,
+    pub store_bytes: u64,
+    /// Pending files, and stale files without an error: work for the worker.
+    pub waiting: u64,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -55,6 +132,8 @@ pub struct QueryRequest {
     pub regex: bool,
     /// Drop matches the caller cannot list before counting and paging.
     pub visible_only: bool,
+    /// With `content:` terms: up to this many matching locations per hit.
+    pub locations: u32,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default, PartialEq)]
@@ -68,6 +147,9 @@ pub struct Hit {
     pub modified: u64,
     pub created: u64,
     pub attributes: u32,
+    /// Matching content locations, when the query asked for them.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub locations: Option<Vec<serde_json::Value>>,
 }
 
 fn visible_default() -> bool {
@@ -131,6 +213,13 @@ pub struct Response {
     pub sizes: Option<Vec<FolderSize>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<Status>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub scopes: Option<Vec<ContentScope>>,
+    /// `content_next` work items or `content_state` entries.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub files: Option<Vec<serde_json::Value>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub content: Option<ContentStatus>,
 }
 
 impl Response {
@@ -209,5 +298,32 @@ mod tests {
         assert!(matches!(sizes, Request::FolderSizes { .. }));
         let status: Request = serde_json::from_str(r#"{"op":"status"}"#).unwrap();
         assert!(matches!(status, Request::Status));
+    }
+
+    #[test]
+    fn content_ops_parse_as_documented() {
+        let put: Request = serde_json::from_str(
+            r#"{"op":"content_put","id":17,"version":3,"read":{"size":2048,"modified":5},"after":{"size":2048,"modified":5},
+                "chunks":[{"location":{"line":1,"column":1,"offset":0},"text":"first lines"}],"final":true}"#,
+        )
+        .unwrap();
+        match put {
+            Request::ContentPut { id, version, read, chunks, last, .. } => {
+                assert_eq!((id, version, read.size, last), (17, 3, 2048, true));
+                assert_eq!(chunks[0].location["line"], 1);
+            }
+            _ => panic!(),
+        }
+        let next: Request = serde_json::from_str(r#"{"op":"content_next","count":50,"version":3}"#).unwrap();
+        assert!(matches!(next, Request::ContentNext { count: 50, version: 3 }));
+        let fail: Request = serde_json::from_str(r#"{"op":"content_fail","id":18,"version":3,"read":{"size":1,"modified":1},"error":"encrypted PDF","unsupported":false}"#).unwrap();
+        assert!(matches!(fail, Request::ContentFail { id: 18, unsupported: false, .. }));
+        for op in ["content_scopes", "content_status"] {
+            serde_json::from_str::<Request>(&format!(r#"{{"op":"{op}"}}"#)).unwrap();
+        }
+        let q: Request = serde_json::from_str(r#"{"op":"query","query":"content:invoice","locations":5}"#).unwrap();
+        assert!(matches!(q, Request::Query(QueryRequest { locations: 5, .. })));
+        let hit = serde_json::to_string(&Hit::default()).unwrap();
+        assert!(!hit.contains("locations"), "absent unless asked for");
     }
 }

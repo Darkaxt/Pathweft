@@ -1,4 +1,4 @@
-# Pathweft index service: pipe protocol, version 1
+# Pathweft index service: pipe protocol, version 2
 
 Pipe: `\\.\pipe\PathweftIndex` (local only; remote clients and network logons
 are rejected; SYSTEM and the configured users, by default the user who ran
@@ -48,8 +48,8 @@ inclusive) or `>`, `>=`, `<`, `<=`, `=` one of those. Days are local-time days
 never matches. `parent:<folder>` matches the folder's direct children only
 (a drive, a folder-root path or a UNC root also works); a folder that is not
 indexed matches nothing.
-Anything else (`dupe:`, `content:` ...) is an error, never a silently different
-result.
+`content:` is described under version 2 below. Anything else (`dupe:` ...) is an
+error, never a silently different result.
 
 ## Response
 
@@ -105,3 +105,49 @@ var len = new byte[4]; await pipe.ReadExactlyAsync(len, ct);
 var reply = new byte[BitConverter.ToInt32(len)]; await pipe.ReadExactlyAsync(reply, ct);
 using var doc = JsonDocument.Parse(reply);
 ```
+
+## Version 2: content index (SPEC IDX-15..19)
+
+`status.protocol` is 2. A version-1 service answers these ops with
+`bad request: unknown variant`; clients check the protocol first.
+
+```json
+{"op":"content_scope_add","path":"D:\\Docs"}
+{"op":"content_scope_remove","path":"D:\\Docs"}
+{"op":"content_scopes"}
+{"op":"content_next","count":50,"version":3}
+{"op":"content_put","id":17,"version":3,
+ "read":{"size":2048,"modified":133700000000000000},
+ "after":{"size":2048,"modified":133700000000000000},
+ "chunks":[{"location":{"line":1,"column":1,"offset":0},"text":"first lines ..."}],
+ "final":true}
+{"op":"content_fail","id":18,"version":3,"read":{"size":1,"modified":1},
+ "error":"encrypted PDF","unsupported":false}
+{"op":"content_state","folder":"D:\\Docs"}
+{"op":"content_status"}
+{"op":"query","query":"content:invoice ext:pdf","count":50,"locations":5}
+```
+
+Replies:
+- `content_next`: `{"ok":true,"files":[{"id":17,"path":"D:\\Docs\\a.txt","size":2048,"modified":...}]}`.
+- `content_scopes`: `{"ok":true,"scopes":[{"path":...,"added":...,"reconciled":...,"error":null}]}`.
+- `content_state`: `{"ok":true,"files":[{"path":...,"state":"current","indexed":...,"error":null}]}`.
+  States: `pending`, `current`, `stale`, `failed`, `unsupported`, `unavailable`.
+- `content_status`:
+  `{"ok":true,"content":{"scopes":[{"path":...,"files":N,"pending":N,"current":N,"stale":N,"failed":N,"unsupported":N,"unavailable":N,"reconciled":...,"error":null}],"store_bytes":N,"waiting":N}}`.
+- Query hits from a query with `locations` carry `"locations":[{...}, ...]`:
+  the stored location objects of up to that many matching chunks.
+
+`content:` arguments:
+- `content:word`: the word.
+- `content:pre*`: a prefix.
+- `content:"two words"`: a phrase.
+- A bare `content:two words` takes only `two`; quote phrases.
+
+Matching is case- and diacritic-insensitive. Content matches the caller cannot
+read are dropped (IDX-18). A query with `content:` on an instance without a
+content index is an error.
+
+Locations are whatever the worker sent. Pathweft's convention:
+- text: `{"line":N,"column":N,"offset":bytes}` (1-based line);
+- Office and PDF: the Craft fields plus `"engine":1`.

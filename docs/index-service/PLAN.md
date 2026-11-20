@@ -15,6 +15,7 @@ is recorded in SPEC.md.
 | IS6 folder changes | Follow folder roots with change notifications while running (owner request 2026-11-18) | IDX-03 (live changes) | Unit tests; console-mode test on a local folder root; installed service log on the real roots |
 | IS7 adaptive checks | Per-folder adaptive re-listing, 15 min to 6 h, replacing the fixed full rescan (owner request 2026-11-18) | IDX-03 (scheduled checks) | Unit tests; console-mode test with a short schedule; installed service log (schedule summary, changes found by a scheduled check on the share) |
 | IS8 query additions | `dm:`/`dc:` date filters and `parent:` (Pathweft thread request 2026-11-19, to replace Everything completely) | IDX-05 (dates, parent) | Unit tests; installed service queries |
+| IS10 content index | S19 part b, owner decisions 2026-11-19: service-owned terms store beside the file index on C:, content scopes, change tracking from the name index, worker ops, `content:` with read-access filtering, reference worker in `pwindex` | IDX-15..19 | Unit tests and release build through the gate; console-instance end-to-end with the reference worker; installed service after Pathweft's release |
 | IS9 install layout | S19 part (a), owner decision 2026-11-19: run in place from `Program Files\Pathweft\services\file_index`, data in `ProgramData\Pathweft\services\file_index`, migrate the old layout, add `stop` | IDX-01 | Unit tests and release build through the gate; the installed upgrade by Pathweft 1.1.83 setup (`sc qc`, `status`, folder roots kept, no `PathweftIndex` folders left) |
 
 ## Ledger
@@ -30,7 +31,8 @@ is recorded in SPEC.md.
 | IS7 | COMPLETE | – | – | IS7 record below |
 | IS8 | COMPLETE | – | – | IS8 record below |
 | FIX1 | COMPLETE | – | – | FIX1 record below |
-| IS9 | ACTIVE | – | – | IS9 record below; installed upgrade pending Pathweft 1.1.83 |
+| IS9 | COMPLETE | – | – | IS9 record below |
+| IS10 | ACTIVE | – | – | IS10 record below |
 
 ## IS1 readiness record (2026-11-18)
 
@@ -339,3 +341,74 @@ dbe801a3), release build 0 warnings (46722777). Release SHA-256:
 pathweft-indexd.exe 963fda5e…c109, pwindex.exe 7a962c84…a5ae,
 pathweft_index.dll 3bc7b07c…2112. Still to verify: the installed upgrade from
 1.1.82 through Pathweft 1.1.83 setup.
+
+Installed (2026-11-20): the owner upgraded Pathweft 1.1.82 to 1.1.83 (tag
+v1.1.83 = 6b62885, which merges 2e46d75). The Pathweft thread reported the
+result, and this thread checked it independently:
+- `sc qc PathweftIndex`: AUTO_START, binary
+  `"C:\Program Files\Pathweft\services\file_index\pathweft-indexd.exe" service`.
+- `pwindex status` from the new folder answers (protocol 1). The stores are
+  loading and becoming ready.
+- `C:\Program Files\PathweftIndex` and `C:\ProgramData\PathweftIndex` are gone.
+- `C:\ProgramData\Pathweft\services\file_index` holds config.json and
+  service.log.
+- The everything-search skill copies (the Claude plugin cache, the marketplace
+  and Codex) now point at the new pwindex path. A skill query answered from
+  the pathweft-index backend.
+
+## IS10 record (content index, S19 part b)
+
+Specified in SPEC IDX-15..19 and PROTOCOL version 2. The design was agreed with
+the Pathweft thread on 2026-11-19/20:
+- its schema;
+- states 0-5;
+- staged publish;
+- global scopes;
+- SYSTEM/Administrators-only store ACL;
+- read-access filtering;
+- no terms or snippets in replies.
+
+Change from what was offered: no NTFS file-reference column. The name index does
+not keep the reverse key map, so moves use the extension/size/modified
+heuristic on all stores.
+
+Source ready for validation (2026-11-20), not yet compiled or tested:
+- `src/protocol.rs`: protocol 2, the content ops and types,
+  `QueryRequest.locations`, `Hit.locations`.
+- `src/query.rs`: the `Content` trait, `content:` terms, the read-access filter
+  for content queries, `subtree_files`.
+- `src/bin/pathweft-indexd/content.rs`: the SQLite/FTS5 store (rusqlite,
+  bundled), the scope rules, reconcile, the worker ops, the protected folder and
+  the reconcile thread.
+- `state.rs`, `service.rs`, `main.rs`, `pipe.rs`: the store opens in
+  `ProgramData\Pathweft\services\file_index\content` for the service and only
+  with `--content-dir` for a console instance; the pipe serves the ops.
+- `src/bin/pwindex.rs`: `content ...` commands, `query --locations N` and the
+  reference plain-text worker `content work`.
+- Checks to run through the Rust gate: `cargo test`, `cargo build --release`,
+  then an end-to-end console-instance test (scope, work, query, change, move,
+  delete, remove) on a scratch folder.
+
+Validation (2026-11-20), Rust gate ticket f8e5e6a3 (renews cd5fe818):
+- First `cargo test` (workflow 9f180326) did not compile: `prepare_cached`
+  needs rusqlite's cache feature. Corrected in a70b026.
+- `cargo test` passed 48/48 (workflow c32d80d3) and the release build had 0
+  warnings (4d4aa5c3).
+- End-to-end on a private console instance (pipe pwis10, `--volumes ""`,
+  `--content-dir` under E:\Temp; `E:\Temp\pwindex-is10\e2e.py`): 27/28.
+  Content did not answer right after a restart: the startup reconcile marked
+  the files unavailable while the folder root waited for its user, and the
+  next reconcile was 60 s away. A first fix (quick retry only while
+  "loading", e4b8a06) missed the waiting-for-user state; it failed the same
+  way (release 401b2fa3). Fixed in ef02295: the loop reconciles within 2 s of
+  any store becoming ready.
+- Final: `cargo test` 48/48 (8e9e7d42), release 0 warnings (8740e040), end
+  to end 28/28: scope add and covered scope, reconcile, the reference worker
+  (4 indexed, 1 unsupported), content: word, prefix, phrase, negation and
+  ext: combination, locations, change → stale with old terms answering →
+  re-read, move kept without re-read, delete purged, content_state (direct
+  files), restart persistence, scope remove purge.
+- Not yet verified: integration with Pathweft's worker (S19b) against a console
+  instance; the protected store folder and the reconcile under the installed
+  service (needs a Pathweft release; no mutation of the installed service from
+  here). IS10 stays ACTIVE until the Pathweft integration passes.

@@ -116,8 +116,8 @@ inclusive) or `>`, `>=`, `<`, `<=`, `=` one of those. Days are local-time days
 never matches. `parent:<folder>` matches the folder's direct children only
 (a drive, a folder-root path or a UNC root also works); a folder that is not
 indexed matches nothing.
-Unsupported functions (`dupe:`, `content:`, ...) return an explicit error, never
-a silently different result.
+`content:` is described in IDX-18. Unsupported functions (`dupe:`, ...) return an
+explicit error, never a silently different result.
 *Accept:* unit tests cover parsing and matching for every listed construct,
 including `IndexedQuery.Compose` output and `FolderExpression`; live parity on
 sample queries against Everything.
@@ -171,7 +171,8 @@ improvement over Everything, I accept whatever resources it may be using").
 file for data access. Volume reads cover only MFT records. Directory and security
 lookups use `FILE_FLAG_OPEN_REPARSE_POINT | FILE_FLAG_BACKUP_SEMANTICS |
 FILE_FLAG_OPEN_NO_RECALL` with no data access, so cloud placeholders are never
-hydrated. Scans use directory enumeration only. *Accept:* source inspection.
+hydrated. Scans use directory enumeration only. Content terms come only from
+the user's worker over the pipe (IDX-17). *Accept:* source inspection.
 
 **IDX-12 Measured comparison.** Report for the owner's drives: initial index time,
 memory, query latency during heavy churn, and result parity on sample queries,
@@ -187,6 +188,116 @@ thread is told the integration point is ready.
 `D:\Temp\pathweft-index`, exercising load, churn, USN application, forced
 re-read, folder sizes and a pipe round trip. *Accept:* self-test report all checks
 passed; VHDX detached and deleted afterwards.
+
+## Content index (IS10, S19 part b)
+
+Owner decisions (2026-11-19):
+- "Service owns what runs in the service side, you own what runs in your side"
+  (relayed by the Pathweft thread).
+- "the database with the file paths and the file contents should be stored
+  together. For speed C: makes more sense if we can keep, as per our design, the
+  contents index under control."
+
+Split:
+- Pathweft's worker (`Pathweft.exe` in worker mode, running as the user) reads
+  files, hydrating cloud files when needed (Pathweft CONTENT-04), and pushes
+  text chunks with source locations.
+- The service tracks which files need work, keeps the terms index and answers
+  `content:` inside its ordinary queries.
+- The service still never opens a file for data access (IDX-11). Text reaches
+  it only over the pipe, and it stores terms, not text.
+
+**IDX-15 Content scopes.**
+- `content_scope_add {path}` adds a folder that is indexed by a store (an NTFS
+  volume or a folder root). Scopes are global (one owner on this setup).
+- A scope inside an existing scope is already covered. A new scope absorbs the
+  scopes below it.
+- `content_scope_remove {path}` removes an exact scope. It purges the terms of
+  every file that no remaining scope covers.
+- `content_scopes` lists the scopes.
+- *Accept:* unit tests for absorb, covered and purge-with-overlap.
+
+**IDX-16 Change tracking from the name index.**
+- About once a minute, and right after a scope is added, each scope is compared
+  with the name index: path, size and modified time of every file below it.
+- New file: pending.
+- Changed stamp:
+  - a current file becomes stale, and its previous terms keep answering;
+  - a failed or unsupported file becomes pending.
+- File gone while its store is ready: if exactly one new file has the same
+  extension, size and modified time, it is treated as a move and keeps its
+  terms. Otherwise its terms are purged.
+- Store not ready (loading or its first scan, offline, in error, waiting for
+  its user): the scope's files become unavailable and keep their data.
+  Unavailable is never deleted. They return to their previous state once the
+  store is ready and the stamp is unchanged. A store that is re-reading or
+  rescanning still serves its previous tree and counts as ready. A scope folder
+  missing from a ready store makes its files unavailable with an error; it is
+  not a purge.
+- The comparison also runs within about 2 s of a store becoming ready (after a
+  start, its user's sign-in or a volume's return), so unavailable files answer
+  again without waiting for the minute.
+- Scopes are disjoint, so removing a scope purges exactly its files.
+- `content_state {folder}` lists the files directly in the folder, not
+  subfolders. `waiting` in the status counts pending files and stale files
+  without an error.
+- The content ops are open to every user the pipe admits; on this single-user
+  PC that is the owner (accepted).
+- *Accept:* unit tests for every transition; a console-instance test on a
+  folder root.
+
+**IDX-17 Worker protocol.**
+- `content_next {count, version}` returns files to read, each with
+  `{id, path, size, modified}`:
+  - pending and stale files;
+  - failed and unsupported files whose recorded extractor version is lower than
+    `version`.
+  A file handed out is not handed out again for 10 minutes unless it is
+  answered.
+- `content_put {id, version, read, after, chunks:[{location, text}], final}`:
+  - chunks are staged until `final`;
+  - on `final` the file's previous terms are replaced in one transaction, and the
+    stamp the worker read (`read`) is recorded as published;
+  - the file is current if `read`, `after` and the index's present stamp are all
+    equal, otherwise stale.
+  - Limits: 64 KiB per chunk, 64 MiB of text per file.
+- `content_fail {id, version, read, error, unsupported}`: a previously
+  published file stays stale with the error; otherwise it is failed or
+  unsupported.
+- *Accept:* unit tests for staging, publish, stale-on-change, fail and retry by
+  version; an end-to-end run with the reference worker in `pwindex`.
+
+**IDX-18 Content query and visibility.**
+- `content:` in the query language takes a word, a `prefix*` or a "phrase".
+  Several `content:` terms combine like other terms.
+- Matching uses SQLite FTS5 (unicode61, diacritics removed) over the chunks of
+  current and stale files.
+- A content match is returned only if the caller may read that file:
+  - NTFS: `FILE_READ_DATA` by `AccessCheck` on the file's own descriptor, cached
+    per security ID like IDX-08;
+  - folder roots: the root's owner only.
+  Content results are dropped, not flagged.
+- With `locations: N`, each hit carries up to N matching locations, as stored.
+  Text and terms are never returned.
+- `content_state {folder}` gives badge states for the folder's direct children
+  in scopes: pending, current, stale, failed, unsupported or unavailable, with
+  indexed time and error. It follows the folder's list access.
+- `content_status` reports, per scope, the counts per state, the last reconcile
+  and any error; also the store size in bytes and `waiting` (files ready for
+  the worker).
+- *Accept:* unit tests for term translation (no FTS syntax injection) and
+  visibility; a live query through a console instance.
+
+**IDX-19 Store.**
+- One SQLite database, `content\content.db`, in the service's data folder
+  (`%ProgramData%\Pathweft\services\file_index`, on C: by owner decision).
+- The `content` folder has a protected DACL: SYSTEM and Administrators only.
+- Tables, from Pathweft's draft: `scopes`, `files` (path, stamp, state, error,
+  published stamp, extractor version, indexed time), `chunks` (file, location
+  JSON) and a contentless FTS5 table `terms` with `contentless_delete=1`.
+- Bounded memory (16 MB page cache).
+- The private console instance uses `--content-dir` or has no content index.
+- *Accept:* status shows the size; ACL inspected on the installed service.
 
 ## Constraints carried from the brief
 
