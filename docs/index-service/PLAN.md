@@ -30,7 +30,7 @@ is recorded in SPEC.md.
 | IS7 | COMPLETE | – | – | IS7 record below |
 | IS8 | COMPLETE | – | – | IS8 record below |
 | FIX1 | COMPLETE | – | – | FIX1 record below |
-| IS9 | ACTIVE | – | – | IS9 record below; installed upgrade pending Pathweft 1.1.83 |
+| IS9 | COMPLETE | – | – | IS9 record below |
 
 ## IS1 readiness record (2026-11-18)
 
@@ -339,3 +339,17 @@ dbe801a3), release build 0 warnings (46722777). Release SHA-256:
 pathweft-indexd.exe 963fda5e…c109, pwindex.exe 7a962c84…a5ae,
 pathweft_index.dll 3bc7b07c…2112. Still to verify: the installed upgrade from
 1.1.82 through Pathweft 1.1.83 setup.
+
+Installed (2026-11-20): the owner upgraded Pathweft 1.1.82 to 1.1.83 (tag
+v1.1.83 = 6b62885, which merges 2e46d75). The Pathweft thread reported the
+result, and this thread checked it independently:
+- `sc qc PathweftIndex`: AUTO_START, binary
+  `"C:\Program Files\Pathweft\servicesile_index\pathweft-indexd.exe" service`.
+- `pwindex status` from the new folder answers (protocol 1). The stores are
+  loading and becoming ready.
+- `C:\Program Files\PathweftIndex` and `C:\ProgramData\PathweftIndex` are gone.
+- `C:\ProgramData\Pathweft\servicesile_index` holds config.json and
+  service.log.
+- The everything-search skill copies (the Claude plugin cache, the marketplace
+  and Codex) now point at the new pwindex path. A skill query answered from
+  the pathweft-index backend.
