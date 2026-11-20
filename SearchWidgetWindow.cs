@@ -26,7 +26,9 @@ internal sealed class SearchWidgetWindow : Window
     internal SearchWidgetWindow(MainWindow owner)
     {
         main = owner;
-        Owner = owner;
+        // Not owned by the main window: an owned window raises its owner when it activates and hands
+        // activation back to it when hidden, so Ctrl+Alt+Space brought the folder window forward.
+        // A tool window stays out of the taskbar and Alt+Tab; hiding it returns focus to the app in use.
 #if DEBUG
         HiddenTrialPresentation.Prepare(this);
 #endif
@@ -68,7 +70,12 @@ internal sealed class SearchWidgetWindow : Window
         Deactivated += (_, _) => DismissAfterDeactivation();
         Closing += (_, e) => { if (!closing) { e.Cancel = true; Dismiss(); } };
         Closed += (_, _) => Pane.StopWidgetWork();
-        SourceInitialized += (_, _) => MainWindow.ApplyAcrylic(this);
+        SourceInitialized += (_, _) =>
+        {
+            var hwnd = new System.Windows.Interop.WindowInteropHelper(this).Handle;
+            SetWindowLong(hwnd, -20, GetWindowLong(hwnd, -20) | 0x80); // WS_EX_TOOLWINDOW
+            MainWindow.ApplyAcrylic(this);
+        };
         DpiChanged += (_, change) =>
         {
             if (!ReferenceEquals(change.OriginalSource, this)) return;
@@ -127,6 +134,8 @@ internal sealed class SearchWidgetWindow : Window
         return false;
     }
     [DllImport("user32.dll")]static extern IntPtr GetForegroundWindow();
+    [DllImport("user32.dll",EntryPoint="GetWindowLongW")]static extern int GetWindowLong(IntPtr hwnd,int index);
+    [DllImport("user32.dll",EntryPoint="SetWindowLongW")]static extern int SetWindowLong(IntPtr hwnd,int index,int value);
     [DllImport("user32.dll")]static extern IntPtr GetWindow(IntPtr window,uint relation);
     internal void DismissAfterDeactivation() => Dispatcher.BeginInvoke(() =>
     {

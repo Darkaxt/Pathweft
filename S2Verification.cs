@@ -250,6 +250,10 @@ public partial class MainWindow
             var widget = taskbarSearch.Widget;
             var query = (TextBox)widget.Pane.FindName("FilterBox");
             check(widget.IsActive && query.IsKeyboardFocusWithin, "WIDGET-03 real global shortcut activates the widget and focuses its query");
+            // An owned popup raises its owner and returns activation to it when hidden: the folder window must stay where it was.
+            var widgetHandle = new System.Windows.Interop.WindowInteropHelper(widget).Handle;
+            check(widget.Owner == null && (NativeShortcut.GetWindowLong(widgetHandle, -20) & 0x80) != 0 && !IsActive,
+                "WIDGET-03 the shortcut popup is an unowned tool window, so the folder window is neither raised nor activated with it");
             // The shortcut's modifier-up events can still be queued when the
             // WM_HOTKEY handler shows the popup. Observe their actual processing.
             var released = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -307,6 +311,7 @@ public partial class MainWindow
         }
         [DllImport("user32.dll")] internal static extern short GetAsyncKeyState(int key);
         [DllImport("user32.dll")] internal static extern IntPtr GetForegroundWindow();
+        [DllImport("user32.dll", EntryPoint = "GetWindowLongW")] internal static extern int GetWindowLong(IntPtr hwnd, int index);
         [DllImport("user32.dll")] internal static extern bool SetForegroundWindow(IntPtr hwnd);
         [DllImport("user32.dll")] internal static extern bool IsWindow(IntPtr hwnd);
         [DllImport("user32.dll", SetLastError = true)] static extern uint SendInput(uint count, Input[] input, int size);

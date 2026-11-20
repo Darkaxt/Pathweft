@@ -1,6 +1,10 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.85 | 2026-11-20 | Search popup leaves your windows alone
+
+- Ctrl+Alt+Space opens the search popup without bringing the Pathweft folder window forward, and closing the popup returns you to the program you were using.
+
 ## 1.1.84 | 2026-11-20 | Search inside files of the folders you choose
 
 - Index contents (command bar) indexes the text inside the files of the folder shown and its subfolders: text, logs, JSON, Word, PDF and the other documents Pathweft opens. It runs in the background at low priority and keeps up as files change.
