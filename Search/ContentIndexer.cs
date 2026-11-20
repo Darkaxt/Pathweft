@@ -24,9 +24,10 @@ internal static class ContentIndexer
 
     internal static async Task<int> Run(int parent, string pipe = null)
     {
-        using var mutex = new Mutex(false, MutexName, out _);
-        try { if (!mutex.WaitOne(0)) return 0; }
-        catch (AbandonedMutexException) { }
+        // One worker per sign-in session: whoever creates the named object runs. A semaphore, not a mutex, because
+        // the work continues on pool threads; the object goes away with the last handle, also after a crash.
+        using var single = new Semaphore(0, 1, MutexName, out bool first);
+        if (!first) return 0;
         try
         {
             SetPriorityClass(new IntPtr(-1), 0x00100000); // PROCESS_MODE_BACKGROUND_BEGIN
@@ -38,7 +39,6 @@ internal static class ContentIndexer
         }
         catch (OperationCanceledException) { return 0; }
         catch (InvalidOperationException error) { Trace.WriteLine("Content indexer stopped: " + error.Message); return 1; }
-        finally { mutex.ReleaseMutex(); }
     }
 
     static async Task WatchParent(int parent, CancellationTokenSource stop)
