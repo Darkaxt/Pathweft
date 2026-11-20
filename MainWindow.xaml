@@ -479,6 +479,7 @@
           <!-- Tools -->
           <Button x:Name="TerminalCommand" Style="{StaticResource CompactCommand}" Click="Terminal_Click" ToolTip="Open terminal (Ctrl+`)" AutomationProperties.Name="Open terminal"><Image Width="16" Height="16" Source="{DynamicResource CommandIcon.Terminal}"/></Button>
           <Button x:Name="AnalyzeSpaceCommand" Style="{StaticResource CompactCommand}" Click="AnalyzeSpace_Click" ToolTip="Analyze space in this folder" AutomationProperties.Name="Analyze space"><Image Width="16" Height="16" Source="{DynamicResource CommandIcon.AnalyzeSpace}"/></Button>
+          <Button x:Name="IndexContentsCommand" Style="{StaticResource CompactCommand}" Click="IndexContents_Click" ToolTip="Index contents of this folder" AutomationProperties.Name="Index contents"><Image Width="16" Height="16" Source="{DynamicResource CommandIcon.IndexContents}"/></Button>
           <Button x:Name="PerformanceCommand" Style="{StaticResource CompactCommand}" Click="Performance_Click" ToolTip="Show performance" AutomationProperties.Name="Show performance"><Image Width="16" Height="16" Source="{DynamicResource CommandIcon.Performance}"/></Button>
           <Button x:Name="MaintenanceCommand" Style="{StaticResource CompactCommand}" Click="Maintenance_Click" ToolTip="Maintenance" AutomationProperties.Name="Maintenance"><Image Width="16" Height="16" Source="{DynamicResource CommandIcon.Maintenance}"/></Button>
           <Border Style="{StaticResource CommandDivider}"/>

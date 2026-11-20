@@ -90,6 +90,15 @@ public sealed class EditorWindow : Window
     public static void Open(string path)
         => OpenPrepared(path);
 
+    /// <summary>CONTENT-05: opens a file at a line (a content search match), or moves its open tab's cursor there.</summary>
+    public static void OpenAt(string path, int line)
+    {
+        var fresh = instance == null;
+        if (fresh) { instance = new EditorWindow(); instance.RestoreSession(except: path); }
+        instance.AddFile(path, activate: true, line: Math.Max(1, line), column: 1, quiet: false, reveal: true);
+        Show(fresh);
+    }
+
     /// <summary>Automatic open: let the Windows association handle files this editor cannot read.</summary>
     public static bool TryOpen(string path)
     {
@@ -209,11 +218,15 @@ public sealed class EditorWindow : Window
     }
 #endif
 
-    void AddFile(string path, bool activate, int line, int column, bool quiet, (string Text, string Encoding)? prepared = null)
+    void AddFile(string path, bool activate, int line, int column, bool quiet, (string Text, string Encoding)? prepared = null, bool reveal = false)
     {
         path = Path.GetFullPath(path);
         var open = docs.FirstOrDefault(d => string.Equals(d.Value.Path, path, StringComparison.OrdinalIgnoreCase));
-        if (open.Value != null) { if (activate) Post(new JsonObject { ["type"] = "focus", ["id"] = open.Key }); return; }
+        if (open.Value != null)
+        {
+            if (activate) Post(reveal ? new JsonObject { ["type"] = "focus", ["id"] = open.Key, ["line"] = line, ["column"] = column } : new JsonObject { ["type"] = "focus", ["id"] = open.Key });
+            return;
+        }
         if ((prepared ?? Read(path, quiet)) is not { } read) return;
         var (text, encoding) = read;
         var id = nextId++;

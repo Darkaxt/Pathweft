@@ -345,6 +345,23 @@
               <Button x:Name="IndexUninstall" Content="Remove service" Style="{StaticResource Tab}" Click="IndexUninstall_Click"/>
             </WrapPanel>
             <TextBlock x:Name="IndexActionStatus" Style="{StaticResource Hint}" Margin="0,6,0,0" TextWrapping="Wrap" AutomationProperties.LiveSetting="Polite"/>
+            <StackPanel x:Name="ContentIndexPanel" Visibility="Collapsed">
+              <TextBlock Text="Indexed contents" FontWeight="SemiBold" Margin="0,12,0,6"/>
+              <TextBlock Style="{StaticResource Hint}" Text="Folders whose file contents are searchable with content:word in the address bar. Turn a folder on or off with the Index contents button. Pathweft reads the files in the background, fetching cloud files once; the index keeps words and their locations, not the text."/>
+              <TextBlock x:Name="ContentIndexStatus" TextWrapping="Wrap" Margin="0,6,0,4" AutomationProperties.Name="Content index status" AutomationProperties.LiveSetting="Polite"/>
+              <ItemsControl x:Name="ContentScopes" AutomationProperties.Name="Folders with indexed contents">
+                <ItemsControl.ItemTemplate><DataTemplate>
+                  <Grid Margin="0,0,0,4">
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="34"/></Grid.ColumnDefinitions>
+                    <StackPanel VerticalAlignment="Center">
+                      <TextBlock Text="{Binding Path}" TextTrimming="CharacterEllipsis" ToolTip="{Binding Path}"/>
+                      <TextBlock Text="{Binding Detail}" Style="{StaticResource Hint}" TextWrapping="Wrap"/>
+                    </StackPanel>
+                    <Button Grid.Column="1" Style="{StaticResource Ghost}" Padding="7,5" Content="&#xE74D;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" ToolTip="Stop indexing contents" AutomationProperties.Name="Stop indexing contents" Click="ContentScopeRemove_Click"/>
+                  </Grid>
+                </DataTemplate></ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </StackPanel>
           </StackPanel>
         </Border>
 

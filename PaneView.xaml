@@ -47,6 +47,24 @@
         </Grid>
       </Viewbox>
     </DataTemplate>
+    <!-- CONTENT-06: a folder whose contents are indexed shows each file's state at the icon's top-right, drawn like
+         the read-only lock: accent when indexed, amber waiting or changed, red failed, grey not indexable or offline. -->
+    <DataTemplate x:Key="ContentBadge">
+      <Viewbox IsHitTestVisible="False">
+        <Grid Width="24" Height="24">
+          <Ellipse Fill="{DynamicResource Palette.20242A}" Stroke="{Binding ContentBrush}" StrokeThickness="1.5"/>
+          <Ellipse Width="9" Height="9" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="6,5,0,0" Stroke="{Binding ContentBrush}" StrokeThickness="2.2"/>
+          <Path Stroke="{Binding ContentBrush}" StrokeThickness="2.6" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Data="M13.4,12.4 L17.4,16.4"/>
+        </Grid>
+      </Viewbox>
+    </DataTemplate>
+    <Style x:Key="ContentBadgeStyle" TargetType="ContentControl">
+      <Setter Property="ContentTemplate" Value="{StaticResource ContentBadge}"/>
+      <Setter Property="HorizontalAlignment" Value="Right"/>
+      <Setter Property="VerticalAlignment" Value="Top"/>
+      <Setter Property="IsHitTestVisible" Value="False"/>
+      <Setter Property="Visibility"><Setter.Value><Binding Path="HasContentBadge"><Binding.Converter><BooleanToVisibilityConverter/></Binding.Converter></Binding></Setter.Value></Setter>
+    </Style>
     <Style x:Key="ReadOnlyLockStyle" TargetType="ContentControl">
       <Setter Property="ContentTemplate" Value="{StaticResource ReadOnlyLock}"/>
       <Setter Property="HorizontalAlignment" Value="Right"/>
@@ -104,6 +122,7 @@
           <Image Source="{Binding DisplaySmallIcon}" RenderOptions.BitmapScalingMode="HighQuality"/>
           <Image Source="{Binding Overlay}" RenderOptions.BitmapScalingMode="HighQuality"/> <!-- sync badge (Google Drive, Nextcloud, ...) -->
           <ContentControl Tag="ReadOnlyLock" Content="{Binding}" Style="{StaticResource ReadOnlyLockStyle}" Width="8" Height="8"/>
+          <ContentControl Tag="ContentBadge" Content="{Binding}" Style="{StaticResource ContentBadgeStyle}" Width="8" Height="8"/>
         </Grid>
         <Grid>
           <!-- not hit-testable: a right-click landing on one of its Runs made the list drop a multi-selection -->
@@ -124,6 +143,7 @@
           <Image Source="{Binding DisplaySmallIcon}" RenderOptions.BitmapScalingMode="HighQuality"/>
           <Image Source="{Binding Overlay}"/>
           <ContentControl Content="{Binding}" Style="{StaticResource ReadOnlyLockStyle}" Width="8" Height="8"/>
+          <ContentControl Tag="ContentBadge" Content="{Binding}" Style="{StaticResource ContentBadgeStyle}" Width="8" Height="8"/>
         </Grid>
         <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
       </DockPanel>
@@ -196,6 +216,7 @@
           <Image Source="{Binding DisplayThumb}" Stretch="Uniform" StretchDirection="DownOnly" RenderOptions.BitmapScalingMode="HighQuality"/>
           <Image Source="{Binding Overlay}" Width="32" Height="32" HorizontalAlignment="Left" VerticalAlignment="Bottom" RenderOptions.BitmapScalingMode="HighQuality"/>
           <ContentControl Tag="ReadOnlyLock" Content="{Binding}" Style="{StaticResource ReadOnlyLockStyle}" Width="24" Height="24" Margin="2"/>
+          <ContentControl Tag="ContentBadge" Content="{Binding}" Style="{StaticResource ContentBadgeStyle}" Width="24" Height="24" Margin="2"/>
         </Grid>
         <Border Height="5" Width="34" CornerRadius="2.5" Background="{Binding AgeBrush}" Margin="0,4,0,3" HorizontalAlignment="Center"/>
         <Grid>
@@ -219,6 +240,7 @@
           <Image Source="{Binding DisplaySmallIcon}" RenderOptions.BitmapScalingMode="HighQuality"/>
           <Image Source="{Binding Overlay}" RenderOptions.BitmapScalingMode="HighQuality"/> <!-- sync badge (Google Drive, Nextcloud, ...) -->
           <ContentControl Tag="ReadOnlyLock" Content="{Binding}" Style="{StaticResource ReadOnlyLockStyle}" Width="8" Height="8"/>
+          <ContentControl Tag="ContentBadge" Content="{Binding}" Style="{StaticResource ContentBadgeStyle}" Width="8" Height="8"/>
         </Grid>
         <Grid>
           <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"><TextBlock.Visibility><Binding Path="NotRenaming"><Binding.Converter><BooleanToVisibilityConverter/></Binding.Converter></Binding></TextBlock.Visibility></TextBlock>

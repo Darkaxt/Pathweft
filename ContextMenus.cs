@@ -181,6 +181,10 @@ public partial class MainWindow
         }
         if (p.InSearch && one)
             m.Items.Add(Item("Open file location", "", "", () => { p.Navigate(Path.GetDirectoryName(first.Path), first.Name); p.FocusList(); }));
+        // CONTENT-05: a content hit in a text file opens in the editor at each matching line.
+        if (p.InSearch && one && !dir && first.Matches is { Count: > 0 } matches && EditorWindow.IsText(first.Path))
+            foreach (int line in matches.Select(Search.ContentExtractors.Line).OfType<int>().Distinct().Take(5))
+                m.Items.Add(Item($"Open at line {line}", "", "", () => EditorWindow.OpenAt(first.Path, line)));
         if (sel.Any(x => !x.IsDir)) m.Items.Add(Item("Edit", "", "F4", EditSelected));
         if (sel.Count == 2 && sel.All(x => !x.IsDir)) m.Items.Add(Item("Compare in editor", "", "", () => EditorWindow.Compare(sel[0].Path, sel[1].Path)));
         if (NotepadPlusPlus is { } npp && sel.Any(x => !x.IsDir))
@@ -249,7 +253,7 @@ public partial class MainWindow
         void Take(ItemsControl target,Func<MenuItem,bool> predicate){foreach(var item in remaining.Where(predicate).ToArray()){remaining.Remove(item);target.Items.Add(item);}}
         void Group(string name,string glyph,Func<MenuItem,bool> predicate){var group=Item(name,glyph,"",()=>{});Take(group,predicate);if(group.Items.Count>0)menu.Items.Add(group);}
         static bool Named(MenuItem item,params string[] labels)=>labels.Contains(item.Header as string);
-        Take(menu,item=>item.Tag==null&&(Named(item,"Open","Open in new tab","Open in other pane","Open file location")||(item.Header as string)?.StartsWith("Open in ")==true&&item.Header as string!="Open in File Explorer"));
+        Take(menu,item=>item.Tag==null&&(Named(item,"Open","Open in new tab","Open in other pane","Open file location")||(item.Header as string)?.StartsWith("Open at line ")==true||(item.Header as string)?.StartsWith("Open in ")==true&&item.Header as string!="Open in File Explorer"));
         OpenWithGroup(menu,remaining);
         Take(menu,item=>Named(item,"Run with PowerShell","Edit","Quick View"));
         menu.Items.Add(new Separator());

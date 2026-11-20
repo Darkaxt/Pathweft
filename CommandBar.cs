@@ -31,6 +31,47 @@ public partial class MainWindow
             AnalyzeSpaceCommand.ToolTip=active?.SpaceAnalyzing==true?"Restore the previous view":"Analyze space in this folder";
             System.Windows.Automation.AutomationProperties.SetItemStatus(AnalyzeSpaceCommand,active?.SpaceAnalyzing==true?"On":"Off");
         }
+        UpdateContentCommandState();
+    }
+    // CONTENT-01: indexes the contents of the folder shown and everything below it, or stops. Shown only when the
+    // index service has the content index (protocol 2). A folder inside an indexed folder is covered by it.
+    void UpdateContentCommandState()
+    {
+        if(IndexContentsCommand==null)return;
+        bool shown=Search.ContentIndexing.Available;
+        if(IndexContentsCommand.Visibility!=(shown?Visibility.Visible:Visibility.Collapsed)){IndexContentsCommand.Visibility=shown?Visibility.Visible:Visibility.Collapsed;UpdateCommandSpacing();}
+        if(!shown)return;
+        string folder=active?.CanIndexContents==true?active.Dir:null;
+        string scope=folder==null?null:Search.ContentIndexing.Covering(folder);
+        bool exact=scope!=null&&scope.Equals(Search.ContentIndexing.Normalize(folder),StringComparison.OrdinalIgnoreCase);
+        IndexContentsCommand.IsEnabled=!AnalysisVisible&&folder!=null&&(scope==null||exact);
+        IndexContentsCommand.Tag=scope!=null?"on":null;
+        IndexContentsCommand.ToolTip=folder==null?"Index contents (open a folder on a drive)"
+            :scope==null?"Index contents of this folder and its subfolders"
+            :exact?"Stop indexing contents of this folder"
+            :"Contents are indexed with "+scope;
+        System.Windows.Automation.AutomationProperties.SetItemStatus(IndexContentsCommand,scope!=null?"On":"Off");
+    }
+    async void IndexContents_Click(object sender,RoutedEventArgs args)
+    {
+        if(active?.CanIndexContents!=true)return;
+        string folder=Search.ContentIndexing.Normalize(active.Dir);
+        IndexContentsCommand.IsEnabled=false;
+        try
+        {
+            if(Search.ContentIndexing.Covering(folder) is { } scope)
+            {
+                await Search.ContentIndexing.Disable(scope);
+                Status.Text="Stopped indexing contents of "+scope+". Its content index was removed; the files are unchanged.";
+            }
+            else
+            {
+                await Search.ContentIndexing.Enable(folder);
+                Status.Text="Indexing contents of "+folder+" in the background. Search them with content:word in the address bar.";
+            }
+        }
+        catch(InvalidOperationException error){Status.Text="Content index: "+error.Message;}
+        finally{UpdateCommandStates();}
     }
     void CommandBar_SizeChanged(object sender,SizeChangedEventArgs args)=>UpdateCommandSpacing();
     async void AnalyzeSpace_Click(object sender,RoutedEventArgs args)

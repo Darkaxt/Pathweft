@@ -53,7 +53,10 @@ public class Entry : INotifyPropertyChanged
     public string FolderTarget => IsDir ? Path : !Path.EndsWith(".lnk", StringComparison.OrdinalIgnoreCase) || RemoteAddress.IsRemote(Path) ? null
         : (shortcutFolder ??= MainWindow.ShortcutFolder(Path) ?? "") is { Length: > 0 } t ? t : null;
     public string Location { get; init; } = ""; // search results: the folder it was found in, relative to where the search started
-    public string Where => Location == "" ? "" : "   in " + Location;
+    // CONTENT-05: a content search hit's match locations as stored (raw JSON), and how they read.
+    internal IReadOnlyList<string> Matches { get; init; }
+    string MatchText => Matches is { Count: > 0 } m ? string.Join(", ", m.Select(Search.ContentExtractors.Describe).Distinct()) : "";
+    public string Where => (Location == "" ? "" : "   in " + Location) + (MatchText.Length > 0 ? "   · " + MatchText : "");
 
     long size = -1; // -1 = folder size still computing, -2 = not measured (network shares)
     long lastMeasuredSize=-1;
@@ -161,6 +164,22 @@ public class Entry : INotifyPropertyChanged
     public event PropertyChangedEventHandler PropertyChanged;
     protected void Changed(string p) => PropertyChanged?.Invoke(this, new(p));
 
+    // CONTENT-06: the file's state in the content index, when its folder is indexed.
+    Search.ContentFile content;
+    internal Search.ContentFile Content
+    {
+        get => content;
+        set { if (content == value) return; content = value; Changed(nameof(HasContentBadge)); Changed(nameof(ContentBrush)); Changed(nameof(Tip)); }
+    }
+    public bool HasContentBadge => content != null && !IsDir;
+    public Brush ContentBrush => content?.State switch
+    {
+        Search.ContentState.Current => Application.Current?.TryFindResource("Accent") as Brush ?? MainWindow.Hex("#4CA6FF"),
+        Search.ContentState.Pending or Search.ContentState.Stale => MainWindow.Hex("#E6BE2A"),
+        Search.ContentState.Failed => MainWindow.Hex("#EF7777"),
+        _ => MainWindow.Hex("#9CA3AF"),
+    };
+
     static readonly Dictionary<string, (string, string)> Kinds = new(StringComparer.OrdinalIgnoreCase)
     {
         [".jpg"] = ("", "#EB78B4"), [".jpeg"] = ("", "#EB78B4"), [".png"] = ("", "#EB78B4"),
@@ -233,10 +252,11 @@ public class Entry : INotifyPropertyChanged
     // The hover tooltip, as Explorer's: the whole name (a long one is cut off in the row), then type, size, date.
     public string Tip => IsUp ? null : string.Join("\n", new[]
     {
-        Name, Message.Length>0?Message:null, IsReadOnly ? ReadOnlyReason : null, Location != "" ? "In: " + Location : null, "Type: " + Thumbnails.TypeName(Name, IsDir),
+        Name, Message.Length>0?Message:null, IsReadOnly ? ReadOnlyReason : null, Location != "" ? "In: " + Location : null, MatchText.Length > 0 ? "Content matches: " + MatchText : null, "Type: " + Thumbnails.TypeName(Name, IsDir),
         IsDrive?CapacityText:null,DriveConnection.Length>0?DriveConnection:null,DriveRawFormat.Length>0?"Reported filesystem: "+DriveRawFormat:null,DriveLocation.Length>0?DriveLocation:null,
         IsDrive?DrivePresentation.SpaceSource(DriveConnection,DriveCloudQuota,DriveMountTotal,DriveMountFree):null,
         DisplaySize >= 0 ? "Size: " + MainWindow.Fmt(DisplaySize) : null, SizeSource.Length>0?SizeSource:null, NoDate ? null : "Date modified: " + Modified.ToString("yyyy-MM-dd HH:mm:ss"),
+        content != null && !IsDir ? Search.ContentIndexing.Describe(content) : null,
     }.Where(line => line != null));
 }
 
@@ -367,8 +387,8 @@ public partial class PaneView : UserControl
         InitializeComponent();
         details = List.View;
         SetSort(sortKey, sortDesc);
-        Loaded += (_, _) => { ApplyStartView(); FolderProfiles.Changed += ProfilesChanged; FileNotes.Changed += NotesChanged; };
-        Unloaded += (_, _) => { FolderProfiles.Changed -= ProfilesChanged; FileNotes.Changed -= NotesChanged; };
+        Loaded += (_, _) => { ApplyStartView(); FolderProfiles.Changed += ProfilesChanged; FileNotes.Changed += NotesChanged; Search.ContentIndexing.Changed += ContentIndexChanged; };
+        Unloaded += (_, _) => { FolderProfiles.Changed -= ProfilesChanged; FileNotes.Changed -= NotesChanged; Search.ContentIndexing.Changed -= ContentIndexChanged; };
         List.GotKeyboardFocus += (_, _) => Activated?.Invoke();
         PreviewMouseDown += (_, _) => Activated?.Invoke(); // anywhere in the pane: tabs, path, list
         renameTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(GetDoubleClickTime()) };
@@ -710,6 +730,7 @@ public partial class PaneView : UserControl
                 Listed = true;
                 UpdateFooter();
                 StatsChanged?.Invoke();
+                RefreshContentStates();
                 StartPrefetch();
                 // at startup: after the window's first frame
             }, WindowShown ? DispatcherPriority.Normal : DispatcherPriority.Background);

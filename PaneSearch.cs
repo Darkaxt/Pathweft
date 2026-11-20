@@ -241,6 +241,10 @@ public partial class PaneView
         SearchCompletion = LoadIndexedPage(indexedCancellation.Token, navVersion);
     }
 
+    // CONTENT-05: a query with a content: term asks the service for up to this many match locations per file.
+    internal const int MatchLocations = 5;
+    internal static bool ContentQuery(string expression) => System.Text.RegularExpressions.Regex.IsMatch(expression, @"(^|[\s<|!])content:", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
     async Task LoadIndexedPage(CancellationToken token, int generation)
     {
         SearchLoading(generation);
@@ -251,7 +255,7 @@ public partial class PaneView
         try
         {
             var page = await IndexedSearch.QueryAsync(indexedExpression,
-                indexedOffset, SearchPageSize, sortKey, sortDesc, token);
+                indexedOffset, SearchPageSize, sortKey, sortDesc, token, ContentQuery(indexedExpression) ? MatchLocations : 0);
             if (token.IsCancellationRequested || generation != navVersion) return;
             // Inspect only the requested page. A separate raw cursor ensures a
             // fully hidden page cannot repeat or make paging stop prematurely.
@@ -277,6 +281,7 @@ public partial class PaneView
                     Name = System.IO.Path.GetFileName(hit.Path), Path = hit.Path, IsDir = hit.IsFolder,
                     Size = hit.Size, Modified = hit.Modified,
                     Location = System.IO.Path.GetDirectoryName(hit.Path) ?? "", IsCut = CutPaths.Contains(hit.Path),
+                    Matches = hit.Locations,
                 });
             }
             searchNotice = IndexServiceClient.Engine + (page.Updating ? " · updating; some drives or folders are still being indexed." : " · Unindexed locations may be absent.");

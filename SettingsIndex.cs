@@ -48,6 +48,44 @@ public partial class SettingsWindow
         IndexUninstall.Visibility = canInstall && IndexServiceSetup.Installed ? Visibility.Visible : Visibility.Collapsed;
         IndexActionStatus.Text = action ?? (Settings.Profile == null && !StartupTasks.ProtectedInstall
             ? "Installing the service needs the Program Files installation of Pathweft." : "");
+        await RefreshContentScopes(status, generation);
+    }
+
+    // CONTENT-01/03: the content scopes, their per-state counts and the store size, from the service.
+    internal sealed record ContentScopeRow(string Path, string Detail);
+    async Task RefreshContentScopes(IndexServiceStatus status, int generation)
+    {
+        if (status?.HasContentIndex != true) { ContentIndexPanel.Visibility = Visibility.Collapsed; return; }
+        ContentStatus content = null; string failure = null;
+        try { content = await IndexedSearch.Service.ContentStatusAsync(CancellationToken.None); }
+        catch (InvalidOperationException ex) { failure = ex.Message; }
+        if (generation != indexRefresh) return;
+        ContentIndexPanel.Visibility = Visibility.Visible;
+        if (content == null) { ContentIndexStatus.Text = failure ?? IndexServiceClient.NotRunning; ContentScopes.ItemsSource = null; return; }
+        ContentIndexStatus.Text = content.Scopes.Count == 0 ? "No folder's contents are indexed."
+            : $"{content.Scopes.Sum(s => s.Current):N0} files indexed · {MainWindow.Fmt(content.StoreBytes)} index" + (content.Waiting > 0 ? $" · {content.Waiting:N0} waiting" + (ContentIndexing.Running ? ", indexing" : "") : "");
+        ContentScopes.ItemsSource = content.Scopes.OrderBy(s => s.Path, StringComparer.OrdinalIgnoreCase).Select(s => new ContentScopeRow(s.Path, ScopeDetail(s))).ToList();
+    }
+
+    static string ScopeDetail(ContentScopeStatus s)
+    {
+        var parts = new List<string> { $"{s.Current:N0} of {s.Files:N0} files indexed" };
+        if (s.Pending > 0) parts.Add($"{s.Pending:N0} waiting");
+        if (s.Stale > 0) parts.Add($"{s.Stale:N0} changed");
+        if (s.Failed > 0) parts.Add($"{s.Failed:N0} failed");
+        if (s.Unsupported > 0) parts.Add($"{s.Unsupported:N0} not indexable");
+        if (s.Unavailable > 0) parts.Add($"{s.Unavailable:N0} unavailable");
+        parts.Add(s.Reconciled > 0 ? "checked " + ContentIndexing.When(s.Reconciled) : "not checked yet");
+        if (s.Error is { Length: > 0 } error) parts.Add(error);
+        return string.Join(" · ", parts);
+    }
+
+    async void ContentScopeRemove_Click(object sender, RoutedEventArgs e)
+    {
+        if ((sender as FrameworkElement)?.DataContext is not ContentScopeRow row) return;
+        IndexActionStatus.Text = "Working…";
+        try { await ContentIndexing.Disable(row.Path); await RefreshIndex($"Stopped indexing contents of {row.Path}. Its content index was removed; the files are unchanged."); }
+        catch (InvalidOperationException ex) { IndexActionStatus.Text = ex.Message; }
     }
 
 

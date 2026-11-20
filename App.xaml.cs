@@ -38,6 +38,15 @@ static class Program
         {Environment.ExitCode=PerformanceMcp.Run().GetAwaiter().GetResult();return;}
         if(args.Length==4&&args[0]=="--performance-io-worker")
         {Environment.ExitCode=PerformanceIoWorker.Run(args[1],int.Parse(args[2]),long.Parse(args[3])).GetAwaiter().GetResult();return;}
+        if(args.Length is 2 or 3&&args[0]=="--content-index-worker")
+        {
+#if DEBUG
+            string pipe=args.Length==3?args[2]:null; // verification: a fake index service
+#else
+            string pipe=null;
+#endif
+            Environment.ExitCode=Search.ContentIndexer.Run(int.Parse(args[1]),pipe).GetAwaiter().GetResult();return;
+        }
         if(args.Length==1&&args[0]=="--office-preview-worker")
         {Environment.ExitCode=Preview.OfficeWorker.Run().GetAwaiter().GetResult();return;}
         if(args.FirstOrDefault(a=>a.StartsWith("--relocate-profile=")) is { } relocation)
@@ -323,6 +332,7 @@ public partial class App : Application
         var sizeSaver = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMinutes(2) };
         sizeSaver.Tick += (_, _) => Task.Run(() => { SizeCache.SaveIfChanged(); HashCache.SaveIfChanged(); }); // off the UI thread: up to 50 000 lines
         sizeSaver.Start();
+        Search.ContentIndexing.Start(); // CONTENT-04: catches up on indexed folders shortly after the window is up
         base.OnStartup(e);
         var window = new MainWindow(); // opened here, not via StartupUri, so --agent etc. never build it
         if(e.Args.Contains("--storage-result"))window.ContentRendered+=(_,_)=>window.OpenStorageSettings();

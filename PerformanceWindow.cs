@@ -84,7 +84,7 @@ public partial class MainWindow
         bool files=!AnalysisVisible;
         var owner=files?null:maintenanceVisible?MaintenanceCommand:PerformanceCommand;
         foreach(var button in CommandButtons.Children.OfType<Button>())
-            if(button!=TransfersButton&&button!=AdministratorCommand&&button!=AnalyzeSpaceCommand)button.IsEnabled=files||button==owner;
+            if(button!=TransfersButton&&button!=AdministratorCommand&&button!=AnalyzeSpaceCommand&&button!=IndexContentsCommand)button.IsEnabled=files||button==owner;
         UpdateSpaceCommandState();
         MaintenanceCommand.Tag=maintenanceVisible?"on":null;
         UpdateAdministrator();

@@ -363,7 +363,12 @@
           tabs.push(t); activate(t);
           break;
         }
-        case 'focus': { const t = find(m.id); if (t) activate(t); break; }
+        case 'focus': {
+          const t = find(m.id); if (!t) break;
+          activate(t);
+          if (m.line) { const at = { lineNumber: m.line, column: m.column || 1 }; editor.setPosition(at); editor.revealPositionInCenter(at); }
+          break;
+        }
         case 'saved': {
           const t = find(m.id); if (!t) break;
           t.saved = m.version; t.forced = false; t.encoding = m.encoding; t.diskChanged = false;

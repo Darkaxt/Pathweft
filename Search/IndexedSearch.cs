@@ -2,7 +2,8 @@ using System.Collections.Generic;
 
 namespace FileExplorer.Search;
 
-internal sealed record IndexedHit(string Path, bool IsFolder, long Size, DateTime Modified, DateTime Created = default, uint? Attributes = null, bool Visible = true);
+// Locations: CONTENT-05, the stored location objects (raw JSON) of a content hit's matches.
+internal sealed record IndexedHit(string Path, bool IsFolder, long Size, DateTime Modified, DateTime Created = default, uint? Attributes = null, bool Visible = true, IReadOnlyList<string> Locations = null);
 // MCP-03: the es.exe-equivalent switches.
 internal sealed record SearchSwitches(bool MatchPath, bool MatchCase, bool WholeWord, bool Regex);
 // Updating: SEARCH-06, the index service is still loading or scanning a store.
@@ -32,11 +33,11 @@ internal static class IndexedSearch
         => page ?? throw new InvalidOperationException(service.LastConnectError is { Length: > 0 } error && error != IndexServiceClient.NotRunning ? error : Absent);
 
     // Pane and widget searches: columns Name, Size, Type or Modified; only what the user can open.
-    internal static async Task<IndexedPage> QueryAsync(string expression, uint offset, uint count, string column, bool descending, CancellationToken token)
+    internal static async Task<IndexedPage> QueryAsync(string expression, uint offset, uint count, string column, bool descending, CancellationToken token, int locations = 0)
     {
         string sort = column switch { "Name" => "name", "Size" => "size", "Type" => "extension", "Modified" => "modified", _ => throw new ArgumentException("The index cannot sort by that column. Choose Name, Size, Type or Modified.") };
         var service = Service;
-        return Answered(await service.QueryAsync(expression, offset, count, sort, descending, null, true, token).ConfigureAwait(false), service);
+        return Answered(await service.QueryAsync(expression, offset, count, sort, descending, null, true, token, locations).ConfigureAwait(false), service);
     }
 
     // MCP search: every match, each with its visibility flag.

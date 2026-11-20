@@ -4,6 +4,7 @@ using System.IO;
 using System.IO.Pipes;
 using System.Security.Principal;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace FileExplorer.Search;
 
@@ -70,7 +71,7 @@ internal sealed class IndexServiceClient(string pipeName)
                 {
                     string error = root.TryGetProperty("error", out var e) && e.ValueKind == JsonValueKind.String ? e.GetString() : "The index service refused the request.";
                     document.Dispose();
-                    throw new InvalidOperationException(error);
+                    throw new IndexServiceRefusedException(error);
                 }
                 return document;
             }
@@ -91,14 +92,17 @@ internal sealed class IndexServiceClient(string pipeName)
         }
     }
 
-    internal async Task<IndexedPage> QueryAsync(string expression, uint offset, uint count, string sort, bool descending, SearchSwitches switches, bool visibleOnly, CancellationToken token)
+    // locations > 0 (CONTENT-05, protocol 2): content hits carry up to that many stored match locations.
+    internal async Task<IndexedPage> QueryAsync(string expression, uint offset, uint count, string sort, bool descending, SearchSwitches switches, bool visibleOnly, CancellationToken token, int locations = 0)
     {
-        using var reply = await TryRequestAsync(new
+        var request = new JsonObject
         {
-            op = "query", query = expression, offset, count, sort, descending,
-            match_path = switches?.MatchPath ?? false, match_case = switches?.MatchCase ?? false,
-            whole_word = switches?.WholeWord ?? false, regex = switches?.Regex ?? false, visible_only = visibleOnly,
-        }, token).ConfigureAwait(false);
+            ["op"] = "query", ["query"] = expression, ["offset"] = offset, ["count"] = count, ["sort"] = sort, ["descending"] = descending,
+            ["match_path"] = switches?.MatchPath ?? false, ["match_case"] = switches?.MatchCase ?? false,
+            ["whole_word"] = switches?.WholeWord ?? false, ["regex"] = switches?.Regex ?? false, ["visible_only"] = visibleOnly,
+        };
+        if (locations > 0) request["locations"] = locations;
+        using var reply = await TryRequestAsync(request, token).ConfigureAwait(false);
         if (reply == null) return null;
         return Parsed(() =>
         {
@@ -110,7 +114,8 @@ internal sealed class IndexServiceClient(string pipeName)
                 long size = hit.GetProperty("size").GetInt64();
                 hits.Add(new(hit.GetProperty("path").GetString(), hit.GetProperty("folder").GetBoolean(), size < 0 ? -2 : size,
                     Time(hit, "modified"), Time(hit, "created"), hit.TryGetProperty("attributes", out var a) ? a.GetUInt32() : null,
-                    !hit.TryGetProperty("visible", out var v) || v.GetBoolean()));
+                    !hit.TryGetProperty("visible", out var v) || v.GetBoolean(),
+                    hit.TryGetProperty("locations", out var l) && l.ValueKind == JsonValueKind.Array ? l.EnumerateArray().Select(x => x.GetRawText()).ToList() : null));
             }
         ulong total = root.TryGetProperty("total", out var t) ? t.GetUInt64() : (ulong)hits.Count;
         return new IndexedPage(hits, (uint)Math.Min(total, uint.MaxValue), Engine, true, Updating(root));
@@ -155,6 +160,73 @@ internal sealed class IndexServiceClient(string pipeName)
         return reply == null ? null : Parsed(() => IndexServiceStatus.Parse(reply.RootElement.GetProperty("status")));
     }
 
+    // ---- Content index (CONTENT-01..05; service protocol 2, docs/index-service/PROTOCOL.md "Version 2") ----
+    internal Task ContentScopeAddAsync(string path, CancellationToken token) => Command(new { op = "content_scope_add", path }, token);
+    internal Task ContentScopeRemoveAsync(string path, CancellationToken token) => Command(new { op = "content_scope_remove", path }, token);
+
+    // Null when the service is absent.
+    internal async Task<List<ContentScope>> ContentScopesAsync(CancellationToken token)
+    {
+        using var reply = await TryRequestAsync(new { op = "content_scopes" }, token).ConfigureAwait(false);
+        return reply == null ? null : Parsed(() => reply.RootElement.GetProperty("scopes").EnumerateArray()
+            .Select(s => new ContentScope(Path.TrimEndingDirectorySeparator(s.GetProperty("path").GetString()), Long(s, "reconciled"), Str(s, "error"))).ToList());
+    }
+
+    internal async Task<List<ContentWork>> ContentNextAsync(int count, int version, CancellationToken token)
+    {
+        using var reply = await TryRequestAsync(new { op = "content_next", count, version }, token).ConfigureAwait(false);
+        if (reply == null) throw new InvalidOperationException(LastConnectError ?? NotRunning);
+        return Parsed(() => reply.RootElement.GetProperty("files").EnumerateArray()
+            .Select(f => new ContentWork(f.GetProperty("id").GetInt64(), f.GetProperty("path").GetString(), new ContentStamp(f.GetProperty("size").GetInt64(), f.GetProperty("modified").GetInt64()))).ToList());
+    }
+
+    internal Task ContentPutAsync(long id, int version, ContentStamp read, ContentStamp after, IReadOnlyList<(string Location, string Text)> chunks, bool final, CancellationToken token)
+    {
+        var array = new JsonArray();
+        foreach (var (location, text) in chunks) array.Add(new JsonObject { ["location"] = JsonNode.Parse(location), ["text"] = text });
+        return Command(new JsonObject
+        {
+            ["op"] = "content_put", ["id"] = id, ["version"] = version, ["read"] = Stamp(read), ["after"] = Stamp(after), ["chunks"] = array, ["final"] = final,
+        }, token);
+    }
+
+    internal Task ContentFailAsync(long id, int version, ContentStamp read, string error, bool unsupported, CancellationToken token)
+        => Command(new JsonObject { ["op"] = "content_fail", ["id"] = id, ["version"] = version, ["read"] = Stamp(read), ["error"] = error, ["unsupported"] = unsupported }, token);
+
+    static JsonObject Stamp(ContentStamp stamp) => new() { ["size"] = stamp.Size, ["modified"] = stamp.Modified };
+
+    // States of a folder's direct children that are in a content scope; null when the service is absent.
+    internal async Task<Dictionary<string, ContentFile>> ContentStateAsync(string folder, CancellationToken token)
+    {
+        using var reply = await TryRequestAsync(new { op = "content_state", folder }, token).ConfigureAwait(false);
+        if (reply == null) return null;
+        return Parsed(() =>
+        {
+            var result = new Dictionary<string, ContentFile>(StringComparer.OrdinalIgnoreCase);
+            foreach (var f in reply.RootElement.GetProperty("files").EnumerateArray())
+                if (ContentFile.ParseState(Str(f, "state")) is { } state)
+                    result[f.GetProperty("path").GetString()] = new ContentFile(f.GetProperty("path").GetString(), state, Long(f, "indexed"), Str(f, "error"));
+            return result;
+        });
+    }
+
+    internal async Task<ContentStatus> ContentStatusAsync(CancellationToken token)
+    {
+        using var reply = await TryRequestAsync(new { op = "content_status" }, token).ConfigureAwait(false);
+        if (reply == null) return null;
+        return Parsed(() =>
+        {
+            var content = reply.RootElement.GetProperty("content");
+            var scopes = content.GetProperty("scopes").EnumerateArray().Select(s => new ContentScopeStatus(Path.TrimEndingDirectorySeparator(s.GetProperty("path").GetString()),
+                Long(s, "files"), Long(s, "pending"), Long(s, "current"), Long(s, "stale"), Long(s, "failed"), Long(s, "unsupported"), Long(s, "unavailable"),
+                Long(s, "reconciled"), Str(s, "error"))).ToList();
+            return new ContentStatus(scopes, Long(content, "store_bytes"), Long(content, "waiting"));
+        });
+    }
+
+    static string Str(JsonElement e, string name) => e.TryGetProperty(name, out var v) && v.ValueKind == JsonValueKind.String ? v.GetString() : null;
+    static long Long(JsonElement e, string name) => e.TryGetProperty(name, out var v) && v.ValueKind == JsonValueKind.Number && v.TryGetInt64(out long n) ? n : 0;
+
     internal Task FolderAddAsync(string path, CancellationToken token) => Command(new { op = "folder_add", path }, token);
     internal Task FolderRemoveAsync(string path, CancellationToken token) => Command(new { op = "folder_remove", path }, token);
     internal Task RescanAsync(string target, CancellationToken token) => Command(new { op = "rescan", target }, token);
@@ -167,8 +239,10 @@ internal sealed class IndexServiceClient(string pipeName)
 }
 
 internal sealed record IndexStoreStatus(string Name, string Kind, string State, ulong Items, ulong Folders, ulong MemoryBytes, string Error, string Owner);
-internal sealed record IndexServiceStatus(string Version, ulong WorkingSet, ulong PrivateBytes, ulong UptimeSeconds, IReadOnlyList<IndexStoreStatus> Stores)
+// Protocol 2 adds the content index; a version-1 service refuses its operations.
+internal sealed record IndexServiceStatus(string Version, ulong WorkingSet, ulong PrivateBytes, ulong UptimeSeconds, IReadOnlyList<IndexStoreStatus> Stores, ulong Protocol = 1)
 {
+    internal bool HasContentIndex => Protocol >= 2;
     internal static IndexServiceStatus Parse(JsonElement status)
     {
         static string Text(JsonElement e, string name) => e.TryGetProperty(name, out var v) && v.ValueKind == JsonValueKind.String ? v.GetString() : null;
@@ -176,6 +250,9 @@ internal sealed record IndexServiceStatus(string Version, ulong WorkingSet, ulon
         var stores = status.TryGetProperty("stores", out var array)
             ? array.EnumerateArray().Select(s => new IndexStoreStatus(Text(s, "name"), Text(s, "kind"), Text(s, "state"), Number(s, "items"), Number(s, "folders"), Number(s, "memory_bytes"), Text(s, "error"), Text(s, "owner"))).ToList()
             : new List<IndexStoreStatus>();
-        return new(Text(status, "version"), Number(status, "working_set"), Number(status, "private_bytes"), Number(status, "uptime_s"), stores);
+        return new(Text(status, "version"), Number(status, "working_set"), Number(status, "private_bytes"), Number(status, "uptime_s"), stores, Math.Max(1, Number(status, "protocol")));
     }
 }
+
+// The service answered and refused the request (ok:false); a lost or unanswered connection stays InvalidOperationException.
+internal sealed class IndexServiceRefusedException(string message) : InvalidOperationException(message);

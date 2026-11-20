@@ -18,7 +18,7 @@ internal static class ExplorerIcons
         ("Cut","windows.cut.svg","\uE8C6"),("Paste","windows.paste.svg","\uE77F"),
         ("NewFolder","newfolder.svg","\uE8F4"),("NewFile",null,"\uEA1A"),
         ("Delete","windows.ribbondelete.svg","\uE74D"),("Terminal",null,"\uE756"),
-        ("AnalyzeSpace",null,"\uE9F5"),
+        ("AnalyzeSpace",null,"\uE9F5"),("IndexContents",null,"\uE721"),
         ("Maintenance",null,"\uEA99"),
         ("Hidden","windows.showhiddenfiles.svg","\uE890"),("Panes",null,"\uE89F"),
         // These historical filenames are opposite to their visible roles.
@@ -55,6 +55,7 @@ internal static class ExplorerIcons
                     "Terminal"=>Terminal(),
                     "Delete"=>DeleteDetail(image),
                     "AnalyzeSpace"=>SmallerCog(),
+                    "IndexContents"=>PageSearch(),
                     "Maintenance"=>GlyphDetail("\uEA99",Geometry.Parse("M4,6.5 L9.5,12").GetWidenedPathGeometry(new Pen(Brushes.Black,1.4))),
                     _=>image
                 };
@@ -165,6 +166,15 @@ internal static class ExplorerIcons
         var shape=((GeometryDrawing)((DrawingGroup)source.Drawing).Children[1]).Geometry;
         var group=new DrawingGroup();group.Children.Add(source.Drawing);
         group.Children.Add(new GeometryDrawing(CommandAccent,null,new CombinedGeometry(GeometryCombineMode.Intersect,shape,detail)));
+        group.Freeze();var image=new DrawingImage(group);image.Freeze();return image;
+    }
+    // CONTENT-01: a page with an accent magnifier, the folder's file contents made searchable.
+    static DrawingImage PageSearch()
+    {
+        var group=new DrawingGroup();group.Children.Add(Glyph("\uE8A5").Drawing);
+        var pen=new Pen(CommandAccent,1.4){StartLineCap=PenLineCap.Round,EndLineCap=PenLineCap.Round};
+        group.Children.Add(new GeometryDrawing(null,pen,new EllipseGeometry(new Point(10.2,10.2),2.6,2.6)));
+        group.Children.Add(new GeometryDrawing(null,pen,Geometry.Parse("M12.1,12.1 L14.6,14.6")));
         group.Freeze();var image=new DrawingImage(group);image.Freeze();return image;
     }
     static DrawingImage DeleteDetail(DrawingImage source)

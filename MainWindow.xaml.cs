@@ -26,6 +26,7 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         InitializePerformance();
+        Search.ContentIndexing.Changed += () => Dispatcher.BeginInvoke(UpdateContentCommandState);
         Title = $"Pathweft {Updater.Current}";
         PaneView.ShowHidden = Settings.ShowHidden;
         SidebarColumn.Width = new GridLength(Settings.SidebarWidth);
