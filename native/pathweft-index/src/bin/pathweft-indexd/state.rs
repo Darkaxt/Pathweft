@@ -169,14 +169,15 @@ impl Service {
         self.content_wake.1.notify_all();
     }
 
-    /// Sleeps up to `d` or until poked or stopping.
-    pub fn content_wait(&self, d: Duration) {
+    /// Sleeps up to `d` or until poked or stopping. Returns whether it was
+    /// poked (or is stopping).
+    pub fn content_wait(&self, d: Duration) -> bool {
         let (m, cv) = &self.content_wake;
         let mut poked = m.lock().unwrap();
         if !*poked && !self.stopping() {
             poked = cv.wait_timeout(poked, d).unwrap().0;
         }
-        *poked = false;
+        std::mem::replace(&mut *poked, false) || self.stopping()
     }
 
     pub fn add_slot(&self, name: String, kind: Kind) -> Option<Arc<Slot>> {

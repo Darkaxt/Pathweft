@@ -234,8 +234,9 @@ Split:
   rescanning still serves its previous tree and counts as ready. A scope folder
   missing from a ready store makes its files unavailable with an error; it is
   not a purge.
-- While a scope's store is loading, the comparison repeats every 2 s, so its
-  files return as soon as the store is ready (for example after a restart).
+- The comparison also runs within about 2 s of a store becoming ready (after a
+  start, its user's sign-in or a volume's return), so unavailable files answer
+  again without waiting for the minute.
 - Scopes are disjoint, so removing a scope purges exactly its files.
 - `content_state {folder}` lists the files directly in the folder, not
   subfolders. `waiting` in the status counts pending files and stale files

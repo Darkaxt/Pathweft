@@ -576,37 +576,45 @@ fn listing(scope: &str, slots: &[Arc<Slot>], refs: &[StoreRef]) -> Result<Vec<(S
     }
 }
 
-/// Reconciles every scope. Returns whether a scope's store is still loading,
-/// so its files should be restored soon rather than at the next minute.
-pub fn reconcile_all(svc: &Service) -> bool {
-    let Some(store) = &svc.content else { return false };
+pub fn reconcile_all(svc: &Service) {
+    let Some(store) = &svc.content else { return };
     let scopes = match store.scopes() {
         Ok(s) => s,
         Err(e) => {
             warning!("{e}");
-            return false;
+            return;
         }
     };
     let (slots, refs) = svc.snapshot();
-    let mut loading = false;
     for s in scopes {
-        loading |= covering(&slots, &s.path).is_some_and(|slot| slot.state() == "loading");
         if let Err(e) = store.reconcile(&s.path, listing(&s.path, &slots, &refs)) {
             warning!("content {}: {e}", s.path);
         }
     }
-    loading
 }
 
-/// While a store is loading (after a start or restart).
-const RECONCILE_LOADING: Duration = Duration::from_secs(2);
+/// How often the loop looks for a store that has become ready.
+const READY_CHECK: Duration = Duration::from_secs(2);
 
-/// The reconcile loop: every minute, when poked, and every 2 s while a
-/// scope's store is loading.
+/// The stores that can answer now.
+fn ready_slots(svc: &Service) -> Vec<usize> {
+    svc.all().iter().filter(|s| ready(s)).map(|s| s.id).collect()
+}
+
+/// The reconcile loop: every minute, when poked, and as soon as a store
+/// becomes ready (after a start, a user's sign-in or a volume's return), so
+/// unavailable files come back without waiting for the minute.
 pub fn run(svc: Arc<Service>) {
     while !svc.stopping() {
-        let loading = reconcile_all(&svc);
-        svc.content_wait(if loading { RECONCILE_LOADING } else { RECONCILE });
+        reconcile_all(&svc);
+        let seen = ready_slots(&svc);
+        let until = Instant::now() + RECONCILE;
+        loop {
+            let left = until.saturating_duration_since(Instant::now());
+            if left.is_zero() || svc.content_wait(left.min(READY_CHECK)) || ready_slots(&svc).iter().any(|id| !seen.contains(id)) {
+                break;
+            }
+        }
     }
 }
 
