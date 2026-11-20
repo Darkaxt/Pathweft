@@ -3,7 +3,7 @@
 //! ```text
 //! pathweft-indexd service                      run under the service control manager
 //! pathweft-indexd console [--pipe NAME] [--volumes C:,D:] [--no-folders]
-//!                         [--config PATH] [--exit-after SECONDS]
+//!                         [--config PATH] [--content-dir PATH] [--exit-after SECONDS]
 //! pathweft-indexd install [--allow SID]...     register in place and start (elevated)
 //! pathweft-indexd stop                         stop and wait for exit (elevated)
 //! pathweft-indexd uninstall [--purge]          stop and remove (elevated)
@@ -20,6 +20,8 @@ fn main() {
 mod log;
 #[cfg(windows)]
 mod config;
+#[cfg(windows)]
+mod content;
 #[cfg(windows)]
 mod install;
 #[cfg(windows)]
@@ -69,6 +71,10 @@ fn console(args: &[String]) -> Result<(), String> {
         opts.folders = false;
     }
     opts.persist_config = value(args, "--config").is_some() || opts.volumes.is_none();
+    // A console instance has a content index only when asked, in a folder
+    // its user can write.
+    opts.content_dir = value(args, "--content-dir").map(PathBuf::from);
+    opts.protect_content = false;
     let exit_after = value(args, "--exit-after").and_then(|s| s.parse::<u64>().ok());
     let svc = service::run(opts)?;
     match exit_after {

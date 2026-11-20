@@ -3,7 +3,7 @@
 use crate::config::{self, Config, FolderRoot};
 use crate::log::{info, warning};
 use crate::state::{Kind, Options, Service, Slot};
-use crate::{ntfs, pipe, scan, security};
+use crate::{content, ntfs, pipe, scan, security};
 use pathweft_index::ffi::*;
 use std::ffi::c_void;
 use std::sync::atomic::{AtomicPtr, Ordering};
@@ -47,7 +47,14 @@ pub fn run(opts: Options) -> Result<Arc<Service>, String> {
     if !security::enable_privilege("SeBackupPrivilege") {
         warning!("SeBackupPrivilege is not available; some folders' permissions cannot be read");
     }
-    let svc = Arc::new(Service::new(opts, config));
+    let store = match &opts.content_dir {
+        Some(dir) => content::open_dir(dir, opts.protect_content).map(Some),
+        None => Ok(None),
+    };
+    if let Err(e) = &store {
+        warning!("content index unavailable: {e}");
+    }
+    let svc = Arc::new(Service::new(opts, config, store));
     if svc.opts.folders {
         let folders = svc.config.lock().unwrap().folders.clone();
         for root in folders {
@@ -69,6 +76,10 @@ pub fn run(opts: Options) -> Result<Arc<Service>, String> {
             })
             .expect("spawn");
     }
+    if svc.content.is_some() {
+        let svc = svc.clone();
+        std::thread::Builder::new().name("content".into()).spawn(move || content::run(svc)).expect("spawn");
+    }
     {
         let svc2 = svc.clone();
         std::thread::Builder::new()
@@ -89,11 +100,20 @@ pub fn shutdown(svc: &Service) {
         s.stop.store(true, Ordering::Relaxed);
         s.poke();
     }
+    svc.content_poke();
     pipe::wake(&svc.opts.pipe);
 }
 
 pub fn service_options() -> Options {
-    Options { pipe: pathweft_index::protocol::PIPE_NAME.into(), config_path: config::default_path(), volumes: None, folders: true, persist_config: true }
+    Options {
+        pipe: pathweft_index::protocol::PIPE_NAME.into(),
+        config_path: config::default_path(),
+        volumes: None,
+        folders: true,
+        persist_config: true,
+        content_dir: Some(config::data_dir().join("content")),
+        protect_content: true,
+    }
 }
 
 // ---------------------------------------------------------------- SCM

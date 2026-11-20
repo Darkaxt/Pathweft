@@ -1,6 +1,7 @@
 //! The local named pipe (SPEC IDX-07) and request handling.
 
 use crate::config::FolderRoot;
+use crate::content::{self, ContentStore};
 use crate::log::{info, warning};
 use crate::scan;
 use crate::security::{self, CallerAccess, ClientToken, LocalSd};
@@ -125,7 +126,8 @@ pub fn handle(svc: &Arc<Service>, client: &ClientToken, req: Request) -> Respons
         Request::Query(q) => {
             let (slots, refs) = svc.snapshot();
             let access = CallerAccess::new(svc, client);
-            match with_access(&access, || query::query(&refs, &q, &access)) {
+            let lookup = svc.content.as_ref().map(|c| c as &dyn query::Content);
+            match with_access(&access, || query::query(&refs, &q, &access, lookup)) {
                 Ok(result) => {
                     let mut r = Response { ok: true, total: Some(result.total), hits: Some(result.hits), ..Default::default() };
                     mark_updating(&slots, &mut r);
@@ -178,6 +180,64 @@ pub fn handle(svc: &Arc<Service>, client: &ClientToken, req: Request) -> Respons
                 None => Response::failure(format!("{target} is not indexed")),
             }
         }
+        other => match store(svc) {
+            Ok(c) => content_op(svc, client, c, other),
+            Err(r) => r,
+        },
+    }
+}
+
+fn store(svc: &Service) -> Result<&ContentStore, Response> {
+    svc.content.as_ref().ok_or_else(|| {
+        Response::failure(match &svc.content_error {
+            Some(e) => format!("the content index is unavailable: {e}"),
+            None => "this instance has no content index".into(),
+        })
+    })
+}
+
+fn done(r: Result<Response, String>) -> Response {
+    r.unwrap_or_else(Response::failure)
+}
+
+/// The content index ops (SPEC IDX-15..19, protocol 2).
+fn content_op(svc: &Arc<Service>, client: &ClientToken, c: &ContentStore, req: Request) -> Response {
+    let ok = || Response { ok: true, ..Default::default() };
+    match req {
+        Request::ContentScopeAdd { path } => done((|| {
+            let (_, refs) = svc.snapshot();
+            if query::resolve_paths(&refs, &[path.clone()], true)[0].is_none() {
+                return Err(format!("{path} is not an indexed folder"));
+            }
+            let msg = c.scope_add(&path)?;
+            info!("content scope: {msg}");
+            svc.content_poke();
+            Ok(ok())
+        })()),
+        Request::ContentScopeRemove { path } => done(c.scope_remove(&path).map(|n| {
+            info!("content scope removed: {path} ({n} files purged)");
+            ok()
+        })),
+        Request::ContentScopes => done(c.scopes().map(|s| Response { ok: true, scopes: Some(s), ..Default::default() })),
+        Request::ContentNext { count, version } => done(c.next(count, version).map(|f| Response { ok: true, files: Some(f), ..Default::default() })),
+        Request::ContentPut { id, version, read, after, chunks, last } => {
+            let present = if last {
+                let (_, refs) = svc.snapshot();
+                c.path_of(id).and_then(|p| content::present(&refs, &p))
+            } else {
+                None
+            };
+            done(c.put(id, version, read, after, &chunks, last, present).map(|_| ok()))
+        }
+        Request::ContentFail { id, version, read, error, unsupported } => done(c.fail(id, version, read, &error, unsupported).map(|_| ok())),
+        Request::ContentState { folder } => {
+            if !content::may_list(svc, &client.sid, client.token.raw(), &folder) {
+                return Response::failure(format!("{folder}: access denied"));
+            }
+            done(c.state(&folder).map(|f| Response { ok: true, files: Some(f), ..Default::default() }))
+        }
+        Request::ContentStatus => done(c.status().map(|s| Response { ok: true, content: Some(s), ..Default::default() })),
+        _ => Response::failure("unexpected request"),
     }
 }
 

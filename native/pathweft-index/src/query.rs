@@ -30,6 +30,14 @@ pub trait Access: Sync {
     fn listable(&self, slot: usize, sec: u32) -> Option<bool>;
 }
 
+/// The content index (SPEC IDX-18), provided by the service.
+pub trait Content: Sync {
+    /// Paths of files whose published terms match an FTS5 expression.
+    fn matching(&self, expr: &str) -> Result<Vec<String>, String>;
+    /// Up to `limit` stored locations of `path`'s chunks matching any of `exprs`.
+    fn locations(&self, path: &str, exprs: &[String], limit: u32) -> Vec<serde_json::Value>;
+}
+
 /// A security ID the caller's access has not been evaluated for yet, with a
 /// directory that carries it.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -108,9 +116,13 @@ pub enum Node {
     Parent(String),
     /// Direct children of an indexed folder.
     Children { slot: usize, rec: u32 },
+    /// `content:` before resolution: an FTS5 expression.
+    Content(String),
+    /// Records found by a content lookup.
+    InSet(HashSet<(usize, u32)>),
 }
 
-const FUNCTIONS: &str = "path:, nopath:, case:, nocase:, ww:, noww:, wfn:, nowfn:, regex:, noregex:, file:, folder:, ext:, size:, dm:, dc:, parent:";
+const FUNCTIONS: &str = "path:, nopath:, case:, nocase:, ww:, noww:, wfn:, nowfn:, regex:, noregex:, file:, folder:, ext:, size:, dm:, dc:, parent:, content:";
 
 struct Parser {
     s: Vec<char>,
@@ -246,6 +258,11 @@ impl Parser {
                     }
                     return Ok(wrap(Node::Parent(arg), m));
                 }
+                "content" => {
+                    self.i = after;
+                    let arg = self.read_text(true)?;
+                    return Ok(wrap(Node::Content(fts_expr(&arg)?), m));
+                }
                 other => {
                     return Err(format!(
                         "The index service does not support the search function '{other}:'. Supported: {FUNCTIONS}."
@@ -311,6 +328,19 @@ impl Parser {
         }
         Ok(out)
     }
+}
+
+/// Translates a `content:` argument into an FTS5 expression: one quoted
+/// string (a word, or a phrase when the argument has several words), with a
+/// trailing `*` as a prefix match. Quoting keeps FTS5 operators literal.
+pub fn fts_expr(arg: &str) -> Result<String, String> {
+    let arg = arg.trim();
+    let prefix = arg.ends_with('*');
+    let core = arg.trim_end_matches('*');
+    if !core.chars().any(char::is_alphanumeric) {
+        return Err("content: needs a word, prefix* or \"phrase\", for example content:invoice.".into());
+    }
+    Ok(format!("\"{}\"{}", core.replace('"', "\"\""), if prefix { "*" } else { "" }))
 }
 
 fn wrap(node: Node, m: Mods) -> Node {
@@ -748,7 +778,8 @@ fn eval(n: &Node, c: &mut Cand) -> bool {
             t != 0 && t >= *lo && t < *hi
         }
         Node::Children { slot, rec } => c.slot == *slot && c.rec.parent == *rec && c.r != *rec,
-        Node::Parent(_) => false, // replaced during resolution
+        Node::Parent(_) | Node::Content(_) => false, // replaced during resolution
+        Node::InSet(set) => set.contains(&(c.slot, c.r)),
         Node::Text(t) => {
             if t.on_path {
                 let p = c.path();
@@ -831,6 +862,59 @@ pub fn resolve_paths(stores: &[StoreRef], paths: &[String], dirs_only: bool) -> 
             }
             start = end;
         }
+    }
+    out
+}
+
+fn content_exprs(n: &Node, out: &mut Vec<String>) {
+    match n {
+        Node::And(v) | Node::Or(v) => v.iter().for_each(|x| content_exprs(x, out)),
+        Node::Not(x) => content_exprs(x, out),
+        Node::Content(e) if !out.contains(e) => out.push(e.clone()),
+        _ => {}
+    }
+}
+
+/// Replaces `content:` terms with the records of the matching files.
+fn resolve_content(node: &mut Node, stores: &[StoreRef], exprs: &[String], content: Option<&dyn Content>) -> Result<(), String> {
+    fn put(n: &mut Node, map: &HashMap<String, HashSet<(usize, u32)>>) {
+        match n {
+            Node::And(v) | Node::Or(v) => v.iter_mut().for_each(|x| put(x, map)),
+            Node::Not(x) => put(x, map),
+            Node::Content(e) => *n = Node::InSet(map.get(e).cloned().unwrap_or_default()),
+            _ => {}
+        }
+    }
+    if exprs.is_empty() {
+        return Ok(());
+    }
+    let content = content.ok_or("This index service instance has no content index; content: is unavailable.")?;
+    let mut map = HashMap::new();
+    for e in exprs {
+        let paths = content.matching(e)?;
+        let set: HashSet<(usize, u32)> = resolve_paths(stores, &paths, false).into_iter().flatten().collect();
+        map.insert(e.clone(), set);
+    }
+    put(node, &map);
+    Ok(())
+}
+
+/// Every live file below folder `rec` of a store, with size and modified time.
+pub fn subtree_files(sr: &StoreRef, rec: u32) -> Vec<(String, u64, u64)> {
+    let mut out = Vec::new();
+    let mut path = String::new();
+    let len = sr.store.read().unwrap().recs.len();
+    let mut start = 0;
+    while start < len {
+        let st = sr.store.read().unwrap();
+        let end = (start + CHUNK).min(st.recs.len());
+        for r in start as u32..end as u32 {
+            let x = &st.recs[r as usize];
+            if x.live() && !x.is_dir() && st.is_below(r, rec) && st.full_path(r, &mut path) {
+                out.push((path.clone(), x.size, x.mtime));
+            }
+        }
+        start = end;
     }
     out
 }
@@ -1002,8 +1086,15 @@ fn worker_threads(jobs: usize) -> usize {
 /// caller may list its parent folder; `visible_only` drops the others before
 /// counting and paging. Security IDs not yet evaluated for the caller make the
 /// outcome `NeedAccess`; evaluate them and run the query again.
-pub fn query(stores: &[StoreRef], req: &QueryRequest, access: &dyn Access) -> Result<Outcome<QueryResult>, String> {
+///
+/// With `content:` terms, only records the caller may read themselves (their
+/// own security ID, not the parent's) are returned at all (SPEC IDX-18).
+pub fn query(stores: &[StoreRef], req: &QueryRequest, access: &dyn Access, content: Option<&dyn Content>) -> Result<Outcome<QueryResult>, String> {
     let mut node = compile(req)?;
+    let mut exprs = Vec::new();
+    content_exprs(&node, &mut exprs);
+    let readable_only = !exprs.is_empty();
+    resolve_content(&mut node, stores, &exprs, content)?;
     resolve(&mut node, stores);
     if matches!(node, Node::Never) {
         return Ok(Outcome::Done(QueryResult::default()));
@@ -1048,6 +1139,16 @@ pub fn query(stores: &[StoreRef], req: &QueryRequest, access: &dyn Access) -> Re
                             let mut c = Cand { st: &st, slot: sr.slot, r, rec, name: st.name(r), path: None };
                             if !eval(node, &mut c) {
                                 continue;
+                            }
+                            if readable_only {
+                                match access.listable(sr.slot, rec.sec) {
+                                    Some(true) => {}
+                                    Some(false) => continue,
+                                    None => {
+                                        w.unknown.entry((sr.slot, rec.sec)).or_insert(r);
+                                        continue;
+                                    }
+                                }
                             }
                             if visible_only {
                                 let psec = st.recs.get(rec.parent as usize).map(|p| p.sec).unwrap_or(0);
@@ -1150,13 +1251,20 @@ pub fn query(stores: &[StoreRef], req: &QueryRequest, access: &dyn Access) -> Re
                 modified: rec.mtime,
                 created: rec.ctime,
                 attributes: rec.attrs | if rec.is_dir() { ATTR_DIRECTORY } else { 0 },
+                locations: None,
             });
         }
     }
     if !unknown.is_empty() {
         return Ok(Outcome::NeedAccess(unknown.into_iter().map(|((slot, sec), dir)| Unknown { slot, sec, dir }).collect()));
     }
-    Ok(Outcome::Done(QueryResult { total, hits: hits.into_iter().flatten().collect() }))
+    let mut hits: Vec<Hit> = hits.into_iter().flatten().collect();
+    if let (Some(c), true) = (content, readable_only && req.locations > 0) {
+        for h in hits.iter_mut().filter(|h| !h.folder) {
+            h.locations = Some(c.locations(&h.path, &exprs, req.locations));
+        }
+    }
+    Ok(Outcome::Done(QueryResult { total, hits }))
 }
 
 // ---------------------------------------------------------------- folder sizes
@@ -1228,7 +1336,7 @@ mod tests {
         run_req(stores, QueryRequest { query: q.into(), count: 100, sort: SortKey::Path, ..Default::default() })
     }
     fn run_req(stores: &[StoreRef], req: QueryRequest) -> Vec<String> {
-        match query(stores, &req, &open()).unwrap() {
+        match query(stores, &req, &open(), None).unwrap() {
             Outcome::Done(r) => r.hits.into_iter().map(|h| h.path).collect(),
             Outcome::NeedAccess(_) => panic!("need access"),
         }
@@ -1388,7 +1496,7 @@ mod tests {
         assert_eq!(names(req(SortKey::Name, false, 2, 2)), vec!["notes.TXT", "PaneSearch.cs"]);
         assert_eq!(names(req(SortKey::Modified, true, 0, 1)), vec!["Ölfile.txt"]);
         assert_eq!(names(req(SortKey::Extension, false, 0, 2)), vec!["EverythingSearchClient.cs", "PaneSearch.cs"]);
-        match query(&s, &req(SortKey::Name, false, 0, 0), &open()).unwrap() {
+        match query(&s, &req(SortKey::Name, false, 0, 0), &open(), None).unwrap() {
             Outcome::Done(r) => {
                 assert_eq!(r.total, 6);
                 assert!(r.hits.is_empty());
@@ -1401,7 +1509,7 @@ mod tests {
     fn hits_carry_metadata_and_folder_sizes() {
         let s = sample();
         let req = QueryRequest { query: r#"path:wfn:"C:\Projects""#.into(), count: 5, ..Default::default() };
-        let Outcome::Done(r) = query(&s, &req, &open()).unwrap() else { panic!() };
+        let Outcome::Done(r) = query(&s, &req, &open(), None).unwrap() else { panic!() };
         assert_eq!(r.hits.len(), 1);
         let h = &r.hits[0];
         assert!(h.folder);
@@ -1429,7 +1537,7 @@ mod tests {
         // Default: both matches; PaneSearch.cs (parent Pathweft) is flagged not visible,
         // Search\EverythingSearchClient.cs is visible (its parent Search is listable).
         let req = QueryRequest { query: "*.cs".into(), count: 10, sort: SortKey::Path, ..Default::default() };
-        let Outcome::Done(r) = query(&s, &req, &fake).unwrap() else { panic!() };
+        let Outcome::Done(r) = query(&s, &req, &fake, None).unwrap() else { panic!() };
         assert_eq!(r.total, 2);
         let flags: Vec<(&str, bool)> = r.hits.iter().map(|h| (h.path.as_str(), h.visible)).collect();
         assert_eq!(
@@ -1438,7 +1546,7 @@ mod tests {
         );
         // visible_only filters before counting.
         let req = QueryRequest { visible_only: true, ..req };
-        let Outcome::Done(r) = query(&s, &req, &fake).unwrap() else { panic!() };
+        let Outcome::Done(r) = query(&s, &req, &fake, None).unwrap() else { panic!() };
         assert_eq!(r.total, 1);
         assert_eq!(r.hits[0].path, r"C:\Projects\Pathweft\Search\EverythingSearchClient.cs");
         // Folder sizes are the full (administrator) view.
@@ -1454,10 +1562,95 @@ mod tests {
         let fake = Fake { denied: vec![], known: false };
         let req = QueryRequest { query: "readme".into(), count: 10, ..Default::default() };
         let other = s[0].store.read().unwrap().index_of(23).unwrap();
-        match query(&s, &req, &fake).unwrap() {
+        match query(&s, &req, &fake, None).unwrap() {
             Outcome::NeedAccess(u) => assert_eq!(u, vec![Unknown { slot: 0, sec: 99, dir: other }]),
             _ => panic!("expected NeedAccess"),
         }
+    }
+
+    struct FakeContent;
+    impl Content for FakeContent {
+        fn matching(&self, expr: &str) -> Result<Vec<String>, String> {
+            Ok(match expr {
+                "\"invoice\"" => vec![r"C:\Projects\Pathweft\notes.TXT".into(), r"c:\projects\other\README.md".into(), r"C:\Gone\x.txt".into()],
+                "\"draft\"" => vec![r"C:\Projects\Pathweft\notes.TXT".into()],
+                _ => vec![],
+            })
+        }
+        fn locations(&self, path: &str, exprs: &[String], limit: u32) -> Vec<serde_json::Value> {
+            vec![serde_json::json!({"path": path, "exprs": exprs, "limit": limit})]
+        }
+    }
+
+    #[test]
+    fn content_terms_translate_safely() {
+        assert_eq!(fts_expr("invoice").unwrap(), "\"invoice\"");
+        assert_eq!(fts_expr("inv*").unwrap(), "\"inv\"*");
+        assert_eq!(fts_expr("two words").unwrap(), "\"two words\"");
+        // FTS5 operators and quotes stay literal text inside one string.
+        assert_eq!(fts_expr("a\" OR \"b").unwrap(), "\"a\"\" OR \"\"b\"");
+        assert_eq!(fts_expr("NEAR(x y)").unwrap(), "\"NEAR(x y)\"");
+        assert!(fts_expr("*").is_err());
+        assert!(fts_expr("").is_err());
+        let n = compile(&QueryRequest { query: r#"content:"two words" ext:md content:inv*"#.into(), ..Default::default() }).unwrap();
+        let mut e = Vec::new();
+        content_exprs(&n, &mut e);
+        assert_eq!(e, vec!["\"two words\"".to_string(), "\"inv\"*".to_string()]);
+    }
+
+    #[test]
+    fn content_matches_resolve_combine_and_need_read_access() {
+        let s = sample();
+        let q = |query: &str, locations: u32| QueryRequest { query: query.into(), count: 10, sort: SortKey::Path, locations, ..Default::default() };
+        let paths = |r: QueryResult| r.hits.into_iter().map(|h| h.path).collect::<Vec<_>>();
+        let Outcome::Done(r) = query(&s, &q("content:invoice", 0), &open(), Some(&FakeContent)).unwrap() else { panic!() };
+        assert_eq!(paths(r), vec![r"C:\Projects\Other\readme.md", r"C:\Projects\Pathweft\notes.TXT"], "paths fold case; unknown ones drop");
+        let Outcome::Done(r) = query(&s, &q("content:invoice !content:draft", 0), &open(), Some(&FakeContent)).unwrap() else { panic!() };
+        assert_eq!(paths(r), vec![r"C:\Projects\Other\readme.md"]);
+        let Outcome::Done(r) = query(&s, &q("content:invoice ext:txt", 2), &open(), Some(&FakeContent)).unwrap() else { panic!() };
+        assert_eq!(r.hits[0].locations.as_ref().unwrap()[0]["limit"], 2);
+        assert!(query(&s, &q("content:invoice", 0), &open(), None).unwrap_err().contains("no content index"));
+        // readme.md's own security ID 7 is unreadable: dropped before counting,
+        // although its parent stays listable.
+        {
+            let mut st = s[0].store.write().unwrap();
+            let mut x = e(23, "readme.md", 10, false, 33);
+            x.sec = 7;
+            st.set(33, Some(&x));
+        }
+        let fake = Fake { denied: vec![7], known: true };
+        let Outcome::Done(r) = query(&s, &q("content:invoice", 0), &fake, Some(&FakeContent)).unwrap() else { panic!() };
+        assert_eq!(r.total, 1);
+        assert_eq!(paths(r), vec![r"C:\Projects\Pathweft\notes.TXT".to_string()]);
+        // Plain name queries keep the parent-listing rule.
+        let Outcome::Done(r) = query(&s, &q("readme", 0), &fake, None).unwrap() else { panic!() };
+        assert_eq!(r.total, 1);
+        // Unknown file security IDs are reported with the file itself.
+        {
+            let mut st = s[0].store.write().unwrap();
+            let mut x = e(21, "notes.TXT", 50, false, 32);
+            x.sec = 99;
+            st.set(32, Some(&x));
+        }
+        let notes = s[0].store.read().unwrap().index_of(32).unwrap();
+        match query(&s, &q("content:draft", 0), &Fake { denied: vec![], known: false }, Some(&FakeContent)).unwrap() {
+            Outcome::NeedAccess(u) => assert_eq!(u, vec![Unknown { slot: 0, sec: 99, dir: notes }]),
+            _ => panic!("expected NeedAccess"),
+        }
+    }
+
+    #[test]
+    fn subtree_files_lists_files_below_a_folder() {
+        let s = sample();
+        let projects = s[0].store.read().unwrap().index_of(20).unwrap();
+        let mut f = subtree_files(&s[0], projects);
+        f.sort();
+        assert_eq!(f, vec![
+            (r"C:\Projects\Other\readme.md".to_string(), 10, 33),
+            (r"C:\Projects\Pathweft\PaneSearch.cs".to_string(), 200, 31),
+            (r"C:\Projects\Pathweft\Search\EverythingSearchClient.cs".to_string(), 300, 30),
+            (r"C:\Projects\Pathweft\notes.TXT".to_string(), 50, 32),
+        ]);
     }
 
     #[test]

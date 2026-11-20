@@ -371,3 +371,20 @@ the Pathweft thread on 2026-11-19/20:
 Change from what was offered: no NTFS file-reference column. The name index does
 not keep the reverse key map, so moves use the extension/size/modified
 heuristic on all stores.
+
+Source ready for validation (2026-11-20), not yet compiled or tested:
+- `src/protocol.rs`: protocol 2, the content ops and types,
+  `QueryRequest.locations`, `Hit.locations`.
+- `src/query.rs`: the `Content` trait, `content:` terms, the read-access filter
+  for content queries, `subtree_files`.
+- `src/bin/pathweft-indexd/content.rs`: the SQLite/FTS5 store (rusqlite,
+  bundled), the scope rules, reconcile, the worker ops, the protected folder and
+  the reconcile thread.
+- `state.rs`, `service.rs`, `main.rs`, `pipe.rs`: the store opens in
+  `ProgramData\Pathweft\services\file_index\content` for the service and only
+  with `--content-dir` for a console instance; the pipe serves the ops.
+- `src/bin/pwindex.rs`: `content ...` commands, `query --locations N` and the
+  reference plain-text worker `content work`.
+- Checks to run through the Rust gate: `cargo test`, `cargo build --release`,
+  then an end-to-end console-instance test (scope, work, query, change, move,
+  delete, remove) on a scratch folder.

@@ -227,10 +227,19 @@ Split:
 - File gone while its store is ready: if exactly one new file has the same
   extension, size and modified time, it is treated as a move and keeps its
   terms. Otherwise its terms are purged.
-- Store not ready (loading, re-reading, first scan, offline, waiting for its
-  user): the scope's files become unavailable and keep their data. Unavailable
-  is never deleted. They return to their previous state once the store is
-  ready and the stamp is unchanged.
+- Store not ready (loading or its first scan, offline, in error, waiting for
+  its user): the scope's files become unavailable and keep their data.
+  Unavailable is never deleted. They return to their previous state once the
+  store is ready and the stamp is unchanged. A store that is re-reading or
+  rescanning still serves its previous tree and counts as ready. A scope folder
+  missing from a ready store makes its files unavailable with an error; it is
+  not a purge.
+- Scopes are disjoint, so removing a scope purges exactly its files.
+- `content_state {folder}` lists the files directly in the folder, not
+  subfolders. `waiting` in the status counts pending files and stale files
+  without an error.
+- The content ops are open to every user the pipe admits; on this single-user
+  PC that is the owner (accepted).
 - *Accept:* unit tests for every transition; a console-instance test on a
   folder root.
 

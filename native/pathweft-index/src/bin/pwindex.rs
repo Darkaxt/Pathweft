@@ -3,10 +3,12 @@
 //! ```text
 //! pwindex [--pipe NAME] status [--json]
 //! pwindex query EXPR [--offset N] [--count N] [--sort name|path|size|extension|created|modified]
-//!               [--desc] [--path] [--case] [--ww] [--regex] [--visible-only] [--json]
+//!               [--desc] [--path] [--case] [--ww] [--regex] [--visible-only] [--locations N] [--json]
 //! pwindex sizes FOLDER...
 //! pwindex folder add PATH [--rescan-minutes N] | folder remove PATH
 //! pwindex rescan TARGET                         (a drive letter or a folder root)
+//! pwindex content status|scopes|add PATH|remove PATH|state FOLDER
+//! pwindex content work [--version N]            (reference plain-text worker)
 //! pwindex bench EXPR [--runs N] [--count N]
 //! pwindex churn --dir DIR [--seconds S] [--files N] [--query Q] [--es [PATH]]
 //! pwindex compare EXPR [--es PATH] [--timeout-ms N] [--max N]
@@ -117,6 +119,7 @@ mod cli {
             whole_word: a.flag("--ww"),
             regex: a.flag("--regex"),
             visible_only: a.flag("--visible-only"),
+            locations: a.num("--locations", 0),
         })
     }
 
@@ -210,6 +213,9 @@ mod cli {
             let size = if h.size < 0 { "-".to_string() } else { h.size.to_string() };
             // Third column only for entries the caller cannot list.
             println!("{}{}\t{size}{}", h.path, if h.folder { "\\" } else { "" }, if h.visible { "" } else { "\tnot-visible" });
+            for l in h.locations.unwrap_or_default() {
+                println!("    at {l}");
+            }
         }
         eprintln!(
             "{} matches; {:.2} ms round trip, {} us in the service{}",
@@ -219,6 +225,128 @@ mod cli {
             if r.updating { format!("; updating: {}", r.updating_stores.join(", ")) } else { String::new() }
         );
         Ok(())
+    }
+
+    fn content(pipe: &str, a: &mut Args) -> Result<(), String> {
+        let sub = if a.list.is_empty() { String::new() } else { a.list.remove(0) };
+        let arg = |a: &Args, what: &str| a.list.first().cloned().ok_or(format!("content {sub} needs {what}"));
+        match sub.as_str() {
+            "status" => {
+                let c = call(pipe, &Request::ContentStatus)?.content.unwrap_or_default();
+                for s in &c.scopes {
+                    println!(
+                        "{}\tfiles {} pending {} current {} stale {} failed {} unsupported {} unavailable {}{}",
+                        s.path, s.files, s.pending, s.current, s.stale, s.failed, s.unsupported, s.unavailable,
+                        s.error.as_ref().map(|e| format!("\terror: {e}")).unwrap_or_default()
+                    );
+                }
+                println!("store {}; waiting {}", mb(c.store_bytes), c.waiting);
+                Ok(())
+            }
+            "scopes" => {
+                for s in call(pipe, &Request::ContentScopes)?.scopes.unwrap_or_default() {
+                    println!("{}\tadded {} reconciled {}{}", s.path, s.added, s.reconciled, s.error.map(|e| format!("\terror: {e}")).unwrap_or_default());
+                }
+                Ok(())
+            }
+            "add" => call(pipe, &Request::ContentScopeAdd { path: arg(a, "a folder")? }).map(|_| println!("added")),
+            "remove" => call(pipe, &Request::ContentScopeRemove { path: arg(a, "a folder")? }).map(|_| println!("removed")),
+            "state" => {
+                for f in call(pipe, &Request::ContentState { folder: arg(a, "a folder")? })?.files.unwrap_or_default() {
+                    println!("{}\t{}{}", f["path"].as_str().unwrap_or(""), f["state"].as_str().unwrap_or(""), f["error"].as_str().map(|e| format!("\t{e}")).unwrap_or_default());
+                }
+                Ok(())
+            }
+            "work" => work(pipe, a.num("--version", 1)),
+            _ => Err("content status | scopes | add PATH | remove PATH | state FOLDER | work [--version N]".into()),
+        }
+    }
+
+    /// A file's stamp as the name index records it: size and UTC FILETIME.
+    fn stamp(path: &str) -> Option<Stamp> {
+        let m = std::fs::metadata(path).ok()?;
+        let t = m.modified().ok()?.duration_since(std::time::UNIX_EPOCH).ok()?;
+        Some(Stamp { size: m.len(), modified: t.as_secs() * 10_000_000 + 116_444_736_000_000_000 + t.subsec_nanos() as u64 / 100 })
+    }
+
+    const MAX_TEXT: u64 = 64 << 20;
+
+    /// The reference worker (SPEC IDX-17): extracts UTF-8 text files as the
+    /// calling user until the queue is empty.
+    fn work(pipe: &str, version: u32) -> Result<(), String> {
+        let (mut done, mut failed) = (0, 0);
+        loop {
+            let files = call(pipe, &Request::ContentNext { count: 50, version })?.files.unwrap_or_default();
+            if files.is_empty() {
+                break;
+            }
+            for f in files {
+                let id = f["id"].as_i64().ok_or("bad id")?;
+                let path = f["path"].as_str().ok_or("bad path")?.to_string();
+                let fail = |read: Stamp, error: String, unsupported: bool| call(pipe, &Request::ContentFail { id, version, read, error, unsupported });
+                let Some(read) = stamp(&path) else {
+                    fail(Stamp::default(), "cannot read metadata".into(), false)?;
+                    failed += 1;
+                    continue;
+                };
+                if read.size > MAX_TEXT {
+                    fail(read, "larger than 64 MiB".into(), true)?;
+                    failed += 1;
+                    continue;
+                }
+                let bytes = match std::fs::read(&path) {
+                    Ok(b) => b,
+                    Err(e) => {
+                        fail(read, e.to_string(), false)?;
+                        failed += 1;
+                        continue;
+                    }
+                };
+                let body = bytes.strip_prefix(b"\xEF\xBB\xBF").unwrap_or(&bytes);
+                let Ok(text) = std::str::from_utf8(body) else {
+                    fail(read, "not UTF-8 text".into(), true)?;
+                    failed += 1;
+                    continue;
+                };
+                let after = stamp(&path).unwrap_or_default();
+                let chunks = chunk(text, bytes.len() - body.len());
+                let mut batches: Vec<&[ContentChunk]> = chunks.chunks(256).collect();
+                if batches.is_empty() {
+                    batches.push(&[]);
+                }
+                let n = batches.len();
+                for (i, b) in batches.into_iter().enumerate() {
+                    call(pipe, &Request::ContentPut { id, version, read, after, chunks: b.to_vec(), last: i + 1 == n })?;
+                }
+                done += 1;
+            }
+        }
+        println!("indexed {done}, failed {failed}");
+        Ok(())
+    }
+
+    /// Splits text into chunks of at most 8 lines or about 2048 characters.
+    fn chunk(text: &str, base: usize) -> Vec<ContentChunk> {
+        let mut out = Vec::new();
+        let (mut cur, mut start_line, mut start_off, mut lines) = (String::new(), 1u64, base, 0);
+        let mut off = base;
+        for (i, line) in text.split_inclusive('\n').enumerate() {
+            if cur.is_empty() {
+                start_line = i as u64 + 1;
+                start_off = off;
+            }
+            cur.push_str(line);
+            off += line.len();
+            lines += 1;
+            if lines == 8 || cur.len() >= 2048 {
+                out.push(ContentChunk { location: serde_json::json!({"line": start_line, "column": 1, "offset": start_off}), text: std::mem::take(&mut cur) });
+                lines = 0;
+            }
+        }
+        if !cur.is_empty() {
+            out.push(ContentChunk { location: serde_json::json!({"line": start_line, "column": 1, "offset": start_off}), text: cur });
+        }
+        out
     }
 
     fn sizes(pipe: &str, folders: Vec<String>) -> Result<(), String> {
@@ -378,7 +506,7 @@ mod cli {
         let mut a = Args { list: std::env::args().skip(1).collect() };
         let pipe = a.opt("--pipe").map(|p| if p.starts_with(r"\\") { p } else { format!(r"\\.\pipe\{p}") }).unwrap_or_else(|| PIPE_NAME.into());
         if a.list.is_empty() {
-            return Err("usage: pwindex [--pipe NAME] status|query|sizes|folder|rescan|bench|churn|compare|compare-sizes ...".into());
+            return Err("usage: pwindex [--pipe NAME] status|query|sizes|folder|rescan|content|bench|churn|compare|compare-sizes ...".into());
         }
         let cmd = a.list.remove(0);
         match cmd.as_str() {
@@ -407,6 +535,7 @@ mod cli {
                 let target = a.list.first().cloned().ok_or("rescan needs a target")?;
                 call(&pipe, &Request::Rescan { target }).map(|_| println!("requested"))
             }
+            "content" => content(&pipe, &mut a),
             "bench" => bench(&pipe, &mut a),
             "churn" => churn(&pipe, &mut a),
             "compare" => compare(&pipe, &mut a),

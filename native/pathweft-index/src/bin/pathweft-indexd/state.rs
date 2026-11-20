@@ -2,6 +2,7 @@
 //! the query side uses.
 
 use crate::config::{Config, FolderRoot};
+use crate::content::ContentStore;
 use crate::log::info;
 use crate::security::{AccessCache, TokenCache};
 use pathweft_index::query::StoreRef;
@@ -118,6 +119,10 @@ pub struct Options {
     pub volumes: Option<Vec<String>>,
     pub folders: bool,
     pub persist_config: bool,
+    /// Where the content index lives; `None` disables it.
+    pub content_dir: Option<PathBuf>,
+    /// Create the content folder for SYSTEM and Administrators only.
+    pub protect_content: bool,
 }
 
 pub struct Service {
@@ -130,10 +135,18 @@ pub struct Service {
     pub started: Instant,
     pub shutdown: AtomicBool,
     pub connections: AtomicUsize,
+    pub content: Option<ContentStore>,
+    /// Why the content index is off, when `content_dir` was set.
+    pub content_error: Option<String>,
+    content_wake: (Mutex<bool>, Condvar),
 }
 
 impl Service {
-    pub fn new(opts: Options, config: Config) -> Service {
+    pub fn new(opts: Options, config: Config, content: Result<Option<ContentStore>, String>) -> Service {
+        let (content, content_error) = match content {
+            Ok(c) => (c, None),
+            Err(e) => (None, Some(e)),
+        };
         Service {
             opts,
             config: Mutex::new(config),
@@ -144,7 +157,26 @@ impl Service {
             started: Instant::now(),
             shutdown: AtomicBool::new(false),
             connections: AtomicUsize::new(0),
+            content,
+            content_error,
+            content_wake: (Mutex::new(false), Condvar::new()),
         }
+    }
+
+    /// Asks the content reconcile loop to run now.
+    pub fn content_poke(&self) {
+        *self.content_wake.0.lock().unwrap() = true;
+        self.content_wake.1.notify_all();
+    }
+
+    /// Sleeps up to `d` or until poked or stopping.
+    pub fn content_wait(&self, d: Duration) {
+        let (m, cv) = &self.content_wake;
+        let mut poked = m.lock().unwrap();
+        if !*poked && !self.stopping() {
+            poked = cv.wait_timeout(poked, d).unwrap().0;
+        }
+        *poked = false;
     }
 
     pub fn add_slot(&self, name: String, kind: Kind) -> Option<Arc<Slot>> {
