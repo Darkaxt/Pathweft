@@ -83,7 +83,8 @@ public partial class MainWindow
                 _ => new JsonObject { ["ok"] = true },
             };
             IndexedSearch.ServiceOverride = new IndexServiceClient(fake.Name);
-            JsonObject Last() { JsonObject last = null; while (fake.Requests.TryDequeue(out var r)) last = r; return last; }
+            // The content coordinator checks the service's status once a minute; those requests are not the ones under test.
+            JsonObject Last() { JsonObject last = null; while (fake.Requests.TryDequeue(out var r)) if ((string)r["op"] != "status") last = r; return last; }
 
             // Router: pane query goes to the service with visible_only and column mapping.
             var page = await IndexedSearch.QueryAsync("visible", 0, 50, "Modified", true, CancellationToken.None);
@@ -201,7 +202,7 @@ public partial class MainWindow
             await IndexedSearch.Service.FolderAddAsync("H:\\", CancellationToken.None);
             await IndexedSearch.Service.FolderRemoveAsync("\\\\server\\share", CancellationToken.None);
             await IndexedSearch.Service.RescanAsync("C:", CancellationToken.None);
-            var commands = fake.Requests.ToArray();
+            var commands = fake.Requests.Where(r => (string)r["op"] != "status").ToArray();
             check(commands.Length == 3 && (string)commands[0]["op"] == "folder_add" && (string)commands[0]["path"] == "H:\\" && (string)commands[1]["op"] == "folder_remove" && (string)commands[2]["op"] == "rescan" && (string)commands[2]["target"] == "C:",
                 "SEARCH-07: folder-root add, remove and rescan send their pipe commands");
             var install = IndexServiceSetup.Command(true); var remove = IndexServiceSetup.Command(false);
