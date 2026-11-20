@@ -344,11 +344,11 @@ Installed (2026-11-20): the owner upgraded Pathweft 1.1.82 to 1.1.83 (tag
 v1.1.83 = 6b62885, which merges 2e46d75). The Pathweft thread reported the
 result, and this thread checked it independently:
 - `sc qc PathweftIndex`: AUTO_START, binary
-  `"C:\Program Files\Pathweft\servicesile_index\pathweft-indexd.exe" service`.
+  `"C:\Program Files\Pathweft\services\file_index\pathweft-indexd.exe" service`.
 - `pwindex status` from the new folder answers (protocol 1). The stores are
   loading and becoming ready.
 - `C:\Program Files\PathweftIndex` and `C:\ProgramData\PathweftIndex` are gone.
-- `C:\ProgramData\Pathweft\servicesile_index` holds config.json and
+- `C:\ProgramData\Pathweft\services\file_index` holds config.json and
   service.log.
 - The everything-search skill copies (the Claude plugin cache, the marketplace
   and Codex) now point at the new pwindex path. A skill query answered from
