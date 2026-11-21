@@ -99,8 +99,11 @@ internal static class StartupTasks
         }
         else{StopRecorder();RemoveTask(RecorderName,RecorderArguments);}
     }
-    internal static string StopEventName=>"Local\\Pathweft-ActivityStop-"+Sid;
-    internal static string RecorderMutexName=>"Local\\Pathweft-Activity-"+Sid;
+    // An isolated test profile (PATHWEFT_PROFILE) gets its own recorder names, so a test recorder
+    // never replaces the installed recorder's ETW sessions or answers its stop request.
+    internal static string Instance=>Settings.Profile is { } profile?"-"+Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(profile.ToLowerInvariant())))[..12]:"";
+    internal static string StopEventName=>"Local\\Pathweft-ActivityStop-"+Sid+Instance;
+    internal static string RecorderMutexName=>"Local\\Pathweft-Activity-"+Sid+Instance;
     internal static void StopRecorder()
     {
         if(!EventWaitHandle.TryOpenExisting(StopEventName,out var stop))return;

@@ -49,14 +49,19 @@ state, not security or exact app launches/exits. No mutation tools are exposed.
 The app activity recorder adds get_run_history, get_workloads,
 get_top_consumers, get_app_usage and get_activity_intervals. They take
 `last_minutes` (default 1440, up to 43200) or `from`/`to`, an optional `name`
-(part of the executable path; required by get_app_usage), `metric` (cpu, io,
+(part of the executable path, and for get_run_history also of the command
+line; required by get_app_usage), `metric` (cpu, io,
 memory or starts) and `limit` (1..500, default 50).
 
 - get_run_history: exited program runs overlapping the range (path, PID, parent,
-  start/exit, CPU, I/O, peak memory, exit code, launching workload). Short light
-  processes are only counted in their workload.
+  start/exit, CPU, I/O, peak memory, exit code, launching workload) and, since
+  1.1.88, `command_line` (passwords, tokens, keys and URL credentials masked; at
+  most 2,048 characters) and `working_directory` (null when the process ended or
+  was protected before it could be read). Runs recorded earlier have nulls.
+  Short light processes are only counted in their workload.
 - get_workloads: launching process trees, such as one build command, with
-  process count, CPU, I/O, largest peak memory and duration.
+  process count, CPU, I/O, largest peak memory, duration and the first
+  process's `root_command_line`.
 - get_top_consumers: per-executable totals over the range from 5-minute usage
   buckets, long-running programs included.
 - get_app_usage: the 5-minute buckets of executables whose path contains `name`.

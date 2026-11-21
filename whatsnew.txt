@@ -1,6 +1,12 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.88 | 2026-11-22 | Command lines in app activity
+
+- Record app activity now also keeps each program's command line and the folder it started in, so you can see what a build or script actually ran. Passwords, tokens, keys and credentials in URLs are masked before anything is saved; long command lines are shortened to 2,048 characters.
+- The activity history can now grow to 1 GB, so a week of history fits; before, a busy week filled it and the oldest days were lost early.
+- This is the first update that downloads only the files that changed.
+
 ## 1.1.87 | 2026-11-21 | Smaller updates
 
 - Updates now download only the files that changed, usually a few dozen megabytes instead of the whole 390 MB installer. Before downloading, Pathweft checks that its installed files are the ones of the version you have; if any differ, it downloads the full installer and says why.

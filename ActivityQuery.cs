@@ -48,6 +48,10 @@ internal static class ActivityQuery
         double Seconds(long cycles)=>Math.Round(cycles/(mhz*1e6),3);
         static string Time(long ms)=>DateTimeOffset.FromUnixTimeMilliseconds(ms).ToString("O",CultureInfo.InvariantCulture);
         string like=request.Name==null?null:"%"+request.Name.Replace("\\","\\\\").Replace("%","\\%").Replace("_","\\_")+"%";
+        // ACTIVITY-07: stores written before 1.1.88 have no command-line columns; they still answer, with nulls.
+        bool commands;using(var command=db.CreateCommand()){command.CommandText="SELECT COUNT(*) FROM pragma_table_info('processes') WHERE name='cmd'";commands=Convert.ToInt64(command.ExecuteScalar())>0;}
+        string cmd=commands?"c.text":"NULL",cwd=commands?"d.text":"NULL",texts=commands?" LEFT JOIN texts c ON c.id=p.cmd LEFT JOIN texts d ON d.id=p.cwd":"";
+        string rootCmd=commands?"(SELECT c.text FROM processes p JOIN texts c ON c.id=p.cmd WHERE p.workload=workloads.id ORDER BY p.start LIMIT 1)":"NULL";
         var rows=new List<object>();bool truncated=false;
         void Read(string sql,Func<SqliteDataReader,object> map)
         {
@@ -61,14 +65,15 @@ internal static class ActivityQuery
         switch(request.Tool)
         {
             case "get_run_history":
-                Read($"SELECT p.path,p.pid,p.parent,p.start,p.exit,p.cycles,p.read,p.write,p.peak,p.code,p.workload,w.root FROM processes p LEFT JOIN workloads w ON w.id=p.workload WHERE p.exit>=$from AND p.start<=$to AND {NameFilter.Replace("path","p.path")} ORDER BY p.start DESC LIMIT $limit",
+                Read($"SELECT p.path,p.pid,p.parent,p.start,p.exit,p.cycles,p.read,p.write,p.peak,p.code,p.workload,w.root,{cmd},{cwd} FROM processes p LEFT JOIN workloads w ON w.id=p.workload{texts} WHERE p.exit>=$from AND p.start<=$to AND ({NameFilter.Replace("path","p.path")}{(commands?" OR c.text LIKE $name ESCAPE '\\'":"")}) ORDER BY p.start DESC LIMIT $limit",
                     r=>new{path=r.GetString(0),pid=r.GetInt32(1),parent_pid=r.GetInt32(2),start=Time(r.GetInt64(3)),exit=Time(r.GetInt64(4)),duration_seconds=(r.GetInt64(4)-r.GetInt64(3))/1000.0,
-                        cpu_seconds=Seconds(r.GetInt64(5)),read_bytes=r.GetInt64(6),write_bytes=r.GetInt64(7),peak_private_bytes=r.GetInt64(8),exit_code=r.IsDBNull(9)?(int?)null:r.GetInt32(9),workload=r.GetInt64(10),workload_root=r.IsDBNull(11)?null:r.GetString(11)});
+                        cpu_seconds=Seconds(r.GetInt64(5)),read_bytes=r.GetInt64(6),write_bytes=r.GetInt64(7),peak_private_bytes=r.GetInt64(8),exit_code=r.IsDBNull(9)?(int?)null:r.GetInt32(9),workload=r.GetInt64(10),workload_root=r.IsDBNull(11)?null:r.GetString(11),
+                        command_line=r.IsDBNull(12)?null:r.GetString(12),working_directory=r.IsDBNull(13)?null:r.GetString(13)});
                 break;
             case "get_workloads":
-                Read($"SELECT id,root,start,end,processes,tiny,cycles,read,write,peak FROM workloads WHERE IFNULL(end,$to)>=$from AND start<=$to AND {NameFilter.Replace("path","root")} ORDER BY "+Order("cycles","read+write","peak","processes")+" DESC LIMIT $limit",
+                Read($"SELECT id,root,start,end,processes,tiny,cycles,read,write,peak,{rootCmd} FROM workloads WHERE IFNULL(end,$to)>=$from AND start<=$to AND {NameFilter.Replace("path","root")} ORDER BY "+Order("cycles","read+write","peak","processes")+" DESC LIMIT $limit",
                     r=>new{workload=r.GetInt64(0),root=r.GetString(1),start=Time(r.GetInt64(2)),end=r.IsDBNull(3)?null:Time(r.GetInt64(3)),running=r.IsDBNull(3),processes=r.GetInt32(4),short_processes_not_listed=r.GetInt32(5),
-                        cpu_seconds=Seconds(r.GetInt64(6)),read_bytes=r.GetInt64(7),write_bytes=r.GetInt64(8),largest_process_peak_private_bytes=r.GetInt64(9)});
+                        cpu_seconds=Seconds(r.GetInt64(6)),read_bytes=r.GetInt64(7),write_bytes=r.GetInt64(8),largest_process_peak_private_bytes=r.GetInt64(9),root_command_line=r.IsDBNull(10)?null:r.GetString(10)});
                 break;
             case "get_top_consumers":
                 Read($"SELECT path,SUM(starts),SUM(cycles),SUM(read),SUM(write),MAX(peak),MIN(t),MAX(t) FROM app_usage WHERE t>=$from-{ActivityRecorder.BucketMs} AND t<=$to AND {NameFilter} GROUP BY path ORDER BY "+Order("SUM(cycles)","SUM(read)+SUM(write)","MAX(peak)","SUM(starts)")+" DESC LIMIT $limit",
@@ -95,7 +100,7 @@ internal static class ActivityQuery
         {
             status,last_heartbeat=heartbeat==0?null:Time(heartbeat),range_from=Time(from),range_to=Time(to),rows,truncated,
             lost_events=meta.GetValueOrDefault("lost_events"),missed_starts=meta.GetValueOrDefault("missed_starts"),unmatched_stops=meta.GetValueOrDefault("unmatched_stops"),dropped_batches=meta.GetValueOrDefault("dropped_batches"),
-            notes="cpu_seconds is derived from CPU cycle counts at the nominal processor frequency. Usage buckets are 5 minutes. Processes shorter than 1 s with little CPU, I/O and memory are counted in their workload, not listed. Peak memory is peak private commit. Executable path is the only program identity."
+            notes="cpu_seconds is derived from CPU cycle counts at the nominal processor frequency. Usage buckets are 5 minutes. Processes shorter than 1 s with little CPU, I/O and memory are counted in their workload, not listed. Peak memory is peak private commit. command_line and working_directory come from the process start (secrets such as tokens, passwords and keys masked; at most 2,048 characters); runs recorded before 1.1.88 have only the executable path, and working_directory is null when the process ended or was protected before it could be read."
         };
         string Order(string cpu,string io,string memory,string starts)=>request.Metric switch{"io"=>io,"memory"=>memory,"starts"=>starts,_=>cpu};
     }
@@ -104,8 +109,8 @@ internal static class ActivityQuery
     {
         name,description=name switch
         {
-            "get_run_history"=>"Recorded program runs (exited processes) overlapping a range: executable path, PID, parent, start/exit, CPU, I/O, peak memory, exit code and launching workload. Short light processes are only counted in their workload. Requires the app activity recorder.",
-            "get_workloads"=>"Launching workloads (process trees such as one build command) with process count, CPU, I/O, largest peak memory and duration; ordered by metric.",
+            "get_run_history"=>"Recorded program runs (exited processes) overlapping a range: executable path, command line (secrets masked), starting folder, PID, parent, start/exit, CPU, I/O, peak memory, exit code and launching workload. Short light processes are only counted in their workload. Requires the app activity recorder.",
+            "get_workloads"=>"Launching workloads (process trees such as one build command) with the first process's command line, process count, CPU, I/O, largest peak memory and duration; ordered by metric.",
             "get_top_consumers"=>"Per-executable totals over a range (starts, CPU, I/O, peak memory) ordered by metric, from 5-minute usage buckets including long-running programs.",
             "get_app_usage"=>"5-minute usage buckets for executables whose path contains name. Requires name.",
             _=>"Recorder intervals with active, idle (no input for 5 minutes) and locked state, lost-event counts and off gaps."
@@ -113,7 +118,7 @@ internal static class ActivityQuery
         inputSchema=new{type="object",properties=new Dictionary<string,object>
         {
             ["last_minutes"]=new{type="integer",minimum=1,maximum=43200,description="Default 1440"},["from"]=new{type="string",format="date-time"},["to"]=new{type="string",format="date-time"},
-            ["name"]=new{type="string",maxLength=260,description="Case-insensitive part of the executable path"},
+            ["name"]=new{type="string",maxLength=260,description="Case-insensitive part of the executable path (get_run_history also matches the command line)"},
             ["metric"]=new{type="string",@enum=new[]{"cpu","io","memory","starts"}},["limit"]=new{type="integer",minimum=1,maximum=500,description="Default 50"}
         },required=name=="get_app_usage"?new[]{"name"}:Array.Empty<string>(),additionalProperties=false},
         annotations=new{readOnlyHint=true,destructiveHint=false,idempotentHint=true,openWorldHint=false}

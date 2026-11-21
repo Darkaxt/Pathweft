@@ -2,9 +2,11 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Security.Principal;
 using System.Text;
+using System.Text.RegularExpressions;
 using Microsoft.Data.Sqlite;
 using Microsoft.Diagnostics.Tracing;
 using Microsoft.Diagnostics.Tracing.Parsers;
+using Microsoft.Diagnostics.Tracing.Parsers.Kernel;
 using Microsoft.Diagnostics.Tracing.Session;
 using Microsoft.Win32;
 
@@ -12,7 +14,11 @@ namespace FileExplorer;
 
 // ACTIVITY-01..03: the windowless recorder started by the elevated logon task.
 // Performance monitoring only: executable path, process tree, lifetimes and
-// resource totals. No hashes, signatures, command lines, blocking or network.
+// resource totals. No hashes, signatures, blocking or network.
+// ACTIVITY-07: a second session on the kernel logger's process events supplies each
+// start's command line (its rundown covers programs already running); the starting
+// directory is read from the new process. Both are stored once per distinct text,
+// capped and with passwords and tokens masked.
 // Windows' Kernel-Process start/stop events give exact launches and lifetime
 // totals; one system-wide process snapshot every 30 seconds attributes the use
 // of long-running programs to time. Writes are batched every 30 seconds.
@@ -20,13 +26,13 @@ internal sealed class ActivityRecorder
 {
     internal static string FilePath=>Path.Combine(DataFolder.Bulk,"Activity","activity.sqlite");
     internal const long BucketMs=5*60*1000;
-    internal const long StorageLimit=128L*1024*1024;
+    internal const long StorageLimit=1024L*1024*1024;
     const string KernelProcess="Microsoft-Windows-Kernel-Process";
     static readonly TimeSpan FlushInterval=TimeSpan.FromSeconds(30);
 
     sealed class Node
     {
-        public int Pid,Parent;public long Start,Created;public string Path;public Work Work;public bool Root;
+        public int Pid,Parent;public long Start,Created;public string Path,Command,Directory;public Work Work;public bool Root;
         public long Cycles,Read,Write,Peak;           // latest observed lifetime totals
         public long BaseCycles,BaseRead,BaseWrite;    // lifetime totals when first observed (0 for observed starts)
     }
@@ -37,7 +43,7 @@ internal sealed class ActivityRecorder
         public readonly HashSet<Node> Members=new();public bool Dirty;
     }
     sealed class Usage{public int Starts;public long Cycles,Read,Write,Peak;}
-    sealed record Finished(long Workload,int Pid,int Parent,long Start,long Exit,string Path,long Cycles,long Read,long Write,long Peak,int Code);
+    sealed record Finished(long Workload,int Pid,int Parent,long Start,long Exit,string Path,long Cycles,long Read,long Write,long Peak,int Code,string Command,string Directory);
 
     readonly object gate=new();
     readonly Dictionary<int,Node> live=new();
@@ -45,9 +51,11 @@ internal sealed class ActivityRecorder
     readonly List<Finished> finished=new();
     readonly Dictionary<(long,string),Usage> usage=new();
     readonly Dictionary<string,string> devices=new(StringComparer.OrdinalIgnoreCase);
+    // Command lines that arrived before their Kernel-Process start or after the process was finished.
+    readonly Dictionary<int,(long Time,string Text)> commands=new();
     long nextWorkload,missedStarts,unmatchedStops,cycleThreshold,droppedBatches;
     string state;long stateStart,lastFlush,lastPrune,reportedLoss;
-    SqliteConnection db;TraceEventSession session;IntPtr snapshot;int snapshotSize=1<<20;
+    SqliteConnection db;TraceEventSession session,kernel;IntPtr snapshot;int snapshotSize=1<<20;string commandSource="unavailable";
 
     internal static int Run()
     {
@@ -72,11 +80,12 @@ internal sealed class ActivityRecorder
         OpenStore();
         lock(gate)Observe(initial:true);
         // One fixed per-user name: Create replaces a session left behind by a crashed run.
-        session=new TraceEventSession("Pathweft-Activity-"+WindowsIdentity.GetCurrent().User.Value,TraceEventSessionOptions.Create){StopOnDispose=true,BufferSizeMB=1};
+        session=new TraceEventSession("Pathweft-Activity-"+WindowsIdentity.GetCurrent().User.Value+StartupTasks.Instance,TraceEventSessionOptions.Create){StopOnDispose=true,BufferSizeMB=1};
         session.EnableProvider(KernelProcess,TraceEventLevel.Informational,0x10);
         var source=session.Source;var parser=new RegisteredTraceEventParser(source);
         parser.All+=Event;
         var processing=Task.Run(()=>{try{source.Process();}catch(Exception error)when(error is ObjectDisposedException or InvalidOperationException or System.ComponentModel.Win32Exception){}});
+        var commandLines=StartCommands();
         lastFlush=Now();
         while(!stop.WaitOne(FlushInterval))
         {
@@ -84,16 +93,86 @@ internal sealed class ActivityRecorder
             Flush();
         }
         session.Dispose();session=null;processing.Wait(5000);
+        kernel?.Dispose();kernel=null;commandLines?.Wait(5000);
         lock(gate)Observe(initial:false);
         Flush();
     }
     void Close()
     {
         session?.Dispose();
+        kernel?.Dispose();
         db?.Dispose();
         if(snapshot!=IntPtr.Zero){Marshal.FreeHGlobal(snapshot);snapshot=IntPtr.Zero;}
     }
     double mhz;
+    // ACTIVITY-07: a private system-logger session (Windows 8+) with only the process keyword.
+    Task StartCommands()
+    {
+        try
+        {
+            kernel=new TraceEventSession("Pathweft-Activity-Commands-"+WindowsIdentity.GetCurrent().User.Value+StartupTasks.Instance,TraceEventSessionOptions.Create){StopOnDispose=true,BufferSizeMB=1};
+            kernel.EnableKernelProvider(KernelTraceEventParser.Keywords.Process);
+            var source=kernel.Source;
+            source.Kernel.ProcessStart+=data=>CommandLine(data,false);
+            source.Kernel.ProcessDCStart+=data=>CommandLine(data,true);
+            commandSource="kernel";
+            return Task.Run(()=>{try{source.Process();}catch(Exception error)when(error is ObjectDisposedException or InvalidOperationException or System.ComponentModel.Win32Exception){}});
+        }
+        catch(Exception error)when(error is COMException or UnauthorizedAccessException or NotSupportedException or InvalidOperationException or System.ComponentModel.Win32Exception)
+        {
+            kernel?.Dispose();kernel=null;commandSource="unavailable: "+error.GetType().Name;return null;
+        }
+    }
+    void CommandLine(ProcessTraceData data,bool rundown)
+    {
+        string text=data.CommandLine;if(string.IsNullOrWhiteSpace(text))return;
+        int pid=data.ProcessID;long time=new DateTimeOffset(data.TimeStamp.ToUniversalTime()).ToUnixTimeMilliseconds();
+        lock(gate)
+        {
+            // A rundown names programs running before recording; a start matches by its time.
+            if(live.TryGetValue(pid,out var node)&&node.Command==null&&(rundown||Math.Abs(node.Start-time)<5000))node.Command=text;
+            else if(!rundown)commands[pid]=(time,text);
+        }
+    }
+    static readonly Regex[] Secrets=
+    {
+        new(@"(?i)((?:--?|/)(?:password|passwd|pwd|pass|token|secret|api[-_]?key|access[-_]?key|client[-_]?secret|auth(?:orization)?)(?:[=:]|\s+))(""[^""]*""|'[^']*'|\S+)",RegexOptions.Compiled),
+        new(@"(?i)\b((?:password|passwd|pwd|token|secret|api[-_]?key|apikey|access[-_]?token|client[-_]?secret)[=:])(""[^""]*""|'[^']*'|[^\s&;""']+)",RegexOptions.Compiled),
+        new(@"(?i)(authorization:\s*(?:bearer|basic|token)\s+|\bbearer\s+)([A-Za-z0-9._~+/=-]{8,})",RegexOptions.Compiled),
+        new(@"(://)([^/\s:@]+:[^/\s@]+)(@)",RegexOptions.Compiled),
+        new(@"()\b(gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|sk-[A-Za-z0-9_-]{20,}|xox[abprs]-[A-Za-z0-9-]{10,}|AKIA[0-9A-Z]{16}|AIza[0-9A-Za-z_-]{30,})",RegexOptions.Compiled),
+    };
+    internal const int TextLimit=2048;
+    // Passwords and tokens masked, then capped; the length of a cut text is kept.
+    internal static string Clean(string text)
+    {
+        if(string.IsNullOrWhiteSpace(text))return null;
+        text=text.Trim();
+        foreach(var secret in Secrets)text=secret.Replace(text,m=>m.Groups[1].Value+"***"+(m.Groups.Count>3?m.Groups[3].Value:""));
+        return text.Length<=TextLimit?text:text[..TextLimit]+"… ("+text.Length.ToString("N0",System.Globalization.CultureInfo.InvariantCulture)+" characters)";
+    }
+    // The starting directory from the new process's parameters (64-bit layout; null when unreadable).
+    static string StartDirectory(int pid)
+    {
+        IntPtr process=OpenProcess(0x1000|0x0010,false,pid);if(process==IntPtr.Zero)return null;
+        try
+        {
+            var basic=new long[6];
+            if(NtQueryInformationProcess(process,0,basic,48,out _)!=0||basic[1]==0)return null;
+            var pointer=new byte[8];
+            if(!ReadProcessMemory(process,(IntPtr)(basic[1]+0x20),pointer,8,out _))return null;
+            long parameters=BitConverter.ToInt64(pointer,0);if(parameters==0)return null;
+            var current=new byte[16];
+            if(!ReadProcessMemory(process,(IntPtr)(parameters+0x38),current,16,out _))return null;
+            int length=BitConverter.ToUInt16(current,0);long buffer=BitConverter.ToInt64(current,8);
+            if(length==0||length>8192||buffer==0)return null;
+            var text=new byte[length];
+            if(!ReadProcessMemory(process,(IntPtr)buffer,text,length,out _))return null;
+            string directory=Encoding.Unicode.GetString(text);
+            return directory.Length>3?directory.TrimEnd('\\'):directory;
+        }
+        finally{CloseHandle(process);}
+    }
     static long Now()=>DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
     static double NominalMhz()
     {
@@ -139,7 +218,8 @@ internal sealed class ActivityRecorder
         if(live.Remove(pid,out var stale))Leave(stale,time,null);
         live.TryGetValue(parentPid,out var parent);
         if(parent!=null&&parent.Created>created)parent=null;
-        var node=new Node{Pid=pid,Parent=parentPid,Start=time,Created=created,Path=path??"(unknown)"};
+        var node=new Node{Pid=pid,Parent=parentPid,Start=time,Created=created,Path=path??"(unknown)",Directory=StartDirectory(pid)};
+        if(commands.Remove(pid,out var command)&&Math.Abs(command.Time-time)<5000)node.Command=command.Text;
         Join(node,parent,time);
         Use(node.Path,time).Starts++;
     }
@@ -174,7 +254,7 @@ internal sealed class ActivityRecorder
         Changed(work);
         // Short, light processes count in their workload; others are kept individually.
         bool significant=node.Root||time-node.Start>=1000||node.Cycles>=cycleThreshold||node.Read+node.Write>=1<<20||node.Peak>=64L<<20;
-        if(significant)finished.Add(new(work.Id,node.Pid,node.Parent,node.Start,time,node.Path,node.Cycles,node.Read,node.Write,node.Peak,exit?.Code??int.MinValue));
+        if(significant)finished.Add(new(work.Id,node.Pid,node.Parent,node.Start,time,node.Path,node.Cycles,node.Read,node.Write,node.Peak,exit?.Code??int.MinValue,node.Command,node.Directory));
         else work.Tiny++;
     }
     Usage Use(string path,long time)
@@ -223,7 +303,7 @@ internal sealed class ActivityRecorder
         live.TryGetValue(item.Parent,out var parent);if(parent!=null&&parent.Created>item.Created)parent=null;
         long started=item.Created>0?DateTimeOffset.FromFileTime(item.Created).ToUnixTimeMilliseconds():now;
         var node=new Node{Pid=item.Pid,Parent=item.Parent,Start=started,Created=item.Created,Path=FullPath(item.Pid)??item.Image,
-            Cycles=item.Cycles,Read=item.Read,Write=item.Write,Peak=item.Peak,BaseCycles=item.Cycles,BaseRead=item.Read,BaseWrite=item.Write};
+            Cycles=item.Cycles,Read=item.Read,Write=item.Write,Peak=item.Peak,BaseCycles=item.Cycles,BaseRead=item.Read,BaseWrite=item.Write,Directory=StartDirectory(item.Pid)};
         Join(node,parent,started);
     }
     int Query()
@@ -288,7 +368,11 @@ internal sealed class ActivityRecorder
             CREATE INDEX IF NOT EXISTS processes_workload ON processes(workload);
             CREATE TABLE IF NOT EXISTS app_usage(t INTEGER NOT NULL,path TEXT NOT NULL,starts INTEGER NOT NULL,cycles INTEGER NOT NULL,read INTEGER NOT NULL,write INTEGER NOT NULL,peak INTEGER NOT NULL,PRIMARY KEY(t,path));
             CREATE TABLE IF NOT EXISTS intervals(start INTEGER PRIMARY KEY,end INTEGER NOT NULL,state TEXT NOT NULL,lost INTEGER NOT NULL);
+            CREATE TABLE IF NOT EXISTS texts(id INTEGER PRIMARY KEY,text TEXT NOT NULL UNIQUE);
             """);
+        // ACTIVITY-07: stores from 1.1.87 and earlier gain the command and directory references.
+        if(Scalar("SELECT COUNT(*) FROM pragma_table_info('processes') WHERE name='cmd'")==0)
+            Execute("ALTER TABLE processes ADD COLUMN cmd INTEGER; ALTER TABLE processes ADD COLUMN cwd INTEGER;");
         long pageSize=Scalar("PRAGMA page_size");
         Execute($"PRAGMA max_page_count={StorageLimit/pageSize}; PRAGMA wal_autocheckpoint=256; PRAGMA cache_size=-256;");
         nextWorkload=Scalar("SELECT IFNULL(MAX(id),0)+1 FROM workloads");
@@ -312,31 +396,54 @@ internal sealed class ActivityRecorder
         lock(gate)
         {
             rows=[..finished];finished.Clear();
+            for(int i=0;i<rows.Count;i++)
+                if(rows[i].Command==null&&commands.Remove(rows[i].Pid,out var late)&&Math.Abs(late.Time-rows[i].Start)<5000)rows[i]=rows[i] with{Command=late.Text};
+            foreach(int pid in commands.Where(c=>now-c.Value.Time>120_000).Select(c=>c.Key).ToList())commands.Remove(pid);
             uses=[..usage];usage.Clear();
             works=changed.Select(w=>(w,w.Cycles+w.Members.Sum(m=>m.Cycles-m.BaseCycles),w.Read+w.Members.Sum(m=>m.Read-m.BaseRead),w.Write+w.Members.Sum(m=>m.Write-m.BaseWrite),Math.Max(w.Peak,w.Members.Select(m=>m.Peak).DefaultIfEmpty().Max()),w.Members.Count>0)).ToList();
             foreach(var w in changed)w.Dirty=false;changed.Clear();
             missed=missedStarts;unmatched=unmatchedStops;
         }
+        var cleaned=rows.Select(p=>(Command:Clean(p.Command),Directory:Clean(p.Directory))).ToList();
+        for(int attempt=0;;attempt++)
         try
         {
             using var transaction=db.BeginTransaction();
+            var ids=new Dictionary<string,long>(StringComparer.Ordinal);
+            object Text(string text)
+            {
+                if(text==null)return null;
+                if(ids.TryGetValue(text,out long known))return known;
+                using var command=db.CreateCommand();command.Transaction=transaction;
+                command.CommandText="INSERT INTO texts(text) VALUES($0) ON CONFLICT(text) DO UPDATE SET text=excluded.text RETURNING id";
+                command.Parameters.AddWithValue("$0",text);
+                return ids[text]=Convert.ToInt64(command.ExecuteScalar());
+            }
             foreach(var w in works)
                 Insert(transaction,"INSERT OR REPLACE INTO workloads VALUES($0,$1,$2,$3,$4,$5,$6,$7,$8,$9)",w.Work.Id,w.Work.Root,w.Work.Start,w.Open?null:w.Work.End,w.Work.Processes,w.Work.Tiny,w.Cycles,w.Read,w.Write,w.Peak);
-            foreach(var p in rows)
-                Insert(transaction,"INSERT INTO processes VALUES($0,$1,$2,$3,$4,$5,$6,$7,$8,$9,$10)",p.Workload,p.Pid,p.Parent,p.Start,p.Exit,p.Path,p.Cycles,p.Read,p.Write,p.Peak,p.Code==int.MinValue?null:p.Code);
+            for(int i=0;i<rows.Count;i++)
+            {
+                var p=rows[i];
+                Insert(transaction,"INSERT INTO processes(workload,pid,parent,start,exit,path,cycles,read,write,peak,code,cmd,cwd) VALUES($0,$1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)",
+                    p.Workload,p.Pid,p.Parent,p.Start,p.Exit,p.Path,p.Cycles,p.Read,p.Write,p.Peak,p.Code==int.MinValue?null:p.Code,Text(cleaned[i].Command),Text(cleaned[i].Directory));
+            }
             foreach(var (key,u) in uses)
                 Insert(transaction,"INSERT INTO app_usage VALUES($0,$1,$2,$3,$4,$5,$6) ON CONFLICT(t,path) DO UPDATE SET starts=starts+excluded.starts,cycles=cycles+excluded.cycles,read=read+excluded.read,write=write+excluded.write,peak=MAX(peak,excluded.peak)",key.Item1,key.Item2,u.Starts,u.Cycles,u.Read,u.Write,u.Peak);
             // Recording intervals: contiguous while heartbeats are at most 90 s apart; gaps are "off".
             if(state==current&&now-lastFlush<=90_000)Insert(transaction,"UPDATE intervals SET end=$1,lost=lost+$2 WHERE start=$0",stateStart,now,newLoss);
             else{stateStart=state!=null&&now-lastFlush<=90_000?lastFlush:now;state=current;Insert(transaction,"INSERT OR REPLACE INTO intervals VALUES($0,$1,$2,$3)",stateStart,now,state,newLoss);}
-            Insert(transaction,"INSERT OR REPLACE INTO meta VALUES('heartbeat',$0),('missed_starts',$1),('unmatched_stops',$2),('lost_events',$3),('dropped_batches',$4)",now,missed,unmatched,lost,droppedBatches);
+            Insert(transaction,"INSERT OR REPLACE INTO meta VALUES('heartbeat',$0),('missed_starts',$1),('unmatched_stops',$2),('lost_events',$3),('dropped_batches',$4),('command_lines',$5)",now,missed,unmatched,lost,droppedBatches,commandSource);
             transaction.Commit();
             reportedLoss=lost;lastFlush=now;
+            break;
         }
         catch(SqliteException error)
         {
-            // The batch is not replayed; its loss is reported. At the storage limit the oldest hour goes.
-            droppedBatches++;if(error.SqliteErrorCode==13)Trim(now);
+            // At the storage limit the oldest hour goes and the same batch is written once more;
+            // any other failure, or a second one, drops the batch and reports it.
+            if(error.SqliteErrorCode==13)Trim(now);
+            if(error.SqliteErrorCode==13&&attempt==0)continue;
+            droppedBatches++;break;
         }
         if(now-lastPrune>=3600_000)Prune(now);
         // Stay small between batches: return SQLite's page cache and compact the managed heap.
@@ -352,14 +459,15 @@ internal sealed class ActivityRecorder
     void Prune(long now)
     {
         Settings.Load();long cutoff=now-Math.Clamp(Settings.PerformanceRetention,1,30)*86_400_000L;
-        Execute("DELETE FROM processes WHERE exit<$0; DELETE FROM workloads WHERE end<$0; DELETE FROM app_usage WHERE t<$0; DELETE FROM intervals WHERE end<$0;",cutoff);
+        Execute("DELETE FROM processes WHERE exit<$0; DELETE FROM workloads WHERE end<$0; DELETE FROM app_usage WHERE t<$0; DELETE FROM intervals WHERE end<$0;"+UnusedTexts,cutoff);
         Execute("PRAGMA incremental_vacuum(1024); PRAGMA wal_checkpoint(PASSIVE);");
         lastPrune=now;
     }
+    const string UnusedTexts=" DELETE FROM texts WHERE id NOT IN (SELECT cmd FROM processes WHERE cmd IS NOT NULL UNION SELECT cwd FROM processes WHERE cwd IS NOT NULL);";
     void Trim(long now)
     {
         long oldest=Scalar("SELECT IFNULL(MIN(t),0) FROM app_usage");
-        Execute("DELETE FROM processes WHERE exit<$0; DELETE FROM workloads WHERE end<$0; DELETE FROM app_usage WHERE t<$0;",Math.Min(now,oldest+3600_000));
+        Execute("DELETE FROM processes WHERE exit<$0; DELETE FROM workloads WHERE end<$0; DELETE FROM app_usage WHERE t<$0;"+UnusedTexts,Math.Min(now,oldest+3600_000));
         Execute("PRAGMA incremental_vacuum(1024);");
     }
     static string Session()
@@ -377,6 +485,8 @@ internal sealed class ActivityRecorder
     }
     [StructLayout(LayoutKind.Sequential)]struct LastInput{public uint Size,Time;}
     [DllImport("ntdll.dll")]static extern int NtQuerySystemInformation(int kind,IntPtr buffer,int length,out int needed);
+    [DllImport("ntdll.dll")]static extern int NtQueryInformationProcess(IntPtr process,int kind,long[] info,int length,out int needed);
+    [DllImport("kernel32.dll",SetLastError=true)]static extern bool ReadProcessMemory(IntPtr process,IntPtr address,byte[] buffer,nint size,out nint read);
     [DllImport("kernel32.dll",SetLastError=true)]static extern IntPtr OpenProcess(int access,bool inherit,int pid);
     [DllImport("kernel32.dll")]static extern bool CloseHandle(IntPtr handle);
     [DllImport("kernel32.dll",CharSet=CharSet.Unicode,SetLastError=true)]static extern bool QueryFullProcessImageName(IntPtr process,int flags,StringBuilder name,ref int size);

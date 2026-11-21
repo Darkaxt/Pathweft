@@ -495,6 +495,12 @@ public partial class App : Application
             Check(!FileExplorer.MainWindow.UndoTouches(renamed,@"D:\Tools\Reframe")&&FileExplorer.MainWindow.UndoTouches(renamed,@"D:\Tools\Other\"),"Undo of a rename belongs to the rename's folder only");
             Check(FileExplorer.MainWindow.UndoTouches(movedIn,@"D:\Tools\Reframe")&&FileExplorer.MainWindow.UndoTouches(movedIn,@"e:\from")&&!FileExplorer.MainWindow.UndoTouches(movedIn,@"D:\Tools"),"Undo of a move belongs to both its folders, not their parents");
             Check(FileExplorer.MainWindow.UndoTouches(restored,@"C:\")&&!FileExplorer.MainWindow.UndoTouches(restored,@"D:\"),"Undo of a delete belongs to the folder it was deleted from, a drive root included");
+            // ACTIVITY-07: recorded command lines keep the command and mask its secrets
+            Check(ActivityRecorder.Clean("git push --token abc123 origin")=="git push --token *** origin"&&ActivityRecorder.Clean("tool password=hunter2 -v")=="tool password=*** -v","Recorded command lines mask token and password arguments");
+            Check(ActivityRecorder.Clean("git clone https://me:pw@example.com/r.git")=="git clone https://***@example.com/r.git"&&ActivityRecorder.Clean("gh auth ghp_abcdefghijklmnopqrstuvwxyz0123")=="gh auth ***","Recorded command lines mask URL credentials and known key formats");
+            Check(ActivityRecorder.Clean("curl -H \"Authorization: Bearer abcdefgh12345678\" x")?.Contains("abcdefgh12345678")==false&&ActivityRecorder.Clean("  ")==null,"Recorded command lines mask bearer tokens and blank lines record nothing");
+            var longLine=ActivityRecorder.Clean(new string('a',5000));
+            Check(longLine.StartsWith(new string('a',ActivityRecorder.TextLimit))&&longLine.EndsWith(" (5,000 characters)")&&longLine.Length<ActivityRecorder.TextLimit+40,"Recorded command lines are capped and keep their original length");
 
             var batchOne=Directory.CreateDirectory(Path.Combine(root,"batch-one")).FullName;
             var batchTwo=Directory.CreateDirectory(Path.Combine(root,"batch-two")).FullName;

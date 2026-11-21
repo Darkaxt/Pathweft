@@ -94,6 +94,35 @@ sealed partial class PackageProbe
         process.StandardInput.Close();await process.WaitForExitAsync();
         Check(process.ExitCode==0&&(await error).Length==0&&before.SequenceEqual(SHA256.HashData(File.ReadAllBytes(database))),
             "Delivered MCP exits naturally on EOF and does not modify recorded history");
+        VerifyActivityCommandLines();
         await VerifyPerformance132();
+    }
+
+    // ACTIVITY-07: run history answers from a 1.1.87 store (no command columns) and from a store with them.
+    void VerifyActivityCommandLines()
+    {
+        var queryType=Type("ActivityQuery");var requestType=Type("ActivityQuery+Request");
+        long now=DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        JsonElement Run(string file,bool commands,string name)
+        {
+            using(var db=new Microsoft.Data.Sqlite.SqliteConnection("Data Source="+file+";Pooling=False"))
+            {
+                db.Open();using var command=db.CreateCommand();
+                command.CommandText="CREATE TABLE meta(key TEXT PRIMARY KEY,value); CREATE TABLE workloads(id INTEGER PRIMARY KEY,root TEXT NOT NULL,start INTEGER NOT NULL,end INTEGER,processes INTEGER NOT NULL,tiny INTEGER NOT NULL,cycles INTEGER NOT NULL,read INTEGER NOT NULL,write INTEGER NOT NULL,peak INTEGER NOT NULL);"
+                    +"CREATE TABLE processes(workload INTEGER NOT NULL,pid INTEGER NOT NULL,parent INTEGER NOT NULL,start INTEGER NOT NULL,exit INTEGER NOT NULL,path TEXT NOT NULL,cycles INTEGER NOT NULL,read INTEGER NOT NULL,write INTEGER NOT NULL,peak INTEGER NOT NULL,code INTEGER"+(commands?",cmd INTEGER,cwd INTEGER":"")+");"
+                    +$"INSERT INTO meta VALUES('heartbeat',{now}); INSERT INTO workloads VALUES(1,'C:\\Tools\\build.exe',{now-60000},{now-1000},1,0,1000,1,1,1);"
+                    +(commands?"CREATE TABLE texts(id INTEGER PRIMARY KEY,text TEXT NOT NULL UNIQUE); INSERT INTO texts VALUES(1,'build.exe --target probe-package'),(2,'D:\\Work');"
+                        +$"INSERT INTO processes VALUES(1,10,4,{now-60000},{now-1000},'C:\\Tools\\build.exe',1000,1,1,1,0,1,2);":$"INSERT INTO processes VALUES(1,10,4,{now-60000},{now-1000},'C:\\Tools\\build.exe',1000,1,1,1,0);");
+                command.ExecuteNonQuery();
+            }
+            var request=Activator.CreateInstance(requestType,"get_run_history",DateTimeOffset.UtcNow.AddHours(-1),DateTimeOffset.UtcNow,name,"cpu",50);
+            using var document=JsonDocument.Parse(JsonSerializer.Serialize(Call(queryType,null,"Query",request,file)));return document.RootElement.Clone();
+        }
+        var older=Run(Path.Combine(root,"activity-1187.sqlite"),false,null).GetProperty("rows");
+        Check(older.GetArrayLength()==1&&older[0].GetProperty("path").GetString()==@"C:\Tools\build.exe"&&older[0].GetProperty("command_line").ValueKind==JsonValueKind.Null,
+            "Delivered run history still answers from a store recorded before command lines");
+        var newer=Run(Path.Combine(root,"activity-1188.sqlite"),true,"probe-package").GetProperty("rows");
+        Check(newer.GetArrayLength()==1&&newer[0].GetProperty("command_line").GetString()=="build.exe --target probe-package"&&newer[0].GetProperty("working_directory").GetString()==@"D:\Work",
+            "Delivered run history returns the command line and starting folder, and its name filter matches the command line");
     }
 }
