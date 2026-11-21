@@ -112,7 +112,9 @@ sealed partial class PackageProbe
     {
         // Select the callable arity; OfficeDocument also has a private three-
         // argument implementation behind its two-argument Open entry point.
-        var member=type.GetMethods(Flags).Single(m=>m.Name==method&&m.GetParameters().Length>=args.Length&&m.GetParameters().Skip(args.Length).All(p=>p.IsOptional));
+        // Overloads of one arity (UpdateDownloads.Create(Version)/Create(string)) are told apart by the argument types.
+        var member=type.GetMethods(Flags).Single(m=>m.Name==method&&m.GetParameters().Length>=args.Length&&m.GetParameters().Skip(args.Length).All(p=>p.IsOptional)
+            &&m.GetParameters().Zip(args).All(pair=>pair.Second==null||pair.First.ParameterType.IsInstanceOfType(pair.Second)||pair.First.ParameterType.IsPrimitive));
         try{return member.Invoke(target,args.Concat(Enumerable.Repeat(System.Type.Missing,member.GetParameters().Length-args.Length)).ToArray());}
         catch(TargetInvocationException error){System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(error.InnerException).Throw();throw;}
     }
