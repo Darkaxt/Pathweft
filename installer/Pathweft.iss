@@ -242,8 +242,8 @@ var
   IntegrationExitCode: Integer;
 
 #ifdef LightBase
-{ LIGHT-03: '' when every listed file under {app} has its SHA-256, else the first
-  that differs or is missing. Each line of the list is "<sha256> <relative path>". }
+// LIGHT-03: '' when every listed file under the application folder has its SHA-256,
+// else the first that differs or is missing. Each line is "<sha256> <relative path>".
 function LightFileDiffers(const List: String): String;
 var
   Lines: TArrayOfString;
@@ -252,7 +252,7 @@ var
 begin
   Result := '';
   ExtractTemporaryFile(List);
-  if not LoadStringsFromFile(ExpandConstant('{tmp}' + List), Lines) then begin
+  if not LoadStringsFromFile(ExpandConstant('{tmp}\' + List), Lines) then begin
     Result := List;
     Exit;
   end;
@@ -263,7 +263,7 @@ begin
     Space := Pos(' ', Line);
     Path := Copy(Line, Space + 1, Length(Line));
     try
-      if CompareText(GetSHA256OfFile(ExpandConstant('{app}') + Path), Copy(Line, 1, Space - 1)) <> 0 then Result := Path;
+      if CompareText(GetSHA256OfFile(ExpandConstant('{app}\') + Path), Copy(Line, 1, Space - 1)) <> 0 then Result := Path;
     except
       Result := Path;
     end;
