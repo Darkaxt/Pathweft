@@ -320,7 +320,7 @@ public partial class MainWindow
         var m = new ContextMenu();
         var shell = ShellMenu.LoadExtensions(this, Array.Empty<string>(), p.InSearch ? null : p.Dir);
         m.Closed += (_, _) => Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.ApplicationIdle, shell.Dispose); // after a Click
-        if (undo.Count > 0) m.Items.Add(Item($"Undo {undo[^1].What}", "", "Ctrl+Z", Undo));
+        if (LatestUndo(p.Dir) is { } latest) m.Items.Add(Item($"Undo {latest.What}", "", "Ctrl+Z", () => Undo(latest)));
         m.Items.Add(Item("Paste", "", "Ctrl+V", () => ClipboardPaste(), HasTransferClipboard()));
         bool writable = !p.InSearch && !PaneView.IsVirtual(p.Dir);
         var pasteAs = Item("Paste as file", "\uE77F", "", () => { }, writable && CanPasteAsFile());

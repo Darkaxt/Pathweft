@@ -1,6 +1,6 @@
 # Pathweft specification
 
-Version 1.48 - 2026-11-21. Owner: Darkaxt.
+Version 1.49 - 2026-11-21. Owner: Darkaxt.
 
 ### Read-only MCP expansion (S48)
 
@@ -2659,6 +2659,18 @@ installations. Portable copies keep their current update path.
 | LIGHT-02 | The updater decides before downloading. It chooses the light package only when the installed version is the package's base version, the installed release-manifest.json is the recorded base manifest, and every file that manifest lists is present with its SHA-256. Anything else (a skipped release, a missing or changed file, no light package) means the full installer. The update dialog shows which package was chosen and its size; the file check shows progress and can be cancelled. |
 | LIGHT-03 | The light package keeps the full update's behaviour: the same dialog, administrator consent, progress, closing and restarting Pathweft, stopping and restarting the index service when its files change, shell DLLs in use, the uninstall entry's version and a working uninstaller. Before changing anything it checks the installed files against the base manifest again; on any difference it changes nothing and the updater downloads and runs the full installer in the same dialog. After applying, the installed files must match the new manifest exactly, otherwise the updater runs the full installer. |
 | LIGHT-04 | Verification: the release build checks that installing the base release and then the light package gives exactly the files of the new manifest. Update scenarios with the actual installer in the isolated per-user installer harness (`scripts/Invoke-UpdateProgressChecks.ps1`, its own test AppId) cover the light path from the base release, the refusal after a changed installed file and for another base, and the app's light-update scenario covers the choice, its reasons, a skipped release and a cancelled check. (Spec 1.48, 2026-11-21: wording revised from Windows Sandbox to that harness, which runs the same installer without a guest; no acceptance is removed.) The first release that contains the new updater is still fetched whole by earlier updaters; the owner's installed update to the release after it confirms the light path on his PC. |
+
+### Tab-scoped Undo and Help coverage (owner requests 2026-11-21, carried in 1.1.87)
+
+Owner requests 2026-11-21: "Can we make the undos adapt to the tab they are requested in?" (a tab on one
+folder offered the Undo of a rename made in another), and "Are you updating the Help section to explain all
+of the new features, what they are for, where to find them and how to use them?" (features since 1.1.82 had
+no Help entries). Both ship in 1.1.87 with S59.
+
+| ID | Requirement and acceptance |
+| --- | --- |
+| UNDO-01 | Ctrl+Z and a folder's right-click Undo item take back the latest Undo history entry that touched the active tab's folder: a step's item lies directly in that folder, or a moved item goes back into it (a rename, a new item, an arrival, a move out, a delete). Other folders' entries are not offered there: no Undo item appears and Ctrl+Z says nothing is to be undone in this folder, pointing to History → Operation history…, which still undoes any entry. A transfer card's Undo button is unchanged. The release self-test checks the folder matching (a rename's folder only; both folders of a move and not their parents; a delete's folder, a drive root included). |
+| HELP-01 | Help (F1) has an entry for every user-facing feature released since 1.1.82 and for every one a stage adds from now on, in the same release: what it is for, where it is found and how it is used. In 1.1.87: Index contents and content: search (1.1.84); workspaces, linked panes, collections, path aliases, expandable folders, flat view, Copy as table and Export listing, operation history and image marks (1.1.86); light updates and tab-scoped Undo (1.1.87). |
 
 ### Lifecycle, shell integration and final delivery
 

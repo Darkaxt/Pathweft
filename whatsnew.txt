@@ -5,6 +5,8 @@
 
 - Updates now download only the files that changed, usually a few dozen megabytes instead of the whole 390 MB installer. Before downloading, Pathweft checks that its installed files are the ones of the version you have; if any differ, it downloads the full installer and says why.
 - This update itself is still downloaded whole; the update after it is the first light one.
+- Ctrl+Z and the folder menu's Undo now take back the latest operation in the folder of the tab you are in. Operations in other folders stay in History → Operation history…, which can undo any of them.
+- Help (F1) now explains the features of the last releases: content search, workspaces, linked panes, collections, path aliases, expandable and flat views, listing export, operation history, image marks and light updates.
 
 ## 1.1.86 | 2026-11-20 | Workspaces, linked panes, collections and more
 

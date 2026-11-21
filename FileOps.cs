@@ -152,7 +152,26 @@ public partial class MainWindow
     readonly Dictionary<Job, Action> undoJobs = new(); // moves that undo a move: not undoable themselves; each says when it's done
     readonly Dictionary<Job, UndoEntry> jobUndo = new(); // a transfer's card → its entry, for its Undo button
 
-    void Undo() => Undo(undo.Count > 0 ? undo[^1] : null);
+    // Ctrl+Z and a folder's Undo item take back the latest operation in that tab's folder; the rest stay in
+    // History → Operation history, which can undo any of them.
+    void Undo()
+    {
+        if (LatestUndo(active.Dir) is { } entry) Undo(entry);
+        else Status.Text = undo.Count > 0 ? "Nothing to undo in this folder. History → Operation history has the rest" : "Nothing to undo";
+    }
+
+    UndoEntry LatestUndo(string folder) => undo.LastOrDefault(e => UndoTouches(e, folder));
+
+    /// Whether an operation touched this folder: something in it was made, renamed, moved or copied in, moved
+    /// out, or deleted from it (its own item's place, and where a moved item goes back to).
+    internal static bool UndoTouches(UndoEntry entry, string folder)
+    {
+        if (string.IsNullOrEmpty(folder)) return false;
+        folder = Path.TrimEndingDirectorySeparator(folder);
+        bool In(string path) => path != null && Path.IsPathFullyQualified(path)
+            && string.Equals(Path.TrimEndingDirectorySeparator(Path.GetDirectoryName(Path.TrimEndingDirectorySeparator(path)) ?? ""), folder, StringComparison.OrdinalIgnoreCase);
+        return entry.Steps.Any(s => In(s.Path) || s.Kind is "move" or "unkeep" && In(s.To));
+    }
 
     async void Undo(UndoEntry entry)
     {

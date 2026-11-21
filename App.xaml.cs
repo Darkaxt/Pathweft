@@ -488,6 +488,13 @@ public partial class App : Application
             File.Move(Path.Combine(named,"original.txt"),Path.Combine(named,"retained.txt"));
             File.WriteAllText(Path.Combine(named,"original.txt"),"undo exact name");File.SetLastWriteTimeUtc(Path.Combine(named,"original.txt"),oldTime);
             Check(Ferry.Stamp(Path.Combine(named,"original.txt"))!=beforeReplacement,"Undo detects a replacement even when size and modification time match");
+            // Undo follows the tab's folder: a rename in one folder isn't offered in another
+            var renamed=new MainWindow.UndoEntry("rename",DateTime.Now,new(){new("rename",@"D:\Tools\Other\new.exe","old.exe")});
+            var movedIn=new MainWindow.UndoEntry("move",DateTime.Now,new(){new("move",@"D:\Tools\Reframe\a.txt",@"E:\From\a.txt")});
+            var restored=new MainWindow.UndoEntry("delete",DateTime.Now,new(){new("restore",@"C:\x.txt",@"C:\$Recycle.Bin\S-1\$Rabc.txt")});
+            Check(!MainWindow.UndoTouches(renamed,@"D:\Tools\Reframe")&&MainWindow.UndoTouches(renamed,@"D:\Tools\Other\"),"Undo of a rename belongs to the rename's folder only");
+            Check(MainWindow.UndoTouches(movedIn,@"D:\Tools\Reframe")&&MainWindow.UndoTouches(movedIn,@"e:\from")&&!MainWindow.UndoTouches(movedIn,@"D:\Tools"),"Undo of a move belongs to both its folders, not their parents");
+            Check(MainWindow.UndoTouches(restored,@"C:\")&&!MainWindow.UndoTouches(restored,@"D:\"),"Undo of a delete belongs to the folder it was deleted from, a drive root included");
 
             var batchOne=Directory.CreateDirectory(Path.Combine(root,"batch-one")).FullName;
             var batchTwo=Directory.CreateDirectory(Path.Combine(root,"batch-two")).FullName;

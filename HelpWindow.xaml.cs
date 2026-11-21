@@ -23,7 +23,15 @@ public partial class HelpWindow : Window
             ("Maintenance", "The brush swaps the bottom row to five summary tabs: Cleanup, Startup, Services, Windows tweaks and Windows apps. Click a card to review that section in the main pane. Counts cover the listed items; Windows apps means optional preinstalled apps. Cleanup estimates appear after Analyze. Back to files or the brush restores the browser"),
             ("Maintenance actions", "Review the selected item, then confirm its action. Cleanup removes only reviewed unchanged files; new or busy files are skipped. Startup/service/tweak changes save original settings before applying; Restore preserves newer independent changes. Windows may request administrator permission. Removing a Windows app affects this user; reinstall it through Microsoft Store"),
             ("Bottom bar", "The everyday commands with their keys, and the status line at its right"),
-            ("History button", "Left of minimize: the recently closed tabs and the last 25 folders you visited. Click one to go back to it"),
+            ("History button", "Left of minimize: the recently closed tabs and the last 25 folders you visited. Click one to go back to it. Operation history… at its end lists what you did to files"),
+            ("Operation history", "History button → Operation history…: up to 500 copies, moves, renames, deletes and other operations from the last 90 days, each with how it really ended (done, partly done, failed or cancelled), where it went from and to, and Open folder. Undo there takes back any of them, from any folder, while the Undo history still holds it. Settings → Privacy clears the records; files are never touched"),
+        }),
+        ("Workspaces and collections", new[]
+        {
+            ("Workspaces", "Sets of tabs for a project. In the sidebar's Workspaces section, the save button keeps the open tabs of both panes, which pane is active and linked roots under a name you choose. Click a workspace to replace the unpinned tabs with it (pinned tabs stay); middle-click it to add its tabs to the open ones. Right-click it to update it with the open tabs, rename or remove it. A saved folder that no longer exists opens at the nearest folder that does, and the pane says so"),
+            ("Link panes", "Right-click a folder's background → Tools → Link panes: both panes' current folders become roots, and going into a folder below one takes the other pane to the same folder below the other root. Handy for comparing a project with its backup or two versions of a tree. A folder missing on the other side is reported, nothing is created. Leaving a root pauses the link until you come back; Re-link at current folders moves both roots; Unlink panes ends it"),
+            ("Collections", "Named lists of files and folders from anywhere, for work that cuts across folders; the files stay where they are. Right-click items → Add to collection → a collection or New collection…, or press Save as collection in the Drop bin. The sidebar's Collections section opens one as a listing; right-click it to show it in the other pane, rename it, forget missing items or remove it. Remove from collection, in a collection's item menu, only takes the item off the list"),
+            ("Path aliases", "Short names for folders you go to often. Right-click a folder's background → Tools → Add alias for this folder…, then type @name (or @name\\subfolder) in the address bar; suggestions appear as you type @. Path aliases… in the same menu lists, renames and removes them. A real file or folder of that name wins, and an alias whose folder is gone says so"),
         }),
         ("Panes and tabs", new[]
         {
@@ -72,7 +80,7 @@ public partial class HelpWindow : Window
             ("Ctrl+N", "New file: the types Explorer's New menu offers, plus text, Markdown, JSON, CSV, PowerShell and batch, and your own templates"),
             ("F8 / Del", "Delete to the Recycle Bin; on a drive with its Recycle Bin turned off, it asks first, since that delete is for good"),
             ("Shift+Del, Enter", "Delete permanently; the next file is selected, to carry on from there"),
-            ("Ctrl+Z", "Undo the last copy, move, rename, new file or folder, zip, extract or shortcut"),
+            ("Ctrl+Z", "Undo the latest copy, move, rename, delete, new file or folder, zip, extract or shortcut in this tab's folder: something made, renamed, moved or deleted there. The folder's right-click menu names it as Undo …. Operations in other folders wait for their own tab, and History → Operation history… can undo any of them"),
             ("Ctrl+Shift+C", "Copy the selected paths, quoted like Explorer's Copy as path; Copy name is in the right-click menu"),
             ("Alt+Enter", "Properties; with several items selected, Windows' combined dialog with their total size"),
             ("Enter on a script", "Runs .bat and .cmd files in their own folder, as Explorer does; F4 edits them. .ps1 opens in the editor"),
@@ -105,8 +113,11 @@ public partial class HelpWindow : Window
             ("Index search", "Searches this folder and its descendants. Search from This PC for the full index. Uses the Pathweft index service, which setup installs (Settings → Windows integration → Pathweft index shows its state). Everything-style syntax works: wildcards, quotes, | for OR, ! for NOT, < > groups, path:, parent:, ext:, size:, dm: and dc:; other functions are refused with a message. Results load 200 at a time; \"index updating\" means a drive or folder is still being indexed."),
             ("Aa / Ab / ..\\ / .*", "Match case, match whole word, match path and regular expression. These switches affect this pane's search and follow a taskbar search when opened in a pane. Whole-word matching is unavailable while Regex is on."),
             ("Search coverage", "Only files known to the index can appear. With the Pathweft index, NTFS drives are complete and other drives, network shares and folders appear once added as folder roots. Only items you can open are listed. When the index service is not running, search says so and never falls back to a filesystem scan."),
+            ("Index contents", "To search inside files: open the folder and press Index contents on the bottom bar. Its text files, logs, JSON and documents (Word, PDF and the others Pathweft opens) are indexed in the background, at low priority, folder and subfolders; cloud files that aren't on the disk aren't downloaded. Indexed files carry a content badge. Press it again to drop that folder's content index (the files stay). Settings → Windows integration → Pathweft index lists the indexed folders with their counts"),
+            ("content:", "content:word, content:\"exact phrase\" or content:prefix* finds files containing it, combined with any other filter (ext:pdf content:invoice). Each result says where: near line N, page N or paragraph N. Right-click a text result → Open at line opens the editor there"),
             ("Space", "Built-in preview: pictures, video/audio (Enter pauses, ←/→ seek), PDF pages, text/code, Markdown, ZIP contents, fonts and folders. Up/Down move through the list; Space or Esc closes. The taskbar widget uses the same modules"),
             ("Alt+P", "Preview pane: the selected file beside the panes, following the active pane; drag its edge to size it"),
+            ("Mark images", "For picking photos while looking at them: the Mark button in the preview's header (M in Quick View) puts the picture into the Marked images collection or takes it out; the arrows beside it (Shift+Up/Down in Quick View) jump between the marked pictures of the listing. Open Marked images from the sidebar's Collections to copy or move the picks together"),
             ("Settings → Files → Preview modules", "Enable or disable each built-in viewer. Changes affect open previews immediately. Markdown takes priority over text; disabled/unsupported files show an honest state or a readable alternative"),
         }),
         ("Tools", new[]
@@ -147,6 +158,9 @@ public partial class HelpWindow : Window
             ("Sync badges", "Google Drive, Nextcloud and other apps' status icons, on the file icons as in Explorer, updated live"),
             ("Ctrl+H", "Show hidden files"),
             ("F5 / Ctrl+R", "Refresh and measure folder sizes again"),
+            ("Expandable folders", "Right-click empty space → View → Expandable folders: in Details, folders open in place under their row (the arrow, or Right/Left), to look into several at once without leaving the folder"),
+            ("Flat view", "Right-click empty space → View → Flat view: every file below this folder in one list, with a Location column, to sort or select across subfolders. Copying or moving files from subfolders asks whether to keep the folder structure or put them all side by side. Choose it again to go back"),
+            ("Copy as table / Export listing…", "Right-click selected items → Copy as table puts those rows on the clipboard with the columns shown, ready to paste into a spreadsheet. Right-click empty space → Copy listing has Copy as table for every row and Export listing…, which saves the listing as CSV or TSV"),
             ("Folder sizes", "Measured in the background and remembered, so a big drive shows its folders' sizes at once the next time"),
         }),
         ("Windows integration", new[]
@@ -163,6 +177,7 @@ public partial class HelpWindow : Window
         {
             ("Ctrl+,", "Settings: appearance (backdrop, opacity, background picture, accent color, row height, text size per area, summary cards, animations), files, the right-click menu, transfers, Windows integration, about"),
             ("Updates", "Pathweft checks every hour; a newer version shows as a dot on the update button at the top of the sidebar, and clicking it shows what's new and asks before updating; the update downloads, is checked against GitHub's published SHA-256, installs and restarts in about ten seconds"),
+            ("Light updates", "When only some files changed, the update window offers a light update with its size: just those files, much smaller than the full installer. Pathweft first checks that the installed files are exactly the previous release's (with progress, and Cancel); if any differ, it downloads the full installer instead and says why. If something differs when installing, nothing is changed and Pathweft reopens to install the full update. There's nothing to choose: it happens by itself"),
             ("What's new", "Every release's notes, by month, from the button beside Pathweft's name in the sidebar. It opens by itself after an update"),
             ("Settings → Reset to defaults", "Every setting back to how Pathweft comes, after asking; each card has its own Reset. Windows integration, tabs and Quick access stay. A double-click on a slider's handle resets just that slider"),
             ("Tooltips", "Wait 1.5 s before they show, each one; Settings → Files → Tooltip delay changes that, from the next start"),
