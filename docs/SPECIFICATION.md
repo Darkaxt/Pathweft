@@ -1,6 +1,6 @@
 # Pathweft specification
 
-Version 1.47 - 2026-11-20. Owner: Darkaxt.
+Version 1.48 - 2026-11-21. Owner: Darkaxt.
 
 ### Read-only MCP expansion (S48)
 
@@ -2658,7 +2658,7 @@ installations. Portable copies keep their current update path.
 | LIGHT-01 | Each release also publishes `Pathweft-<version>-update.exe` when a previous published release exists. It is built from the difference between the previous release's release-manifest.json and the new one: it contains the new and changed files, the list of files to remove and the new release-manifest.json, and it records its base version and the SHA-256 of the base manifest. It is listed in SHA256SUMS.txt. Its name must not end in `setup.exe`, so earlier updaters, which pick the asset ending in setup.exe, keep downloading the full installer. |
 | LIGHT-02 | The updater decides before downloading. It chooses the light package only when the installed version is the package's base version, the installed release-manifest.json is the recorded base manifest, and every file that manifest lists is present with its SHA-256. Anything else (a skipped release, a missing or changed file, no light package) means the full installer. The update dialog shows which package was chosen and its size; the file check shows progress and can be cancelled. |
 | LIGHT-03 | The light package keeps the full update's behaviour: the same dialog, administrator consent, progress, closing and restarting Pathweft, stopping and restarting the index service when its files change, shell DLLs in use, the uninstall entry's version and a working uninstaller. Before changing anything it checks the installed files against the base manifest again; on any difference it changes nothing and the updater downloads and runs the full installer in the same dialog. After applying, the installed files must match the new manifest exactly, otherwise the updater runs the full installer. |
-| LIGHT-04 | Verification: the release build checks that installing the base release and then the light package gives exactly the files of the new manifest. Update scenarios in Windows Sandbox cover the light path from the base release, the fallback after a changed installed file, the fallback for a skipped release and a cancelled check. The first release that contains the new updater is still fetched whole by earlier updaters; the owner's installed update to the release after it confirms the light path on his PC. |
+| LIGHT-04 | Verification: the release build checks that installing the base release and then the light package gives exactly the files of the new manifest. Update scenarios with the actual installer in the isolated per-user installer harness (`scripts/Invoke-UpdateProgressChecks.ps1`, its own test AppId) cover the light path from the base release, the refusal after a changed installed file and for another base, and the app's light-update scenario covers the choice, its reasons, a skipped release and a cancelled check. (Spec 1.48, 2026-11-21: wording revised from Windows Sandbox to that harness, which runs the same installer without a guest; no acceptance is removed.) The first release that contains the new updater is still fetched whole by earlier updaters; the owner's installed update to the release after it confirms the light path on his PC. |
 
 ### Lifecycle, shell integration and final delivery
 

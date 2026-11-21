@@ -6,7 +6,7 @@ public partial class MainWindow
 {
     readonly CancellationTokenSource updateShutdown=new();
     Task<string> updateCheck;
-    bool manualUpdateRequested,updateChecksStopped;
+    bool manualUpdateRequested,updateChecksStopped,fullUpdateRequested;
     Updater.Release availableUpdate; // UPDATE-03: the newer release the last check found, shown by the dot
 
     // UPDATE-03: a dot on the sidebar's update button, with its tooltip and accessible name, instead of a popup
@@ -56,7 +56,7 @@ public partial class MainWindow
         try
         {
             // A manual caller joining an automatic check sees the version it asked for in its window.
-            var release=await Updater.Check(manual:true,updateShutdown.Token);
+            var release=await Updater.Check(manual:true,updateShutdown.Token,reinstall:fullUpdateRequested);
             if(!updateChecksStopped)
             {
                 // UPDATE-03: any successful check sets the dot; only a manual check shows the release in a window.
@@ -64,7 +64,7 @@ public partial class MainWindow
                 ShowUpdateAvailable(release);
                 if(release!=null)
                 {
-                    if(manualUpdateRequested&&updateDialog!=null)updateDialog.ShowRelease(release);
+                    if(manualUpdateRequested&&updateDialog!=null)updateDialog.ShowRelease(release,continueFull:fullUpdateRequested);
                 }
                 else if(manualUpdateRequested)
                 {
@@ -83,7 +83,7 @@ public partial class MainWindow
             }
         }
         catch(Exception error){failure=error;}
-        finally{updateCheck=null;manualUpdateRequested=false;}
+        finally{updateCheck=null;manualUpdateRequested=fullUpdateRequested=false;}
         if(failure!=null)completion.TrySetException(failure);else completion.TrySetResult(answer);
     }
     async Task StopUpdateChecks()

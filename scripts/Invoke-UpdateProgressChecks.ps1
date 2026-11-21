@@ -100,6 +100,69 @@ foreach($case in @(@{name='dark100';scale=100;back=0x141414;ink=0xF6EEE8;accent=
         }
     }
 }
+# LIGHT-04: the light update of a fixture release, built by the release script from the base's
+# file list and run with the actual installer over an actual full installation of that base.
+function Write-FixtureManifest([string]$root,[string]$version){
+    $files=@(Get-ChildItem -LiteralPath $root -File -Recurse|Where-Object Name -NE 'release-manifest.json'|Sort-Object FullName|ForEach-Object{[ordered]@{path=[IO.Path]::GetRelativePath($root,$_.FullName).Replace('\','/');bytes=$_.Length;sha256=(Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash}})
+    [ordered]@{product='Pathweft';version=$version;files=$files}|ConvertTo-Json -Depth 6|Set-Content -LiteralPath (Join-Path $root 'release-manifest.json') -Encoding utf8
+}
+function Write-FixtureBytes([string]$path){$data=New-Object byte[] (256*1024);[Security.Cryptography.RandomNumberGenerator]::Fill($data);[void][IO.Directory]::CreateDirectory((Split-Path $path));[IO.File]::WriteAllBytes($path,$data)}
+function Invoke-FixtureSetup([string]$file,[string]$destination,[string]$log){
+    $process=Start-Process -FilePath $file -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/NOICONS','/TASKS=','/RESTARTAPP=1',('/DIR='+$destination),('/LOG='+$log)) -WindowStyle Hidden -PassThru
+    $process.WaitForExit();$code=$process.ExitCode;$process.Dispose();$code
+}
+$lightBase=Join-Path $run 'light-base';$lightNext=Join-Path $run 'light-next'
+$baseDelivery=Join-Path $run 'light-base-delivery';$lightDelivery=Join-Path $run 'light-delivery'
+foreach($path in @($lightBase,$baseDelivery,$lightDelivery)){[void][IO.Directory]::CreateDirectory($path)}
+foreach($name in @('Pathweft.exe','PathweftShell-x64.dll','PathweftShell-x86.dll')){Copy-Item (Join-Path $payload $name) (Join-Path $lightBase $name)}
+foreach($name in @('kept.bin','changed.bin','removed.bin','data\nested.bin')){Write-FixtureBytes (Join-Path $lightBase $name)}
+Write-FixtureManifest $lightBase '1.1.13'
+Copy-Item -LiteralPath $lightBase -Destination $lightNext -Recurse
+Write-FixtureBytes (Join-Path $lightNext 'changed.bin');Remove-Item -LiteralPath (Join-Path $lightNext 'removed.bin');Write-FixtureBytes (Join-Path $lightNext 'data\added.bin')
+Write-FixtureManifest $lightNext '1.1.14'
+& $Compiler '/DAppVersion=1.1.13' ('/DAppIdGuid='+$id) '/DProgressVerification' ('/DPublishRoot='+$lightBase) ('/DDeliveryRoot='+$baseDelivery) (Join-Path $repo 'installer/Pathweft.iss') /Q
+if($LASTEXITCODE -ne 0){throw 'The light base fixture installer did not compile.'}
+$light=& (Join-Path $PSScriptRoot 'New-LightUpdate.ps1') -BaseManifest (Join-Path $lightBase 'release-manifest.json') -PublishRoot $lightNext -DeliveryRoot $lightDelivery -Scratch (Join-Path $run 'light-stage') -Compiler $Compiler -Define @('ProgressVerification',('AppIdGuid='+$id))
+Check ($light.changed -eq 2 -and $light.removed -eq 1 -and $light.base -eq '1.1.13' -and $light.installer -eq 'Pathweft-1.1.14-update.exe') 'The light update holds only the changed and new files and the removed one'
+$lightSetup=Join-Path $lightDelivery 'Pathweft-1.1.14-update.exe'
+$described=Get-Content -LiteralPath (Join-Path $lightDelivery 'Pathweft-1.1.14-update.json') -Raw|ConvertFrom-Json
+Check ($described.sha256 -eq (Get-FileHash $lightSetup).Hash.ToLowerInvariant() -and $described.baseManifestSha256 -eq (Get-FileHash (Join-Path $lightBase 'release-manifest.json')).Hash.ToLowerInvariant()) 'The light update description names its package and base file list'
+$nextFiles=@((Get-Content -LiteralPath (Join-Path $lightNext 'release-manifest.json') -Raw|ConvertFrom-Json).files)
+foreach($case in @('light-applies','light-changed-file','light-other-base')){
+    $folder=Join-Path $run $case;$destination=Join-Path $folder 'installed';[void][IO.Directory]::CreateDirectory($folder)
+    $installed=$false
+    try{
+        $code=Invoke-FixtureSetup (Join-Path $baseDelivery 'Pathweft-1.1.13-setup.exe') $destination (Join-Path $folder 'base.log');$installed=$true
+        Check ($code -eq 0) ($case+': the full base release installs')
+        Remove-Item -LiteralPath (Join-Path $destination 'calls.txt')
+        if($case -eq 'light-changed-file'){Write-FixtureBytes (Join-Path $destination 'kept.bin')}
+        if($case -eq 'light-other-base'){Add-Content -LiteralPath (Join-Path $destination 'release-manifest.json') -Value ' '}
+        $before=@{};foreach($name in @('changed.bin','removed.bin','release-manifest.json')){$before[$name]=(Get-FileHash (Join-Path $destination $name)).Hash}
+        $code=Invoke-FixtureSetup $lightSetup $destination (Join-Path $folder 'light.log')
+        $calls=@(Get-Content (Join-Path $destination 'calls.txt'))
+        if($case -eq 'light-applies'){
+            Check ($code -eq 0) 'The light update installs over its base'
+            Check (!@($nextFiles|Where-Object{(Get-FileHash -LiteralPath (Join-Path $destination $_.path)).Hash -ne $_.sha256}).Count) 'After the light update every file is the new release one'
+            Check ((Get-FileHash (Join-Path $destination 'release-manifest.json')).Hash -eq (Get-FileHash (Join-Path $lightNext 'release-manifest.json')).Hash -and !(Test-Path (Join-Path $destination 'removed.bin'))) 'The light update writes the new file list and deletes the file the release no longer ships'
+            $key=[Microsoft.Win32.Registry]::CurrentUser.OpenSubKey($registration)
+            try{Check ($key.GetValue('DisplayVersion') -eq '1.1.14') 'The installation is registered as the new version'}finally{$key.Dispose()}
+            Check (@($calls|Where-Object{$_ -eq '--desktop-launch '}).Count -eq 1 -and !@($calls|Where-Object{$_ -like '*--full-update*'}).Count) 'The light update reopens Pathweft normally'
+        }else{
+            Check ($code -ne 0) ($case+': the light update refuses an installation that is not its base')
+            Check (!@($before.Keys|Where-Object{(Get-FileHash (Join-Path $destination $_)).Hash -ne $before[$_]}).Count -and !(Test-Path (Join-Path $destination 'data\added.bin'))) ($case+': the refused light update changes nothing')
+            Check (@($calls|Where-Object{$_ -eq '--desktop-launch --full-update '}).Count -eq 1 -and !@($calls|Where-Object{$_ -like '--prepare-update*'}).Count) ($case+': Pathweft reopens to install the full update')
+            Check ((Get-Content -LiteralPath (Join-Path $folder 'light.log') -Raw) -match 'Light update not used') ($case+': the setup log names the differing file')
+        }
+    }finally{
+        $key=[Microsoft.Win32.Registry]::CurrentUser.OpenSubKey($registration)
+        try{if($key -and $key.GetValue('InstallLocation').TrimEnd('\') -ne $destination){throw 'Test installation ownership changed; preserve it.'};$installed=$null -ne $key}finally{if($key){$key.Dispose()}}
+        if($installed){
+            $uninstall=Start-Process -FilePath (Join-Path $destination 'unins000.exe') -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART') -WindowStyle Hidden -PassThru
+            $uninstall.WaitForExit();if($uninstall.ExitCode -ne 0){throw 'Owned fixture uninstall did not complete.'};$uninstall.Dispose()
+            Check (!@(@($nextFiles.path)+'removed.bin'|Where-Object{Test-Path (Join-Path $destination $_)}).Count) ($case+': uninstalling removes the files of both releases')
+        }
+    }
+}
 $remaining=[Microsoft.Win32.Registry]::CurrentUser.OpenSubKey($registration)
 try{Check ($null -eq $remaining) 'The actual test uninstaller removes only its distinct installation identity'}finally{if($remaining){$remaining.Dispose()}}
 $checks|ConvertTo-Json -Depth 5|Set-Content (Join-Path $run 'checks.json')

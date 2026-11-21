@@ -21,8 +21,20 @@ public static class Updater
 {
     public const string Repo = "Darkaxt/Pathweft";
 
-    public record Release(Version Version, string Tag, string Notes, string AssetUrl, long AssetSize, string Sha256);
+    public record Release(Version Version, string Tag, string Notes, string AssetUrl, long AssetSize, string Sha256, LightAsset Light = null)
+    {
+        public Package Full => new(AssetUrl, AssetSize, Sha256, $"Pathweft-{Version}-setup.exe", false);
+    }
+    /// LIGHT-01: the release's light package and its description (base version, base file list hash).
+    public record LightAsset(string InfoUrl, string Url, long Size, string Sha256);
+    /// What gets downloaded and run: the full installer or the light package.
+    public record Package(string Url, long Size, string Sha256, string FileName, bool Light);
+    /// LIGHT-02: the package chosen before downloading, and why the full installer when it is the full one.
+    public record Choice(Package Package, string Reason);
     public record DownloadProgress(string Stage,long Received,long Total);
+
+    // the self-test points this at an owned fixture installation
+    internal static string InstalledRoot = AppContext.BaseDirectory;
 
     public static Version Current => typeof(Updater).Assembly.GetName().Version is { } v ? new Version(v.Major, v.Minor, v.Build) : new Version(0, 0, 0);
 
@@ -38,12 +50,13 @@ public static class Updater
         ex is HttpRequestException or TaskCanceledException or JsonException or KeyNotFoundException or InvalidOperationException;
 
     /// The latest release when it is newer than what's running, else null. Throws when the check
-    /// itself failed (see Failed).
-    public static async Task<Release> Check(bool manual,CancellationToken token=default)
+    /// itself failed (see Failed). LIGHT-03: reinstall also returns the running version, for the full
+    /// installer after a light update whose written files didn't match.
+    public static async Task<Release> Check(bool manual,CancellationToken token=default,bool reinstall=false)
     {
         var release = await Latest(token);
         if (release == null) return null;
-        if (release.Version <= Current) return null;
+        if (release.Version < Current || (release.Version == Current && !reinstall)) return null;
         return release;
     }
 
@@ -63,24 +76,105 @@ public static class Updater
             .FirstOrDefault(a => (a.GetProperty("name").GetString() ?? "").EndsWith("setup.exe", StringComparison.OrdinalIgnoreCase));
         if (asset.ValueKind != JsonValueKind.Object) return null; // a release without an installer: nothing to install
         // GitHub publishes each asset's SHA-256 as "sha256:<hex>"; older assets have none
-        var digest = asset.TryGetProperty("digest", out var d) && d.ValueKind == JsonValueKind.String ? d.GetString() : null;
+        static string Digest(JsonElement a) => a.TryGetProperty("digest", out var d) && d.ValueKind == JsonValueKind.String && d.GetString() is { } value && value.StartsWith("sha256:") ? value[7..] : null;
+        JsonElement Named(string name) => root.GetProperty("assets").EnumerateArray().FirstOrDefault(a => string.Equals(a.GetProperty("name").GetString(), name, StringComparison.OrdinalIgnoreCase));
+        LightAsset light = null;
+        var info = Named($"Pathweft-{version}-update.json");
+        var package = Named($"Pathweft-{version}-update.exe");
+        if (info.ValueKind == JsonValueKind.Object && package.ValueKind == JsonValueKind.Object)
+            light = new(info.GetProperty("browser_download_url").GetString(), package.GetProperty("browser_download_url").GetString(), package.GetProperty("size").GetInt64(), Digest(package));
         return new Release(version, tag, root.GetProperty("body").GetString() ?? "",
                            asset.GetProperty("browser_download_url").GetString(), asset.GetProperty("size").GetInt64(),
-                           digest?.StartsWith("sha256:") == true ? digest[7..] : null);
+                           Digest(asset), light);
+    }
+
+    /// LIGHT-02: decide before downloading. The light package only when this installation is exactly the release
+    /// it was built from: the same version, the same release-manifest.json and every file it lists unchanged.
+    /// Anything else means the full installer, with the reason. Only cancellation throws.
+    public static async Task<Choice> Choose(Release release, IProgress<DownloadProgress> progress, CancellationToken token)
+    {
+        if (release.Light == null) return new(release.Full, "no light update was published for this release");
+        if (release.Light.Sha256 == null) return new(release.Full, "the light update has no published checksum");
+        JsonElement description;
+        try
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Get, release.Light.InfoUrl);
+            request.Headers.UserAgent.ParseAdd("Pathweft");
+            using var response = await http.SendAsync(request, token);
+            response.EnsureSuccessStatusCode();
+            using var json = JsonDocument.Parse(await response.Content.ReadAsStringAsync(token));
+            description = json.RootElement.Clone();
+        }
+        catch (Exception error) when (error is HttpRequestException or JsonException || (error is TaskCanceledException && !token.IsCancellationRequested))
+        { return new(release.Full, "the light update's description couldn't be read"); }
+        string baseText, manifestSha, installer, sha; long bytes;
+        try
+        {
+            if (description.GetProperty("version").GetString() != release.Version.ToString()) return new(release.Full, "the light update describes another release");
+            baseText = description.GetProperty("base").GetString(); manifestSha = description.GetProperty("baseManifestSha256").GetString();
+            installer = description.GetProperty("installer").GetString(); sha = description.GetProperty("sha256").GetString(); bytes = description.GetProperty("bytes").GetInt64();
+        }
+        catch (Exception error) when (error is KeyNotFoundException or InvalidOperationException)
+        { return new(release.Full, "the light update's description is incomplete"); }
+        if (!Version.TryParse(baseText, out var from) || installer != $"Pathweft-{release.Version}-update.exe" || bytes != release.Light.Size || !string.Equals(sha, release.Light.Sha256, StringComparison.OrdinalIgnoreCase))
+            return new(release.Full, "the light update's description doesn't match its download");
+        if (from != Current) return new(release.Full, $"the light update only updates {from}");
+        string listed = Path.Combine(InstalledRoot, "release-manifest.json");
+        if (!File.Exists(listed)) return new(release.Full, "this installation has no file list");
+        byte[] manifest = await File.ReadAllBytesAsync(listed, token);
+        if (!Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(manifest)).Equals(manifestSha, StringComparison.OrdinalIgnoreCase))
+            return new(release.Full, $"the installed file list isn't the one of Pathweft {from}");
+        var files = new List<(string Path, long Bytes, string Sha256)>();
+        try
+        {
+            using var parsed = JsonDocument.Parse(System.Text.Encoding.UTF8.GetString(manifest).TrimStart((char)0xFEFF));
+            foreach (var file in parsed.RootElement.GetProperty("files").EnumerateArray())
+                files.Add((file.GetProperty("path").GetString(), file.GetProperty("bytes").GetInt64(), file.GetProperty("sha256").GetString()));
+        }
+        catch (Exception error) when (error is JsonException or KeyNotFoundException or InvalidOperationException)
+        { return new(release.Full, "the installed file list can't be read"); }
+        string root = Path.GetFullPath(InstalledRoot);
+        long total = files.Sum(file => file.Bytes), done = 0, reported = -1;
+        string differs = null;
+        using var stop = CancellationTokenSource.CreateLinkedTokenSource(token);
+        progress?.Report(new("Checking installed files", 0, total));
+        try
+        {
+            await Parallel.ForEachAsync(files, new ParallelOptions { MaxDegreeOfParallelism = 4, CancellationToken = stop.Token }, async (file, cancel) =>
+            {
+                string path = Path.GetFullPath(Path.Combine(root, file.Path));
+                bool same = false;
+                if (path.StartsWith(root, StringComparison.OrdinalIgnoreCase) && File.Exists(path))
+                {
+                    using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, 1 << 16, FileOptions.Asynchronous | FileOptions.SequentialScan);
+                    same = stream.Length == file.Bytes && Convert.ToHexString(await System.Security.Cryptography.SHA256.HashDataAsync(stream, cancel)).Equals(file.Sha256, StringComparison.OrdinalIgnoreCase);
+                }
+                if (!same) { Interlocked.CompareExchange(ref differs, file.Path, null); stop.Cancel(); return; }
+                long now = Interlocked.Add(ref done, file.Bytes), percent = total > 0 ? now * 100 / total : 100;
+                if (Interlocked.Exchange(ref reported, percent) != percent) progress?.Report(new("Checking installed files", now, total));
+            });
+        }
+        catch (OperationCanceledException) when (differs != null && !token.IsCancellationRequested) { }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException) { return new(release.Full, "an installed file couldn't be read"); }
+        if (differs != null) return new(release.Full, $"an installed file differs from Pathweft {from} ({differs})");
+        return new(new(release.Light.Url, release.Light.Size, release.Light.Sha256, installer, true), null);
     }
 
 
-    /// Downloads the installer, reporting 0..1 progress. Returns its path.
-    public static async Task<string> Download(Release release, IProgress<DownloadProgress> progress, CancellationToken token)
+    /// Downloads the full installer, reporting progress. Returns its path.
+    public static Task<string> Download(Release release, IProgress<DownloadProgress> progress, CancellationToken token) => Download(release.Full, progress, token);
+
+    /// Downloads the chosen package (full installer or light update), reporting progress. Returns its path.
+    public static async Task<string> Download(Package release, IProgress<DownloadProgress> progress, CancellationToken token)
     {
-        var path = UpdateDownloads.Create(release.Version);
+        var path = UpdateDownloads.Create(release.FileName);
         bool complete=false;
         try
         {
-        using (var response = await http.GetAsync(release.AssetUrl, HttpCompletionOption.ResponseHeadersRead, token))
+        using (var response = await http.GetAsync(release.Url, HttpCompletionOption.ResponseHeadersRead, token))
         {
             response.EnsureSuccessStatusCode();
-            var total = response.Content.Headers.ContentLength ?? release.AssetSize;
+            var total = response.Content.Headers.ContentLength ?? release.Size;
             using var source = await response.Content.ReadAsStreamAsync(token);
             using var file = File.Create(path);
             var buffer = new byte[128 * 1024];
@@ -96,10 +190,10 @@ public static class Updater
         // Size check, as in Shelf: a truncated download would otherwise be run as an installer.
         progress?.Report(new("Checking update",0,0));
         var length = new FileInfo(path).Length;
-        if (length != release.AssetSize)
+        if (length != release.Size)
         {
             File.Delete(path);
-            throw new IOException($"Download is {MainWindow.Fmt(length)}, expected {MainWindow.Fmt(release.AssetSize)}");
+            throw new IOException($"Download is {MainWindow.Fmt(length)}, expected {MainWindow.Fmt(release.Size)}");
         }
         // The size catches a cut-off download; the checksum catches everything else. This file is about
         // to be run as an installer, so one that differs from what was published never is.

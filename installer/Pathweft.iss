@@ -43,7 +43,12 @@ ArchitecturesInstallIn64BitMode=x64compatible
 CloseApplications=no
 RestartApplications=no
 OutputDir={#DeliveryRoot}
+#ifdef LightBase
+; LIGHT-01: only the files that changed since {#LightBase}; build.ps1 supplies the lists.
+OutputBaseFilename=Pathweft-{#AppVersion}-update
+#else
 OutputBaseFilename=Pathweft-{#AppVersion}-setup
+#endif
 SetupIconFile=..\app.ico
 Compression=lzma2
 SolidCompression=yes
@@ -58,6 +63,11 @@ Name: "defaultfm"; Description: "Open filesystem folders and drives in Pathweft"
 Name: "desktopicon"; Description: "Create a desktop shortcut"; GroupDescription: "Shortcuts:"; Flags: unchecked
 
 [InstallDelete]
+#ifdef LightBase
+; LIGHT-01: exactly the files the base release had and this one no longer ships. The
+; cleanups below assume a full copy follows (some are copied back), so they stay out.
+#include LightRemoved
+#else
 ; An update only overwrites files, so members earlier releases shipped stay
 ; behind. These run before [Files] copies the current set: S56 (1.1.80) removed
 ; the bundled Everything engine and SDK, and each .NET servicing update renames
@@ -73,6 +83,7 @@ Type: filesandordirs; Name: "{app}\index"
 Type: files; Name: "{app}\Performance-MCP.md"
 Type: files; Name: "{app}\*.xml"
 #include "BundledRuntime.iss"
+#endif
 
 [Files]
 ; SHELL-06: the native handlers keep one fixed name. A Shell caller (Explorer,
@@ -80,8 +91,16 @@ Type: files; Name: "{app}\*.xml"
 ; before the new copy is written, so no app is closed. Uninstall never
 ; force-closes that caller to remove its DLL. They are copied first, so the new
 ; Pathweft.exe never runs without its handler, even if Setup stops early.
+#ifdef LightBase
+Source: "{#LightRoot}\PathweftShell-*.dll"; DestDir: "{app}"; Flags: ignoreversion uninsrestartdelete skipifsourcedoesntexist; BeforeInstall: MoveHandlerAside
+Source: "{#LightRoot}\*"; DestDir: "{app}"; Excludes: "PathweftShell-*.dll"; Flags: ignoreversion recursesubdirs createallsubdirs
+; LIGHT-03: the base files checked before anything changes, and the new files checked after
+Source: "{#LightCheck}"; DestName: "light-base.txt"; Flags: dontcopy
+Source: "{#LightVerify}"; DestName: "light-new.txt"; Flags: dontcopy
+#else
 Source: "{#PublishRoot}\PathweftShell-*.dll"; DestDir: "{app}"; Flags: ignoreversion uninsrestartdelete; BeforeInstall: MoveHandlerAside
 Source: "{#PublishRoot}\*"; DestDir: "{app}"; Excludes: "PathweftShell-*.dll"; Flags: ignoreversion recursesubdirs createallsubdirs
+#endif
 
 [Registry]
 #ifndef ProgressVerification
@@ -222,6 +241,46 @@ end;
 var
   IntegrationExitCode: Integer;
 
+#ifdef LightBase
+{ LIGHT-03: '' when every listed file under {app} has its SHA-256, else the first
+  that differs or is missing. Each line of the list is "<sha256> <relative path>". }
+function LightFileDiffers(const List: String): String;
+var
+  Lines: TArrayOfString;
+  I, Space, Count: Integer;
+  Line, Path: String;
+begin
+  Result := '';
+  ExtractTemporaryFile(List);
+  if not LoadStringsFromFile(ExpandConstant('{tmp}' + List), Lines) then begin
+    Result := List;
+    Exit;
+  end;
+  Count := GetArrayLength(Lines);
+  for I := 0 to Count - 1 do begin
+    Line := Trim(Lines[I]);
+    if Line = '' then Continue;
+    Space := Pos(' ', Line);
+    Path := Copy(Line, Space + 1, Length(Line));
+    try
+      if CompareText(GetSHA256OfFile(ExpandConstant('{app}') + Path), Copy(Line, 1, Space - 1)) <> 0 then Result := Path;
+    except
+      Result := Path;
+    end;
+    if Result <> '' then Exit;
+    if (I mod 100) = 0 then DeploymentChecked(I, Count);
+  end;
+end;
+
+procedure ReopenForFullUpdate;
+var
+  Code: Integer;
+begin
+  if RestartRequested() then
+    Exec(ExpandConstant('{app}\{#AppExe}'), '--desktop-launch --full-update', '', SW_HIDE, ewWaitUntilTerminated, Code);
+end;
+#endif
+
 function GetCustomSetupExitCode(): Integer;
 begin
   Result := IntegrationExitCode;
@@ -307,7 +366,7 @@ var
   Pid, Code: Integer;
   Handle: THandle;
   Created, Exited, Kernel, User: TCreationTime;
-  Expected: String;
+  Expected, Differs: String;
 begin
   Result := '';
 #ifndef ProgressVerification
@@ -356,6 +415,20 @@ begin
       end;
     end;
   end;
+#ifdef LightBase
+  { LIGHT-03: recheck the base right before changing anything. On a difference nothing
+    is changed and Pathweft reopens to install the full update. }
+  DeploymentPhase('Checking installed files', 'The light update needs the files of Pathweft {#LightBase}.');
+  Differs := LightFileDiffers('light-base.txt');
+  if Differs <> '' then begin
+    Log('Light update not used; this installed file differs from {#LightBase}: ' + Differs);
+    DeploymentPhase('Using the full update', 'An installed file differs from Pathweft {#LightBase}, so nothing has been changed. Pathweft reopens and installs the full update.');
+    DeploymentFailure := '';
+    ReopenForFullUpdate;
+    Result := 'An installed file differs from Pathweft {#LightBase} (' + Differs + '). The light update changed nothing.';
+    Exit;
+  end;
+#endif
   Result := PrepareExisting('--prepare-update');
 #ifndef ProgressVerification
   { The service runs from the files this update replaces: stop it first; `install` starts it again. }
@@ -372,7 +445,23 @@ end;
 procedure CurStepChanged(CurStep: TSetupStep);
 var
   Code: Integer;
+#ifdef LightBase
+  Differs: String;
+#endif
 begin
+#ifdef LightBase
+  { LIGHT-03: the files this update wrote must be the release's. }
+  if CurStep = ssPostInstall then begin
+    Differs := LightFileDiffers('light-new.txt');
+    if Differs <> '' then begin
+      Log('Light update file differs after installing: ' + Differs);
+      IntegrationExitCode := 9;
+      DeploymentFailure := '';
+      ReopenForFullUpdate;
+      RaiseException('The light update wrote ' + Differs + ', but it differs from the release. Pathweft reopens and installs the full update.');
+    end;
+  end;
+#endif
   if CurStep = ssPostInstall then begin
     RetireOldHandlers;
     if MigrationRequested() then begin

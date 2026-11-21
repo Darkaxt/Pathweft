@@ -95,7 +95,7 @@ static class Program
 #endif
         if(args.Contains("--desktop-launch"))
         {
-            try{Environment.ExitCode=DesktopLaunch.FromSetup(args.Contains("--resume-agent"),args.Contains("--set-default"));}
+            try{Environment.ExitCode=DesktopLaunch.FromSetup(args.Contains("--resume-agent"),args.Contains("--set-default"),args.Contains("--full-update"));}
             catch(Exception error)when(error is System.Runtime.InteropServices.COMException or IOException or UnauthorizedAccessException){Environment.ExitCode=1;}
             return;
         }

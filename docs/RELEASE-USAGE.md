@@ -290,6 +290,12 @@ The updater reports downloaded bytes, checksum verification and installation
 phases in matching themed popups. Installation progress remains visible after
 the app exits; closing that popup hides progress without cancelling replacement.
 File percentages measure installer file work, not an estimated overall duration.
+From 1.1.87 each release also publishes a light update, Pathweft-<version>-update.exe,
+with only the files changed since the previous release. The updater uses it only
+when the installed version is its base and every installed file is unchanged; it
+checks that before downloading and the light update checks it again before
+changing anything. Otherwise the full installer is used, and the update window
+says why. To install by hand, use the full installer.
 Video and animated 3D timeline clicks seek immediately during playback and while
 paused; dragging and keyboard controls remain available.
 

@@ -11,10 +11,13 @@ internal static class UpdateDownloads
     internal sealed record Receipt(string File,uint Volume,ulong Id,long Created,int Owner,long OwnerCreated,int Installer=0,long InstallerCreated=0);
     internal static string Root=>Path.Combine(DataFolder.Bulk,"Updates");
     static string Record(string path)=>Path.Combine(Path.GetDirectoryName(path),"download.json");
-    internal static string Create(Version version)
+    internal static string Create(Version version)=>Create($"Pathweft-{version}-setup.exe");
+    /// The full installer or the light update (LIGHT-01), under its published name.
+    internal static string Create(string name)
     {
+        if(Path.GetFileName(name)!=name||!name.EndsWith(".exe",StringComparison.OrdinalIgnoreCase))throw new IOException("Not an update package name.");
         string folder=Directory.CreateDirectory(Path.Combine(Root,Guid.NewGuid().ToString("N"))).FullName;
-        string path=Path.Combine(folder,$"Pathweft-{version}-setup.exe");
+        string path=Path.Combine(folder,name);
         using(var file=new FileStream(path,FileMode.CreateNew,FileAccess.Write,FileShare.None)){}
         var stamp=TransferFile.Inspect(path);using var owner=Process.GetCurrentProcess();
         Save(path,new(Path.GetFileName(path),stamp.Volume,stamp.Id,stamp.Created,owner.Id,owner.StartTime.ToUniversalTime().ToFileTimeUtc()));

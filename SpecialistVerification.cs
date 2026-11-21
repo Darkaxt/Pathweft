@@ -25,6 +25,7 @@ public partial class MainWindow
 {
     internal async Task VerifySpecialists13(string root, Action<bool,string> check)
     {
+        if(Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO")=="light-update"){await VerifyLightUpdate59(root,check);return;}
         if(Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO")=="index-service"){await VerifyIndexService54(root,check);return;}
         if(Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO")=="content-index"){await VerifyContentIndex19(root,check);return;}
         if(Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO")=="content-live"){await VerifyContentLive19(root,check);return;}

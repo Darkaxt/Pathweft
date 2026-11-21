@@ -8,7 +8,9 @@ param(
     [string]$Compiler='D:\Tools\InnoSetup\6.7.4\ISCC.exe',
     [switch]$Candidate,
     [string]$ResumeCandidateRun,
-    [string]$PrebuiltPublishRoot
+    [string]$PrebuiltPublishRoot,
+    # LIGHT-01: the release-manifest.json of the release this one's light update updates
+    [string]$LightBaseManifest
 )
 $ErrorActionPreference='Stop'
 $root=$PSScriptRoot
@@ -127,6 +129,7 @@ $receipt=[ordered]@{product='Pathweft';version=$version;sourceCommit=$commit;sou
 $receipt | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath (Join-Path $publish 'release-manifest.json') -Encoding utf8
 & $Compiler "/DAppVersion=$version" "/DPublishRoot=$publish" "/DDeliveryRoot=$delivery" (Join-Path $root 'installer/Pathweft.iss') /Q
 if($LASTEXITCODE -ne 0){throw 'Installer compilation failed.'}
+if($LightBaseManifest){& (Join-Path $root 'scripts/New-LightUpdate.ps1') -BaseManifest $LightBaseManifest -PublishRoot $publish -DeliveryRoot $delivery -Scratch (Join-Path $run 'light') -Compiler $Compiler | Out-Host}
 $portableRoot=Join-Path $run 'portable'
 [void][IO.Directory]::CreateDirectory($portableRoot)
 Copy-Item -LiteralPath $publish -Destination (Join-Path $portableRoot 'Pathweft') -Recurse

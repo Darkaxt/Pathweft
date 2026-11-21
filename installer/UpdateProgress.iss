@@ -229,6 +229,20 @@ begin
   DeploymentPhase('Preparing update', 'Version {#AppVersion}');
 end;
 
+{ LIGHT-03: file check progress, painted without a capture per step. }
+procedure DeploymentChecked(Done, Total: Integer);
+var
+  Message: TDeploymentMessage;
+begin
+  if (DeploymentForm <> nil) and (Total > 0) then begin
+    DeploymentPercent.Caption := IntToStr(Done * 100 div Total) + '% checked';
+    UpdateWindow(DeploymentForm.Handle);
+  end;
+  while PeekMessage(Message, 0, 0, 0, 1) do begin
+    TranslateMessage(Message); DispatchMessage(Message);
+  end;
+end;
+
 procedure DeploymentProgress(CurProgress, MaxProgress: Integer);
 var
   Percent: Integer;

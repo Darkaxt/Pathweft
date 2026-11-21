@@ -1,6 +1,11 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.87 | 2026-11-21 | Smaller updates
+
+- Updates now download only the files that changed, usually a few dozen megabytes instead of the whole 390 MB installer. Before downloading, Pathweft checks that its installed files are the ones of the version you have; if any differ, it downloads the full installer and says why.
+- This update itself is still downloaded whole; the update after it is the first light one.
+
 ## 1.1.86 | 2026-11-20 | Workspaces, linked panes, collections and more
 
 - Workspaces (sidebar): save the open tabs of both panes under a name and bring them back later. A click replaces the unpinned tabs; a middle click adds them to the open ones.

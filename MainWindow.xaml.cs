@@ -420,7 +420,9 @@ public partial class MainWindow : Window
             }
             if(updateChecksStopped)return;
             ShowWhatsNew();
-            await CheckForUpdate(manual: false);
+            // LIGHT-03: reopened by a light update that couldn't be used: continue with the full installer
+            if(Environment.GetCommandLineArgs().Contains("--full-update")){fullUpdateRequested=true;await CheckForUpdate(manual:true);}
+            else await CheckForUpdate(manual: false);
         };
         firstUpdateTimer.Start();
         updateTimer.Tick += async (_, _) => await CheckForUpdate(manual: false);

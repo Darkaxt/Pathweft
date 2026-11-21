@@ -19,9 +19,10 @@ static class DesktopLaunch
         try{Marshal.ThrowExceptionForHR(Marshal.GetDelegateForFunctionPointer<Launch>(NativeLibrary.GetExport(library,"PathweftLaunchDesktop"))(Environment.ProcessPath,arguments,AppContext.BaseDirectory,show));}
         finally{NativeLibrary.Free(library);}
     }
-    internal static int FromSetup(bool resume,bool setDefault=false)
+    internal static int FromSetup(bool resume,bool setDefault=false,bool fullUpdate=false)
     {
-        if(!resume&&!setDefault){Start("--front");return 0;}
+        // LIGHT-03: a light update that found changed files reopens Pathweft to install the full one.
+        if(!resume&&!setDefault){Start(fullUpdate?"--front --full-update":"--front");return 0;}
         // Setup must receive the real resume result, not just COM acceptance.
         string name=Prefix+Guid.NewGuid().ToString("N");
         // The desktop child runs at medium integrity. It owns the pipe so the
