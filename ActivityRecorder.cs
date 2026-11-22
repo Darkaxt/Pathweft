@@ -86,12 +86,17 @@ internal sealed class ActivityRecorder
         parser.All+=Event;
         var processing=Task.Run(()=>{try{source.Process();}catch(Exception error)when(error is ObjectDisposedException or InvalidOperationException or System.ComponentModel.Win32Exception){}});
         var commandLines=StartCommands();
+        // ACTIVITY-07: ETW delivers real-time buffers about once a second, after most short processes have
+        // exited; flushing the process session every 100 ms lets the starting folder be read while they run.
+        var events=session;
+        var prompt=new System.Threading.Timer(_=>{try{events.Flush();}catch(Exception error)when(error is ObjectDisposedException or InvalidOperationException or COMException or System.ComponentModel.Win32Exception){}},null,100,100);
         lastFlush=Now();
         while(!stop.WaitOne(FlushInterval))
         {
             lock(gate)Observe(initial:false);
             Flush();
         }
+        using(var stopped=new ManualResetEvent(false)){prompt.Dispose(stopped);stopped.WaitOne(2000);}
         session.Dispose();session=null;processing.Wait(5000);
         kernel?.Dispose();kernel=null;commandLines?.Wait(5000);
         lock(gate)Observe(initial:false);
