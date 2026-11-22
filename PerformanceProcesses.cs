@@ -32,6 +32,7 @@ internal sealed class PerformanceProcessRow : INotifyPropertyChanged
     public int Handles=>Sample.Handles??-1;
     public string HandlesText=>Observed&&Sample.Handles is {} held?held.ToString("N0",CultureInfo.CurrentCulture):"—";
     public string ParentMark=>Sample.ParentEnded==true?"parent ended":"";
+    public Visibility ParentMarkVisibility=>Sample.ParentEnded==true?Visibility.Visible:Visibility.Collapsed;
     public string ExecutablePath {get;internal set;}="Reading…";
     public string CommandLine {get;internal set;}="Reading…";
     public string MetadataIssue {get;internal set;}
@@ -236,6 +237,23 @@ internal sealed partial class PerformancePanel
         // Explicit result: a refusal is shown; an ended process becomes "No current observation" on the next sample.
         if(PerformanceProcessControl.End(row.Pid,row.Started) is {} issue)MessageBox.Show(Window.GetWindow(this),issue,"End process",MessageBoxButton.OK,MessageBoxImage.Warning);
     }
+    // MONITOR-23 parent-ended marker: a small badge at the end of the Process cell, apart from the name
+    // (which trims first); the Status column and item status repeat it.
+    internal static DataTemplate ProcessCell(string pin)
+    {
+        var body=new FrameworkElementFactory(typeof(DockPanel));body.SetValue(DockPanel.LastChildFillProperty,true);
+        if(pin!=null)
+        {
+            var glyph=new FrameworkElementFactory(typeof(TextBlock));glyph.SetValue(TextBlock.FontFamilyProperty,new System.Windows.Media.FontFamily("Segoe Fluent Icons"));glyph.SetValue(TextBlock.FontSizeProperty,11d);glyph.SetValue(FrameworkElement.WidthProperty,18d);glyph.SetValue(FrameworkElement.VerticalAlignmentProperty,VerticalAlignment.Center);glyph.SetBinding(TextBlock.TextProperty,new Binding(pin));glyph.SetValue(DockPanel.DockProperty,Dock.Left);body.AppendChild(glyph);
+        }
+        var badge=new FrameworkElementFactory(typeof(Border));badge.SetValue(DockPanel.DockProperty,Dock.Right);badge.SetValue(Border.CornerRadiusProperty,new CornerRadius(3));badge.SetValue(Border.BorderThicknessProperty,new Thickness(1));
+        badge.SetResourceReference(Border.BackgroundProperty,Appearance.ResourceKey("#14FFFFFF"));badge.SetResourceReference(Border.BorderBrushProperty,Appearance.ResourceKey("#2EFFFFFF"));
+        badge.SetValue(Border.PaddingProperty,new Thickness(5,0,5,1));badge.SetValue(FrameworkElement.MarginProperty,new Thickness(8,0,0,0));badge.SetValue(FrameworkElement.VerticalAlignmentProperty,VerticalAlignment.Center);
+        badge.SetBinding(UIElement.VisibilityProperty,new Binding("ParentMarkVisibility"));badge.SetValue(FrameworkElement.ToolTipProperty,"The process that started this one has exited (PID reuse checked by start time)");
+        var mark=new FrameworkElementFactory(typeof(TextBlock));mark.SetBinding(TextBlock.TextProperty,new Binding("ParentMark"));mark.SetValue(TextBlock.FontSizeProperty,10.5d);mark.SetResourceReference(TextBlock.ForegroundProperty,"Muted");badge.AppendChild(mark);body.AppendChild(badge);
+        var text=new FrameworkElementFactory(typeof(TextBlock));text.SetBinding(TextBlock.TextProperty,new Binding("Process"));text.SetValue(TextBlock.TextTrimmingProperty,TextTrimming.CharacterEllipsis);text.SetValue(FrameworkElement.VerticalAlignmentProperty,VerticalAlignment.Center);body.AppendChild(text);
+        return new DataTemplate{VisualTree=body};
+    }
     void ConfigureProcessTable(GridView view)
     {
         foreach(MenuItem item in processColumnsMenu.Items){item.Visibility=Offered((string)item.Tag)?Visibility.Visible:Visibility.Collapsed;item.IsChecked=processColumns[(string)item.Tag];}
@@ -245,11 +263,7 @@ internal sealed partial class PerformancePanel
             var column=new GridViewColumn{Header=new GridViewColumnHeader{Content=label,Tag=property},Width=width};
             if(property=="Process")
             {
-                var body=new FrameworkElementFactory(typeof(StackPanel));body.SetValue(StackPanel.OrientationProperty,Orientation.Horizontal);
-                var glyph=new FrameworkElementFactory(typeof(TextBlock));glyph.SetValue(TextBlock.FontFamilyProperty,new System.Windows.Media.FontFamily("Segoe Fluent Icons"));glyph.SetValue(TextBlock.FontSizeProperty,11d);glyph.SetValue(FrameworkElement.WidthProperty,18d);glyph.SetValue(FrameworkElement.VerticalAlignmentProperty,VerticalAlignment.Center);glyph.SetBinding(TextBlock.TextProperty,new Binding("Pin"));body.AppendChild(glyph);
-                var text=new FrameworkElementFactory(typeof(TextBlock));text.SetBinding(TextBlock.TextProperty,new Binding(property));body.AppendChild(text);
-                // MONITOR-23 parent-ended marker beside the name; the Status column and item status repeat it.
-                var mark=new FrameworkElementFactory(typeof(TextBlock));mark.SetBinding(TextBlock.TextProperty,new Binding("ParentMark"));mark.SetValue(FrameworkElement.MarginProperty,new Thickness(6,0,0,0));mark.SetValue(TextBlock.FontSizeProperty,11d);mark.SetValue(FrameworkElement.VerticalAlignmentProperty,VerticalAlignment.Center);mark.SetResourceReference(TextBlock.ForegroundProperty,"Muted");mark.SetValue(FrameworkElement.ToolTipProperty,"The process that started this one has exited (PID reuse checked by start time)");body.AppendChild(mark);column.CellTemplate=new DataTemplate{VisualTree=body};
+                column.CellTemplate=ProcessCell("Pin");
             }
             else column.DisplayMemberBinding=new Binding(property);
             if(property is "ExecutablePath" or "CommandLine")

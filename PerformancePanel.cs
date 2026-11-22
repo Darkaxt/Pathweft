@@ -131,7 +131,8 @@ internal sealed partial class PerformancePanel : StackPanel,IAsyncDisposable
         var view=new GridView{AllowsColumnReorder=false};
         if(selected is Cpu or Ram&&!Historical){ConfigureProcessTable(view);table.View=view;return;}
         void Column(string title,string property,double width)=>view.Columns.Add(new GridViewColumn{Header=title,DisplayMemberBinding=new Binding(property),Width=width});
-        Column("Process",selected==Gpu?"ProcessLabel":"Process",145);Column("PID","Pid",70);
+        if(selected==Gpu)view.Columns.Add(new GridViewColumn{Header="Process",CellTemplate=ProcessCell(null),Width=200});else Column("Process","Process",145);
+        Column("PID","Pid",70);
         if(selected is Cpu or Ram or Gpu){if(selected!=Ram)Column(selected==Cpu?"CPU":"GPU","Percent",100);if(selected!=Gpu)Column("Working set","MemoryText",120);}
         else
         {

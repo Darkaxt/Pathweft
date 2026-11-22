@@ -277,6 +277,8 @@ internal sealed record ProcessMetric(int Pid,long Started,string Process,double 
     public int? Handles {get;init;}
     public bool? ParentEnded {get;init;}
     public string ProcessLabel=>ParentEnded==true?Process+" · parent ended":Process;
+    public string ParentMark=>ParentEnded==true?"parent ended":"";
+    public System.Windows.Visibility ParentMarkVisibility=>ParentEnded==true?System.Windows.Visibility.Visible:System.Windows.Visibility.Collapsed;
 }
 internal sealed class ProcessMetrics
 {
