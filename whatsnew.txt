@@ -1,6 +1,10 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.90 | 2026-11-23 | Lighter live analysis
+
+- The live CPU, RAM, GPU and folder I/O tables in Performance analysis now update only the rows that changed instead of rebuilding the whole table every second. That rebuilding was most of the processor time Pathweft used while analysis was open, especially with accessibility, text or capture tools running.
+
 ## 1.1.89 | 2026-11-23 | Index status for agents
 
 - Agents using Pathweft's MCP can now see the index's own status: whether each drive or folder is ready, still loading or scanning, offline or in error, and which folders are content-indexed with how many files are current, pending or failed. An empty search can then be told apart from a store that is still loading.

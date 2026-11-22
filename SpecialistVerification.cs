@@ -38,7 +38,7 @@ public partial class MainWindow
             performance.AutomaticIo=false;Settings.Stats=2;ApplyStats();SetSinglePane(true);SetActive(Left);
             await S1Verification.Navigate(Left,root);
             PerformanceCommand.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-            await VerifyAnalysis28(root,check);await VerifyHandles23(root,check);return;
+            await VerifyAnalysis28(root,check);await VerifyHandles23(root,check);await performance.VerifyAutomationLoad26(root,this,check);return;
         }
         if(Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO")=="performance"){await VerifyPerformance18(root,check);return;}
         if(Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO")=="performance-ui"){await VerifyPerformancePresentation18(root,check);return;}

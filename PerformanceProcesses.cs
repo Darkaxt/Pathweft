@@ -275,11 +275,16 @@ internal sealed partial class PerformancePanel
     }
     void ToggleProcessPin(PerformanceProcessRow row)
     {
-        if(row==null)return;row.Pinned=!row.Pinned;row.Notify();SortRows();UpdateProcessActions();
+        if(row==null)return;row.Pinned=!row.Pinned;row.Notify();SortRows(true);UpdateProcessActions();
         if(row.Pinned)table.ScrollIntoView(row);
     }
+    ProcessMetric[] appliedSamples;
     void RefreshProcessRows(ProcessMetric[] samples)
     {
+        // MONITOR-26: the counter sample also refreshes the panel; an unchanged process
+        // sample leaves the rows, their bindings and the table untouched.
+        if(ReferenceEquals(samples,appliedSamples)&&ReferenceEquals(table.ItemsSource,processItems))return;
+        appliedSamples=samples;
         var observed=samples.Select(x=>(x.Pid,x.Started)).ToHashSet();
         foreach(var key in processRows.Keys.Where(key=>!observed.Contains(key)).ToArray())
         {

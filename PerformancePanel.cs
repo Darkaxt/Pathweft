@@ -140,6 +140,14 @@ internal sealed partial class PerformancePanel : StackPanel,IAsyncDisposable
         }
         table.View=view;
     }
+    // MONITOR-26: a GPU or folder I/O table is replaced only for a new sample, not on
+    // every panel refresh (the counter sample refreshes the cards as well).
+    System.Collections.IEnumerable shownRows;object rowsSource;string rowsKey;
+    void ShowRows(object source,string key,Func<System.Collections.IEnumerable> rows)
+    {
+        if(shownRows!=null&&ReferenceEquals(table.ItemsSource,shownRows)&&ReferenceEquals(source,rowsSource)&&key==rowsKey)return;
+        rowsSource=source;rowsKey=key;table.ItemsSource=shownRows=rows();
+    }
     void Refresh()
     {
         if(disposed)return;
@@ -200,13 +208,13 @@ internal sealed partial class PerformancePanel : StackPanel,IAsyncDisposable
             detailState.Text=selected==Cpu?"CPU usage across all logical processors · inaccessible processes omitted":selected==Ram?"Process working sets may share pages; their sum is not system RAM usage":"Busiest GPU engine · "+adapter?.Name;
             if(GraphFilter is {Length:>0} filter)detailState.Text=$"Graph sums sampled processes matching “{filter}”"+(selected==Ram?" as a share of physical RAM":"");
             if(selected is Cpu or Ram)RefreshProcessRows(monitor.Details);
-            else table.ItemsSource=selected==Gpu?monitor.Details.Where(x=>x.Adapter==gpu).ToArray():monitor.Details.OrderByDescending(x=>x.Memory).ToArray();
+            else {var details=monitor.Details;ShowRows(details,$"{selected}|{gpu}",()=>selected==Gpu?details.Where(x=>x.Adapter==gpu).ToArray():details.OrderByDescending(x=>x.Memory).ToArray());}
         }
         else
         {
             detailState.Text=traceFolder==null?"File I/O measurement unavailable for this path":io?.Latest.State??"Enable detailed I/O — Windows will ask for administrator permission";
             if(io?.Latest.Lost>0)detailState.Text+=$" · {io.Latest.Lost:N0} observations lost";
-            table.ItemsSource=io?.Latest.Rows.Select(x=>new{ x.Process,x.Pid,x.File,ReadText=Rate(x.Read),WriteText=Rate(x.Write),TotalText=Rate(x.Total)}).ToArray();
+            var latest=io?.Latest;ShowRows(latest,$"{selected}",()=>latest?.Rows.Select(x=>new{ x.Process,x.Pid,x.File,ReadText=Rate(x.Read),WriteText=Rate(x.Write),TotalText=Rate(x.Total)}).ToArray());
         }
         SortRows();
     }

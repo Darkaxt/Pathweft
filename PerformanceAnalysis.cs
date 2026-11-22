@@ -146,11 +146,27 @@ internal sealed partial class PerformancePanel
     {
         var button=new Button{Content=label,MinHeight=32};button.SetResourceReference(StyleProperty,"AuxiliaryAction");button.Click+=(_,_)=>click();return button;
     }
-    void SortRows()
+    // MONITOR-26: sort and filter are applied when they change, not per sample. Every
+    // reapplication resets the view, and a reset rebuilds the table's UI Automation
+    // subtree, which costs heavily whenever an accessibility client listens. The live
+    // process table stays ordered through live shaping: only rows whose values moved
+    // are repositioned.
+    ICollectionView appliedView;string appliedShape;
+    void SortRows(bool force=false)
     {
         if(table.ItemsSource==null)return;
-        var view=CollectionViewSource.GetDefaultView(table.ItemsSource);using var defer=view.DeferRefresh();view.SortDescriptions.Clear();
+        var view=CollectionViewSource.GetDefaultView(table.ItemsSource);
         bool processes=ReferenceEquals(table.ItemsSource,processItems);
+        string shape=string.Join("|",processes,selected,sortProperty,sortDirection,processFilter.Text.Trim(),processColumns["ExecutablePath"],processColumns["CommandLine"]);
+        if(!force&&ReferenceEquals(view,appliedView)&&shape==appliedShape)return;
+        appliedView=view;appliedShape=shape;
+        if(processes&&view is ICollectionViewLiveShaping live&&live.CanChangeLiveSorting&&live.CanChangeLiveFiltering)
+        {
+            // An empty LiveSortingProperties follows the SortDescriptions; the filter reads these.
+            live.IsLiveSorting=true;live.IsLiveFiltering=true;
+            if(live.LiveFilteringProperties.Count==0)foreach(string property in new[]{"Pinned","ExecutablePath","CommandLine"})live.LiveFilteringProperties.Add(property);
+        }
+        using var defer=view.DeferRefresh();view.SortDescriptions.Clear();
         if(processes)view.SortDescriptions.Add(new("Pinned",ListSortDirection.Descending));
         string filter=processFilter.Text.Trim();
         view.Filter=filter.Length==0||selected is not (Cpu or Ram)?null:processes?item=>item is PerformanceProcessRow row&&(row.Pinned||row.Process.Contains(filter,StringComparison.OrdinalIgnoreCase)||row.Pid.ToString().Contains(filter,StringComparison.OrdinalIgnoreCase)||(processColumns["ExecutablePath"]&&row.ExecutablePath.Contains(filter,StringComparison.OrdinalIgnoreCase))||(processColumns["CommandLine"]&&row.CommandLine.Contains(filter,StringComparison.OrdinalIgnoreCase)))
