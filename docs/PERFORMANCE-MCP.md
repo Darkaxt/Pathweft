@@ -85,15 +85,44 @@ structured errors, and paths must be absolute local or UNC.
   phase, what it saved, whether it can be restored). It records no times.
 - list_folder(path), get_file_details(path): metadata only (sizes, times,
   attributes, link targets, executable version details); contents are never read.
-- get_folder_size(path): the Pathweft index's folder size, otherwise Pathweft's
-  cached size if still current, otherwise unknown. It never starts a scan.
+- get_folder_size(path) or get_folder_size(paths): the Pathweft index's folder
+  size, otherwise Pathweft's cached size if still current, otherwise unknown. It
+  never starts a scan. Since 1.1.89, `paths` takes 1 to 1,024 folders and asks
+  the index once; it returns `rows` in the same order and `total`.
 - search_files(query, match_path, match_case, whole_word, regex, sort,
-  descending, offset, limit): the Pathweft index service with Everything-style
+  descending, visible_only, locations, offset, limit): the Pathweft index service with Everything-style
   syntax (docs/index-service/PROTOCOL.md); unsupported functions are refused with
   a message. Sort by name, path, size, extension, created or modified. Returns
   path, type, size, created, modified and attributes, with the total; the status
   says when the index is still updating. An unavailable index is reported, and
-  the MCP never restarts it.
+  the MCP never restarts it. Since 1.1.89 (MCP-08):
+  - `updating`, `updating_stores` and `elapsed_us` are the service's own fields.
+    A zero total while a store is updating may not be a real no-match.
+  - `visible_only` keeps only what the signed-in user can open; the total and
+    paging follow it.
+  - `locations` (0 to 10, default 0) gives each file hit of a `content:` query
+    the stored start of up to that many matching chunks, verbatim from the
+    content worker: `{"line","column","offset"}` (1-based line and column,
+    UTF-8 byte offset) for text, or page, sheet, slide and similar fields plus
+    `"engine":1` for documents. No length, no text, no terms (IDX-18).
+- get_index_status: the service's `status` reply as sent: version, protocol,
+  pid, uptime, memory, and per store name, kind (`ntfs` or `folder`), state
+  (`loading`, `scanning`, `reloading`, `ready`, `offline`, `error`,
+  `waiting-for-user`), items, folders, load time, memory, error and owner.
+  `ready`, `scanning` and `reloading` stores still answer searches.
+- get_content_status: `content` (per content-indexed folder: files, pending,
+  current, stale, failed, unsupported, unavailable, reconciled, error;
+  `store_bytes`; `waiting`, the pending and stale files without an error) and
+  `scopes` (path, added, reconciled, error). Times are Unix seconds, 0 if never.
+  The status says when no folder is content-indexed, in which case `content:`
+  matches nothing.
+- get_content_state(folder, offset, limit): the files directly in one folder
+  (not subfolders) with state (`pending`, `current`, `stale`, `failed`,
+  `unsupported`, `unavailable`), `indexed` (Unix seconds) and error. A folder the
+  caller cannot list is an error.
+- No MCP tool adds or removes content-indexed folders, adds or removes index
+  folders, or rescans; those stay in Pathweft's Settings. A version-1 index
+  service (no content index) is reported as such.
 - get_boots, get_system_changes, get_insights: Windows starts, updates and
   driver/feature/app changes, and derived findings as in the Insights view.
   They take `last_minutes` (default 30 days) or `from`/`to`. Installed-app

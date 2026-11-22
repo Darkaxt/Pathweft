@@ -70,7 +70,7 @@ public partial class MainWindow
         check(initialized.GetProperty("result").GetProperty("protocolVersion").GetString()=="2025-06-18","MCP negotiates a supported finite version");
         await child.StandardInput.WriteLineAsync("{\"jsonrpc\":\"2.0\",\"method\":\"notifications/initialized\"}");await child.StandardInput.FlushAsync();
         var listed=(await Call("tools/list")).GetProperty("result").GetProperty("tools");
-        check(listed.GetArrayLength()==20&&listed.EnumerateArray().All(x=>x.GetProperty("annotations").GetProperty("readOnlyHint").GetBoolean()),"MCP exposes exactly twenty read-only tools (six history, five app activity, nine Maintenance/file/search/boot)");
+        check(listed.GetArrayLength()==23&&listed.EnumerateArray().All(x=>x.GetProperty("annotations").GetProperty("readOnlyHint").GetBoolean()),"MCP exposes exactly twenty-three read-only tools (six history, five app activity, twelve Maintenance/file/search/boot/index)");
         var reply=(await Call("tools/call",new{name="get_current_usage",arguments=new{}})).GetProperty("result");
         var result=JsonSerializer.Deserialize<PerformanceResult>(reply.GetProperty("content")[0].GetProperty("text").GetString());
         var persisted=PerformanceHistory.Query(new("get_current_usage"),source:snapshot);
@@ -173,6 +173,20 @@ public partial class MainWindow
         check(!size.GetProperty("isError").GetBoolean()&&Text(size).Contains("\"method\""),"MCP get_folder_size answers without starting a scan and states its method");
         var search=await Tool("search_files",new{query="\""+Path.GetFileName(Program.Executable)+"\"",limit=5});
         check(!search.GetProperty("isError").GetBoolean()?Text(search).Contains("\"total\""):Text(search).StartsWith("Query unavailable:"),"MCP search_files pages index results or states why the index cannot answer");
+        // MCP-08: structured updating fields, batched folder sizes, and the read-only index and content status tools.
+        check(!search.GetProperty("isError").GetBoolean()?Text(search).Contains("\"updating_stores\"")&&Text(search).Contains("\"elapsed_us\""):Text(search).StartsWith("Query unavailable:"),"MCP-08 search_files carries the service's updating, updating_stores and elapsed_us");
+        var batched=await Tool("get_folder_size",new{paths=new[]{folder,Path.Combine(folder,"sub")}});
+        using(var page=JsonDocument.Parse(Text(batched)))
+            check(!batched.GetProperty("isError").GetBoolean()&&page.RootElement.GetProperty("total").GetInt32()==2&&page.RootElement.GetProperty("rows")[1].GetProperty("method").GetString().Length>0,"MCP-08 get_folder_size answers a list of folders in one call, each with its method");
+        foreach(string tool in new[]{"get_index_status","get_content_status"})
+        {
+            var reply=await Tool(tool,new{});
+            check(!reply.GetProperty("isError").GetBoolean()?Text(reply).Contains(tool=="get_index_status"?"\"stores\"":"\"scopes\""):Text(reply).StartsWith("Query unavailable:"),"MCP-08 "+tool+" passes the service's reply or states why the index cannot answer");
+        }
+        foreach(var (tool,arguments,what) in new (string,object,string)[]{
+            ("search_files",new{query="content:x",locations=11},"more than 10 locations"),("get_folder_size",new{path=folder,paths=new[]{folder}},"both path and paths"),
+            ("get_folder_size",new{},"neither path nor paths"),("get_content_state",new{folder="relative"},"a relative content folder")})
+            check((await Tool(tool,arguments)).GetProperty("isError").GetBoolean(),"MCP-08 rejects "+what+" with a structured error");
         foreach(string tool in new[]{"get_maintenance_changes","get_boots","get_system_changes","get_insights"})
             check(!(await Tool(tool,new{})).GetProperty("isError").GetBoolean(),"MCP read-only tool answers: "+tool);
         var startup=await Tool("get_maintenance",new{category="Startup",limit=5});

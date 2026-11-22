@@ -73,8 +73,13 @@ sealed partial class PackageProbe
         Check(init.GetProperty("result").GetProperty("protocolVersion").GetString()=="2025-06-18","Delivered stdio MCP negotiates its actual supported protocol");
         await process.StandardInput.WriteLineAsync("{\"jsonrpc\":\"2.0\",\"method\":\"notifications/initialized\"}");await process.StandardInput.FlushAsync();
         var tools=(await Send("tools/list",new{})).GetProperty("result").GetProperty("tools");
-        Check(tools.GetArrayLength()==20&&tools.EnumerateArray().All(x=>x.GetProperty("annotations").GetProperty("readOnlyHint").GetBoolean()),
-            "Delivered MCP advertises exactly twenty read-only tools");
+        Check(tools.GetArrayLength()==23&&tools.EnumerateArray().All(x=>x.GetProperty("annotations").GetProperty("readOnlyHint").GetBoolean()),
+            "Delivered MCP advertises exactly twenty-three read-only tools");
+        // MCP-08: the index and content status tools, and search_files' locations capped at 10 with visible_only.
+        var searchSchema=tools.EnumerateArray().Single(x=>x.GetProperty("name").GetString()=="search_files").GetProperty("inputSchema").GetProperty("properties");
+        Check(new[]{"get_index_status","get_content_status","get_content_state"}.All(n=>tools.EnumerateArray().Any(x=>x.GetProperty("name").GetString()==n))
+            &&searchSchema.GetProperty("locations").GetProperty("maximum").GetInt32()==10&&searchSchema.TryGetProperty("visible_only",out _),
+            "Delivered MCP has the index and content status tools, and search_files takes locations (at most 10) and visible_only");
         foreach(string tool in new[]{"get_current_usage","get_usage_summary","get_top_processes","find_spikes","get_app_history","get_events","get_run_history","get_workloads","get_top_consumers","get_app_usage","get_activity_intervals"})
         {
             var response=(await Send("tools/call",new{name=tool,arguments=new{name="Pathweft"}})).GetProperty("result");

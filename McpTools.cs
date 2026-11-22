@@ -13,14 +13,15 @@ namespace FileExplorer;
 // make use the approved administrator session (MCP-06), never a prompt.
 internal static class McpTools
 {
-    internal static readonly string[] Tools=["get_maintenance","get_maintenance_changes","list_folder","get_file_details","get_folder_size","search_files","get_boots","get_system_changes","get_insights"];
+    internal static readonly string[] Tools=["get_maintenance","get_maintenance_changes","list_folder","get_file_details","get_folder_size","search_files","get_boots","get_system_changes","get_insights","get_index_status","get_content_status","get_content_state"];
     static readonly string[] Categories=["Cleanup","Startup","Services","Windows tweaks","Windows apps","Security check"];
     static readonly string[] Ranged=["last_minutes","from","to","limit"];
     static readonly Dictionary<string,string[]> Allowed=new()
     {
         ["get_maintenance"]=["category","target","offset","limit"],["get_maintenance_changes"]=["offset","limit"],
-        ["list_folder"]=["path","offset","limit"],["get_file_details"]=["path"],["get_folder_size"]=["path"],
-        ["search_files"]=["query","match_path","match_case","whole_word","regex","sort","descending","offset","limit"],
+        ["list_folder"]=["path","offset","limit"],["get_file_details"]=["path"],["get_folder_size"]=["path","paths"],
+        ["search_files"]=["query","match_path","match_case","whole_word","regex","sort","descending","visible_only","locations","offset","limit"],
+        ["get_index_status"]=[],["get_content_status"]=[],["get_content_state"]=["folder","offset","limit"],
         ["get_boots"]=Ranged,["get_system_changes"]=Ranged,["get_insights"]=Ranged
     };
     // Bounded page of rows: the total is always reported, and whether more remain.
@@ -45,6 +46,12 @@ internal static class McpTools
             if(item.ValueKind!=JsonValueKind.Number||!item.TryGetInt32(out int number)||number<min||number>max)throw new ArgumentException($"{key} must be an integer from {min} to {max}");
             return number;
         }
+        internal string[] Paths(string key,int max)
+        {
+            if(!value.TryGetProperty(key,out var item))return null;
+            if(item.ValueKind!=JsonValueKind.Array||item.GetArrayLength()<1||item.GetArrayLength()>max||item.EnumerateArray().Any(x=>x.ValueKind!=JsonValueKind.String))throw new ArgumentException($"{key} must be a list of 1 to {max} paths");
+            return item.EnumerateArray().Select(x=>x.GetString()).ToArray();
+        }
     }
 
     internal static async Task<object> Query(string tool,JsonElement value,CancellationToken cancel)
@@ -59,12 +66,23 @@ internal static class McpTools
             case "get_maintenance_changes":return Changes(offset,limit);
             case "list_folder":return await ListFolder(FullPath(arguments.Text("path",true)),offset,limit,cancel);
             case "get_file_details":return Details(FullPath(arguments.Text("path",true)));
-            case "get_folder_size":return await FolderSize(FullPath(arguments.Text("path",true)),cancel);
+            case "get_folder_size":
+            {
+                // MCP-08: paths asks the index for many folders at once.
+                string one=arguments.Text("path");string[] many=arguments.Paths("paths",1024);
+                if((one==null)==(many==null))throw new ArgumentException("Give either path or paths");
+                if(one!=null)return (await FolderSizes([FullPath(one)],cancel))[0];
+                var rows=await FolderSizes(many.Select(FullPath).ToArray(),cancel);
+                return new{rows,total=rows.Length};
+            }
+            case "get_index_status":return await IndexedSearch.ReadAsync(new{op="status"},"status",cancel);
+            case "get_content_status":return await ContentStatus(cancel);
+            case "get_content_state":return await ContentState(FullPath(arguments.Text("folder",true)),offset,limit,cancel);
             case "search_files":
             {
                 string query=arguments.Text("query",true,8192);
                 var switches=new SearchSwitches(arguments.Flag("match_path"),arguments.Flag("match_case"),arguments.Flag("whole_word"),arguments.Flag("regex"));
-                return await Search(query,switches,arguments.Text("sort",max:20)??"name",arguments.Flag("descending"),offset,limit,cancel);
+                return await Search(query,switches,arguments.Text("sort",max:20)??"name",arguments.Flag("descending"),arguments.Flag("visible_only"),arguments.Integer("locations",0,0,10),offset,limit,cancel);
             }
             default:
             {
@@ -227,32 +245,87 @@ internal static class McpTools
             file_version=Empty(version?.FileVersion),product_version=Empty(version?.ProductVersion),product=Empty(version?.ProductName),company=Empty(version?.CompanyName),description=Empty(version?.FileDescription)
         };
     }
-    static async Task<object> FolderSize(string path,CancellationToken cancel)
+    // One index request for every folder; each folder the index has no size for falls back to Pathweft's cache.
+    static async Task<object[]> FolderSizes(string[] paths,CancellationToken cancel)
     {
-        var folder=new DirectoryInfo(path);if(!folder.Exists)throw new ArgumentException("Folder not found: "+path);
-        string key=Path.TrimEndingDirectorySeparator(folder.FullName),index=null;
-        try{var sizes=await IndexedSearch.FolderSizesAsync([key],cancel);string engine=IndexedSearch.SizeSource.Split(' ')[0];if(sizes.TryGetValue(key,out long size))return new{path=key,size_bytes=(long?)size,method=engine+" index"};index=engine+" index has no size for this folder";}
+        var folders=paths.Select(x=>new DirectoryInfo(x)).ToArray();
+        if(folders.FirstOrDefault(x=>!x.Exists) is {} missing)throw new ArgumentException("Folder not found: "+missing.FullName);
+        string[] keys=folders.Select(x=>Path.TrimEndingDirectorySeparator(x.FullName)).ToArray();
+        Dictionary<string,long> sizes=null;string engine=IndexedSearch.SizeSource.Split(' ')[0],index=null;
+        try{sizes=await IndexedSearch.FolderSizesAsync(keys,cancel);}
         catch(InvalidOperationException ex){index="Index: "+ex.Message;}
         // Pathweft's own cache, opened read-only; valid only for the folder's current modification time.
-        if(File.Exists(SizeCache.FilePath))
+        SqliteConnection connection=null;
+        try
         {
-            SqliteRuntime.Ensure();
-            using var connection=new SqliteConnection(new SqliteConnectionStringBuilder{DataSource=SizeCache.FilePath,Mode=SqliteOpenMode.ReadOnly,Pooling=false}.ToString());connection.Open();
-            using var command=connection.CreateCommand();command.CommandText="SELECT bytes,stamp FROM sizes WHERE path=$path";command.Parameters.AddWithValue("$path",key.ToUpperInvariant());
-            using var reader=command.ExecuteReader();
-            if(reader.Read()&&reader.GetInt64(1)==folder.LastWriteTimeUtc.Ticks)return new{path=key,size_bytes=(long?)reader.GetInt64(0),method="Pathweft's cached folder size ("+index+")"};
+            var rows=new object[keys.Length];
+            for(int i=0;i<keys.Length;i++)
+            {
+                string key=keys[i];
+                if(sizes!=null&&sizes.TryGetValue(key,out long size)){rows[i]=new{path=key,size_bytes=(long?)size,method=engine+" index"};continue;}
+                string why=index??engine+" index has no size for this folder";
+                if(connection==null&&File.Exists(SizeCache.FilePath))
+                {
+                    SqliteRuntime.Ensure();
+                    connection=new SqliteConnection(new SqliteConnectionStringBuilder{DataSource=SizeCache.FilePath,Mode=SqliteOpenMode.ReadOnly,Pooling=false}.ToString());connection.Open();
+                }
+                if(connection!=null)
+                {
+                    using var command=connection.CreateCommand();command.CommandText="SELECT bytes,stamp FROM sizes WHERE path=$path";command.Parameters.AddWithValue("$path",key.ToUpperInvariant());
+                    using var reader=command.ExecuteReader();
+                    if(reader.Read()&&reader.GetInt64(1)==folders[i].LastWriteTimeUtc.Ticks){rows[i]=new{path=key,size_bytes=(long?)reader.GetInt64(0),method="Pathweft's cached folder size ("+why+")"};continue;}
+                }
+                rows[i]=new{path=key,size_bytes=(long?)null,method="Unknown: "+why+" and Pathweft has no current cached size. No scan was started."};
+            }
+            return rows;
         }
-        return new{path=key,size_bytes=(long?)null,method="Unknown: "+index+" and Pathweft has no current cached size. No scan was started."};
+        finally{connection?.Dispose();}
     }
-    static async Task<object> Search(string query,SearchSwitches switches,string sort,bool descending,int offset,int limit,CancellationToken cancel)
+    static async Task<object> Search(string query,SearchSwitches switches,string sort,bool descending,bool visibleOnly,int locations,int offset,int limit,CancellationToken cancel)
     {
         if(switches.Regex)_=new Regex(query.StartsWith("regex:",StringComparison.OrdinalIgnoreCase)?query[6..]:query);
-        var page=await IndexedSearch.SearchAsync(query,(uint)offset,(uint)limit,sort.ToLowerInvariant(),descending,switches,cancel);
+        var page=await IndexedSearch.SearchAsync(query,(uint)offset,(uint)limit,sort.ToLowerInvariant(),descending,switches,cancel,visibleOnly,locations);
         return new
         {
-            status=page.Engine+(page.Updating?" · index updating, results may be incomplete":""),total=page.Total,offset,truncated=offset+page.Hits.Count<page.Total,
-            rows=page.Hits.Select(x=>new{path=x.Path,type=x.IsFolder?"folder":"file",size_bytes=x.Size>=0?x.Size:(long?)null,created=Time(x.Created),modified=Time(x.Modified),attributes=x.Attributes is {} a?((FileAttributes)a).ToString():null,visible=x.Visible}).ToArray()
+            status=page.Engine+(page.Updating?" · index updating, results may be incomplete":""),
+            // MCP-08: the service's own fields, so a client can tell "no match" from a store still loading.
+            updating=page.Updating,updating_stores=page.UpdatingStores??[],elapsed_us=page.ElapsedUs,
+            total=page.Total,offset,truncated=offset+page.Hits.Count<page.Total,
+            rows=page.Hits.Select(x=>new
+            {
+                path=x.Path,type=x.IsFolder?"folder":"file",size_bytes=x.Size>=0?x.Size:(long?)null,created=Time(x.Created),modified=Time(x.Modified),attributes=x.Attributes is {} a?((FileAttributes)a).ToString():null,visible=x.Visible,
+                // Where each matching chunk starts, as the content worker stored it; never the text (IDX-18).
+                locations=locations>0&&!x.IsFolder?(x.Locations?.Select(l=>JsonSerializer.Deserialize<JsonElement>(l)).ToArray()??[]):null
+            }).ToArray()
         };
+    }
+
+    // MCP-08: content index coverage, read-only; folders are added and removed only in Pathweft's Settings.
+    static async Task RequireContent(CancellationToken cancel)
+    {
+        var status=await IndexedSearch.ReadAsync(new{op="status"},"status",cancel);
+        if(!status.GetProperty("status").TryGetProperty("protocol",out var protocol)||protocol.GetInt32()<2)throw new InvalidOperationException("This index service has no content index (protocol 1); content: is unavailable.");
+    }
+    static async Task<object> ContentStatus(CancellationToken cancel)
+    {
+        await RequireContent(cancel);
+        var status=await IndexedSearch.ReadAsync(new{op="content_status"},"content_status",cancel);
+        var scopes=await IndexedSearch.ReadAsync(new{op="content_scopes"},"content_scopes",cancel);
+        var content=status.GetProperty("content");
+        return new
+        {
+            status=content.GetProperty("scopes").GetArrayLength()==0?"No folder is content-indexed, so content: queries match nothing. Folders are added in Pathweft's Settings.":"Content index coverage per folder; waiting counts pending and stale files without an error. Times are Unix seconds, 0 if never.",
+            updating=status.TryGetProperty("updating",out var u)&&u.GetBoolean(),elapsed_us=status.TryGetProperty("elapsed_us",out var e)?e.GetInt64():(long?)null,
+            content,scopes=scopes.GetProperty("scopes")
+        };
+    }
+    static async Task<Page> ContentState(string folder,int offset,int limit,CancellationToken cancel)
+    {
+        if(!Directory.Exists(folder))throw new ArgumentException("Folder not found: "+folder);
+        await RequireContent(cancel);
+        var reply=await IndexedSearch.ReadAsync(new{op="content_state",folder=Path.TrimEndingDirectorySeparator(folder)},"content_state",cancel);
+        return Bound(reply.GetProperty("files").EnumerateArray().Select(x=>(object)x),offset,limit,
+            "Content index state of the files directly in this folder (not subfolders): pending, current, stale, failed, unsupported or unavailable; indexed is Unix seconds, 0 if never. Files outside content-indexed folders are not listed.");
     }
 
     internal static object Definition(string name)=>new
@@ -264,8 +337,11 @@ internal static class McpTools
             "get_maintenance_changes"=>"Pathweft's Maintenance change journal: the items whose original settings it saved and can restore.",
             "list_folder"=>"Entries of one folder (name, file/folder, size, modified, attributes, link target), folders first. Metadata only.",
             "get_file_details"=>"Size, created/modified/accessed times, attributes, link target and, for executables, version, product, company and description.",
-            "get_folder_size"=>"A folder's total size from the Pathweft index or Pathweft's current cached size; never starts a scan, unknown when neither has it.",
-            "search_files"=>"Search all indexed files and folders with the Pathweft index service, in Everything-style syntax (wildcards, quotes, AND by space, | OR, ! NOT, < > groups, path:, nopath:, parent:, file:, folder:, ext:, size:, dm:, dc:, case:, ww:, wfn:, regex:). Unsupported functions are refused with a message. Paged with offset/limit and the total.",
+            "get_folder_size"=>"A folder's total size from the Pathweft index or Pathweft's current cached size; never starts a scan, unknown when neither has it. Give path for one folder or paths for up to 1,024 at once.",
+            "search_files"=>"Search all indexed files and folders with the Pathweft index service, in Everything-style syntax (wildcards, quotes, AND by space, | OR, ! NOT, < > groups, path:, nopath:, parent:, file:, folder:, ext:, size:, dm:, dc:, case:, ww:, wfn:, regex:). Unsupported functions are refused with a message. Paged with offset/limit and the total. updating and updating_stores tell a real no-match from a store still loading or scanning. visible_only keeps only what the signed-in user can open. locations (content: queries) returns where up to that many matching chunks start in each file (line, column and byte offset for text; page, sheet or similar for documents), never the text.",
+            "get_index_status"=>"The Pathweft index service's own status: version, protocol, memory, and per store (drive or folder) its kind, state (loading, scanning, reloading, ready, offline, error, waiting-for-user), items, folders, last error and owner. Use it to tell an empty result from an offline or still-loading store.",
+            "get_content_status"=>"Content index coverage: per content-indexed folder the files that are current, pending, stale, failed, unsupported or unavailable, the store size and the files waiting, with each folder's added and reconciled times. An empty list means content: queries match nothing. Read-only.",
+            "get_content_state"=>"Content index state of each file directly in one folder (not subfolders): pending, current, stale, failed, unsupported or unavailable, when it was last indexed and its error. Paged with offset/limit.",
             "get_boots"=>"Recorded Windows starts from Windows' boot diagnostics: seconds to desktop, settled seconds, startup apps, and what slowed it. Defaults to the last 30 days.",
             "get_system_changes"=>"Windows updates and driver/feature changes from Windows' logs plus installed-app changes Pathweft already saved (no new baseline is taken). Defaults to the last 30 days.",
             _=>"Derived findings as in Pathweft's Insights view: memory pressure, large memory holders, sustained CPU, slower Windows startup. Defaults to the last 30 days."
@@ -274,15 +350,17 @@ internal static class McpTools
         {
             "category"=>new{type="string",@enum=Categories},
             "target"=>new{type="string",maxLength=200,description="Cleanup target id, e.g. user-temp"},
-            "path"=>new{type="string",maxLength=32767,description="Absolute local or UNC path"},
+            "path" or "folder"=>new{type="string",maxLength=32767,description="Absolute local or UNC path"},
+            "paths"=>new{type="array",minItems=1,maxItems=1024,items=new{type="string",maxLength=32767},description="Absolute local or UNC folder paths"},
+            "locations"=>new{type="integer",minimum=0,maximum=10,description="Match locations per content hit (default 0)"},
             "query"=>new{type="string",maxLength=8192,description="Everything-style search syntax as accepted by the Pathweft index (docs/index-service/PROTOCOL.md)"},
             "sort"=>new{type="string",@enum=new[]{"name","path","size","extension","created","modified"}},
-            "match_path" or "match_case" or "whole_word" or "regex" or "descending"=>new{type="boolean"},
+            "match_path" or "match_case" or "whole_word" or "regex" or "descending" or "visible_only"=>new{type="boolean"},
             "offset"=>new{type="integer",minimum=0},
             "limit"=>new{type="integer",minimum=1,maximum=500},
             "last_minutes"=>new{type="integer",minimum=1,maximum=43200},
             _=>(object)new{type="string",format="date-time"}
-        })),required=name switch{"get_maintenance"=>new[]{"category"},"list_folder" or "get_file_details" or "get_folder_size"=>new[]{"path"},"search_files"=>new[]{"query"},_=>Array.Empty<string>()},additionalProperties=false},
+        })),required=name switch{"get_maintenance"=>new[]{"category"},"list_folder" or "get_file_details"=>new[]{"path"},"get_content_state"=>new[]{"folder"},"search_files"=>new[]{"query"},_=>Array.Empty<string>()},additionalProperties=false},
         annotations=new{readOnlyHint=true,destructiveHint=false,idempotentHint=true,openWorldHint=false}
     };
 }

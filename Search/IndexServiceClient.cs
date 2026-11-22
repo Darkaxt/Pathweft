@@ -118,8 +118,19 @@ internal sealed class IndexServiceClient(string pipeName)
                     hit.TryGetProperty("locations", out var l) && l.ValueKind == JsonValueKind.Array ? l.EnumerateArray().Select(x => x.GetRawText()).ToList() : null));
             }
         ulong total = root.TryGetProperty("total", out var t) ? t.GetUInt64() : (ulong)hits.Count;
-        return new IndexedPage(hits, (uint)Math.Min(total, uint.MaxValue), Engine, true, Updating(root));
+        return new IndexedPage(hits, (uint)Math.Min(total, uint.MaxValue), Engine, true, Updating(root),
+            root.TryGetProperty("updating_stores", out var stores) && stores.ValueKind == JsonValueKind.Array ? stores.EnumerateArray().Select(x => x.GetString()).ToList() : [],
+            root.TryGetProperty("elapsed_us", out var e) && e.TryGetInt64(out long elapsed) ? elapsed : null);
         });
+    }
+
+    // MCP-08: a read-only reply as the service sent it, for the MCP status tools. Null when the service is absent.
+    internal static readonly string[] ReadOnlyOps = ["status", "content_status", "content_scopes", "content_state"];
+    internal async Task<JsonElement?> ReadAsync(object request, string op, CancellationToken token)
+    {
+        if (!ReadOnlyOps.Contains(op)) throw new ArgumentException("Not a read-only index request: " + op);
+        using var reply = await TryRequestAsync(request, token).ConfigureAwait(false);
+        return reply?.RootElement.Clone();
     }
 
     // A reply that lacks a required member is a broken service, reported like a lost

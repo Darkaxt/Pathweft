@@ -7,7 +7,8 @@ internal sealed record IndexedHit(string Path, bool IsFolder, long Size, DateTim
 // MCP-03: the es.exe-equivalent switches.
 internal sealed record SearchSwitches(bool MatchPath, bool MatchCase, bool WholeWord, bool Regex);
 // Updating: SEARCH-06, the index service is still loading or scanning a store.
-internal sealed record IndexedPage(IReadOnlyList<IndexedHit> Hits, uint Total, string Engine, bool FolderSizesIndexed=false, bool Updating=false);
+// UpdatingStores and ElapsedUs: MCP-08, the service's own fields, passed to MCP clients.
+internal sealed record IndexedPage(IReadOnlyList<IndexedHit> Hits, uint Total, string Engine, bool FolderSizesIndexed=false, bool Updating=false, IReadOnlyList<string> UpdatingStores=null, long? ElapsedUs=null);
 
 // SEARCH-09: the Pathweft index service is the only file-name index. Every
 // indexed search and folder size goes to it; when it is absent, searches say so
@@ -40,12 +41,20 @@ internal static class IndexedSearch
         return Answered(await service.QueryAsync(expression, offset, count, sort, descending, null, true, token, locations).ConfigureAwait(false), service);
     }
 
-    // MCP search: every match, each with its visibility flag.
-    internal static async Task<IndexedPage> SearchAsync(string expression, uint offset, uint count, string sort, bool descending, SearchSwitches switches, CancellationToken token)
+    // MCP search: every match, each with its visibility flag, or only what the user can open (visibleOnly).
+    // locations > 0 (MCP-08): content hits carry up to that many stored match locations.
+    internal static async Task<IndexedPage> SearchAsync(string expression, uint offset, uint count, string sort, bool descending, SearchSwitches switches, CancellationToken token, bool visibleOnly = false, int locations = 0)
     {
         if (sort is not ("name" or "path" or "size" or "extension" or "created" or "modified")) throw new ArgumentException("Sort by name, path, size, extension, created or modified");
         var service = Service;
-        return Answered(await service.QueryAsync(expression, offset, count, sort, descending, switches, false, token).ConfigureAwait(false), service);
+        return Answered(await service.QueryAsync(expression, offset, count, sort, descending, switches, visibleOnly, token, locations).ConfigureAwait(false), service);
+    }
+
+    // MCP-08: a read-only service reply, verbatim; an absent service is an error with the usual message.
+    internal static async Task<System.Text.Json.JsonElement> ReadAsync(object request, string op, CancellationToken token)
+    {
+        var service = Service;
+        return await service.ReadAsync(request, op, token).ConfigureAwait(false) ?? throw new InvalidOperationException(service.LastConnectError is { Length: > 0 } error && error != IndexServiceClient.NotRunning ? error : Absent);
     }
 
     // Exact folders; a missing key means unknown, and the caller measures it.
