@@ -1,6 +1,10 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.94 | 2026-11-23 | Analyze space is a snapshot
+
+- Analyze space no longer follows changes on disk. It shows the sizes as they were when it was opened, like WizTree or WinDirStat, and keeps the processor quiet on a drive that changes all the time. When something changes, the footer says so; press F5 to refresh from the Pathweft index service, or Ctrl+R to measure everything on disk.
+
 ## 1.1.93 | 2026-11-23 | Analyze space stays indexed
 
 - Analyze space on a drive that changes all the time, such as D:\, keeps taking folder sizes from the Pathweft index service. Before, every change measured the changed folder (sometimes the whole drive) on disk again, so the rows turned Measured, Pending or Updating… and the processor stayed busy. Ctrl+R still measures everything on disk.

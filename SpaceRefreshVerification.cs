@@ -36,73 +36,91 @@ public partial class MainWindow
         var ink=new FormattedText(glyph.Text,System.Globalization.CultureInfo.InvariantCulture,FlowDirection.LeftToRight,new Typeface(glyph.FontFamily,glyph.FontStyle,glyph.FontWeight,glyph.FontStretch),glyph.FontSize,Brushes.White,1);
         var presenter=PreviewChildren<ContentPresenter>(expander).First();
         bool unclipped=presenter.ActualWidth>=ink.WidthIncludingTrailingWhitespace&&presenter.ActualHeight>=ink.Height&&expander.ActualWidth==18;
+        // An expanded row under a folder F5 takes from the index (below) must be refreshed too.
+        Left.SpaceExpandForVerification((SpaceEntry)Left.Items.Single(entry=>entry.Name=="busy"));await Left.SpaceCompletion;
         var visits=new ConcurrentDictionary<string,int>(StringComparer.OrdinalIgnoreCase);
         SpaceScan.BeforeEnumeration=(path,token)=>visits.AddOrUpdate(path,1,(_,count)=>count+1);
         var unrelated=(SpaceEntry)Left.Items.Single(entry=>entry.Name=="stable");
         bool unrelatedReset=false,knownFlashed=false;
-        var secondStarted=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        var secondPresented=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         void Observed()
         {
             unrelatedReset|=unrelated.State is SpaceState.Pending or SpaceState.Scanning;
             knownFlashed|=Left.Items.OfType<SpaceEntry>().Any(entry=>entry.DisplaySize>=0&&entry.SpaceStatus is "Pending" or "Measuring…");
-            if(secondStarted.Task.IsCompleted)secondPresented.TrySetResult();
+        }
+        // Waits until the watcher reported a change of this file, then long enough for the index service to read it.
+        async Task Watched(string path,Action change)
+        {
+            var invalidated=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            void Invalidated(string changed){if(changed==path)invalidated.TrySetResult();}
+            SizeCache.Invalidated+=Invalidated;
+            try{await Task.Run(change);await invalidated.Task;}finally{SizeCache.Invalidated-=Invalidated;}
+            await Task.Delay(PaneView.IndexCatchUp+TimeSpan.FromMilliseconds(400));
+            await Dispatcher.InvokeAsync(()=>{},DispatcherPriority.ApplicationIdle);
         }
         Left.StatsChanged+=Observed;
         try
         {
-            // CORE-29 check below: a folder written in the last Settle is measured on disk by design (SEARCH-10),
-            // so the fixture's nested folder must be older than that before the watched change.
+            // F5 takes the index's totals, but a folder written in the last Settle is measured on disk by design
+            // (SEARCH-10), so the fixture's folders must be older than that.
             var age=DateTime.UtcNow-Directory.GetLastWriteTimeUtc(busy);
             if(age<FileExplorer.Search.IndexedSearch.Settle)await Task.Delay(FileExplorer.Search.IndexedSearch.Settle-age+TimeSpan.FromMilliseconds(250));
-            var grown=Sizes(Left,()=>Left.FolderTotal==327&&!Left.SizesPending);
-            await Task.Run(()=>{using var stream=File.OpenWrite(payload);stream.SetLength(127);});await grown;
+            Left.ListForVerification.SelectedItem=unrelated;
+            // CORE-30 (owner: "who cares about the disk analysis be desynced by a couple of minutes"): a change on disk
+            // leaves the analysis as it was and only marks it changed.
+            await Watched(payload,()=>{using var stream=File.OpenWrite(payload);stream.SetLength(127);});
             await Left.SpaceCompletion;
-            File.WriteAllText(Path.Combine(root,"refresh-observed.json"),JsonSerializer.Serialize(new{initialSelected,unclipped,unrelatedReset,knownFlashed,rootVisits=visits.GetValueOrDefault(folder),stableVisits=visits.GetValueOrDefault(Path.GetDirectoryName(stable)),visits},new JsonSerializerOptions{WriteIndented=true}));
+            var busyRow=Left.Items.OfType<SpaceEntry>().Single(entry=>entry.Name=="busy");
+            File.WriteAllText(Path.Combine(root,"refresh-observed.json"),JsonSerializer.Serialize(new{initialSelected,unclipped,unrelatedReset,knownFlashed,footer=Left.Footer.Text,visits},new JsonSerializerOptions{WriteIndented=true}));
             check(initialObserved&&initialSelected,"Entering analysis selects the first available top row exactly once");
             check(unclipped,"Compact18-DIP expansion button contains the complete rendered chevron ink");
-            check(visits.GetValueOrDefault(folder)<=1&&!visits.Keys.Any(path=>SizeCache.Within(path,Path.GetDirectoryName(stable)))&&!unrelatedReset,"A watched branch rewrite does not rewalk or reset unrelated completed branches");
-            check(!knownFlashed,"Known analysis rows retain their completed presentation during background replacement");
-            // CORE-29 (owner, D:\ analysis staying Measured/Updating): the changed branch's unchanged subfolder takes the
-            // installed index service's total after the change instead of being walked on disk again.
-            var busyRow=Left.Items.OfType<SpaceEntry>().Single(entry=>entry.Name=="busy");
-            check(visits.GetValueOrDefault(busy)==0&&busyRow.State==SpaceState.Indexed&&busyRow.Size==127,"A watched change refreshes its branch from the index service's totals (busy: "+busyRow.SpaceStatus+", "+busyRow.Size+" bytes, nested walked "+visits.GetValueOrDefault(busy)+" times)");
-            Left.ListForVerification.SelectedItem=unrelated;
+            check(visits.IsEmpty&&Left.FolderTotal==300&&busyRow.Size==100&&!Left.SizesPending&&Left.SpaceStale&&Left.Footer.Text.Contains("changed since this snapshot, F5 to refresh"),
+                "A change on disk reads no folder and keeps the snapshot (total "+Left.FolderTotal+", "+visits.Count+" folders read); the footer says it changed and F5 refreshes: "+Left.Footer.Text);
+            // CORE-30 ("If I want a refresh, allow me to press F5"): F5 takes the index service's totals.
+            Left.Refresh(force:true);await Left.SpaceCompletion;
+            busyRow=Left.Items.OfType<SpaceEntry>().Single(entry=>entry.Name=="busy");
+            check(!Left.SpaceStale&&Left.FolderTotal==327&&busyRow.State==SpaceState.Indexed&&busyRow.Size==127&&visits.GetValueOrDefault(busy)==0&&!visits.Keys.Any(path=>SizeCache.Within(path,Path.GetDirectoryName(stable))),
+                "F5 refreshes the analysis from the index service's totals (busy: "+busyRow.SpaceStatus+", "+busyRow.Size+" bytes, nested read "+visits.GetValueOrDefault(busy)+" times; total "+Left.FolderTotal+")");
+            var nestedRow=Left.Items.OfType<SpaceEntry>().Single(entry=>entry.Path==busy);
+            check(nestedRow.State==SpaceState.Indexed&&nestedRow.Size==127,"F5 also refreshes an expanded row inside a folder taken from the index (nested: "+nestedRow.SpaceStatus+", "+nestedRow.Size+" bytes)");
+            check(!knownFlashed&&!unrelatedReset&&ReferenceEquals(Left.Items.Single(entry=>entry.Name=="stable"),unrelated)&&ReferenceEquals(Left.Selected.Single(),unrelated),
+                "F5 keeps the rows, their values and the selection on screen until each is replaced");
+            // Changes during a refresh do not start another one; F5 pressed again during it adds exactly one more.
             var entered=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-            var release=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);int held=0;
+            var release=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);int held=0,passes=0;
+            SpaceScan.IndexObserved=(_,message)=>{if(message.StartsWith("Run:",StringComparison.Ordinal))Interlocked.Increment(ref passes);};
             SpaceScan.BeforeEnumeration=(path,token)=>
             {
                 visits.AddOrUpdate(path,1,(_,count)=>count+1);
-                if(path==Path.GetDirectoryName(busy))
-                {
-                    int pass=Interlocked.Increment(ref held);
-                    if(pass==1){entered.TrySetResult();release.Task.WaitAsync(token).GetAwaiter().GetResult();}
-                    if(pass==2){secondStarted.TrySetResult();secondPresented.Task.WaitAsync(token).GetAwaiter().GetResult();}
-                }
+                if(path==folder&&Interlocked.Increment(ref held)==1){entered.TrySetResult();release.Task.WaitAsync(token).GetAwaiter().GetResult();}
             };
-            var replaced=Sizes(Left,()=>Left.FolderTotal==340&&!Left.SizesPending);
-            await Task.Run(()=>{using var stream=File.OpenWrite(payload);stream.SetLength(130);});await entered.Task;
-            var invalidated=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-            void Invalidated(string path){if(path==payload)invalidated.TrySetResult();}
-            SizeCache.Invalidated+=Invalidated;
-            try{await Task.Run(()=>{using var stream=File.OpenWrite(payload);stream.SetLength(140);});await invalidated.Task;}
-            finally{SizeCache.Invalidated-=Invalidated;release.TrySetResult();}
-            await replaced;await Left.SpaceCompletion;
-            check(secondStarted.Task.IsCompleted&&ReferenceEquals(Left.Selected.Single(),unrelated)&&!knownFlashed&&!unrelatedReset,"An actual invalidation during a held pass coalesces its replacement without losing selection or flashing pending states");
+            try
+            {
+                Left.Refresh(force:true);await entered.Task;
+                await Watched(payload,()=>{using var stream=File.OpenWrite(payload);stream.SetLength(130);});
+                Left.Refresh(force:true);Left.Refresh(force:true);
+            }
+            finally{release.TrySetResult();}
+            await Left.SpaceCompletion;
+            check(passes==2&&Left.FolderTotal==330&&!Left.SpaceStale&&ReferenceEquals(Left.Selected.Single(),unrelated)&&!knownFlashed&&!unrelatedReset,
+                "A change during a refresh starts nothing, and F5 pressed twice meanwhile adds one pass ("+passes+" passes, total "+Left.FolderTotal+")");
+            SpaceScan.IndexObserved=null;
             SpaceScan.BeforeEnumeration=(path,token)=>visits.AddOrUpdate(path,1,(_,count)=>count+1);
-            var shrunk=Sizes(Left,()=>Left.FolderTotal==211&&!Left.SizesPending);
-            await Task.Run(()=>{using var stream=File.OpenWrite(payload);stream.SetLength(11);});await shrunk;
+            // Shrink, rename and move out; F5 then shows exactly what is on disk.
+            await Watched(payload,()=>{using var stream=File.OpenWrite(payload);stream.SetLength(11);});
             string moved=Path.Combine(folder,"renamed");
-            var renamed=Sizes(Left,()=>Left.Items.Any(entry=>entry.Name=="renamed")&&Left.Items.All(entry=>entry.Name!="busy")&&!Left.SizesPending);
-            await Task.Run(()=>Directory.Move(Path.GetDirectoryName(busy),moved));await renamed;
-            var removed=Sizes(Left,()=>Left.FolderTotal==200&&!Left.SizesPending);
-            await Task.Run(()=>Directory.Move(moved,Path.Combine(root,"removed branch")));await removed;
-            check(Left.FolderTotal==200&&ReferenceEquals(Left.Items.Single(entry=>entry.Name=="stable"),unrelated)&&ReferenceEquals(Left.Selected.Single(),unrelated),"Incremental shrink/rename/removal reaches exact totals and preserves unaffected selection/row identity");
+            await Task.Run(()=>Directory.Move(Path.GetDirectoryName(busy),moved));
+            await Watched(moved,()=>Directory.Move(moved,Path.Combine(root,"removed branch")));
+            check(Left.SpaceStale&&Left.FolderTotal==330&&Left.Items.Any(entry=>entry.Name=="busy"),"Changes on disk leave the snapshot as it was until F5");
             Left.Refresh(force:true);await Left.SpaceCompletion;
-            check(Left.FolderTotal==200&&Left.SpaceSummary.Files==1&&Left.SpaceSummary.Folders==2,"Explicit refresh still performs a complete exact metadata measurement");
+            check(Left.FolderTotal==200&&Left.Items.All(entry=>entry.Name is not ("busy" or "renamed"))&&ReferenceEquals(Left.Items.Single(entry=>entry.Name=="stable"),unrelated)&&ReferenceEquals(Left.Selected.Single(),unrelated),
+                "F5 after a shrink, rename and removal reaches the exact total and keeps the unaffected row and the selection");
+            // Ctrl+R measures everything on disk.
+            Left.Refresh(force:true,measure:true);await Left.SpaceCompletion;
+            check(Left.FolderTotal==200&&Left.SpaceSummary.Files==1&&Left.SpaceSummary.Folders==2&&unrelated.State==SpaceState.Complete&&visits.GetValueOrDefault(stable)>0,
+                "Ctrl+R still measures everything on disk (stable: "+unrelated.SpaceStatus+")");
             await VerifySpaceTabsAndDelete(root,folder,unrelated,visits,check);
         }
-        finally{Left.StatsChanged-=Observed;SpaceScan.BeforeEnumeration=null;}
+        finally{Left.StatsChanged-=Observed;SpaceScan.BeforeEnumeration=null;SpaceScan.IndexObserved=null;}
         await Left.EndSpaceAsync();await Left.StopSizingAsync();
         await VerifyCommandStates21(root,check);
         check(HiddenTrialPresentation.ForegroundViolations==0,"Analysis refresh verification does not activate the user's desktop: "+JsonSerializer.Serialize(HiddenTrialPresentation.ForegroundEvents));
@@ -136,7 +154,7 @@ public partial class MainWindow
 
         string doomed=Path.Combine(folder,"doomed.bin");
         var appeared=Sizes(Left,()=>Left.Items.Any(entry=>entry.Path==doomed)&&Left.FolderTotal==250&&!Left.SizesPending);
-        await Task.Run(()=>File.WriteAllBytes(doomed,new byte[50]));await appeared;await Left.SpaceCompletion;
+        await Task.Run(()=>File.WriteAllBytes(doomed,new byte[50]));Left.Refresh(force:true);await appeared;await Left.SpaceCompletion;
         byte[] hash=System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(doomed));
         SetActive(Left);Left.ListForVerification.SelectedItem=Left.Items.Single(entry=>entry.Path==doomed);
         var recycled=new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);bool removedAtOnce=false;
@@ -157,11 +175,11 @@ public partial class MainWindow
         }
         finally{RecycleFinishedForVerification=null;}
         await Left.SpaceCompletion;await Idle();
-        check(Left.SpaceAnalyzing&&Left.FolderTotal==200&&Left.Items.All(entry=>entry.Path!=doomed),"The quiet re-measurement after a delete agrees with the total shown at once");
+        check(Left.SpaceAnalyzing&&Left.FolderTotal==200&&Left.Items.All(entry=>entry.Path!=doomed),"After a delete the analysis keeps the total shown at once without measuring again");
         var restored=Sizes(Left,()=>Left.Items.Any(entry=>entry.Path==doomed)&&Left.FolderTotal==250&&!Left.SizesPending);
-        await RestoreRecycledMenuFixture(doomed,hash);await restored;await Left.SpaceCompletion;
+        await RestoreRecycledMenuFixture(doomed,hash);Left.Refresh(force:true);await restored;await Left.SpaceCompletion;
         var removed=Sizes(Left,()=>Left.Items.All(entry=>entry.Path!=doomed)&&Left.FolderTotal==200&&!Left.SizesPending);
-        await Task.Run(()=>File.Delete(doomed));await removed;await Left.SpaceCompletion;
+        await Task.Run(()=>File.Delete(doomed));Left.Refresh(force:true);await removed;await Left.SpaceCompletion;
     }
 
     async Task VerifyCommandStates21(string root,Action<bool,string> check)

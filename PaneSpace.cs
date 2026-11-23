@@ -57,8 +57,7 @@ public partial class PaneView
         internal double Vertical,Horizontal;
         internal bool RefreshRequested,Changed,Stopping;
         internal bool SelectFirst=true,QuietRefresh,FullRefresh,Measure,Starting=true,WaitingForIndex;
-        internal long LastChange;
-        internal HashSet<string> Dirty=new(StringComparer.OrdinalIgnoreCase);
+        internal bool Stale; // changed on disk since this snapshot (CORE-30)
         internal HashSet<string> ExpandedAfterAccess=new(StringComparer.OrdinalIgnoreCase);
         internal HashSet<string> SelectionAfterAccess=new(StringComparer.OrdinalIgnoreCase);
         // While its tab is in the background: what was selected and where the tree was scrolled.
@@ -193,8 +192,7 @@ public partial class PaneView
     }
     /// Deleted (to the Recycle Bin or for good) through Pathweft: the rows leave the analysis now and their
     /// space leaves every folder above them, as Explorer drops a deleted item at once. The row that moves up
-    /// into the place of the deleted one is selected, so Delete can be pressed again. The branch is then
-    /// re-measured quietly in the background to correct the totals.
+    /// into the place of the deleted one is selected, so Delete can be pressed again.
     internal void SpaceRemoved(IReadOnlyCollection<string> paths)
     {
         var gone=paths.Where(path=>!File.Exists(path)&&!Directory.Exists(path)).ToArray();
@@ -204,7 +202,6 @@ public partial class PaneView
             bool removed=false;
             foreach(var path in gone)
             {
-                if(space==current&&!path.Equals(current.Root,StringComparison.OrdinalIgnoreCase)&&SizeCache.Within(path,current.Root))dirtySizes.Add(path);
                 if(path.Equals(current.Root,StringComparison.OrdinalIgnoreCase)||!current.Nodes.TryGetValue(path,out var row))continue;
                 RemoveSpaceRow(current,row);removed=true;
             }
@@ -345,20 +342,28 @@ public partial class PaneView
         var present=members.Select(member=>member.Path).ToHashSet(StringComparer.OrdinalIgnoreCase);
         foreach(var absent in current.Nodes.Values.Where(row=>row.ParentPath==path&&!present.Contains(row.Path)).ToArray())RemoveSpaceRow(current,absent);
         var missing=members.Where(member=>member.Directory&&!member.Reparse&&!current.Nodes.ContainsKey(member.Path)).ToArray();
+        // CORE-30: after an F5 from the index, known subfolders of an expanded row that this pass did not reach (their
+        // parent's total came from the index) take the index's current totals too.
+        string[] known;lock(current.Mailbox)known=preferIndex?members.Where(member=>member.Directory&&!member.Reparse&&current.Nodes.TryGetValue(member.Path,out var row)&&row.State!=SpaceState.Reparse&&!current.Seen.Contains(member.Path)).Select(member=>member.Path).ToArray():[];
         Dictionary<string,long> sizes=new(StringComparer.OrdinalIgnoreCase);
         // A slow index must not leave the analysis Pending (and F5 queued behind it) for its whole reply
         // timeout: after IndexWait the folders are measured on disk instead.
-        if(preferIndex&&missing.Length>0)
+        if(preferIndex&&missing.Length+known.Length>0)
         {
             using var indexWait=CancellationTokenSource.CreateLinkedTokenSource(token);indexWait.CancelAfter(IndexWait);
-            try{sizes=await FileExplorer.Search.IndexedSearch.SettledFolderSizesAsync(missing.Select(member=>member.Path),indexWait.Token);}
+            try{sizes=await FileExplorer.Search.IndexedSearch.SettledFolderSizesAsync(missing.Select(member=>member.Path).Concat(known),indexWait.Token);}
             catch(OperationCanceledException)when(!token.IsCancellationRequested){}
             catch(Exception error)when(error is InvalidOperationException or System.ComponentModel.Win32Exception){}
         }
         foreach(var member in members)
         {
             if(current.Nodes.TryGetValue(member.Path,out var existing))
-            {existing.Modified=member.Modified.ToLocalTime();if(!member.Directory)existing.Size=member.Bytes;continue;}
+            {
+                existing.Modified=member.Modified.ToLocalTime();if(!member.Directory)existing.Size=member.Bytes;
+                else if(known.Contains(member.Path)&&sizes.TryGetValue(Path.TrimEndingDirectorySeparator(member.Path),out long now))
+                {existing.Size=now;existing.State=SpaceState.Indexed;existing.Files=existing.Folders=0;existing.Failure="";existing.SizeSource=FileExplorer.Search.IndexedSearch.SizeSource;existing.Updated();}
+                continue;
+            }
             bool indexed=sizes.TryGetValue(Path.TrimEndingDirectorySeparator(member.Path),out long bytes);
             current.Nodes[member.Path]=new SpaceEntry{Path=member.Path,Name=member.Name,IsDir=member.Directory,Modified=member.Modified.ToLocalTime(),ParentPath=path,
                 Size=member.Reparse?0:member.Directory?indexed?bytes:-1:member.Bytes,State=member.Reparse?SpaceState.Reparse:member.Directory?indexed?SpaceState.Indexed:SpaceState.Pending:SpaceState.Complete,Expanded=current.ExpandedAfterAccess.Contains(member.Path)};
@@ -412,7 +417,7 @@ public partial class PaneView
         SpaceActivity.Visibility=current.Starting?Visibility.Visible:Visibility.Collapsed;
         SpaceActivity.IsIndeterminate=current.Starting&&Motion.On;
         SpaceActivity.Value=35;
-        Footer.Text=(current.WaitingForIndex?"Waiting for the index service to finish loading this drive…":current.Starting&&root.State==SpaceState.Pending?"Preparing space analysis…":$"{MainWindow.Fmt(Math.Max(0,root.DisplaySize))} logical · {root.SpaceStatus.ToLowerInvariant()}")+(current.Nodes.Values.Any(row=>row.State==SpaceState.Indexed)?" · indexed sizes may omit excluded files":"")+(Selected.Count>0?$" · {Selected.Count} selected":"");
+        Footer.Text=(current.WaitingForIndex?"Waiting for the index service to finish loading this drive…":current.Starting&&root.State==SpaceState.Pending?"Preparing space analysis…":$"{MainWindow.Fmt(Math.Max(0,root.DisplaySize))} logical · {root.SpaceStatus.ToLowerInvariant()}")+(current.Nodes.Values.Any(row=>row.State==SpaceState.Indexed)?" · indexed sizes may omit excluded files":"")+(current.Stale?" · changed since this snapshot, F5 to refresh":"")+(Selected.Count>0?$" · {Selected.Count} selected":"");
     }
     internal (long Bytes,long Files,long Folders,string Status) SpaceSummary
     {get{var root=space.Nodes[space.Root];return(Math.Max(0,root.DisplaySize),root.Files,root.Folders,root.SpaceStatus);}}
@@ -441,45 +446,34 @@ public partial class PaneView
         var previous=spaceTransition;spaceTransition=Run();
         async Task Run(){await previous;await EndSpaceAsync();action();}
     }
-    void RefreshSpace(bool force=false)
+    /// CORE-30 (owner: "who cares about the disk analysis be desynced by a couple of minutes"; "If I want a refresh,
+    /// allow me to press F5"): the analysis is a snapshot, as in WizTree or WinDirStat. A change on disk only marks it
+    /// changed (footer); nothing is measured until F5, which re-reads the index service's totals, or Ctrl+R and
+    /// Try again, which measure everything on disk.
+    void RefreshSpace(bool force=false,bool measure=false)
     {
         if(space is not {} current||current.Stopping)return;
 #if DEBUG
-        SpaceScan.IndexObserved?.Invoke(current.Root,"Refresh: "+Environment.StackTrace);
+        SpaceScan.IndexObserved?.Invoke(current.Root,"Refresh: force="+force+" measure="+measure);
 #endif
-        current.Changed=true;current.LastChange=Environment.TickCount64;current.Measure|=force;
-        foreach(var path in dirtySizes)
-        {
-            if(path==null||path.Equals(current.Root,StringComparison.OrdinalIgnoreCase)||!SizeCache.Within(path,current.Root))current.FullRefresh=true;
-            else
-            {
-                string relative=Path.GetRelativePath(current.Root,path);int separator=relative.IndexOf(Path.DirectorySeparatorChar);
-                current.Dirty.Add(Path.Combine(current.Root,separator<0?relative:relative[..separator]));
-            }
-        }
-        if(force||dirtySizes.Count==0)current.FullRefresh=true;
-        dirtySizes.Clear();
+        current.Changed=true;
+        if(!force){if(!current.RefreshRequested&&!current.Stale){current.Stale=true;UpdateSpaceFooter();StatsChanged?.Invoke();}return;}
+        current.FullRefresh=true;current.Measure|=measure;current.Stale=false;
         if(current.RefreshRequested)return;
-        current.RefreshRequested=true;
+        current.RefreshRequested=true;UpdateSpaceFooter();
         var previous=current.Work;current.Work=RefreshAfter();
         async Task RefreshAfter()
         {
             try
             {
-                // Finish the original finite pass. New notifications coalesce
-                // into this owner instead of cancelling/restarting the root.
+                // Finish the pass already running; a second F5 meanwhile coalesces into one more pass.
                 await previous;
-                while(!current.Stopping&&(current.FullRefresh||current.Dirty.Count>0))
+                while(!current.Stopping&&current.FullRefresh)
                 {
-                    bool full=current.FullRefresh,measure=current.Measure;current.FullRefresh=current.Measure=false;
-                    // CORE-29: a change takes the index service's totals once the service has read the change
-                    // journal past it (IndexCatchUp), as the pane rows do; only Ctrl+R and Try again measure on disk.
-                    if(!measure&&current.LastChange+(long)IndexCatchUp.TotalMilliseconds-Environment.TickCount64 is var wait and >0)
-                        await Task.Delay(TimeSpan.FromMilliseconds(wait),current.Cancellation.Token);
-                    var dirty=current.Dirty.ToArray();current.Dirty.Clear();
-                    current.QuietRefresh=!full;
-                    if(full)await RunSpaceAsync(current,preferIndex:!measure);
-                    else await RefreshSpaceBranches(current,dirty);
+                    bool measureAll=current.Measure;current.FullRefresh=current.Measure=false;
+                    // From the index the known rows keep their values until replaced; a disk measurement shows its progress.
+                    current.QuietRefresh=!measureAll;lock(current.Mailbox)current.Seen.Clear();
+                    await RunSpaceAsync(current,preferIndex:!measureAll);
                 }
             }
             catch(OperationCanceledException)when(current.Cancellation.IsCancellationRequested){}
@@ -492,43 +486,7 @@ public partial class PaneView
             }
         }
     }
-    async Task RefreshSpaceBranches(SpaceView current,string[] dirty)
-    {
-        var token=current.Cancellation.Token;
-        // Only direct membership needs rereading for rename/delete/root files.
-        // CORE-29: a changed branch is walked only where it changed: its subfolders take the index's
-        // totals unless written in the last Settle (SettledFolderSizesAsync), so only the changed
-        // chain is measured on disk. Unrelated sibling snapshots remain untouched.
-        if(!await ReadSpaceChildren(current,current.Root,preferIndex:false,measureMissing:false))return;
-        var branches=current.Nodes.Values.Where(row=>row.ParentPath==current.Root&&row.IsDir&&row.State!=SpaceState.Reparse&&
-            (row.State==SpaceState.Pending||dirty.Any(path=>SizeCache.Within(path,row.Path)))).ToArray();
-        foreach(var branch in branches)
-        {
-            var seen=new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            await ScanWithAccess(current,branch.Path,true,update=>{seen.Add(update.Path);QueueSpace(current,update);});
-            DrainSpace(current);
-            if(branch.State==SpaceState.Complete)
-                foreach(var key in current.Nodes.Values.Where(row=>row.IsDir&&SizeCache.Within(row.Path,branch.Path)&&!seen.Contains(row.Path)).Select(row=>row.Path).ToArray())
-                    foreach(var absent in current.Nodes.Keys.Where(path=>SizeCache.Within(path,key)).ToArray())current.Nodes.Remove(absent);
-            foreach(var row in current.Nodes.Values.Where(row=>row.IsDir&&SizeCache.Within(row.Path,branch.Path)))row.ChildrenRead=false;
-            foreach(var row in current.Nodes.Values.Where(row=>row.Expanded&&!row.ChildrenRead&&SizeCache.Within(row.Path,branch.Path)).ToArray())
-                await ReadSpaceChildren(current,row.Path,preferIndex:false,measureMissing:false);
-        }
-        token.ThrowIfCancellationRequested();if(current.Stopping)return;
-        var children=current.Nodes.Values.Where(row=>row.ParentPath==current.Root).ToArray();
-        var directories=children.Where(row=>row.IsDir).ToArray();var files=children.Where(row=>!row.IsDir&&row.State!=SpaceState.Reparse).ToArray();
-        var root=current.Nodes[current.Root];
-        root.Size=children.Sum(row=>Math.Max(0,row.DisplaySize));
-        root.Files=files.LongLength+directories.Sum(row=>row.Files);
-        root.Folders=directories.LongLength+directories.Sum(row=>row.Folders);
-        root.State=directories.Any(row=>row.State is SpaceState.Incomplete or SpaceState.Denied or SpaceState.Failed)?SpaceState.Incomplete:
-            directories.Any(row=>row.State is SpaceState.Changed or SpaceState.Pending or SpaceState.Scanning)?SpaceState.Changed:
-            directories.Any(row=>row.State==SpaceState.Indexed)?SpaceState.Indexed:SpaceState.Complete;
-        root.Refreshing=current.RefreshRequested;
-        root.Failure=root.State==SpaceState.Incomplete?directories.First(row=>row.State is SpaceState.Incomplete or SpaceState.Denied or SpaceState.Failed).Failure:
-            root.State==SpaceState.Changed?"Contents changed during measurement; updating the observed total.":"";
-        RebuildSpace(current);
-    }
+    internal bool SpaceStale=>space?.Stale==true;
     internal async Task DrainSpaceAndSizesAsync()
     {
         await EndSpaceAsync();

@@ -390,7 +390,6 @@ public partial class PaneView : UserControl
     string sortKey = "Name"; bool sortDesc;
     CancellationTokenSource sizing;
     Task sizingWork=Task.CompletedTask;
-    readonly HashSet<string> dirtySizes=new(StringComparer.OrdinalIgnoreCase);
     FileSystemWatcher watcher;
     DispatcherOperation folderRefresh;
 
@@ -1453,10 +1452,11 @@ public partial class PaneView : UserControl
         public object ConvertBack(object v, Type t, object p, System.Globalization.CultureInfo c) => throw new NotSupportedException();
     }
 
-    /// `force` re-reads even if the folder's timestamp says nothing changed (Ctrl+R).
-    public void Refresh(bool force = false)
+    /// `force` re-reads even if the folder's timestamp says nothing changed (F5, Ctrl+R). In Analyze space F5
+    /// re-reads the index service's totals and `measure` (Ctrl+R) measures everything on disk (CORE-30).
+    public void Refresh(bool force = false, bool measure = false)
     {
-        if(SpaceAnalyzing){RefreshSpace(force);return;}
+        if(SpaceAnalyzing){RefreshSpace(force,measure);return;}
         if (force) lock (listCache) listCache.Remove(Dir); // rebuilt from scratch: folder sizes are measured again
         if (RefreshListing()) return;
         if (searchQuery != null) Search(searchQuery);
@@ -1660,8 +1660,7 @@ public partial class PaneView : UserControl
             if(SpaceAnalyzing)SpaceScan.IndexObserved?.Invoke(Dir,"Invalidated: "+path);
 #endif
             var owner=watcher;
-            if(SpaceAnalyzing)dirtySizes.Add(path);
-            else
+            if(!SpaceAnalyzing)
             {
                 changedSizes[path??""]=at;
                 // CORE-28: a change below a row's folder changes only sizes. Such changes are taken

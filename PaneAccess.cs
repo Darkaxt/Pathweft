@@ -38,7 +38,7 @@ public partial class PaneView
     void FolderAccess_Click(object sender,RoutedEventArgs args)
     {
         if(folderDenied&&!AdministratorSession.Browsing)AdministratorRequested?.Invoke();
-        else if(SpaceAnalyzing)RefreshSpace(force:true);
+        else if(SpaceAnalyzing)RefreshSpace(force:true,measure:true);
         else Refresh();
     }
 }

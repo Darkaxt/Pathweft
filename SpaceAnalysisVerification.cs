@@ -44,7 +44,7 @@ public partial class MainWindow
         var watch=Stopwatch.StartNew();long before=GC.GetTotalMemory(false);
         AnalyzeSpaceCommand.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         await Dispatcher.InvokeAsync(()=>{},DispatcherPriority.ApplicationIdle);
-        // F5 is the actual metadata-refresh route, independent of this machine's
+        // Ctrl+R is the actual metadata-refresh route, independent of this machine's
         // optional indexed coverage; the separate live-index scenario qualifies
         // the fast entry path and its explicit coverage label.
         // Hold a later real enumeration until the UI has presented already
@@ -54,7 +54,7 @@ public partial class MainWindow
         {
             if(path==Path.Combine(folder,"branch-040"))progressive.Task.WaitAsync(token).GetAwaiter().GetResult();
         };
-        try{Left.Refresh(force:true);await Left.SpaceCompletion;}
+        try{Left.Refresh(force:true,measure:true);await Left.SpaceCompletion;}
         finally{SpaceScan.BeforeEnumeration=null;}
         watch.Stop();Left.StatsChanged-=Progress;
         check(Left.SpaceAnalyzing&&Left.Dir==folder&&Left.FolderTotal==expected,"Actual Analyze space command morphs the current pane and reaches exact recursive logical totals");
@@ -143,9 +143,9 @@ public partial class MainWindow
             long newTotal=expected+rewrite;
             var leftChanged=Sizes(Left,()=>Left.SpaceAnalyzing&&Left.FolderTotal==newTotal&&!Left.SizesPending);
             var rightChanged=Sizes(Right,()=>Right.SpaceAnalyzing&&Right.FolderTotal==newTotal&&!Right.SizesPending);
-            await Task.Run(()=>File.AppendAllText(Path.Combine(folder,"root.txt"),"x"));await Task.WhenAll(leftChanged,rightChanged);
+            await Task.Run(()=>File.AppendAllText(Path.Combine(folder,"root.txt"),"x"));Left.Refresh(force:true);Right.Refresh(force:true);await Task.WhenAll(leftChanged,rightChanged);
         }
-        check(Left.FolderTotal==expected+4&&Right.FolderTotal==expected+4,"Repeated external writes refresh both owned trees to exact new totals");
+        check(Left.FolderTotal==expected+4&&Right.FolderTotal==expected+4,"F5 after repeated external writes refreshes both owned trees to exact new totals");
         string target=Directory.CreateDirectory(Path.Combine(root,"copy-target")).FullName;
         await S1Verification.Navigate(Right,target);SetActive(Left);
         Left.ListForVerification.SelectedItem=Left.Items.Single(entry=>entry.Name=="root.txt");
