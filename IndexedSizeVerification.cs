@@ -38,6 +38,8 @@ public partial class MainWindow
     // The same pane and analysis paths against a substituted service, for the private-desktop profile.
     internal async Task VerifyIndexedSizes15(string root,Action<bool,string> check)
     {
+        // The substituted service answers as an index that has read the change journal: the folder's
+        // current total (CORE-28: a changed row takes the index total once the index has caught up).
         // No pane watches the fixture while it is created: their notifications would
         // correctly mark it changed, and a changed folder is measured, not indexed.
         string neutral=Directory.CreateDirectory(Path.Combine(root,"neutral")).FullName;
@@ -47,7 +49,7 @@ public partial class MainWindow
         File.WriteAllBytes(Path.Combine(folder,"one.bin"),new byte[123]);File.WriteAllBytes(Path.Combine(folder,"two.bin"),new byte[456]);
         using var fake=new FakeIndexService();
         fake.Reply=request=>(string)request["op"]=="folder_sizes"
-            ?new JsonObject{["ok"]=true,["sizes"]=new JsonArray(request["paths"].AsArray().Select(p=>(JsonNode)((string)p==folder?new JsonObject{["path"]=folder,["size"]=579}:new JsonObject{["path"]=(string)p})).ToArray())}
+            ?new JsonObject{["ok"]=true,["sizes"]=new JsonArray(request["paths"].AsArray().Select(p=>(JsonNode)((string)p==folder?new JsonObject{["path"]=folder,["size"]=Directory.EnumerateFiles(folder,"*",SearchOption.AllDirectories).Sum(f=>new FileInfo(f).Length)}:new JsonObject{["path"]=(string)p})).ToArray())}
             :new JsonObject{["ok"]=true,["total"]=0,["hits"]=new JsonArray()};
         var previous=IndexedSearch.ServiceOverride;IndexedSearch.ServiceOverride=new IndexServiceClient(fake.Name);
         try
@@ -92,7 +94,7 @@ public partial class MainWindow
         // CORE-28 (revised criterion): the changed row takes the index total once the service has read
         // the write, or a measurement where the index does not answer; never the lagging old total.
         var changed=Sizes(Left,()=>Left.Items.Single().Size==580);
-        await Task.Run(()=>File.AppendAllText(Path.Combine(folder,"one.bin"),"x"));await changed;
+        await Task.Run(()=>File.AppendAllText(Path.Combine(folder,"one.bin"),"x"));await CompletesWithin(changed,TimeSpan.FromSeconds(30));
         check(Left.Items.Single().Size==580,"A real write refreshes the row to its new total, never a lagging indexed size ("+Left.Items.Single().SizeSource+")");
         await Left.StopSizingAsync();
     }
