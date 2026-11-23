@@ -149,8 +149,10 @@ internal sealed partial class PerformancePanel
     // MONITOR-26: sort and filter are applied when they change, not per sample. Every
     // reapplication resets the view, and a reset rebuilds the table's UI Automation
     // subtree, which costs heavily whenever an accessibility client listens. The live
-    // process table stays ordered through live shaping: only rows whose values moved
-    // are repositioned.
+    // process table is ordered in its source collection (OrderProcessItems): WPF live
+    // sorting moved about 160 of 372 rows per sample, each move rebuilding a row
+    // container and raising automation structure events, even for rows whose order
+    // had not changed. Live filtering keeps pinned rows and late metadata current.
     ICollectionView appliedView;string appliedShape;
     void SortRows(bool force=false)
     {
@@ -160,21 +162,65 @@ internal sealed partial class PerformancePanel
         string shape=string.Join("|",processes,selected,sortProperty,sortDirection,processFilter.Text.Trim(),processColumns["ExecutablePath"],processColumns["CommandLine"]);
         if(!force&&ReferenceEquals(view,appliedView)&&shape==appliedShape)return;
         appliedView=view;appliedShape=shape;
-        if(processes&&view is ICollectionViewLiveShaping live&&live.CanChangeLiveSorting&&live.CanChangeLiveFiltering)
+        if(processes&&view is ICollectionViewLiveShaping live&&live.CanChangeLiveFiltering)
         {
-            // An empty LiveSortingProperties follows the SortDescriptions; the filter reads these.
-            live.IsLiveSorting=true;live.IsLiveFiltering=true;
+            if(live.CanChangeLiveSorting)live.IsLiveSorting=false;live.IsLiveFiltering=true;
             if(live.LiveFilteringProperties.Count==0)foreach(string property in new[]{"Pinned","ExecutablePath","CommandLine"})live.LiveFilteringProperties.Add(property);
         }
+        ApplyView(view,processes);
+        if(processes)OrderProcessItems();
+    }
+    void ApplyView(ICollectionView view,bool processes)
+    {
         using var defer=view.DeferRefresh();view.SortDescriptions.Clear();
-        if(processes)view.SortDescriptions.Add(new("Pinned",ListSortDirection.Descending));
         string filter=processFilter.Text.Trim();
         view.Filter=filter.Length==0||selected is not (Cpu or Ram)?null:processes?item=>item is PerformanceProcessRow row&&(row.Pinned||row.Process.Contains(filter,StringComparison.OrdinalIgnoreCase)||row.Pid.ToString().Contains(filter,StringComparison.OrdinalIgnoreCase)||(processColumns["ExecutablePath"]&&row.ExecutablePath.Contains(filter,StringComparison.OrdinalIgnoreCase))||(processColumns["CommandLine"]&&row.CommandLine.Contains(filter,StringComparison.OrdinalIgnoreCase)))
             // Recorded rows: process facts must match; metric/event rows without a PID stay.
             :item=>item is not PerformanceFact fact||fact.Pid==null||ProcessMatches(filter,fact.Name,fact.Pid);
-        if(sortProperty!=null)view.SortDescriptions.Add(new(sortProperty,sortDirection));
-        else if(processes)view.SortDescriptions.Add(new(selected==Ram?"Memory":"SortUsage",ListSortDirection.Descending));
-        if(processes){view.SortDescriptions.Add(new("Process",ListSortDirection.Ascending));view.SortDescriptions.Add(new("Pid",ListSortDirection.Ascending));}
+        if(!processes&&sortProperty!=null)view.SortDescriptions.Add(new(sortProperty,sortDirection));
+    }
+    // Pinned first, then the chosen column (default: CPU or RAM use, descending), then name,
+    // PID and start time, the same order the view's sort descriptions gave.
+    int CompareProcessRows(PerformanceProcessRow a,PerformanceProcessRow b,System.Reflection.PropertyInfo key)
+    {
+        int c=b.Pinned.CompareTo(a.Pinned);if(c!=0)return c;
+        if(key!=null)
+        {
+            object x=key.GetValue(a),y=key.GetValue(b);
+            c=x is string s&&y is string t?string.Compare(s,t,StringComparison.CurrentCulture):System.Collections.Comparer.Default.Compare(x,y);
+            if(sortProperty==null||sortDirection==ListSortDirection.Descending)c=-c;
+            if(c!=0)return c;
+        }
+        c=string.Compare(a.Process,b.Process,StringComparison.CurrentCulture);if(c!=0)return c;
+        c=a.Pid.CompareTo(b.Pid);return c!=0?c:a.Started.CompareTo(b.Started);
+    }
+    // Moves only the rows outside the longest run already in order, each directly after its
+    // ordered predecessor: one changed row is one Move, and unchanged rows stay in place.
+    void OrderProcessItems()
+    {
+        int n=processItems.Count;if(n<2)return;
+        var key=typeof(PerformanceProcessRow).GetProperty(sortProperty??(selected==Ram?"Memory":"SortUsage"));
+        var target=processItems.OrderBy(x=>x,Comparer<PerformanceProcessRow>.Create((a,b)=>CompareProcessRows(a,b,key))).ToArray();
+        var rank=new Dictionary<PerformanceProcessRow,int>(n);for(int i=0;i<n;i++)rank[target[i]]=i;
+        var ranks=processItems.Select(x=>rank[x]).ToArray();
+        // Longest increasing subsequence of the current ranks (patience sorting).
+        var tails=new List<int>();var previous=new int[n];
+        for(int i=0;i<n;i++)
+        {
+            int lo=0,hi=tails.Count;
+            while(lo<hi){int mid=(lo+hi)/2;if(ranks[tails[mid]]<ranks[i])lo=mid+1;else hi=mid;}
+            previous[i]=lo>0?tails[lo-1]:-1;
+            if(lo==tails.Count)tails.Add(i);else tails[lo]=i;
+        }
+        if(tails.Count==n)return;
+        var keep=new HashSet<int>();for(int i=tails[^1];i>=0;i=previous[i])keep.Add(ranks[i]);
+        for(int t=0;t<n;t++)
+        {
+            if(keep.Contains(t))continue;
+            int from=processItems.IndexOf(target[t]),to=0;
+            if(t>0){int p=processItems.IndexOf(target[t-1]);to=from<p?p:p+1;}
+            if(from!=to)processItems.Move(from,to);
+        }
     }
     void ChangedAnalysis()
     {

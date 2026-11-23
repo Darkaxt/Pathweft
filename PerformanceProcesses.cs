@@ -294,7 +294,8 @@ internal sealed partial class PerformancePanel
         {
             var key=(sample.Pid,sample.Started);
             if(!processRows.TryGetValue(key,out var row))processRows[key]=row=new(sample);
-            else{row.Sample=sample;row.Observed=true;row.Notify();}
+            // An identical sample (record equality covers every shown value) leaves the row quiet.
+            else if(!row.Observed||row.Sample!=sample){row.Sample=sample;row.Observed=true;row.Notify();}
         }
         // Keep stable row objects and the selected identity across sampler ticks.
         var selection=table.SelectedItem as PerformanceProcessRow;
@@ -305,7 +306,7 @@ internal sealed partial class PerformancePanel
         foreach(var row in rows)if(!processItems.Contains(row))processItems.Add(row);
         if(!ReferenceEquals(table.ItemsSource,processItems))table.ItemsSource=processItems;
         if(selection!=null&&wanted.Contains(selection))table.SelectedItem=selection;
-        SortRows();LoadProcessMetadata();
+        SortRows();OrderProcessItems();LoadProcessMetadata();
     }
     void LoadProcessMetadata()
     {

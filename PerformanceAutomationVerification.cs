@@ -16,7 +16,7 @@ internal sealed partial class PerformancePanel
     [DllImport("kernel32.dll")] static extern uint GetCurrentThreadId();
     // MONITOR-26: live CPU analysis while a UI Automation client listens to the whole window,
     // as accessibility, text and capture tools do. Samples must not reset the table's view;
-    // live shaping keeps the order; the UI thread stays well below the reset-per-sample cost.
+    // moving only out-of-order rows keeps the order; the UI thread stays well below the reset-per-sample cost.
     internal async Task VerifyAutomationLoad26(string root,Window window,Action<bool,string> check)
     {
         Select(Cpu);LiveForVerification();
@@ -104,7 +104,7 @@ internal sealed partial class PerformancePanel
             legacy=new{percentOfOneProcessor=legacy.Percent,legacy.Samples,legacy.Events,legacy.Resets,legacy.Moves},
             topSources=ancestry},new JsonSerializerOptions{WriteIndented=true}));
         check(current.Resets==0,"Live CPU analysis applies samples without resetting the table view");
-        check(ordered,"Live shaping keeps the process table in its sort order across samples");
+        check(ordered,"Incremental ordering keeps the process table in its sort order across samples");
         check(current.Events>0,"An actual UI Automation client listened to the window during the measurement");
         check(current.Percent<=10&&current.Percent*2<=legacy.Percent,$"UI thread {current.Percent:0.0}% of one processor with a listening client (no client {baseline.Percent:0.0}%), against {legacy.Percent:0.0}% with a reset per sample");
     }
