@@ -89,9 +89,11 @@ public partial class MainWindow
         await Left.ToggleSpaceAsync();await Left.SpaceCompletion;SpaceScan.IndexObserved=null;
         check(Left.Items.Single().Size==579&&Left.Items.Single() is SpaceEntry{State:SpaceState.Indexed},"The analysis pane uses the same indexed folder size without traversing the covered child");
         await Left.EndSpaceAsync();
-        var changed=Sizes(Left,()=>Left.Items.Single().Size==580&&Left.Items.Single().SizeSource=="Filesystem measurement");
+        // CORE-28 (revised criterion): the changed row takes the index total once the service has read
+        // the write, or a measurement where the index does not answer; never the lagging old total.
+        var changed=Sizes(Left,()=>Left.Items.Single().Size==580);
         await Task.Run(()=>File.AppendAllText(Path.Combine(folder,"one.bin"),"x"));await changed;
-        check(Left.Items.Single().Size==580,"A real write refreshes the row from fresh filesystem metadata rather than accepting a lagging indexed size");
+        check(Left.Items.Single().Size==580,"A real write refreshes the row to its new total, never a lagging indexed size ("+Left.Items.Single().SizeSource+")");
         await Left.StopSizingAsync();
     }
 }

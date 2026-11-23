@@ -1,6 +1,11 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.91 | 2026-11-23 | Folder sizes on a busy drive
+
+- A pane showing C:\ no longer keeps a processor core busy measuring folder sizes. Changed folders now take their totals from the Pathweft index service a second after the change, instead of being walked on disk again for every change.
+- Panes showing a drive root now update folder sizes when something inside them changes.
+
 ## 1.1.90 | 2026-11-23 | Lighter live analysis
 
 - The live CPU, RAM, GPU and folder I/O tables in Performance analysis now update only the rows that changed instead of rebuilding the whole table every second. That rebuilding was most of the processor time Pathweft used while analysis was open, especially with accessibility, text or capture tools running.

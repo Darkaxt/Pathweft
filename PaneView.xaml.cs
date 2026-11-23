@@ -1099,7 +1099,9 @@ public partial class PaneView : UserControl
             // independent of Modified; replace its size in the same UI transaction as the totals.
             if(e.IsDir&&e.Size!=f.Size){e.Size=f.Size;resize|=f.Size==-1;}
         }
-        if (resize) StartSizing();
+        // Recorded changes need a pass even when no row's cached size changed: a row whose walk
+        // the change interrupted still shows its last total and waits for this one (CORE-28).
+        if (resize || changedSizes.Count > 0) StartSizing();
         if (rethumb) StartThumbs();
         if (reversion) StartVersions();
         if (reicon.Count > 0) StartIcons(reicon);
@@ -1490,13 +1492,13 @@ public partial class PaneView : UserControl
         var previousCancellation=sizing;sizing?.Cancel();
         if (indexedSearch) return; // indexed metadata only; never crawl result folders
         var cts = sizing = new CancellationTokenSource();
+        var changed=changedSizes.ToArray();changedSizes.Clear();settleTimer?.Stop();
         if(SpaceAnalyzing||suspendSizing||IsVirtual(Dir)||IsServer(Dir))return;
         // A hot fallback value can paint immediately, but must not prevent an
         // available indexed total from becoming the preferred source.
         var todo = items.Where(e => e.IsDir && !e.IsUp).ToList();
         if (todo.Count == 0) return;
         var previous=sizingWork;
-        var dirty=dirtySizes.ToArray();dirtySizes.Clear();
         sizingWork=SizeRows();
         async Task SizeRows()
         {
@@ -1506,7 +1508,13 @@ public partial class PaneView : UserControl
                 previousCancellation?.Dispose();
                 cts.Token.ThrowIfCancellationRequested();
                 var indexed=new Dictionary<string,long>(StringComparer.OrdinalIgnoreCase);
-                var candidates=todo.Where(e=>!dirty.Any(path=>path==null||SizeCache.Within(path,e.Path)||SizeCache.Within(e.Path,path))).Select(e=>e.Path).ToArray();
+                // CORE-28: a changed row takes the index service's total too, once the service has read
+                // the change journal past the row's newest change (it reads it every 250 ms); asked
+                // sooner it could still report the old total. Measuring on disk instead never finished
+                // on C:\, where something below Users or ProgramData changes every second.
+                long newest=changed.Where(c=>todo.Any(e=>c.Key==""||SizeCache.Within(c.Key,e.Path)||SizeCache.Within(e.Path,c.Key))).Select(c=>c.Value).DefaultIfEmpty(long.MinValue).Max();
+                if(newest!=long.MinValue&&newest+(long)IndexCatchUp.TotalMilliseconds-Environment.TickCount64 is var wait and >0)await Task.Delay(TimeSpan.FromMilliseconds(wait),cts.Token);
+                var candidates=todo.Select(e=>e.Path).ToArray();
                 // A slow index must not hold the row sizes: after IndexWait the folders are measured.
                 if(candidates.Length>0)try{using var indexWait=CancellationTokenSource.CreateLinkedTokenSource(cts.Token);indexWait.CancelAfter(IndexWait);indexed=await FileExplorer.Search.IndexedSearch.FolderSizesAsync(candidates,indexWait.Token);}
                 catch(OperationCanceledException)when(!cts.Token.IsCancellationRequested){}
@@ -1540,11 +1548,11 @@ public partial class PaneView : UserControl
     /// A folder's size, walked one level at a time so that every folder on the way is remembered too:
     /// measuring D:\ used to cache D:\ alone, and opening any folder under it walked that whole subtree
     /// again. A remembered subfolder is not walked, so a scan that was cut short (you moved on) picks
-    /// up from everything it had finished.
+    /// up from everything it had finished. A folder changed during its walk is not remembered and its
+    /// total is not shown: the change starts the next pass. Walking it again at once never ended on a
+    /// folder where something changes every second (CORE-28).
     internal static long Measure(DirectoryInfo dir, CancellationToken token)
     {
-        while(true)
-        {
         token.ThrowIfCancellationRequested();
         using var snapshot=new SizeCache.Measurement(dir.FullName);
         long bytes = 0;
@@ -1561,8 +1569,8 @@ public partial class PaneView : UserControl
         // date. Stored from before the walk, it looked changed at the next visit and was walked again.
         dir.Refresh();
         token.ThrowIfCancellationRequested();
-        if(snapshot.Complete(dir.LastWriteTimeUtc,bytes))return bytes;
-        }
+        snapshot.Complete(dir.LastWriteTimeUtc,bytes);
+        return bytes;
     }
 
     // File versions for exe/dll (OneCommander-style column), off the UI thread: network drives can be slow.
@@ -1609,7 +1617,7 @@ public partial class PaneView : UserControl
 
     void StopFolderWatch()
     {
-        folderRefresh?.Abort();folderRefresh=null;
+        folderRefresh?.Abort();folderRefresh=null;settleTimer?.Stop();
         var previous = watcher;
         watcher = null;
         previous?.Dispose();
@@ -1639,17 +1647,37 @@ public partial class PaneView : UserControl
         catch (Exception ex) when (ex is IOException or ArgumentException or UnauthorizedAccessException) { watcher = null; } // some drives can't be watched; manual refresh still works
     }
 
+    internal static TimeSpan IndexSettle=TimeSpan.FromSeconds(1),IndexCatchUp=TimeSpan.FromMilliseconds(600);
+    readonly Dictionary<string,long> changedSizes=new(StringComparer.OrdinalIgnoreCase); // changed path ("" unknown) -> tick of the change
+    DispatcherTimer settleTimer;FileSystemWatcher settleOwner;
     void SizeInvalidated(string path)
     {
+        long at=Environment.TickCount64;
         Dispatcher.BeginInvoke(() =>
         {
             if(watcher==null||searchQuery!=null||path!=null&&!SizeCache.Within(path,Dir)&&!SizeCache.Within(Dir,path))return;
 #if DEBUG
             if(SpaceAnalyzing)SpaceScan.IndexObserved?.Invoke(Dir,"Invalidated: "+path);
 #endif
-            dirtySizes.Add(path);
-            if(folderRefresh is {Status:DispatcherOperationStatus.Pending})return;
             var owner=watcher;
+            if(SpaceAnalyzing)dirtySizes.Add(path);
+            else
+            {
+                changedSizes[path??""]=at;
+                // CORE-28: a change below a row's folder changes only sizes. Such changes are taken
+                // together once per IndexSettle; a change in this folder itself lists at once.
+                if(path!=null&&Path.GetDirectoryName(path) is {} parent&&!SizeCache.Within(Dir,parent))
+                {
+                    if(settleTimer==null)
+                    {
+                        settleTimer=new(DispatcherPriority.Background,Dispatcher){Interval=IndexSettle};
+                        settleTimer.Tick+=(_,_)=>{settleTimer.Stop();if(watcher!=null&&watcher==settleOwner&&searchQuery==null)Refresh();};
+                    }
+                    if(!settleTimer.IsEnabled){settleOwner=owner;settleTimer.Start();}
+                    return;
+                }
+            }
+            if(folderRefresh is {Status:DispatcherOperationStatus.Pending})return;
             folderRefresh=Dispatcher.BeginInvoke(() =>
             {
                 folderRefresh=null;

@@ -13,6 +13,7 @@ public static class SizeCache
     static readonly Dictionary<string,LinkedListNode<Entry>> hot=new(StringComparer.Ordinal);
     static readonly LinkedList<Entry> recent=new();
     static readonly HashSet<Measurement> measuring=new();
+    static readonly HashSet<string> cleared=new(StringComparer.Ordinal); // changed paths with no ancestor record since the last store
     internal const int HotLimit=2048;
     internal static int HotCount{get{lock(state)return hot.Count;}}
     internal static event Action<string> Invalidated;
@@ -65,6 +66,8 @@ public static class SizeCache
     {
         if(path.Equals(folder,StringComparison.OrdinalIgnoreCase))return true;
         var prefix=Path.TrimEndingDirectorySeparator(folder);
+        // A drive root keeps its separator (C:\): everything on the drive is within it.
+        if(prefix.EndsWith(Path.DirectorySeparatorChar))return path.Length>prefix.Length&&path.StartsWith(prefix,StringComparison.OrdinalIgnoreCase);
         return path.Length>prefix.Length&&path.StartsWith(prefix,StringComparison.OrdinalIgnoreCase)&&path[prefix.Length]==Path.DirectorySeparatorChar;
     }
     internal static void Invalidate(string path,bool subtree=false)
@@ -72,19 +75,25 @@ public static class SizeCache
         Ready();string key=Key(path),prefix=key.TrimEnd('\\')+"\\";
         lock(state)
         {
-            using var transaction=database.BeginTransaction();using var command=database.CreateCommand();command.Transaction=transaction;
-            // The separator range uses the BINARY primary-key index. No map.Keys
-            // snapshot or prefix reconstruction per record during watcher events.
-            if(subtree)
+            // A file written again and again (a log, a browser cache) changes nothing more once its
+            // ancestors' records are gone; they stay gone until the next record is stored.
+            if(subtree||cleared.Add(key))
             {
-                command.CommandText="DELETE FROM sizes WHERE path >= $lo AND path < $hi";
-                command.Parameters.AddWithValue("$lo",prefix);command.Parameters.AddWithValue("$hi",prefix[..^1]+"]");
-                command.ExecuteNonQuery();command.Parameters.Clear();
-                foreach(var entry in recent.Where(e=>Within(e.Key,key)).ToArray())RemoveHot(entry.Key);
+                if(cleared.Count>4096){cleared.Clear();cleared.Add(key);}
+                using var transaction=database.BeginTransaction();using var command=database.CreateCommand();command.Transaction=transaction;
+                // The separator range uses the BINARY primary-key index. No map.Keys
+                // snapshot or prefix reconstruction per record during watcher events.
+                if(subtree)
+                {
+                    command.CommandText="DELETE FROM sizes WHERE path >= $lo AND path < $hi";
+                    command.Parameters.AddWithValue("$lo",prefix);command.Parameters.AddWithValue("$hi",prefix[..^1]+"]");
+                    command.ExecuteNonQuery();command.Parameters.Clear();
+                    foreach(var entry in recent.Where(e=>Within(e.Key,key)).ToArray())RemoveHot(entry.Key);
+                }
+                command.CommandText="DELETE FROM sizes WHERE path=$path";var parameter=command.Parameters.Add("$path",SqliteType.Text);
+                for(string p=key;p!=null;p=Path.GetDirectoryName(p)){string ancestor=Key(p);parameter.Value=ancestor;command.ExecuteNonQuery();RemoveHot(ancestor);}
+                transaction.Commit();
             }
-            command.CommandText="DELETE FROM sizes WHERE path=$path";var parameter=command.Parameters.Add("$path",SqliteType.Text);
-            for(string p=key;p!=null;p=Path.GetDirectoryName(p)){string ancestor=Key(p);parameter.Value=ancestor;command.ExecuteNonQuery();RemoveHot(ancestor);}
-            transaction.Commit();
             foreach(var scan in measuring)if(Within(path,scan.Path)||subtree&&Within(scan.Path,path))scan.Invalid=true;
         }
         Invalidated?.Invoke(path);
@@ -92,6 +101,7 @@ public static class SizeCache
     static void RemoveHot(string key){if(hot.Remove(key,out var node))recent.Remove(node);}
     static void Put(string key,DateTime stamp,long bytes)
     {
+        cleared.Clear();
         using var command=database.CreateCommand();command.CommandText="INSERT OR REPLACE INTO sizes(path,bytes,stamp) VALUES($path,$bytes,$stamp)";
         command.Parameters.AddWithValue("$path",key);command.Parameters.AddWithValue("$bytes",bytes);command.Parameters.AddWithValue("$stamp",stamp.Ticks);
         command.ExecuteNonQuery();Remember(new(key,bytes,stamp.Ticks));

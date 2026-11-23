@@ -163,7 +163,7 @@ public partial class HelpWindow : Window
             ("Expandable folders", "Right-click empty space → View → Expandable folders: in Details, folders open in place under their row (the arrow, or Right/Left), to look into several at once without leaving the folder"),
             ("Flat view", "Right-click empty space → View → Flat view: every file below this folder in one list, with a Location column, to sort or select across subfolders. Copying or moving files from subfolders asks whether to keep the folder structure or put them all side by side. Choose it again to go back"),
             ("Copy as table / Export listing…", "Right-click selected items → Copy as table puts those rows on the clipboard with the columns shown, ready to paste into a spreadsheet. Right-click empty space → Copy listing has Copy as table for every row and Export listing…, which saves the listing as CSV or TSV"),
-            ("Folder sizes", "Measured in the background and remembered, so a big drive shows its folders' sizes at once the next time"),
+            ("Folder sizes", "Taken from the Pathweft index service where it covers the drive, otherwise measured in the background and remembered. A change inside a folder updates its size within about a second, also on a busy drive like C:\\"),
         }),
         ("Windows integration", new[]
         {

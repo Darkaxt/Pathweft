@@ -117,12 +117,21 @@ public partial class MainWindow
         var overflow=typeof(FileSystemWatcher).GetMethod("OnError",flags);
         check(overflow!=null,"The native observer exposes its overflow recovery event");
         SizeCache.Set(package,Directory.GetLastWriteTimeUtc(package),17);
-        overflow.Invoke(watcher,new object[]{new ErrorEventArgs(new InternalBufferOverflowException("Owned diagnostic notification loss"))});
         // The displayed zero intentionally survives refresh. It cannot signal
-        // completion of the replacement measurement; observe the actual
-        // invalidated database record being republished as well.
-        await Sizes(Left,()=>Left.Items.Single(e=>e.Name=="DeckCraft").Size==0&&SizeCache.Get(package,Directory.GetLastWriteTimeUtc(package))==0);
-        check(SizeCache.Get(package,Directory.GetLastWriteTimeUtc(package))==0,"Notification overflow discards unknown stale descendants and rebuilds actual totals");
+        // completion of the replacement total; observe the row's size being
+        // dropped as unknown and replaced. CORE-28 (revised criterion): the
+        // replacement may come from the index service, which leaves no Pathweft
+        // record, so the stale 17 must be gone rather than republished as 0.
+        var overflowRow=Left.Items.Single(e=>e.Name=="DeckCraft");bool dropped=false;
+        System.ComponentModel.PropertyChangedEventHandler observeDrop=(_,_)=>dropped|=overflowRow.Size==-1;
+        overflowRow.PropertyChanged+=observeDrop;
+        try
+        {
+            overflow.Invoke(watcher,new object[]{new ErrorEventArgs(new InternalBufferOverflowException("Owned diagnostic notification loss"))});
+            bool rebuilt=await CompletesWithin(Sizes(Left,()=>dropped&&overflowRow.Size==0),TimeSpan.FromSeconds(30));
+            check(rebuilt&&SizeCache.Get(package,Directory.GetLastWriteTimeUtc(package)) is 0 or -1,"Notification overflow discards unknown stale descendants and rebuilds actual totals");
+        }
+        finally{overflowRow.PropertyChanged-=observeDrop;}
         Left.ListForVerification.SelectedItem=Left.Items.Single(e=>e.Name=="DeckCraft");
         bool selectionLost=false;
         void ObserveSelection(){selectionLost|=Left.Selected.Count==0;}
@@ -134,7 +143,41 @@ public partial class MainWindow
             check(!selectionLost&&Left.Selected.Single().Name=="DeckCraft","Replacing rows after an external create publishes the restored selection atomically to preview/stat consumers");
         }
         finally{Left.StatsChanged-=ObserveSelection;}
+        await VerifyBusySizes28(root,check);
         check(HiddenTrialPresentation.ForegroundViolations==0,"Live folder-size qualification caused no foreground activation");
+    }
+
+    static async Task<bool> CompletesWithin(Task task,TimeSpan limit)=>await Task.WhenAny(task,Task.Delay(limit))==task;
+
+    // CORE-28: a folder whose contents change all the time (C:\Users, ProgramData) must still get a
+    // total, without walking it again for every change.
+    async Task VerifyBusySizes28(string root,Action<bool,string> check)
+    {
+        check(SizeCache.Within(@"C:\Users\x",@"C:\")&&SizeCache.Within(@"C:\",@"C:\")&&!SizeCache.Within(@"D:\Users",@"C:\")&&!SizeCache.Within(@"C:\Users2",@"C:\Users"),"A drive root contains every path on its drive, and only those");
+        string view=Directory.CreateDirectory(Path.Combine(root,"busy-view")).FullName;
+        string deep=Directory.CreateDirectory(Path.Combine(view,"busy","cache","deep")).FullName;
+        File.WriteAllBytes(Path.Combine(view,"busy","base.bin"),new byte[50_000]);
+        string log=Path.Combine(deep,"log.txt");
+        using var writing=new CancellationTokenSource();
+        var writer=Task.Run(async()=>{while(!writing.IsCancellationRequested){File.AppendAllText(log,"entry\n");await Task.Delay(15);}});
+        try
+        {
+            await Task.Delay(500);
+            var walk=Task.Run(()=>PaneView.Measure(new DirectoryInfo(Path.Combine(view,"busy")),CancellationToken.None));
+            bool ended=await CompletesWithin(walk,TimeSpan.FromSeconds(20));
+            check(ended&&walk.Result>=50_000,"A walk of a folder changed during the walk ends instead of starting over ("+(ended?walk.Result.ToString():"still walking after 20 s")+")");
+            await S1Verification.Navigate(Left,view);
+            var row=Left.Items.Single(e=>e.Name=="busy");
+            string indexed=FileExplorer.Search.IndexedSearch.SizeSource;
+            bool listed=await CompletesWithin(Sizes(Left,()=>row.Size>=50_000&&row.SizeSource==indexed),TimeSpan.FromSeconds(20));
+            long first=row.Size;
+            // A later total, after changes the watcher reported: the changed row is not walked again.
+            bool updated=listed&&await CompletesWithin(Sizes(Left,()=>row.Size>first&&row.SizeSource==indexed),TimeSpan.FromSeconds(20));
+            File.WriteAllText(Path.Combine(root,"busy-row.json"),System.Text.Json.JsonSerializer.Serialize(new{first,row.Size,row.SizeSource}));
+            check(updated,"A row whose contents change continuously takes the index's newer totals while the changes go on ("+first+" then "+row.Size+", "+row.SizeSource+")");
+        }
+        finally{writing.Cancel();try{await writer;}catch(IOException){}}
+        await Left.StopSizingAsync();
     }
 
     static async Task Sizes(PaneView pane, Func<bool> predicate)
