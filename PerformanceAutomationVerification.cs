@@ -74,6 +74,7 @@ internal sealed partial class PerformancePanel
         bool registered=System.Windows.Automation.Peers.AutomationPeer.ListenerExists(System.Windows.Automation.Peers.AutomationEvents.PropertyChanged)&&System.Windows.Automation.Peers.AutomationPeer.ListenerExists(System.Windows.Automation.Peers.AutomationEvents.StructureChanged);
         Interlocked.Exchange(ref attributing,0);
         var rows=table.Items.Cast<PerformanceProcessRow>().ToArray();
+        int realized=rows.Count(x=>table.ItemContainerGenerator.ContainerFromItem(x)!=null);
         int Compare(PerformanceProcessRow a,PerformanceProcessRow b)
         {
             int c=b.Pinned.CompareTo(a.Pinned);if(c!=0)return c;
@@ -81,8 +82,9 @@ internal sealed partial class PerformancePanel
             c=string.Compare(a.Process,b.Process,StringComparison.CurrentCulture);return c!=0?c:a.Pid.CompareTo(b.Pid);
         }
         bool ordered=rows.Length>1&&rows.Zip(rows.Skip(1)).All(x=>Compare(x.First,x.Second)<=0);
-        // The same client and table with three view resets per sample, as before MONITOR-26.
-        var legacy=await Measure(()=>{for(int i=0;i<3;i++)SortRows(true);});
+        // The same client and table with the view resets of 1.1.89: two panel refreshes per sample,
+        // three resets each.
+        var legacy=await Measure(()=>{for(int i=0;i<6;i++)SortRows(true);});
         registered&=System.Windows.Automation.Peers.AutomationPeer.ListenerExists(System.Windows.Automation.Peers.AutomationEvents.PropertyChanged)&&System.Windows.Automation.Peers.AutomationPeer.ListenerExists(System.Windows.Automation.Peers.AutomationEvents.StructureChanged);
         ((INotifyCollectionChanged)table.Items).CollectionChanged-=Counted;
         var top=sources.OrderByDescending(x=>x.Value).Take(15).ToArray();
@@ -104,7 +106,7 @@ internal sealed partial class PerformancePanel
         bool listening=registered&&delivered>0;
         bool light=(current.Percent-baseline.Percent)*2<=legacy.Percent-baseline.Percent;
         bool pass=current.Resets==0&&ordered&&listening&&light;
-        File.WriteAllText(Path.Combine(root,"automation-load.json"),JsonSerializer.Serialize(new{pass,rows=rows.Length,ordered,registered,delivered=Interlocked.Read(ref delivered),
+        File.WriteAllText(Path.Combine(root,"automation-load.json"),JsonSerializer.Serialize(new{pass,rows=rows.Length,realized,ordered,registered,delivered=Interlocked.Read(ref delivered),
             baseline=new{percentOfOneProcessor=baseline.Percent,baseline.Samples,baseline.Moves},
             current=new{percentOfOneProcessor=current.Percent,current.Samples,current.Events,current.Resets,current.Moves},
             legacy=new{percentOfOneProcessor=legacy.Percent,legacy.Samples,legacy.Events,legacy.Resets,legacy.Moves},
@@ -112,7 +114,7 @@ internal sealed partial class PerformancePanel
         check(current.Resets==0,"Live CPU analysis applies samples without resetting the table view");
         check(ordered,"Incremental ordering keeps the process table in its sort order across samples");
         check(listening,"An actual UI Automation client listened to the window during the measurement");
-        check(light,$"UI thread {current.Percent:0.0}% of one processor with a listening client (no client {baseline.Percent:0.0}%), against {legacy.Percent:0.0}% with a reset per sample: the client's added cost is at most half of the reset cost");
+        check(light,$"UI thread {current.Percent:0.0}% of one processor with a listening client (no client {baseline.Percent:0.0}%), against {legacy.Percent:0.0}% with the resets of 1.1.89: the client's added cost is at most half of the reset cost");
     }
 }
 #endif
