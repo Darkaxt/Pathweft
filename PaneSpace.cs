@@ -56,7 +56,8 @@ public partial class PaneView
         internal string[] Selected;
         internal double Vertical,Horizontal;
         internal bool RefreshRequested,Changed,Stopping;
-        internal bool SelectFirst=true,QuietRefresh,FullRefresh,Starting=true,WaitingForIndex;
+        internal bool SelectFirst=true,QuietRefresh,FullRefresh,Measure,Starting=true,WaitingForIndex;
+        internal long LastChange;
         internal HashSet<string> Dirty=new(StringComparer.OrdinalIgnoreCase);
         internal HashSet<string> ExpandedAfterAccess=new(StringComparer.OrdinalIgnoreCase);
         internal HashSet<string> SelectionAfterAccess=new(StringComparer.OrdinalIgnoreCase);
@@ -446,7 +447,7 @@ public partial class PaneView
 #if DEBUG
         SpaceScan.IndexObserved?.Invoke(current.Root,"Refresh: "+Environment.StackTrace);
 #endif
-        current.Changed=true;
+        current.Changed=true;current.LastChange=Environment.TickCount64;current.Measure|=force;
         foreach(var path in dirtySizes)
         {
             if(path==null||path.Equals(current.Root,StringComparison.OrdinalIgnoreCase)||!SizeCache.Within(path,current.Root))current.FullRefresh=true;
@@ -470,10 +471,14 @@ public partial class PaneView
                 await previous;
                 while(!current.Stopping&&(current.FullRefresh||current.Dirty.Count>0))
                 {
-                    bool full=current.FullRefresh;current.FullRefresh=false;
+                    bool full=current.FullRefresh,measure=current.Measure;current.FullRefresh=current.Measure=false;
+                    // CORE-29: a change takes the index service's totals once the service has read the change
+                    // journal past it (IndexCatchUp), as the pane rows do; only Ctrl+R and Try again measure on disk.
+                    if(!measure&&current.LastChange+(long)IndexCatchUp.TotalMilliseconds-Environment.TickCount64 is var wait and >0)
+                        await Task.Delay(TimeSpan.FromMilliseconds(wait),current.Cancellation.Token);
                     var dirty=current.Dirty.ToArray();current.Dirty.Clear();
                     current.QuietRefresh=!full;
-                    if(full)await RunSpaceAsync(current,preferIndex:false);
+                    if(full)await RunSpaceAsync(current,preferIndex:!measure);
                     else await RefreshSpaceBranches(current,dirty);
                 }
             }
@@ -491,15 +496,16 @@ public partial class PaneView
     {
         var token=current.Cancellation.Token;
         // Only direct membership needs rereading for rename/delete/root files.
-        // A changed branch gets a fresh filesystem measurement, never a stale
-        // optional index result. Unrelated sibling snapshots remain untouched.
+        // CORE-29: a changed branch is walked only where it changed: its subfolders take the index's
+        // totals unless written in the last Settle (SettledFolderSizesAsync), so only the changed
+        // chain is measured on disk. Unrelated sibling snapshots remain untouched.
         if(!await ReadSpaceChildren(current,current.Root,preferIndex:false,measureMissing:false))return;
         var branches=current.Nodes.Values.Where(row=>row.ParentPath==current.Root&&row.IsDir&&row.State!=SpaceState.Reparse&&
             (row.State==SpaceState.Pending||dirty.Any(path=>SizeCache.Within(path,row.Path)))).ToArray();
         foreach(var branch in branches)
         {
             var seen=new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            await ScanWithAccess(current,branch.Path,false,update=>{seen.Add(update.Path);QueueSpace(current,update);});
+            await ScanWithAccess(current,branch.Path,true,update=>{seen.Add(update.Path);QueueSpace(current,update);});
             DrainSpace(current);
             if(branch.State==SpaceState.Complete)
                 foreach(var key in current.Nodes.Values.Where(row=>row.IsDir&&SizeCache.Within(row.Path,branch.Path)&&!seen.Contains(row.Path)).Select(row=>row.Path).ToArray())

@@ -1,6 +1,10 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.93 | 2026-11-23 | Analyze space stays indexed
+
+- Analyze space on a drive that changes all the time, such as D:\, keeps taking folder sizes from the Pathweft index service. Before, every change measured the changed folder (sometimes the whole drive) on disk again, so the rows turned Measured, Pending or Updating… and the processor stayed busy. Ctrl+R still measures everything on disk.
+
 ## 1.1.92 | 2026-11-23 | Send with Tailscale in Transfer
 
 - Right-click a file → Transfer now holds other programs' Send with entries, such as Send with Tailscale…, beside Copy to and Move to. Before, they were at the bottom of More actions.

@@ -59,6 +59,10 @@ public partial class MainWindow
             check(unclipped,"Compact18-DIP expansion button contains the complete rendered chevron ink");
             check(visits.GetValueOrDefault(folder)<=1&&!visits.Keys.Any(path=>SizeCache.Within(path,Path.GetDirectoryName(stable)))&&!unrelatedReset,"A watched branch rewrite does not rewalk or reset unrelated completed branches");
             check(!knownFlashed,"Known analysis rows retain their completed presentation during background replacement");
+            // CORE-29 (owner, D:\ analysis staying Measured/Updating): the changed branch's unchanged subfolder takes the
+            // installed index service's total after the change instead of being walked on disk again.
+            var busyRow=Left.Items.OfType<SpaceEntry>().Single(entry=>entry.Name=="busy");
+            check(visits.GetValueOrDefault(busy)==0&&busyRow.State==SpaceState.Indexed&&busyRow.Size==127,"A watched change refreshes its branch from the index service's totals (busy: "+busyRow.SpaceStatus+", "+busyRow.Size+" bytes, nested walked "+visits.GetValueOrDefault(busy)+" times)");
             Left.ListForVerification.SelectedItem=unrelated;
             var entered=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
             var release=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);int held=0;
