@@ -250,7 +250,13 @@ internal sealed partial class PerformancePanel
         processFilter.Text="no matching process";
         check(table.Items.Count==1&&ReferenceEquals(table.Items[0],row),"Local process filter keeps the explicitly pinned identity available");
         ToggleProcessPin(row);processFilter.Text=identity.Process;
-        check(table.Items.Cast<PerformanceProcessRow>().All(x=>x.Process.Contains(identity.Process,StringComparison.OrdinalIgnoreCase)),"Donor-style process filter uses existing observations without collecting more data");
+        // The filter also matches the visible Path and Command line columns enabled above, and the
+        // real sampler adds actual processes while metadata resolves: every row must match on the
+        // process name, PID or a visible metadata column.
+        bool Shown(PerformanceProcessRow x)=>x.Process.Contains(identity.Process,StringComparison.OrdinalIgnoreCase)||x.Pid.ToString().Contains(identity.Process,StringComparison.OrdinalIgnoreCase)
+            ||x.ExecutablePath.Contains(identity.Process,StringComparison.OrdinalIgnoreCase)||x.CommandLine.Contains(identity.Process,StringComparison.OrdinalIgnoreCase);
+        var unmatched=table.Items.Cast<PerformanceProcessRow>().Where(x=>!Shown(x)).Select(x=>x.Process+" "+x.Pid).ToArray();
+        check(unmatched.Length==0&&table.Items.Contains(row),"Donor-style process filter uses existing observations without collecting more data"+(unmatched.Length==0?"":" (unmatched: "+string.Join(", ",unmatched)+")"));
         processFilter.Text="";ToggleProcessPin(row);
         var visibility=Visibility;Visibility=Visibility.Collapsed;
         var hiddenIdentity=identity with{Started=identity.Started+2*TimeSpan.TicksPerSecond};
