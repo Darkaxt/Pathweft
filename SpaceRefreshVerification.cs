@@ -51,6 +51,10 @@ public partial class MainWindow
         Left.StatsChanged+=Observed;
         try
         {
+            // CORE-29 check below: a folder written in the last Settle is measured on disk by design (SEARCH-10),
+            // so the fixture's nested folder must be older than that before the watched change.
+            var age=DateTime.UtcNow-Directory.GetLastWriteTimeUtc(busy);
+            if(age<FileExplorer.Search.IndexedSearch.Settle)await Task.Delay(FileExplorer.Search.IndexedSearch.Settle-age+TimeSpan.FromMilliseconds(250));
             var grown=Sizes(Left,()=>Left.FolderTotal==327&&!Left.SizesPending);
             await Task.Run(()=>{using var stream=File.OpenWrite(payload);stream.SetLength(127);});await grown;
             await Left.SpaceCompletion;
