@@ -54,7 +54,7 @@ public partial class MainWindow
         }
         // Explorer's entries Pathweft has under its own name; everything else must be in Pathweft's menu by its label
         var equivalent=new Dictionary<string,string>{["copy as path"]="copy path",["open"]="open",["edit"]="edit",
-            ["open in new window"]="open in new window",["open in new tab"]="open in new tab",["pin to quick access"]="pin to quick access",["new"]="new folder",["explore"]="open",["open in pathweft"]="open",
+            ["paste"]="paste into folder",["open in new window"]="open in new window",["open in new tab"]="open in new tab",["pin to quick access"]="pin to quick access",["new"]="new folder",["explore"]="open",["open in pathweft"]="open",
             ["scan with diskweft"]="analyze space in this folder",["analyze disk space usage with ridnacs"]="analyze space in this folder"};
         void Parity(ContextMenu built,string context,string folderOfItems,string name)
         {
