@@ -5,6 +5,8 @@
 
 - A pane showing C:\ no longer keeps a processor core busy measuring folder sizes. Changed folders now take their totals from the Pathweft index service a second after the change, instead of being walked on disk again for every change.
 - Panes showing a drive root now update folder sizes when something inside them changes.
+- Analyze space takes folder sizes from the index service even when it is opened while the service is still loading after a restart or an update: it waits a few seconds instead of measuring the whole drive on disk for minutes. With administrator browsing on, it uses the index too.
+- The index service no longer loses a new file's size from its folder totals when Windows reuses a deleted file's record for a new folder.
 
 ## 1.1.90 | 2026-11-23 | Lighter live analysis
 

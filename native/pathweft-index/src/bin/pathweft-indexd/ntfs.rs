@@ -418,9 +418,7 @@ fn apply(vol: &Volume, slot: &Slot, frns: &[u64], buf: &mut Vec<u8>) -> Result<u
     }
     let store = slot.store();
     let mut st = store.write().unwrap();
-    for (r, e) in &changes {
-        st.set(*r, e.as_ref());
-    }
+    st.apply_batch(&changes);
     // Entries that do not hang below the root ($Extend metadata) are removed.
     let mut path = String::new();
     for (r, e) in &changes {

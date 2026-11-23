@@ -138,7 +138,7 @@ public partial class MainWindow
             AdministratorCommand.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await accessWork;await Left.SpaceCompletion;
             check(Left.Items.Any(x=>x.Path==Path.Combine(protectedFolder,"protected.txt"))&&Left.Selected.Any(x=>x.Path==protectedFolder)&&launches==1,"Administrator parent analysis restores expansion and selection using the same helper");
             await Left.EndSpaceAsync();await S1Verification.Navigate(Left,root);
-            var measured=new List<SpaceUpdate>();await MaintenanceClient.ScanSpace(protectedFolder,measured.Add,default);
+            var measured=new List<SpaceUpdate>();await MaintenanceClient.ScanSpace(protectedFolder,false,measured.Add,default);
             check(measured.Any(x=>x.Path==protectedFolder&&x.Bytes==23&&x.State==SpaceState.Complete),"Disk analysis uses the approved helper and returns actual protected-file size");
             string protectedFile=Path.Combine(protectedFolder,"protected.txt");
             await MaintenanceClient.SaveEditor(protectedFile,new byte[31]);

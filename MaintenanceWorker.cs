@@ -84,10 +84,11 @@ internal sealed class MaintenanceClient : IAsyncDisposable
         var rows=new List<AccessEntry>();await using var client=new MaintenanceClient();
         await client.Stream(new("list",path,null,null),reply=>{if(reply.Entries!=null)rows.AddRange(reply.Entries);},cancel).ConfigureAwait(false);return rows;
     }
-    internal static async Task ScanSpace(string path,Action<SpaceUpdate> publish,CancellationToken cancel)
+    internal static async Task ScanSpace(string path,bool preferIndex,Action<SpaceUpdate> publish,CancellationToken cancel)
     {
         await using var client=new MaintenanceClient();
-        await client.Stream(new("space",path,null,null),reply=>{if(reply.Updates!=null)foreach(var update in reply.Updates)publish(update);},cancel).ConfigureAwait(false);
+        // The elevated walk takes the index service's folder totals like the ordinary one (Journal "index"); a full refresh measures.
+        await client.Stream(new("space",path,preferIndex?"index":null,null),reply=>{if(reply.Updates!=null)foreach(var update in reply.Updates)publish(update);},cancel).ConfigureAwait(false);
     }
     internal static async Task SaveEditor(string path,byte[] bytes)
     {
@@ -160,7 +161,7 @@ internal static class MaintenanceWorker
                     var channel=System.Threading.Channels.Channel.CreateBounded<SpaceUpdate>(512);
                     var scan=Task.Run(async()=>
                     {
-                        try{await SpaceScan.RunAsync(folder,false,update=>channel.Writer.WriteAsync(update,lost.Token).AsTask().GetAwaiter().GetResult(),lost.Token).ConfigureAwait(false);channel.Writer.TryComplete();}
+                        try{await SpaceScan.RunAsync(folder,request.Journal=="index",update=>channel.Writer.WriteAsync(update,lost.Token).AsTask().GetAwaiter().GetResult(),lost.Token).ConfigureAwait(false);channel.Writer.TryComplete();}
                         catch(Exception error){channel.Writer.TryComplete(error);throw;}
                     });
                     try

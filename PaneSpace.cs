@@ -56,7 +56,7 @@ public partial class PaneView
         internal string[] Selected;
         internal double Vertical,Horizontal;
         internal bool RefreshRequested,Changed,Stopping;
-        internal bool SelectFirst=true,QuietRefresh,FullRefresh,Starting=true;
+        internal bool SelectFirst=true,QuietRefresh,FullRefresh,Starting=true,WaitingForIndex;
         internal HashSet<string> Dirty=new(StringComparer.OrdinalIgnoreCase);
         internal HashSet<string> ExpandedAfterAccess=new(StringComparer.OrdinalIgnoreCase);
         internal HashSet<string> SelectionAfterAccess=new(StringComparer.OrdinalIgnoreCase);
@@ -231,6 +231,13 @@ public partial class PaneView
 #endif
         try
         {
+            // CORE-28: a drive the index service is still loading would be walked on disk for minutes; wait for it.
+            if(preferIndex)
+            {
+                bool loading=true;
+                try{await FileExplorer.Search.IndexedSearch.WaitForStoreAsync(current.Root,IndexWait,()=>Dispatcher.BeginInvoke(()=>{if(!loading)return;current.WaitingForIndex=true;if(space==current)UpdateSpaceFooter();}),current.Cancellation.Token);}
+                finally{loading=false;if(current.WaitingForIndex){current.WaitingForIndex=false;if(space==current)UpdateSpaceFooter();}}
+            }
             await ReadSpaceChildren(current,current.Root,preferIndex:false,measureMissing:false);
             await ScanWithAccess(current,current.Root,preferIndex,update=>QueueSpace(current,update));
             DrainSpace(current);
@@ -246,7 +253,7 @@ public partial class PaneView
         catch(Exception error){if(!current.Stopping){var root=current.Nodes[current.Root];root.State=SpaceState.Failed;root.Failure=error.Message;if(space==current){UpdateSpaceFooter();Error?.Invoke("Space analysis: "+error.Message);}}}
     }
     Task ScanWithAccess(SpaceView current,string path,bool preferIndex,Action<SpaceUpdate> publish)=>current.Administrator
-        ? MaintenanceClient.ScanSpace(path,publish,current.Cancellation.Token)
+        ? MaintenanceClient.ScanSpace(path,preferIndex,publish,current.Cancellation.Token)
         : SpaceScan.RunAsync(path,preferIndex,publish,current.Cancellation.Token);
     void QueueSpace(SpaceView current,SpaceUpdate update)
     {
@@ -404,7 +411,7 @@ public partial class PaneView
         SpaceActivity.Visibility=current.Starting?Visibility.Visible:Visibility.Collapsed;
         SpaceActivity.IsIndeterminate=current.Starting&&Motion.On;
         SpaceActivity.Value=35;
-        Footer.Text=(current.Starting&&root.State==SpaceState.Pending?"Preparing space analysis…":$"{MainWindow.Fmt(Math.Max(0,root.DisplaySize))} logical · {root.SpaceStatus.ToLowerInvariant()}")+(current.Nodes.Values.Any(row=>row.State==SpaceState.Indexed)?" · indexed sizes may omit excluded files":"")+(Selected.Count>0?$" · {Selected.Count} selected":"");
+        Footer.Text=(current.WaitingForIndex?"Waiting for the index service to finish loading this drive…":current.Starting&&root.State==SpaceState.Pending?"Preparing space analysis…":$"{MainWindow.Fmt(Math.Max(0,root.DisplaySize))} logical · {root.SpaceStatus.ToLowerInvariant()}")+(current.Nodes.Values.Any(row=>row.State==SpaceState.Indexed)?" · indexed sizes may omit excluded files":"")+(Selected.Count>0?$" · {Selected.Count} selected":"");
     }
     internal (long Bytes,long Files,long Folders,string Status) SpaceSummary
     {get{var root=space.Nodes[space.Root];return(Math.Max(0,root.DisplaySize),root.Files,root.Folders,root.SpaceStatus);}}

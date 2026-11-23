@@ -286,6 +286,29 @@ impl Store {
         }
     }
 
+    /// Applies one batch of re-read records (journal order, each record once).
+    /// NTFS reuses record numbers: a record deleted as a file and reused as a
+    /// folder can come after a new child of that folder, which would add the
+    /// child's size to the old file and lose it when the record becomes a
+    /// folder. Records whose kind changes (or that are gone) are removed first,
+    /// so a child seen early is kept by the dead record, as `set` already does.
+    pub fn apply_batch(&mut self, changes: &[(u32, Option<Entry>)]) {
+        for (key, new) in changes {
+            let Some(r) = self.index_of(*key) else { continue };
+            let Some(old) = self.get(r) else { continue };
+            let kind_changed = match new {
+                None => true,
+                Some(e) => (e.attrs & ATTR_DIRECTORY != 0) != old.is_dir(),
+            };
+            if kind_changed {
+                self.set_index(r, None, NONE);
+            }
+        }
+        for (key, new) in changes {
+            self.set(*key, new.as_ref());
+        }
+    }
+
     /// `set` on an internal index; `parent` is the internal index of
     /// `new.parent`.
     fn set_index(&mut self, r: u32, new: Option<&Entry>, parent: u32) {
@@ -588,6 +611,23 @@ mod tests {
         s.set(31, Some(&entry(5, "again", 0, true)));
         assert_eq!(s.recs[ix(&s, 31) as usize].size, 0);
         assert_eq!(s.recs[ix(&s, 5) as usize].size, total - 1000);
+    }
+
+    #[test]
+    fn a_batch_keeps_a_child_seen_before_its_reused_folder() {
+        // The 1.1.91 space-scenario loss: c.bin (record 31, 1000 bytes) and
+        // record 41 (a 9-byte file) are deleted; 31 is reused for the folder
+        // "nested" and 41 for its 6000-byte file. The journal lists 41 first.
+        let mut s = sample();
+        s.set(41, Some(&entry(5, "old.bin", 9, false)));
+        let total = s.recs[ix(&s, 5) as usize].size;
+        s.apply_batch(&[(41, Some(entry(31, "item-000.bin", 6000, false))), (31, Some(entry(5, "nested", 0, true)))]);
+        assert_eq!(s.recs[ix(&s, 31) as usize].size, 6000);
+        assert_eq!(s.recs[ix(&s, 5) as usize].size, total - 1000 - 9 + 6000);
+        // A folder reused as a file, its old child deleted later in the batch.
+        s.apply_batch(&[(31, Some(entry(5, "file", 3, false))), (41, None)]);
+        assert_eq!(s.recs[ix(&s, 31) as usize].size, 3);
+        assert_eq!(s.recs[ix(&s, 5) as usize].size, total - 1000 - 9 + 3);
     }
 
     #[test]

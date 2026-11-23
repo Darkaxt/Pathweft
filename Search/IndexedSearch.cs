@@ -65,6 +65,34 @@ internal static class IndexedSearch
         return new(StringComparer.OrdinalIgnoreCase);
     }
 
+    // CORE-28, for space analysis: while the service loads a drive (C: takes about 13 s after a restart or an update) it
+    // answers no sizes there, and the analysis would walk the whole drive on disk for minutes. It waits for that store
+    // instead, at most LoadWait; an absent service or a drive it does not cover is not waited for.
+    internal static TimeSpan LoadWait = TimeSpan.FromSeconds(90);
+    internal static async Task<bool> WaitForStoreAsync(string path, TimeSpan replyWait, Action waiting, CancellationToken token)
+    {
+        var deadline = DateTime.UtcNow + LoadWait;
+        bool waited = false;
+        string full = System.IO.Path.TrimEndingDirectorySeparator(System.IO.Path.GetFullPath(path));
+        while (true)
+        {
+            IndexServiceStatus status;
+            using (var reply = CancellationTokenSource.CreateLinkedTokenSource(token))
+            {
+                reply.CancelAfter(replyWait);
+                try { status = await Service.StatusAsync(reply.Token).ConfigureAwait(false); }
+                catch (OperationCanceledException) when (!token.IsCancellationRequested) { return waited; }
+                catch (Exception ex) when (ex is InvalidOperationException or System.ComponentModel.Win32Exception) { return waited; }
+            }
+            var store = status?.Stores.Where(s => s.Name is { Length: > 0 } name && Covers(System.IO.Path.TrimEndingDirectorySeparator(name), full)).MaxBy(s => s.Name.Length);
+            if (store?.State is not ("loading" or "reloading") || DateTime.UtcNow >= deadline) return waited;
+            if (!waited) { waited = true; waiting(); }
+            await Task.Delay(500, token).ConfigureAwait(false);
+        }
+    }
+    static bool Covers(string store, string path)
+        => path.StartsWith(store, StringComparison.OrdinalIgnoreCase) && (path.Length == store.Length || path[store.Length] == '\\');
+
     // SEARCH-10, for space analysis, which has no watcher of its own: a folder written in the last Settle may not be
     // in the index yet (it reads the NTFS change journal every 250 ms), so its indexed size is not taken and the
     // analysis measures it, counting a file written just before. Pane rows keep FolderSizesAsync: their watcher

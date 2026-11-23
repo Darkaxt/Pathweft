@@ -61,6 +61,21 @@ public partial class MainWindow
             var totals=await IndexedSearch.FolderSizesAsync([folder,Path.Combine(fixture,"absent")],CancellationToken.None);
             check(totals.Count==1&&totals[folder]==579,"Batched folder-size lookup distinguishes indexed data from absent paths");
             await IndexedRows15(root,fixture,folder,check);
+            // CORE-28 addendum: an analysis opened while the service is still loading the drive waits for it
+            // and then takes the indexed total; without the wait the unknown answer would send the folder to a walk.
+            var loadingUntil=DateTime.UtcNow.AddSeconds(2);var current=fake.Reply;
+            fake.Reply=request=>(string)request["op"] switch
+            {
+                "status"=>new JsonObject{["ok"]=true,["status"]=new JsonObject{["protocol"]=2,["stores"]=new JsonArray(new JsonObject{["name"]=Path.GetPathRoot(folder).TrimEnd('\\'),["kind"]="ntfs",["state"]=DateTime.UtcNow<loadingUntil?"loading":"ready"})}},
+                "folder_sizes" when DateTime.UtcNow<loadingUntil=>new JsonObject{["ok"]=true,["sizes"]=new JsonArray(request["paths"].AsArray().Select(p=>(JsonNode)new JsonObject{["path"]=(string)p}).ToArray())},
+                _=>current(request),
+            };
+            await S1Verification.Navigate(Left,fixture);await Left.StopSizingAsync();
+            var opening=Left.ToggleSpaceAsync();bool waited=false;
+            for(var until=DateTime.UtcNow.AddSeconds(5);!waited&&DateTime.UtcNow<until;await Task.Delay(50))waited=Left.Footer.Text.StartsWith("Waiting for the index service");
+            await opening;await CompletesWithin(Left.SpaceCompletion,TimeSpan.FromSeconds(30));
+            check(waited&&DateTime.UtcNow>=loadingUntil&&Left.Items.Single() is SpaceEntry{State:SpaceState.Indexed,Size:580},"Analyze space opened while the index service loads the drive waits for it and then shows the indexed total ("+Left.Footer.Text+")");
+            await Left.EndSpaceAsync();fake.Reply=current;
         }
         finally{IndexedSearch.ServiceOverride=previous;File.WriteAllLines(Path.Combine(root,"indexed-requests.txt"),fake.Requests.Select(request=>request.ToJsonString()));}
     }
