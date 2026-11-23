@@ -262,7 +262,7 @@ public partial class MainWindow
         menu.Items.Add(new Separator());
         Take(menu,item=>Named(item,"Cut","Copy","Paste","Paste into folder","Rename","Rename all…","Remove from collection","Delete","Delete permanently"));
         menu.Items.Add(new Separator());
-        Group("Transfer","\uE8DE",item=>Named(item,"Copy to other pane","Move to other pane","Copy to","Move to","Group into new folder…","Add to Drop bin","Add to collection"));
+        Group("Transfer","\uE8DE",item=>Named(item,"Copy to other pane","Move to other pane","Copy to","Move to","Group into new folder…","Add to Drop bin","Add to collection")||item.Tag as string=="shell:transfer");
         Group("Copy details","\uE8C8",item=>Named(item,"Copy path","Copy name")||item.Tag as string=="copy-detail");
         Group("Archive","\uF012",item=>item.Tag==null&&IsArchiveCommand(item.Header as string)||item.Tag as string is "shell:7-zip" or "shell:winrar");
         Group("Tools","\uE713",item=>Named(item,"Run as administrator","Compare in editor","Edit with Notepad++","Resize images…","What's using this?","Create shortcut","Mount","Tags and notes…","Create link…")||(item.Header as string)?.StartsWith("Find duplicates")==true);
@@ -284,7 +284,7 @@ public partial class MainWindow
             var key = ShellMenu.Comparable(node.Text);
             if (key.Length == 0 || IsNanaZip(node) || PathweftHasPowerToy(key) || !taken.Add(key)) continue;
             if (ShellItem(node) is not MenuItem item) continue;
-            item.Tag = OpensInApp(key) ? "shell:apps" : "shell:other";
+            item.Tag = OpensInApp(key) ? "shell:apps" : SendsElsewhere(key) ? "shell:transfer" : "shell:other";
             menu.Items.Add(item);
         }
     }
@@ -293,6 +293,9 @@ public partial class MainWindow
     /// images…) are left out, as NanaZip's are, so each tool is offered once, under Pathweft's name.
     internal static bool PathweftHasPowerToy(string comparable) =>
         comparable.Contains("powerrename") || comparable.Contains("file locksmith") || comparable.Contains("image resizer");
+
+    /// MENU-06 (owner 2026-11-23): a program's own "Send with …" (Tailscale's Taildrop) goes to Transfer, beside Copy to / Move to.
+    internal static bool SendsElsewhere(string comparable) => comparable.StartsWith("send with ");
 
     internal static bool OpensInApp(string comparable) =>
         comparable.StartsWith("open") || comparable.StartsWith("play") || comparable.StartsWith("edit with") || comparable.EndsWith(" here");

@@ -1,6 +1,10 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.92 | 2026-11-23 | Send with Tailscale in Transfer
+
+- Right-click a file → Transfer now holds other programs' Send with entries, such as Send with Tailscale…, beside Copy to and Move to. Before, they were at the bottom of More actions.
+
 ## 1.1.91 | 2026-11-23 | Folder sizes on a busy drive
 
 - A pane showing C:\ no longer keeps a processor core busy measuring folder sizes. Changed folders now take their totals from the Pathweft index service a second after the change, instead of being walked on disk again for every change.

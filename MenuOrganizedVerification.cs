@@ -34,11 +34,11 @@ public partial class MainWindow
             check(!commands.Any(item=>item.Header is string h&&new[]{"Shelf","Reel","Backup Labs","Lume","Windows menu","Stash"}.Any(word=>h.Contains(word,StringComparison.OrdinalIgnoreCase))),"MENU-05/07: no sister-app or Windows menu… item: "+context);
             // a taken-in command never repeats one of Pathweft's or another taken-in one (Sort by / Group by may share names)
             var own=Commands(built).Select(Label).Where(key=>key.Length>0).ToArray();
-            var repeated=Commands(built).Where(item=>item.Tag as string is "shell:apps" or "shell:other").Select(Label).Where(key=>own.Count(k=>k==key)>1).Distinct().ToArray();
+            var repeated=Commands(built).Where(item=>item.Tag as string is "shell:apps" or "shell:other" or "shell:transfer").Select(Label).Where(key=>own.Count(k=>k==key)>1).Distinct().ToArray();
             check(repeated.Length==0,"MENU-06: no taken-in command repeats one already in Pathweft's groups: "+context+(repeated.Length>0?" ("+string.Join(", ",repeated)+")":""));
             return built;
         }
-        MenuItem Taken(ContextMenu built,Func<string,bool> match)=>MenuCommands(built).FirstOrDefault(item=>item.Tag as string is "shell:apps" or "shell:other"&&match(Label(item)));
+        MenuItem Taken(ContextMenu built,Func<string,bool> match)=>MenuCommands(built).FirstOrDefault(item=>item.Tag as string is "shell:apps" or "shell:other" or "shell:transfer"&&match(Label(item)));
 
         // Explorer's own menu for the same items, as the shell reports it (Shell.Application), for parity
         static string[] ExplorerVerbs(string folder,string name)
@@ -74,6 +74,9 @@ public partial class MainWindow
         check(AllAppsInOpenWith(single),"MENU-10: every taken-in open/play/edit-with program is in the Open with submenu (file)");
         check(!MenuCommands(single).Any(item=>Label(item).Contains("zcode")),"MENU-06: the removed ZCode leftover is gone");
         check(MenuCommands(single).Where(item=>item.Tag as string=="shell:other").All(item=>item.Parent is MenuItem{Header:"More actions"}),"MENU-06: other programs' handler-based entries are taken in under More actions");
+        // owner 2026-11-23: Tailscale's Send with Tailscale… (a static verb on every file) is under Transfer, not More actions
+        var tailscale=MenuCommands(single).FirstOrDefault(item=>Label(item).StartsWith("send with tailscale"));
+        check(Microsoft.Win32.Registry.ClassesRoot.OpenSubKey(@"*\shell\tailscale") is null||tailscale?.Tag as string=="shell:transfer"&&tailscale.Parent is MenuItem{Header:"Transfer"},"MENU-06: Send with Tailscale… is taken in under Transfer for a file ("+(tailscale?.Parent as MenuItem)?.Header+")");
         static bool NoPowerToyRepeats(ContextMenu built)=>!MenuCommands(built).Any(item=>PathweftHasPowerToy(Label(item)));
         check(MenuCommands(single).Count(item=>Label(item)=="edit with notepad++")<=1,"MENU-06: Notepad++'s own Edit with Notepad++ does not repeat Pathweft's");
         var folderMenu=await Built("folder",Path.GetFileName(folder));

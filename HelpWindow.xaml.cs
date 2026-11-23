@@ -96,6 +96,7 @@ public partial class HelpWindow : Window
             ("Settings → Transfers → Verify", "Reads both copies back after copying and compares them (xxHash3)"),
             ("Ctrl+F5 / F6", "Copy / move the selection to the other pane (with one pane, the first press brings it back)"),
             ("Right-click → Copy to / Move to", "The folders your copies and moves went to lately, or Choose a folder…"),
+            ("Right-click → Transfer → Send with…", "Programs that send files elsewhere, such as Send with Tailscale…, are in Transfer beside Copy to and Move to; other programs' entries are under More actions"),
             ("Right-click → Group into new folder…", "Makes a folder here, named as you like, and moves the selected items into it. Ctrl+Z puts them back"),
             ("Drop bin", "Collect files from several folders, then send them all at once: drag them onto the bin button at the bottom of the sidebar (or onto the open bin), or press Ctrl+B on a selection. Go to the destination and press Copy here or Move here. The bin only remembers the files; nothing moves until you press one of those"),
             ("Ctrl+B", "Add the selection to the Drop bin"),
