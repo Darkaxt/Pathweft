@@ -82,6 +82,50 @@ public partial class MainWindow
             await Left.EndSpaceAsync();fake.Reply=current;
         }
         finally{IndexedSearch.ServiceOverride=previous;File.WriteAllLines(Path.Combine(root,"indexed-requests.txt"),fake.Requests.Select(request=>request.ToJsonString()));}
+        await VerifyMappedDrive21(root,fixture,folder,check);
+    }
+
+    // IDX-21: a mapped network drive is answered from the store of its share. The fixture's drive letter stands in
+    // for a mapped letter (NetworkDrives.MappedOverride); the substituted service indexes only the share's UNC root.
+    async Task VerifyMappedDrive21(string root,string fixture,string folder,Action<bool,string> check)
+    {
+        char letter=char.ToUpperInvariant(fixture[0]);const string share=@"\\pathweft-verify\share";
+        string Unc(string path)=>share+path[2..];
+        string[] onlyShare=[share],withLetter=[letter+":",share];
+        NetworkDrives.MappedOverride=new(){[letter]=share};
+        using var fake=new FakeIndexService();
+        string asked=null;
+        fake.Reply=request=>(string)request["op"] switch
+        {
+            "status"=>new JsonObject{["ok"]=true,["status"]=new JsonObject{["protocol"]=2,["stores"]=new JsonArray(new JsonObject{["name"]=share,["kind"]="folder",["state"]="scanning"})}},
+            "folder_sizes"=>new JsonObject{["ok"]=true,["sizes"]=new JsonArray(request["paths"].AsArray().Select(p=>(JsonNode)((string)p==Unc(folder)?new JsonObject{["path"]=Unc(folder),["size"]=4242}:new JsonObject{["path"]=(string)p})).ToArray())},
+            "query"=>Query(request),
+            _=>new JsonObject{["ok"]=false,["error"]="unexpected"},
+        };
+        JsonObject Query(JsonObject request){asked=(string)request["query"];return new JsonObject{["ok"]=true,["total"]=1,["hits"]=new JsonArray(new JsonObject{["path"]=Unc(folder),["folder"]=true,["size"]=4242,["modified"]=0})};}
+        var previous=IndexedSearch.ServiceOverride;IndexedSearch.ServiceOverride=new IndexServiceClient(fake.Name);
+        try
+        {
+            check(NetworkDrives.ToService(folder,onlyShare)==Unc(folder)&&NetworkDrives.FromService(Unc(folder),onlyShare)==folder&&NetworkDrives.FromService(share,onlyShare)==letter+@":\",
+                "A path on a mapped drive is sent as the share's UNC path and the service's answer comes back under the letter (IDX-21)");
+            check(NetworkDrives.ToService(folder,withLetter)==folder&&NetworkDrives.Expression("path:\""+folder+"\"",withLetter)=="path:\""+folder+"\"",
+                "A drive letter the index has its own store for (a Tresorit drive) is not translated (IDX-21)");
+            var sizes=await IndexedSearch.FolderSizesAsync([folder],CancellationToken.None);
+            check(sizes.TryGetValue(folder,out long size)&&size==4242,"Folder sizes on the mapped letter come from the share's store, keyed by the letter path (IDX-21)");
+            var page=await IndexedSearch.QueryAsync("path:\""+fixture+"\\\" child",0,10,"Name",false,CancellationToken.None);
+            check(asked=="path:\""+Unc(fixture)+"\\\" child"&&page.Hits.Single().Path==folder,"A search scoped to the mapped letter is sent with the UNC path and its hits return under the letter: "+asked);
+            var coverage=await IndexedSearch.WaitForStoreAsync(fixture,_=>{},CancellationToken.None);
+            check(coverage.Coverage==IndexedSearch.Coverage.Ready&&coverage.Detail==share,"Analyze space on the mapped letter is covered by the share's store, ready while it is rescanned (IDX-20, IDX-21): "+coverage);
+            // The pane row of the mapped letter's folder takes the share's indexed total.
+            if(typeof(PaneView).GetField("folderRefresh",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic).GetValue(Left) is System.Windows.Threading.DispatcherOperation pending)await pending.Task;
+            Directory.SetLastWriteTimeUtc(folder,DateTime.UtcNow-TimeSpan.FromMinutes(1));
+            var settle=DateTime.UtcNow.AddSeconds(30);
+            do{await S1Verification.Navigate(Left,fixture);await Left.SizingCompletion;}
+            while(Left.Items.Single().Size!=4242&&DateTime.UtcNow<settle&&await Task.Delay(250).ContinueWith(_=>true));
+            check(Left.Items.Single().Size==4242&&Left.Items.Single().SizeSource==IndexedSearch.SizeSource,"A pane on the mapped letter shows the share's indexed folder size, not a network walk (IDX-21): "+Left.Items.Single().Size);
+            await Left.StopSizingAsync();
+        }
+        finally{NetworkDrives.MappedOverride=null;IndexedSearch.ServiceOverride=previous;File.WriteAllLines(Path.Combine(root,"mapped-requests.txt"),fake.Requests.Select(request=>request.ToJsonString()));}
     }
 
     async Task IndexedRows15(string root,string fixture,string folder,Action<bool,string> check)

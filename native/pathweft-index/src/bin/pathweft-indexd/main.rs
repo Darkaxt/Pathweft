@@ -75,6 +75,8 @@ fn console(args: &[String]) -> Result<(), String> {
     // its user can write.
     opts.content_dir = value(args, "--content-dir").map(PathBuf::from);
     opts.protect_content = false;
+    // Saved folder indexes (IDX-20) likewise only when asked.
+    opts.folder_cache = value(args, "--folder-cache").map(PathBuf::from);
     let exit_after = value(args, "--exit-after").and_then(|s| s.parse::<u64>().ok());
     let svc = service::run(opts)?;
     match exit_after {

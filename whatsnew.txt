@@ -1,6 +1,11 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.98 | 2026-11-24 | Mapped network drives use the index
+
+- Browsing a mapped network drive such as M: no longer walks the network for folder sizes. The Pathweft index service knows a network share by its \\server\share name, and Pathweft never matched the drive letter to it, so every folder size, search and Analyze space on M: was measured over the network. They now come from the share's index.
+- A network share's index is saved. After a restart or an update the service answers from it at once (it used to rescan the share from scratch, about half an hour for a large one) and checks the share again in the background. Folder roots are also listed with several connections at a time, so that check is faster.
+
 ## 1.1.97 | 2026-11-24 | Analyze space trusts the index; failed updates say why
 
 - Analyze space now takes every folder the Pathweft index service covers from the index, with no time limits that fell back to measuring on disk. A folder written a moment ago is read once the index has caught up (under a second) instead of being walked on disk. While the service is still loading the drive after a restart or an update, the analysis waits for it and the footer says so; Ctrl+R stops waiting and measures on disk.

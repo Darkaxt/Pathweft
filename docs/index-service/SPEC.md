@@ -201,6 +201,42 @@ thread is told the integration point is ready.
 re-read, folder sizes and a pipe round trip. *Accept:* self-test report all checks
 passed; VHDX detached and deleted afterwards.
 
+**IDX-20 Folder roots answer at once after a restart.** Owner, 2026-11-24: "Why
+is browsing M: so slow and lagging? Isn't everything indexed?" Before this, the
+service kept a folder root's tree in memory only, so every restart (each update)
+scanned it again from nothing; the network share took about 30 minutes (8,000
+folders listed one at a time), unindexed all that time. Now a folder root's
+tree is saved under `%ProgramData%\Pathweft\services\file_index\folders` (SYSTEM
+and Administrators only; one file per root and owner, written whole and then
+renamed into place) after each full scan, at most every 10 minutes while changes
+arrive, and at stop. At start the saved tree is loaded and the root is `ready`
+at once; the full scan then runs as `scanning`, answering from the loaded tree,
+and replaces it. A damaged or foreign file is deleted and the root is scanned.
+Removing the root deletes its file. A full scan of a network root (`\\server\share`)
+lists up to 8 folders at once, each listing impersonating the owner at
+background priority; local folder roots stay one at a time. Pathweft treats
+`scanning` like `ready` (it already answers from the current tree).
+*Accept:* unit test: an exported tree imports with the same records, paths and
+sizes, and a damaged, truncated or foreign image is refused; a private console
+instance with `--folder-cache` loads a saved folder root as `ready` in well under
+a second after a restart, answers its folder sizes before the rescan ends, and
+deletes the file when the root is removed; the owner's installed service shows
+the share `ready` right after an update.
+
+**IDX-21 Mapped network drives use the share's index.** Same owner report. The
+service runs as SYSTEM and knows a share by its UNC path; a mapped letter (M:)
+exists only in the user's session, so Pathweft's `M:\...` folder sizes and
+searches never matched the `\\server\share` store and every folder on M: was
+measured over the network. Pathweft now sends a mapped drive's paths as the
+share's UNC path whenever the service indexes that share and has no store for
+the letter itself (a letter added as such, like T:, stays as it is), in folder
+sizes, query expressions and the Analyze space coverage check, and shows the
+returned paths under the drive letter again. *Accept:* scenario with a
+substituted mapping and service: a pane on the mapped letter takes indexed
+sizes (no disk measurement), a search scoped to it is sent with the UNC path
+and its hits come back under the letter, and a letter with its own store is not
+translated; the owner's M:\ rows show indexed sizes.
+
 ## Content index (IS10, S19 part b)
 
 Owner decisions (2026-11-19):

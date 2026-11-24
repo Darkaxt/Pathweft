@@ -7,12 +7,14 @@
 use crate::config::FolderRoot;
 use crate::log::{info, warning};
 use crate::sched::{self, Schedule};
+use crate::security::LocalSd;
 use crate::state::{Service, Slot};
 use crate::watch::{self, Applied, Watcher};
 use pathweft_index::ffi::*;
 use pathweft_index::store::{Entry, Store, ATTR_DIRECTORY, ATTR_REPARSE};
+use std::path::PathBuf;
 use std::sync::atomic::Ordering;
-use std::sync::Arc;
+use std::sync::{mpsc, Arc, Mutex};
 use std::time::{Duration, Instant};
 
 /// The store's root name: the path without a trailing separator (`H:`).
@@ -134,17 +136,194 @@ pub fn walk(start: u32, path: &str, next: &mut u32, slot: &Slot, sink: &mut dyn 
     Ok(errors)
 }
 
+/// `walk` with up to `threads` folders listed at once (IDX-20): over a
+/// network each listing waits for the server, so listing one folder at a
+/// time made a full scan of a share take half an hour. Keys are still given
+/// out here, parents before children. Each listing thread impersonates
+/// `token` at background priority, as the caller does.
+pub fn walk_parallel(start: u32, path: &str, next: &mut u32, slot: &Slot, token: &Handle, threads: usize, sink: &mut dyn FnMut(u32, Entry)) -> Result<u64, String> {
+    if threads <= 1 {
+        return walk(start, path, next, slot, sink);
+    }
+    type Listed = (u32, String, Result<Vec<Entry>, u32>);
+    let (jobs, queue) = mpsc::channel::<(u32, String)>();
+    let queue = Mutex::new(queue);
+    let (done, results) = mpsc::channel::<Listed>();
+    std::thread::scope(|scope| {
+        for _ in 0..threads {
+            let (queue, done) = (&queue, done.clone());
+            scope.spawn(move || {
+                let _bg = Background::begin();
+                let Some(_imp) = Impersonation::begin(token) else {
+                    warning!("{}: cannot impersonate the folder's owner: error {}", slot.name, last_error());
+                    return;
+                };
+                loop {
+                    let job = queue.lock().unwrap().recv();
+                    let Ok((dir, p)) = job else { break };
+                    if slot.stopping() {
+                        break;
+                    }
+                    let mut v = Vec::new();
+                    let listed = list_dir(&p, |e| v.push(e)).map(|_| v);
+                    if done.send((dir, p, listed)).is_err() {
+                        break;
+                    }
+                }
+            });
+        }
+        drop(done);
+        let mut jobs = Some(jobs);
+        let _ = jobs.as_ref().unwrap().send((start, path.to_string()));
+        let (mut pending, mut errors) = (1usize, 0u64);
+        let outcome = loop {
+            if pending == 0 {
+                break Ok(errors);
+            }
+            let Ok((dir, p, listed)) = results.recv() else { break Err("every listing thread stopped".to_string()) };
+            pending -= 1;
+            if slot.stopping() {
+                break Err("stopped".into());
+            }
+            match listed {
+                Ok(entries) => {
+                    for mut e in entries {
+                        let k = *next;
+                        *next += 1;
+                        e.parent = dir;
+                        if descend(&e) && jobs.as_ref().unwrap().send((k, format!("{p}\\{}", e.name))).is_ok() {
+                            pending += 1;
+                        }
+                        sink(k, e);
+                    }
+                }
+                Err(e) if dir == start => break Err(format!("cannot list {p}: error {e}")),
+                Err(e) => {
+                    if e != ERROR_FILE_NOT_FOUND && e != ERROR_NO_MORE_FILES {
+                        errors += 1;
+                    }
+                }
+            }
+        };
+        // Closing the queue ends the listing threads once they are idle.
+        jobs.take();
+        outcome
+    })
+}
+
+/// Folders listed at once in a full scan: a network share answers many
+/// listings in parallel; a local drive (FAT32, exFAT) is read one at a time.
+fn scan_threads(root: &FolderRoot) -> usize {
+    if root.path.starts_with(r"\\") {
+        8
+    } else {
+        1
+    }
+}
+
 /// Lists the tree below `root` into a new store.
-pub fn scan(root: &FolderRoot, slot: &Slot) -> Result<Store, String> {
+pub fn scan(root: &FolderRoot, slot: &Slot, token: &Handle) -> Result<Store, String> {
     let name = root_name(&root.path);
     let mut store = Store::new(0, &name, 1024);
     let mut next: u32 = 1;
-    let errors = walk(0, &name, &mut next, slot, &mut |k, e| store.set(k, Some(&e)))?;
+    let errors = walk_parallel(0, &name, &mut next, slot, token, scan_threads(root), &mut |k, e| store.set(k, Some(&e)))?;
     if errors > 0 {
         warning!("{name}: {errors} folders could not be listed");
     }
     Ok(store)
 }
+
+// ---------------------------------------------------------------- saved indexes (IDX-20)
+
+/// SYSTEM and Administrators only: a saved index lists the owner's files.
+const SAVED_SDDL: &str = "D:P(A;OICI;FA;;;SY)(A;OICI;FA;;;BA)";
+
+/// The saved index of `root`: one file per root path and owner.
+pub fn saved_path(svc: &Service, root: &FolderRoot) -> Option<PathBuf> {
+    let dir = svc.opts.folder_cache.as_ref()?;
+    let id = format!("{}|{}", root_name(&root.path).to_lowercase(), root.owner.to_uppercase());
+    let mut h: u64 = 0xcbf2_9ce4_8422_2325;
+    for b in id.bytes() {
+        h = (h ^ b as u64).wrapping_mul(0x0000_0100_0000_01b3);
+    }
+    Some(dir.join(format!("{h:016x}.pwfs")))
+}
+
+fn saved_dir(svc: &Service, dir: &std::path::Path) -> Result<(), String> {
+    if dir.exists() {
+        return Ok(());
+    }
+    if let Some(parent) = dir.parent() {
+        std::fs::create_dir_all(parent).map_err(|e| format!("{}: {e}", parent.display()))?;
+    }
+    if !svc.opts.protect_content {
+        return std::fs::create_dir_all(dir).map_err(|e| format!("{}: {e}", dir.display()));
+    }
+    let sd = LocalSd::from_sddl(SAVED_SDDL).ok_or("bad saved-index folder descriptor")?;
+    let sa = sd.attributes();
+    if unsafe { CreateDirectoryW(wide(&dir.to_string_lossy()).as_ptr(), &sa) } == 0 {
+        return Err(format!("creating {} failed: error {}", dir.display(), last_error()));
+    }
+    Ok(())
+}
+
+/// Writes the slot's current tree, when it has one, replacing the saved index.
+pub fn save(svc: &Service, slot: &Slot, root: &FolderRoot) {
+    if !matches!(slot.state(), "ready" | "scanning") {
+        return;
+    }
+    let Some(path) = saved_path(svc, root) else { return };
+    let t = Instant::now();
+    let image = slot.store().read().unwrap().export();
+    let temporary = path.with_extension("pwfs.tmp");
+    let written = path
+        .parent()
+        .map_or(Ok(()), |dir| saved_dir(svc, dir))
+        .and_then(|_| std::fs::write(&temporary, &image).map_err(|e| format!("{}: {e}", temporary.display())))
+        .and_then(|_| std::fs::rename(&temporary, &path).map_err(|e| format!("{}: {e}", path.display())));
+    match written {
+        Ok(()) => info!("{}: saved the index ({:.1} MB) in {} ms", slot.name, image.len() as f64 / (1u64 << 20) as f64, t.elapsed().as_millis()),
+        Err(e) => {
+            let _ = std::fs::remove_file(&temporary);
+            warning!("{}: the index was not saved: {e}", slot.name);
+        }
+    }
+}
+
+/// The saved index of `root`, if there is a usable one.
+fn load(svc: &Service, slot: &Slot, root: &FolderRoot) -> Option<Store> {
+    let path = saved_path(svc, root)?;
+    let bytes = match std::fs::read(&path) {
+        Ok(b) => b,
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => return None,
+        Err(e) => {
+            warning!("{}: the saved index cannot be read: {e}", slot.name);
+            return None;
+        }
+    };
+    match Store::import(&root_name(&root.path), &bytes) {
+        Ok(store) => Some(store),
+        Err(e) => {
+            warning!("{}: {e}; scanning instead", slot.name);
+            let _ = std::fs::remove_file(&path);
+            None
+        }
+    }
+}
+
+/// Deletes the saved index of a removed folder root.
+pub fn forget(svc: &Service, slot: &Slot, root: &FolderRoot) {
+    if let Some(path) = saved_path(svc, root) {
+        match std::fs::remove_file(&path) {
+            Ok(()) => info!("{}: saved index deleted", slot.name),
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
+            Err(e) => warning!("{}: the saved index was not deleted: {e}", slot.name),
+        }
+    }
+}
+
+/// Longest time between two saves while changes arrive, so a crash loses little.
+const SAVE_EVERY: Duration = Duration::from_secs(10 * 60);
 
 /// What to bring up to date: changed paths from the watcher, or folders
 /// (store keys) whose scheduled check is due.
@@ -252,10 +431,29 @@ const CHECK_BATCH: usize = 256;
 pub fn run(svc: Arc<Service>, slot: Arc<Slot>, root: FolderRoot) {
     let mut have_tree = false;
     let mut watcher: Option<Watcher> = None;
+    // IDX-20 (owner, 2026-11-24: "Why is browsing M: so slow and lagging? Isn't everything indexed?"): the
+    // index saved at the last stop answers at once; the scan below then replaces it with the current tree.
+    let t = Instant::now();
+    if let Some(store) = load(&svc, &slot, &root) {
+        let entries = store.live;
+        slot.install(store);
+        {
+            let mut h = slot.health.lock().unwrap();
+            h.state = "ready";
+            h.load_ms = t.elapsed().as_millis() as u64;
+        }
+        have_tree = true;
+        info!("{}: loaded {entries} entries from the saved index in {} ms", slot.name, t.elapsed().as_millis());
+    }
+    let mut saved_at = Instant::now();
+    let mut saved_applied = slot.health.lock().unwrap().applied;
     while !slot.stopping() && !svc.stopping() {
         let Some(token) = svc.tokens.get(&root.owner) else {
             // The owner's token arrives with that user's next standard (not elevated) pipe connection.
-            slot.set_state("waiting-for-user");
+            // A saved index keeps answering meanwhile.
+            if !have_tree {
+                slot.set_state("waiting-for-user");
+            }
             slot.wait(Duration::from_secs(5));
             continue;
         };
@@ -275,7 +473,7 @@ pub fn run(svc: Arc<Service>, slot: Arc<Slot>, root: FolderRoot) {
         let result = {
             let _bg = Background::begin();
             match Impersonation::begin(&token) {
-                Some(_imp) => scan(&root, &slot),
+                Some(_imp) => scan(&root, &slot, &token),
                 None => Err(format!("cannot impersonate the folder's owner: error {}", last_error())),
             }
         };
@@ -291,7 +489,11 @@ pub fn run(svc: Arc<Service>, slot: Arc<Slot>, root: FolderRoot) {
                 if have_tree {
                     h.reloads += 1;
                 }
+                drop(h);
                 have_tree = true;
+                save(&svc, &slot, &root);
+                saved_at = Instant::now();
+                saved_applied = slot.health.lock().unwrap().applied;
             }
             Err(e) => {
                 if slot.stopping() {
@@ -364,6 +566,12 @@ pub fn run(svc: Arc<Service>, slot: Arc<Slot>, root: FolderRoot) {
                 }
                 continue;
             }
+            let applied = slot.health.lock().unwrap().applied;
+            if applied != saved_applied && saved_at.elapsed() >= SAVE_EVERY {
+                save(&svc, &slot, &root);
+                saved_at = Instant::now();
+                saved_applied = applied;
+            }
             if hour.elapsed() >= Duration::from_secs(3600) {
                 if checked > 0 {
                     info!(
@@ -380,5 +588,59 @@ pub fn run(svc: Arc<Service>, slot: Arc<Slot>, root: FolderRoot) {
             let wait = plan.next_due().map_or(60, |t| t.saturating_sub(sched::now())).clamp(1, if watcher.is_some() { 5 } else { 60 });
             slot.wait(Duration::from_secs(wait));
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::state::Kind;
+
+    fn own_token() -> Handle {
+        let mut token = std::ptr::null_mut();
+        let ok = unsafe { OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY | TOKEN_DUPLICATE | TOKEN_IMPERSONATE, &mut token) };
+        assert_ne!(ok, 0, "own token");
+        Handle::valid(token).expect("token handle")
+    }
+
+    fn tree(walked: &[(u32, Entry)], start: &str) -> Vec<(String, u64, bool)> {
+        let mut paths: std::collections::HashMap<u32, String> = std::collections::HashMap::new();
+        paths.insert(0, start.to_string());
+        let mut out = Vec::new();
+        for (k, e) in walked {
+            let p = format!("{}\{}", paths[&e.parent], e.name);
+            paths.insert(*k, p.clone());
+            out.push((p, e.size, e.attrs & ATTR_DIRECTORY != 0));
+        }
+        out.sort();
+        out
+    }
+
+    // IDX-20: listing several folders at once finds exactly what the one-at-a-time walk finds,
+    // with every parent keyed before its children.
+    #[test]
+    fn a_parallel_walk_lists_the_same_tree() {
+        let root = std::env::temp_dir().join(format!("pwidx20-walk-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&root);
+        for a in 0..6 {
+            for b in 0..5 {
+                let dir = root.join(format!("a{a}")).join(format!("b{b} é")).join("deep");
+                std::fs::create_dir_all(&dir).unwrap();
+                std::fs::write(dir.join(format!("f{a}{b}.bin")), vec![0u8; a * 10 + b]).unwrap();
+            }
+        }
+        let start = root.to_string_lossy().to_string();
+        let slot = Slot::new(0, start.clone(), Kind::Ntfs);
+        let token = own_token();
+        let (mut serial, mut parallel) = (Vec::new(), Vec::new());
+        let mut next = 1;
+        walk(0, &start, &mut next, &slot, &mut |k, e| serial.push((k, e))).unwrap();
+        let mut next = 1;
+        walk_parallel(0, &start, &mut next, &slot, &token, 8, &mut |k, e| parallel.push((k, e))).unwrap();
+        let _ = std::fs::remove_dir_all(&root);
+        assert_eq!(serial.len(), 6 + 30 * 3);
+        assert!(parallel.iter().all(|(k, e)| e.parent < *k), "parents are keyed before their children");
+        assert_eq!(tree(&serial, &start), tree(&parallel, &start));
+        assert!(walk_parallel(0, &format!("{start}-absent"), &mut 1, &slot, &token, 8, &mut |_, _| {}).is_err(), "an unlistable root fails");
     }
 }

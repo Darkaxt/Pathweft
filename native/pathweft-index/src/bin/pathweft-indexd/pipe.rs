@@ -159,7 +159,9 @@ pub fn handle(svc: &Arc<Service>, client: &ClientToken, req: Request) -> Respons
                 Kind::Folder(_) => return Response::failure("only the user who added a folder can remove it"),
                 Kind::Ntfs => return Response::failure(format!("{name} is an NTFS volume; exclude it in the config instead")),
             }
-            svc.remove_slot(&name);
+            if let (Some(removed), Kind::Folder(root)) = (svc.remove_slot(&name), &slot.kind) {
+                scan::forget(svc, &removed, root);
+            }
             svc.config.lock().unwrap().folders.retain(|f| !scan::root_name(&f.path).eq_ignore_ascii_case(&name));
             if let Err(e) = svc.save_config() {
                 return Response::failure(format!("removed, but the config was not saved: {e}"));

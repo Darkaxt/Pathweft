@@ -15,6 +15,8 @@ pub const NONE: u32 = u32::MAX;
 pub const ATTR_DIRECTORY: u32 = 0x10;
 pub const ATTR_REPARSE: u32 = 0x400;
 const MAX_DEPTH: usize = 1024;
+/// First bytes of an `export` image (format 1).
+const SAVED_MAGIC: &[u8] = b"PWFSTORE1\n";
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Rec {
@@ -499,6 +501,81 @@ impl Store {
         r + n + k
     }
 
+    /// The live records as a self-contained byte image (IDX-20: a folder
+    /// root's saved index). Every record is written with its external key and
+    /// its parent's external key; folder sizes are derived again on import.
+    pub fn export(&self) -> Vec<u8> {
+        let mut external = vec![NONE; self.recs.len()];
+        for (k, &i) in self.keys.iter().enumerate() {
+            if i != NONE {
+                external[i as usize] = k as u32;
+            }
+        }
+        let mut out = Vec::with_capacity(16 + self.live as usize * 48);
+        out.extend_from_slice(SAVED_MAGIC);
+        out.extend_from_slice(&(self.live as u32).to_le_bytes());
+        for (i, rec) in self.recs.iter().enumerate() {
+            if !rec.live() || i as u32 == self.root {
+                continue;
+            }
+            out.extend_from_slice(&external[i].to_le_bytes());
+            // The root is key 0 in the image, as in every scanned tree.
+            out.extend_from_slice(&(if rec.parent == self.root { 0 } else { external[rec.parent as usize] }).to_le_bytes());
+            out.extend_from_slice(&(if rec.is_dir() { 0 } else { rec.size }).to_le_bytes());
+            out.extend_from_slice(&rec.mtime.to_le_bytes());
+            out.extend_from_slice(&rec.ctime.to_le_bytes());
+            out.extend_from_slice(&rec.attrs.to_le_bytes());
+            let name = self.name_bytes_at(rec.name);
+            out.extend_from_slice(&(name.len() as u16).to_le_bytes());
+            out.extend_from_slice(name);
+        }
+        let check = Self::name_hash(&out);
+        out.extend_from_slice(&check.to_le_bytes());
+        out
+    }
+
+    /// Rebuilds a store written by `export` (root key 0 named `root_name`).
+    /// `Err` when the image is damaged or from another format.
+    pub fn import(root_name: &str, bytes: &[u8]) -> Result<Store, String> {
+        let damaged = || "the saved index is damaged".to_string();
+        if bytes.len() < SAVED_MAGIC.len() + 12 || !bytes.starts_with(SAVED_MAGIC) {
+            return Err("the saved index has another format".into());
+        }
+        let (body, check) = bytes.split_at(bytes.len() - 8);
+        if Self::name_hash(body).to_le_bytes() != check {
+            return Err(damaged());
+        }
+        let mut at = SAVED_MAGIC.len();
+        fn cut<'a>(body: &'a [u8], at: &mut usize, n: usize) -> Result<&'a [u8], String> {
+            let s = body.get(*at..*at + n).ok_or_else(|| "the saved index is damaged".to_string())?;
+            *at += n;
+            Ok(s)
+        }
+        let mut take = |n: usize| cut(body, &mut at, n);
+        let u32_at = |s: &[u8]| u32::from_le_bytes(s.try_into().unwrap());
+        let u64_at = |s: &[u8]| u64::from_le_bytes(s.try_into().unwrap());
+        let live = u32_at(take(4)?) as usize;
+        let mut store = Store::new(0, root_name, live + 1);
+        for _ in 0..live {
+            let key = u32_at(take(4)?);
+            let parent = u32_at(take(4)?);
+            let size = u64_at(take(8)?);
+            let mtime = u64_at(take(8)?);
+            let ctime = u64_at(take(8)?);
+            let attrs = u32_at(take(4)?);
+            let len = u16::from_le_bytes(take(2)?.try_into().unwrap()) as usize;
+            let name = std::str::from_utf8(take(len)?).map_err(|_| damaged())?.to_string();
+            if key == 0 {
+                return Err(damaged());
+            }
+            store.set(key, Some(&Entry { parent, name, size, mtime, ctime, attrs, sec: 0 }));
+        }
+        if take(1).is_ok() {
+            return Err(damaged());
+        }
+        Ok(store)
+    }
+
     /// Ends the build phase (drops the name-sharing table) and releases spare
     /// capacity. Names set later are appended without sharing.
     pub fn shrink(&mut self) {
@@ -680,5 +757,37 @@ mod tests {
         // Removing a key that was never set is a no-op.
         s.set(42, None);
         assert_eq!(s.live, 3);
+    }
+
+    #[test]
+    fn a_saved_tree_loads_with_the_same_records_and_sizes() {
+        // Children before parents and a moved file, as after watcher changes (IDX-20).
+        let mut s = Store::new(0, r"\\srv\share", 16);
+        s.set(3, Some(&entry(2, "b.txt", 100, false)));
+        s.set(2, Some(&entry(1, "sub", 0, true)));
+        s.set(1, Some(&entry(0, "dir", 0, true)));
+        s.set(4, Some(&entry(0, "top é 子.txt", 7, false)));
+        s.set(5, Some(&entry(1, "gone.txt", 9, false)));
+        s.set(5, None);
+        s.set(6, Some(&entry(0, "new", 0, true)));
+        s.set(3, Some(&entry(6, "b.txt", 120, false)));
+        let image = s.export();
+        let t = Store::import(r"\\srv\share", &image).expect("loads");
+        assert_eq!((t.live, t.dirs), (s.live, s.dirs));
+        for key in [1u32, 2, 3, 4, 6] {
+            let (a, b) = (s.get(ix(&s, key)).unwrap(), t.get(ix(&t, key)).unwrap());
+            assert_eq!((a.size, a.mtime, a.attrs), (b.size, b.mtime, b.attrs), "key {key}");
+            let (mut pa, mut pb) = (String::new(), String::new());
+            assert!(s.full_path(ix(&s, key), &mut pa) && t.full_path(ix(&t, key), &mut pb));
+            assert_eq!(pa, pb);
+        }
+        assert_eq!(t.recs[t.root as usize].size, 127);
+        assert!(t.index_of(5).is_none_or(|i| t.get(i).is_none()));
+        assert!(t.key_count() >= 7, "new keys continue after the saved ones");
+        let mut bad = image.clone();
+        bad[20] ^= 1;
+        assert!(Store::import("x", &bad).is_err());
+        assert!(Store::import("x", &image[..image.len() - 1]).is_err());
+        assert!(Store::import("x", b"something else entirely").is_err());
     }
 }

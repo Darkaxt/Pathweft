@@ -123,7 +123,7 @@ pub fn run(volume: &str, report_path: Option<PathBuf>) -> Result<bool, String> {
         && fs::rename(base.join("hidden-item.txt"), secret.join("hidden-item.txt")).is_ok();
 
     let pipe = format!(r"\\.\pipe\PathweftIndex-selftest-{}", std::process::id());
-    let opts = Options { pipe: pipe.clone(), config_path: base.join("no-config.json"), volumes: Some(vec![letter.clone()]), folders: false, persist_config: false, content_dir: None, protect_content: false };
+    let opts = Options { pipe: pipe.clone(), config_path: base.join("no-config.json"), volumes: Some(vec![letter.clone()]), folders: false, persist_config: false, content_dir: None, protect_content: false, folder_cache: None };
     let svc = service::run(opts)?;
     let mut t = T { pipe, checks: Vec::new() };
 

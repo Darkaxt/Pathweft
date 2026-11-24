@@ -82,9 +82,12 @@ internal static class IndexedSearch
             try { status = await service.StatusAsync(token).ConfigureAwait(false); }
             catch (Exception ex) when (ex is InvalidOperationException or System.ComponentModel.Win32Exception or System.IO.IOException) { return (Coverage.Unavailable, ex.Message); }
             if (status == null) return (Coverage.Unavailable, service.LastConnectError is { Length: > 0 } error && error != IndexServiceClient.NotRunning ? error : "the Pathweft index service is not running");
-            var store = status.Stores.Where(s => s.Name is { Length: > 0 } name && Covers(System.IO.Path.TrimEndingDirectorySeparator(name), full)).MaxBy(s => s.Name.Length);
+            // IDX-21: a mapped network drive is covered by the store of its share.
+            string asked = NetworkDrives.ToService(full, status.Stores.Select(s => s.Name).Where(name => name is { Length: > 0 }).ToArray());
+            var store = status.Stores.Where(s => s.Name is { Length: > 0 } name && Covers(System.IO.Path.TrimEndingDirectorySeparator(name), asked)).MaxBy(s => s.Name.Length);
             if (store == null) return (Coverage.NotCovered, "");
-            if (store.State is not ("loading" or "reloading")) return store.State == "ready" ? (Coverage.Ready, store.Name) : (Coverage.Unavailable, store.Name + " is " + store.State);
+            // IDX-20: a folder store being rescanned ("scanning") answers from its current tree, as a ready one does.
+            if (store.State is not ("loading" or "reloading")) return store.State is "ready" or "scanning" ? (Coverage.Ready, store.Name) : (Coverage.Unavailable, store.Name + " is " + store.State);
             if (!waited) { waited = true; waiting(store.Name); }
             await Task.Delay(500, token).ConfigureAwait(false);
         }

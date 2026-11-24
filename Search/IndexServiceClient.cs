@@ -26,6 +26,30 @@ internal sealed class IndexServiceClient(string pipeName)
 
     internal void ForgetAbsence() => Interlocked.Exchange(ref absentUntil, 0);
 
+    // IDX-21: the service's store roots, for translating mapped network drives (NetworkDrives). Re-read at most
+    // every StoresFor; every status reply refreshes them too.
+    static readonly TimeSpan StoresFor = TimeSpan.FromSeconds(30);
+    volatile string[] stores = [];
+    long storesAt = long.MinValue;
+    internal async Task<IReadOnlyCollection<string>> StoresAsync(CancellationToken token)
+    {
+        long now = Environment.TickCount64;
+        long at = Interlocked.Read(ref storesAt);
+        if (now - at < (long)StoresFor.TotalMilliseconds || Interlocked.CompareExchange(ref storesAt, now, at) != at) return stores;
+        try
+        {
+            using var reply = await TryRequestAsync(new { op = "status" }, token).ConfigureAwait(false);
+            if (reply != null) Learn(Parsed(() => IndexServiceStatus.Parse(reply.RootElement.GetProperty("status"))));
+        }
+        catch (InvalidOperationException) { } // the request that follows reports it
+        return stores;
+    }
+    void Learn(IndexServiceStatus status)
+    {
+        stores = status.Stores.Select(s => s.Name).Where(name => name is { Length: > 0 }).ToArray();
+        Interlocked.Exchange(ref storesAt, Environment.TickCount64);
+    }
+
     // Null when the service is absent. A service refusal throws InvalidOperationException
     // with its message, and so does a lost or unanswered connection.
     internal async Task<JsonDocument> TryRequestAsync(object request, CancellationToken token)
@@ -95,9 +119,10 @@ internal sealed class IndexServiceClient(string pipeName)
     // locations > 0 (CONTENT-05, protocol 2): content hits carry up to that many stored match locations.
     internal async Task<IndexedPage> QueryAsync(string expression, uint offset, uint count, string sort, bool descending, SearchSwitches switches, bool visibleOnly, CancellationToken token, int locations = 0)
     {
+        var known = await StoresAsync(token).ConfigureAwait(false);
         var request = new JsonObject
         {
-            ["op"] = "query", ["query"] = expression, ["offset"] = offset, ["count"] = count, ["sort"] = sort, ["descending"] = descending,
+            ["op"] = "query", ["query"] = NetworkDrives.Expression(expression, known), ["offset"] = offset, ["count"] = count, ["sort"] = sort, ["descending"] = descending,
             ["match_path"] = switches?.MatchPath ?? false, ["match_case"] = switches?.MatchCase ?? false,
             ["whole_word"] = switches?.WholeWord ?? false, ["regex"] = switches?.Regex ?? false, ["visible_only"] = visibleOnly,
         };
@@ -112,7 +137,7 @@ internal sealed class IndexServiceClient(string pipeName)
             foreach (var hit in array.EnumerateArray())
             {
                 long size = hit.GetProperty("size").GetInt64();
-                hits.Add(new(hit.GetProperty("path").GetString(), hit.GetProperty("folder").GetBoolean(), size < 0 ? -2 : size,
+                hits.Add(new(NetworkDrives.FromService(hit.GetProperty("path").GetString(), known), hit.GetProperty("folder").GetBoolean(), size < 0 ? -2 : size,
                     Time(hit, "modified"), Time(hit, "created"), hit.TryGetProperty("attributes", out var a) ? a.GetUInt32() : null,
                     !hit.TryGetProperty("visible", out var v) || v.GetBoolean(),
                     hit.TryGetProperty("locations", out var l) && l.ValueKind == JsonValueKind.Array ? l.EnumerateArray().Select(x => x.GetRawText()).ToList() : null));
@@ -149,7 +174,12 @@ internal sealed class IndexServiceClient(string pipeName)
     internal async Task<Dictionary<string, long>> FolderSizesAsync(IEnumerable<string> paths, CancellationToken token)
     {
         var result = new Dictionary<string, long>(StringComparer.OrdinalIgnoreCase);
-        foreach (var batch in paths.Select(path => Path.TrimEndingDirectorySeparator(Path.GetFullPath(path))).Distinct(StringComparer.OrdinalIgnoreCase).Chunk(1024))
+        // IDX-21: a mapped network drive is asked for by its UNC path and answered under the path the caller gave.
+        var asked = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var known = await StoresAsync(token).ConfigureAwait(false);
+        foreach (var path in paths.Select(path => Path.TrimEndingDirectorySeparator(Path.GetFullPath(path))))
+            asked.TryAdd(Path.TrimEndingDirectorySeparator(NetworkDrives.ToService(path, known)), path);
+        foreach (var batch in asked.Keys.Chunk(1024))
         {
             using var reply = await TryRequestAsync(new { op = "folder_sizes", paths = batch }, token).ConfigureAwait(false);
             if (reply == null) return null;
@@ -157,7 +187,10 @@ internal sealed class IndexServiceClient(string pipeName)
             {
                 foreach (var item in reply.RootElement.GetProperty("sizes").EnumerateArray())
                     if (item.TryGetProperty("size", out var size) && size.ValueKind == JsonValueKind.Number)
-                        result[Path.TrimEndingDirectorySeparator(item.GetProperty("path").GetString())] = size.GetInt64();
+                    {
+                        string path = Path.TrimEndingDirectorySeparator(item.GetProperty("path").GetString());
+                        result[asked.TryGetValue(path, out var original) ? original : path] = size.GetInt64();
+                    }
                 return true;
             });
         }
@@ -168,7 +201,10 @@ internal sealed class IndexServiceClient(string pipeName)
     {
         ForgetAbsence();
         using var reply = await TryRequestAsync(new { op = "status" }, token).ConfigureAwait(false);
-        return reply == null ? null : Parsed(() => IndexServiceStatus.Parse(reply.RootElement.GetProperty("status")));
+        if (reply == null) return null;
+        var status = Parsed(() => IndexServiceStatus.Parse(reply.RootElement.GetProperty("status")));
+        Learn(status);
+        return status;
     }
 
     // ---- Content index (CONTENT-01..05; service protocol 2, docs/index-service/PROTOCOL.md "Version 2") ----

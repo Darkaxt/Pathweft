@@ -123,6 +123,9 @@ pub struct Options {
     pub content_dir: Option<PathBuf>,
     /// Create the content folder for SYSTEM and Administrators only.
     pub protect_content: bool,
+    /// Where folder roots' saved indexes live (IDX-20); `None` keeps them in
+    /// memory only. Protected like the content folder when `protect_content`.
+    pub folder_cache: Option<PathBuf>,
 }
 
 pub struct Service {

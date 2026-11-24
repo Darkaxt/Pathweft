@@ -100,6 +100,12 @@ pub fn shutdown(svc: &Service) {
         s.stop.store(true, Ordering::Relaxed);
         s.poke();
     }
+    // IDX-20: the next start answers for folder roots from these at once.
+    for s in svc.all() {
+        if let Kind::Folder(root) = &s.kind {
+            scan::save(svc, &s, root);
+        }
+    }
     svc.content_poke();
     pipe::wake(&svc.opts.pipe);
 }
@@ -113,6 +119,7 @@ pub fn service_options() -> Options {
         persist_config: true,
         content_dir: Some(config::data_dir().join("content")),
         protect_content: true,
+        folder_cache: Some(config::data_dir().join("folders")),
     }
 }
 
