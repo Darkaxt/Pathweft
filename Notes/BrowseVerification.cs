@@ -84,6 +84,18 @@ public partial class MainWindow
         Left.FilterBox.Text = root + "\\compl";
         check(await Until(() => Shown().Any(s => s.Kind == PaneView.SuggestionKind.Completion && s.Path.EndsWith("complete-me"))), "BROWSE-01: filesystem completion still supplements a typed path");
         check(Left.FilterBox.Text == root + "\\compl" && Left.FilterBox.IsKeyboardFocusWithin && Left.Suggest.IsOpen, "BROWSE-02: background completion leaves the draft and focus alone");
+        // BROWSE-13: %name offers the environment variables naming a folder; Tab writes the variable, ready for the next level
+        Environment.SetEnvironmentVariable("PathweftVerifyFolder", unicode);
+        Environment.SetEnvironmentVariable("PathweftVerifyFile", Path.Combine(unicode, "none.txt"));
+        Left.FilterBox.Text = "%pathweftverify";
+        var variables = Shown().Where(s => s.Kind == PaneView.SuggestionKind.Variable).ToList();
+        check(variables.Count == 1 && variables[0].Name == "%PATHWEFTVERIFYFOLDER%" && variables[0].Path == unicode && Left.Suggest.IsOpen, "BROWSE-13: %name lists only the variables naming a folder: " + string.Join(", ", variables.Select(v => v.Name)));
+        Left.SuggestList.SelectedIndex = Shown().FindIndex(s => s.Kind == PaneView.SuggestionKind.Variable);
+        var tab = new System.Windows.Input.KeyEventArgs(System.Windows.Input.Keyboard.PrimaryDevice, PresentationSource.FromVisual(Left.FilterBox), Environment.TickCount, System.Windows.Input.Key.Tab) { RoutedEvent = System.Windows.Input.Keyboard.PreviewKeyDownEvent };
+        Left.FilterBox.RaiseEvent(tab);
+        check(Left.FilterBox.Text == "%PATHWEFTVERIFYFOLDER%\\", "BROWSE-13: Tab completes the variable itself: " + Left.FilterBox.Text);
+        Environment.SetEnvironmentVariable("PathweftVerifyFolder", null); Environment.SetEnvironmentVariable("PathweftVerifyFile", null);
+        Left.FilterBox.Text = root + "\\compl";
         // Escape closes the list and keeps the draft
         var esc = new System.Windows.Input.KeyEventArgs(System.Windows.Input.Keyboard.PrimaryDevice, PresentationSource.FromVisual(Left.FilterBox), Environment.TickCount, System.Windows.Input.Key.Escape) { RoutedEvent = System.Windows.Input.Keyboard.PreviewKeyDownEvent };
         Left.FilterBox.RaiseEvent(esc);

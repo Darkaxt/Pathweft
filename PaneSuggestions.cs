@@ -15,7 +15,7 @@ namespace FileExplorer;
 /// replace newer ones and never touch the draft, caret or focus.
 public partial class PaneView
 {
-    internal enum SuggestionKind { Tab, Pinned, Alias, SavedSearch, Recent, Completion }
+    internal enum SuggestionKind { Tab, Pinned, Alias, SavedSearch, Recent, Completion, Variable }
     internal sealed record Suggestion(SuggestionKind Kind, string Path, string Name, string Location, PaneView Pane = null, int TabIndex = -1, SavedSearch Search = null)
     {
         internal int Match;   // 0 name prefix, 1 name substring, 2 path substring, 3 recent (empty field)
@@ -73,11 +73,29 @@ public partial class PaneView
             foreach (var alias in Aliases.All)
                 if (alias.Name.StartsWith(query[1..], StringComparison.OrdinalIgnoreCase))
                     found.Add(new(SuggestionKind.Alias, alias.Target, "@" + alias.Name, "Alias  ·  " + alias.Target) { Match = 0, Recency = int.MaxValue });
+        // BROWSE-13: %name rows, as Explorer offers them: the environment variables naming a folder
+        if (query.StartsWith('%') && query.IndexOf('%', 1) < 0 && !query.Contains('\\'))
+            foreach (var (name, folder) in VariableFolders(query[1..]))
+                found.Add(new(SuggestionKind.Variable, folder, "%" + name + "%", "Environment variable  ·  " + folder) { Match = 0, Recency = int.MaxValue });
         foreach (var search in SavedSearches.All)
             Add(new(SuggestionKind.SavedSearch, null, search.Name, $"Saved search  ·  {search.Query} in {search.ScopeText}", Search: search), search.Name, search.Query);
         foreach (var path in recent)
             Add(new(SuggestionKind.Recent, path, DisplayName(path), Location(path)), DisplayName(path), path);
         return found;
+    }
+    /// The variables whose name starts with the typed text and whose value is a local folder (a network value is not probed).
+    internal static List<(string Name, string Folder)> VariableFolders(string prefix)
+    {
+        var found = new List<(string, string)>();
+        foreach (System.Collections.DictionaryEntry v in Environment.GetEnvironmentVariables())
+        {
+            if (v.Key is not string name || v.Value is not string value || !name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)) continue;
+            value = value.Trim().Trim('"');
+            if (value.Length < 3 || value[1] != ':' || value[2] != '\\' || value.Contains(';') || RemoteAddress.IsRemote(value)) continue;
+            try { if (Directory.Exists(value)) found.Add((name.ToUpperInvariant(), System.IO.Path.TrimEndingDirectorySeparator(value))); }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException) { }
+        }
+        return found.OrderBy(f => f.Item1, StringComparer.OrdinalIgnoreCase).ToList();
     }
     static string Location(string path) =>
         path == ThisPC ? "Drives and devices" : RemoteAddress.IsRemote(path) ? path : System.IO.Path.GetDirectoryName(path.TrimEnd('\\')) ?? path;
@@ -193,7 +211,7 @@ public partial class PaneView
     {
         var s = SuggestionOf(SuggestList.SelectedItem) ?? SuggestList.Items.Cast<object>().Select(SuggestionOf).FirstOrDefault(x => x?.Path != null);
         if (s?.Path == null || s.Path == ThisPC || RemoteAddress.IsRemote(s.Path)) return;
-        PathBox.Text = s.Path.TrimEnd('\\') + "\\";
+        PathBox.Text = (s.Kind == SuggestionKind.Variable ? s.Name : s.Path.TrimEnd('\\')) + "\\"; // %NAME%\ stays a variable, as Explorer writes it
         PathBox.CaretIndex = PathBox.Text.Length;
     }
 

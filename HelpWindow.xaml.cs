@@ -59,7 +59,7 @@ public partial class HelpWindow : Window
             ("Enter / F3", "Open"),
             ("Backspace / Alt+Up", "Up one folder; the folder you left stays selected"),
             ("Alt+Left / Alt+Right", "Back / Forward (also the mouse side buttons)"),
-            ("Ctrl+L", "Type a path; matching folders are suggested, Tab completes, Down picks one. %USERPROFILE% and other variables work"),
+            ("Ctrl+L", "Type a path; matching folders are suggested, Tab completes, Down picks one. %USERPROFILE% and other variables work, and typing % suggests the variables that name a folder"),
             ("Chevron after a path segment", "The folders inside it, to jump sideways"),
             ("Ctrl+F / Ctrl+L", "Use the address/search field. Enter resolves an existing path first; otherwise it searches the Pathweft index in this folder. Search from This PC for all indexed files."),
             ("Esc", "Leave search results"),

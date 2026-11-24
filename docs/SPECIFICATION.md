@@ -1,6 +1,6 @@
 # Pathweft specification
 
-Version 1.59 - 2026-11-24. Owner: Darkaxt.
+Version 1.60 - 2026-11-24. Owner: Darkaxt.
 
 ### Read-only MCP expansion (S48)
 
@@ -2586,6 +2586,13 @@ does not activate implementation or authorize changes to source/user/remote data
   (Developer Mode or administrator for symbolic links). Properties shows a
   link's kind and target, broken links are marked, and deleting a link never
   touches its target.
+- **BROWSE-13 variable suggestions** (spec 1.60, S70; owner 2026-11-24: "what I
+  miss is any autocomplete suggestions" after typing `%Lo`). Address text that
+  starts with `%` and has no closing `%` or backslash lists, as Explorer does,
+  the environment variables whose name starts with the typed text and whose
+  value is an existing local folder, as `%NAME%` rows showing the folder. Enter
+  or a click opens the folder; Tab writes `%NAME%\` so folder completion
+  continues below it. Network values are not probed.
 
 Reference behaviors: [Dolphin filtering/saved searches](https://docs.kde.org/stable_kf6/en/dolphin/dolphin/quick-tips.html),
 [Dolphin metadata/terminal panels](https://docs.kde.org/stable_kf6/en/dolphin/dolphin/panels.html),

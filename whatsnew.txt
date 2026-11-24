@@ -1,6 +1,10 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.99 | 2026-11-24 | Address bar suggests %variables%
+
+- Typing % in the address bar now suggests environment variables that name a folder, as Explorer does: %Lo offers %LOCALAPPDATA% with the folder it points to. Enter or a click opens it; Tab writes %LOCALAPPDATA%\ so the folders inside are suggested next.
+
 ## 1.1.98 | 2026-11-24 | Mapped network drives use the index
 
 - Browsing a mapped network drive such as M: no longer walks the network for folder sizes. The Pathweft index service knows a network share by its \\server\share name, and Pathweft never matched the drive letter to it, so every folder size, search and Analyze space on M: was measured over the network. They now come from the share's index.
