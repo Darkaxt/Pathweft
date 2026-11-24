@@ -412,3 +412,18 @@ Validation (2026-11-20), Rust gate ticket f8e5e6a3 (renews cd5fe818):
   instance; the protected store folder and the reconcile under the installed
   service (needs a Pathweft release; no mutation of the installed service from
   here). IS10 stays ACTIVE until the Pathweft integration passes.
+
+## IDX-03 record (2026-11-24): administrator view keeps folder roots (1.1.95)
+
+- Owner, after installing 1.1.94: switching to administrator view broke the
+  indexing status. The elevated client's token replaced the owner's scan token,
+  and that logon session has none of the user's drive mappings (service log:
+  "cannot list" error 3 on T:, H:, J:).
+- Fixed in 1aee118: scan tokens are standard only; visibility cached per SID,
+  elevation and security ID. Rust gate: library 28 and service binary 23
+  passed, 0 failed (ticket daa39fa5).
+- scripts/Test-ElevatedClient.ps1 (subst Q:, elevated side via the
+  administrator broker, private console instances): 1.1.94 binary fails with
+  "cannot list Q:: error 3", 1.1.95 binary passes.
+- Pending: the owner's installed service keeps T:/H:/J: ready after switching
+  to administrator view.
