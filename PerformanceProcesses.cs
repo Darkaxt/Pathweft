@@ -40,8 +40,29 @@ internal sealed class PerformanceProcessRow : INotifyPropertyChanged
     public string CommandTooltip=>MetadataIssue??CommandLine;
     internal bool MetadataRequested;
     public event PropertyChangedEventHandler PropertyChanged;
-    internal PerformanceProcessRow(ProcessMetric sample)=>Sample=sample;
-    internal void Notify()=>PropertyChanged?.Invoke(this,new PropertyChangedEventArgs(null));
+    // Issue #13: raise only the properties whose shown values changed. Refreshing every binding of a
+    // realized row each sample re-reads unchanged cells and tooltips for a listening automation client.
+    static readonly (string Name,Func<PerformanceProcessRow,object> Value)[] Shown=
+    [
+        (nameof(Pid),x=>x.Pid),(nameof(Started),x=>x.Started),(nameof(Process),x=>x.Process),(nameof(Usage),x=>x.Usage),
+        (nameof(SortUsage),x=>x.SortUsage),(nameof(Memory),x=>x.Memory),(nameof(Percent),x=>x.Percent),(nameof(MemoryText),x=>x.MemoryText),
+        (nameof(Pinned),x=>x.Pinned),(nameof(Pin),x=>x.Pin),(nameof(Observed),x=>x.Observed),(nameof(State),x=>x.State),
+        (nameof(Handles),x=>x.Handles),(nameof(HandlesText),x=>x.HandlesText),(nameof(ParentMark),x=>x.ParentMark),
+        (nameof(ParentMarkVisibility),x=>x.ParentMarkVisibility),(nameof(ExecutablePath),x=>x.ExecutablePath),(nameof(CommandLine),x=>x.CommandLine),
+        (nameof(MetadataIssue),x=>x.MetadataIssue),(nameof(PathTooltip),x=>x.PathTooltip),(nameof(CommandTooltip),x=>x.CommandTooltip),
+    ];
+    object[] shown;
+    internal PerformanceProcessRow(ProcessMetric sample){Sample=sample;shown=Array.ConvertAll(Shown,x=>x.Value(this));}
+    internal void Notify()
+    {
+        var handler=PropertyChanged;
+        for(int i=0;i<Shown.Length;i++)
+        {
+            object value=Shown[i].Value(this);
+            if(Equals(value,shown[i]))continue;
+            shown[i]=value;handler?.Invoke(this,new PropertyChangedEventArgs(Shown[i].Name));
+        }
+    }
 }
 
 internal sealed record PerformanceProcessMetadata(string ExecutablePath,string CommandLine,string Issue=null);
@@ -140,6 +161,11 @@ internal sealed partial class PerformancePanel
         // Issue #13: a row moved by a live sample reuses a row container instead of building a new one,
         // so a listening UI Automation client sees far fewer structure changes (rows keep their identity).
         VirtualizingPanel.SetVirtualizationMode(table,VirtualizationMode.Recycling);
+        // A moved row's container leaves the panel and re-enters it, and its cells' automation peers are
+        // rebuilt (one ChildAdded and one Name change per cell). Realizing only the visible rows, not a
+        // page of off-screen rows on each side, keeps moves among unseen rows free of that rebuild.
+        VirtualizingPanel.SetCacheLengthUnit(table,VirtualizationCacheLengthUnit.Item);
+        VirtualizingPanel.SetCacheLength(table,new VirtualizationCacheLength(0));
         foreach(var (label,property,_) in processColumnSet)
         {
             var item=new MenuItem{Header=label,Tag=property,IsCheckable=true,IsChecked=processColumns[property],IsEnabled=property!="Process",StaysOpenOnClick=true};
