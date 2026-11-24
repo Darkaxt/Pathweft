@@ -60,6 +60,10 @@ public partial class MainWindow
         Left.StatsChanged+=Observed;
         try
         {
+            // The fixture was written just before: NTFS reports some of those writes late (lazy metadata flush), and a late
+            // notification during the Ctrl+R pass below would correctly mark a folder changed during its measurement.
+            var age=DateTime.UtcNow-Directory.GetLastWriteTimeUtc(busy);
+            if(age<TimeSpan.FromSeconds(2))await Task.Delay(TimeSpan.FromSeconds(2)-age+TimeSpan.FromMilliseconds(250));
             Left.ListForVerification.SelectedItem=unrelated;
             // CORE-30 (owner: "who cares about the disk analysis be desynced by a couple of minutes"): a change on disk
             // leaves the analysis as it was and only marks it changed.
@@ -111,9 +115,11 @@ public partial class MainWindow
             check(Left.FolderTotal==200&&Left.Items.All(entry=>entry.Name is not ("busy" or "renamed"))&&ReferenceEquals(Left.Items.Single(entry=>entry.Name=="stable"),unrelated)&&ReferenceEquals(Left.Selected.Single(),unrelated),
                 "F5 after a shrink, rename and removal reaches the exact total and keeps the unaffected row and the selection");
             // Ctrl+R measures everything on disk.
-            Left.Refresh(force:true,measure:true);await Left.SpaceCompletion;
+            var lateChanges=new ConcurrentQueue<string>();void Late(string changed)=>lateChanges.Enqueue(changed??"(all)");
+            SizeCache.Invalidated+=Late;
+            try{Left.Refresh(force:true,measure:true);await Left.SpaceCompletion;}finally{SizeCache.Invalidated-=Late;}
             check(Left.FolderTotal==200&&Left.SpaceSummary.Files==1&&Left.SpaceSummary.Folders==2&&unrelated.State==SpaceState.Complete&&visits.GetValueOrDefault(stable)>0,
-                "Ctrl+R still measures everything on disk (stable: "+unrelated.SpaceStatus+")");
+                "Ctrl+R still measures everything on disk (stable: "+unrelated.SpaceStatus+"; changes seen during the pass: "+string.Join(", ",lateChanges.Select(Path.GetFileName))+")");
             await VerifySpaceTabsAndDelete(root,folder,unrelated,visits,check);
             // CORE-31 (owner: switching views made the analysis walk D:\ for minutes while F5 was instant): a view switch
             // takes the index service's totals too.

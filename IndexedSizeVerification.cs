@@ -50,6 +50,8 @@ public partial class MainWindow
         using var fake=new FakeIndexService();
         fake.Reply=request=>(string)request["op"]=="folder_sizes"
             ?new JsonObject{["ok"]=true,["sizes"]=new JsonArray(request["paths"].AsArray().Select(p=>(JsonNode)((string)p==folder?new JsonObject{["path"]=folder,["size"]=Directory.EnumerateFiles(folder,"*",SearchOption.AllDirectories).Sum(f=>new FileInfo(f).Length)}:new JsonObject{["path"]=(string)p})).ToArray())}
+            // CORE-32: Analyze space asks for the store's state first; this index has the fixture's drive ready.
+            :(string)request["op"]=="status"?new JsonObject{["ok"]=true,["status"]=new JsonObject{["protocol"]=2,["stores"]=new JsonArray(new JsonObject{["name"]=Path.GetPathRoot(folder).TrimEnd(Path.DirectorySeparatorChar),["kind"]="ntfs",["state"]="ready"})}}
             :new JsonObject{["ok"]=true,["total"]=0,["hits"]=new JsonArray()};
         var previous=IndexedSearch.ServiceOverride;IndexedSearch.ServiceOverride=new IndexServiceClient(fake.Name);
         try
