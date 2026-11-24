@@ -617,7 +617,9 @@ public partial class PaneView : UserControl
             // ordinary listing restored when leaving analysis.
             current.SavedItems=new List<Entry>();current.SavedView=new System.Windows.Data.ListCollectionView((System.Collections.IList)current.SavedItems);
             current.Changed=true;ClearFolderFailure();UpdateSpaceFooter();StatsChanged?.Invoke();
-            current.Work=RunSpaceAsync(current,preferIndex:false);return;
+            // CORE-31: the index service measures every folder for both views (it only filters what each may see), so a
+            // view switch takes its totals like F5 instead of walking the whole tree on disk.
+            current.Work=RunSpaceAsync(current,preferIndex:true);return;
         }
         if(!IsWidget&&!InSearch&&!IsVirtual(Dir))Navigate(Dir,null,false,true);
     }

@@ -119,6 +119,13 @@ public partial class MainWindow
             check(Left.FolderTotal==200&&Left.SpaceSummary.Files==1&&Left.SpaceSummary.Folders==2&&unrelated.State==SpaceState.Complete&&visits.GetValueOrDefault(stable)>0,
                 "Ctrl+R still measures everything on disk (stable: "+unrelated.SpaceStatus+")");
             await VerifySpaceTabsAndDelete(root,folder,unrelated,visits,check);
+            // CORE-31 (owner: switching views made the analysis walk D:\ for minutes while F5 was instant): a view switch
+            // takes the index service's totals too.
+            visits.Clear();
+            await Left.RefreshAccessMode();await Left.SpaceCompletion;
+            var switched=Left.Items.OfType<SpaceEntry>().Single(entry=>entry.Name=="stable");
+            check(Left.FolderTotal==200&&switched.State==SpaceState.Indexed&&switched.Size==200&&!visits.Keys.Any(path=>SizeCache.Within(path,Path.GetDirectoryName(stable))),
+                "Switching between standard and administrator view takes the index's totals instead of measuring on disk (stable: "+switched.SpaceStatus+", "+visits.Count+" folders read, total "+Left.FolderTotal+")");
         }
         finally{Left.StatsChanged-=Observed;SpaceScan.BeforeEnumeration=null;SpaceScan.IndexObserved=null;}
         await Left.EndSpaceAsync();await Left.StopSizingAsync();
