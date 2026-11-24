@@ -25,6 +25,7 @@ change the Windows Search service or indexing configuration.
   optional global live-search popup with four matching switches and a plain results
   list. Transfers stay in the main manager.
 - Eight internal preview modules serve the side pane, Space preview and widget.
+  eBooks (EPUB, FB2, MOBI, AZW3) open as native pages with their contents.
   Standalone QuickLook is unnecessary. The opt-in native F3D viewer supports its
   bundled model readers, external resources, mouse/keyboard camera interaction
   and animation controls without the former model-size limit. Archives preview
@@ -84,8 +85,8 @@ File Labs was imported at `a8d5a5ca81ab4b70d26e293e69b9cc402baa77b6`;
 selected fixes through `9bfbbce` are included. Donor/dependency
 revisions and notices remain under `vendor/`.
 
-Inherited source retains its [MIT notice](LICENSE). Imported QuickLook source
-makes the combined application [GPL-3.0-or-later](COPYING-GPL-3.0.txt).
+Inherited source retains its [MIT notice](LICENSE). Imported QuickLook source, and MOBI/AZW3 reading adapted from calibre
+(vendor/Calibre), make the combined application [GPL-3.0-or-later](COPYING-GPL-3.0.txt).
 Dependencies retain their terms; see [distribution notices](docs/THIRD-PARTY-NOTICES.md).
 Final delivery must include matching application/dependency source, checksums
 and accurate signing status alongside the installer and portable package.

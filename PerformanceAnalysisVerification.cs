@@ -164,15 +164,22 @@ public partial class MainWindow
         string folder=Path.Combine(root,"mcp-folder");Directory.CreateDirectory(Path.Combine(folder,"sub"));File.WriteAllText(Path.Combine(folder,"a.txt"),"12345");
         var listed=await Tool("list_folder",new{path=folder});
         using(var page=JsonDocument.Parse(Text(listed)))
-            check(!listed.GetProperty("isError").GetBoolean()&&page.RootElement.GetProperty("Total").GetInt32()==2&&page.RootElement.GetProperty("Rows")[0].GetProperty("type").GetString()=="folder"
-                &&page.RootElement.GetProperty("Rows")[1].GetProperty("size_bytes").GetInt64()==5,"MCP list_folder returns metadata, folders first, with the total");
+            check(!listed.GetProperty("isError").GetBoolean()&&page.RootElement.GetProperty("total").GetInt32()==2&&page.RootElement.GetProperty("rows")[0].GetProperty("type").GetString()=="folder"
+                &&page.RootElement.GetProperty("rows")[1].GetProperty("size_bytes").GetInt64()==5,"MCP list_folder returns metadata, folders first, with the total");
+        // MCP-09: a full page says where the next page starts; the last page says it is the last.
+        var first=await Tool("list_folder",new{path=folder,limit=1});var last=await Tool("list_folder",new{path=folder,offset=1,limit=1});
+        using(var a=JsonDocument.Parse(Text(first)))using(var b=JsonDocument.Parse(Text(last)))
+            check(a.RootElement.GetProperty("has_more").GetBoolean()&&a.RootElement.GetProperty("next_offset").GetInt32()==1&&a.RootElement.GetProperty("returned").GetInt32()==1
+                &&a.RootElement.GetProperty("status").GetString().Contains("Rows 1-1 of 2. More rows: call again with offset 1")
+                &&!b.RootElement.GetProperty("has_more").GetBoolean()&&b.RootElement.GetProperty("next_offset").ValueKind==JsonValueKind.Null&&b.RootElement.GetProperty("status").GetString().Contains("This is the last page"),
+                "MCP-09 paged answers carry returned, has_more and next_offset, and the status names the next offset or the last page");
         var details=await Tool("get_file_details",new{path=Program.Executable});
         using(var item=JsonDocument.Parse(Text(details)))
             check(!details.GetProperty("isError").GetBoolean()&&item.RootElement.GetProperty("size_bytes").GetInt64()>0&&item.RootElement.GetProperty("product").GetString()!=null,"MCP get_file_details reports size, times and executable version");
         var size=await Tool("get_folder_size",new{path=folder});
         check(!size.GetProperty("isError").GetBoolean()&&Text(size).Contains("\"method\""),"MCP get_folder_size answers without starting a scan and states its method");
         var search=await Tool("search_files",new{query="\""+Path.GetFileName(Program.Executable)+"\"",limit=5});
-        check(!search.GetProperty("isError").GetBoolean()?Text(search).Contains("\"total\""):Text(search).StartsWith("Query unavailable:"),"MCP search_files pages index results or states why the index cannot answer");
+        check(!search.GetProperty("isError").GetBoolean()?Text(search).Contains("\"total\"")&&Text(search).Contains("\"next_offset\"")&&Text(search).Contains("\"has_more\""):Text(search).StartsWith("Query unavailable:"),"MCP search_files pages index results or states why the index cannot answer");
         // MCP-08: structured updating fields, batched folder sizes, and the read-only index and content status tools.
         check(!search.GetProperty("isError").GetBoolean()?Text(search).Contains("\"updating_stores\"")&&Text(search).Contains("\"elapsed_us\""):Text(search).StartsWith("Query unavailable:"),"MCP-08 search_files carries the service's updating, updating_stores and elapsed_us");
         var batched=await Tool("get_folder_size",new{paths=new[]{folder,Path.Combine(folder,"sub")}});
@@ -193,7 +200,7 @@ public partial class MainWindow
         check(!startup.GetProperty("isError").GetBoolean(),"MCP get_maintenance reads Startup rows as the signed-in user");
         var cleanup=await Tool("get_maintenance",new{category="Cleanup",target="user-temp"});
         using(var page=JsonDocument.Parse(Text(cleanup)))
-            check(!cleanup.GetProperty("isError").GetBoolean()&&page.RootElement.GetProperty("Rows")[0].GetProperty("method").GetString().Length>0,"MCP Cleanup size report states the method of each size");
+            check(!cleanup.GetProperty("isError").GetBoolean()&&page.RootElement.GetProperty("rows")[0].GetProperty("method").GetString().Length>0,"MCP Cleanup size report states the method of each size");
         foreach(var (tool,arguments,what) in new (string,object,string)[]{
             ("list_folder",new{path="relative\folder"},"relative path"),("get_maintenance",new{category="Nope"},"unknown category"),
             ("get_maintenance",new{category="Startup",target="user-temp"},"target outside Cleanup"),("list_folder",new{path=folder,extra=1},"unknown argument"),

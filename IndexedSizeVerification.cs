@@ -108,6 +108,9 @@ public partial class MainWindow
         {
             check(NetworkDrives.ToService(folder,onlyShare)==Unc(folder)&&NetworkDrives.FromService(Unc(folder),onlyShare)==folder&&NetworkDrives.FromService(share,onlyShare)==letter+@":\",
                 "A path on a mapped drive is sent as the share's UNC path and the service's answer comes back under the letter (IDX-21)");
+            check(NetworkDrives.IsNetwork(folder)&&NetworkDrives.IsNetwork(Unc(folder))&&!NetworkDrives.IsNetwork(@"\\?\"+Environment.SystemDirectory)&&!NetworkDrives.IsNetwork(Environment.SystemDirectory)
+                &&!AdministratorSession.BrowsingFor(folder),
+                "The mapped letter and its share are network folders, read with standard access in administrator view; local and device paths are not (ACCESS-09)");
             check(NetworkDrives.ToService(folder,withLetter)==folder&&NetworkDrives.Expression("path:\""+folder+"\"",withLetter)=="path:\""+folder+"\"",
                 "A drive letter the index has its own store for (a Tresorit drive) is not translated (IDX-21)");
             var sizes=await IndexedSearch.FolderSizesAsync([folder],CancellationToken.None);

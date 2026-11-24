@@ -1,0 +1,56 @@
+[
+  {
+    "file": "src/calibre/ebooks/mobi/reader/headers.py",
+    "commit": "8f8119ef2d4fb902540022b7a8b0bcb7080c85a7",
+    "url": "https://raw.githubusercontent.com/kovidgoyal/calibre/8f8119ef2d4fb902540022b7a8b0bcb7080c85a7/src/calibre/ebooks/mobi/reader/headers.py",
+    "sha256": "5033ED4618DECFBE4266D61DDAEBB3AB96E90B7FD94B2C1781FD76ACC5A346EF"
+  },
+  {
+    "file": "src/calibre/ebooks/mobi/reader/mobi6.py",
+    "commit": "8f8119ef2d4fb902540022b7a8b0bcb7080c85a7",
+    "url": "https://raw.githubusercontent.com/kovidgoyal/calibre/8f8119ef2d4fb902540022b7a8b0bcb7080c85a7/src/calibre/ebooks/mobi/reader/mobi6.py",
+    "sha256": "8102DCED30246CBCF75D3EBB2B7EE2C49FAF700BC5F6EE0CE42583AC9878AE92"
+  },
+  {
+    "file": "src/calibre/ebooks/mobi/reader/mobi8.py",
+    "commit": "8f8119ef2d4fb902540022b7a8b0bcb7080c85a7",
+    "url": "https://raw.githubusercontent.com/kovidgoyal/calibre/8f8119ef2d4fb902540022b7a8b0bcb7080c85a7/src/calibre/ebooks/mobi/reader/mobi8.py",
+    "sha256": "063CF80EAC07AA7A4604B3E22E8583EE596890C244FD58CD988726EB87254BB0"
+  },
+  {
+    "file": "src/calibre/ebooks/mobi/reader/index.py",
+    "commit": "8f8119ef2d4fb902540022b7a8b0bcb7080c85a7",
+    "url": "https://raw.githubusercontent.com/kovidgoyal/calibre/8f8119ef2d4fb902540022b7a8b0bcb7080c85a7/src/calibre/ebooks/mobi/reader/index.py",
+    "sha256": "8D45569A1666FCFB5EB3C34F53F066EEA131240FBA51C6774A9D82FCAB184403"
+  },
+  {
+    "file": "src/calibre/ebooks/mobi/reader/markup.py",
+    "commit": "8f8119ef2d4fb902540022b7a8b0bcb7080c85a7",
+    "url": "https://raw.githubusercontent.com/kovidgoyal/calibre/8f8119ef2d4fb902540022b7a8b0bcb7080c85a7/src/calibre/ebooks/mobi/reader/markup.py",
+    "sha256": "1A4C9529F83C58A9AB09B477519CB377AF064D163C41365F357A43BCB4DBA716"
+  },
+  {
+    "file": "src/calibre/ebooks/mobi/reader/ncx.py",
+    "commit": "8f8119ef2d4fb902540022b7a8b0bcb7080c85a7",
+    "url": "https://raw.githubusercontent.com/kovidgoyal/calibre/8f8119ef2d4fb902540022b7a8b0bcb7080c85a7/src/calibre/ebooks/mobi/reader/ncx.py",
+    "sha256": "FA4B4BE3E4550015C999D56D38C5E87CBBA97F72043041B635AF4F8F0AC5EAA1"
+  },
+  {
+    "file": "src/calibre/ebooks/mobi/huffcdic.py",
+    "commit": "8f8119ef2d4fb902540022b7a8b0bcb7080c85a7",
+    "url": "https://raw.githubusercontent.com/kovidgoyal/calibre/8f8119ef2d4fb902540022b7a8b0bcb7080c85a7/src/calibre/ebooks/mobi/huffcdic.py",
+    "sha256": "985D959B12B477CDF9B94882D4DF5C3D07D9576B84C4C67A3F323AD202F3DC5C"
+  },
+  {
+    "file": "src/calibre/ebooks/mobi/utils.py",
+    "commit": "8f8119ef2d4fb902540022b7a8b0bcb7080c85a7",
+    "url": "https://raw.githubusercontent.com/kovidgoyal/calibre/8f8119ef2d4fb902540022b7a8b0bcb7080c85a7/src/calibre/ebooks/mobi/utils.py",
+    "sha256": "44F68E732081813CB5B695C14D80FEBBDD7E18833D6AF46373CA826C3C6C05BA"
+  },
+  {
+    "file": "src/calibre/ebooks/compression/palmdoc.c",
+    "commit": "8f8119ef2d4fb902540022b7a8b0bcb7080c85a7",
+    "url": "https://raw.githubusercontent.com/kovidgoyal/calibre/8f8119ef2d4fb902540022b7a8b0bcb7080c85a7/src/calibre/ebooks/compression/palmdoc.c",
+    "sha256": "586A02E184F46845C25A799AFB1D9AA606C2F3EF907BAA9B1267DE0FD129ACAD"
+  }
+]

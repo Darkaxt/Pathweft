@@ -98,7 +98,8 @@ internal static class ActivityQuery
         string status=heartbeat==0?"The recorder has not written yet.":age>120?$"Recorder not running: last heartbeat {Time(heartbeat)}; later activity is absent.":"Recording.";
         return new
         {
-            status,last_heartbeat=heartbeat==0?null:Time(heartbeat),range_from=Time(from),range_to=Time(to),rows,truncated,
+            // MCP-09: these time-range tools have no offset; say plainly when the limit cut the range short.
+            status=truncated?status+$" Only the first {request.Limit} rows of the range: narrow from/to or raise limit (at most 500) for the rest.":status,last_heartbeat=heartbeat==0?null:Time(heartbeat),range_from=Time(from),range_to=Time(to),rows,truncated,
             lost_events=meta.GetValueOrDefault("lost_events"),missed_starts=meta.GetValueOrDefault("missed_starts"),unmatched_stops=meta.GetValueOrDefault("unmatched_stops"),dropped_batches=meta.GetValueOrDefault("dropped_batches"),
             notes="cpu_seconds is derived from CPU cycle counts at the nominal processor frequency. Usage buckets are 5 minutes. Processes shorter than 1 s with little CPU, I/O and memory are counted in their workload, not listed. Peak memory is peak private commit. command_line and working_directory come from the process start (secrets such as tokens, passwords and keys masked; at most 2,048 characters); runs recorded before 1.1.88 have only the executable path, and working_directory is null when the process ended or was protected before it could be read."
         };

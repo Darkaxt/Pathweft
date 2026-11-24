@@ -69,8 +69,13 @@ memory or starts) and `limit` (1..500, default 50).
   minutes) and locked state, lost-event counts and off gaps.
 
 Since 1.1.68 the same server is named Pathweft and also answers these read-only
-tools. Paged tools take `offset` and `limit` (1..500, default 100) and return
-Status, Rows, Total, Offset and Truncated. Arguments outside each schema are
+tools. Paged tools take `offset` and `limit` (1..500, default 100). Since 1.1.101
+(MCP-09) every paged answer, search_files included, has `status`, `rows`,
+`total`, `offset`, `limit`, `returned`, `has_more` and `next_offset` (null on the
+last page), and the status ends with "Rows 1-100 of 247. More rows: call again
+with offset 100" or "This is the last page". A full page of `limit` rows is one
+page, not a cap. Time-range tools without an offset say when `limit` cut the
+range short. Arguments outside each schema are
 structured errors, and paths must be absolute local or UNC.
 
 - get_maintenance(category, target): rows of Startup, Services, Windows tweaks,

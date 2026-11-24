@@ -1,6 +1,12 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.101 | 2026-11-25 | eBook previews
+
+- EPUB, FB2, MOBI and AZW3 books now open in the preview as pages, like PDFs: the cover, title and author on top, a Contents list to jump to a chapter, and page buttons and a page number at the bottom. Turning past a chapter's last page continues with the next chapter, and links inside the book work. DRM-protected books show their details and cover.
+- Mapped network drives such as M: work in administrator view again: network folders are always read with your own access, because administrator rights don't apply to a share.
+- For AI tools using Pathweft's MCP, every paged answer now says which rows it returned and where the next page starts, so a full page is no longer mistaken for a limit.
+
 ## 1.1.100 | 2026-11-24 | Live analysis is lighter with accessibility tools
 
 - The live CPU and RAM process lists reuse their rows when processes change places, build only the rows you can see and update only the values that changed, so screen readers, text and capture tools that watch Pathweft's window cost it less processor time while the live analysis is open.

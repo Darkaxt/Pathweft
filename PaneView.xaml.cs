@@ -606,7 +606,7 @@ public partial class PaneView : UserControl
         if(space is {} current)
         {
             current.Cancellation.Cancel();await current.Work;current.Cancellation.Dispose();current.Cancellation=new();
-            current.Administrator=AdministratorSession.Browsing;current.QuietRefresh=false;
+            current.Administrator=AdministratorSession.BrowsingFor(current.Root);current.QuietRefresh=false;
             current.ExpandedAfterAccess=current.Nodes.Values.Where(row=>row.Expanded).Select(row=>row.Path).ToHashSet(StringComparer.OrdinalIgnoreCase);
             current.SelectionAfterAccess=Selected.Select(row=>row.Path).ToHashSet(StringComparer.OrdinalIgnoreCase);
             lock(current.Mailbox){current.Pending.Clear();current.Seen.Clear();}
@@ -678,7 +678,7 @@ public partial class PaneView : UserControl
         bool foregroundLoading=loadingListing>=0;
         int v = GoTo(di.FullName, record,preserveAddress:refresh&&di.FullName.Equals(Dir,StringComparison.OrdinalIgnoreCase)&&!InSearch);
         ListingLoading(v,!refresh||foregroundLoading);
-        accessReading?.Cancel();accessReading?.Dispose();var access=accessReading=new();var accessToken=access.Token;bool administrator=AdministratorSession.Browsing;
+        accessReading?.Cancel();accessReading?.Dispose();var access=accessReading=new();var accessToken=access.Token;bool administrator=AdministratorSession.BrowsingFor(di.FullName);
         // Observe before reading or sizing: an installation can finish during either operation.
         if(watcher?.Path!=di.FullName)Watch();
 
@@ -861,9 +861,9 @@ public partial class PaneView : UserControl
                 if (stamp == 0 || Cached(path) is { } hit && hit.Stamp == stamp) continue; // already fresh
                 // Do not issue privileged reads speculatively. The explicit
                 // foreground navigation owns each administrator enumeration.
-                if(administrator)continue;
+                if(administrator&&!FileExplorer.Search.NetworkDrives.IsNetwork(path))continue;
                 var list = ReadFolder(new DirectoryInfo(path), hidden, out var error, out int concealed);
-                if (error == null && !cts.IsCancellationRequested) Dispatcher.BeginInvoke(() => {if(!cts.IsCancellationRequested&&!AdministratorSession.Browsing)Remember(path, list, stamp, hidden, concealed);});
+                if (error == null && !cts.IsCancellationRequested) Dispatcher.BeginInvoke(() => {if(!cts.IsCancellationRequested&&AdministratorSession.Browsing==administrator)Remember(path, list, stamp, hidden, concealed);});
             }
         }, cts.Token);
     }

@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using FileExplorer.Search;
 using Microsoft.Data.Sqlite;
@@ -25,7 +26,28 @@ internal static class McpTools
         ["get_boots"]=Ranged,["get_system_changes"]=Ranged,["get_insights"]=Ranged
     };
     // Bounded page of rows: the total is always reported, and whether more remain.
-    internal sealed record Page(string Status,object[] Rows,int Total,int Offset,bool Truncated);
+    // MCP-09 (owner, 2026-11-24: "If you, the owner of this product, couldn't tell the pagination system in the MCP...
+    // something needs improvement there"): every paged tool answers in one shape that says which rows it returned
+    // and where the next page starts, so a full page of `limit` rows is never mistaken for a cap.
+    internal sealed record Page(string Status,object[] Rows,int Total,int Offset,int Limit)
+    {
+        [JsonPropertyName("status")] public string Status{get;}=Paging(Status,Total,Offset,Rows.Length,Limit);
+        [JsonPropertyName("rows")] public object[] Rows{get;}=Rows;
+        [JsonPropertyName("total")] public int Total{get;}=Total;
+        [JsonPropertyName("offset")] public int Offset{get;}=Offset;
+        [JsonPropertyName("limit")] public int Limit{get;}=Limit;
+        [JsonPropertyName("returned")] public int Returned=>Rows.Length;
+        [JsonPropertyName("has_more")] public bool HasMore=>Offset+Rows.Length<Total;
+        [JsonPropertyName("next_offset")] public int? NextOffset=>HasMore?Offset+Rows.Length:null;
+    }
+    // "Rows 1-100 of 247. More rows: call again with offset 100 (limit up to 500)."
+    internal static string Paging(string status,long total,long offset,int returned,int limit)
+    {
+        string page=returned==0?(total==0?"No rows.":$"No rows at offset {offset}; there are {total}."):$"Rows {offset+1}-{offset+returned} of {total}.";
+        if(offset+returned<total&&returned>0)page+=$" More rows: call again with offset {offset+returned}"+(limit<500?" (limit up to 500).":".");
+        else if(returned>0)page+=" This is the last page.";
+        return string.IsNullOrEmpty(status)?page:status.TrimEnd()+" "+page;
+    }
 
     sealed class Arguments(JsonElement value)
     {
@@ -108,7 +130,7 @@ internal static class McpTools
     static Page Bound(IEnumerable<object> rows,int offset,int limit,string status)
     {
         var all=rows.ToArray();var page=all.Skip(offset).Take(limit).ToArray();
-        return new(status,page,all.Length,offset,offset+page.Length<all.Length);
+        return new(status,page,all.Length,offset,limit);
     }
     static string Time(DateTime value)=>value==default||value.Year<1602?null:new DateTimeOffset(value.ToUniversalTime()).ToString("O",CultureInfo.InvariantCulture);
 
@@ -123,7 +145,7 @@ internal static class McpTools
             if(target!=null&&targets.Length==0)throw new ArgumentException("Unknown Cleanup target. Targets: "+string.Join(", ",CleanupReview.Targets.Select(t=>t.Id)));
             var rows=new List<object>();
             foreach(var item in targets.Skip(offset).Take(limit))rows.Add(await CleanupSize(item,cancel));
-            return new Page("Cleanup size report; the Maintenance tab still reviews the exact files before cleaning. Nothing was removed.",rows.ToArray(),targets.Length,offset,offset+rows.Count<targets.Length);
+            return new Page("Cleanup size report; the Maintenance tab still reviews the exact files before cleaning. Nothing was removed.",rows.ToArray(),targets.Length,offset,limit);
         }
         string status=category=="Security check"?"Read as the signed-in user; values only administrators can read are marked, never guessed.":"Read as the signed-in user, as the Maintenance tab shows it.";
         SecurityFinding[] elevated=null;
@@ -287,10 +309,12 @@ internal static class McpTools
         var page=await IndexedSearch.SearchAsync(query,(uint)offset,(uint)limit,sort.ToLowerInvariant(),descending,switches,cancel,visibleOnly,locations);
         return new
         {
-            status=page.Engine+(page.Updating?" · index updating, results may be incomplete":""),
+            status=Paging(page.Engine+(page.Updating?" · index updating, results may be incomplete.":"."),page.Total,offset,page.Hits.Count,limit),
             // MCP-08: the service's own fields, so a client can tell "no match" from a store still loading.
             updating=page.Updating,updating_stores=page.UpdatingStores??[],elapsed_us=page.ElapsedUs,
-            total=page.Total,offset,truncated=offset+page.Hits.Count<page.Total,
+            // MCP-09: the same paging fields as every other paged tool.
+            total=page.Total,offset,limit,returned=page.Hits.Count,has_more=offset+page.Hits.Count<page.Total,
+            next_offset=offset+page.Hits.Count<page.Total?offset+page.Hits.Count:(long?)null,
             rows=page.Hits.Select(x=>new
             {
                 path=x.Path,type=x.IsFolder?"folder":"file",size_bytes=x.Size>=0?x.Size:(long?)null,created=Time(x.Created),modified=Time(x.Modified),attributes=x.Attributes is {} a?((FileAttributes)a).ToString():null,visible=x.Visible,
@@ -338,10 +362,10 @@ internal static class McpTools
             "list_folder"=>"Entries of one folder (name, file/folder, size, modified, attributes, link target), folders first. Metadata only.",
             "get_file_details"=>"Size, created/modified/accessed times, attributes, link target and, for executables, version, product, company and description.",
             "get_folder_size"=>"A folder's total size from the Pathweft index or Pathweft's current cached size; never starts a scan, unknown when neither has it. Give path for one folder or paths for up to 1,024 at once.",
-            "search_files"=>"Search all indexed files and folders with the Pathweft index service, in Everything-style syntax (wildcards, quotes, AND by space, | OR, ! NOT, < > groups, path:, nopath:, parent:, file:, folder:, ext:, size:, dm:, dc:, case:, ww:, wfn:, regex:). Unsupported functions are refused with a message. Paged with offset/limit and the total. updating and updating_stores tell a real no-match from a store still loading or scanning. visible_only keeps only what the signed-in user can open. locations (content: queries) returns where up to that many matching chunks start in each file (line, column and byte offset for text; page, sheet or similar for documents), never the text.",
+            "search_files"=>"Search all indexed files and folders with the Pathweft index service, in Everything-style syntax (wildcards, quotes, AND by space, | OR, ! NOT, < > groups, path:, nopath:, parent:, file:, folder:, ext:, size:, dm:, dc:, case:, ww:, wfn:, regex:). Unsupported functions are refused with a message. Paged: each answer has total, returned, has_more and next_offset (default limit 100, at most 500). updating and updating_stores tell a real no-match from a store still loading or scanning. visible_only keeps only what the signed-in user can open. locations (content: queries) returns where up to that many matching chunks start in each file (line, column and byte offset for text; page, sheet or similar for documents), never the text.",
             "get_index_status"=>"The Pathweft index service's own status: version, protocol, memory, and per store (drive or folder) its kind, state (loading, scanning, reloading, ready, offline, error, waiting-for-user), items, folders, last error and owner. Use it to tell an empty result from an offline or still-loading store.",
             "get_content_status"=>"Content index coverage: per content-indexed folder the files that are current, pending, stale, failed, unsupported or unavailable, the store size and the files waiting, with each folder's added and reconciled times. An empty list means content: queries match nothing. Read-only.",
-            "get_content_state"=>"Content index state of each file directly in one folder (not subfolders): pending, current, stale, failed, unsupported or unavailable, when it was last indexed and its error. Paged with offset/limit.",
+            "get_content_state"=>"Content index state of each file directly in one folder (not subfolders): pending, current, stale, failed, unsupported or unavailable, when it was last indexed and its error. Paged: total, returned, has_more and next_offset.",
             "get_boots"=>"Recorded Windows starts from Windows' boot diagnostics: seconds to desktop, settled seconds, startup apps, and what slowed it. Defaults to the last 30 days.",
             "get_system_changes"=>"Windows updates and driver/feature changes from Windows' logs plus installed-app changes Pathweft already saved (no new baseline is taken). Defaults to the last 30 days.",
             _=>"Derived findings as in Pathweft's Insights view: memory pressure, large memory holders, sustained CPU, slower Windows startup. Defaults to the last 30 days."
@@ -356,8 +380,8 @@ internal static class McpTools
             "query"=>new{type="string",maxLength=8192,description="Everything-style search syntax as accepted by the Pathweft index (docs/index-service/PROTOCOL.md)"},
             "sort"=>new{type="string",@enum=new[]{"name","path","size","extension","created","modified"}},
             "match_path" or "match_case" or "whole_word" or "regex" or "descending" or "visible_only"=>new{type="boolean"},
-            "offset"=>new{type="integer",minimum=0},
-            "limit"=>new{type="integer",minimum=1,maximum=500},
+            "offset"=>new{type="integer",minimum=0,description="Rows to skip (default 0). Continue a listing with the previous answer's next_offset"},
+            "limit"=>new{type="integer",minimum=1,maximum=500,description="Rows per page (default 100, at most 500). A full page is not a cap: total, has_more and next_offset tell whether more rows follow"},
             "last_minutes"=>new{type="integer",minimum=1,maximum=43200},
             _=>(object)new{type="string",format="date-time"}
         })),required=name switch{"get_maintenance"=>new[]{"category"},"list_folder" or "get_file_details"=>new[]{"path"},"get_content_state"=>new[]{"folder"},"search_files"=>new[]{"query"},_=>Array.Empty<string>()},additionalProperties=false},

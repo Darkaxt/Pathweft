@@ -1,0 +1,8 @@
+calibre (https://github.com/kovidgoyal/calibre), commit 8f8119ef2d4fb902540022b7a8b0bcb7080c85a7
+Copyright (C) Kovid Goyal and calibre contributors. GNU General Public License version 3 (LICENSE, COPYRIGHT).
+
+Pathweft's eBook preview (Preview/Ebook) adapts calibre's MOBI/KF8 reading (PalmDB and MOBI/EXTH headers,
+PalmDOC and HUFF/CDIC decompression, trailing entries, INDX/TAGX/CNCX indexes, KF8 skeleton and fragment
+assembly, NCX, guide TOC). EPUB and FB2 reading is Pathweft code. The original files it was
+adapted from are under original/ with their SHA-256 in source-manifest.json. calibre itself does not ship
+or run with Pathweft. Pathweft as a whole is GPL-3.0-or-later.

@@ -100,7 +100,7 @@ public partial class PaneView
         if(ResumeSpace())return; // this folder's analysis is still kept from another tab
         if(!CanAnalyzeSpace)return;
         var sizingStopped=StopSizingAsync();
-        var current=new SpaceView{Root=Dir};SaveListing(current);
+        var current=new SpaceView{Root=Dir,Administrator=AdministratorSession.BrowsingFor(Dir)};SaveListing(current);
         ++navVersion;prefetching?.Cancel();space=current;
         StopColumns();icons?.Cancel();thumbs?.Cancel();
         current.Nodes[current.Root]=new SpaceEntry{Path=current.Root,Name=Path.GetFileName(current.Root),IsDir=true,Depth=-1,Expanded=true,State=SpaceState.Pending};

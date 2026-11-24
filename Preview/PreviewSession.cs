@@ -84,7 +84,7 @@ internal sealed class PreviewSession : IDisposable
                 IViewer candidate = module.Id switch
                 {
                     "f3d"=>new F3dViewer(owner),"html"=>new HtmlViewer(entry),"csv"=>new CsvViewer(owner),
-                    "database"=>new DatabaseViewer(owner),"mail"=>new MailViewer(entry),"certificate"=>new CertificateViewer(owner),
+                    "database"=>new DatabaseViewer(owner),"mail"=>new MailViewer(entry),"certificate"=>new CertificateViewer(owner),"ebook"=>new Ebook.EbookViewer(owner,entry),
                     "design"=>new DesignThumbnailViewer(),"binary"=>new BinaryViewer(owner),"office"=>new OfficeViewer(owner,entry),"photocraft"=>new OfficeViewer(owner,entry,"photocraft"),"vectorcraft"=>new OfficeViewer(owner,entry,"vectorcraft"),"figcraft"=>new OfficeViewer(owner,entry,"figcraft"),"pdfcraft"=>new OfficeViewer(owner,entry,"pdfcraft"),"chm"=>new CompiledHelpViewer(owner,entry),"shortcut"=>new ShortcutViewer(owner),"registry"=>new RegistryViewer(owner),
                     "app" or "elf" or "dump" or "prefetch" or "clsid" or "mediainfo"=>new InspectionViewer(module.Id),
                     _=>new BuiltinViewer(module, owner, entry)

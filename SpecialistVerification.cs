@@ -65,6 +65,7 @@ public partial class MainWindow
         if(Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO") is "menus" or "menus-ui"){await VerifyMenus9(root,check);return;}
         if(Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO")=="icons"){await VerifyCommandIcons13(root,check);return;}
         if(Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO")=="sizes"){await VerifySizes18(root,check);return;}
+        if(Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO")=="ebook"){await VerifyEbooks(root,check);return;}
         if(Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO")=="pdf"){await VerifyPdfNavigation13(root,check);return;}
         if(Environment.GetEnvironmentVariable("PATHWEFT_SPECIALIST_SCENARIO")=="existing")
         {

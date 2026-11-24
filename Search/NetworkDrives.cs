@@ -45,6 +45,14 @@ internal static class NetworkDrives
         }
     }
 
+    // A \\server\share path or a path on a mapped network letter (M:, the Tresorit T:); not \\?\ or \\.\ device paths.
+    internal static bool IsNetwork(string path)
+    {
+        if (string.IsNullOrEmpty(path)) return false;
+        if (path.StartsWith(@"\\")) return !path.StartsWith(@"\\?\") && !path.StartsWith(@"\\.\");
+        return path.Length >= 2 && path[1] == ':' && char.IsAsciiLetter(path[0]) && Mapped().ContainsKey(char.ToUpperInvariant(path[0]));
+    }
+
     static bool Covers(string store, string path)
         => path.StartsWith(store, StringComparison.OrdinalIgnoreCase) && (path.Length == store.Length || path[store.Length] == '\\');
     static string Root(string store) => store.TrimEnd('\\');

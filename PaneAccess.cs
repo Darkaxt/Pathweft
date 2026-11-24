@@ -11,12 +11,15 @@ public partial class PaneView
     internal static bool IsAccessDenied(Exception error)=>error is UnauthorizedAccessException or System.Security.SecurityException
         ||error is Win32Exception{NativeErrorCode:5};
 
+    // ACCESS-09: administrator access cannot open a network folder, so it is not offered there.
+    bool OffersAdministrator=>folderDenied&&!AdministratorSession.Browsing&&!FileExplorer.Search.NetworkDrives.IsNetwork(Dir);
     void ShowFolderFailure(Exception error)
     {
         folderDenied=IsAccessDenied(error);
         FolderFailureTitle.Text=folderDenied?"Access denied":"Folder unavailable";
         FolderFailureDetails.Text=folderDenied
-            ? AdministratorSession.Browsing?"Windows still denies access to this folder with administrator access.":"Use administrator access to open this folder."
+            ? FileExplorer.Search.NetworkDrives.IsNetwork(Dir)?"The share denies access to this folder. Administrator access does not apply to network folders."
+            : AdministratorSession.Browsing?"Windows still denies access to this folder with administrator access.":"Use administrator access to open this folder."
             : error.Message;
         FolderFailureDetails.ToolTip=error.Message;
         FolderFailurePanel.Visibility=Visibility.Visible;
@@ -32,12 +35,12 @@ public partial class PaneView
     }
     internal void UpdateFolderAccessAction(bool enabled)
     {
-        FolderAccessAction.Content=folderDenied&&!AdministratorSession.Browsing?"Use administrator access":"Try again";
+        FolderAccessAction.Content=OffersAdministrator?"Use administrator access":"Try again";
         FolderAccessAction.IsEnabled=enabled;
     }
     void FolderAccess_Click(object sender,RoutedEventArgs args)
     {
-        if(folderDenied&&!AdministratorSession.Browsing)AdministratorRequested?.Invoke();
+        if(OffersAdministrator)AdministratorRequested?.Invoke();
         else if(SpaceAnalyzing)RefreshSpace(force:true,measure:true);
         else Refresh();
     }

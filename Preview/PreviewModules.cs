@@ -43,6 +43,7 @@ internal static class PreviewModules
         new("image", "Images", "WIC images, decoded to fit the preview without retaining the source file.", 90,
             new[] { ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".ico", ".tif", ".tiff", ".heic" }),
         new("pdf", "PDF", "Windows PDF rendering with page navigation; no document scripts.", 90, new[] { ".pdf" }),
+        new("ebook", "eBooks", "EPUB, FB2, MOBI and AZW3 books as native pages with contents, cover and page navigation; no scripts or web content.", 90, Ebook.EbookViewer.Extensions),
         new("html", "HTML", "Static HTML with local images and styling. Scripts, online content and downloads stay disabled.", 90, new[] { ".html", ".htm" }),
         new("executable", "Executable details", "Version resources, architecture and file details without running the application.", 90, new[] { ".exe" }),
         new("archive", "Folders and archives", "Expandable folder and archive trees without extracting or running entries.", 90, Array.Empty<string>()),

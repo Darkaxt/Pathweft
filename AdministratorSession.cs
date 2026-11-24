@@ -23,6 +23,10 @@ internal sealed class AdministratorSession : IAsyncDisposable
     internal static bool Available=>current is { } session&&!session.stopped.IsCancellationRequested;
     internal static event Action Changed;
     internal static void SetBrowsing(bool enabled){Browsing=enabled&&Available;Changed?.Invoke();}
+    // ACCESS-09 (owner 2026-11-24: "M: break when I enable the admin view"): a mapped drive exists only in the logon
+    // session that mapped it, so the elevated helper has no M:, and administrator rights grant nothing on a network
+    // share (the server checks the user's network credentials). Network folders are read with standard access.
+    internal static bool BrowsingFor(string path)=>Browsing&&!FileExplorer.Search.NetworkDrives.IsNetwork(path);
     readonly SemaphoreSlim commands=new(1);
     readonly SemaphoreSlim operations=new(8);
     readonly CancellationTokenSource stopped=new();
