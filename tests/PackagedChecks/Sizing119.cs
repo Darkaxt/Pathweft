@@ -57,11 +57,15 @@ sealed partial class PackageProbe
         pane.StatsChanged+=AnalysisChanged;
         try
         {
-            var replacement=SizeReady(()=>pane.FolderTotal==591&&!pane.SizesPending);
-            await Task.Run(()=>{using var stream=File.OpenWrite(Path.Combine(nested,"payload.bin"));stream.SetLength(591);});await replacement;await (Task)Get(pane,"SpaceCompletion");
-            Check(!analysisNoise&&ReferenceEquals(list.SelectedItem,selected),"Delivered watched analysis replaces a completed branch without flashing states or losing selection");
-            replacement=SizeReady(()=>pane.FolderTotal==579&&!pane.SizesPending);
-            await Task.Run(()=>{using var stream=File.OpenWrite(Path.Combine(nested,"payload.bin"));stream.SetLength(579);});await replacement;await (Task)Get(pane,"SpaceCompletion");
+            // CORE-30: the analysis is a snapshot; a change on disk only marks it changed, and F5 refreshes it.
+            var stale=SizeReady(()=>(bool)Get(pane,"SpaceStale"));
+            await Task.Run(()=>{using var stream=File.OpenWrite(Path.Combine(nested,"payload.bin"));stream.SetLength(591);});await stale;await (Task)Get(pane,"SpaceCompletion");
+            Check(pane.FolderTotal==579&&((TextBlock)pane.FindName("Footer")).Text.Contains("F5 to refresh"),"Delivered analysis keeps its snapshot after a change on disk and says F5 refreshes it");
+            pane.Refresh(force:true);await (Task)Get(pane,"SpaceCompletion");
+            Check(pane.FolderTotal==591&&!(bool)Get(pane,"SpaceStale")&&!analysisNoise&&ReferenceEquals(list.SelectedItem,selected),"Delivered F5 refreshes the analysis without flashing states or losing selection");
+            await Task.Run(()=>{using var stream=File.OpenWrite(Path.Combine(nested,"payload.bin"));stream.SetLength(579);});
+            pane.Refresh(force:true,measure:true);await (Task)Get(pane,"SpaceCompletion");
+            Check(pane.FolderTotal==579,"Delivered Ctrl+R measures the analysis on disk");
         }
         finally{pane.StatsChanged-=AnalysisChanged;}
         foreach(string name in new[]{"HiddenToggle","PanesCommand","PreviewCommand","AnalyzeSpaceCommand"})
