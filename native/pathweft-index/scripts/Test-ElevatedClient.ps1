@@ -26,7 +26,10 @@ param(
     [string[]]$Exes = @(),
     [string]$Letter = 'Q:'
 )
-$ErrorActionPreference = 'Stop'
+$ErrorActionPreference = 'Continue'   # native stderr must not throw in Windows PowerShell 5.1; failures are checked explicitly
+# powershell -File passes "old,new" as one string.
+$Rounds = @($Rounds | ForEach-Object { $_ -split ',' } | Where-Object { $_ })
+$Exes = @($Exes | ForEach-Object { $_ -split ',' } | Where-Object { $_ })
 
 function Status([string]$pipe) {
     $json = & $Pwindex --pipe $pipe status --json 2>$null
