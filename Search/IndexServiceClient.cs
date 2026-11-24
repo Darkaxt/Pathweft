@@ -35,7 +35,7 @@ internal sealed class IndexServiceClient(string pipeName)
     {
         long now = Environment.TickCount64;
         long at = Interlocked.Read(ref storesAt);
-        if (now - at < (long)StoresFor.TotalMilliseconds || Interlocked.CompareExchange(ref storesAt, now, at) != at) return stores;
+        if ((at != long.MinValue && now - at < (long)StoresFor.TotalMilliseconds) || Interlocked.CompareExchange(ref storesAt, now, at) != at) return stores;
         try
         {
             using var reply = await TryRequestAsync(new { op = "status" }, token).ConfigureAwait(false);

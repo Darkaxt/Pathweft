@@ -29,7 +29,7 @@ internal static class NetworkDrives
 #endif
         lock (gate)
         {
-            if (Environment.TickCount64 - resolvedAt < (long)Refresh.TotalMilliseconds) return mapped;
+            if (resolvedAt != long.MinValue && Environment.TickCount64 - resolvedAt < (long)Refresh.TotalMilliseconds) return mapped;
             var current = new Dictionary<char, string>();
             uint bits = GetLogicalDrives();
             for (int i = 0; i < 26; i++)
