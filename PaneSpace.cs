@@ -63,6 +63,9 @@ public partial class PaneView
         internal string WaitingForIndex,IndexProblem;
         internal CancellationTokenSource IndexWaiting;
         internal bool Stale; // changed on disk since this snapshot (CORE-30)
+        // CORE-32: when the analysis's watcher last saw a change (Environment.TickCount64). A file's size can change without
+        // its folder's write time, so F5 asks the index once it has had IndexedSearch.CatchUp to read that change.
+        internal long ChangedAt=long.MinValue;
         internal HashSet<string> ExpandedAfterAccess=new(StringComparer.OrdinalIgnoreCase);
         internal HashSet<string> SelectionAfterAccess=new(StringComparer.OrdinalIgnoreCase);
         // While its tab is in the background: what was selected and where the tree was scrolled.
@@ -241,7 +244,9 @@ public partial class PaneView
             {
                 using var waiting=current.IndexWaiting=CancellationTokenSource.CreateLinkedTokenSource(current.Cancellation.Token);
                 (FileExplorer.Search.IndexedSearch.Coverage Coverage,string Detail) coverage;
-                try{coverage=await FileExplorer.Search.IndexedSearch.WaitForStoreAsync(current.Root,store=>Dispatcher.BeginInvoke(()=>{if(current.IndexWaiting!=waiting||waiting.IsCancellationRequested)return;current.WaitingForIndex=store;if(space==current)UpdateSpaceFooter();}),waiting.Token);}
+                try{coverage=await FileExplorer.Search.IndexedSearch.WaitForStoreAsync(current.Root,store=>Dispatcher.BeginInvoke(()=>{if(current.IndexWaiting!=waiting||waiting.IsCancellationRequested)return;current.WaitingForIndex=store;if(space==current)UpdateSpaceFooter();}),waiting.Token);
+                    if(current.ChangedAt!=long.MinValue&&current.ChangedAt+(long)FileExplorer.Search.IndexedSearch.CatchUp.TotalMilliseconds-Environment.TickCount64 is var catchUp and >0)
+                        await Task.Delay(TimeSpan.FromMilliseconds(catchUp),waiting.Token);}
                 catch(OperationCanceledException)when(!current.Cancellation.IsCancellationRequested){return;} // Ctrl+R: its pass measures on disk
                 finally{current.IndexWaiting=null;if(current.WaitingForIndex!=null){current.WaitingForIndex=null;if(space==current)UpdateSpaceFooter();}}
                 if(coverage.Coverage==FileExplorer.Search.IndexedSearch.Coverage.Unavailable){current.IndexProblem=coverage.Detail;preferIndex=false;}
@@ -465,7 +470,7 @@ public partial class PaneView
         SpaceScan.IndexObserved?.Invoke(current.Root,"Refresh: force="+force+" measure="+measure);
 #endif
         current.Changed=true;
-        if(!force){if(!current.RefreshRequested&&!current.Stale){current.Stale=true;UpdateSpaceFooter();StatsChanged?.Invoke();}return;}
+        if(!force){current.ChangedAt=Environment.TickCount64;if(!current.RefreshRequested&&!current.Stale){current.Stale=true;UpdateSpaceFooter();StatsChanged?.Invoke();}return;}
         current.FullRefresh=true;current.Measure|=measure;current.Stale=false;
         if(measure)current.IndexWaiting?.Cancel(); // CORE-32: Ctrl+R does not wait for the index
         if(current.RefreshRequested)return;
