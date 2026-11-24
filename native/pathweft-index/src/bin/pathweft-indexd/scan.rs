@@ -254,7 +254,7 @@ pub fn run(svc: Arc<Service>, slot: Arc<Slot>, root: FolderRoot) {
     let mut watcher: Option<Watcher> = None;
     while !slot.stopping() && !svc.stopping() {
         let Some(token) = svc.tokens.get(&root.owner) else {
-            // The owner's token arrives with that user's next pipe connection.
+            // The owner's token arrives with that user's next standard (not elevated) pipe connection.
             slot.set_state("waiting-for-user");
             slot.wait(Duration::from_secs(5));
             continue;

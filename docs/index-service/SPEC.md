@@ -55,7 +55,18 @@ completes and swaps; live service reports per-volume `ready` with a moving USN.
 `folder add` (FAT32 H:, J:, the M: share, or T: if the owner opts it in) are
 listed recursively on a background thread in Windows background-priority mode,
 impersonating the user who added them (so the user's drive mappings and
-credentials apply). A rescan builds a new tree and swaps it in; the old tree keeps
+credentials apply). That is the user's standard token: an elevated connection
+from the same user (Pathweft's administrator view) belongs to another logon
+session, without the user's mappings or share credentials, and never replaces
+it; a user seen only elevated waits (`waiting-for-user`) for a standard
+connection (owner, 2026-11-24: switching to administrator view "broke the
+indexing status ... we are only filtering out results, so the filtering
+shouldn't just break"; the log showed `T:: cannot list T:: error 3`).
+*Accept (elevated owner):* unit test that an elevated connection neither
+replaces nor supplies the scan token; `scripts/Test-ElevatedClient.ps1` on a
+private elevated console instance: a root on a drive mapped only in the
+standard session, rescanned at an elevated client's request, scans without
+`cannot list` (the 1.1.94 binary is the failing baseline). A rescan builds a new tree and swaps it in; the old tree keeps
 answering. Reparse points are not followed. A full rescan runs at start-up, on an
 explicit `rescan` and after a notification overflow. Nothing is scanned by default; T: is never indexed unless the
 owner adds it.
@@ -143,7 +154,8 @@ always run with admin view, since its purpose is to enumerate problematic
 folders"). Every match is returned with `visible`: whether the caller's token
 is granted `FILE_LIST_DIRECTORY` on the entry's parent directory (`AccessCheck`
 of the caller's impersonation token against the parent's security descriptor,
-cached per caller SID and NTFS security ID). Entries of a scanned root added by
+cached per caller SID, elevation and NTFS security ID, so the standard and
+administrator views of the same user never share answers). Entries of a scanned root added by
 another SID are `visible: false`. The request option `visible_only` filters
 before counting and paging. Folder sizes are always the administrator view
 (everything indexed). Only names and metadata are exposed; raw volume handles

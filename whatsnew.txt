@@ -1,6 +1,10 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.95 | 2026-11-24 | Administrator view keeps the index
+
+- Switching to administrator view no longer breaks indexing of other drives and network shares, such as T:, H: and mapped shares. The index service read them with the administrator view's token, which cannot see your mapped drives, so they failed with "path not found". They are now always read as you, and the administrator view and the normal view keep their own record of which folders each may open.
+
 ## 1.1.94 | 2026-11-23 | Analyze space is a snapshot
 
 - Analyze space no longer follows changes on disk. It shows the sizes as they were when it was opened, like WizTree or WinDirStat, and keeps the processor quiet on a drive that changes all the time. When something changes, the footer says so; press F5 to refresh from the Pathweft index service, or Ctrl+R to measure everything on disk.

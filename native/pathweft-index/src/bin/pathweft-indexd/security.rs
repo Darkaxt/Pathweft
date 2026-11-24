@@ -2,8 +2,9 @@
 //! when the caller's token is granted FILE_LIST_DIRECTORY on its parent
 //! directory. Security descriptors are read as SYSTEM with backup semantics
 //! (no data access, no recall) and checked with AccessCheck against the
-//! caller's impersonation token. Results are cached per (caller SID, store,
-//! NTFS security ID).
+//! caller's impersonation token. Results are cached per (caller SID,
+//! elevation, store, NTFS security ID): the same user's standard and elevated
+//! (administrator view) tokens list different folders.
 
 use crate::log::warning;
 use crate::state::{Kind, Service};
@@ -76,6 +77,8 @@ pub fn pipe_sddl(allowed: &[String]) -> String {
 pub struct ClientToken {
     pub token: Handle,
     pub sid: String,
+    /// The elevated half of a split token (Pathweft's administrator view).
+    pub elevated: bool,
 }
 
 /// Captures the pipe client's impersonation token. Must be called after the
@@ -94,12 +97,17 @@ pub fn client_token(pipe: HANDLE) -> Result<ClientToken, String> {
         }
         let token = Handle(token);
         let sid = token_user_sid(token.raw()).ok_or("caller SID unavailable")?;
-        Ok(ClientToken { token, sid })
+        let elevated = token_elevated(token.raw());
+        Ok(ClientToken { token, sid, elevated })
     }
 }
 
 /// Duplicated user tokens, kept so folder scans can run as the user who
-/// added the folder. Refreshed on every connection from that user.
+/// added the folder. Refreshed on every standard connection from that user.
+/// An elevated connection (Pathweft's administrator view) is never kept: its
+/// token belongs to another logon session, which has none of the user's drive
+/// mappings or share credentials, so T:, H: and network roots read as "path
+/// not found" (SPEC IDX-03).
 #[derive(Default)]
 pub struct TokenCache {
     map: Mutex<HashMap<String, Arc<Handle>>>,
@@ -107,6 +115,9 @@ pub struct TokenCache {
 
 impl TokenCache {
     pub fn remember(&self, client: &ClientToken) {
+        if !scans_with(client) {
+            return;
+        }
         unsafe {
             let mut dup: HANDLE = std::ptr::null_mut();
             if DuplicateTokenEx(
@@ -127,10 +138,15 @@ impl TokenCache {
     }
 }
 
-/// (caller SID, slot, security ID) -> listable, cleared every 15 minutes so
-/// changed permissions take effect.
+/// Whether folder scans may run with this caller's token (SPEC IDX-03).
+fn scans_with(client: &ClientToken) -> bool {
+    !client.elevated
+}
+
+/// (caller SID, elevated, slot, security ID) -> listable, cleared every 15
+/// minutes so changed permissions take effect.
 pub struct AccessCache {
-    map: Mutex<(Instant, HashMap<(String, usize, u32), bool>)>,
+    map: Mutex<(Instant, HashMap<(String, bool, usize, u32), bool>)>,
 }
 
 impl Default for AccessCache {
@@ -142,16 +158,16 @@ impl Default for AccessCache {
 const ACCESS_TTL: Duration = Duration::from_secs(15 * 60);
 
 impl AccessCache {
-    fn get(&self, sid: &str, slot: usize, sec: u32) -> Option<bool> {
+    fn get(&self, client: &ClientToken, slot: usize, sec: u32) -> Option<bool> {
         let mut m = self.map.lock().unwrap();
         if m.0.elapsed() > ACCESS_TTL {
             m.0 = Instant::now();
             m.1.clear();
         }
-        m.1.get(&(sid.to_string(), slot, sec)).copied()
+        m.1.get(&(client.sid.clone(), client.elevated, slot, sec)).copied()
     }
-    fn put(&self, sid: &str, slot: usize, sec: u32, value: bool) {
-        self.map.lock().unwrap().1.insert((sid.to_string(), slot, sec), value);
+    fn put(&self, client: &ClientToken, slot: usize, sec: u32, value: bool) {
+        self.map.lock().unwrap().1.insert((client.sid.clone(), client.elevated, slot, sec), value);
     }
 }
 
@@ -190,7 +206,7 @@ impl<'a> CallerAccess<'a> {
             let found = store.read().unwrap().full_path(u.dir, &mut path);
             let verdict = if found { list_access(&path, self.client.token.raw()) } else { None };
             match verdict {
-                Some(v) => self.svc.access.put(&self.client.sid, u.slot, u.sec, v),
+                Some(v) => self.svc.access.put(self.client, u.slot, u.sec, v),
                 None => {
                     self.local.lock().unwrap().insert((u.slot, u.sec), false);
                 }
@@ -210,7 +226,7 @@ impl Access for CallerAccess<'_> {
         if let Some(&v) = self.local.lock().unwrap().get(&(slot, sec)) {
             return Some(v);
         }
-        self.svc.access.get(&self.client.sid, slot, sec)
+        self.svc.access.get(self.client, slot, sec)
     }
 }
 
@@ -271,5 +287,48 @@ pub fn list_access(path: &str, token: HANDLE) -> Option<bool> {
             return Some(false);
         }
         Some(status != 0)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// This process's own token as a pipe client of the given elevation.
+    fn client(elevated: bool) -> ClientToken {
+        unsafe {
+            let mut token: HANDLE = std::ptr::null_mut();
+            assert_ne!(OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY | TOKEN_DUPLICATE | TOKEN_IMPERSONATE, &mut token), 0);
+            let token = Handle(token);
+            let sid = token_user_sid(token.raw()).unwrap();
+            ClientToken { token, sid, elevated }
+        }
+    }
+
+    #[test]
+    fn folder_scans_keep_the_standard_token() {
+        let tokens = TokenCache::default();
+        let elevated = client(true);
+        tokens.remember(&elevated);
+        assert!(tokens.get(&elevated.sid).is_none(), "an elevated-only user waits for a standard connection");
+        let standard = client(false);
+        tokens.remember(&standard);
+        let kept = tokens.get(&standard.sid).expect("standard token kept");
+        tokens.remember(&elevated);
+        let after = tokens.get(&standard.sid).unwrap();
+        assert!(Arc::ptr_eq(&kept, &after), "an elevated connection must not replace the standard token");
+        tokens.remember(&standard);
+        assert!(!Arc::ptr_eq(&after, &tokens.get(&standard.sid).unwrap()), "a standard connection refreshes it");
+    }
+
+    #[test]
+    fn visibility_is_cached_per_elevation() {
+        let cache = AccessCache::default();
+        let (standard, elevated) = (client(false), client(true));
+        cache.put(&elevated, 1, 7, true);
+        assert_eq!(cache.get(&standard, 1, 7), None, "the administrator view's answer is not the standard one");
+        cache.put(&standard, 1, 7, false);
+        assert_eq!(cache.get(&standard, 1, 7), Some(false));
+        assert_eq!(cache.get(&elevated, 1, 7), Some(true));
     }
 }

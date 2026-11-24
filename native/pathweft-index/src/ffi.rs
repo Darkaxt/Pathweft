@@ -72,6 +72,9 @@ pub const TOKEN_ALL_ACCESS: u32 = 0x000F_01FF;
 pub const SE_PRIVILEGE_ENABLED: u32 = 2;
 pub const TOKEN_USER_CLASS: u32 = 1;
 pub const TOKEN_IMPERSONATION_LEVEL_CLASS: u32 = 9;
+pub const TOKEN_ELEVATION_TYPE_CLASS: u32 = 18;
+/// TOKEN_ELEVATION_TYPE: the elevated half of a split (UAC) token.
+pub const TOKEN_ELEVATION_TYPE_FULL: i32 = 2;
 pub const SECURITY_IMPERSONATION_LEVEL_IMPERSONATION: i32 = 2;
 pub const TOKEN_TYPE_IMPERSONATION: i32 = 2;
 
@@ -467,6 +470,16 @@ pub fn token_user_sid(token: HANDLE) -> Option<String> {
         let sid = *(buf.as_ptr() as *const *mut c_void);
         sid_string(sid)
     }
+}
+
+/// Whether a token is the elevated half of a split (UAC) token. A
+/// non-split token (UAC off, built-in Administrator) is not elevated in this
+/// sense: it is the user's only token.
+pub fn token_elevated(token: HANDLE) -> bool {
+    let mut kind: i32 = 0;
+    let mut needed = 0u32;
+    let ok = unsafe { GetTokenInformation(token, TOKEN_ELEVATION_TYPE_CLASS, &mut kind as *mut i32 as *mut c_void, 4, &mut needed) };
+    ok != 0 && kind == TOKEN_ELEVATION_TYPE_FULL
 }
 
 /// The current process token's user SID.
