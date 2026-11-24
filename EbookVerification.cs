@@ -46,7 +46,7 @@ public partial class MainWindow
                 "EPUB title, author, format, publisher, year and cover are shown above the pages");
             check(viewer.ContentsForVerification.Items.Count == 3 && ((ComboBoxItem)viewer.ContentsForVerification.Items[2]).Content.ToString().Trim() == "Night", "The EPUB 3 navigation document fills the contents picker with its nested entries");
             check(await Until(() => Label().StartsWith("Page 1 of ") && Label().EndsWith(" · Part 1 of 2") && viewer.PagesForVerification.PageCount > 1), "The first chapter is laid out as several pages: " + Label());
-            var document = viewer.PagesForVerification.Document;
+            var document = (FlowDocument)viewer.PagesForVerification.Document;
             check(LogicalTreeHelper.GetChildren(document).OfType<object>().Any() && FlowDescendants(document).OfType<InlineUIContainer>().Any(c => c.Child is Image { Source: not null }) && FlowDescendants(document).OfType<Bold>().Any() && FlowDescendants(document).OfType<Table>().Any() && FlowDescendants(document).OfType<List>().Any(),
                 "Chapter markup becomes native flow content: images from the book, emphasis, lists and tables");
             int firstPages = viewer.PagesForVerification.PageCount;
@@ -58,7 +58,7 @@ public partial class MainWindow
             check(await Until(() => viewer.ChapterForVerification == 1 && viewer.PagesForVerification.MasterPageNumber > 1), "Choosing a contents entry opens its chapter at the entry's place (page " + viewer.PagesForVerification.MasterPageNumber + ")");
             viewer.ContentsForVerification.SelectedIndex = 0;
             await Until(() => viewer.ChapterForVerification == 0);
-            var link = FlowDescendants(viewer.PagesForVerification.Document).OfType<Hyperlink>().First();
+            var link = FlowDescendants((FlowDocument)viewer.PagesForVerification.Document).OfType<Hyperlink>().First();
             link.RaiseEvent(new RoutedEventArgs(Hyperlink.ClickEvent));
             check(await Until(() => viewer.ChapterForVerification == 1 && viewer.PagesForVerification.MasterPageNumber > 1 && ((ComboBoxItem)viewer.ContentsForVerification.SelectedItem).Content.ToString().Trim() == "Night"),
                 "A link inside the book opens its target chapter and place, and the contents picker follows");
@@ -77,7 +77,7 @@ public partial class MainWindow
             check(session.ModuleId == "ebook" && tales.BookForVerification.Format == "FB2" && tales.BookForVerification.Author == "Ivan Petrov" && tales.BookForVerification.Cover != null
                 && tales.BookForVerification.Toc.Select(t => t.Title).SequenceEqual(new[] { "The River", "The Mill", "Notes" }), "FB2 author, cover and section contents are read: " + string.Join(", ", tales.BookForVerification.Toc.Select(t => t.Title)));
             await Until(() => Label().StartsWith("Page 1"));
-            var note = FlowDescendants(tales.PagesForVerification.Document).OfType<Hyperlink>().First();
+            var note = FlowDescendants((FlowDocument)tales.PagesForVerification.Document).OfType<Hyperlink>().First();
             note.RaiseEvent(new RoutedEventArgs(Hyperlink.ClickEvent));
             check(await Until(() => tales.ChapterForVerification == tales.BookForVerification.Chapters.Count - 1), "An FB2 note link opens the note in the notes body");
 
@@ -90,7 +90,7 @@ public partial class MainWindow
             {
                 await Until(() => Label().StartsWith("Page 1"));
                 letters.NextForVerification(); await Until(() => letters.ChapterForVerification == 1);
-                check(FlowDescendants(letters.PagesForVerification.Document).OfType<InlineUIContainer>().Any(c => c.Child is Image { Source: not null }), "The MOBI image record referenced by recindex is shown in its part");
+                check(FlowDescendants((FlowDocument)letters.PagesForVerification.Document).OfType<InlineUIContainer>().Any(c => c.Child is Image { Source: not null }), "The MOBI image record referenced by recindex is shown in its part");
             }
             session.Clear(); await PreviewSession.DrainAsync();
             check(hashes.All(h => h.Value.SequenceEqual(SHA256.HashData(File.ReadAllBytes(h.Key)))), "Previewing books leaves their bytes unchanged");

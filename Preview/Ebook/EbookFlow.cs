@@ -68,7 +68,7 @@ internal sealed class EbookFlow
         string name = element.LocalName;
         switch (name)
         {
-            case "hr": return Mark(element, new Paragraph(new Run("⁂")) { TextAlignment = TextAlignment.Center, Margin = new(0, 12, 0, 12), Opacity = .6 });
+            case "hr": return Mark(element, new Paragraph(new Run("⁂")) { TextAlignment = TextAlignment.Center, Margin = new(0, 12, 0, 12) });
             case "ul": case "ol":
                 var list = new List { MarkerStyle = name == "ol" ? TextMarkerStyle.Decimal : TextMarkerStyle.Disc, Margin = new(0, 4, 0, 10), Padding = new(22, 0, 0, 0) };
                 foreach (var item in element.Children)
