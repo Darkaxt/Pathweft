@@ -1,6 +1,10 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.100 | 2026-11-24 | Live analysis is lighter with accessibility tools
+
+- The live CPU and RAM process lists reuse their rows when processes change places, so screen readers, text and capture tools that watch Pathweft's window cost it less processor time while the live analysis is open.
+
 ## 1.1.99 | 2026-11-24 | Address bar suggests %variables%
 
 - Typing % in the address bar now suggests environment variables that name a folder, as Explorer does: %Lo offers %LOCALAPPDATA% with the folder it points to. Enter or a click opens it; Tab writes %LOCALAPPDATA%\ so the folders inside are suggested next.

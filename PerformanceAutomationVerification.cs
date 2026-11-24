@@ -26,22 +26,35 @@ Add-Type -ReferencedAssemblies UIAutomationClient,UIAutomationTypes,WindowsBase 
 using System;using System.Collections.Concurrent;using System.Collections.Generic;using System.IO;using System.Threading;using System.Windows.Automation;
 public static class PathweftAutomationClient
 {
-    static long events;static int attributing;static readonly ConcurrentDictionary<string,int> sources=new ConcurrentDictionary<string,int>();
-    static void Hit(object sender,string kind)
+    static long events,windowNames;static int attributing;static IntPtr root;static readonly ConcurrentDictionary<string,int> sources=new ConcurrentDictionary<string,int>(),windows=new ConcurrentDictionary<string,int>();
+    static string Short(object value){var text=value==null?"null":value.ToString();return text.Length>60?text.Substring(0,60)+"...":text;}
+    static void Hit(object sender,string kind,AutomationPropertyChangedEventArgs change)
     {
         Interlocked.Increment(ref events);if(Volatile.Read(ref attributing)==0)return;
-        string key;try{var e=(AutomationElement)sender;key=kind+" | "+e.Cached.ControlType.ProgrammaticName+" "+e.Cached.ClassName+" #"+e.Cached.AutomationId;}catch(Exception ex){key=kind+" | "+ex.GetType().Name;}
+        string key;
+        try
+        {
+            var e=(AutomationElement)sender;key=kind+" | "+e.Cached.ControlType.ProgrammaticName+" "+e.Cached.ClassName+" #"+e.Cached.AutomationId;
+            // Issue #13: which window raises Name changes, and with what values.
+            if(change!=null&&change.Property==AutomationElement.NameProperty&&e.Cached.ControlType==ControlType.Window)
+            {
+                Interlocked.Increment(ref windowNames);
+                var handle=new IntPtr(e.Cached.NativeWindowHandle);
+                windows.AddOrUpdate((handle==root?"main window":"window "+handle.ToInt64().ToString("x"))+" "+e.Cached.ClassName+" | old '"+Short(change.OldValue)+"' new '"+Short(change.NewValue)+"'",1,(k,n)=>n+1);
+            }
+        }
+        catch(Exception ex){key=kind+" | "+ex.GetType().Name;}
         sources.AddOrUpdate(key,1,(k,n)=>n+1);
     }
     static string State(string path){try{return File.ReadAllText(path).Trim();}catch(IOException){return "";}}
     public static void Run(long hwnd,string dir)
     {
-        var element=AutomationElement.FromHandle(new IntPtr(hwnd));var cache=new CacheRequest();
-        cache.Add(AutomationElement.ControlTypeProperty);cache.Add(AutomationElement.ClassNameProperty);cache.Add(AutomationElement.AutomationIdProperty);
+        root=new IntPtr(hwnd);var element=AutomationElement.FromHandle(root);var cache=new CacheRequest();
+        cache.Add(AutomationElement.ControlTypeProperty);cache.Add(AutomationElement.ClassNameProperty);cache.Add(AutomationElement.AutomationIdProperty);cache.Add(AutomationElement.NativeWindowHandleProperty);
         using(cache.Activate())
         {
-            Automation.AddAutomationPropertyChangedEventHandler(element,TreeScope.Subtree,new AutomationPropertyChangedEventHandler((s,e)=>Hit(s,e.Property.ProgrammaticName)),AutomationElement.NameProperty,AutomationElement.IsOffscreenProperty,AutomationElement.BoundingRectangleProperty);
-            Automation.AddStructureChangedEventHandler(element,TreeScope.Subtree,new StructureChangedEventHandler((s,e)=>Hit(s,"Structure."+e.StructureChangeType)));
+            Automation.AddAutomationPropertyChangedEventHandler(element,TreeScope.Subtree,new AutomationPropertyChangedEventHandler((s,e)=>Hit(s,e.Property.ProgrammaticName,e)),AutomationElement.NameProperty,AutomationElement.IsOffscreenProperty,AutomationElement.BoundingRectangleProperty);
+            Automation.AddStructureChangedEventHandler(element,TreeScope.Subtree,new StructureChangedEventHandler((s,e)=>Hit(s,"Structure."+e.StructureChangeType,null)));
         }
         string control=Path.Combine(dir,"control"),counter=Path.Combine(dir,"events"),ready=Path.Combine(dir,"ready");
         File.WriteAllText(ready,"1");
@@ -55,6 +68,9 @@ public static class PathweftAutomationClient
         var top=new List<KeyValuePair<string,int>>(sources);top.Sort((a,b)=>b.Value.CompareTo(a.Value));
         var lines=new List<string>();for(int i=0;i<top.Count&&i<15;i++)lines.Add(top[i].Value+"\t"+top[i].Key);
         File.WriteAllLines(Path.Combine(dir,"sources.tsv"),lines);
+        var named=new List<KeyValuePair<string,int>>(windows);named.Sort((a,b)=>b.Value.CompareTo(a.Value));
+        var names=new List<string>{Interlocked.Read(ref windowNames).ToString()};for(int i=0;i<named.Count&&i<15;i++)names.Add(named[i].Value+"\t"+named[i].Key);
+        File.WriteAllLines(Path.Combine(dir,"window-names.tsv"),names);
         File.WriteAllText(Path.Combine(dir,"done"),Interlocked.Read(ref events).ToString());
     }
 }
@@ -142,6 +158,9 @@ public static class PathweftAutomationClient
             if(!client.HasExited)client.Kill();
         }
         var sources=File.Exists(Path.Combine(dir,"sources.tsv"))?File.ReadAllLines(Path.Combine(dir,"sources.tsv")).Select(x=>x.Split('\t',2)).Where(x=>x.Length==2).Select(x=>new{source=x[1],count=int.Parse(x[0])}).ToArray():[];
+        var windowFile=Path.Combine(dir,"window-names.tsv");var windowLines=File.Exists(windowFile)?File.ReadAllLines(windowFile):[];
+        long windowNameChanges=windowLines.Length>0&&long.TryParse(windowLines[0],out long w)?w:-1;
+        var windowSources=windowLines.Skip(1).Select(x=>x.Split('\t',2)).Where(x=>x.Length==2).Select(x=>new{source=x[1],count=int.Parse(x[0])}).ToArray();
         string clientErrors=(await errors).Trim();
         Select(-1);
         bool listening=started&&registered&&current.Events>0;
@@ -151,11 +170,13 @@ public static class PathweftAutomationClient
             baseline=new{percentOfOneProcessor=baseline.Percent,baseline.Samples,baseline.Moves},
             current=new{percentOfOneProcessor=current.Percent,current.Samples,current.Events,current.Resets,current.Moves},
             legacy=new{percentOfOneProcessor=legacy.Percent,legacy.Samples,legacy.Events,legacy.Resets,legacy.Moves},
-            topSources=sources,clientErrors},new JsonSerializerOptions{WriteIndented=true}));
+            topSources=sources,windowNameChanges,windowSources,clientErrors},new JsonSerializerOptions{WriteIndented=true}));
         check(started,"An out-of-process UI Automation client registers on the window"+(started?"":": "+clientErrors));
         check(current.Resets==0,"Live CPU analysis applies samples without resetting the table view");
         check(ordered,"Incremental ordering keeps the process table in its sort order across samples");
         check(listening,"An actual UI Automation client listened to the window during the measurement");
+        // Issue #13: the window title is static, so the window raises no Name changes while the client listens.
+        check(windowNameChanges==0,$"The window raises no Name changes during live analysis ({windowNameChanges} in 20 s: {string.Join("; ",windowSources.Select(x=>x.count+" "+x.source))})");
         check(light,$"UI thread {current.Percent:0.0}% of one processor with a listening client (no client {baseline.Percent:0.0}%), against {legacy.Percent:0.0}% with the resets of 1.1.89: the client's added cost is at most half of the reset cost");
     }
 }

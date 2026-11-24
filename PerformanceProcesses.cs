@@ -137,6 +137,9 @@ internal sealed partial class PerformancePanel
         var rowStyle=new Style(typeof(ListViewItem),table.TryFindResource(typeof(ListViewItem)) as Style);
         rowStyle.Setters.Add(new Setter(AutomationProperties.ItemStatusProperty,new Binding("State")));
         table.ItemContainerStyle=rowStyle;
+        // Issue #13: a row moved by a live sample reuses a row container instead of building a new one,
+        // so a listening UI Automation client sees far fewer structure changes (rows keep their identity).
+        VirtualizingPanel.SetVirtualizationMode(table,VirtualizationMode.Recycling);
         foreach(var (label,property,_) in processColumnSet)
         {
             var item=new MenuItem{Header=label,Tag=property,IsCheckable=true,IsChecked=processColumns[property],IsEnabled=property!="Process",StaysOpenOnClick=true};
