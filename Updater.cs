@@ -215,7 +215,7 @@ public static class Updater
 
     /// Start the protected update. Setup observes this exact process's exit;
     /// manual installs do not force-close other windows or active transfers.
-    public static bool InstallAndRestart(string installer,string expectedSha256)
+    public static bool InstallAndRestart(string installer,string expectedSha256,Version version)
     {
         try
         {
@@ -229,17 +229,85 @@ public static class Updater
             using var caller=Process.GetCurrentProcess();
             foreach(var argument in InstallationArguments(caller.Id,caller.StartTime.ToUniversalTime().ToFileTimeUtc(),AppContext.BaseDirectory))launch.ArgumentList.Add(argument);
             using var process=Process.Start(launch)??throw new IOException("The installer did not start.");
-            try{UpdateDownloads.Handoff(installer,process);}
+            try{UpdateDownloads.Handoff(installer,process);Started(version,process);}
             catch
             {
                 // Setup is waiting for this exact caller to exit. If its durable
                 // handoff cannot be saved, retire only that uncommitted launch.
                 if(!process.HasExited)process.Kill(entireProcessTree:true);
-                process.WaitForExit();throw;
+                process.WaitForExit();Forget();throw;
             }
             return true;
         }
         catch (System.ComponentModel.Win32Exception ex) when (ex.NativeErrorCode == 1223) { return false; } // ERROR_CANCELLED: UAC declined
+    }
+
+    // UPDATE-04 (owner, 2026-11-24, after an update from 1.1.95 to 1.1.96 left 1.1.95 in place: "So it did crash on
+    // the other update"): setup writes its log to SetupLog (the last attempt's is kept), and the update it was started for
+    // is recorded. On its next start Pathweft compares its own version with that record and reports an update that was
+    // not installed, or installed with a problem, with setup's reason and its log. A failed update reopens Pathweft.
+    internal static string SetupLog=>Path.Combine(UpdateDownloads.Root,"setup.log");
+    static string Record=>Path.Combine(UpdateDownloads.Root,"started-update.json");
+    internal sealed record StartedUpdate(string Version,int Installer,long InstallerCreated);
+    internal sealed record Outcome(Version Version,bool Installed,string Failure,string Log,string Excerpt);
+    static void Started(Version version,Process setup)
+    {
+        string pending=Record+".new";
+        File.WriteAllText(pending,JsonSerializer.Serialize(new StartedUpdate(version.ToString(3),setup.Id,setup.StartTime.ToUniversalTime().ToFileTimeUtc())));
+        File.Move(pending,Record,true);
+    }
+    static void Forget(){try{File.Delete(Record);}catch(Exception error)when(error is IOException or UnauthorizedAccessException){Trace.TraceWarning("Update record retained: "+error.Message);}}
+    /// The update the last start of setup was for, once setup has exited; null when none was started or it was installed
+    /// without a problem. The record is consumed: an outcome is reported once.
+    internal static async Task<Outcome> TakeOutcomeAsync(CancellationToken token)
+    {
+        StartedUpdate started;
+        try{started=JsonSerializer.Deserialize<StartedUpdate>(await File.ReadAllTextAsync(Record,token));}
+        catch(Exception error)when(error is FileNotFoundException or DirectoryNotFoundException){return null;}
+        catch(Exception error)when(error is IOException or UnauthorizedAccessException or JsonException){Trace.TraceWarning("Update record unreadable: "+error.Message);Forget();return null;}
+        if(started==null||!Version.TryParse(started.Version,out var version)){Forget();return null;}
+        // Setup reopens Pathweft just before it exits: its log is complete once it has.
+        using(var setup=UpdateDownloads.Living(started.Installer,started.InstallerCreated))if(setup!=null)await setup.WaitForExitAsync(token);
+        Forget();
+        string[] lines=[];
+        try
+        {
+            using var stream=new FileStream(SetupLog,FileMode.Open,FileAccess.Read,FileShare.ReadWrite|FileShare.Delete);
+            using var reader=new StreamReader(stream);
+            lines=(await reader.ReadToEndAsync(token)).Split('\n').Select(line=>line.TrimEnd('\r')).ToArray();
+        }
+        catch(Exception error)when(error is IOException or UnauthorizedAccessException){Trace.TraceWarning("Setup log unreadable: "+error.Message);}
+        string failure=Failure(lines);bool installed=Current>=version;
+        if(installed&&failure==null)return null;
+        return new(version,installed,failure??"Setup ended without installing it and logged no reason.",File.Exists(SetupLog)?SetupLog:null,
+            string.Join(Environment.NewLine,lines.Where(line=>line.Length>0).TakeLast(60).Select(Message)));
+    }
+    // Setup's log lines start with the date and time ("2026-11-24 14:41:20.123   Message"); a message box's text
+    // follows on lines of its own, without one.
+    static bool Stamped(string line)=>line.Length>23&&char.IsDigit(line[0])&&line[4]=='-'&&line[10]==' ';
+    internal static string Message(string line)=>Stamped(line)?line[23..].TrimStart():line;
+    /// The reason setup gave: the failure Pathweft's setup script logged, with the last error behind it Inno Setup
+    /// logged (a message box, suppressed or answered, an exception or a failed file operation).
+    internal static string Failure(IReadOnlyList<string> raw)
+    {
+        const string Marker="Pathweft update failure: ";
+        var lines=raw.Select(Message).ToList();
+        string failure=lines.LastOrDefault(line=>line.StartsWith(Marker,StringComparison.Ordinal))?[Marker.Length..];
+        string Text(int at)=>string.Join(" ",raw.Skip(at+1).TakeWhile(line=>!Stamped(line)).Select(line=>line.Trim()).Where(line=>line.Length>0).Take(6));
+        var causes=new List<string>();
+        for(int i=0;i<raw.Count;i++)
+        {
+            if(!Stamped(raw[i]))continue;
+            string line=lines[i],cause=null;
+            if(line.Contains("message box (",StringComparison.OrdinalIgnoreCase))cause=Text(i);
+            else if(line.StartsWith("Exception message:",StringComparison.Ordinal))cause=line["Exception message:".Length..].Trim() is {Length:>0} same?same:Text(i);
+            else if(line.Contains(" failed. Error ",StringComparison.Ordinal))cause=line;
+            if(!string.IsNullOrWhiteSpace(cause))causes.Add(cause);
+        }
+        // Setup's own failure window repeats the logged failure; the cause is the error before it.
+        string reason=causes.LastOrDefault(cause=>failure==null||!(failure.Contains(cause,StringComparison.Ordinal)||cause.Contains(failure,StringComparison.Ordinal)));
+        if(failure==null)return reason;
+        return reason==null?failure:failure+" ("+reason.TrimEnd('.')+")";
     }
     internal static string[] InstallationArguments(int pid,long created,string directory)
     {
@@ -248,7 +316,7 @@ public static class Updater
         var track=Appearance.Resolve("#1AFFFFFF");
         byte Blend(byte foreground,byte behind)=>(byte)((foreground*track.A+behind*(255-track.A)+127)/255);
         var opaqueTrack=Color.FromRgb(Blend(track.R,background.R),Blend(track.G,background.G),Blend(track.B,background.B));
-        return new[]{"/VERYSILENT","/SUPPRESSMSGBOXES","/NORESTART","/RESTARTAPP=1","/WAITPID="+pid,
+        return new[]{"/VERYSILENT","/SUPPRESSMSGBOXES","/NORESTART","/RESTARTAPP=1","/LOG="+SetupLog,"/WAITPID="+pid,
             "/WAITCREATED="+created.ToString("X16"),"/DIR="+directory.TrimEnd('\\'),
             ColorArgument("BACK",Appearance.Background),ColorArgument("INK",Appearance.Resolve("#E8EEF6")),
             ColorArgument("MUTED",Appearance.Resolve("#8A97AA")),ColorArgument("ACCENT",Appearance.Accent),ColorArgument("TRACK",opaqueTrack)};

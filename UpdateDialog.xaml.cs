@@ -29,11 +29,17 @@ public partial class UpdateDialog : Window
     }
 
     void Later_Click(object s, RoutedEventArgs e) => Close();
+    string setupLog;
+    void Log_Click(object s, RoutedEventArgs e)
+    {
+        try{System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(setupLog){UseShellExecute=true})?.Dispose();}
+        catch(Exception ex)when(ex is System.ComponentModel.Win32Exception or IOException){Status.Text="Couldn't open the log: "+ex.Message;}
+    }
 
     internal void ShowChecking()
     {
         choosing?.Cancel();choice=null;
-        release=null;CheckState="checking";
+        release=null;CheckState="checking";LogButton.Visibility=Visibility.Collapsed;
         Heading.Text="Checking for updates…";Sub.Text=$"Installed version: Pathweft {Updater.Current}";
         Status.Text="";NotesCard.Visibility=UpdateButton.Visibility=Visibility.Collapsed;
         Progress.Visibility=Visibility.Visible;Progress.IsIndeterminate=true;
@@ -42,15 +48,31 @@ public partial class UpdateDialog : Window
     }
     internal void ShowCheckResult(bool failed,string message)
     {
-        CheckState=failed?"failed":"current";
+        CheckState=failed?"failed":"current";LogButton.Visibility=Visibility.Collapsed;
         Heading.Text=failed?"Couldn't check for updates":$"Pathweft {Updater.Current} is up to date";
         Sub.Text=message;Status.Text="";Progress.Visibility=NotesCard.Visibility=Visibility.Collapsed;
         UpdateButton.Content=failed?"Retry":"Check again";UpdateButton.Visibility=Visibility.Visible;UpdateButton.IsEnabled=true;
         LaterButton.Content="Close";LaterButton.IsEnabled=true;
     }
+    // UPDATE-04: the last update setup was started for and did not install, or installed with a problem, with
+    // setup's reason, the end of its log and the log itself. Try again checks for the update again.
+    internal void ShowInstallFailure(Updater.Outcome outcome)
+    {
+        choosing?.Cancel();choice=null;
+        release=null;CheckState="install-failed";setupLog=outcome.Log;
+        Heading.Text=outcome.Installed?$"Pathweft {outcome.Version} was installed with a problem":$"Pathweft {outcome.Version} wasn't installed";
+        Sub.Text=outcome.Failure;
+        Notes.Text=string.IsNullOrWhiteSpace(outcome.Excerpt)?"Setup wrote no log.":outcome.Excerpt;
+        NotesCard.Visibility=Visibility.Visible;Progress.Visibility=Visibility.Collapsed;
+        Status.Text=outcome.Log==null?"Setup's log was not found.":"Setup's log: "+outcome.Log;
+        LogButton.Visibility=outcome.Log==null?Visibility.Collapsed:Visibility.Visible;
+        UpdateButton.Content="Try again";UpdateButton.Visibility=outcome.Installed?Visibility.Collapsed:Visibility.Visible;
+        UpdateButton.IsEnabled=LaterButton.IsEnabled=true;LaterButton.Content="Close";
+        Height=Math.Min(MaxHeight,440*Math.Max(1,Settings.TextScale));MinHeight=300;
+    }
     internal void ShowRelease(Updater.Release available,bool continueFull=false)
     {
-        release=available;CheckState="available";
+        release=available;CheckState="available";LogButton.Visibility=Visibility.Collapsed;
         Heading.Text=$"Pathweft {release.Version} is available";
         Notes.Text=string.IsNullOrWhiteSpace(release.Notes)?"No release notes.":release.Notes.Trim();
         NotesCard.Visibility=UpdateButton.Visibility=Visibility.Visible;Progress.Visibility=Visibility.Collapsed;Status.Text="";
@@ -149,7 +171,7 @@ public partial class UpdateDialog : Window
             }
             Status.Text = "Installing — Pathweft will restart.";
             LaterButton.IsEnabled=false;
-            if (!Updater.InstallAndRestart(installer,chosen.Package.Sha256))
+            if (!Updater.InstallAndRestart(installer,chosen.Package.Sha256,release.Version))
             {
                 Progress.Visibility = Visibility.Collapsed;
                 Status.Text = "Update not installed: Windows asked for permission and it wasn't given. Try again whenever you like.";

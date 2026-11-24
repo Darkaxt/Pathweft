@@ -13,6 +13,7 @@
       <StackPanel DockPanel.Dock="Bottom" Margin="0,12,0,0">
         <TextBlock x:Name="Status" Foreground="{DynamicResource Palette.8A97AA}" TextWrapping="Wrap" Margin="0,0,0,8"/>
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+          <Button x:Name="LogButton" Content="Open log" Style="{StaticResource AuxiliaryAction}" Margin="0,0,6,0" Visibility="Collapsed" Click="Log_Click"/>
           <Button x:Name="LaterButton" Content="Later" Style="{StaticResource AuxiliaryAction}" Margin="0,0,6,0" Click="Later_Click"/>
           <Button x:Name="UpdateButton" Content="Update now" Style="{StaticResource AuxiliaryAction}" Tag="on" Click="Update_Click"/>
         </StackPanel>

@@ -420,8 +420,16 @@ public partial class MainWindow : Window
             }
             if(updateChecksStopped)return;
             ShowWhatsNew();
+            // UPDATE-04: an update setup was started for and did not install (or installed with a problem) is reported
+            // with setup's reason and log. A light update handing over to the full installer (LIGHT-03) is not a failure.
+            bool fullUpdate=Environment.GetCommandLineArgs().Contains("--full-update");
+            Updater.Outcome outcome=null;
+            try{outcome=await Updater.TakeOutcomeAsync(updateShutdown.Token);}
+            catch(OperationCanceledException)when(updateShutdown.IsCancellationRequested){return;}
+            if(updateChecksStopped)return;
+            if(outcome!=null&&!fullUpdate)EnsureUpdateDialog().ShowInstallFailure(outcome);
             // LIGHT-03: reopened by a light update that couldn't be used: continue with the full installer
-            if(Environment.GetCommandLineArgs().Contains("--full-update")){fullUpdateRequested=true;await CheckForUpdate(manual:true);}
+            if(fullUpdate){fullUpdateRequested=true;await CheckForUpdate(manual:true);}
             else await CheckForUpdate(manual: false);
         };
         firstUpdateTimer.Start();

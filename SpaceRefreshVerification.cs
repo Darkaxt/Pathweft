@@ -60,10 +60,6 @@ public partial class MainWindow
         Left.StatsChanged+=Observed;
         try
         {
-            // F5 takes the index's totals, but a folder written in the last Settle is measured on disk by design
-            // (SEARCH-10), so the fixture's folders must be older than that.
-            var age=DateTime.UtcNow-Directory.GetLastWriteTimeUtc(busy);
-            if(age<FileExplorer.Search.IndexedSearch.Settle)await Task.Delay(FileExplorer.Search.IndexedSearch.Settle-age+TimeSpan.FromMilliseconds(250));
             Left.ListForVerification.SelectedItem=unrelated;
             // CORE-30 (owner: "who cares about the disk analysis be desynced by a couple of minutes"): a change on disk
             // leaves the analysis as it was and only marks it changed.

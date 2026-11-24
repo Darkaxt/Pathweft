@@ -145,6 +145,10 @@ function CloseHandle(Handle: THandle): Boolean;
 function GetProcessTimes(Handle: THandle; var Created, Exited, Kernel, User: TCreationTime): Boolean;
   external 'GetProcessTimes@kernel32.dll stdcall';
 
+var
+  { CallerSettled: the requesting window has exited. PathweftReopened: setup has opened Pathweft again. }
+  CallerSettled, PathweftReopened: Boolean;
+
 function RestartRequested(): Boolean;
 begin
   Result := ExpandConstant('{param:RESTARTAPP|0}') = '1';
@@ -277,7 +281,7 @@ var
   Code: Integer;
 begin
   if RestartRequested() then
-    Exec(ExpandConstant('{app}\{#AppExe}'), '--desktop-launch --full-update', '', SW_HIDE, ewWaitUntilTerminated, Code);
+    PathweftReopened := Exec(ExpandConstant('{app}\{#AppExe}'), '--desktop-launch --full-update', '', SW_HIDE, ewWaitUntilTerminated, Code);
 end;
 #endif
 
@@ -361,12 +365,55 @@ begin
     Result := 'The Microsoft .NET 10 Desktop Runtime is still missing after its installer finished. No Pathweft files have been replaced.';
 end;
 
-function PrepareToInstall(var NeedsRestart: Boolean): String;
+{ The Pathweft window that started this update (WAITPID, with its creation time) must have exited before any
+  file is replaced, and before a failed update reopens Pathweft. Normal running-app ownership is checked
+  independently by PrepareExisting. }
+function WaitForCaller(): String;
 var
-  Pid, Code: Integer;
+  Pid: Integer;
   Handle: THandle;
   Created, Exited, Kernel, User: TCreationTime;
-  Expected, Differs: String;
+  Expected: String;
+begin
+  Result := '';
+  if CallerSettled then Exit;
+  Pid := StrToIntDef(ExpandConstant('{param:WAITPID|0}'), 0);
+  if Pid <> 0 then begin
+    Expected := ExpandConstant('{param:WAITCREATED|}');
+    if Expected = '' then begin
+      Result := 'The updating process identity is incomplete.';
+      Exit;
+    end;
+    Handle := OpenProcess($00101000, False, Pid);
+    if Handle <> 0 then begin
+      try
+        if not GetProcessTimes(Handle, Created, Exited, Kernel, User) then begin
+          Result := 'The updating process identity could not be checked.';
+          Exit;
+        end;
+        { A reused PID is no longer the requesting process. }
+        if CompareText(Format('%.8x%.8x', [Created.High, Created.Low]), Expected) = 0 then begin
+          Log('Waiting for the identified requesting process to exit.');
+          if WaitDeploymentHandle(Handle) <> 0 then begin
+            Result := 'The updating Pathweft process could not be observed to exit.';
+            Exit;
+          end;
+          Log('The identified requesting process exited.');
+        end else begin
+          Log('Requesting process creation time differs; no wait for a reused PID.');
+        end;
+      finally
+        CloseHandle(Handle);
+      end;
+    end;
+  end;
+  CallerSettled := True;
+end;
+
+function PrepareToInstall(var NeedsRestart: Boolean): String;
+var
+  Code: Integer;
+  Differs: String;
 begin
   Result := '';
 #ifndef ProgressVerification
@@ -384,37 +431,8 @@ begin
 #endif
   DeploymentPhase('Closing Pathweft', 'Waiting for the current window to finish closing.');
   DeploymentFailure := 'The updating process could not finish preparing its installation.';
-  Pid := StrToIntDef(ExpandConstant('{param:WAITPID|0}'), 0);
-  if Pid <> 0 then begin
-    Expected := ExpandConstant('{param:WAITCREATED|}');
-    if Expected = '' then begin
-      Result := 'The updating process identity is incomplete.';
-      Exit;
-    end;
-    Handle := OpenProcess($00101000, False, Pid);
-    if Handle <> 0 then begin
-      try
-        if not GetProcessTimes(Handle, Created, Exited, Kernel, User) then begin
-          Result := 'The updating process identity could not be checked.';
-          Exit;
-        end;
-        { A reused PID is no longer the requesting process. Normal running-app
-          ownership is checked independently below before replacing any files. }
-        if CompareText(Format('%.8x%.8x', [Created.High, Created.Low]), Expected) = 0 then begin
-          Log('Waiting for the identified requesting process to exit.');
-          if WaitDeploymentHandle(Handle) <> 0 then begin
-            Result := 'The updating Pathweft process could not be observed to exit.';
-            Exit;
-          end;
-          Log('The identified requesting process exited.');
-        end else begin
-          Log('Requesting process creation time differs; no wait for a reused PID.');
-        end;
-      finally
-        CloseHandle(Handle);
-      end;
-    end;
-  end;
+  Result := WaitForCaller();
+  if Result <> '' then Exit;
 #ifdef LightBase
   { LIGHT-03: recheck the base right before changing anything. On a difference nothing
     is changed and Pathweft reopens to install the full update. }
@@ -507,6 +525,7 @@ begin
       IntegrationExitCode := 9;
       RaiseException(DeploymentFailure);
     end;
+    PathweftReopened := True;
   end;
   if CurStep = ssInstall then DeploymentFailure := 'The update could not replace its application files. Close any app using them, then try the update again.';
   if CurStep = ssDone then begin
@@ -522,8 +541,21 @@ begin
   end;
 end;
 
+{ UPDATE-04: an update that could not finish reopens Pathweft once the window that started it has exited. Pathweft
+  compares its version with the one it started and reports the failure, with this line and the rest of setup's
+  log (the updater runs setup with /LOG); setup's own failure window is shown only when Pathweft cannot reopen. }
 procedure DeinitializeSetup;
+var
+  Code: Integer;
 begin
+  if (DeploymentFailure <> '') and RestartRequested() and (not MigrationRequested()) then begin
+    Log('Pathweft update failure: ' + DeploymentFailure);
+#ifndef ProgressVerification
+    if (not PathweftReopened) and (WaitForCaller() = '') and FileExists(ExpandConstant('{app}\{#AppExe}')) then
+      if Exec(ExpandConstant('{app}\{#AppExe}'), '--desktop-launch', '', SW_HIDE, ewWaitUntilTerminated, Code) and (Code = 0) then
+        DeploymentFailure := '';
+#endif
+  end;
   FinishDeployment;
 end;
 

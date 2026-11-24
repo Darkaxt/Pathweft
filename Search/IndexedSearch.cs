@@ -65,46 +65,42 @@ internal static class IndexedSearch
         return new(StringComparer.OrdinalIgnoreCase);
     }
 
-    // CORE-28, for space analysis: while the service loads a drive (C: takes about 13 s after a restart or an update) it
-    // answers no sizes there, and the analysis would walk the whole drive on disk for minutes. It waits for that store
-    // instead, at most LoadWait; an absent service or a drive it does not cover is not waited for.
-    internal static TimeSpan LoadWait = TimeSpan.FromSeconds(90);
-    internal static async Task<bool> WaitForStoreAsync(string path, TimeSpan replyWait, Action waiting, CancellationToken token)
+    // CORE-32 (owner, 2026-11-24: "with the current index implementation there is no way this behavior makes sense"):
+    // Analyze space reads its totals from the index wherever the index covers the folder. While the service is still
+    // loading that store (C: takes about 13 s after a restart or an update) it is waited for, however long it takes,
+    // never replaced by a disk walk; Ctrl+R measures on disk instead. Ready: the store is indexed. Unavailable: the
+    // service is absent or did not answer, and the detail says why; the analysis measures on disk and says so.
+    internal enum Coverage { Ready, NotCovered, Unavailable }
+    internal static async Task<(Coverage Coverage, string Detail)> WaitForStoreAsync(string path, Action<string> waiting, CancellationToken token)
     {
-        var deadline = DateTime.UtcNow + LoadWait;
         bool waited = false;
         string full = System.IO.Path.TrimEndingDirectorySeparator(System.IO.Path.GetFullPath(path));
         while (true)
         {
             IndexServiceStatus status;
-            using (var reply = CancellationTokenSource.CreateLinkedTokenSource(token))
-            {
-                reply.CancelAfter(replyWait);
-                try { status = await Service.StatusAsync(reply.Token).ConfigureAwait(false); }
-                catch (OperationCanceledException) when (!token.IsCancellationRequested) { return waited; }
-                catch (Exception ex) when (ex is InvalidOperationException or System.ComponentModel.Win32Exception) { return waited; }
-            }
-            var store = status?.Stores.Where(s => s.Name is { Length: > 0 } name && Covers(System.IO.Path.TrimEndingDirectorySeparator(name), full)).MaxBy(s => s.Name.Length);
-            if (store?.State is not ("loading" or "reloading") || DateTime.UtcNow >= deadline) return waited;
-            if (!waited) { waited = true; waiting(); }
+            var service = Service;
+            try { status = await service.StatusAsync(token).ConfigureAwait(false); }
+            catch (Exception ex) when (ex is InvalidOperationException or System.ComponentModel.Win32Exception or System.IO.IOException) { return (Coverage.Unavailable, ex.Message); }
+            if (status == null) return (Coverage.Unavailable, service.LastConnectError is { Length: > 0 } error && error != IndexServiceClient.NotRunning ? error : "the Pathweft index service is not running");
+            var store = status.Stores.Where(s => s.Name is { Length: > 0 } name && Covers(System.IO.Path.TrimEndingDirectorySeparator(name), full)).MaxBy(s => s.Name.Length);
+            if (store == null) return (Coverage.NotCovered, "");
+            if (store.State is not ("loading" or "reloading")) return store.State == "ready" ? (Coverage.Ready, store.Name) : (Coverage.Unavailable, store.Name + " is " + store.State);
+            if (!waited) { waited = true; waiting(store.Name); }
             await Task.Delay(500, token).ConfigureAwait(false);
         }
     }
     static bool Covers(string store, string path)
         => path.StartsWith(store, StringComparison.OrdinalIgnoreCase) && (path.Length == store.Length || path[store.Length] == '\\');
 
-    // SEARCH-10, for space analysis, which has no watcher of its own: a folder written in the last Settle may not be
-    // in the index yet (it reads the NTFS change journal every 250 ms), so its indexed size is not taken and the
-    // analysis measures it, counting a file written just before. Pane rows keep FolderSizesAsync: their watcher
-    // already sends a changed folder to measurement.
-    internal static readonly TimeSpan Settle = TimeSpan.FromSeconds(2);
-    internal static async Task<Dictionary<string, long>> SettledFolderSizesAsync(IEnumerable<string> paths, CancellationToken token)
+    // SEARCH-10 (revised by CORE-32), for space analysis, which has no watcher of its own: the index reads the NTFS
+    // change journal every 250 ms, so a folder written in the last CatchUp is asked for once CatchUp has passed since
+    // that write, as pane rows do (CORE-28); it is not measured on disk. A file written just before is still counted.
+    internal static readonly TimeSpan CatchUp = TimeSpan.FromMilliseconds(600);
+    internal static async Task<Dictionary<string, long>> CurrentFolderSizesAsync(IReadOnlyCollection<(string Path, DateTime Modified)> folders, CancellationToken token)
     {
-        var sizes = await FolderSizesAsync(paths, token).ConfigureAwait(false);
-        var recent = DateTime.UtcNow - Settle;
-        foreach (var folder in sizes.Keys.ToArray())
-            try { if (System.IO.Directory.GetLastWriteTimeUtc(folder) > recent) sizes.Remove(folder); }
-            catch (Exception ex) when (ex is System.IO.IOException or UnauthorizedAccessException) { sizes.Remove(folder); }
-        return sizes;
+        var newest = folders.Select(folder => folder.Modified).DefaultIfEmpty(DateTime.MinValue).Max();
+        if (newest > DateTime.MinValue && newest + CatchUp - DateTime.UtcNow is var wait && wait > TimeSpan.Zero)
+            await Task.Delay(wait < CatchUp ? wait : CatchUp, token).ConfigureAwait(false);
+        return await FolderSizesAsync(folders.Select(folder => folder.Path), token).ConfigureAwait(false);
     }
 }

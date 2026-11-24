@@ -97,11 +97,10 @@ internal static class SpaceScan
                         if(preferIndex&&frame.Children.Count>0)
                         {
                             Dictionary<string,long> sizes=null;
-                            // A slow index must not hold the walk: after IndexWait the children are measured.
-                            using var indexWait=CancellationTokenSource.CreateLinkedTokenSource(token);indexWait.CancelAfter(PaneView.IndexWait);
-                            try{sizes=IndexedSearch.SettledFolderSizesAsync(frame.Children.Select(child=>child.Path),indexWait.Token).GetAwaiter().GetResult();}
-                            catch(OperationCanceledException)when(!token.IsCancellationRequested){}
-                            catch(Exception ex)when(ex is InvalidOperationException or Win32Exception){
+                            // CORE-32: the index's totals for the subfolders, however long the service takes to answer
+                            // (its own reply timeout ends a service that does not answer); only folders it does not know are walked.
+                            try{sizes=IndexedSearch.CurrentFolderSizesAsync(frame.Children.Select(child=>(child.Path,child.Modified)).ToArray(),token).GetAwaiter().GetResult();}
+                            catch(Exception ex)when(ex is InvalidOperationException or Win32Exception or IOException){
 #if DEBUG
                                 IndexObserved?.Invoke(frame.Path,ex.ToString());
 #endif

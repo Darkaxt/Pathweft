@@ -40,12 +40,12 @@ internal static class UpdateDownloads
     }
     internal static void Handoff(string path,Process installer)
     {var receipt=Read(path);Save(path,receipt with{Installer=installer.Id,InstallerCreated=installer.StartTime.ToUniversalTime().ToFileTimeUtc()});}
-    static Process Living(int pid,long created)
+    internal static Process Living(int pid,long created)
     {
         if(pid<=0)return null;
         Process process=null;
         try{process=Process.GetProcessById(pid);if(!process.HasExited&&process.StartTime.ToUniversalTime().ToFileTimeUtc()==created)return process;}
-        catch(ArgumentException){}catch(InvalidOperationException){}
+        catch(ArgumentException){}catch(InvalidOperationException){}catch(System.ComponentModel.Win32Exception){}
         process?.Dispose();return null;
     }
     internal static bool Discard(string path)

@@ -33,7 +33,8 @@ internal sealed class SpaceEntry:Entry
 
 public partial class PaneView
 {
-    /// How long the analyzer waits for the index's folder sizes before measuring on disk (SPACE: slow index).
+    /// How long pane folder sizing waits for the index's folder sizes before measuring on disk. Analyze space
+    /// does not use it: it waits for the index (CORE-32).
     internal static TimeSpan IndexWait=TimeSpan.FromSeconds(5);
     sealed class SpaceView
     {
@@ -56,7 +57,11 @@ public partial class PaneView
         internal string[] Selected;
         internal double Vertical,Horizontal;
         internal bool RefreshRequested,Changed,Stopping;
-        internal bool SelectFirst=true,QuietRefresh,FullRefresh,Measure,Starting=true,WaitingForIndex;
+        internal bool SelectFirst=true,QuietRefresh,FullRefresh,Measure,Starting=true;
+        // CORE-32: the store the index service is still loading (the analysis waits for it; Ctrl+R stops waiting and
+        // measures on disk), and why the index could not be used when it could not.
+        internal string WaitingForIndex,IndexProblem;
+        internal CancellationTokenSource IndexWaiting;
         internal bool Stale; // changed on disk since this snapshot (CORE-30)
         internal HashSet<string> ExpandedAfterAccess=new(StringComparer.OrdinalIgnoreCase);
         internal HashSet<string> SelectionAfterAccess=new(StringComparer.OrdinalIgnoreCase);
@@ -229,12 +234,17 @@ public partial class PaneView
 #endif
         try
         {
-            // CORE-28: a drive the index service is still loading would be walked on disk for minutes; wait for it.
+            // CORE-32: the index is the source of the analysis wherever it covers the folder. A store it is still loading
+            // is waited for, however long; Ctrl+R stops the wait and measures on disk instead.
+            current.IndexProblem=null;
             if(preferIndex)
             {
-                bool loading=true;
-                try{await FileExplorer.Search.IndexedSearch.WaitForStoreAsync(current.Root,IndexWait,()=>Dispatcher.BeginInvoke(()=>{if(!loading)return;current.WaitingForIndex=true;if(space==current)UpdateSpaceFooter();}),current.Cancellation.Token);}
-                finally{loading=false;if(current.WaitingForIndex){current.WaitingForIndex=false;if(space==current)UpdateSpaceFooter();}}
+                using var waiting=current.IndexWaiting=CancellationTokenSource.CreateLinkedTokenSource(current.Cancellation.Token);
+                (FileExplorer.Search.IndexedSearch.Coverage Coverage,string Detail) coverage;
+                try{coverage=await FileExplorer.Search.IndexedSearch.WaitForStoreAsync(current.Root,store=>Dispatcher.BeginInvoke(()=>{if(current.IndexWaiting!=waiting||waiting.IsCancellationRequested)return;current.WaitingForIndex=store;if(space==current)UpdateSpaceFooter();}),waiting.Token);}
+                catch(OperationCanceledException)when(!current.Cancellation.IsCancellationRequested){return;} // Ctrl+R: its pass measures on disk
+                finally{current.IndexWaiting=null;if(current.WaitingForIndex!=null){current.WaitingForIndex=null;if(space==current)UpdateSpaceFooter();}}
+                if(coverage.Coverage==FileExplorer.Search.IndexedSearch.Coverage.Unavailable){current.IndexProblem=coverage.Detail;preferIndex=false;}
             }
             await ReadSpaceChildren(current,current.Root,preferIndex:false,measureMissing:false);
             await ScanWithAccess(current,current.Root,preferIndex,update=>QueueSpace(current,update));
@@ -346,14 +356,12 @@ public partial class PaneView
         // parent's total came from the index) take the index's current totals too.
         string[] known;lock(current.Mailbox)known=preferIndex?members.Where(member=>member.Directory&&!member.Reparse&&current.Nodes.TryGetValue(member.Path,out var row)&&row.State!=SpaceState.Reparse&&!current.Seen.Contains(member.Path)).Select(member=>member.Path).ToArray():[];
         Dictionary<string,long> sizes=new(StringComparer.OrdinalIgnoreCase);
-        // A slow index must not leave the analysis Pending (and F5 queued behind it) for its whole reply
-        // timeout: after IndexWait the folders are measured on disk instead.
+        // CORE-32: the index's totals, however long the service takes to answer; only folders it does not know are measured.
         if(preferIndex&&missing.Length+known.Length>0)
         {
-            using var indexWait=CancellationTokenSource.CreateLinkedTokenSource(token);indexWait.CancelAfter(IndexWait);
-            try{sizes=await FileExplorer.Search.IndexedSearch.SettledFolderSizesAsync(missing.Select(member=>member.Path).Concat(known),indexWait.Token);}
-            catch(OperationCanceledException)when(!token.IsCancellationRequested){}
-            catch(Exception error)when(error is InvalidOperationException or System.ComponentModel.Win32Exception){}
+            var asked=members.Where(member=>missing.Contains(member)||known.Contains(member.Path)).Select(member=>(member.Path,member.Modified)).ToArray();
+            try{sizes=await FileExplorer.Search.IndexedSearch.CurrentFolderSizesAsync(asked,token);}
+            catch(Exception error)when(error is InvalidOperationException or System.ComponentModel.Win32Exception or IOException){current.IndexProblem??=error.Message;}
         }
         foreach(var member in members)
         {
@@ -417,7 +425,7 @@ public partial class PaneView
         SpaceActivity.Visibility=current.Starting?Visibility.Visible:Visibility.Collapsed;
         SpaceActivity.IsIndeterminate=current.Starting&&Motion.On;
         SpaceActivity.Value=35;
-        Footer.Text=(current.WaitingForIndex?"Waiting for the index service to finish loading this drive…":current.Starting&&root.State==SpaceState.Pending?"Preparing space analysis…":$"{MainWindow.Fmt(Math.Max(0,root.DisplaySize))} logical · {root.SpaceStatus.ToLowerInvariant()}")+(current.Nodes.Values.Any(row=>row.State==SpaceState.Indexed)?" · indexed sizes may omit excluded files":"")+(current.Stale?" · changed since this snapshot, F5 to refresh":"")+(Selected.Count>0?$" · {Selected.Count} selected":"");
+        Footer.Text=(current.WaitingForIndex!=null?$"Waiting for the index service to finish loading {current.WaitingForIndex} · Ctrl+R measures on disk instead":current.Starting&&root.State==SpaceState.Pending?"Preparing space analysis…":$"{MainWindow.Fmt(Math.Max(0,root.DisplaySize))} logical · {root.SpaceStatus.ToLowerInvariant()}")+(current.IndexProblem!=null?$" · measured on disk: {current.IndexProblem.TrimEnd('.')}":"")+(current.Nodes.Values.Any(row=>row.State==SpaceState.Indexed)?" · indexed sizes may omit excluded files":"")+(current.Stale?" · changed since this snapshot, F5 to refresh":"")+(Selected.Count>0?$" · {Selected.Count} selected":"");
     }
     internal (long Bytes,long Files,long Folders,string Status) SpaceSummary
     {get{var root=space.Nodes[space.Root];return(Math.Max(0,root.DisplaySize),root.Files,root.Folders,root.SpaceStatus);}}
@@ -459,6 +467,7 @@ public partial class PaneView
         current.Changed=true;
         if(!force){if(!current.RefreshRequested&&!current.Stale){current.Stale=true;UpdateSpaceFooter();StatsChanged?.Invoke();}return;}
         current.FullRefresh=true;current.Measure|=measure;current.Stale=false;
+        if(measure)current.IndexWaiting?.Cancel(); // CORE-32: Ctrl+R does not wait for the index
         if(current.RefreshRequested)return;
         current.RefreshRequested=true;UpdateSpaceFooter();
         var previous=current.Work;current.Work=RefreshAfter();

@@ -1,6 +1,11 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.97 | 2026-11-24 | Analyze space trusts the index; failed updates say why
+
+- Analyze space now takes every folder the Pathweft index service covers from the index, with no time limits that fell back to measuring on disk. A folder written a moment ago is read once the index has caught up (under a second) instead of being walked on disk. While the service is still loading the drive after a restart or an update, the analysis waits for it and the footer says so; Ctrl+R stops waiting and measures on disk.
+- An update that can't be installed no longer just closes Pathweft. Setup now always keeps a log; Pathweft reopens, and its update window says which version wasn't installed and why (for example a file in use), with the end of the log, Open log and Try again.
+
 ## 1.1.96 | 2026-11-24 | View switch keeps Analyze space indexed
 
 - Switching between standard and administrator view with Analyze space open no longer measures the whole folder on disk again, which took minutes on a large drive. Like F5, it takes the sizes from the Pathweft index service, which measures every folder for both views. Ctrl+R still measures everything on disk.

@@ -19,23 +19,27 @@ public partial class MainWindow
         Left.SetSizingSuspended(true);Right.SetSizingSuspended(true);
         await Task.WhenAll(Left.StopSizingAsync(),Right.StopSizingAsync());
         await S1Verification.Navigate(Left,folder);
-        // A held index service (it reads requests and never answers) must not keep
-        // the analysis waiting: after IndexWait the folders are measured on disk.
+        // CORE-32: a held index service (it reads requests and never answers) is waited for, never replaced by a
+        // disk walk on a timer; Ctrl+R stops the wait and measures on disk.
         using var slow=new FakeIndexService{Hold=true};
-        var service=IndexedSearch.ServiceOverride;var wait=PaneView.IndexWait;
-        IndexedSearch.ServiceOverride=new IndexServiceClient(slow.Name);PaneView.IndexWait=TimeSpan.FromSeconds(1);
+        var service=IndexedSearch.ServiceOverride;
+        IndexedSearch.ServiceOverride=new IndexServiceClient(slow.Name);
+        var visits=new System.Collections.Concurrent.ConcurrentBag<string>();
         try
         {
+            SpaceScan.BeforeEnumeration=(path,token)=>visits.Add(path);
             AnalyzeSpaceCommand.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             check(Left.SpaceActivity.Visibility==Visibility.Visible&&!Left.SpaceActivity.IsIndeterminate,"Reduced-motion initial loading remains visible while startup is active");
+            await Task.Delay(TimeSpan.FromSeconds(6)); // longer than the 5-second wait that used to start a disk walk
+            check(!Left.SpaceCompletion.IsCompleted&&visits.IsEmpty&&!slow.Requests.IsEmpty,"While the index service does not answer, the analysis waits for it and reads no folder on disk ("+visits.Count+" read)");
+            Left.Refresh(force:true,measure:true);
             await Left.SpaceCompletion;
-            check(Left.FolderTotal==321&&Left.Items.Count()==2&&Left.Items.OfType<SpaceEntry>().All(row=>row.State==SpaceState.Complete),"Analysis traverses the actual nested fixture to exact totals while the index service does not answer");
-            check(!slow.Requests.IsEmpty,"The analysis asked the index service first");
+            check(Left.FolderTotal==321&&Left.Items.Count()==2&&Left.Items.OfType<SpaceEntry>().All(row=>row.State==SpaceState.Complete),"Ctrl+R stops waiting for the index and measures the nested fixture on disk to exact totals");
             check(Left.SpaceActivity.Visibility==Visibility.Collapsed,"Actual completion ends the initial loading indicator");
         }
         finally
         {
-            IndexedSearch.ServiceOverride=service;PaneView.IndexWait=wait;slow.Hold=false;
+            SpaceScan.BeforeEnumeration=null;IndexedSearch.ServiceOverride=service;slow.Hold=false;
             await Left.EndSpaceAsync();
         }
         var previous=Left.SpaceAdmission;
