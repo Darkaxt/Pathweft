@@ -1,6 +1,7 @@
 // MOBI/AZW3 reading adapted from calibre (src/calibre/ebooks/mobi, compression/palmdoc.c,
 // commit 8f8119ef2d4fb902540022b7a8b0bcb7080c85a7). Copyright (C) Kovid Goyal. GPL-3.0-or-later.
 using System.Buffers.Binary;
+using System.IO;
 using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
