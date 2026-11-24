@@ -60,10 +60,13 @@ public partial class MainWindow
         Left.StatsChanged+=Observed;
         try
         {
-            // The fixture was written just before: NTFS reports some of those writes late (lazy metadata flush), and a late
-            // notification during the Ctrl+R pass below would correctly mark a folder changed during its measurement.
+            // The fixture was written just before: NTFS reports some of those writes late (lazy metadata flush), and the first
+            // enumeration of a new folder can report it then. The analysis here comes from the index, so the first on-disk walk
+            // of these folders would be the Ctrl+R pass below, and that late notification would correctly mark a folder changed
+            // during its measurement. Read the fixture once now, as anything that opened it would have, and let it settle.
+            foreach(var _ in Directory.EnumerateFileSystemEntries(folder,"*",SearchOption.AllDirectories)){}
             var age=DateTime.UtcNow-Directory.GetLastWriteTimeUtc(busy);
-            if(age<TimeSpan.FromSeconds(2))await Task.Delay(TimeSpan.FromSeconds(2)-age+TimeSpan.FromMilliseconds(250));
+            await Task.Delay((age<TimeSpan.FromSeconds(2)?TimeSpan.FromSeconds(2)-age:TimeSpan.Zero)+TimeSpan.FromSeconds(1));
             Left.ListForVerification.SelectedItem=unrelated;
             // CORE-30 (owner: "who cares about the disk analysis be desynced by a couple of minutes"): a change on disk
             // leaves the analysis as it was and only marks it changed.
@@ -119,7 +122,7 @@ public partial class MainWindow
             SizeCache.Invalidated+=Late;
             try{Left.Refresh(force:true,measure:true);await Left.SpaceCompletion;}finally{SizeCache.Invalidated-=Late;}
             check(Left.FolderTotal==200&&Left.SpaceSummary.Files==1&&Left.SpaceSummary.Folders==2&&unrelated.State==SpaceState.Complete&&visits.GetValueOrDefault(stable)>0,
-                "Ctrl+R still measures everything on disk (stable: "+unrelated.SpaceStatus+"; changes seen during the pass: "+string.Join(", ",lateChanges.Select(Path.GetFileName))+")");
+                "Ctrl+R still measures everything on disk (stable: "+unrelated.SpaceStatus+"; changes seen during the pass: "+string.Join(", ",lateChanges.Select(path=>Path.GetRelativePath(root,path)))+")");
             await VerifySpaceTabsAndDelete(root,folder,unrelated,visits,check);
             // CORE-31 (owner: switching views made the analysis walk D:\ for minutes while F5 was instant): a view switch
             // takes the index service's totals too.
