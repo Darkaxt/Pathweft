@@ -445,8 +445,9 @@ pub fn run(svc: Arc<Service>, slot: Arc<Slot>, root: FolderRoot) {
         have_tree = true;
         info!("{}: loaded {entries} entries from the saved index in {} ms", slot.name, t.elapsed().as_millis());
     }
-    let mut saved_at = Instant::now();
-    let mut saved_applied = slot.health.lock().unwrap().applied;
+    // Set by each successful scan, which always precedes the periodic saves.
+    let mut saved_at;
+    let mut saved_applied;
     while !slot.stopping() && !svc.stopping() {
         let Some(token) = svc.tokens.get(&root.owner) else {
             // The owner's token arrives with that user's next standard (not elevated) pipe connection.
@@ -608,7 +609,7 @@ mod tests {
         paths.insert(0, start.to_string());
         let mut out = Vec::new();
         for (k, e) in walked {
-            let p = format!("{}\{}", paths[&e.parent], e.name);
+            let p = format!("{}\\{}", paths[&e.parent], e.name);
             paths.insert(*k, p.clone());
             out.push((p, e.size, e.attrs & ATTR_DIRECTORY != 0));
         }
