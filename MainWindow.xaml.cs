@@ -1167,6 +1167,14 @@ public partial class MainWindow : Window
     {
         if (closingPreviews || sources.Count == 0 || dest == PaneView.ThisPC) return null;
         if (RemoteAddress.IsRemote(dest) || sources.Any(RemoteAddress.IsRemote)) { RemoteTransfer(sources, dest, move); return null; } // BROWSE-09
+        // Moving items into the folder they are already in does nothing, as in Explorer: no transfer and no
+        // "already in this folder" failure card (1.1.101 showed one after a click turned into a drag).
+        if (move)
+        {
+            string into = Path.TrimEndingDirectorySeparator(Path.GetFullPath(dest));
+            sources = sources.Where(s => !string.Equals(Path.GetDirectoryName(Path.TrimEndingDirectorySeparator(Path.GetFullPath(s))), into, StringComparison.OrdinalIgnoreCase)).ToList();
+            if (sources.Count == 0) return null;
+        }
         if (ask && !ArchivePasswords(sources)) return null;
         if (move && ask && sources.Select(s => Path.GetDirectoryName(s.TrimEnd('\\'))).Distinct(StringComparer.OrdinalIgnoreCase).Count() is var folders and > 1
             && PromptDialog.Choose(this, $"Move {sources.Count:N0} items from {folders:N0} folders into one folder?", "All of them go into " + dest, "Move", "Cancel") != 0) return null;

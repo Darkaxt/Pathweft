@@ -3027,6 +3027,10 @@ public partial class PaneView : UserControl
 
     // ---- Drag & drop: between panes, and to/from Explorer (CF_HDROP). Explorer's rules: Ctrl copies, Shift moves, else same drive moves. ----
     Point dragStart;
+    // Where the press was on the screen: a file drag starts only when the pointer itself moves. The preview
+    // panel opening for the clicked file resizes the list, which moved the press point relative to the list
+    // by more than the drag distance, so a single click started a drag onto the same folder.
+    Point dragStartScreen;
     bool dragArmed;
     Entry keepSelection; // click on an already multi-selected row: keep the selection so it can be dragged
 
@@ -3063,8 +3067,9 @@ public partial class PaneView : UserControl
         if (InTextBox(e.OriginalSource)) { dragArmed = false; keepSelection = null; return; }
         CommitRename();
         var row = RowAt(e.OriginalSource as DependencyObject);
-        dragArmed = row is { IsUp: false };
+        dragArmed = row is { IsUp: false } && e.ClickCount == 1; // the second press of a double-click opens
         dragStart = e.GetPosition(List);
+        dragStartScreen = List.PointToScreen(dragStart);
         keepSelection = null; deselectOnUp = null;
         // A press on empty space (not a row, scrollbar or column header) may become a selection rectangle.
         // In Details, so may a press on a row outside its Name column, as in Explorer — a full folder
@@ -3263,8 +3268,9 @@ public partial class PaneView : UserControl
         if (rightArmed && e.RightButton == MouseButtonState.Pressed) { MarqueeMove(e); e.Handled = Marquee.Visibility == Visibility.Visible; return; }
         if (marqueeArmed && e.LeftButton == MouseButtonState.Pressed) { MarqueeMove(e); e.Handled = Marquee.Visibility == Visibility.Visible; return; }
         if (!dragArmed || renamingEntry != null || e.LeftButton != MouseButtonState.Pressed) return;
-        var d = e.GetPosition(List) - dragStart;
-        if (Math.Abs(d.X) < SystemParameters.MinimumHorizontalDragDistance && Math.Abs(d.Y) < SystemParameters.MinimumVerticalDragDistance) return;
+        var dpi = VisualTreeHelper.GetDpi(List);
+        var d = List.PointToScreen(e.GetPosition(List)) - dragStartScreen;
+        if (Math.Abs(d.X) / dpi.DpiScaleX < SystemParameters.MinimumHorizontalDragDistance && Math.Abs(d.Y) / dpi.DpiScaleY < SystemParameters.MinimumVerticalDragDistance) return;
         dragArmed = false; keepSelection = null; deselectOnUp = null; renameCandidate = null;
         if(Selected.Count==0||IsRemoteFolder)return; // BROWSE-09: remote rows go by Copy/Move to the other pane
         var data=CreateDragData();
@@ -3324,8 +3330,10 @@ public partial class PaneView : UserControl
             // no dropping a folder onto itself, nor into the folder it's already in — except Ctrl+drop (a copy),
             // which duplicates there as in Explorer ("name - Copy.ext")
             bool duplicate = effects == DragDropEffects.Copy && e.KeyStates.HasFlag(DragDropKeyStates.ControlKey);
-            if (files.Any(f => f.Equals(target, StringComparison.OrdinalIgnoreCase)
-                            || !duplicate && System.IO.Path.GetDirectoryName(f)?.Equals(target, StringComparison.OrdinalIgnoreCase) == true))
+            // compared without a trailing separator: a folder target of "E:\a\b\" is the folder of "E:\a\b\f.mp4"
+            string into = System.IO.Path.TrimEndingDirectorySeparator(target);
+            if (files.Any(f => System.IO.Path.TrimEndingDirectorySeparator(f).Equals(into, StringComparison.OrdinalIgnoreCase)
+                            || !duplicate && System.IO.Path.GetDirectoryName(System.IO.Path.TrimEndingDirectorySeparator(f))?.Equals(into, StringComparison.OrdinalIgnoreCase) == true))
                 effects = DragDropEffects.None;
         }
         return effects;
