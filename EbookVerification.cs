@@ -107,6 +107,8 @@ public partial class MainWindow
         if (string.IsNullOrEmpty(library) || !Directory.Exists(library)) { check(true, "Owner library pass not requested (PATHWEFT_EBOOK_LIBRARY unset)"); return; }
         var counts = new Dictionary<string, (int Opened, int Protected, int Failed)>();
         var failures = new List<string>();
+        // A file the share refuses to open (another program rewriting it, permissions) is not a reader failure; it is listed.
+        var unreadable = new List<string>();
         foreach (var path in Directory.EnumerateFiles(library, "*", SearchOption.AllDirectories).Where(p => EbookViewer.Extensions.Contains(Path.GetExtension(p).ToLowerInvariant())).Take(1000))
         {
             string extension = Path.GetExtension(path).ToLowerInvariant();
@@ -122,11 +124,12 @@ public partial class MainWindow
                     if (text) opened++; else { failed++; failures.Add(Path.GetFileName(path) + ": no text"); }
                 }
             }
+            catch (Exception ex) when (ex is UnauthorizedAccessException or IOException) { unreadable.Add(Path.GetFileName(path) + ": " + ex.GetType().Name); }
             catch (Exception ex) { failed++; failures.Add(Path.GetFileName(path) + ": " + ex.GetType().Name + " " + ex.Message); }
             counts[extension] = (opened, locked, failed);
         }
         string summary = string.Join("; ", counts.OrderBy(c => c.Key).Select(c => $"{c.Key} {c.Value.Opened} opened, {c.Value.Protected} DRM, {c.Value.Failed} failed"));
-        check(counts.Count > 0 && counts.Values.All(c => c.Failed == 0), "Owner library: every book opens with text or is reported DRM-protected: " + summary + (failures.Count > 0 ? " | " + string.Join(" | ", failures.Take(20)) : ""));
+        check(counts.Count > 0 && counts.Values.All(c => c.Failed == 0), "Owner library: every book opens with text or is reported DRM-protected: " + summary + (unreadable.Count > 0 ? $"; {unreadable.Count} not readable on the share" : "") + (failures.Count > 0 ? " | " + string.Join(" | ", failures.Take(20)) : ""));
     }
 
     static IEnumerable<DependencyObject> FlowDescendants(DependencyObject root)
@@ -155,7 +158,8 @@ public partial class MainWindow
             Add("mimetype", "application/epub+zip", CompressionLevel.NoCompression);
             Add("META-INF/container.xml", "<?xml version=\"1.0\"?><container version=\"1.0\" xmlns=\"urn:oasis:names:tc:opendocument:xmlns:container\"><rootfiles><rootfile full-path=\"OEBPS/content.opf\" media-type=\"application/oebps-package+xml\"/></rootfiles></container>");
             if (encrypted) Add("META-INF/encryption.xml", "<encryption xmlns=\"urn:oasis:names:tc:opendocument:xmlns:container\" xmlns:enc=\"http://www.w3.org/2001/04/xmlenc#\"><enc:EncryptedData><enc:EncryptionMethod Algorithm=\"http://www.w3.org/2001/04/xmlenc#aes128-cbc\"/><enc:CipherData><enc:CipherReference URI=\"OEBPS/text/ch1.xhtml\"/></enc:CipherData></enc:EncryptedData></encryption>");
-            Add("OEBPS/content.opf", "<?xml version=\"1.0\" encoding=\"utf-8\"?><package xmlns=\"http://www.idpf.org/2007/opf\" version=\"3.0\" unique-identifier=\"id\"><metadata xmlns:dc=\"http://purl.org/dc/elements/1.1/\">" +
+            // The package declares XML 1.1, as some Tor books do; .NET reads only 1.0, so the reader treats it as 1.0.
+            Add("OEBPS/content.opf", "<?xml version=\"1.1\" encoding=\"utf-8\"?><package xmlns=\"http://www.idpf.org/2007/opf\" version=\"3.0\" unique-identifier=\"id\"><metadata xmlns:dc=\"http://purl.org/dc/elements/1.1/\">" +
                 "<dc:identifier id=\"id\">urn:uuid:fixture</dc:identifier><dc:title>Fixture Voyage</dc:title><dc:creator>Ada Writer</dc:creator><dc:publisher>Harbor Press</dc:publisher><dc:date>2021-05-01</dc:date><dc:language>en</dc:language>" +
                 "<dc:description>&lt;p&gt;A short voyage along the coast.&lt;/p&gt;</dc:description><meta name=\"cover\" content=\"cover-img\"/></metadata><manifest>" +
                 "<item id=\"nav\" href=\"nav.xhtml\" media-type=\"application/xhtml+xml\" properties=\"nav\"/><item id=\"ch1\" href=\"text/ch1.xhtml\" media-type=\"application/xhtml+xml\"/><item id=\"ch2\" href=\"text/ch2.xhtml\" media-type=\"application/xhtml+xml\"/>" +

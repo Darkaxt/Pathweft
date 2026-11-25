@@ -130,6 +130,11 @@ internal static class EpubReader
     {
         // No DTD processing or external entities; XHTML entity declarations are ignored.
         var settings = new XmlReaderSettings { DtdProcessing = DtdProcessing.Ignore, XmlResolver = null, MaxCharactersFromEntities = 1 << 20 };
+        // .NET reads XML 1.0 only; books declaring version="1.1" (some Tor EPUBs) are read as 1.0.
+        int skip = data.Length >= 3 && data[0] == 0xEF && data[1] == 0xBB && data[2] == 0xBF ? 3 : 0;
+        var head = Encoding.ASCII.GetString(data, skip, Math.Min(data.Length - skip, 64));
+        int at = head.StartsWith("<?xml") ? Math.Max(head.IndexOf("version=\"1.1\""), head.IndexOf("version='1.1'")) : -1;
+        if (at >= 0) { data = (byte[])data.Clone(); data[skip + at + 11] = (byte)'0'; }
         using var reader = XmlReader.Create(new MemoryStream(data), settings);
         return XDocument.Load(reader);
     }
