@@ -1,16 +1,16 @@
 {
   "backend": "rars",
-  "version": "0.12.3-pathweft.2",
+  "version": "0.13.0-pathweft.1",
   "source": "https://github.com/bitplane/rars",
-  "sourceCommit": "e2415a2eb12e6b62deaa0cca919864eabe4671b1",
+  "sourceCommit": "f7098c7b9a1e844555daad1d376fd1f043adba2c",
   "abi": 2,
   "architecture": "x86_64-pc-windows-msvc",
   "rustc": "rustc 1.94.0 (4a4ef493e 2026-03-02)",
   "dll": "pathweft_rars.dll",
-  "dllSha256": "F4E4FCAB00F5E0B2CBE0BE0F21E4F968F58F5DB32262DD1A377373AA5C4DB79A",
-  "bridgeSourceSha256": "08FD4E9506088814E1188998A554AA8FC489FDA5633CB7B502D3BDE585ABF14A",
-  "lockSha256": "B0CB200D8D4FCEF1664358A34F76401D0A7A2F9D5510A0F69E57B922DACD56F4",
-  "cargoManifestSha256": "995A9364AA912DBD48C5503669CE41D346AAB76259EE0B939C80ECB76ACFDA4D",
+  "dllSha256": "AE25A205C6952DF2858CBFFC638C81AF02B02DEC482AD18DED9EAE2D6E8EFDAB",
+  "bridgeSourceSha256": "42484118941BCBEBF1B5B36F18AEB07D247D65BBE941D6FECDC8008A74CE4A1F",
+  "lockSha256": "8EB03B84D85004E82482BF1E084787867027D9981E59FCA9797F1E6704948148",
+  "cargoManifestSha256": "D3084953F1E95B3082BBA8C808C4B333FCFDB5810EE3E91CA2F3D5D1E28FCABA",
   "license": "Apache-2.0 donor; GPL-3.0-or-later Pathweft bridge",
   "dependencies": [
     {
@@ -23,6 +23,18 @@
       "name": "aho-corasick",
       "version": "1.1.5",
       "license": "Unlicense OR MIT",
+      "source": "registry+https://github.com/rust-lang/crates.io-index"
+    },
+    {
+      "name": "arrayvec",
+      "version": "0.7.8",
+      "license": "MIT OR Apache-2.0",
+      "source": "registry+https://github.com/rust-lang/crates.io-index"
+    },
+    {
+      "name": "blake2s_simd",
+      "version": "1.0.5",
+      "license": "MIT",
       "source": "registry+https://github.com/rust-lang/crates.io-index"
     },
     {
@@ -59,6 +71,12 @@
       "name": "const-oid",
       "version": "0.10.2",
       "license": "Apache-2.0 OR MIT",
+      "source": "registry+https://github.com/rust-lang/crates.io-index"
+    },
+    {
+      "name": "constant_time_eq",
+      "version": "0.4.2",
+      "license": "CC0-1.0 OR MIT-0 OR Apache-2.0",
       "source": "registry+https://github.com/rust-lang/crates.io-index"
     },
     {
@@ -171,9 +189,9 @@
     },
     {
       "name": "rars",
-      "version": "0.12.3",
+      "version": "0.13.0",
       "license": "Apache-2.0",
-      "source": "git+https://github.com/bitplane/rars?rev=e2415a2eb12e6b62deaa0cca919864eabe4671b1#e2415a2eb12e6b62deaa0cca919864eabe4671b1"
+      "source": "git+https://github.com/bitplane/rars?rev=f7098c7b9a1e844555daad1d376fd1f043adba2c#f7098c7b9a1e844555daad1d376fd1f043adba2c"
     },
     {
       "name": "rustversion",
