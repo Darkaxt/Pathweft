@@ -90,7 +90,11 @@ public partial class ToolReport : Window
     }
 
     void Extra_Click(object s, RoutedEventArgs e) => Run();
-    void Copy_Click(object s, RoutedEventArgs e) =>
-        Clipboard.SetText(string.Join(Environment.NewLine, rows.Select(r => r.Value is { Length: > 0 } v ? $"{r.Name}\t{v}" : r.Name)));
+    void Copy_Click(object s, RoutedEventArgs e)
+    {
+        string error = ClipboardText.TrySet(string.Join(Environment.NewLine, rows.Select(r => r.Value is { Length: > 0 } v ? $"{r.Name}\t{v}" : r.Name)));
+        CopyButton.Content = error == null ? "Copied" : "Copy";
+        CopyButton.ToolTip = error;
+    }
     void Close_Click(object s, RoutedEventArgs e) => Close();
 }

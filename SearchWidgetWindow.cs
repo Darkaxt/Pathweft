@@ -173,7 +173,7 @@ internal sealed class SearchWidgetWindow : Window
         menu.Items.Add(MainWindow.Item("Preview","\uE8B7","Space",Preview,one));
         menu.Items.Add(MainWindow.Item("Open containing folder","\uE838","Ctrl+Shift+Enter",RevealSelection,one&&physical&&Path.GetDirectoryName(paths[0].TrimEnd('\\'))!=null));
         menu.Items.Add(new Separator());
-        menu.Items.Add(MainWindow.Item("Copy path","\uE8C8","Ctrl+Shift+C",()=>System.Windows.Forms.Clipboard.SetText(Entry.QuotedPaths(Pane.Selected)),selected.Count>0));
+        menu.Items.Add(MainWindow.Item("Copy path","\uE8C8","Ctrl+Shift+C",()=>main.PutText(Entry.QuotedPaths(Pane.Selected),"Path copied"),selected.Count>0));
         var properties=MainWindow.Item("Properties","\uE946","Alt+Enter",PropertiesSelection,physical&&MainWindow.SupportsProperties(paths));
         if(physical&&!properties.IsEnabled){properties.ToolTip="Select results on the same drive or share for combined Properties.";ToolTipService.SetShowOnDisabled(properties,true);}menu.Items.Add(properties);
         MainWindow.PrepareContextMenu(menu,Pane.List);
@@ -212,7 +212,7 @@ internal sealed class SearchWidgetWindow : Window
         if(key==Key.Enter&&modifiers==(ModifierKeys.Control|ModifierKeys.Shift)){RevealSelection();return true;}
         if(key==Key.C&&modifiers==(ModifierKeys.Control|ModifierKeys.Shift)&&source is not TextBox)
         {
-            if(Pane.Selected.Count>0)System.Windows.Forms.Clipboard.SetText(Entry.QuotedPaths(Pane.Selected));
+            if(Pane.Selected.Count>0)main.PutText(Entry.QuotedPaths(Pane.Selected),"Path copied");
             return true;
         }
         return false;

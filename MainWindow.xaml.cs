@@ -1898,8 +1898,7 @@ public partial class MainWindow : Window
             case Key.R when ctrl: SizeCache.Clear(); active.Refresh(force: true, measure: true); break;
             case Key.F5 when !ctrl: SizeCache.Clear(); active.Refresh(force: true); break;
             case Key.C when ctrl && shift:
-                Clipboard.SetText(Entry.QuotedPaths(active.Selected));
-                Status.Text = "Path copied"; break;
+                PutText(Entry.QuotedPaths(active.Selected), "Path copied"); break;
             case Key.Oem3 when ctrl && !shift: OpenTerminal(); break;
             case Key.Left when alt: active.Back(); break;
             case Key.Right when alt: active.Forward(); break;

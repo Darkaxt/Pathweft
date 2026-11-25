@@ -206,8 +206,8 @@ public partial class MainWindow
         m.Items.Add(Item("Add to Drop bin", "\uE7B8", "Ctrl+B", () => AddToBin(sel.Select(x => x.Path))));
         m.Items.Add(AddToCollectionMenu(sel)); // OPUS-04
         m.Items.Add(new Separator());
-        m.Items.Add(Item("Copy path", "", "Ctrl+Shift+C", () => Clipboard.SetText(Entry.QuotedPaths(sel))));
-        m.Items.Add(Item("Copy name", "", "", () => Clipboard.SetText(string.Join(Environment.NewLine, sel.Select(x => x.Name)))));
+        m.Items.Add(Item("Copy path", "", "Ctrl+Shift+C", () => PutText(Entry.QuotedPaths(sel), "Path copied")));
+        m.Items.Add(Item("Copy name", "", "", () => PutText(string.Join(Environment.NewLine, sel.Select(x => x.Name)), "Name copied")));
         foreach (var detail in CopyDetailItems(p, sel)) m.Items.Add(detail);
         var table = Item("Copy as table", "\uE8C8", "", () => CopyAsTable(p)); table.Tag = "copy-detail"; m.Items.Add(table); // OPUS-06
         m.Items.Add(one ? Item("Rename", "", "F2", Rename) : Item("Rename all…", "", "F2", RenameMany));

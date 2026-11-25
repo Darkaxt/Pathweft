@@ -176,7 +176,6 @@ internal sealed class OcrOverlay : Grid
 #if DEBUG
         if(ClipboardForVerification!=null){ClipboardForVerification(text);Report("Text copied.",false);return;}
 #endif
-        try{Clipboard.SetText(text);Report("Text copied.",false);}
-        catch(System.Runtime.InteropServices.COMException error){Report("The clipboard is in use by another application. "+error.Message,true);}
+        string error=ClipboardText.TrySet(text);Report(error??"Text copied.",error!=null);
     }
 }

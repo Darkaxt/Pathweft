@@ -135,7 +135,7 @@ public partial class MainWindow
     internal void ShowChecksums(List<(string Name, Dictionary<string, string> Values)> results, IReadOnlyCollection<string> names)
     {
         if (results.Count == 0) { Status.Text = "No files to checksum"; return; }
-        string clip = Checksums.Clipboard(Clipboard.ContainsText() ? Clipboard.GetText().Trim() : "");
+        string clip = Checksums.Clipboard(ClipboardText.TryGet().Trim());
         bool Same(string value) => clip != null && value != null && value.Equals(clip, StringComparison.OrdinalIgnoreCase);
         if (results.Count == 1 && names.Count == 1)
         {
@@ -148,7 +148,7 @@ public partial class MainWindow
             ChecksumShownForVerification?.Invoke(label, hash);
             if (ChecksumShownForVerification != null) return;
 #endif
-            if (PromptDialog.Ask(this, Path.GetFileName(name), label, hash, "Copy", selectAll: true) != null) Clipboard.SetText(hash);
+            if (PromptDialog.Ask(this, Path.GetFileName(name), label, hash, "Copy", selectAll: true) != null) PutText(hash, "Hash copied");
             return;
         }
         var rows = new List<ReportRow>();

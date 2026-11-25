@@ -34,8 +34,7 @@ public partial class MainWindow
 #if DEBUG
         if (CopySink is { } sink) { sink(text); return; } // verification never takes the clipboard
 #endif
-        Clipboard.SetText(text);
-        Status.Text = $"Copied {rows.Count:N0} row(s) as a table";
+        PutText(text, $"Copied {rows.Count:N0} row(s) as a table");
     }
 
     internal void ExportListing(PaneView p)

@@ -60,8 +60,8 @@ public partial class MainWindow
             am.Items.Add(Writes(Item("Group into new folder…", "", "", () => ArchiveGroupIntoFolder(p, rows))));
             am.Items.Add(Item("Add to Drop bin", "", "Ctrl+B", () => AddToBin(rows.Select(x => x.Path))));
             // as Explorer's Copy as path inside a ZIP: the archive's path followed by the entry's
-            am.Items.Add(Item("Copy path", "", "Ctrl+Shift+C", () => Clipboard.SetText(Entry.QuotedPaths(rows))));
-            am.Items.Add(Item("Copy name", "", "", () => Clipboard.SetText(string.Join(Environment.NewLine, rows.Select(x => x.Name)))));
+            am.Items.Add(Item("Copy path", "", "Ctrl+Shift+C", () => PutText(Entry.QuotedPaths(rows), "Path copied")));
+            am.Items.Add(Item("Copy name", "", "", () => PutText(string.Join(Environment.NewLine, rows.Select(x => x.Name)), "Name copied")));
             foreach (var detail in CopyDetailItems(p, rows)) am.Items.Add(detail);
             am.Items.Add(one ? WriteAction("Rename", "F2", p.BeginRename) : WriteAction("Rename all…", "F2", () => ArchiveRenameMany(p)));
             am.Items.Add(WriteAction("Delete", "Del", () => DeleteFromArchive(p)));

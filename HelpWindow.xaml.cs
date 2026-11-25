@@ -83,7 +83,7 @@ public partial class HelpWindow : Window
             ("F8 / Del", "Delete to the Recycle Bin; on a drive with its Recycle Bin turned off, it asks first, since that delete is for good"),
             ("Shift+Del, Enter", "Delete permanently; the next file is selected, to carry on from there"),
             ("Ctrl+Z", "Undo the latest copy, move, rename, delete, new file or folder, zip, extract or shortcut in this tab's folder: something made, renamed, moved or deleted there. The folder's right-click menu names it as Undo …. Operations in other folders wait for their own tab, and History → Operation history… can undo any of them"),
-            ("Ctrl+Shift+C", "Copy the selected paths, quoted like Explorer's Copy as path; Copy name is in the right-click menu"),
+            ("Ctrl+Shift+C", "Copy the selected paths, quoted like Explorer's Copy as path; Copy name is in the right-click menu. When another program is using the clipboard, the status bar says nothing was copied: try again"),
             ("Alt+Enter", "Properties; with several items selected, Windows' combined dialog with their total size"),
             ("Enter on a script", "Runs .bat and .cmd files in their own folder, as Explorer does; F4 edits them. .ps1 opens in the editor"),
             ("Recycle Bin", "In Favorites: what was deleted, from where and when; Restore puts items back, and it can delete them for good or empty the bin"),

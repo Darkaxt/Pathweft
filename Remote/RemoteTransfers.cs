@@ -210,7 +210,7 @@ public partial class MainWindow
         m.Items.Add(new Separator());
         m.Items.Add(Item("Copy to other pane", "", "F5", () => Transfer(false), !Settings.SinglePane && (!PaneView.IsVirtual(Other.Dir) || RemoteAddress.IsRemote(Other.Dir))));
         m.Items.Add(Item("Move to other pane", "", "F6", () => Transfer(true), !Settings.SinglePane && (!PaneView.IsVirtual(Other.Dir) || RemoteAddress.IsRemote(Other.Dir))));
-        m.Items.Add(Item("Copy address", "", "", () => { Clipboard.SetText(string.Join(Environment.NewLine, sel.Select(e => e.Path))); Status.Text = "Address copied"; }));
+        m.Items.Add(Item("Copy address", "", "", () => PutText(string.Join(Environment.NewLine, sel.Select(e => e.Path)), "Address copied")));
         m.Items.Add(new Separator());
         m.Items.Add(Item("Rename", "", "F2", () => p.BeginRename(), one));
         m.Items.Add(Item("Delete permanently…", "", "Del", () => p.RemoteDelete()));
@@ -226,7 +226,7 @@ public partial class MainWindow
         var view = Item("View", "", "", () => { });
         foreach (var item in p.ViewMenuItems()) view.Items.Add(item);
         m.Items.Add(view);
-        m.Items.Add(Item("Copy address", "", "", () => { Clipboard.SetText(p.Dir); Status.Text = "Address copied"; }));
+        m.Items.Add(Item("Copy address", "", "", () => PutText(p.Dir, "Address copied")));
         return m;
     }
 }

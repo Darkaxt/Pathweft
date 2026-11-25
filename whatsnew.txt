@@ -1,6 +1,10 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.104 | 2026-11-26 | Copying no longer crashes when the clipboard is busy
+
+- Copy path, Copy name and Pathweft's other text copies no longer close Pathweft when another program is using the clipboard. The status bar says nothing was copied; try again a moment later.
+
 ## 1.1.103 | 2026-11-25 | Updated RAR library
 
 - Pathweft's RAR library is updated to rars 0.13.0, with its fixes for reading the end of files and archives, split archives, and writing older RAR versions. RAR browsing, creating and editing work as before; damaged or cut-off RAR archives are refused and left untouched.

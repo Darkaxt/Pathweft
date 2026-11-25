@@ -240,7 +240,7 @@ public partial class MainWindow
 #if DEBUG
         if (CopySink is { } sink) { sink(text); return; } // verification never takes the clipboard
 #endif
-        Clipboard.SetText(text);
+        PutText(text, null);
     }
 #if DEBUG
     internal static Action<string> CopySink;
