@@ -135,9 +135,21 @@ internal static class EpubReader
         var head = Encoding.ASCII.GetString(data, skip, Math.Min(data.Length - skip, 64));
         int at = head.StartsWith("<?xml") ? Math.Max(head.IndexOf("version=\"1.1\""), head.IndexOf("version='1.1'")) : -1;
         if (at >= 0) { data = (byte[])data.Clone(); data[skip + at + 11] = (byte)'0'; }
-        using var reader = XmlReader.Create(new MemoryStream(data), settings);
-        return XDocument.Load(reader);
+        try
+        {
+            using var reader = XmlReader.Create(new MemoryStream(data), settings);
+            return XDocument.Load(reader);
+        }
+        catch (XmlException) when (Decode(data) is var text && HtmlEntity.IsMatch(text))
+        {
+            // HTML entities such as &nbsp; with no DTD to declare them (seen in an NCX): written as character references.
+            text = HtmlEntity.Replace(text, m => System.Net.WebUtility.HtmlDecode(m.Value) is { Length: 1 } c ? "&#" + (int)c[0] + ";" : m.Value);
+            using var reader = XmlReader.Create(new StringReader(text), settings);
+            return XDocument.Load(reader);
+        }
     }
+
+    static readonly System.Text.RegularExpressions.Regex HtmlEntity = new(@"&(?!(?:amp|lt|gt|quot|apos);)[A-Za-z][A-Za-z0-9]*;", System.Text.RegularExpressions.RegexOptions.CultureInvariant);
 
     // UTF-8 unless a BOM or the XML declaration names another encoding.
     internal static string Decode(byte[] data)

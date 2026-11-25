@@ -13,7 +13,11 @@ namespace FileExplorer.Preview.Ebook;
 
 internal static class Markup
 {
-    internal static IDocument Parse(string html) => new HtmlParser(new HtmlParserOptions { IsScripting = false }).ParseDocument(html ?? "");
+    // Book chapters are XHTML: an empty <title/> or <h1 .../> would open an element that swallows the rest
+    // of the page under HTML parsing, so self-closed non-void elements are written out as open and close tags.
+    static readonly System.Text.RegularExpressions.Regex SelfClosed = new(@"<(?!(?:area|base|br|col|embed|hr|img|input|link|meta|param|source|track|wbr)\b)([A-Za-z][\w:.-]*)(\s[^<>]*?)?\s*/>",
+        System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.CultureInvariant);
+    internal static IDocument Parse(string html) => new HtmlParser(new HtmlParserOptions { IsScripting = false }).ParseDocument(SelfClosed.Replace(html ?? "", "<$1$2></$1>"));
     internal static string PlainText(string html) => EpubReader.Clean(Parse("<body>" + html + "</body>").Body?.TextContent ?? html);
 }
 
