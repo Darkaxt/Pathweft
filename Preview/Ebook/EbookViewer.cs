@@ -94,8 +94,9 @@ internal sealed class EbookViewer(MainWindow owner, Entry entry) : IViewer
         controls.Children.Add(previous); controls.Children.Add(label); controls.Children.Add(next); controls.Children.Add(number);
         DockPanel.SetDock(controls, Dock.Bottom); root.Children.Add(controls);
 
+        // DocumentViewerBase sets MasterPageNumber before CanGoToNextPage/CanGoToPreviousPage, so the buttons also follow those two.
         pages = new FlowDocumentPageViewer { Template = PageTemplate(), Focusable = true, Background = Brushes.Transparent };
-        foreach (var property in new[] { DocumentViewerBase.MasterPageNumberProperty, DocumentViewerBase.PageCountProperty })
+        foreach (var property in new[] { DocumentViewerBase.MasterPageNumberProperty, DocumentViewerBase.PageCountProperty, DocumentViewerBase.CanGoToNextPageProperty, DocumentViewerBase.CanGoToPreviousPageProperty })
         {
             var descriptor = DependencyPropertyDescriptor.FromProperty(property, typeof(FlowDocumentPageViewer)); EventHandler handler = (_, _) => Update();
             descriptor.AddValueChanged(pages, handler); watchers.Add((descriptor, handler));
