@@ -1,6 +1,10 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.103 | 2026-11-25 | Updated RAR library
+
+- Pathweft's RAR library is updated to rars 0.13.0, with its fixes for reading the end of files and archives, split archives, and writing older RAR versions. RAR browsing, creating and editing work as before; damaged or cut-off RAR archives are refused and left untouched.
+
 ## 1.1.102 | 2026-11-25 | Clicks no longer start drags
 
 - Clicking or double-clicking a file while the preview panel opens no longer starts a drag. The panel resizing the file list moved the file under a still pointer, which Pathweft took for a drag onto the file's own folder. A drag now starts only when the mouse itself moves.

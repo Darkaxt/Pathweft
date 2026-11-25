@@ -70,7 +70,35 @@ try
         Call("Extract", path, new[] { "renamed 子", "second.txt" }, "", target);
         Check(Hash(Path.Combine(target, "renamed 子/large.bin")) == Hash(Path.Combine(fixtures, "large-original.bin")), "solid/encrypted rewrite independently decodes: " + Path.GetFileName(path));
         if (encrypted) { Call("SetPassword", path, null!); Check(!(bool)Call("CanChange", path), "encrypted header edit needs the session password"); Call("SetPassword", path, "fixture-password"); }
+        byte[] whole = File.ReadAllBytes(input);
+        foreach (var (kind, bytes) in new[] { ("truncated", whole[..(whole.Length / 2)]), ("damaged", whole.Select((x, i) => i >= 8 && i < 72 ? (byte)(x ^ 0x5A) : x).ToArray()) })
+        {
+            string bad = Path.Combine(Directory.CreateDirectory(Path.Combine(root, "malformed")).FullName, kind + " " + Path.GetFileName(input)); File.WriteAllBytes(bad, bytes);
+            if (encrypted) Call("SetPassword", bad, "fixture-password");
+            bool refused = false; try { Call("Edit", bad, new Dictionary<int, string>(), new Dictionary<string, string> { ["new.txt"] = added }); } catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException) { refused = true; }
+            Check(refused && File.ReadAllBytes(bad).SequenceEqual(bytes), "malformed RAR is refused and kept byte for byte: " + kind + " " + Path.GetFileName(input));
+        }
     }
+    // ARCHIVE-12's RAR writer settings without the UI (the S4 trial needs the user's clipboard):
+    // Maximum, solid, 3% recovery record, password with encrypted names, 1 MB volumes.
+    var optionsType = typeof(App).Assembly.GetType("FileExplorer.ArchiveOptions", true)!;
+    object Options(params (string Name, object Value)[] values) { var o = Activator.CreateInstance(optionsType, true)!; foreach (var (n, v) in values) optionsType.GetProperty(n)!.SetValue(o, v); return o; }
+    string optionsRoot = Directory.CreateDirectory(Path.Combine(root, "options")).FullName, bulk = Path.Combine(optionsRoot, "bulk.bin");
+    var noise = new byte[3 << 20]; new Random(1103).NextBytes(noise); File.WriteAllBytes(bulk, noise);
+    const string secret = "fixture-secret 子 ARCHIVE-12";
+    Call("Create", Path.Combine(optionsRoot, "options 子.rar"), new Dictionary<string, string> { ["bulk.bin"] = bulk, ["notes/a.txt"] = a }, null!,
+        Options(("Format", "rar"), ("Level", 4), ("Solid", "on"), ("Recovery", 3), ("Password", secret), ("EncryptNames", true), ("VolumeSize", 1L << 20)));
+    string[] parts = Directory.GetFiles(optionsRoot, "options 子.part*.rar"); string firstPart = parts.Single(p => p.EndsWith(".part1.rar"));
+    Check(parts.Length >= 3 && parts.All(p => new FileInfo(p).Length <= 1 << 20) && (bool)Call("HidesNames", firstPart), "ARCHIVE-12 RAR Maximum solid volumes with a recovery record stay within 1 MB and hide their names: " + string.Join(", ", parts.Select(p => new FileInfo(p).Length)));
+    Call("SetPassword", firstPart, secret);
+    string joined = Directory.CreateDirectory(Path.Combine(optionsRoot, "decoded")).FullName;
+    Call("Extract", firstPart, new[] { "bulk.bin", "notes" }, "", joined);
+    Check(Hash(Path.Combine(joined, "bulk.bin")) == Hash(bulk) && Hash(Path.Combine(joined, "notes/a.txt")) == Hash(a), "ARCHIVE-12 the encrypted RAR volume set decodes to its inputs with the password");
+    Check(((string)Call("ChangeReason", firstPart)).Length > 0, "RAR volume sets stay read-only with a reason: " + (string)Call("ChangeReason", firstPart));
+    Call("SetPassword", firstPart, null!);
+    string recovered = Path.Combine(optionsRoot, "recovery.rar");
+    Call("Create", recovered, new Dictionary<string, string> { ["bulk.bin"] = bulk }, null!, Options(("Format", "rar"), ("Recovery", 3)));
+    Check(((string)Call("ChangeReason", recovered)).Contains("recovery-record"), "the native reader finds the recovery record the writer added");
     string unsupported = Path.Combine(Path.GetDirectoryName(root)!, "unsupported-fixtures");
     if (Directory.Exists(unsupported)) foreach (string input in Directory.GetFiles(unsupported, "*.rar"))
     {
@@ -128,7 +156,7 @@ try
     foreach (string path in Directory.GetFiles(root, "*.rar")) using (File.Open(path, FileMode.Open, FileAccess.ReadWrite, FileShare.None)) { }
     using (File.Open(a, FileMode.Open, FileAccess.ReadWrite, FileShare.None)) { }
     var module = System.Diagnostics.Process.GetCurrentProcess().Modules.Cast<System.Diagnostics.ProcessModule>().Single(m => m.ModuleName == "pathweft_rars.dll");
-    File.WriteAllText(Path.Combine(root, "native-identity.json"), System.Text.Json.JsonSerializer.Serialize(new { module.FileName, sha256 = Hash(module.FileName), source = "e2415a2eb12e6b62deaa0cca919864eabe4671b1" }));
+    File.WriteAllText(Path.Combine(root, "native-identity.json"), System.Text.Json.JsonSerializer.Serialize(new { module.FileName, sha256 = Hash(module.FileName), source = "f7098c7b9a1e844555daad1d376fd1f043adba2c" }));
     Check(true, "native calls release input/output handles and load the app-owned DLL");
     Console.WriteLine("RAR contracts passed."); return 0;
 }

@@ -10,6 +10,6 @@ publish = false
 crate-type = ["cdylib"]
 
 [dependencies]
-rars = { git = "https://github.com/bitplane/rars", rev = "e2415a2eb12e6b62deaa0cca919864eabe4671b1", default-features = false, features = ["write", "encryption", "recovery"] }
+rars = { git = "https://github.com/bitplane/rars", rev = "f7098c7b9a1e844555daad1d376fd1f043adba2c", default-features = false, features = ["write", "encryption", "recovery"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

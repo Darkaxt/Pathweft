@@ -15,11 +15,8 @@ fn main() -> rars::Result<()> {
         ("encrypted-rar4", ArchiveVersion::Rar40, true),
         ("encrypted-rar5", ArchiveVersion::Rar50, true),
     ] {
-        let time = Some(if version.family() == rars::ArchiveFamily::Rar50Plus {
-            1_700_000_000
-        } else {
-            0x576e_b1aa
-        });
+        // 2023-11-14 22:13:20 UTC; legacy formats store it as their DOS time.
+        let time = Some(rars::Timestamp::from_unix_seconds(1_700_000_000));
         let mut builder = Builder::new(version)
             .compression_level(Some(3))
             .solid(true)
@@ -97,7 +94,7 @@ fn main() -> rars::Result<()> {
     legacy.add_bytes(
         b"original.txt".to_vec(),
         b"legacy comment fixture".to_vec(),
-        Some(0x576e_b1aa),
+        Some(rars::Timestamp::from_unix_seconds(1_700_000_000)),
         None,
     )?;
     legacy.set_file_comment(b"original.txt", Some(b"legacy member comment".to_vec()))?;

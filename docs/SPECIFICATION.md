@@ -1,6 +1,6 @@
 # Pathweft specification
 
-Version 1.63 - 2026-11-25. Owner: Darkaxt.
+Version 1.64 - 2026-11-25. Owner: Darkaxt.
 
 ### Read-only MCP expansion (S48)
 
@@ -1879,7 +1879,7 @@ S8 gate. Keep integration opt-in and preserve existing settings during installat
 | Everything engine | 1.4.1.1032 (until 1.1.79) | Retired by SEARCH-09: no longer used or packaged; the Pathweft index service (native/pathweft-index) replaces it. |
 | F3D | 4.0.0, b72c7b5c9244e4a0c12975ce6546645c1a8b2680 | Source-derived C API/offscreen rendering for the S3 GLB prototype |
 | 7-Zip | Pin source/SDK/runtime in S4 | Native archive browsing and supported edit operations |
-| rars | `e2415a2eb12e6b62deaa0cca919864eabe4671b1`, crate 0.12.3 | S4R embedded RAR encoder/rewrite API; Apache-2.0; independently qualify before enabling edits |
+| rars | `f7098c7b9a1e844555daad1d376fd1f043adba2c`, crate 0.13.0 (was e2415a2 / 0.12.3 until 1.1.103) | S4R embedded RAR encoder/rewrite API; Apache-2.0; independently qualify before enabling edits |
 | TeraCopy | 4.0.5.0 x64, signed main SHA-256 `1f0cca0be4e6a22e856c3b0de6655a1af8059a06cc66133398307de335098c6f` | Required REA reference, not a product runtime dependency. Evidence and bounded behavior adoption: [S5 transfer contract](S5-TRANSFER-ADOPTION.md). |
 | StartAllBack | Host 3.9.25; current isolated qualification 3.9.28 on 2026-10-30; identify exact artifact/hash and Windows dependencies for each capture | Proprietary host for a version-bound native search adapter; current-build qualification replaces routine downgrades; no donor binary redistribution or provider-hook feasibility claimed |
 
@@ -2103,6 +2103,7 @@ must be detected and reported rather than silently converting or losing data.
 | RAR-03 | Preflight source preservation through the pinned library before offering/publishing edits. Qualify supported solid and encrypted single-file archives; preserve their supported names, content, timestamps/attributes, comments and encryption settings. Refuse unsupported metadata, links, ambiguous names, codecs and multipart rewrites with a concrete reason. Do not claim every RAR variant writable; maintain an explicit capability table backed by fixtures. Passwords remain session-only and absent from logs. |
 | RAR-04 | Reuse staged verification and atomic replacement: independently decode the staged output with 7-Zip and compare all expected names/content before publication; exercise UnRAR interoperability independently on representative writer outputs. Source/input changes, native failure, cancellation and failed verification preserve originals and retain cut sources. Own native buffers, callbacks and scratch through actual completion; verify no orphan process or locked input/output. |
 | RAR-05 | Verify the complete integration through hidden real WPF pane/action/queue workflows, including preview and encrypted password handling, plus focused data-preservation and interoperability contracts. Retain actionable evidence, clean expendable scratch, reconcile RAR-01..05 and commit/push/read back. Final package/source/license/install and downloadable delivery remain S8; no intermediate product release. |
+| RAR-06 | Upstream review of 2026-11-23 (rars 0.13.0: reader end-of-member and end-of-archive handling, split-volume boundaries, RAR 2.9-4 writing and RAR 5 decoding fixes, plus a breaking Rust API change): adopt rars 0.13.0 (`f7098c7b9a1e844555daad1d376fd1f043adba2c`) only after qualifying archive read, write, recovery and the packaged DLL; the runtime becomes 0.13.0-pathweft.1, native ABI 2 unchanged, with Pathweft's behavior unchanged (the bridge keeps its operations, JSON and timestamps; RAR 1.5-4 timestamps are copied through rars' own time copy). Acceptance: the DLL is built from the locked sources through the Rust gate and its provenance manifest regenerated; the RAR contracts pass (creation, rename/add/delete, 7-Zip decode, failed publication, delete-all, solid and encrypted rar4/rar5/rar7 rewrites, unsupported refusals, native cancellation, transfers, DLL identity) and new contracts refuse truncated and header-damaged archives without changing their bytes; ARCHIVE-12's RAR writer settings are created and read back in the RAR contracts (Maximum, solid, 3% recovery record found by the native reader, password with encrypted names, 1 MB volumes within their size, decoded with the password; the S4 UI trial is not run because it uses the owner's clipboard); official UnRAR extracts the edited fixtures and that volume set; a missing or incompatible DLL leaves browsing available and editing honestly unavailable; the package ships the qualified DLL and corresponding Rust sources vendored from the new lock (the build refuses vendored sources that differ from the lock). If a criterion fails, the 0.12.3 pin stays. |
 
 ### REA-driven transfer improvements
 

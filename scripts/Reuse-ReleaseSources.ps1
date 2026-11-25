@@ -2,7 +2,7 @@
    staging members are preserved and must match; the packaging manifest checks
    still qualify every selected current dependency before final publication. #>
 [CmdletBinding()]
-param([Parameter(Mandatory)][string]$DeliveryRoot,[Parameter(Mandatory)][string]$Destination,[switch]$RefreshOffice)
+param([Parameter(Mandatory)][string]$DeliveryRoot,[Parameter(Mandatory)][string]$Destination,[switch]$RefreshOffice,[switch]$RefreshRust)
 $ErrorActionPreference='Stop'
 $target=[IO.Path]::GetFullPath($Destination)
 if($target -notmatch '^D:\\Temp\\[^\\]+\\corresponding-sources$'){throw 'Use exact native/build source staging scratch.'}
@@ -25,6 +25,8 @@ try{
         # A new reviewed core set is staged by Stage-OfficeSources from its own
         # exact manifests. Do not import obsolete donor sources into that set.
         if($RefreshOffice -and $entry.FullName.TrimStart('./').StartsWith('Office/',[StringComparison]::Ordinal)){continue}
+        # A changed native/pathweft-rars lock is vendored again below from the locked graph.
+        if($RefreshRust -and ($entry.FullName.TrimStart('./').StartsWith('rust-vendor/',[StringComparison]::Ordinal) -or $entry.FullName.TrimStart('./') -eq 'cargo-config.toml')){continue}
         $path=[IO.Path]::GetFullPath((Join-Path $target $entry.FullName))
         if($path -eq $target){continue}
         if(!$path.StartsWith($target+'\',[StringComparison]::OrdinalIgnoreCase)){throw 'Source archive entry escapes staging.'}
@@ -42,4 +44,12 @@ try{
     }
 }finally{$zip.Dispose()}
 if(!(Test-Path -LiteralPath (Join-Path $target 'source-manifest.json'))){throw 'Source root manifest is missing.'}
+if($RefreshRust){
+    # As Prepare-S8ReleaseSources: the RAR bridge's locked dependency sources, offline-buildable.
+    $vendor=Join-Path $target 'rust-vendor'
+    $previousHome=$env:CARGO_HOME;$env:CARGO_HOME='D:\BuildCache\Pathweft\cargo'
+    try{$configuration=& cargo vendor --manifest-path (Join-Path (Split-Path -Parent $PSScriptRoot) 'native/pathweft-rars/Cargo.toml') --locked --versioned-dirs $vendor}finally{$env:CARGO_HOME=$previousHome}
+    if($LASTEXITCODE -ne 0){throw 'Locked native dependency source export failed.'}
+    [IO.File]::WriteAllText((Join-Path $target 'cargo-config.toml'),($configuration -join "`n").Replace($vendor.Replace('\','/'),'rust-vendor')+"`n")
+}
 @{source=$archive.FullName;destination=$target;members=$count;transaction=$transaction}|ConvertTo-Json

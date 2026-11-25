@@ -29,5 +29,21 @@ foreach ($path in Get-ChildItem -LiteralPath $edited -File -Filter '*-rar*.rar')
     $reports += [ordered]@{ archive=$path.Name; archiveSha256=(Get-FileHash -LiteralPath $path.FullName -Algorithm SHA256).Hash; decoderExit=$code; contentSha256=(Get-FileHash -LiteralPath $actual -Algorithm SHA256).Hash; attributes=[IO.File]::GetAttributes($actual).ToString(); modifiedUtc=[IO.File]::GetLastWriteTimeUtc($actual).ToString('o') }
 }
 if ($reports.Count -ne 5) { throw 'All five legacy/modern/solid/encrypted variants must be covered.' }
-[ordered]@{ decoder=$provenance; fixtures=$reports } | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath (Join-Path $scratch 'unrar-interoperability.json') -Encoding utf8
-Write-Output 'Official signed UnRAR independently extracted all five edited RAR4/RAR5/RAR7 solid/encrypted archives with matching contents.'
+# RAR-06/ARCHIVE-12: the writer's encrypted, solid, recovery-record volume set from RarContracts.
+$volumes = Join-Path $edited 'options/options 子.part1.rar'
+$output = Join-Path $scratch 'unrar-output/options-volumes'
+[void][IO.Directory]::CreateDirectory($output)
+$start = [Diagnostics.ProcessStartInfo]::new($executable)
+$start.UseShellExecute = $false; $start.CreateNoWindow = $true; $start.RedirectStandardOutput = $true; $start.RedirectStandardError = $true
+foreach ($argument in @('x','-idq','-o+','-y','-pfixture-secret 子 ARCHIVE-12',$volumes,($output + '\'))) { [void]$start.ArgumentList.Add($argument) }
+$process = [Diagnostics.Process]::Start($start)
+$stdout = $process.StandardOutput.ReadToEndAsync(); $stderr = $process.StandardError.ReadToEndAsync()
+$process.WaitForExit(); $code = $process.ExitCode; $process.Dispose()
+if ($code -ne 0) { throw "Reference decoder rejected the volume set: $code $($stderr.GetAwaiter().GetResult()) $($stdout.GetAwaiter().GetResult())" }
+foreach ($name in @('bulk.bin','notes/a.txt')) {
+    $source = $(if ($name -eq 'bulk.bin') { Join-Path $edited 'options/bulk.bin' } else { Join-Path $edited 'a.txt' })
+    if ((Get-FileHash -LiteralPath (Join-Path $output $name)).Hash -ne (Get-FileHash -LiteralPath $source).Hash) { throw "Volume set member differs: $name" }
+}
+$volumeReport = [ordered]@{ firstVolume=[IO.Path]::GetFileName($volumes); volumes=@(Get-ChildItem -LiteralPath (Split-Path -Parent $volumes) -Filter 'options 子.part*.rar' | ForEach-Object { [ordered]@{ name=$_.Name; bytes=$_.Length } }); decoderExit=$code }
+[ordered]@{ decoder=$provenance; fixtures=$reports; volumeSet=$volumeReport } | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath (Join-Path $scratch 'unrar-interoperability.json') -Encoding utf8
+Write-Output 'Official signed UnRAR independently extracted all five edited RAR4/RAR5/RAR7 solid/encrypted archives and the encrypted solid recovery-record volume set with matching contents.'

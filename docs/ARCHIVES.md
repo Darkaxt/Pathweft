@@ -9,7 +9,7 @@ licenses and the reviewed interop patch are under `vendor/SevenZip` and
 `vendor/SharpSevenZip`.
 
 RAR writes use the Rust `rars` library, source commit
-`e2415a2eb12e6b62deaa0cca919864eabe4671b1` (actual crate 0.12.3), behind
+`f7098c7b9a1e844555daad1d376fd1f043adba2c` (crate 0.13.0, tag v0.13.0), behind
 `native/pathweft-rars` and one synchronous C ABI. The source-built
 `Rars/pathweft_rars.dll` is loaded from the app directory. No rars/WinRAR
 executable is used for application operations. Source/lock/license/DLL provenance

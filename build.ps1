@@ -139,6 +139,10 @@ if($LASTEXITCODE -ne 0){throw 'Portable archive creation failed.'}
 
 # Corresponding source includes full pinned archives, the interop patch and
 # offline native Rust dependency sources, not only selected reference snippets.
+# The vendored Rust sources must be exactly the RAR bridge's locked graph (Reuse-ReleaseSources -RefreshRust after a lock change).
+$lockedRust=@([regex]::Matches((Get-Content -LiteralPath (Join-Path $root 'native/pathweft-rars/Cargo.lock') -Raw),'(?m)^name = "([^"]+)"\r?\nversion = "([^"]+)"\r?\nsource = ')|ForEach-Object {$_.Groups[1].Value+'-'+$_.Groups[2].Value}|Sort-Object)
+$vendoredRust=@(Get-ChildItem -LiteralPath (Join-Path $sources 'rust-vendor') -Directory|ForEach-Object Name|Sort-Object)
+if($lockedRust.Count -eq 0 -or (Compare-Object $lockedRust $vendoredRust)){throw 'Vendored native Rust sources differ from native/pathweft-rars/Cargo.lock.'}
 $performance=Get-Content (Join-Path $root 'vendor/Performance/source-manifest.json') -Raw|ConvertFrom-Json
 $performanceSources=Join-Path $sources 'Performance';[void][IO.Directory]::CreateDirectory($performanceSources)
 foreach($pin in @($performance.archives)+@($performance.packages|ForEach-Object {@{name=$_.packageArchive;sha256=$_.packageSha256}})){

@@ -1,7 +1,7 @@
 //! In-process RAR rewrite boundary. The host owns queueing, source snapshots,
 //! independent content verification and final publication. No process dispatch.
 // Metadata-copy sequence adapted from bitplane/rars crates/rars-python/src/lib.rs
-// at e2415a2 (Apache-2.0); see vendor/rars/NOTICES.txt and LICENSE.txt.
+// at e2415a2 (Apache-2.0), updated for rars 0.13.0 (f7098c7); see vendor/rars/NOTICES.txt and LICENSE.txt.
 use rars::{
     Archive, ArchiveFamily, ArchiveMember, ArchiveMemberDetail, ArchiveReadOptions, ArchiveReader,
     ArchiveVersion, AttrSource, Builder, EntrySource, RewriteStaging, WriteProgress,
@@ -62,7 +62,7 @@ impl FileVolumes {
     }
 }
 impl rars::rar50::VolumeSink for FileVolumes {
-    fn start_volume(&mut self, index: u64) -> rars::Result<Box<dyn std::io::Write + Send>> {
+    fn start_volume(&mut self, index: u64) -> rars::Result<Box<dyn rars::rar50::VolumeOutput>> {
         let file = std::fs::OpenOptions::new()
             .write(true)
             .create_new(true)
@@ -166,12 +166,12 @@ fn copy_member(
     let meta = &member.meta;
     let mode = (meta.attr_source() == AttrSource::Unix).then_some(meta.file_attr as u32);
     if meta.is_directory {
-        builder.add_directory(meta.name.clone(), meta.file_time, mode)?;
+        builder.add_directory(meta.name.clone(), None, mode)?;
     } else {
         builder.add_source(
             meta.name.clone(),
             source.ok_or(rars::Error::InvalidArgument("missing staged source"))?,
-            meta.file_time,
+            None,
             mode,
         )?;
     }
@@ -180,6 +180,8 @@ fn copy_member(
         .last()
         .ok_or(rars::Error::InvalidArgument("missing builder member"))?;
     builder.set_file_comment_by_id(id, comment)?;
+    // Stored times (RAR5 time record and nanoseconds, RAR 2.9-4 extended times) copy exactly.
+    builder.copy_times_by_id(id, member)?;
     builder.set_entry_encryption_by_id(
         id,
         if meta.is_encrypted {
@@ -194,16 +196,9 @@ fn copy_member(
         },
     )?;
     match &member.detail {
-        ArchiveMemberDetail::Rar15To40 {
-            unicode_name,
-            extended_times,
-            ..
-        } => {
+        ArchiveMemberDetail::Rar15To40 { unicode_name, .. } => {
             if let Some(raw) = unicode_name {
                 builder.set_legacy_unicode_name_by_id(id, raw.clone())?;
-            }
-            if !extended_times.is_empty() {
-                builder.set_legacy_extended_times_by_id(id, Some(extended_times.clone()))?;
             }
             if name != meta.name {
                 builder.rename_by_id(id, name)?;
@@ -216,7 +211,6 @@ fn copy_member(
             }
         }
         _ => {
-            builder.set_file_times_by_id(id, member.file_times()?)?;
             if name != meta.name {
                 builder.rename_by_id(id, name)?;
             }
@@ -239,21 +233,14 @@ fn add_inputs(
             if !info.is_file() || info.file_type().is_symlink() {
                 return Err(rars::Error::InvalidArgument("input must be a regular file"));
             }
-            let modified = info
-                .modified()?
-                .duration_since(std::time::UNIX_EPOCH)
-                .map_err(|_| rars::Error::InvalidArgument("input timestamp predates Unix epoch"))?;
-            let seconds = u32::try_from(modified.as_secs())
-                .map_err(|_| rars::Error::InvalidArgument("input timestamp exceeds RAR range"))?;
+            // RAR 5 keeps nanoseconds; older formats round to their DOS time.
+            let modified = rars::Timestamp::try_from(info.modified()?)?;
             builder.add_source(
                 name.as_bytes().to_vec(),
                 EntrySource::from_path(path),
-                Some(seconds),
+                Some(modified),
                 None,
             )?;
-            if builder.format().family() == ArchiveFamily::Rar50Plus {
-                builder.set_mtime_nanoseconds(name.as_bytes(), modified.subsec_nanos())?;
-            }
         } else {
             builder.add_directory(name.as_bytes().to_vec(), None, None)?;
         }
@@ -270,8 +257,8 @@ fn metadata(
 ) -> rars::Result<Value> {
     Ok(
         json!({"directory":member.meta.is_directory,"attr":member.meta.file_attr,
-        "host":member.meta.host_os,"time":member.meta.file_time,
-        "times":format!("{:?}", member.file_times()?),
+        "host":member.meta.host_os,"time":format!("{:?}", member.meta.stored_modification_time()),
+        "times":format!("{:?}", member.times()?),
         "encrypted":member.meta.is_encrypted,"comment":comment,"commentEncrypted":encrypted_comment}),
     )
 }
@@ -346,7 +333,7 @@ fn verify_metadata(
 fn run(request: &Request, control: Control) -> rars::Result<Value> {
     if request.operation == "version" {
         return Ok(
-            json!({"abi":2,"rars":"0.12.3","source":"e2415a2eb12e6b62deaa0cca919864eabe4671b1"}),
+            json!({"abi":2,"rars":"0.13.0","source":"f7098c7b9a1e844555daad1d376fd1f043adba2c"}),
         );
     }
     let password = request.password.as_deref().map(str::as_bytes);

@@ -23,7 +23,7 @@ internal static class RarNative
         {
             var value = new Binding(module, Marshal.GetDelegateForFunctionPointer<CallNative>(NativeLibrary.GetExport(module, "pw_rar_call")), Marshal.GetDelegateForFunctionPointer<FreeNative>(NativeLibrary.GetExport(module, "pw_rar_free")));
             using var version = Invoke(value, new { operation = "version" }, null);
-            if (version.RootElement.GetProperty("abi").GetInt32() != 2 || version.RootElement.GetProperty("rars").GetString() != "0.12.3" || version.RootElement.GetProperty("source").GetString() != "e2415a2eb12e6b62deaa0cca919864eabe4671b1") throw new IOException("Incompatible RAR library.");
+            if (version.RootElement.GetProperty("abi").GetInt32() != 2 || version.RootElement.GetProperty("rars").GetString() != "0.13.0" || version.RootElement.GetProperty("source").GetString() != "f7098c7b9a1e844555daad1d376fd1f043adba2c") throw new IOException("Incompatible RAR library.");
             return value;
         }
         catch { NativeLibrary.Free(module); throw; }

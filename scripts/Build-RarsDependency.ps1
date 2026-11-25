@@ -28,7 +28,7 @@ try {
     }
     & cargo build --release --locked --manifest-path $project --jobs 2
     if ($LASTEXITCODE -ne 0) { throw 'Native RAR build failed.' }
-    $runtime = Join-Path $cache 'rars/0.12.3-pathweft.2'
+    $runtime = Join-Path $cache 'rars/0.13.0-pathweft.1'
     [void][IO.Directory]::CreateDirectory($runtime)
     Copy-Item -LiteralPath (Join-Path $environment.CARGO_TARGET_DIR 'release/pathweft_rars.dll') -Destination (Join-Path $runtime 'pathweft_rars.dll')
     Get-FileHash -LiteralPath (Join-Path $runtime 'pathweft_rars.dll') -Algorithm SHA256

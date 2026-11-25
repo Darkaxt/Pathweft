@@ -21,7 +21,7 @@ Those notices remain distributed with the application.
 | QuickLook selected viewers | 2ec219aa18416c6e3b89d6aad3d82d10610f917f | Selected file GPL headers plus Common MIT notice; full adapted source and original references |
 | 7-Zip | 26.05 | LGPL/BSD/unRAR terms under SevenZip/ and vendor/SevenZip; full matching source archive |
 | SharpSevenZip | 2.0.130-pathweft.1, upstream 9b2379b | LGPL-3.0-or-later; full original source, reviewed empty-directory.patch and reproduction scripts |
-| rars / Pathweft bridge | 0.12.3 / e2415a2 | Apache-2.0 donor, GPL-3.0-or-later bridge; Cargo.lock, native source and vendored locked dependencies |
+| rars / Pathweft bridge | 0.13.0 / f7098c7 | Apache-2.0 donor, GPL-3.0-or-later bridge; Cargo.lock, native source and vendored locked dependencies |
 | F3D and linked runtime dependencies | 4.0.0 / b72c7b5 | BSD-3-Clause core; all supplied dependency licenses under F3D/licenses; matching source/build recipes |
 | FFmpeg / OpenH264 in F3D's runtime | 9.0.1 / 2.6.0 | Actual avcodec configuration reports LGPL-2.1-or-later and libopenh264; full source archives and matching superbuild configure/patch recipes |
 | MPV / media FFmpeg / libplacebo | e471496c56 / 9a861e9687 / 285d1cc8af | Darkaxt/vlc redesign-v1.1.1 source baseline with Pathweft's isolated FriBidi refresh; GPL/version3 linked media build. MPV/licenses contains verified linked-library notices; vendor/MPV identifies every source/hash; corresponding dependency source includes the native build/patch/SDK recipes. Separate from F3D's FFmpeg |
