@@ -38,7 +38,9 @@ public static class PathweftAutomationClient
             // Issue #13: which window raises Name changes, and with what values.
             if(change!=null&&change.Property==AutomationElement.NameProperty&&e.Cached.ControlType==ControlType.Window)
             {
-                Interlocked.Increment(ref windowNames);
+                // Only title changes count: a drive's free space changing during the run is reported
+                // against the window too (1.1.101 run: "646.7 GB free" -> "646.4 GB free"), and is listed below.
+                if((change.OldValue as string??"").StartsWith("Pathweft")||(change.NewValue as string??"").StartsWith("Pathweft"))Interlocked.Increment(ref windowNames);
                 var handle=new IntPtr(e.Cached.NativeWindowHandle);
                 windows.AddOrUpdate((handle==root?"main window":"window "+handle.ToInt64().ToString("x"))+" "+e.Cached.ClassName+" | old '"+Short(change.OldValue)+"' new '"+Short(change.NewValue)+"'",1,(k,n)=>n+1);
             }
@@ -176,7 +178,7 @@ public static class PathweftAutomationClient
         check(ordered,"Incremental ordering keeps the process table in its sort order across samples");
         check(listening,"An actual UI Automation client listened to the window during the measurement");
         // Issue #13: the window title is static, so the window raises no Name changes while the client listens.
-        check(windowNameChanges==0,$"The window raises no Name changes during live analysis ({windowNameChanges} in 20 s: {string.Join("; ",windowSources.Select(x=>x.count+" "+x.source))})");
+        check(windowNameChanges==0,$"The window title raises no Name changes during live analysis ({windowNameChanges} in 20 s; window-attributed Name changes: {string.Join("; ",windowSources.Select(x=>x.count+" "+x.source))})");
         check(light,$"UI thread {current.Percent:0.0}% of one processor with a listening client (no client {baseline.Percent:0.0}%), against {legacy.Percent:0.0}% with the resets of 1.1.89: the client's added cost is at most half of the reset cost");
     }
 }

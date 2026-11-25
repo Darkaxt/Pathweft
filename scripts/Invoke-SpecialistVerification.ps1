@@ -7,6 +7,8 @@ param(
     [string]$MenuDesktop,
     [string]$FixtureSource,
     [string]$MediaInputs,
+    # EBOOK-01: a library folder for the read-only eBook pass, passed explicitly rather than through the caller's environment.
+    [string]$EbookLibrary,
     [switch]$WithoutMediaInfo
 )
 $ErrorActionPreference='Stop'
@@ -52,6 +54,7 @@ $start.Environment['PATHWEFT_TEST_HIDDEN']='1'
 $start.Environment['PATHWEFT_VERIFY_SPECIALISTS13']='1'
 $start.Environment['PATHWEFT_SPECIALIST_SCENARIO']=$Scenario
 if($FixtureSource){$start.Environment['PATHWEFT_SPECIALIST_FIXTURE_SOURCE']=[IO.Path]::GetFullPath($FixtureSource)}
+if($EbookLibrary){$start.Environment['PATHWEFT_EBOOK_LIBRARY']=$EbookLibrary}
 if($MediaInputs){$start.Environment['PATHWEFT_SPECIALIST_MEDIA_INPUTS']=[IO.Path]::GetFullPath($MediaInputs)}
 if($Scenario -eq 'browse'){$start.Environment['PATHWEFT_RCLONE']=(Get-Command rclone -CommandType Application -ErrorAction Stop|Select-Object -First 1).Source}
 if($Scenario -eq 'performance-native'){$start.Environment['PATHWEFT_PERFORMANCE_LOAD']=Join-Path (Split-Path -Parent $MenuDesktop) 'PerformanceLoad.exe'}
