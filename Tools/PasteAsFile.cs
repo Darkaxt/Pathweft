@@ -88,8 +88,7 @@ public partial class MainWindow
             if (attempt == 5)
             {
                 int error = Marshal.GetLastWin32Error();
-                ClipboardWindowProcess(GetOpenClipboardWindow(), out uint process);
-                throw new IOException($"The clipboard is in use (holding process {process}). Try again.", new Win32Exception(error));
+                throw new IOException($"{ClipboardText.Holder()} is using the clipboard. Try again.", new Win32Exception(error));
             }
             Thread.Sleep(20);
         }

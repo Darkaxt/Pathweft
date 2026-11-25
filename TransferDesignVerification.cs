@@ -78,23 +78,29 @@ public partial class MainWindow
             }
             finally{release.TrySetResult();Ferry.VerificationBoundary=null;if(job?.Active==true){job.Cancel();await job.Completion;}}
         }
-        // CORE-34: another program holding the clipboard open (here a thread of this process on the private
-        // station) refuses the write. The item menu's Copy path reports it instead of ending Pathweft.
-        await S1Verification.Navigate(Left,source);SetActive(Left);Left.SetSelection(entry=>entry.Path==file);
+        // CORE-34, once the clipboard is free: only on the private window station, never the owner's clipboard.
+        await VerifyBusyClipboard34(source,file,check);
         string quoted=Entry.QuotedPaths(Left.Selected);
-        void CopyPath(){var item=MenuCommands(ItemMenu(Left,Left.Selected)).Single(item=>item.Header as string=="Copy path");item.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.MenuItem.ClickEvent));}
+        CopyPathFromMenu();
+        check(Status.Text=="Path copied"&&ClipboardText.TryGet()==quoted,"Copy path puts the quoted path on the clipboard once it is free");
+    }
+    void CopyPathFromMenu(){var item=MenuCommands(ItemMenu(Left,Left.Selected)).Single(item=>item.Header as string=="Copy path");item.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.MenuItem.ClickEvent));}
+    /// CORE-34: another program holding the clipboard open (here a window-less thread of this process) refuses
+    /// the write. The item menu's Copy path reports it instead of ending Pathweft. The clipboard is only held
+    /// open, never written, so this may run where the clipboard is the owner's (shell-only private desktop).
+    internal async Task VerifyBusyClipboard34(string folder,string file,Action<bool,string> check)
+    {
+        await S1Verification.Navigate(Left,folder);SetActive(Left);Left.SetSelection(entry=>entry.Path==file);
         var held=new ManualResetEventSlim();var free=new ManualResetEventSlim();bool opened=false;
         var holder=new Thread(()=>{opened=OpenClipboard(IntPtr.Zero);held.Set();free.Wait();if(opened)CloseClipboard();}){IsBackground=true};
         holder.Start();held.Wait();uint busySequence=GetClipboardSequenceNumber();
         try
         {
-            Exception thrown=null;try{CopyPath();}catch(Exception error){thrown=error;}
-            check(opened&&thrown==null&&Status.Text.StartsWith("Nothing copied: another program is using the clipboard")&&GetClipboardSequenceNumber()==busySequence,
-                "Copy path while another program holds the clipboard reports it and Pathweft keeps running: "+(thrown?.GetType().Name??Status.Text));
+            Exception thrown=null;try{CopyPathFromMenu();}catch(Exception error){thrown=error;}
+            check(opened&&thrown==null&&Status.Text=="Nothing copied: another program is using the clipboard. Try again."&&GetClipboardSequenceNumber()==busySequence,
+                "Copy path while another program holds the clipboard reports it, changes nothing and Pathweft keeps running: "+(thrown?.GetType().Name??Status.Text));
         }
         finally{free.Set();holder.Join();}
-        CopyPath();
-        check(Status.Text=="Path copied"&&ClipboardText.TryGet()==quoted,"Copy path puts the quoted path on the clipboard once it is free");
     }
 }
 #endif

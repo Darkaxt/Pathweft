@@ -30,6 +30,12 @@ public partial class MainWindow
         await Step("remote", () => VerifyRemote21(Path.Combine(root, "remote"), check));
         await Step("terminal", () => VerifyTerminal21(Path.Combine(root, "terminal"), check));
         await Step("monitor", () => VerifyMonitor25(root, check));
+        await Step("busy-clipboard", async () =>
+        {
+            string folder = Directory.CreateDirectory(Path.Combine(root, "clipboard 子")).FullName, file = Path.Combine(folder, "copied é.txt");
+            File.WriteAllText(file, "CORE-34");
+            await VerifyBusyClipboard34(folder, file, check); // held open only: this desktop shares the owner's clipboard
+        });
         strict(failures.Count == 0, "S21: every browse check passed" + string.Concat(failures.Select(f => " | failed: " + f)));
 
         async Task Step(string name, Func<Task> run)

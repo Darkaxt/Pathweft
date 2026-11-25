@@ -32,15 +32,13 @@ public partial class MainWindow
         finally { owner.DestroyHandle(); }
     }
 #endif
-    [DllImport("user32.dll")] static extern IntPtr GetOpenClipboardWindow();
     [DllImport("user32.dll", EntryPoint = "GetWindowThreadProcessId")] static extern uint ClipboardWindowProcess(IntPtr window, out uint process);
     static void OpenTransferClipboard(IntPtr owner)
     {
         if (owner == IntPtr.Zero) throw new IOException("Clipboard access requires its live window owner.");
         if (OpenClipboard(owner)) return;
         int error = Marshal.GetLastWin32Error();
-        ClipboardWindowProcess(GetOpenClipboardWindow(), out uint process);
-        throw new IOException($"The clipboard is in use (holding process {process}).", new Win32Exception(error));
+        throw new IOException($"{ClipboardText.Holder()} is using the clipboard. Try again.", new Win32Exception(error));
     }
     [DllImport("kernel32.dll", SetLastError = true)] static extern IntPtr GlobalLock(IntPtr memory);
     [DllImport("kernel32.dll")] static extern bool GlobalUnlock(IntPtr memory);
