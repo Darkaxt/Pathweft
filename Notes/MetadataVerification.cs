@@ -125,7 +125,7 @@ public partial class MainWindow
             var notBack = files.Where(f => File.GetLastWriteTimeUtc(f) != modifiedBefore[f]
                 || M.Family.Photo == Of(f).Family && undone[f].Taken != before[f].Taken
                 || Of(f).Fields.Any(field => string.Join("; ", undone[f].Values.GetValueOrDefault(field.Name) ?? Array.Empty<string>()) != string.Join("; ", before[f].Values.GetValueOrDefault(field.Name) ?? Array.Empty<string>())))
-                .Select(f => Path.GetFileName(f)).ToList();
+                .Select(f => Path.GetFileName(f) + "(" + string.Join(",", Of(f).Fields.Where(field => string.Join("; ", undone[f].Values.GetValueOrDefault(field.Name) ?? Array.Empty<string>()) != string.Join("; ", before[f].Values.GetValueOrDefault(field.Name) ?? Array.Empty<string>())).Select(field => field.Label)) + (File.GetLastWriteTimeUtc(f) != modifiedBefore[f] ? ",modified" : "") + ")").ToList();
             check(notBack.Count == 0 && !undo.Any(u => u.When == entry.When && u.What == entry.What), "OPUS-09: Undo puts every file's earlier details and dates back: " + string.Join(", ", notBack) + " / " + Status.Text);
 
             // a file in use fails alone; the others still change, and what wasn't edited stays

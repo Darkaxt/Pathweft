@@ -137,6 +137,7 @@ internal static class EmbeddedMetadata
         bool modified = dates && change.Modified, created = dates && change.Created;
         if (fields.Count == 0 && !taken && !modified && !created) return new(path, false, null, "nothing chosen applies to this file", null, 0);
         var undo = new Dictionary<string, string[]>(StringComparer.Ordinal);
+        var others = new Dictionary<Field, string[]>();
         DateTime oldModified, oldCreated;
         try { oldModified = File.GetLastWriteTimeUtc(path); oldCreated = File.GetCreationTimeUtc(path); }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return new(path, false, ex.Message, null, null, 0); }
@@ -148,6 +149,7 @@ internal static class EmbeddedMetadata
             if (hr != 0) return new(path, false, Why(hr), null, null, 0);
             try
             {
+                foreach (var field in item.Fields.Except(fields)) others[field] = Get(store, field.Name, field.Kind) ?? Array.Empty<string>();
                 foreach (var field in fields)
                 {
                     undo[field.Name] = Get(store, field.Name, field.Kind) ?? Array.Empty<string>();
@@ -172,6 +174,8 @@ internal static class EmbeddedMetadata
             {
                 var lost = fields.Where(f => !Same(Get(check, f.Name, f.Kind), change.Fields[f.Name], f.Kind)).Select(f => f.Label).ToList();
                 if (lost.Count > 0) note = string.Join(", ", lost) + " not kept by this file's format";
+                // what the handler changed besides: Undo puts it back as well
+                foreach (var (field, was) in others) if (!Same(Get(check, field.Name, field.Kind), was, field.Kind)) undo[field.Name] = was;
             }
             catch (Exception ex) when (ex is COMException or InvalidCastException) { }
             finally { Marshal.ReleaseComObject(check); }
@@ -209,6 +213,16 @@ internal static class EmbeddedMetadata
             }
             catch (Exception ex) when (ex is COMException or InvalidCastException or FormatException) { return ex.Message; }
             finally { Marshal.ReleaseComObject(store); }
+            // some handlers (FLAC) drop part of several removals saved together, never one saved alone
+            var notBack = Differing(path, fields, values);
+            foreach (var field in notBack)
+            {
+                if (Open(path, out var one) != 0) break;
+                try { if (Set(one, field.Name, field.Kind, values[field.Name]) == 0) one.Commit(); }
+                catch (Exception ex) when (ex is COMException or InvalidCastException) { }
+                finally { Marshal.ReleaseComObject(one); }
+            }
+            if (notBack.Count > 0 && Differing(path, notBack, values) is { Count: > 0 } still) return string.Join(", ", still.Select(f => f.Label)) + " not put back";
         }
         try
         {
@@ -230,6 +244,14 @@ internal static class EmbeddedMetadata
             Marshal.ThrowExceptionForHR(PSGetPropertyKeyFromName(name, out var key));
             return keys[name] = key;
         }
+    }
+
+    static List<Field> Differing(string path, List<Field> fields, Dictionary<string, string[]> values)
+    {
+        if (fields.Count == 0 || Open(path, out var check, readOnly: true) != 0) return new();
+        try { return fields.Where(f => !Same(Get(check, f.Name, f.Kind), values[f.Name], f.Kind)).ToList(); }
+        catch (Exception ex) when (ex is COMException or InvalidCastException) { return new(); }
+        finally { Marshal.ReleaseComObject(check); }
     }
 
     static bool Same(string[] stored, string[] wanted, Kind kind)

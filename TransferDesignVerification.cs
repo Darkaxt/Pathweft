@@ -93,12 +93,14 @@ public partial class MainWindow
         await S1Verification.Navigate(Left,folder);SetActive(Left);Left.SetSelection(entry=>entry.Path==file);
         var held=new ManualResetEventSlim();var free=new ManualResetEventSlim();bool opened=false;
         var holder=new Thread(()=>{opened=OpenClipboard(IntPtr.Zero);held.Set();free.Wait();if(opened)CloseClipboard();}){IsBackground=true};
+        string quoted=Entry.QuotedPaths(Left.Selected);uint busySequence=GetClipboardSequenceNumber();
         holder.Start();held.Wait();
         Exception thrown=null;
         try{try{CopyPathFromMenu();}catch(Exception error){thrown=error;}}
         finally{free.Set();holder.Join();}
-        // "changes nothing": the path did not reach the clipboard (its sequence number can move with the owner's own copies on a shared desktop)
-        check(opened&&thrown==null&&Status.Text=="Nothing copied: another program is using the clipboard. Try again."&&ClipboardText.TryGet()!=Entry.QuotedPaths(Left.Selected),
+        // "changes nothing": nothing was written, or (the owner's own copies move the sequence on a shared desktop) what was is not this path;
+        // the path alone can't tell, since an earlier run's "Copy path once it is free" may have left the same path there
+        check(opened&&thrown==null&&Status.Text=="Nothing copied: another program is using the clipboard. Try again."&&(GetClipboardSequenceNumber()==busySequence||ClipboardText.TryGet()!=quoted),
             "Copy path while another program holds the clipboard reports it, changes nothing and Pathweft keeps running: "+(thrown?.GetType().Name??Status.Text));
     }
 }
