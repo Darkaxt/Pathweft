@@ -47,6 +47,7 @@ public partial class MainWindow
                 [M.Family.Video] = new[] { M.Title.Name },
                 [M.Family.Document] = new[] { M.Title.Name, M.Authors.Name },
             };
+            check(!Of(files.Single(f => f.EndsWith(".flac"))).Writable.Contains(M.Rating.Name), "OPUS-09a: FLAC is not offered a rating (its handler accepts one but doesn't keep it)");
             check(files.All(f => Of(f).Problem == null && core[Of(f).Family.Value].All(Of(f).Writable.Contains)) && Of(jpg).TakenWritable, "OPUS-09a: every qualified format opens for writing with its core details: " + writable);
             check(Of(readOnly).Problem == "read-only" && Of(text).Problem?.Contains(".txt") == true && Of(folder).Problem?.Contains("folder") == true, "OPUS-09: read-only, unsupported and folder items are listed as left alone: " + Of(readOnly).Problem + " / " + Of(text).Problem);
 
@@ -86,6 +87,7 @@ public partial class MainWindow
             dialog.Press(); await dialog.Writing;
             long ms = clock.ElapsedMilliseconds;
             var outcomes = dialog.Outcomes;
+            check(outcomes.All(o => o.Note?.Contains("not kept") != true), "OPUS-09: every written detail reads back: " + string.Join(", ", outcomes.Where(o => o.Note?.Contains("not kept") == true).Select(o => Path.GetFileName(o.Path) + "=" + o.Note)));
             check(dialog.Phase == 3 && outcomes.Count == files.Count + 3 && files.All(f => outcomes.Single(o => o.Path == f).Changed) && new[] { readOnly, text, folder }.All(f => !outcomes.Single(o => o.Path == f).Changed),
                   "OPUS-09: Apply changes every qualified file and none of the others: " + string.Join(", ", outcomes.Where(o => !o.Changed || o.Error != null).Select(o => Path.GetFileName(o.Path) + "=" + (o.Error ?? o.Note))));
             check(recorded == outcomes && entry != null && entry.Steps.Count == files.Count && entry.Steps.All(s => s.Kind == "meta"), "OPUS-09: one Undo entry holds every changed file");

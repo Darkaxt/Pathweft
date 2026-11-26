@@ -41,6 +41,8 @@ internal static class EmbeddedMetadata
         [".mp4"] = Family.Video, [".m4v"] = Family.Video, [".wmv"] = Family.Video,
         [".docx"] = Family.Document, [".xlsx"] = Family.Document, [".pptx"] = Family.Document,
     };
+    /// What a format's handler reports writable but doesn't keep (found by writing and reading back): not offered.
+    static readonly Dictionary<string, string[]> notKept = new(StringComparer.OrdinalIgnoreCase) { [".flac"] = new[] { "System.Rating" } };
     internal static Family? FamilyOf(string path) => extensions.TryGetValue(Path.GetExtension(path), out var f) ? f : null;
     internal static string FamilyName(Family f) => f switch { Family.Photo => "photo", Family.Music => "song", Family.Video => "video", _ => "document" };
     internal const int Limit = 2000; // files per edit: each one is opened through its handler when the dialog opens
@@ -93,7 +95,7 @@ internal static class EmbeddedMetadata
             foreach (var field in Families[item.Family.Value])
             {
                 var key = Key(field.Name);
-                if (capabilities == null || capabilities.IsPropertyWritable(ref key) == 0) item.Writable.Add(field.Name);
+                if ((capabilities == null || capabilities.IsPropertyWritable(ref key) == 0) && !(notKept.TryGetValue(Path.GetExtension(path), out var dropped) && dropped.Contains(field.Name))) item.Writable.Add(field.Name);
                 if (Get(store, field.Name, field.Kind) is { } value) item.Values[field.Name] = value;
             }
             if (item.Family == Family.Photo)
@@ -163,15 +165,24 @@ internal static class EmbeddedMetadata
             catch (Exception ex) when (ex is COMException or InvalidCastException or ArgumentException or FormatException or OverflowException) { return new(path, false, ex.Message, null, null, 0); }
             finally { Marshal.ReleaseComObject(store); }
         }
-        // the handler rewrote the file, which updates its modified date as in Explorer (unless asked to keep it)
+        // read back: a detail the format's handler accepted but didn't keep is said, not counted as written
         string note = null;
+        if (fields.Count > 0 && Open(path, out var check, readOnly: true) == 0)
+            try
+            {
+                var lost = fields.Where(f => !Same(Get(check, f.Name, f.Kind), change.Fields[f.Name], f.Kind)).Select(f => f.Label).ToList();
+                if (lost.Count > 0) note = string.Join(", ", lost) + " not kept by this file's format";
+            }
+            catch (Exception ex) when (ex is COMException or InvalidCastException) { }
+            finally { Marshal.ReleaseComObject(check); }
+        // the handler rewrote the file, which updates its modified date as in Explorer (unless asked to keep it)
         try
         {
             if (modified) File.SetLastWriteTimeUtc(path, change.Dates == DateMode.Set ? change.Set.ToUniversalTime() : oldModified + change.Shift);
             else if (change.KeepModified) File.SetLastWriteTimeUtc(path, oldModified);
             if (created) File.SetCreationTimeUtc(path, change.Dates == DateMode.Set ? change.Set.ToUniversalTime() : oldCreated + change.Shift);
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentOutOfRangeException) { note = "dates not changed: " + ex.Message; }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentOutOfRangeException) { note = (note == null ? "" : note + "; ") + "dates not changed: " + ex.Message; }
         if (dates && change.Taken && !taken && item.Family == Family.Photo) note ??= "no date taken to shift";
         int skipped = item.Family is { } family ? change.Fields.Keys.Count(name => Families[family].Any(f => f.Name == name) && !item.Writable.Contains(name)) : 0;
         if (skipped > 0) note ??= $"{skipped} of the details can't be stored in this file";
@@ -221,10 +232,18 @@ internal static class EmbeddedMetadata
         }
     }
 
-    static int Open(string path, out IWritablePropertyStore store)
+    static bool Same(string[] stored, string[] wanted, Kind kind)
+    {
+        static string Norm(IEnumerable<string> v) => string.Join("\u001F", (v ?? Array.Empty<string>()).Select(x => x.Trim()).Where(x => x.Length > 0));
+        if (kind is Kind.Rating) return Stars(uint.TryParse(stored?.FirstOrDefault(), out uint a) ? a : 0) == Stars(uint.TryParse(wanted.FirstOrDefault(), out uint b) ? b : 0);
+        if (kind is Kind.Text) return Norm(new[] { string.Join("; ", stored ?? Array.Empty<string>()) }) == Norm(new[] { string.Join("; ", wanted) });
+        return Norm(stored) == Norm(wanted);
+    }
+
+    static int Open(string path, out IWritablePropertyStore store, bool readOnly = false)
     {
         var iid = typeof(IWritablePropertyStore).GUID;
-        int hr = SHGetPropertyStoreFromParsingName(path, IntPtr.Zero, 0x2 /*GPS_READWRITE*/, ref iid, out store);
+        int hr = SHGetPropertyStoreFromParsingName(path, IntPtr.Zero, readOnly ? 0x1 /*GPS_HANDLERPROPERTIESONLY*/ : 0x2 /*GPS_READWRITE*/, ref iid, out store);
         return hr == 0 && store == null ? unchecked((int)0x80004005) : hr;
     }
 
