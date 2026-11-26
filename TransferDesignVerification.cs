@@ -92,7 +92,8 @@ public partial class MainWindow
     {
         await S1Verification.Navigate(Left,folder);SetActive(Left);Left.SetSelection(entry=>entry.Path==file);
         var held=new ManualResetEventSlim();var free=new ManualResetEventSlim();bool opened=false;
-        var holder=new Thread(()=>{opened=OpenClipboard(IntPtr.Zero);held.Set();free.Wait();if(opened)CloseClipboard();}){IsBackground=true};
+        // on the shared desktop another program (clipboard sync) may have it open for a moment: wait for it, so the holder is really this one
+        var holder=new Thread(()=>{for(int i=0;i<250&&!(opened=OpenClipboard(IntPtr.Zero));i++)Thread.Sleep(20);held.Set();free.Wait();if(opened)CloseClipboard();}){IsBackground=true};
         string quoted=Entry.QuotedPaths(Left.Selected);uint busySequence=GetClipboardSequenceNumber();
         holder.Start();held.Wait();
         Exception thrown=null;
@@ -104,7 +105,7 @@ public partial class MainWindow
         GetWindowThreadProcessId(GetClipboardOwner(),out uint ownerProcess);
         bool ours=moved&&ownerProcess==Environment.ProcessId;
         check(opened&&thrown==null&&Status.Text=="Nothing copied: another program is using the clipboard. Try again."&&!ours,
-            "Copy path while another program holds the clipboard reports it, changes nothing and Pathweft keeps running: "+(thrown?.GetType().Name??Status.Text)+(moved?" (clipboard since written by "+(ours?"Pathweft":"another program")+(ClipboardText.TryGet()==quoted?", holding the same path":"")+")":""));
+            "Copy path while another program holds the clipboard reports it, changes nothing and Pathweft keeps running: "+(opened?"":"(the test could not hold the clipboard) ")+(thrown?.GetType().Name??Status.Text)+(moved?" (clipboard since written by "+(ours?"Pathweft":"another program")+(ClipboardText.TryGet()==quoted?", holding the same path":"")+")":""));
     }
 }
 #endif
