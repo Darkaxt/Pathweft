@@ -41,7 +41,7 @@ public partial class MainWindow
         var second = (ListViewItem)Left.List.ItemContainerGenerator.ContainerFromItem(other);
         MouseButtonEventArgs Press(int count)
         {
-            var args = new MouseButtonEventArgs(Mouse.PrimaryDevice, Environment.TickCount, MouseButton.Left) { RoutedEvent = UIElement.PreviewMouseLeftButtonDownEvent };
+            var args = new MouseButtonEventArgs(Mouse.PrimaryDevice, Environment.TickCount, MouseButton.Left) { RoutedEvent = UIElement.PreviewMouseDownEvent }; // as input does: the left-button events are direct, raised from this one per element
             typeof(MouseButtonEventArgs).GetProperty(nameof(MouseButtonEventArgs.ClickCount)).SetValue(args, count);
             return args;
         }
