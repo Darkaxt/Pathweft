@@ -28,7 +28,9 @@ public partial class MainWindow
         }
         bool Blue()
         {
-            if(PreviewBody.Content is not Image{Source:BitmapSource image})return false;
+            // images show inside the Text Extractor overlay since S20 (TOOLS-04)
+            var image=PreviewBody.Content switch{Image{Source:BitmapSource source}=>source,FileExplorer.Preview.OcrOverlay overlay=>overlay.BitmapForVerification,_=>null};
+            if(image==null)return false;
             var converted=new FormatConvertedBitmap(image,PixelFormats.Bgra32,null,0);var pixel=new byte[4];converted.CopyPixels(new Int32Rect(0,0,1,1),pixel,4,0);return pixel[0]==255&&pixel[2]==0;
         }
         foreach(var mode in new[]{PreviewMode.PictureInPicture,PreviewMode.Windowed})
