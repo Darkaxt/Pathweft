@@ -29,7 +29,7 @@ internal sealed class MaintenanceClient : IAsyncDisposable
         {
             if(elevated)
             {
-                session=await AdministratorSession.Open(name,"maintenance",cancel,enable:request.Action is not ("list" or "space" or "disk-health" or "security-check" or "boots")).ConfigureAwait(false);
+                session=await AdministratorSession.Open(name,"maintenance",cancel,enable:request.Action is not ("list" or "space" or "copy-file" or "disk-health" or "security-check" or "boots")).ConfigureAwait(false);
                 sessionStop=session.Stopped.Register(()=>{stopped.Cancel();pipe.Dispose();});
             }
             else
@@ -237,6 +237,8 @@ internal static class MaintenanceWorker
     internal static async Task<string> Apply(MaintenanceRequest request,CancellationToken cancel=default)
     {
         if(request.Action=="save-editor")return SaveEditor(request,cancel);
+        // ACCESS-10: a read-only copy of a file the user may not read, for its preview or the editor.
+        if(request.Action=="copy-file")return AdministratorCopies.Apply(request,cancel);
         // Read-only Security check with the approved session's access (MAINT-40); it never writes.
         if(request.Action=="security-check")return JsonSerializer.Serialize(MaintenanceSecurity.Check(cancel));
         // Read-only boot diagnostics, whose log Windows lets only administrators read (MCP-06).

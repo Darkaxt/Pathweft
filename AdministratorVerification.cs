@@ -12,6 +12,44 @@ using System.Windows.Media;
 namespace FileExplorer;
 public partial class MainWindow
 {
+    /// ACCESS-10: the approved session's copy behind the preview, folder preview and editor of a file the user may not read.
+    internal async Task VerifyAdministratorCopies10(string root,Action<bool,string> check)
+    {
+        string secret=Path.Combine(root,"DumpStack-protected.log");File.WriteAllText(secret,"Protected contents seen through the administrator session");
+        // the worker's fixed copy: only into a fresh copy folder, never past the limit, the source unchanged
+        string Fresh(){string folder=Path.Combine(AdministratorCopies.Root,Guid.NewGuid().ToString("N"));Directory.CreateDirectory(folder);return Path.Combine(folder,Path.GetFileName(secret));}
+        string copy=Fresh();
+        await MaintenanceWorker.Apply(new("copy-file",secret,"1048576",copy));
+        check(File.ReadAllText(copy)==File.ReadAllText(secret),"The worker copies the protected file into its own copy folder");
+        bool Refused(MaintenanceRequest request){try{MaintenanceWorker.Apply(request).GetAwaiter().GetResult();return false;}catch(Exception e)when(e is IOException or ArgumentException){return true;}}
+        string outside=Path.Combine(root,"elsewhere",Path.GetFileName(secret));Directory.CreateDirectory(Path.GetDirectoryName(outside));
+        string small=Fresh();
+        check(Refused(new("copy-file",secret,"1048576",outside))&&!File.Exists(outside)&&Refused(new("copy-file",secret,"1048576",copy))&&Refused(new("copy-file",secret,"4",small))&&!File.Exists(small),
+            "The worker refuses a copy outside its folder, over an existing copy, or past the size limit");
+        AdministratorCopies.Release(copy);AdministratorCopies.Release(small);
+        check(!Directory.Exists(Path.GetDirectoryName(copy))&&!Directory.Exists(Path.GetDirectoryName(small)),"A released copy leaves no folder behind");
+        // the preview and editor take that copy when the user is refused
+        var asked=new List<string>();
+        AdministratorCopies.NeededForVerification=path=>path.Equals(secret,StringComparison.OrdinalIgnoreCase);
+        AdministratorCopies.CopyForVerification=async(path,limit,cancel)=>{asked.Add(path);string target=Fresh();await MaintenanceWorker.Apply(new("copy-file",path,limit.ToString(System.Globalization.CultureInfo.InvariantCulture),target),cancel);return target;};
+        try
+        {
+            sidePreview.Show(new Entry{Path=secret,Name=Path.GetFileName(secret),Size=new FileInfo(secret).Length});await sidePreview.Completion;
+            string held=sidePreview.AdministratorCopyForVerification;
+            check(sidePreview.State=="ready"&&asked.SequenceEqual(new[]{secret})&&held!=null&&File.Exists(held)&&Path.GetFileName(held)==Path.GetFileName(secret),
+                $"A file the user may not read previews from the approved session's copy, under its own name (state {sidePreview.State}, module {sidePreview.ModuleId}, copies {asked.Count})");
+            sidePreview.Clear();await FileExplorer.Preview.PreviewSession.DrainAsync();
+            check(held!=null&&!Directory.Exists(Path.GetDirectoryName(held)),"The preview's copy goes when the preview moves on");
+            var read=EditorWindow.Read(secret,true);
+            check(read?.Text==File.ReadAllText(secret)&&asked.Count==2&&!Directory.EnumerateDirectories(AdministratorCopies.Root).Any(),"The editor opens it from the approved session's copy, and keeps no copy");
+            string readable=Path.Combine(root,"keep.txt");asked.Clear();
+            sidePreview.Show(new Entry{Path=readable,Name="keep.txt",Size=new FileInfo(readable).Length});await sidePreview.Completion;
+            check(sidePreview.State=="ready"&&asked.Count==0&&sidePreview.AdministratorCopyForVerification==null,"A file the user can read previews directly, with no copy");
+            sidePreview.Clear();await FileExplorer.Preview.PreviewSession.DrainAsync();
+        }
+        finally{AdministratorCopies.NeededForVerification=null;AdministratorCopies.CopyForVerification=null;}
+        check(Directory.Exists(AdministratorCopies.Root)==false||!Directory.EnumerateFileSystemEntries(AdministratorCopies.Root).Any(),"No administrator copies are left behind");
+    }
     internal async Task VerifyAdministrator30(string root,Action<bool,string> check)
     {
         performance.AutomaticIo=false;SetSinglePane(true);SetActive(Left);
@@ -45,6 +83,7 @@ public partial class MainWindow
             check(rejected&&File.ReadAllBytes(editorFile).SequenceEqual(contents)&&!Directory.EnumerateFiles(root,"editor-save.txt.pathweft-*.tmp").Any(),"Changed editor staging is rejected without replacing the original or leaving adjacent temporary files");
         }
         finally{File.Delete(staged);}
+        await VerifyAdministratorCopies10(root,check);
         await VerifyAutomaticAdministrator08(check);
         if(Environment.GetEnvironmentVariable("PATHWEFT_ADMIN_NATIVE")!="1"){AdministratorSession.LaunchForVerification=null;return;}
         string handoff="Pathweft-Admin-Trial-"+Guid.NewGuid().ToString("N");

@@ -1,6 +1,11 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.109 | 2026-11-27 | The preview uses administrator view
+
+- With administrator view on, files only administrators can read, such as C:\DumpStack.log, now preview instead of saying "Access to the path is denied", and they open in the editor too. Folders only administrators can open show their contents in the preview.
+- Turning administrator view on or off shows the open previews again with the new access.
+
 ## 1.1.108 | 2026-11-26 | The preview opens inside the pane
 
 - With one pane, the preview now opens inside the pane, under its tabs: the tabs keep their place and never wrap into another row, and the path bar and files move over to make room. The preview is a card with rounded corners; drag its left edge to size it.

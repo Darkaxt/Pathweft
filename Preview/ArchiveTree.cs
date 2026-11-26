@@ -25,6 +25,17 @@ internal static class ArchiveTree
     internal static Node ReadDirectory(string path,CancellationToken token,bool hidden)
     {
         var root=new Node("",path,true){PhysicalPath=path};
+        // ACCESS-10: with administrator browsing on, a folder the user may not list is read by the approved session
+        if(AdministratorSession.BrowsingFor(path)&&AdministratorSession.Available&&!Listable(path))
+        {
+            foreach(var entry in MaintenanceClient.ReadFolder(path,token).GetAwaiter().GetResult())
+            {
+                if(!FileVisibility.Visible(entry.Name,entry.Attributes,hidden))continue;
+                bool directory=(entry.Attributes&FileAttributes.Directory)!=0;
+                root.Children.TryAdd(entry.Name,new(entry.Name,entry.Path,directory){PhysicalPath=directory?entry.Path:null,Attributes=entry.Attributes,Size=directory?0:entry.Bytes});
+            }
+            return root;
+        }
         foreach(var entry in new DirectoryInfo(path).EnumerateFileSystemInfos())
         {
             token.ThrowIfCancellationRequested();
@@ -38,6 +49,12 @@ internal static class ArchiveTree
             catch(FileNotFoundException){} // Entry was removed during enumeration.
         }
         return root;
+    }
+
+    static bool Listable(string path)
+    {
+        try{using var entries=new DirectoryInfo(path).EnumerateFileSystemInfos().GetEnumerator();entries.MoveNext();return true;}
+        catch(UnauthorizedAccessException){return false;}
     }
 
     internal static Node Read(string archive, string inner, CancellationToken token)

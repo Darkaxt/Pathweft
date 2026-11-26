@@ -16,6 +16,8 @@ internal sealed class PreviewSession : IDisposable
     CancellationTokenSource cancellation;
     IViewer viewer;
     ArchiveContent.Lease archiveContent;
+    string administratorCopy; // ACCESS-10
+    internal string AdministratorCopyForVerification => administratorCopy;
     List<Task> requestWork = new();
     bool disposed;
     long generation;
@@ -69,6 +71,13 @@ internal sealed class PreviewSession : IDisposable
                 if (entry.Size > MainWindow.RemotePreviewLimit) { State = "unsupported"; target.Content = BuiltinViewer.Message("Too large to preview from the server.\nOpen downloads a copy and opens it."); return; }
                 path = await owner.RemotePreviewCopy(entry, token);
                 if (!Current() || token.IsCancellationRequested) return;
+            }
+            // ACCESS-10: administrator browsing previews a file the user may not read from the approved session's copy
+            if (!entry.IsDir && !RemoteAddress.IsRemote(entry.Path) && await Task.Run(() => AdministratorCopies.Needed(path), token))
+            {
+                string copy = await AdministratorCopies.Copy(path, MainWindow.RemotePreviewLimit, token);
+                if (!Current() || token.IsCancellationRequested) { AdministratorCopies.Release(copy); return; }
+                administratorCopy = copy; path = copy;
             }
             var candidates=PreviewModules.Candidates(entry).Where(m=>preferredModule==null||m.Id==preferredModule).ToArray();
             bool scopedHtml=candidates.FirstOrDefault()?.Id=="html";
@@ -131,7 +140,12 @@ internal sealed class PreviewSession : IDisposable
         if (archiveContent is { } extracted)
         {
             archiveContent = null;
-            Track(ReleaseContent(extracted, Completion, requestWork));
+            Track(ReleaseContent(extracted.Dispose, Completion, requestWork));
+        }
+        if (administratorCopy is { } copy)
+        {
+            administratorCopy = null;
+            Track(ReleaseContent(() => AdministratorCopies.Release(copy), Completion, requestWork));
         }
         RendererId=RendererDescription=null;target.Content = null; title("");
         Entry = null; ModuleId = null; State = "empty";
@@ -147,7 +161,7 @@ internal sealed class PreviewSession : IDisposable
             item.Click+=(_,_)=>{if(!disposed&&current==generation)Show(entry,module.Id);};Menu.Items.Add(item);
         }
     }
-    static async Task ReleaseContent(ArchiveContent.Lease extracted, Task load, List<Task> work)
+    static async Task ReleaseContent(Action release, Task load, List<Task> work)
     {
         try
         {
@@ -156,7 +170,7 @@ internal sealed class PreviewSession : IDisposable
             while (observed < work.Count)
             { var pendingWork = work.Skip(observed).ToArray(); observed = work.Count; await Task.WhenAll(pendingWork); }
         }
-        finally { extracted.Dispose(); }
+        finally { release(); }
     }
     internal bool HandleKey(System.Windows.Input.Key key) => viewer is F3dViewer model ? model.HandleKey(key) : viewer is BuiltinViewer builtin && builtin.HandleKey(key);
     internal static void RefreshAll() { foreach (var session in sessions.ToArray()) session.Refresh(); }

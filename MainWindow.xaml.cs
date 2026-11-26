@@ -64,6 +64,7 @@ public partial class MainWindow : Window
             foreach(var pane in new[]{Left,Right})pane.CloseView();
             taskbarSearch?.Dispose();tray?.Dispose();
             RemoteTempCopies.Cleanup(); // BROWSE-09
+            AdministratorCopies.Cleanup(); // ACCESS-10
         };
         SourceInitialized += (_, _) => { ApplyAcrylic(this); WatchShellChanges(); taskbarSearch = new(this); taskbarSearch.ApplySettings();
             // Shell folder views are optional: a missing or mismatched handler DLL (an interrupted

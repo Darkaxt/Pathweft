@@ -246,12 +246,21 @@ public sealed class EditorWindow : Window
         });
     }
 
-    static (string Text, string Encoding)? Read(string path, bool quiet)
+    // ACCESS-10: with administrator browsing on, a file the user may not read opens from the approved session's copy
+    // (saving it already goes through that session).
+    static byte[] ReadBytes(string path)
+    {
+        if (!AdministratorCopies.Needed(path)) return File.ReadAllBytes(path);
+        string copy = Task.Run(() => AdministratorCopies.Copy(path, MaxBytes, CancellationToken.None)).GetAwaiter().GetResult();
+        try { return File.ReadAllBytes(copy); } finally { AdministratorCopies.Release(copy); }
+    }
+
+    internal static (string Text, string Encoding)? Read(string path, bool quiet) // internal for the ACCESS-10 check
     {
         try
         {
             if (new FileInfo(path).Length > MaxBytes) return Refuse($"{Path.GetFileName(path)} is over 20 MB, too big for the editor.");
-            return Decode(File.ReadAllBytes(path)) is { } decoded ? decoded : Refuse($"{Path.GetFileName(path)} isn't a text file.");
+            return Decode(ReadBytes(path)) is { } decoded ? decoded : Refuse($"{Path.GetFileName(path)} isn't a text file.");
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {

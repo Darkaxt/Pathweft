@@ -48,6 +48,7 @@ public partial class MainWindow
     {
         lastAdministratorMode=AdministratorSession.Browsing;
         await Left.RefreshAccessMode();await Right.RefreshAccessMode();
+        FileExplorer.Preview.PreviewSession.RefreshAll(); // ACCESS-10: previews read with the new access too
     }
     async void Administrator_Click(object sender,RoutedEventArgs e)
     {if(changingAccess||AnalysisVisible)return;accessWork=ToggleAdministrator();await accessWork;}
