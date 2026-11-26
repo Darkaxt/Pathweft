@@ -226,6 +226,7 @@ public partial class SettingsWindow : Window
         "copydetails", // Copy…'s last choices
         "compress", // Compress…'s last choices, remembered as 7-Zip's Add to archive does
         "terminal.height", // the terminal panel's remembered height, like the preview width
+        "previewloop", // the media preview's Loop button, remembered like the preview width
         "imageresize", "renameoptions", // Resize images' and Rename all's last choices, remembered as PowerToys does
     };
 
