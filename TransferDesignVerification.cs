@@ -88,7 +88,6 @@ public partial class MainWindow
     /// CORE-34: another program holding the clipboard open (here a window-less thread of this process) refuses
     /// the write. The item menu's Copy path reports it instead of ending Pathweft. The clipboard is only held
     /// open, never written, so this may run where the clipboard is the owner's (shell-only private desktop).
-    [System.Runtime.InteropServices.DllImport("user32.dll")] static extern IntPtr GetClipboardOwner();
     internal async Task VerifyBusyClipboard34(string folder,string file,Action<bool,string> check)
     {
         await S1Verification.Navigate(Left,folder);SetActive(Left);Left.SetSelection(entry=>entry.Path==file);
