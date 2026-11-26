@@ -98,10 +98,21 @@ public partial class MainWindow
             Left.List.SelectedItem=Left.Items.Single(e=>e.Name=="child");Left.OpenSelected();
             await Dispatcher.InvokeAsync(UpdateLayout,System.Windows.Threading.DispatcherPriority.ApplicationIdle);
             check(Left.Dir==Path.Combine(folder,"child"),"Ordinary directories still navigate internally");
-            string html=Path.Combine(folder,"plain.html");File.WriteAllText(html,"<html><body>Opening contract fixture</body></html>");
-            Settings.InternalEditor=true;check(EditorWindow.TryOpen(html)&&EditorWindow.OwnsArchiveCopy(html),"Readable supported text retains the enabled editor contract");
-            await EditorWindow.CaptureForVerification(Path.Combine(root,"open-editor-html"),light:false);
-            await EditorWindow.CloseForVerification();Settings.InternalEditor=false;
+            string css=Path.Combine(folder,"plain.css");File.WriteAllText(css,"body { color: #336699; } /* Opening contract fixture */");
+            Settings.InternalEditor=true;check(EditorWindow.TryOpen(css)&&EditorWindow.OwnsArchiveCopy(css),"Readable supported text retains the enabled editor contract");
+            await EditorWindow.CaptureForVerification(Path.Combine(root,"open-editor-css"),light:false);
+            await EditorWindow.CloseForVerification();
+            // CORE-37: a web page opens in its browser on double-click and Enter, also with the editor setting on; F4 still edits it
+            foreach(string page in new[]{"page.html","page.htm","image.svg"})File.WriteAllText(Path.Combine(folder,page),page.EndsWith(".svg")?"<svg xmlns=\"http://www.w3.org/2000/svg\"/>":"<html><body>Browser fixture</body></html>");
+            await S1Verification.Navigate(Left,folder);
+            foreach(string page in new[]{"page.html","page.htm","image.svg"})
+            {
+                int before=dispatches.Count;Left.List.SelectedItem=Left.Items.Single(e=>e.Name==page);Left.OpenSelected();
+                await Dispatcher.InvokeAsync(UpdateLayout,System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+                check(dispatches.Count==before+1&&dispatches[^1].FileName==Path.Combine(folder,page)&&!EditorWindow.HasOpenWindow,"Double-click opens "+page+" with its Windows association, not the editor, with the editor setting on");
+            }
+            check(EditorWindow.IsText(Path.Combine(folder,"page.html")),"A web page stays editable with F4 and Edit");
+            Settings.InternalEditor=false;
             string zip=Path.Combine(root,"open-fixture.zip");
             using(var archive=System.IO.Compression.ZipFile.Open(zip,System.IO.Compression.ZipArchiveMode.Create))System.IO.Compression.ZipFileExtensions.CreateEntryFromFile(archive,Path.Combine(folder,"image.png"),"image.png");
             await S1Verification.Navigate(Left,zip);var archived=Left.Items.Single(e=>e.Name=="image.png");

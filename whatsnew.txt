@@ -1,6 +1,10 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.110 | 2026-11-27 | Web pages open in your browser
+
+- Double-clicking or pressing Enter on an .html, .htm or .svg file opens it in your browser again, as Explorer does, instead of the code editor. F4 still opens it in the editor.
+
 ## 1.1.109 | 2026-11-27 | The preview uses administrator view
 
 - With administrator view on, files only administrators can read, such as C:\DumpStack.log, now preview instead of saying "Access to the path is denied", and they open in the editor too. Folders only administrators can open show their contents in the preview.

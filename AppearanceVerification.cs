@@ -410,12 +410,17 @@ public partial class MainWindow
                 }
                 foreach(var path in new[]{binaryHtml,largeHtml,unsupported})await DoubleClick(Path.GetFileName(path));
                 Check(external.Count==3&&external.All(p=>p.UseShellExecute&&p.WorkingDirectory==editorFolder)&&!EditorWindow.HasOpenWindow,"Actual file-row double-clicks reach the existing Windows-association launch boundary for rejected files; test captures dispatch without launching user apps");
+                // CORE-37: a web page goes to its browser even with automatic editing on; supported text still opens internally
                 await DoubleClick("plain.html");
-                Check(external.Count==3&&EditorWindow.OwnsArchiveCopy(plainHtml),"Supported HTML still opens internally when automatic editing is enabled");
-                await EditorWindow.CaptureForVerification(Path.Combine(root,"editor-supported-html"),light:false);
+                Check(external.Count==4&&external[^1].FileName==plainHtml&&!EditorWindow.HasOpenWindow,"A readable HTML page opens with its Windows association, not the editor, when automatic editing is enabled");
+                string plainCss=Path.Combine(editorFolder,"plain.css");File.WriteAllText(plainCss,"body { color: #336699; } /* Editor routing fixture */");
+                await S1Verification.Navigate(Left,editorFolder);
+                await DoubleClick("plain.css");
+                Check(external.Count==4&&EditorWindow.OwnsArchiveCopy(plainCss),"Supported text still opens internally when automatic editing is enabled");
+                await EditorWindow.CaptureForVerification(Path.Combine(root,"editor-supported-css"),light:false);
                 await EditorWindow.CloseForVerification();
-                Settings.InternalEditor=false;await DoubleClick("plain.html");
-                Check(external.Count==4&&external[^1].FileName==plainHtml&&!EditorWindow.HasOpenWindow,"Disabling the internal editor sends ordinary HTML double-clicks to the Windows association");
+                Settings.InternalEditor=false;await DoubleClick("plain.css");
+                Check(external.Count==5&&external[^1].FileName==plainCss&&!EditorWindow.HasOpenWindow,"Disabling the internal editor sends ordinary text double-clicks to the Windows association");
                 Settings.InternalEditor=true;
                 string archive=Path.Combine(root,"editor-routing.zip");
                 using(var zip=System.IO.Compression.ZipFile.Open(archive,System.IO.Compression.ZipArchiveMode.Create))System.IO.Compression.ZipFileExtensions.CreateEntryFromFile(zip,binaryHtml,"binary.html");

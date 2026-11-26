@@ -53,6 +53,10 @@ public sealed class EditorWindow : Window
     };
 
     public static bool IsText(string path) => TextExt.Contains(Path.GetExtension(path)) || TextNames.Contains(Path.GetFileName(path));
+    // CORE-37 (owner 2026-11-27: "Double click on an html file seems to be opening the code viewer instead of opening it in a
+    // browsesr"): pages Windows opens in a viewer keep their association on Enter and double-click; F4 and Edit still edit them.
+    static readonly HashSet<string> ViewedExt = new(StringComparer.OrdinalIgnoreCase) { ".html", ".htm", ".xhtml", ".shtml", ".svg" };
+    internal static bool OpensInViewer(string path) => ViewedExt.Contains(Path.GetExtension(path));
 
     sealed class Doc
     {
@@ -102,7 +106,7 @@ public sealed class EditorWindow : Window
     /// <summary>Automatic open: let the Windows association handle files this editor cannot read.</summary>
     public static bool TryOpen(string path)
     {
-        if (!IsText(path)) return false;
+        if (!IsText(path) || OpensInViewer(path)) return false;
         path = Path.GetFullPath(path);
         // Keep an existing document, including unsaved edits, rather than re-reading it.
         if (OwnsArchiveCopy(path)) { Open(path); return true; }
