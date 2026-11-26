@@ -36,7 +36,7 @@ public partial class MainWindow
             await Select(first);MovePreviewHost(mode);await Layout();var window=previewWindow;
             double width=window?.Width??PreviewPane.Width,height=window?.Height??PreviewPane.Height;
             await Select(second);
-            check(previewMode==mode&&ReferenceEquals(window,previewWindow)&&sidePreview.Entry?.Path==second&&PreviewTitle.Text==Path.GetFileName(second)&&Blue(),"Actual selection replaces pixels/title in the same preview host: "+mode);
+            check(previewMode==mode&&ReferenceEquals(window,previewWindow)&&sidePreview.Entry?.Path==second&&PreviewTitle.Text==Path.GetFileName(second)&&Blue(),"Actual selection replaces pixels/title in the same preview host: "+mode+$" (mode {previewMode}, same window {ReferenceEquals(window,previewWindow)}, entry {Path.GetFileName(sidePreview.Entry?.Path??"none")}, title {PreviewTitle.Text}, blue {Blue()}, body {PreviewBody.Content?.GetType().Name??"none"}, shown {previewShown}, visible {PreviewPane.Visibility}, parent {(PreviewPane.Parent as FrameworkElement)?.Name})");
             check((window?.Width??PreviewPane.Width)==width&&(window?.Height??PreviewPane.Height)==height,"Selection preserves preview host dimensions: "+mode);
             long pinnedGeneration=sidePreview.Generation;
             PreviewPinButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await Select(first);

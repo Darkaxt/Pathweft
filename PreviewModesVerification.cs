@@ -47,7 +47,7 @@ public partial class MainWindow
             PreviewWindowButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await Layout();
             check(previewMode==PreviewMode.Windowed&&previewWindow!=null&&previewWindow.Content==PreviewPane&&Left.PreviewSlot.Visibility==Visibility.Collapsed,"Windowed uses an independent resizable floating window: "+label);
             check(ReferenceEquals(viewer,sidePreview.ViewerForVerification)&&ReferenceEquals(content,PreviewBody.Content)&&sidePreview.Generation==generation,"Switching hosts retains the same renderer, content and request: "+label);state();
-            check(PreviewHeader.Children.OfType<Button>().All(button=>button.IsVisible&&AutomationProperties.GetName(button).Length>0),"Every actual mode/close button has an accessible name: "+label);
+            check(new[]{PreviewCloseButton,PreviewWindowButton,PreviewPipButton,PreviewPinButton}.All(button=>button.IsVisible)&&PreviewHeader.Children.OfType<Button>().Where(button=>button.IsVisible).All(button=>AutomationProperties.GetName(button).Length>0),"Every actual mode/close button has an accessible name: "+label);
             await S1Verification.Snapshot(previewWindow,root,label+"-windowed");
             previewWindow.Close();await Layout();
             check(previewMode==PreviewMode.Sidebar&&previewWindow==null&&Math.Abs(Left.DockedPreviewWidth-Settings.PreviewWidth)<0.5&&PreviewPane.Parent==Left.PreviewSlot&&sidePreview.Entry==entry,"Closing the floating window restores the same preview to its saved sidebar: "+label);
