@@ -45,12 +45,15 @@ public partial class MainWindow
             typeof(MouseButtonEventArgs).GetProperty(nameof(MouseButtonEventArgs.ClickCount)).SetValue(args, count);
             return args;
         }
-        var press1 = Press(1); first.RaiseEvent(press1);
-        string state = $"press 1: count {press1.ClickCount}, handled {press1.Handled}, pressed {Left.pressed?.Name ?? "null"}, at {Left.pressedAt}; ";
+        // pressed where a real click lands: whatever is under the row's centre in the list, as a pointer press would be routed
+        UIElement Under(ListViewItem row) => Left.List.InputHitTest(row.TranslatePoint(new Point(row.ActualWidth / 2, row.ActualHeight / 2), Left.List)) as UIElement ?? row;
+        string attached = $"attached {PresentationSource.FromVisual(first) != null}/{PresentationSource.FromVisual(second) != null}, ";
+        var press1 = Press(1); var at1 = Under(first); at1.RaiseEvent(press1);
+        string state = attached + $"press 1 on {at1.GetType().Name}: count {press1.ClickCount}, handled {press1.Handled}, pressed {Left.pressed?.Name ?? "null"}, at {Left.pressedAt}; ";
         double listBefore = Left.List.ActualWidth; Left.PreviewSlot.Width += 30; Left.UpdateLayout();
         state += $"list {listBefore:0.#}->{Left.List.ActualWidth:0.#}, moved at {Left.listMovedAt}, slot {Left.PreviewSlot.ActualWidth:0.#}; ";
-        var again = Press(2); second.RaiseEvent(again);
-        state += $"press 2: count {again.ClickCount}, pressed {Left.pressed?.Name ?? "null"}, first {(first.DataContext as Entry)?.Name}, second {(second.DataContext as Entry)?.Name}";
+        var again = Press(2); var at2 = Under(second); at2.RaiseEvent(again);
+        state += $"press 2 on {at2.GetType().Name}: count {again.ClickCount}, pressed {Left.pressed?.Name ?? "null"}, first {(first.DataContext as Entry)?.Name}, second {(second.DataContext as Entry)?.Name}";
         // opening a folder lists it asynchronously: wait for that navigation to finish
         for (int i = 0; i < 100 && !(Left.Listed && Left.Dir.Equals(folder, StringComparison.OrdinalIgnoreCase)); i++) { await settle(); await Task.Delay(50); }
         check(again.Handled && Left.Dir.Equals(folder, StringComparison.OrdinalIgnoreCase),
