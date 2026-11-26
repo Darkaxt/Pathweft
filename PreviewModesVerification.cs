@@ -38,19 +38,19 @@ public partial class MainWindow
             var viewer=sidePreview.ViewerForVerification;var content=PreviewBody.Content;long generation=sidePreview.Generation;var entry=sidePreview.Entry;
             int windows=Application.Current.Windows.Count;
             PreviewPipButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await Layout();
-            check(previewMode==PreviewMode.PictureInPicture&&previewWindow==null&&Application.Current.Windows.Count==windows&&PreviewColumn.Width.Value==0&&PreviewGap.Width.Value==0&&PreviewSplitter.Visibility==Visibility.Collapsed,"PiP is an in-app corner overlay and releases the full sidebar column: "+label);
+            check(previewMode==PreviewMode.PictureInPicture&&previewWindow==null&&Application.Current.Windows.Count==windows&&PreviewPane.Parent==Left.PipLayer&&Left.PreviewSlot.Visibility==Visibility.Collapsed,"PiP is an in-app corner overlay and releases the docked card's room: "+label);
             check(PreviewPane.ActualWidth<=400.1&&PreviewPane.ActualHeight<=320.1&&PreviewPane.ActualWidth>200&&PreviewPane.ActualHeight>100,"PiP has compact measured client bounds: "+label);
             if(!previewPinned)PreviewPinButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             Left.List.SelectedItem=Left.Items.Single(item=>item.Path==Path.Combine(root,"other.txt"));PreviewFollow();
             check(previewPinned&&sidePreview.Entry==entry&&sidePreview.Generation==generation,"Explicit pin keeps the detached item while browsing: "+label);
             state();await S1Verification.Snapshot(this,root,label+"-pip");
             PreviewWindowButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await Layout();
-            check(previewMode==PreviewMode.Windowed&&previewWindow!=null&&previewWindow.Content==PreviewPane&&PreviewColumn.Width.Value==0,"Windowed uses an independent resizable floating window: "+label);
+            check(previewMode==PreviewMode.Windowed&&previewWindow!=null&&previewWindow.Content==PreviewPane&&Left.PreviewSlot.Visibility==Visibility.Collapsed,"Windowed uses an independent resizable floating window: "+label);
             check(ReferenceEquals(viewer,sidePreview.ViewerForVerification)&&ReferenceEquals(content,PreviewBody.Content)&&sidePreview.Generation==generation,"Switching hosts retains the same renderer, content and request: "+label);state();
             check(PreviewHeader.Children.OfType<Button>().All(button=>button.IsVisible&&AutomationProperties.GetName(button).Length>0),"Every actual mode/close button has an accessible name: "+label);
             await S1Verification.Snapshot(previewWindow,root,label+"-windowed");
             previewWindow.Close();await Layout();
-            check(previewMode==PreviewMode.Sidebar&&previewWindow==null&&PreviewColumn.Width.Value==Settings.PreviewWidth&&PreviewPane.Parent==PaneArea&&sidePreview.Entry==entry,"Closing the floating window restores the same preview to its saved sidebar: "+label);
+            check(previewMode==PreviewMode.Sidebar&&previewWindow==null&&Math.Abs(Left.DockedPreviewWidth-Settings.PreviewWidth)<0.5&&PreviewPane.Parent==Left.PreviewSlot&&sidePreview.Entry==entry,"Closing the floating window restores the same preview to its saved sidebar: "+label);
             PreviewFollow();check(sidePreview.Entry==entry&&sidePreview.Generation==generation,"Restoration is stable until the user changes selection again: "+label);state();
             if(Left.Items.FirstOrDefault(item=>item.Path==entry.Path) is {} selected)
             {Left.List.SelectedItem=selected;PreviewPinButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await sidePreview.Completion;}
@@ -105,11 +105,11 @@ public partial class MainWindow
         PreviewWindowButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await Layout();previewWindow.Close();await Layout();
         check(Directory.Exists(lease)&&sidePreview.Generation==archiveGeneration,"Windowed restoration retains the same archive input lease");
         PreviewCloseButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await PreviewSession.DrainAsync();
-        check(!Directory.Exists(lease)&&!Settings.Preview&&previewMode==PreviewMode.Sidebar&&previewWindow==null&&PreviewColumn.Width.Value==0,"Explicit preview close releases its lease and disables the sidebar preference");
+        check(!Directory.Exists(lease)&&!Settings.Preview&&previewMode==PreviewMode.Sidebar&&previewWindow==null&&Left.PreviewSlot.Visibility==Visibility.Collapsed,"Explicit preview close releases its lease and disables the sidebar preference");
         await Select(Path.Combine(root,"sdr.mp4"));media=((BuiltinViewer)sidePreview.ViewerForVerification).MediaForVerification;player=media.Player;
         PreviewPipButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));await Layout();
         double oldWidth=Width;Width=860;await Layout();
-        check(PreviewPane.ActualWidth<=PaneArea.ActualWidth-24&&PreviewPane.ActualHeight<=PaneArea.ActualHeight-24,"PiP stays within the actual narrow app client");Width=oldWidth;
+        check(PreviewPane.ActualWidth<=Left.PipLayer.ActualWidth-23&&PreviewPane.ActualHeight<=Left.PipLayer.ActualHeight-23,"PiP stays within the actual narrow pane");Width=oldWidth;
         Settings.DisabledPreviewModules.Add("media");RefreshPreviewModules();await sidePreview.Completion;await PreviewSession.DrainAsync();
         check(player.Completion.IsCompletedSuccessfully&&sidePreview.ModuleId!="media","Disabling the active PiP module tears down its actual native player");Settings.DisabledPreviewModules.Remove("media");
         MovePreviewHost(PreviewMode.Sidebar);await Select(Path.Combine(root,"sdr.mp4"));player=((BuiltinViewer)sidePreview.ViewerForVerification).MediaForVerification.Player;

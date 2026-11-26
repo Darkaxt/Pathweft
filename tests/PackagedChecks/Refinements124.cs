@@ -37,8 +37,8 @@ sealed partial class PackageProbe
         var mode=typeof(MainWindow).GetNestedType("PreviewMode",BindingFlags.NonPublic);
         Call(typeof(MainWindow),owner,"MovePreviewHost",Enum.Parse(mode,"PictureInPicture"));
         await Select("blue.png");
-        Check(((Entry)Get(preview,"Entry")).Name=="blue.png"&&typeof(MainWindow).GetField("previewMode",Flags).GetValue(owner).ToString()=="PictureInPicture","Delivered PiP follows real list selection without changing host mode");
-        var pin=(Button)owner.FindName("PreviewPinButton");pin.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        Check(((Entry)Get(preview,"Entry")).Name=="blue.png"&&Get(owner,"previewMode").ToString()=="PictureInPicture","Delivered PiP follows real list selection without changing host mode");
+        var pin=(Button)Get(owner,"PreviewPinButton");pin.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         await Select("red.png");
         Check(((Entry)Get(preview,"Entry")).Name=="blue.png"&&Equals(pin.Tag,"on")&&AutomationProperties.GetItemStatus(pin)=="Pinned","Delivered explicit pin retains the item and exposes its state");
         Call(typeof(MainWindow),owner,"MovePreviewHost",Enum.Parse(mode,"Sidebar"));
@@ -47,8 +47,8 @@ sealed partial class PackageProbe
         Check(((Entry)Get(preview,"Entry")).Name=="red.png"&&pin.Tag==null,"Delivered unpin catches up immediately");
         list.UnselectAll();await owner.Dispatcher.InvokeAsync(()=>{},DispatcherPriority.ApplicationIdle);
         Check(Get(preview,"Entry")==null,"Delivered unpinned empty selection releases the previous renderer");
-        var close=(Button)owner.FindName("PreviewCloseButton");
-        var detach=(Button)owner.FindName("PreviewWindowButton");
+        var close=(Button)Get(owner,"PreviewCloseButton");
+        var detach=(Button)Get(owner,"PreviewWindowButton");
         Check(detach.FontSize<=10&&pin.Width==32&&pin.Height==32,"Delivered preview controls use small glyphs with retained hit targets");
 
         var stamp=new DateTime(2026,1,5,12,0,0,DateTimeKind.Utc);

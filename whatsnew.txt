@@ -1,6 +1,12 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.108 | 2026-11-26 | The preview opens inside the pane
+
+- With one pane, the preview now opens inside the pane, under its tabs: the tabs keep their place and never wrap into another row, and the path bar and files move over to make room. The preview is a card with rounded corners; drag its left edge to size it.
+- With two panes, each pane shows a preview of its own selection, as a picture-in-picture card in that pane, both at the same time. Each card has its own pin, floating window and close.
+- A double-click opens the file the first click was on, even if the files moved under the pointer between the two clicks.
+
 ## 1.1.107 | 2026-11-26 | Loop in the media preview
 
 - Videos and songs in the preview have a Loop button beside Mute: on, playback starts over at the end instead of stopping. It stays on for the next files you preview until you turn it off.

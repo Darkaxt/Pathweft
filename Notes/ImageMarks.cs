@@ -10,14 +10,17 @@ namespace FileExplorer;
 /// is not the selection, not a rating and not the preview's pin, and marking never moves or changes a file.
 public partial class MainWindow
 {
-    Entry PreviewedEntry => quick != null ? quickPreview?.Entry : sidePreview?.Entry;
+    Entry PreviewedEntry => quick != null ? quickPreview?.Entry : ActiveCard?.Session.Entry;
     PaneView MarkSource => quick != null ? quickSource : active;
     static bool Markable(Entry e) => e is { IsDir: false, IsUp: false } && !PaneView.IsVirtual(e.Path) && !RemoteAddress.IsRemote(e.Path) && ResizableImage(e);
     static HashSet<string> MarkedPaths() => (Collections.Find(Collections.Marked)?.Items ?? new()).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-    internal bool ToggleMark()
+    internal bool ToggleMark() => ToggleMark(PreviewedEntry);
+    internal void ToggleMark(PreviewCard card) => ToggleMark(card.Session.Entry); // PREVIEW-41: that card's image
+
+    bool ToggleMark(Entry shown)
     {
-        if (PreviewedEntry is not { } e || !Markable(e)) return false;
+        if (shown is not { } e || !Markable(e)) return false;
         bool marked = Collections.Contains(Collections.Marked, e.Path);
         if (marked) Collections.Remove(Collections.Marked, new[] { e.Path });
         else Collections.Add(Collections.Marked, new[] { e.Path });
@@ -27,9 +30,9 @@ public partial class MainWindow
     }
 
     /// The previous (-1) or next (+1) marked image in the listing's order, wrapping around.
-    internal bool StepMarked(int step)
+    internal bool StepMarked(int step) => StepMarked(MarkSource, step);
+    internal bool StepMarked(PaneView pane, int step)
     {
-        var pane = MarkSource;
         if (pane == null) return false;
         var marked = MarkedPaths();
         var rows = pane.ListingRows;
@@ -48,25 +51,21 @@ public partial class MainWindow
         return false;
     }
 
-    void UpdateMarkButtons()
+    void UpdateMarkButtons() { foreach (var card in Cards) UpdateMarkButtons(card); }
+    void UpdateMarkButtons(PreviewCard card)
     {
-        if (PreviewMarkButton == null) return;
-        var e = sidePreview?.Entry;
+        var e = card.Session.Entry;
         bool can = Markable(e);
         var visibility = can ? Visibility.Visible : Visibility.Collapsed;
-        PreviewMarkButton.Visibility = PreviewMarkPrevButton.Visibility = PreviewMarkNextButton.Visibility = visibility;
+        card.PreviewMarkButton.Visibility = card.PreviewMarkPrevButton.Visibility = card.PreviewMarkNextButton.Visibility = visibility;
         if (!can) return;
         bool marked = Collections.Contains(Collections.Marked, e.Path);
-        PreviewMarkButton.Tag = marked ? "on" : null;
-        PreviewMarkButton.Content = marked ? "" : "";
+        card.PreviewMarkButton.Tag = marked ? "on" : null;
+        card.PreviewMarkButton.Content = marked ? "" : "";
         string tip = marked ? "Unmark this image" : "Mark this image";
-        PreviewMarkButton.ToolTip = tip; AutomationProperties.SetName(PreviewMarkButton, tip);
-        AutomationProperties.SetItemStatus(PreviewMarkButton, marked ? "Marked" : "Not marked");
+        card.PreviewMarkButton.ToolTip = tip; AutomationProperties.SetName(card.PreviewMarkButton, tip);
+        AutomationProperties.SetItemStatus(card.PreviewMarkButton, marked ? "Marked" : "Not marked");
     }
-
-    void PreviewMark_Click(object sender, RoutedEventArgs e) => ToggleMark();
-    void PreviewMarkPrev_Click(object sender, RoutedEventArgs e) => StepMarked(-1);
-    void PreviewMarkNext_Click(object sender, RoutedEventArgs e) => StepMarked(1);
 
     /// Quick View's keys: M marks or unmarks, Shift+Up/Down go to the previous/next marked image.
     bool MarkKey(Key key)

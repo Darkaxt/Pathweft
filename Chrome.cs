@@ -62,15 +62,14 @@ public partial class MainWindow
         System.Windows.Automation.AutomationProperties.SetName(MaxButton, (string)MaxButton.ToolTip);
     }
 
-    /// Which element sits under the window's buttons, top right: the right pane, the left one when it is
-    /// alone, or the preview pane's header. That one keeps the room free; the others get it back.
+    /// Which pane's tab row sits under the window's buttons, top right: the right pane, or the left one when it is
+    /// alone. That one keeps the room free; the other gets it back. The preview is inside a pane, under its tabs
+    /// (PREVIEW-41), so it never reaches the window's top.
     void PlaceCaption()
     {
         var rightmost = Settings.SinglePane ? Left : Right;
-        bool preview=previewMode==PreviewMode.Sidebar&&PreviewPane.Visibility==Visibility.Visible;
-        Left.ReserveCaption(!preview && rightmost == Left ? CaptionWidth : 0);
-        Right.ReserveCaption(!preview && rightmost == Right ? CaptionWidth : 0);
-        PreviewHeader.Margin = new Thickness(12, preview ? 40 : 6, 6, 4);
+        Left.ReserveCaption(rightmost == Left ? CaptionWidth : 0);
+        Right.ReserveCaption(rightmost == Right ? CaptionWidth : 0);
     }
 
     struct ThemeOptions { public uint Flags, Mask; }
@@ -115,16 +114,6 @@ public partial class MainWindow
     }
 
     void Caption_MouseDown(object s, MouseButtonEventArgs e) => CaptionDown(e);
-
-    /// The preview pane's top, beside and under the window's buttons, is title bar too: its empty header space
-    /// (the strip above it, the file name and the gaps between its buttons) moves the window. Clicks on the preview
-    /// itself, below the header, are left alone.
-    void PreviewPane_MouseDown(object s, MouseButtonEventArgs e)
-    {
-        if (e.OriginalSource != PreviewPane && e.OriginalSource != PreviewHeader && e.OriginalSource != PreviewTitle) return;
-        double headerBottom = PreviewHeader.TranslatePoint(new Point(0, PreviewHeader.ActualHeight + PreviewHeader.Margin.Bottom), PreviewPane).Y;
-        if (e.GetPosition(PreviewPane).Y <= headerBottom) CaptionDown(e);
-    }
 
     void ToggleMaximize() => WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
     void Minimize_Click(object s, RoutedEventArgs e) => WindowState = WindowState.Minimized;

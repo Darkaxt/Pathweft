@@ -82,7 +82,7 @@ public partial class MainWindow : Window
                 bool analyzing=Left.SpaceWorking||Right.SpaceWorking;
                 Left.SetSizingSuspended(analyzing);Right.SetSizingSuspended(analyzing);UpdateCommandStates();
             };
-            p.StatsChanged += () => { if (p == active) { UpdateStats(); PreviewFollow(); } FilesShown(); };
+            p.StatsChanged += () => { if (p == active) UpdateStats(); if (p == active || !Settings.SinglePane) PreviewFollow(); FilesShown(); }; // PREVIEW-41: each pane's card follows it
             p.NavigationChanged += () => { if(p==active)UpdateCommandStates(); }; // BROWSE-05: a saved view may change hidden files
             p.Error += msg => Status.Text = msg;
             p.FilesDropped += (files, dest, move) => Submit(files, dest, move);
@@ -397,7 +397,7 @@ public partial class MainWindow : Window
         Left.RefreshVisibility(); Right.RefreshVisibility();
         taskbarSearch?.Widget?.Pane.RefreshVisibility();
         RefreshFolderTreeVisibility();
-        if(sidePreview?.ModuleId=="archive")sidePreview.Refresh();
+        foreach(var card in Cards)if(card.Session.ModuleId=="archive")card.Session.Refresh();
         if(quickPreview?.ModuleId=="archive")quickPreview.Refresh();
     }
 
@@ -604,7 +604,7 @@ public partial class MainWindow : Window
         cols[0].Width = new GridLength(one ? 1 : Settings.Split, GridUnitType.Star);
         cols[2].Width = new GridLength(one ? 0 : 1 - Settings.Split, GridUnitType.Star);
         if (one && active == Right) SetActive(Left);
-        FitPreview(); // one pane leaves the preview more room
+        RefreshPreviewHosts(); // PREVIEW-41: one pane docks its card, two panes show one card each
         UpdateCommandStates();
         PlaceCaption();
     }

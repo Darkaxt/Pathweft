@@ -396,6 +396,7 @@ public partial class PaneView : UserControl
     public PaneView()
     {
         InitializeComponent();
+        InitializePanePreview(); // PREVIEW-41, CORE-36
         details = List.View;
         SetSort(sortKey, sortDesc);
         Loaded += (_, _) => { ApplyStartView(); FolderProfiles.Changed += ProfilesChanged; FileNotes.Changed += NotesChanged; FileExplorer.Search.ContentIndexing.Changed += ContentIndexChanged; };

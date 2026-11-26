@@ -406,12 +406,8 @@
         </Border>
       </Grid>
 
-      <Grid x:Name="PaneArea" SizeChanged="PaneArea_SizeChanged">
-        <Grid.ColumnDefinitions>
-          <ColumnDefinition/>
-          <ColumnDefinition x:Name="PreviewGap" Width="0"/>
-          <ColumnDefinition x:Name="PreviewColumn" Width="0"/>
-        </Grid.ColumnDefinitions>
+      <!-- PREVIEW-41: the preview is a card inside each pane (PreviewCard, MainWindow.PlaceCard), never a column beside them -->
+      <Grid x:Name="PaneArea">
       <Grid x:Name="PaneGrid">
         <Grid.ColumnDefinitions>
           <ColumnDefinition MinWidth="250"/>
@@ -424,46 +420,6 @@
         <local:PaneView x:Name="Left"/>
         <local:PaneView x:Name="Right" Grid.Column="2"/>
       </Grid>
-      <!-- Preview pane (Alt+P): the active pane's selected file, drawn by Quick View's code -->
-      <GridSplitter x:Name="PreviewSplitter" Grid.Column="1" HorizontalAlignment="Stretch" Background="Transparent" ResizeBehavior="PreviousAndNext"
-                    Visibility="Collapsed" DragCompleted="PreviewSplitter_DragCompleted"/>
-      <Border x:Name="PreviewPane" Grid.Column="2" Visibility="Collapsed" MouseDown="PreviewPane_MouseDown" Background="{DynamicResource Palette.0DFFFFFF}" CornerRadius="10" BorderThickness="1" BorderBrush="{DynamicResource Palette.1AFFFFFF}" ClipToBounds="True">
-        <DockPanel>
-          <DockPanel x:Name="PreviewHeader" DockPanel.Dock="Top" Margin="12,6,6,4">
-            <Button DockPanel.Dock="Right" Style="{StaticResource Ghost}" Content="&#xE711;" FontFamily="Segoe Fluent Icons" FontSize="10"
-                    x:Name="PreviewCloseButton" AutomationProperties.Name="Close preview" MinWidth="32" MinHeight="32"
-                    ToolTip="Close the preview (Alt+P)" Click="Preview_Click"/>
-            <Button x:Name="PreviewWindowButton" DockPanel.Dock="Right" Style="{StaticResource Ghost}" Content="&#xE8A7;" FontFamily="Segoe Fluent Icons" FontSize="10"
-                    MinWidth="32" MinHeight="32" AutomationProperties.Name="Open preview in a floating window" ToolTip="Open preview in a floating window" Click="PreviewWindow_Click"/>
-            <Button x:Name="PreviewPipButton" DockPanel.Dock="Right" Style="{StaticResource Ghost}" MinWidth="32" MinHeight="32"
-                    AutomationProperties.Name="Picture in picture inside Pathweft" ToolTip="Picture in picture inside Pathweft" Click="PreviewPip_Click">
-              <Viewbox Width="12" Height="12">
-                <Canvas Width="24" Height="24">
-                  <Path Data="M3,4 H21 V20 H3 Z" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.5"/>
-                  <Path Data="M12,11 H19 V18 H12 Z" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"/>
-                </Canvas>
-              </Viewbox>
-            </Button>
-            <Button x:Name="PreviewPinButton" DockPanel.Dock="Right" Style="{StaticResource CompactCommand}" Width="32" Height="32" MinWidth="32" MinHeight="32" Content="&#xE718;" FontFamily="Segoe Fluent Icons" FontSize="10"
-                    AutomationProperties.Name="Pin this preview" ToolTip="Pin this preview" Click="PreviewPin_Click"/>
-            <!-- OPUS-08: mark the image shown (the Marked images collection) and step through the marked ones -->
-            <Button x:Name="PreviewMarkButton" DockPanel.Dock="Right" Style="{StaticResource CompactCommand}" Width="32" Height="32" MinWidth="32" MinHeight="32" Content="&#xE734;" FontFamily="Segoe Fluent Icons" FontSize="11"
-                    Visibility="Collapsed" AutomationProperties.Name="Mark this image" ToolTip="Mark this image" Click="PreviewMark_Click"/>
-            <Button x:Name="PreviewMarkNextButton" DockPanel.Dock="Right" Style="{StaticResource CompactCommand}" Width="26" Height="32" MinWidth="26" MinHeight="32" Content="&#xE76C;" FontFamily="Segoe Fluent Icons" FontSize="9"
-                    Visibility="Collapsed" AutomationProperties.Name="Next marked image" ToolTip="Next marked image" Click="PreviewMarkNext_Click"/>
-            <Button x:Name="PreviewMarkPrevButton" DockPanel.Dock="Right" Style="{StaticResource CompactCommand}" Width="26" Height="32" MinWidth="26" MinHeight="32" Content="&#xE76B;" FontFamily="Segoe Fluent Icons" FontSize="9"
-                    Visibility="Collapsed" AutomationProperties.Name="Previous marked image" ToolTip="Previous marked image" Click="PreviewMarkPrev_Click"/>
-            <Grid DockPanel.Dock="Left" Width="18" Height="18" Margin="0,0,8,0" VerticalAlignment="Center">
-              <TextBlock Text="{Binding Icon}" Foreground="{Binding IconBrush}" FontFamily="Segoe Fluent Icons" FontSize="16" VerticalAlignment="Center">
-                <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding Source, ElementName=PreviewAppIcon}" Value="{x:Null}"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></TextBlock.Style>
-              </TextBlock>
-              <Image x:Name="PreviewAppIcon" Stretch="Uniform" AutomationProperties.Name="Preview renderer icon"/>
-            </Grid>
-            <TextBlock x:Name="PreviewTitle" Foreground="{DynamicResource Muted}" FontSize="11" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
-          </DockPanel>
-          <ContentControl x:Name="PreviewBody" Focusable="False" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"/>
-        </DockPanel>
-      </Border>
       </Grid>
 
       <!-- Ferry transfers live in a window of their own (MainWindow.ShowTransfers): under the panes they took the files' room -->

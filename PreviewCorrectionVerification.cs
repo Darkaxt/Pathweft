@@ -48,10 +48,11 @@ public partial class MainWindow
         foreach(bool single in new[]{true,false})
         {
             SetSinglePane(single);Left.List.UnselectAll();PreviewFollow();await PreviewSession.DrainAsync();await Settle();
-            check(Settings.Preview&&PreviewPane.Visibility==Visibility.Collapsed&&PreviewSplitter.Visibility==Visibility.Collapsed&&PreviewColumn.Width.Value==0&&PreviewGap.Width.Value==0,"Empty selection collapses the complete preview without changing its enabled preference: "+single);
+            check(Settings.Preview&&PreviewPane.Visibility==Visibility.Collapsed&&Left.PreviewSlot.Visibility==Visibility.Collapsed,"Empty selection collapses the complete preview without changing its enabled preference: "+single);
             Left.List.SelectedItem=Left.Items.Single(e=>e.Path==folder);PreviewFollow();await sidePreview.Completion;await Settle();
-            check(PreviewPane.Visibility==Visibility.Visible&&PreviewColumn.Width.Value==previewWidth&&PreviewBody.Content is TreeView,"New selection restores the saved preview width and native folder tree: "+single);
+            check(PreviewPane.Visibility==Visibility.Visible&&PreviewBody.Content is TreeView&&(single?PreviewPane.Parent==Left.PreviewSlot&&Math.Abs(Left.DockedPreviewWidth-previewWidth)<0.5:PreviewPane.Parent==Left.PipLayer),"New selection restores the saved preview width and native folder tree: "+single);
         }
+        await VerifyPreviewCards41(root,folder,previewWidth,Settle,check);
         Settings.Preview=false;ApplyPreview();Left.List.UnselectAll();Left.List.SelectedItem=Left.Items.Single(e=>e.Path==folder);PreviewFollow();
         check(PreviewPane.Visibility==Visibility.Collapsed,"Selection does not re-enable a deliberately disabled preview");
         Settings.Preview=true;ApplyPreview();await sidePreview.Completion;

@@ -6,121 +6,161 @@ using FileExplorer.Preview;
 
 namespace FileExplorer;
 
+/// PREVIEW-41: the preview cards and where they are. One pane: one card, docked inside the pane under its tab row
+/// (Sidebar), or picture in picture over its list, or in its own window. Two panes: each pane has its own card showing
+/// its own selection, both at once, as picture in picture (a docked card would take half of an already halved pane);
+/// either can still float in a window. Moving a card keeps its session, content, native windows, playback and leases.
 public partial class MainWindow
 {
-    enum PreviewMode { Sidebar, PictureInPicture, Windowed }
-    PreviewMode previewMode;
-    Window previewWindow;
-    bool changingPreviewHost,previewPinned;
+    internal enum PreviewMode { Sidebar, PictureInPicture, Windowed }
+    PreviewCard primary, secondary; // the left (or only) pane's, and the right pane's in two panes
+    bool changingPreviewHost;
+    IEnumerable<PreviewCard> Cards => primary == null ? Array.Empty<PreviewCard>() : secondary == null ? new[] { primary } : new[] { primary, secondary };
+    PreviewCard ActiveCard => Cards.FirstOrDefault(card => card.Pane == active) ?? primary;
 
-    void PreviewPin_Click(object sender,RoutedEventArgs args)
+    // The left pane's card keeps the names the rest of the code and the verification use.
+    PreviewCard PreviewPane => primary;
+    DockPanel PreviewHeader => primary?.PreviewHeader;
+    TextBlock PreviewTitle => primary?.PreviewTitle;
+    Image PreviewAppIcon => primary?.PreviewAppIcon;
+    ContentControl PreviewBody => primary?.PreviewBody;
+    Button PreviewCloseButton => primary?.PreviewCloseButton;
+    Button PreviewWindowButton => primary?.PreviewWindowButton;
+    Button PreviewPipButton => primary?.PreviewPipButton;
+    Button PreviewPinButton => primary?.PreviewPinButton;
+    Button PreviewMarkButton => primary?.PreviewMarkButton;
+    Button PreviewMarkNextButton => primary?.PreviewMarkNextButton;
+    Button PreviewMarkPrevButton => primary?.PreviewMarkPrevButton;
+    bool previewPinned { get => primary?.Pinned == true; set { if (primary != null) primary.Pinned = value; } }
+    string previewShown { get => primary?.Shown; set { if (primary != null) primary.Shown = value; } }
+    PreviewMode previewMode => primary?.Mode ?? PreviewMode.Sidebar;
+    Window previewWindow => primary?.Window;
+
+    /// One pane or two, a card added or retired: every card goes where its mode puts it now.
+    void RefreshPreviewHosts()
     {
-        if(sidePreview?.Entry==null)return;
-        previewPinned=!previewPinned;UpdatePreviewModeButtons();
-        if(!previewPinned)PreviewFollow();
+        if (primary == null) return;
+        if (Settings.SinglePane && secondary is { } retired)
+        {
+            secondary = null;
+            if (retired.Window is { } window) { retired.Window = null; window.Content = null; window.Close(); }
+            PaneView.Detach(retired); retired.Session.Dispose();
+            Right.UpdatePreviewSlot();
+        }
+        else if (!Settings.SinglePane && secondary == null) secondary = new PreviewCard(this, Right, UpdatePreviewHeading);
+        foreach (var card in Cards) { if (card.Window == null) PlaceCard(card); UpdatePreviewModeButtons(card); }
+        PreviewFollow();
     }
 
-    void UpdateSidePreviewHeading(string text)
+    /// Docked inside the pane in one pane; picture in picture over the pane's list otherwise.
+    void PlaceCard(PreviewCard card) => card.Pane.HostPreview(card, card.Mode == PreviewMode.Sidebar && Settings.SinglePane);
+
+    internal void TogglePin(PreviewCard card)
     {
-        PreviewTitle.Text=text;PreviewHeader.DataContext=text.Length>0?sidePreview?.Entry:null;
-        var icon=PreviewControls.RendererIcon(sidePreview?.RendererId);
-        if(icon!=null)PreviewAppIcon.Source=icon;
-        else PreviewAppIcon.SetBinding(Image.SourceProperty,new System.Windows.Data.Binding(nameof(Entry.SmallIcon)){Source=PreviewHeader.DataContext});
-        PreviewAppIcon.ToolTip=sidePreview?.RendererDescription;
-        AutomationProperties.SetName(PreviewAppIcon,sidePreview?.RendererDescription??"Preview icon");
-        if(previewWindow!=null){previewWindow.Title=text;previewWindow.Icon=icon??sidePreview?.Entry?.SmallIcon;}
-        UpdatePreviewModeButtons();
+        if (card.Session.Entry == null) return;
+        card.Pinned = !card.Pinned; UpdatePreviewModeButtons(card);
+        if (!card.Pinned) PreviewFollow();
     }
 
-    void PreviewWindow_Click(object sender,RoutedEventArgs args)
-        =>MovePreviewHost(previewMode==PreviewMode.Windowed?PreviewMode.Sidebar:PreviewMode.Windowed);
-    void PreviewPip_Click(object sender,RoutedEventArgs args)
-        =>MovePreviewHost(previewMode==PreviewMode.PictureInPicture?PreviewMode.Sidebar:PreviewMode.PictureInPicture);
-
-    void MovePreviewHost(PreviewMode destination)
+    void UpdatePreviewHeading(PreviewCard card, string text)
     {
-        if(changingPreviewHost||previewMode==destination)return;
-        if(destination!=PreviewMode.Sidebar&&sidePreview?.Entry==null)return;
-        changingPreviewHost=true;
+        card.PreviewTitle.Text = text; card.PreviewHeader.DataContext = text.Length > 0 ? card.Session.Entry : null;
+        var icon = PreviewControls.RendererIcon(card.Session.RendererId);
+        if (icon != null) card.PreviewAppIcon.Source = icon;
+        else card.PreviewAppIcon.SetBinding(Image.SourceProperty, new System.Windows.Data.Binding(nameof(Entry.SmallIcon)) { Source = card.PreviewHeader.DataContext });
+        card.PreviewAppIcon.ToolTip = card.Session.RendererDescription;
+        AutomationProperties.SetName(card.PreviewAppIcon, card.Session.RendererDescription ?? "Preview icon");
+        if (card.Window != null) { card.Window.Title = text; card.Window.Icon = icon ?? card.Session.Entry?.SmallIcon; }
+        UpdatePreviewModeButtons(card);
+    }
+
+    internal void ToggleCardWindow(PreviewCard card) => MoveHost(card, card.Mode == PreviewMode.Windowed ? PreviewMode.Sidebar : PreviewMode.Windowed);
+    internal void ToggleCardPip(PreviewCard card) => MoveHost(card, card.Mode == PreviewMode.PictureInPicture ? PreviewMode.Sidebar : PreviewMode.PictureInPicture);
+    internal void ClosePreviewFrom(PreviewCard card) { TogglePreview(); card.Pane.FocusList(); }
+
+    void MovePreviewHost(PreviewMode destination) { if (primary != null) MoveHost(primary, destination); }
+    void ResetPreviewHosts() { foreach (var card in Cards) MoveHost(card, PreviewMode.Sidebar); }
+
+    void MoveHost(PreviewCard card, PreviewMode destination)
+    {
+        if (changingPreviewHost || card.Mode == destination) return;
+        if (destination != PreviewMode.Sidebar && card.Session.Entry == null) return;
+        changingPreviewHost = true;
         try
         {
-            // Move the whole existing container. The session, content, HWND,
-            // native document, playback and archive lease keep their identities.
-            if(previewWindow is {} previous)
+            // Move the whole existing card. The session, content, HWND, native document,
+            // playback and archive lease keep their identities.
+            if (card.Window is { } previous) { card.Window = null; previous.Content = null; previous.Close(); }
+            else PaneView.Detach(card);
+            card.Mode = destination;
+            card.Pane.UpdatePreviewSlot();
+            if (destination == PreviewMode.Windowed)
             {
-                previewWindow=null;previous.Content=null;previous.Close();
-            }
-            else PaneArea.Children.Remove(PreviewPane);
-            previewMode=destination;
-            PreviewPane.Width=PreviewPane.Height=double.NaN;
-            PreviewPane.HorizontalAlignment=HorizontalAlignment.Stretch;
-            PreviewPane.VerticalAlignment=VerticalAlignment.Stretch;
-            PreviewPane.Margin=new Thickness(0);Grid.SetColumnSpan(PreviewPane,1);
-            PreviewPane.LayoutTransform=null;Panel.SetZIndex(PreviewPane,0);
-            if(destination==PreviewMode.Windowed)
-            {
-                var window=previewWindow=new Window
+                card.Width = card.Height = double.NaN; card.Margin = new Thickness(0);
+                card.HorizontalAlignment = HorizontalAlignment.Stretch; card.VerticalAlignment = VerticalAlignment.Stretch;
+                var window = card.Window = new Window
                 {
-                    Owner=this,Content=PreviewPane,Title=PreviewTitle.Text,Width=840,Height=680,MinWidth=360,MinHeight=260,
-                    WindowStartupLocation=WindowStartupLocation.CenterOwner,ShowInTaskbar=false,ShowActivated=false,
-                    Background=Hex("#161B24"),Foreground=Foreground,FontFamily=FontFamily,FontSize=FontSize
+                    Owner = this, Content = card, Title = card.PreviewTitle.Text, Width = 840, Height = 680, MinWidth = 360, MinHeight = 260,
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner, ShowInTaskbar = false, ShowActivated = false,
+                    Background = Hex("#161B24"), Foreground = Foreground, FontFamily = FontFamily, FontSize = FontSize
                 };
-                window.Icon=PreviewControls.RendererIcon(sidePreview.RendererId)??sidePreview.Entry.SmallIcon;
-                AuxiliaryWindows.Prepare(window,PreviewPane,scaleContent:false);
+                window.Icon = PreviewControls.RendererIcon(card.Session.RendererId) ?? card.Session.Entry.SmallIcon;
+                AuxiliaryWindows.Prepare(window, card, scaleContent: false);
 #if DEBUG
                 HiddenTrialPresentation.Prepare(window);
 #endif
-                window.SourceInitialized+=(_,_)=>ApplyAcrylic(window);
-                window.Closed+=(_,_)=>
+                window.SourceInitialized += (_, _) => ApplyAcrylic(window);
+                window.Closed += (_, _) =>
                 {
-                    if(previewWindow!=window)return;
+                    if (card.Window != window) return;
                     // Native window close restores; the header's explicit ×
                     // remains the separate close-preview action.
-                    previewWindow=null;window.Content=null;
-                    if(!closingPreviews)MovePreviewHost(PreviewMode.Sidebar);
+                    card.Window = null; window.Content = null;
+                    if (!closingPreviews) MoveHost(card, PreviewMode.Sidebar);
                 };
-                ApplyPreviewAppearance();window.Show();
+                ApplyPreviewAppearance(); window.Show();
             }
             else
             {
-                Grid.SetColumn(PreviewPane,destination==PreviewMode.Sidebar?2:0);
-                PaneArea.Children.Add(PreviewPane);
-                if(destination==PreviewMode.PictureInPicture)
-                {
-                    Grid.SetColumnSpan(PreviewPane,3);Panel.SetZIndex(PreviewPane,10);
-                    PreviewPane.HorizontalAlignment=HorizontalAlignment.Right;PreviewPane.VerticalAlignment=VerticalAlignment.Bottom;
-                    PreviewPane.Margin=new Thickness(12);FitPictureInPicture();
-                }
-                else
-                {
-                    previewShown=sidePreview?.Entry?.Path;
-                }
+                PlaceCard(card);
+                if (destination == PreviewMode.Sidebar) card.Shown = card.Session.Entry?.Path;
             }
-            UpdatePreviewModeButtons();SetPreviewVisible(sidePreview?.Entry!=null);
+            UpdatePreviewModeButtons(card); SetPreviewVisible(card, card.Session.Entry != null);
         }
-        finally{changingPreviewHost=false;}
+        finally { changingPreviewHost = false; }
     }
 
-    void FitPictureInPicture()
+    void SetPreviewVisible(PreviewCard card, bool visible)
     {
-        if(previewMode!=PreviewMode.PictureInPicture)return;
-        double availableWidth=Math.Max(0,PaneArea.ActualWidth-24),availableHeight=Math.Max(0,PaneArea.ActualHeight-24);
-        PreviewPane.Width=Math.Min(availableWidth,Math.Min(400,Math.Max(280,availableWidth*.45)));
-        PreviewPane.Height=Math.Min(availableHeight,Math.Min(320,Math.Max(220,availableHeight*.55)));
+        bool appearing = visible && card.Visibility != Visibility.Visible;
+        card.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
+        if (appearing) Motion.Enter(card, ms: 120); // a fade only: hosted viewers draw in their own windows
+        if (card.Window is { } window)
+        {
+            if (!visible) window.Hide();
+            else if (!window.IsVisible) window.Show();
+        }
+        card.Pane.UpdatePreviewSlot();
     }
-    void UpdatePreviewModeButtons()
+
+    void UpdatePreviewModeButtons() { foreach (var card in Cards) UpdatePreviewModeButtons(card); }
+    void UpdatePreviewModeButtons(PreviewCard card)
     {
-        string pin=previewPinned?"Unpin preview and follow selection":"Pin this preview";
-        PreviewPinButton.ToolTip=pin;AutomationProperties.SetName(PreviewPinButton,pin);
-        AutomationProperties.SetItemStatus(PreviewPinButton,previewPinned?"Pinned":"Following selection");
-        PreviewPinButton.Tag=previewPinned?"on":null;PreviewPinButton.IsEnabled=sidePreview?.Entry!=null;
-        UpdateMarkButtons(); // OPUS-08
-        string floating=previewMode==PreviewMode.Windowed?"Return preview to sidebar":"Open preview in a floating window";
-        string pip=previewMode==PreviewMode.PictureInPicture?"Return preview to sidebar":"Picture in picture inside Pathweft";
-        PreviewWindowButton.ToolTip=floating;AutomationProperties.SetName(PreviewWindowButton,floating);
-        PreviewPipButton.ToolTip=pip;AutomationProperties.SetName(PreviewPipButton,pip);
-        PreviewWindowButton.Content=previewMode==PreviewMode.Windowed?"\uE73F":"\uE8A7";
-        if(previewMode==PreviewMode.Sidebar)PreviewPane.SetResourceReference(Border.BackgroundProperty,"Palette.0DFFFFFF");
-        else PreviewPane.Background=Hex("#161B24");
+        string pin = card.Pinned ? "Unpin preview and follow selection" : "Pin this preview";
+        card.PreviewPinButton.ToolTip = pin; AutomationProperties.SetName(card.PreviewPinButton, pin);
+        AutomationProperties.SetItemStatus(card.PreviewPinButton, card.Pinned ? "Pinned" : "Following selection");
+        card.PreviewPinButton.Tag = card.Pinned ? "on" : null; card.PreviewPinButton.IsEnabled = card.Session.Entry != null;
+        UpdateMarkButtons(card); // OPUS-08
+        string back = Settings.SinglePane ? "Return preview to the pane" : "Return preview to picture in picture";
+        string floating = card.Mode == PreviewMode.Windowed ? back : "Open preview in a floating window";
+        string pip = card.Mode == PreviewMode.PictureInPicture ? "Return preview to the pane" : "Picture in picture inside Pathweft";
+        card.PreviewWindowButton.ToolTip = floating; AutomationProperties.SetName(card.PreviewWindowButton, floating);
+        card.PreviewPipButton.ToolTip = pip; AutomationProperties.SetName(card.PreviewPipButton, pip);
+        // two panes: picture in picture is the only in-app place, so there is nothing to switch to
+        card.PreviewPipButton.Visibility = Settings.SinglePane ? Visibility.Visible : Visibility.Collapsed;
+        card.PreviewWindowButton.Content = card.Mode == PreviewMode.Windowed ? "\uE73F" : "\uE8A7";
+        // docked it is part of the pane's surface; over the list or in a window it needs a solid one
+        if (card.Window == null && card.Mode == PreviewMode.Sidebar && Settings.SinglePane) card.SetResourceReference(Border.BackgroundProperty, "Palette.0DFFFFFF");
+        else card.Background = Hex("#161B24");
     }
 }

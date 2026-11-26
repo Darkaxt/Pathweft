@@ -12,8 +12,8 @@ public partial class MainWindow
     Window quick;
     ContentControl quickBody;
     PaneView quickSource;
-    PreviewSession sidePreview, quickPreview;
-    string previewShown, quickShown;
+    PreviewSession sidePreview, quickPreview; // sidePreview: the left (or only) pane's card's session
+    string quickShown;
     Entry quickExplicit;
     bool closingPreviews, previewCloseAccepted;
     static HashSet<string> Set(params string[] extensions) => new(extensions, StringComparer.OrdinalIgnoreCase);
@@ -21,17 +21,18 @@ public partial class MainWindow
 
     void InitializePreviews()
     {
-        sidePreview = new(this, PreviewBody, UpdateSidePreviewHeading);
-        PreviewTitle.ContextMenu=sidePreview.Menu;PreviewTitle.ToolTip="Right-click to choose a preview module";
+        primary = new PreviewCard(this, Left, UpdatePreviewHeading);
+        sidePreview = primary.Session;
+        RefreshPreviewHosts();
         // Await actual owned work before the application's dispatcher exits.
         Closing += async (_, change) =>
         {
             if (previewCloseAccepted) return;
             closingPreviews = true;
-            previewPinned=false;
+            foreach(var card in Cards){card.Pinned=false;card.Shown=null;}
             PreviewSession.ClearAll();
-            previewShown = quickShown = null;
-            if (change.Cancel) { MovePreviewHost(PreviewMode.Sidebar);closingPreviews = false; return; } // normal notification-area hide
+            quickShown = null;
+            if (change.Cancel) { ResetPreviewHosts();closingPreviews = false; return; } // normal notification-area hide
             change.Cancel = true;
             await StopUpdateChecks();
             await Task.WhenAll(Left.DrainSpaceAndSizesAsync(),Right.DrainSpaceAndSizesAsync());
@@ -43,65 +44,43 @@ public partial class MainWindow
             // saves before the dispatcher and its completion handlers disappear.
             await Dispatcher.InvokeAsync(() => { }, System.Windows.Threading.DispatcherPriority.Background);
             await FinishUndoWork();
-            MovePreviewHost(PreviewMode.Sidebar);
+            ResetPreviewHosts();
             previewCloseAccepted = true;
             _ = Dispatcher.BeginInvoke(Close);
         };
-        Closed += (_, _) => { sidePreview.Dispose(); Archive.ForgetPasswords(); ArchiveContent.ReleaseNested(); }; // nested archives were written back as they changed
+        Closed += (_, _) => { foreach(var card in Cards)card.Session.Dispose(); Archive.ForgetPasswords(); ArchiveContent.ReleaseNested(); }; // nested archives were written back as they changed
     }
     void ApplyPreview()
     {
         UpdateCommandStates();
-        if(previewMode==PreviewMode.Sidebar&&!previewPinned)previewShown = null;
+        foreach(var card in Cards)if(card.Mode==PreviewMode.Sidebar&&!card.Pinned)card.Shown=null;
         if(Settings.Preview)PreviewFollow();
-        else{previewPinned=false;MovePreviewHost(PreviewMode.Sidebar);previewShown=null;SetPreviewVisible(false);sidePreview?.Clear();UpdatePreviewModeButtons();}
-    }
-    void SetPreviewVisible(bool visible)
-    {
-        bool column=visible&&previewMode==PreviewMode.Sidebar;
-        bool appearing=visible&&PreviewPane.Visibility!=Visibility.Visible;
-        PreviewPane.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
-        if(appearing)Motion.Enter(PreviewPane,ms:160); // a fade only: hosted viewers draw in their own windows
-        if(previewWindow is {} window)
-        {
-            if(!visible)window.Hide();
-            else if(!window.IsVisible)window.Show();
-        }
-        PreviewSplitter.Visibility = column ? Visibility.Visible : Visibility.Collapsed;
-        if(column== (PreviewColumn.Width.Value>0))return;
-        PreviewColumn.MinWidth = column ? 200 : 0;
-        PreviewColumn.MaxWidth=double.PositiveInfinity;
-        PreviewGap.Width = new GridLength(column ? 10 : 0);
-        PreviewColumn.Width = new GridLength(column ? Settings.PreviewWidth : 0);
-        FitPreview(); PlaceCaption();
+        else foreach(var card in Cards){card.Pinned=false;MoveHost(card,PreviewMode.Sidebar);card.Shown=null;SetPreviewVisible(card,false);card.Session.Clear();UpdatePreviewModeButtons(card);}
     }
     void TogglePreview() { Settings.Preview = !Settings.Preview; Settings.Save(); ApplyPreview(); }
     void Preview_Click(object sender, RoutedEventArgs e) { TogglePreview(); active.FocusList(); }
-    void FitPreview()
-    {
-        double panes = Settings.SinglePane ? 250 : 510;
-        PreviewColumn.MaxWidth = Settings.Preview ? Math.Max(PreviewColumn.MinWidth, PaneArea.ActualWidth - 10 - panes) : double.PositiveInfinity;
-    }
-    void PaneArea_SizeChanged(object sender, SizeChangedEventArgs e) {FitPreview();FitPictureInPicture();}
-    void PreviewSplitter_DragCompleted(object sender, System.Windows.Controls.Primitives.DragCompletedEventArgs e)
-    { Settings.PreviewWidth = PreviewColumn.ActualWidth; Settings.Save(); }
     void PreviewFollow()
     {
         if (closingPreviews) return;
         if (quick != null)
         {
-            SetPreviewVisible(false);
+            foreach(var card in Cards)SetPreviewVisible(card,false);
             var selected = quickExplicit??quickSource?.List.SelectedItem as Entry;
             if (selected?.Path != quickShown) { quickShown = selected?.Path; quickPreview.Show(selected); }
             return;
         }
-        if (!Settings.Preview || sidePreview == null) return;
-        var entry = active?.List.SelectedItem as Entry;
+        if (!Settings.Preview) return;
+        foreach(var card in Cards)Follow(card);
+    }
+    /// PREVIEW-41: each card shows its own pane's selection.
+    void Follow(PreviewCard card)
+    {
+        var entry = card.Pane.List.SelectedItem as Entry;
         if(entry?.IsUp==true)entry=null;
-        if(previewPinned&&sidePreview.Entry!=null){SetPreviewVisible(true);return;}
-        SetPreviewVisible(entry!=null);
-        if (entry?.Path == previewShown) return;
-        previewShown = entry?.Path; sidePreview.Show(entry);UpdatePreviewModeButtons();
+        if(card.Pinned&&card.Session.Entry!=null){SetPreviewVisible(card,true);return;}
+        SetPreviewVisible(card,entry!=null);
+        if (entry?.Path == card.Shown) return;
+        card.Shown = entry?.Path; card.Session.Show(entry);UpdatePreviewModeButtons(card);
     }
     void QuickView() => ToggleQuickView(active, this);
     internal void InspectShellClass(PaneView source,Entry entry,Window previewOwner=null)
@@ -112,9 +91,10 @@ public partial class MainWindow
     }
     internal void ToggleQuickView(PaneView source, Window owner)
     {
-        if(previewMode!=PreviewMode.Sidebar)MovePreviewHost(PreviewMode.Sidebar);
+        ResetPreviewHosts();
         if (quick != null) { quick.Close(); return; }
-        sidePreview.Clear(); previewPinned=false;previewShown = null; quickSource = source;UpdatePreviewModeButtons();
+        foreach(var card in Cards){card.Session.Clear();card.Pinned=false;card.Shown=null;}
+        quickSource = source;UpdatePreviewModeButtons();
         quickBody = new ContentControl { HorizontalContentAlignment = HorizontalAlignment.Stretch, VerticalContentAlignment = VerticalAlignment.Stretch };
         quick = new Window
         {
@@ -174,7 +154,7 @@ public partial class MainWindow
     void ApplyPreviewAppearance()
     {
         if (quickBody != null) quickBody.LayoutTransform = Settings.TextScale > 1 ? new ScaleTransform(Settings.TextScale, Settings.TextScale) : null;
-        if(PreviewPane!=null)PreviewPane.LayoutTransform=previewMode==PreviewMode.Windowed&&Settings.TextScale>1?new ScaleTransform(Settings.TextScale,Settings.TextScale):null;
-        if(PreviewWindowButton!=null)UpdatePreviewModeButtons();
+        foreach(var card in Cards)card.LayoutTransform=card.Mode==PreviewMode.Windowed&&Settings.TextScale>1?new ScaleTransform(Settings.TextScale,Settings.TextScale):null;
+        UpdatePreviewModeButtons();
     }
 }

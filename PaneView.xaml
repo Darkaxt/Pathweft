@@ -304,6 +304,19 @@
       </Canvas>
       </Grid>
 
+      <!-- PREVIEW-41: the docked preview card, inside the pane under its tab row. The tabs keep the pane's full width;
+           the path bar, list and footer fill the room to its left. The strip on its left edge resizes it. -->
+      <Grid x:Name="PreviewSlot" DockPanel.Dock="Right" Visibility="Collapsed">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="8"/>
+          <ColumnDefinition/>
+        </Grid.ColumnDefinitions>
+        <Thumb x:Name="PreviewDivider" Cursor="SizeWE" DragDelta="PreviewDivider_DragDelta" DragCompleted="PreviewDivider_DragCompleted"
+               AutomationProperties.Name="Resize preview">
+          <Thumb.Template><ControlTemplate TargetType="Thumb"><Border Background="Transparent"/></ControlTemplate></Thumb.Template>
+        </Thumb>
+      </Grid>
+
       <!-- Path: breadcrumbs, editable on click in empty area / Ctrl+L -->
       <DockPanel x:Name="PathBar" DockPanel.Dock="Top" Margin="8,4,8,0">
         <Button DockPanel.Dock="Left" Style="{StaticResource Ghost}" Content="&#xE72B;" FontFamily="Segoe Fluent Icons" FontSize="10" ToolTip="Back (Alt+Left) · middle-click: in a new tab" Click="Back_Click" Tag="back" PreviewMouseDown="Nav_MiddleClick"/>
@@ -459,6 +472,8 @@
       <!-- an empty folder, search or filter says so instead of showing a blank list; clicks reach the list -->
       <TextBlock x:Name="EmptyState" Visibility="Collapsed" IsHitTestVisible="False" Panel.ZIndex="1"
                  HorizontalAlignment="Center" VerticalAlignment="Top" Margin="24,72,24,24" FontSize="13" Foreground="{DynamicResource Muted}"/>
+      <!-- PREVIEW-41: picture in picture, a corner card over this pane's list; the empty layer lets clicks through -->
+      <Grid x:Name="PipLayer" Panel.ZIndex="3"/>
       </Grid>
     </DockPanel>
       <!-- The visible diagonal segment meets the right/bottom pane edges, including the footer.
