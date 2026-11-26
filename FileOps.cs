@@ -29,7 +29,8 @@ public partial class MainWindow
     // replaced is gone. An entry stays until each of its steps has worked: what failed is tried again next time.
     // Kinds: recycle (Path, made by the operation), move (Path back to To, the exact old path, its old name included),
     // rename (Path to the name To), rmdir (Path, a folder it made, once empty), restore (Path: where it was deleted from;
-    // To: that very item in the Recycle Bin, its $R file). Stamp (Ferry.Stamp): what the item looked like when the
+    // To: that very item in the Recycle Bin, its $R file), meta (Path: a file whose embedded details an edit changed;
+    // To: its earlier values and dates, OPUS-09). Stamp (Ferry.Stamp): what the item looked like when the
     // operation left it; something put in its place since is left alone, and said so.
     internal record UndoStep(string Kind, string Path, string To = null, long Stamp = 0);
     internal record UndoEntry(string What, DateTime When, List<UndoStep> Steps, string Journal = null);
@@ -183,14 +184,14 @@ public partial class MainWindow
         Status.Text = $"Undoing {entry.What}…";
         var left = new List<UndoStep>();
         string error = null;
-        int gone = 0, changed = 0;
+        int gone = 0, changed = 0, missing = 0;
         // Off the UI thread: what was changed since is set aside, names go back (all together, so names swapped among
         // themselves don't collide), deleted items come back from the Recycle Bin, each the very item that was deleted.
         var ready = await Task.Run(() =>
         {
             var kept = new List<UndoStep>();
             foreach (var s in entry.Steps)
-                if (s.Kind is "recycle" or "move" or "rename" or "unkeep" && Exists(s.Path) && (s.Stamp == 0 || Ferry.Stamp(s.Path) != s.Stamp)) changed++;
+                if (s.Kind is "recycle" or "move" or "rename" or "unkeep" or "meta" && Exists(s.Path) && (s.Stamp == 0 || Ferry.Stamp(s.Path) != s.Stamp)) changed++;
                 else kept.Add(s);
             foreach (var s in kept.Where(s => s.Kind == "mkdir").OrderBy(s => s.Path.Length))
                 try { TransferFile.RequirePlainDestination(s.Path); Directory.CreateDirectory(s.Path); }
@@ -202,6 +203,9 @@ public partial class MainWindow
             foreach (var s in kept.Where(s => s.Kind == "restore"))
                 if (RecycleBinWindow.RestoreItem(s.To ?? "", out bool lost) is { } why) { left.Add(s); error ??= why; }
                 else if (lost) gone++; // emptied from the bin: nothing left to bring back, so not kept either
+            foreach (var s in kept.Where(s => s.Kind == "meta")) // the earlier details and dates, written back through the same handlers
+                if (!File.Exists(s.Path)) missing++;
+                else if (EmbeddedMetadata.Restore(s.Path, s.To) is { } why) { left.Add(s with { Stamp = Ferry.Stamp(s.Path) }); error ??= Path.GetFileName(s.Path) + ": " + why; }
             return kept;
         });
         // then through the shell and through transfers (each item to its exact old path); the folders it made go last, once emptied
@@ -231,7 +235,7 @@ public partial class MainWindow
             SaveUndo();
             foreach (var (job, e) in jobUndo.Where(x => x.Value == entry).ToList()) { job.CanUndo = false; job.Refresh(); jobUndo.Remove(job); }
             undoing = null;
-            var notes = string.Join(", ", new[] { gone > 0 ? $"{gone} no longer in the Recycle Bin" : null, changed > 0 ? $"{changed} changed since, left alone" : null }.Where(n => n != null));
+            var notes = string.Join(", ", new[] { gone > 0 ? $"{gone} no longer in the Recycle Bin" : null, missing > 0 ? $"{missing} no longer there" : null, changed > 0 ? $"{changed} changed since, left alone" : null }.Where(n => n != null));
             Status.Text = (left.Count == 0 ? $"Undone: {entry.What}" : $"Partly undone: {entry.What}. Ctrl+Z tries the rest")
                         + (notes != "" ? $" ({notes})" : "") + (left.Count > 0 && error != null ? $": {error}" : "");
             Left.Refresh(); Right.Refresh();

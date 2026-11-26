@@ -233,6 +233,7 @@ public partial class MainWindow
         bool local=sel.All(x=>!PaneView.IsVirtual(x.Path)&&!RemoteAddress.IsRemote(x.Path));
         if (one && local && !p.InSearch && first.Path is var linkTarget) m.Items.Add(Item("Create link…", "\uE71B", "", () => NewLink(linkTarget)));
         m.Items.Add(Item("Tags and notes…", "\uE8EC", "", () => NotesDialog.Edit(this, sel.Select(x => x.Path).ToList()), local));
+        if (local && sel.Any(x => !x.IsDir && EmbeddedMetadata.FamilyOf(x.Path) != null)) m.Items.Add(Item("Edit metadata…", "\uE70F", "", () => EditMetadata(sel.Select(x => x.Path).ToList()))); // OPUS-09
         if (local && CustomActions.Menu(sel, p.InSearch ? Path.GetDirectoryName(first.Path) : p.Dir, error => MessageBox.Show(this, error, "Actions")) is { } actions) m.Items.Add(actions);
         m.Items.Add(new Separator());
         if (sel.Any(x => x.IsDir)) m.Items.Add(Item("Pin to Quick access", "", "Ctrl+D", PinSelected));
@@ -265,7 +266,7 @@ public partial class MainWindow
         Group("Transfer","\uE8DE",item=>Named(item,"Copy to other pane","Move to other pane","Copy to","Move to","Group into new folder…","Add to Drop bin","Add to collection")||item.Tag as string=="shell:transfer");
         Group("Copy details","\uE8C8",item=>Named(item,"Copy path","Copy name")||item.Tag as string=="copy-detail");
         Group("Archive","\uF012",item=>item.Tag==null&&IsArchiveCommand(item.Header as string)||item.Tag as string is "shell:7-zip" or "shell:winrar");
-        Group("Tools","\uE713",item=>Named(item,"Run as administrator","Compare in editor","Edit with Notepad++","Resize images…","What's using this?","Create shortcut","Mount","Tags and notes…","Create link…")||(item.Header as string)?.StartsWith("Find duplicates")==true);
+        Group("Tools","\uE713",item=>Named(item,"Run as administrator","Compare in editor","Edit with Notepad++","Resize images…","What's using this?","Create shortcut","Mount","Tags and notes…","Edit metadata…","Create link…")||(item.Header as string)?.StartsWith("Find duplicates")==true);
         Take(menu,item=>item.Tag as string=="custom-actions");
         Group("More actions","\uE712",_=>true);
         menu.Items.Add(new Separator());menu.Items.Add(properties);

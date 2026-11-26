@@ -30,6 +30,7 @@ public partial class MainWindow
         await Step("remote", () => VerifyRemote21(Path.Combine(root, "remote"), check));
         await Step("terminal", () => VerifyTerminal21(Path.Combine(root, "terminal"), check));
         await Step("monitor", () => VerifyMonitor25(root, check));
+        await Step("metadata", () => VerifyMetadata58(Path.Combine(root, "metadata"), check)); // OPUS-09/10
         await Step("busy-clipboard", async () =>
         {
             string folder = Directory.CreateDirectory(Path.Combine(root, "clipboard 子")).FullName, file = Path.Combine(folder, "copied é.txt");

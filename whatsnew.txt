@@ -1,6 +1,13 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.105 | 2026-11-26 | Edit metadata for many files at once
+
+- Right-click → Tools → Edit metadata… changes the details stored inside photos, songs, videos and Office documents for one file or a whole selection: title, artists, album, year, track, genre, authors, tags, rating, comments and more.
+- Fields where the files differ show (multiple values) and keep each file's own value unless you type over them.
+- Dates sets or shifts the modified, created and date-taken times, for example to fix a camera clock.
+- Review shows what will change before anything is written; Stop, the per-file results and Ctrl+Z work as for other operations. Read-only and online-only cloud files are left alone.
+
 ## 1.1.104 | 2026-11-26 | Copying no longer crashes when the clipboard is busy
 
 - Copy path, Copy name and Pathweft's other text copies no longer close Pathweft when another program is using the clipboard. The status bar says nothing was copied; try again a moment later.

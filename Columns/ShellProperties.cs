@@ -89,8 +89,8 @@ internal static class ShellProperties
         var result = new Dictionary<string, (string, IComparable)>(StringComparer.OrdinalIgnoreCase);
         if (wanted.Count == 0) return result;
         var iid = typeof(IPropertyStore).GUID;
-        // GPS_DEFAULT | GPS_BESTEFFORT (0x40); a placeholder: GPS_FASTPROPERTIESONLY (0x2)
-        if (SHGetPropertyStoreFromParsingName(path, IntPtr.Zero, cachedOnly ? 0x2 : 0x40, ref iid, out var store) != 0 || store == null) return result;
+        // GPS_DEFAULT | GPS_BESTEFFORT (0x40); a placeholder: GPS_FASTPROPERTIESONLY (0x8; 0x2 would be GPS_READWRITE)
+        if (SHGetPropertyStoreFromParsingName(path, IntPtr.Zero, cachedOnly ? 0x8 : 0x40, ref iid, out var store) != 0 || store == null) return result;
         try
         {
             foreach (var d in wanted)
