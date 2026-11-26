@@ -14,8 +14,8 @@ public partial class PaneView
 {
     internal const double PreviewListMin = 250, PreviewCardMin = 200;
     const double SlotChrome = 16; // the divider strip on the left and the card's inset on the right
-    Entry pressed;
-    long pressedAt, listMovedAt;
+    internal Entry pressed; // internal for the CORE-36 check
+    internal long pressedAt, listMovedAt;
 
     void InitializePanePreview()
     {

@@ -45,12 +45,16 @@ public partial class MainWindow
             typeof(MouseButtonEventArgs).GetProperty(nameof(MouseButtonEventArgs.ClickCount)).SetValue(args, count);
             return args;
         }
-        first.RaiseEvent(Press(1)); Left.PreviewSlot.Width += 30; Left.UpdateLayout();
+        var press1 = Press(1); first.RaiseEvent(press1);
+        string state = $"press 1: count {press1.ClickCount}, handled {press1.Handled}, pressed {Left.pressed?.Name ?? "null"}, at {Left.pressedAt}; ";
+        double listBefore = Left.List.ActualWidth; Left.PreviewSlot.Width += 30; Left.UpdateLayout();
+        state += $"list {listBefore:0.#}->{Left.List.ActualWidth:0.#}, moved at {Left.listMovedAt}, slot {Left.PreviewSlot.ActualWidth:0.#}; ";
         var again = Press(2); second.RaiseEvent(again);
+        state += $"press 2: count {again.ClickCount}, pressed {Left.pressed?.Name ?? "null"}, first {(first.DataContext as Entry)?.Name}, second {(second.DataContext as Entry)?.Name}";
         // opening a folder lists it asynchronously: wait for that navigation to finish
         for (int i = 0; i < 100 && !(Left.Listed && Left.Dir.Equals(folder, StringComparison.OrdinalIgnoreCase)); i++) { await settle(); await Task.Delay(50); }
         check(again.Handled && Left.Dir.Equals(folder, StringComparison.OrdinalIgnoreCase),
-            $"A double-click whose rows moved between its presses opens the item its first press was on (handled {again.Handled}, opened {Left.Dir == folder})");
+            $"A double-click whose rows moved between its presses opens the item its first press was on (handled {again.Handled}, opened {Left.Dir == folder}; {state})");
         await S1Verification.Navigate(Left, root);
         while (Left.TabCount > tabsBefore) Left.CloseTab(Left.ActiveTab + 1 < Left.TabCount ? Left.ActiveTab + 1 : Left.ActiveTab);
 
