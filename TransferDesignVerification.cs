@@ -91,9 +91,9 @@ public partial class MainWindow
     internal async Task VerifyBusyClipboard34(string folder,string file,Action<bool,string> check)
     {
         await S1Verification.Navigate(Left,folder);SetActive(Left);Left.SetSelection(entry=>entry.Path==file);
-        var held=new ManualResetEventSlim();var free=new ManualResetEventSlim();bool opened=false;
+        var held=new ManualResetEventSlim();var free=new ManualResetEventSlim();bool opened=false;int refusal=0;
         // on the shared desktop another program (clipboard sync) may have it open for a moment: wait for it, so the holder is really this one
-        var holder=new Thread(()=>{for(int i=0;i<250&&!(opened=OpenClipboard(IntPtr.Zero));i++)Thread.Sleep(20);held.Set();free.Wait();if(opened)CloseClipboard();}){IsBackground=true};
+        var holder=new Thread(()=>{for(int i=0;i<250&&!(opened=OpenClipboard(IntPtr.Zero));i++){refusal=System.Runtime.InteropServices.Marshal.GetLastWin32Error();if(refusal==5)break;Thread.Sleep(20);}held.Set();free.Wait();if(opened)CloseClipboard();}){IsBackground=true};
         string quoted=Entry.QuotedPaths(Left.Selected);uint busySequence=GetClipboardSequenceNumber();
         holder.Start();held.Wait();
         Exception thrown=null;
@@ -104,8 +104,10 @@ public partial class MainWindow
         bool moved=GetClipboardSequenceNumber()!=busySequence;
         GetWindowThreadProcessId(GetClipboardOwner(),out uint ownerProcess);
         bool ours=moved&&ownerProcess==Environment.ProcessId;
-        check(opened&&thrown==null&&Status.Text=="Nothing copied: another program is using the clipboard. Try again."&&!ours,
-            "Copy path while another program holds the clipboard reports it, changes nothing and Pathweft keeps running: "+(opened?"":"(the test could not hold the clipboard) ")+(thrown?.GetType().Name??Status.Text)+(moved?" (clipboard since written by "+(ours?"Pathweft":"another program")+(ClipboardText.TryGet()==quoted?", holding the same path":"")+")":""));
+        // while the session is locked Windows refuses the clipboard to every program (access denied): the same refused write, from Windows
+        bool refused=!opened&&refusal==5;
+        check((opened||refused)&&thrown==null&&Status.Text=="Nothing copied: another program is using the clipboard. Try again."&&!ours,
+            "Copy path while another program holds the clipboard reports it, changes nothing and Pathweft keeps running: "+(opened?"":refused?"(Windows refuses the clipboard to every program, as while the session is locked) ":"(the test could not hold the clipboard, error "+refusal+") ")+(thrown?.GetType().Name??Status.Text)+(moved?" (clipboard since written by "+(ours?"Pathweft":"another program")+(ClipboardText.TryGet()==quoted?", holding the same path":"")+")":""));
     }
 }
 #endif
