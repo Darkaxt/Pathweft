@@ -88,6 +88,7 @@ public partial class MainWindow
     /// CORE-34: another program holding the clipboard open (here a window-less thread of this process) refuses
     /// the write. The item menu's Copy path reports it instead of ending Pathweft. The clipboard is only held
     /// open, never written, so this may run where the clipboard is the owner's (shell-only private desktop).
+    [System.Runtime.InteropServices.DllImport("user32.dll")] static extern IntPtr GetClipboardOwner();
     internal async Task VerifyBusyClipboard34(string folder,string file,Action<bool,string> check)
     {
         await S1Verification.Navigate(Left,folder);SetActive(Left);Left.SetSelection(entry=>entry.Path==file);
@@ -98,10 +99,13 @@ public partial class MainWindow
         Exception thrown=null;
         try{try{CopyPathFromMenu();}catch(Exception error){thrown=error;}}
         finally{free.Set();holder.Join();}
-        // "changes nothing": nothing was written, or (the owner's own copies move the sequence on a shared desktop) what was is not this path;
-        // the path alone can't tell, since an earlier run's "Copy path once it is free" may have left the same path there
-        check(opened&&thrown==null&&Status.Text=="Nothing copied: another program is using the clipboard. Try again."&&(GetClipboardSequenceNumber()==busySequence||ClipboardText.TryGet()!=quoted),
-            "Copy path while another program holds the clipboard reports it, changes nothing and Pathweft keeps running: "+(thrown?.GetType().Name??Status.Text));
+        // "changes nothing": nothing was written, or what was written since is another program's (on the shared desktop the owner's
+        // copies and clipboard sync move the sequence, and can put back the same path an earlier run copied), never Pathweft's
+        bool moved=GetClipboardSequenceNumber()!=busySequence;
+        GetWindowThreadProcessId(GetClipboardOwner(),out uint ownerProcess);
+        bool ours=moved&&ownerProcess==Environment.ProcessId;
+        check(opened&&thrown==null&&Status.Text=="Nothing copied: another program is using the clipboard. Try again."&&!ours,
+            "Copy path while another program holds the clipboard reports it, changes nothing and Pathweft keeps running: "+(thrown?.GetType().Name??Status.Text)+(moved?" (clipboard since written by "+(ours?"Pathweft":"another program")+(ClipboardText.TryGet()==quoted?", holding the same path":"")+")":""));
     }
 }
 #endif
