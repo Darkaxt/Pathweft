@@ -1,6 +1,10 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.106 | 2026-11-26 | Move the window from the preview pane's top
+
+- With the preview pane open, its empty top, beside and under the window's buttons, moves the window like the tab row does: drag to move or snap, double-click to maximize, right-click for the window menu.
+
 ## 1.1.105 | 2026-11-26 | Edit metadata for many files at once
 
 - Right-click → Tools → Edit metadata… changes the details stored inside photos, songs, videos and Office documents for one file or a whole selection: title, artists, album, year, track, genre, authors, tags, rating, comments and more.

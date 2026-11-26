@@ -15,7 +15,7 @@ public partial class HelpWindow : Window
         ("The window", new[]
         {
             ("Two panes", "Two folders side by side, each with its own tabs. The active pane has the lighter surface and the accent edge; Tab switches. Ctrl+P shows one pane or two"),
-            ("Top row", "The tabs. Drag its empty part (or Pathweft' name at the top of the sidebar) to move the window, double-click it to maximize, right-click it for the window menu. Resting on the maximize button shows Windows' snap layouts"),
+            ("Top row", "The tabs. Drag its empty part, the top of the preview pane beside the window's buttons, or Pathweft's name at the top of the sidebar to move the window, double-click it to maximize, right-click it for the window menu. Resting on the maximize button shows Windows' snap layouts"),
             ("Sidebar", "Quick access (the folders you pin), Favorites (Home, Desktop, Documents, Downloads, Pictures, Music, Videos, Recycle Bin), Drives with how full each one is, and a Folders tree. Click a section's header to fold it, drag a header to reorder; drag the sidebar's edge to widen it"),
             ("Sidebar controls", "Check for updates, What's new, Help and Settings sit beside Pathweft's name, or just below it in a narrow sidebar. The Drop bin stays at the bottom. Hover a button for its name"),
             ("Summary cards", "Under the panes: the drive (free space, how full), this folder (its size, folders and files, and a bar of what it holds by kind: images, video, code…), and the selection — or, with nothing selected, the latest change in the folder"),

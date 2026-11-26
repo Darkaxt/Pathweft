@@ -116,6 +116,16 @@ public partial class MainWindow
 
     void Caption_MouseDown(object s, MouseButtonEventArgs e) => CaptionDown(e);
 
+    /// The preview pane's top, beside and under the window's buttons, is title bar too: its empty header space
+    /// (the strip above it, the file name and the gaps between its buttons) moves the window. Clicks on the preview
+    /// itself, below the header, are left alone.
+    void PreviewPane_MouseDown(object s, MouseButtonEventArgs e)
+    {
+        if (e.OriginalSource != PreviewPane && e.OriginalSource != PreviewHeader && e.OriginalSource != PreviewTitle) return;
+        double headerBottom = PreviewHeader.TranslatePoint(new Point(0, PreviewHeader.ActualHeight + PreviewHeader.Margin.Bottom), PreviewPane).Y;
+        if (e.GetPosition(PreviewPane).Y <= headerBottom) CaptionDown(e);
+    }
+
     void ToggleMaximize() => WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
     void Minimize_Click(object s, RoutedEventArgs e) => WindowState = WindowState.Minimized;
     void Maximize_Click(object s, RoutedEventArgs e) => ToggleMaximize();
