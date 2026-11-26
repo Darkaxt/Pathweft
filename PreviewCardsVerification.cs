@@ -46,8 +46,11 @@ public partial class MainWindow
             return args;
         }
         first.RaiseEvent(Press(1)); Left.PreviewSlot.Width += 30; Left.UpdateLayout();
-        var again = Press(2); second.RaiseEvent(again); await settle();
-        check(again.Handled && Left.Dir == folder, "A double-click whose rows moved between its presses opens the item its first press was on");
+        var again = Press(2); second.RaiseEvent(again);
+        // opening a folder lists it asynchronously: wait for that navigation to finish
+        for (int i = 0; i < 100 && !(Left.Listed && Left.Dir.Equals(folder, StringComparison.OrdinalIgnoreCase)); i++) { await settle(); await Task.Delay(50); }
+        check(again.Handled && Left.Dir.Equals(folder, StringComparison.OrdinalIgnoreCase),
+            $"A double-click whose rows moved between its presses opens the item its first press was on (handled {again.Handled}, opened {Left.Dir == folder})");
         await S1Verification.Navigate(Left, root);
         while (Left.TabCount > tabsBefore) Left.CloseTab(Left.ActiveTab + 1 < Left.TabCount ? Left.ActiveTab + 1 : Left.ActiveTab);
 
