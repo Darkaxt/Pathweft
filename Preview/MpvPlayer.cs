@@ -17,9 +17,9 @@ internal sealed class MpvPlayer
     internal Task Ready=>ready.Task;
     internal Task Completion {get;}
     internal event Action<string,object> Changed;
-    internal MpvPlayer(IntPtr window,string path,bool autoplay,bool muted,Action<string,object> changed)
-    {Changed+=changed;Completion=Task.Run(()=>Run(window,path,autoplay,muted));}
-    void Run(IntPtr window,string path,bool autoplay,bool muted)
+    internal MpvPlayer(IntPtr window,string path,bool autoplay,bool muted,bool loop,Action<string,object> changed)
+    {Changed+=changed;Completion=Task.Run(()=>Run(window,path,autoplay,muted,loop));}
+    void Run(IntPtr window,string path,bool autoplay,bool muted,bool loop)
     {
         IntPtr client=IntPtr.Zero;
         try
@@ -36,7 +36,7 @@ internal sealed class MpvPlayer
                 // and peak percentile. Keep the explicit sRGB preview target.
                 ["tone-mapping"]="bt.2390",["hdr-contrast-recovery"]="0.30",["hdr-peak-percentile"]="99.995",
                 ["osd-level"]="0",["terminal"]="no",["background-color"]=Appearance.Light?"#F5F5F5":"#202020",
-                ["pause"]=autoplay?"no":"yes",["mute"]=muted?"yes":"no"
+                ["pause"]=autoplay?"no":"yes",["mute"]=muted?"yes":"no",["loop-file"]=loop?"inf":"no"
             };
             options["gpu-shader-cache-dir"]=Directory.CreateDirectory(Path.Combine(DataFolder.Bulk,"MpvShaders")).FullName;
             foreach(var option in options)

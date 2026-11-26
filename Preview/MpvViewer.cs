@@ -11,7 +11,7 @@ internal sealed class MpvViewer(MainWindow owner)
     MpvHost host;
     MpvPlayer player;
     ContextObject context;
-    Button play,mute;
+    Button play,mute,loop;
     PreviewTimeline position;
     TextBlock time;
     bool paused=true,muted;
@@ -20,6 +20,7 @@ internal sealed class MpvViewer(MainWindow owner)
     internal MpvPlayer Player=>player;
 #if DEBUG
     internal MpvHost HostForVerification=>host;
+    internal Button LoopForVerification=>loop;
 #endif
     internal Task Ready {get;private set;}=Task.CompletedTask;
     internal async Task View(string path,ContextObject current)
@@ -31,19 +32,22 @@ internal sealed class MpvViewer(MainWindow owner)
         var created=new TaskCompletionSource<MpvPlayer>(TaskCreationOptions.RunContinuationsAsynchronously);
         host=new MpvHost {MinHeight=80,Start=window=>
         {
-            try{player=new MpvPlayer(window,path,context.Autoplay,muted,Changed);created.TrySetResult(player);return player;}
+            try{player=new MpvPlayer(window,path,context.Autoplay,muted,Settings.PreviewLoop,Changed);created.TrySetResult(player);return player;}
             catch(Exception error){created.TrySetException(error);throw;}
         }};
         play=PreviewControls.Icon(owner,paused?"Play":"Pause",paused?"\uE768":"\uE769");play.IsEnabled=false;
         mute=PreviewControls.Icon(owner,muted?"Unmute":"Mute",muted?"\uE74F":"\uE767");
+        // Loop: mpv starts the file over at its end; the choice stays for the next previews
+        loop=PreviewControls.Icon(owner,"Loop","\uE8EE");loop.Style=(Style)owner.FindResource("CompactCommand");loop.Width=loop.Height=32;UpdateLoop();
+        loop.Click+=(_,_)=>{Settings.PreviewLoop=!Settings.PreviewLoop;Settings.Save();player?.Command("set","loop-file",Settings.PreviewLoop?"inf":"no");UpdateLoop();};
         play.Click+=(_,_)=>Toggle();mute.Click+=(_,_)=>{muted=!muted;player?.Command("set","mute",muted?"yes":"no");PreviewControls.SetIcon(mute,muted?"Unmute":"Mute",muted?"\uE74F":"\uE767");};
         position=new PreviewTimeline {Minimum=0,Maximum=0,MinWidth=50,Margin=new(8,0,8,0),VerticalAlignment=VerticalAlignment.Center,IsEnabled=false};
         AutomationProperties.SetName(position,"Playback position");
         position.SeekRequested+=Seek;
         time=new TextBlock {Text="0:00 / 0:00",VerticalAlignment=VerticalAlignment.Center,Margin=new(6)};
         var controls=new Grid {Margin=new(6)};
-        foreach(var width in new[]{GridLength.Auto,GridLength.Auto,new GridLength(1,GridUnitType.Star),GridLength.Auto})controls.ColumnDefinitions.Add(new(){Width=width});
-        int column=0;foreach(var control in new UIElement[]{play,mute,position,time}){Grid.SetColumn(control,column++);controls.Children.Add(control);}
+        foreach(var width in new[]{GridLength.Auto,GridLength.Auto,GridLength.Auto,new GridLength(1,GridUnitType.Star),GridLength.Auto})controls.ColumnDefinitions.Add(new(){Width=width});
+        int column=0;foreach(var control in new UIElement[]{play,mute,loop,position,time}){Grid.SetColumn(control,column++);controls.Children.Add(control);}
         var root=new DockPanel();DockPanel.SetDock(controls,Dock.Bottom);root.Children.Add(controls);root.Children.Add(host);
         context.ViewerContent=root;
         using var cancelled=context.Token.Register(()=>created.TrySetCanceled(context.Token));
@@ -66,6 +70,13 @@ internal sealed class MpvViewer(MainWindow owner)
             }
             time.Text=$"{TimeSpan.FromSeconds(Math.Max(0,seconds)):h\\:mm\\:ss} / {TimeSpan.FromSeconds(Math.Max(0,duration)):h\\:mm\\:ss}";
         });
+    }
+    void UpdateLoop()
+    {
+        bool on=Settings.PreviewLoop;
+        loop.Tag=on?"on":null; // the accent face of the other on/off buttons
+        loop.ToolTip=on?"Loop is on: playback starts over at the end":"Loop: start over at the end";
+        AutomationProperties.SetName(loop,"Loop");AutomationProperties.SetItemStatus(loop,on?"On":"Off");
     }
     void UpdatePlay()=>PreviewControls.SetIcon(play,paused?"Play":"Pause",paused?"\uE768":"\uE769");
     void Toggle(){if(player==null)return;paused=!paused;player.Command("set","pause",paused?"yes":"no");UpdatePlay();}

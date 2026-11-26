@@ -1,6 +1,10 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.107 | 2026-11-26 | Loop in the media preview
+
+- Videos and songs in the preview have a Loop button beside Mute: on, playback starts over at the end instead of stopping. It stays on for the next files you preview until you turn it off.
+
 ## 1.1.106 | 2026-11-26 | Move the window from the preview pane's top
 
 - With the preview pane open, its empty top, beside and under the window's buttons, moves the window like the tab row does: drag to move or snap, double-click to maximize, right-click for the window menu.

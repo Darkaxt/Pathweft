@@ -55,6 +55,7 @@ public static class Settings
     public static string LastSeenVersion = "";   // What's new is shown once per version
     public static bool NativeMenu;          // right-click shows the Windows menu instead of ours
     public static bool TakeWinE;         // with Windows integration on, Win+E opens Pathweft; off = File Explorer
+    public static bool PreviewLoop;             // the media preview starts each video or song over at its end (its Loop button)
     public static bool CloseToTray;             // closing hides the window to the notification area; the next open is instant
     public static bool CloseEmptyPane;          // closing the second pane's last tab hides that pane (one pane), as Ctrl+P does
     public static string NewPlusFolder = "";    // New from template's folder; "" = NewPlus.DefaultFolder
@@ -173,6 +174,7 @@ public static class Settings
                 case "wine": TakeWinE = v != "0"; break;
                 case "lastseen": LastSeenVersion = v; break;
                 case "tray": CloseToTray = v == "1"; break;
+                case "previewloop": PreviewLoop = v == "1"; break;
                 case "adminatstart": AdminAtStart = v != "0"; break;
                 case "closeemptypane": CloseEmptyPane = v == "1"; break;
                 case "newplus.folder": NewPlusFolder = v; break;
@@ -270,6 +272,7 @@ public static class Settings
             $"wine={(TakeWinE ? 1 : 0)}",
             $"lastseen={LastSeenVersion}",
             $"tray={(CloseToTray ? 1 : 0)}",
+            $"previewloop={(PreviewLoop ? 1 : 0)}",
             $"adminatstart={(AdminAtStart ? 1 : 0)}",
             $"closeemptypane={(CloseEmptyPane ? 1 : 0)}",
             $"newplus.folder={NewPlusFolder}",

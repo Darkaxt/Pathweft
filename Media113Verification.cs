@@ -94,6 +94,37 @@ public partial class MainWindow
                 try{check(sidePreview.HandleKey(System.Windows.Input.Key.Enter),"The preview's Enter action toggles real native playback: "+name);await advanced.Task;check(sidePreview.HandleKey(System.Windows.Input.Key.Right),"The preview's seek key reaches native playback: "+name);await reset.Task;}
                 finally{player.Changed-=Changed;}
                 check(player.Property("pause")=="yes","Native EOF resets the preview to its beginning and pauses: "+name);
+                if(name=="sdr")
+                {
+                    // the Loop button: on, playback runs past the end and starts over without pausing; the choice is kept
+                    var loopButton=((BuiltinViewer)sidePreview.ViewerForVerification).MediaForVerification.LoopForVerification;
+                    check(!Settings.PreviewLoop&&player.Property("loop-file")=="no"&&loopButton.Tag==null,"Loop starts off: "+name);
+                    loopButton.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent));
+                    check(Settings.PreviewLoop&&player.Property("loop-file")=="inf"&&loopButton.Tag as string=="on","The Loop button turns native looping on and shows it: "+name);
+                    double length=double.Parse(player.Property("duration"),System.Globalization.CultureInfo.InvariantCulture);
+                    var nearEnd=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+                    var restarted=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);bool late=false,ended=false;
+                    void Looped(string property,object value)
+                    {
+                        if(property=="eof-reached"&&value is true)ended=true;
+                        if(property!="time-pos"||value is not double at)return;
+                        if(at>=length-1)late=true;
+                        if(late)nearEnd.TrySetResult();
+                        if(late&&at<0.5)restarted.TrySetResult();
+                    }
+                    player.Changed+=Looped;
+                    try
+                    {
+                        await player.CommandAsync("seek",Math.Max(0,length-0.6).ToString("R",System.Globalization.CultureInfo.InvariantCulture),"absolute+exact");
+                        sidePreview.HandleKey(System.Windows.Input.Key.Enter);
+                        bool wrapped=await Task.WhenAny(restarted.Task,Task.Delay(TimeSpan.FromSeconds(20)))==restarted.Task;
+                        check(wrapped&&!ended&&player.Property("pause")=="no","With Loop on, playback passes the end and starts over without pausing: "+name);
+                    }
+                    finally{player.Changed-=Looped;}
+                    sidePreview.HandleKey(System.Windows.Input.Key.Enter);
+                    loopButton.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent));
+                    check(!Settings.PreviewLoop&&player.Property("loop-file")=="no"&&loopButton.Tag==null,"The Loop button turns looping off again: "+name);
+                }
             }
             if(name.StartsWith("p")&&Environment.GetEnvironmentVariable("PATHWEFT_VERIFY_DEPS117")=="1")
                 await Dependency117Checks.DolbySeeks(player,name,check);
