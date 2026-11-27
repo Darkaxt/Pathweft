@@ -1,6 +1,15 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.113 | 2026-11-27 | Pathweft's own Start menu
+
+- With StartAllBack's taskbar, Pathweft can now open its own Start menu. Turn it on in Settings → Windows integration → Keyboard; then Win, Ctrl+Esc and the Start button open Pathweft's menu at the Start button, and Esc or Win again closes it. Turning it off, or the helper ending, brings StartAllBack's menu back.
+- The left column has your pinned programs and the programs you start most. An arrow beside a program shows its jump list. All Programs opens your Start menu folders and Windows apps, with newly installed programs highlighted.
+- The right column has your folders, Computer, Control Panel, PC settings and StartAllBack's other commands, in StartAllBack's order. Folders and drives open in Pathweft, never in Explorer.
+- Type to search programs, Settings and your files from Pathweft's index. Enter opens the first result, and See more results opens a This PC tab searching for the text.
+- Right-click a program to run it as administrator, open its file location, pin it to or unpin it from the Start menu, remove it from the recent list or see its properties. Shut down offers Restart, Sleep, Hibernate, Sign out, Lock and Switch user.
+- Lists open when you move the pointer onto them, not when the menu appears under a pointer that is not moving.
+
 ## 1.1.112 | 2026-11-27 | The new-tab button follows your tabs
 
 - The + that opens a new tab now sits right after your last tab. When the tabs wrap into two or more rows, it moves down with the last tab instead of staying at the top right of the header.
