@@ -91,6 +91,32 @@ internal static class StartMenuItems
         };
     }
 
+    /// Pin to Start menu, as Windows 7 does: a copy of the shortcut in User Pinned\StartMenu, after the pinned ones.
+    internal static void Pin(Entry e)
+    {
+        if (e.Target == null || !File.Exists(e.Target) || !Launchable.Contains(Path.GetExtension(e.Target), StringComparer.OrdinalIgnoreCase)) return;
+        Directory.CreateDirectory(PinnedFolder);
+        string to = Path.Combine(PinnedFolder, Path.GetFileName(e.Target));
+        if (!File.Exists(to)) File.Copy(e.Target, to);
+    }
+
+    /// Unpin from Start menu: the pinned copy is removed (never the program's own shortcut).
+    internal static void Unpin(Entry e)
+    {
+        if (e.Target != null && string.Equals(Path.GetDirectoryName(e.Target), PinnedFolder, StringComparison.OrdinalIgnoreCase) && File.Exists(e.Target)) File.Delete(e.Target);
+    }
+
+    internal static bool IsPinned(Entry e) => e.Target != null && File.Exists(Path.Combine(PinnedFolder, Path.GetFileName(e.Target)));
+
+    /// Remove from this list, as Windows 7 does for a recent program: its UserAssist count is deleted.
+    internal static void ForgetRecent(Entry e)
+    {
+        using var root = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Explorer\UserAssist\{F4E57C4B-2036-45F0-A9AB-443BCFE33D9F}\Count", true);
+        if (root == null || e.Target == null) return;
+        foreach (var name in root.GetValueNames())
+            if (string.Equals(Expand(Rot13(name)), e.Target, StringComparison.OrdinalIgnoreCase)) root.DeleteValue(name, false);
+    }
+
     // ---- recent programs (UserAssist) ----
 
     /// UserAssist's shortcut counts (ROT13 names, a known-folder id for the Programs folders), as the Windows 7

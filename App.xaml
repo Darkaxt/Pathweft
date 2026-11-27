@@ -274,10 +274,12 @@
     <Style x:Key="Ghost" TargetType="Button">
       <Setter Property="Foreground" Value="{DynamicResource Palette.D0FFFFFF}"/>
       <Setter Property="Cursor" Value="Hand"/>
+      <!-- transparent unless a button marks itself (the Start menu's new programs) -->
+      <Setter Property="Background" Value="Transparent"/>
       <Setter Property="Template">
         <Setter.Value>
           <ControlTemplate TargetType="Button">
-            <Border x:Name="Bd" Background="Transparent" CornerRadius="5" Padding="6,3" BorderThickness="1" BorderBrush="Transparent">
+            <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="5" Padding="6,3" BorderThickness="1" BorderBrush="Transparent">
               <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"/>
             </Border>
             <ControlTemplate.Triggers>
@@ -635,11 +637,12 @@
     </Style>
     <Style TargetType="MenuItem">
       <Setter Property="Foreground" Value="{DynamicResource Palette.E8EEF6}"/>
+      <Setter Property="Background" Value="Transparent"/>
       <Setter Property="Template">
         <Setter.Value>
           <ControlTemplate TargetType="MenuItem">
             <Grid>
-              <Border x:Name="Bd" Background="Transparent" CornerRadius="5" Margin="4,0" Padding="8,5">
+              <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="5" Margin="4,0" Padding="8,5">
                 <Grid>
                   <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="26"/>

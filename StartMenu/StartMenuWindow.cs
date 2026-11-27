@@ -184,17 +184,43 @@ internal sealed class StartMenuWindow : Window
         return t;
     }
 
-    /// Open, Run as administrator for a program, Open file location in Pathweft.
+    /// Windows 7's item menu, in Pathweft's style: Open, Run as administrator, Open file location (in Pathweft), Pin to
+    /// or Unpin from Start menu, Remove from this list for a recent program, and Properties.
     ContextMenu ItemMenu(Entry e)
     {
         if (e.Kind == EntryKind.Command) return null;
         var menu = new ContextMenu();
-        void Add(string header, Action run) { var item = new MenuItem { Header = header }; item.Click += (_, _) => run(); menu.Items.Add(item); }
+        void Add(string header, Action run) { var item = new MenuItem { Header = header }; AutomationProperties.SetName(item, header); item.Click += (_, _) => run(); menu.Items.Add(item); }
+        // the lists are read again at once, so the change shows while the menu is open
+        void Change(Action change)
+        {
+            try { change(); }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Security.SecurityException) { Notice(ex.Message); }
+            _ = Refresh();
+        }
         Add("Open", () => Launch(e));
         bool file = e.Target != null && e.Target.Length > 2 && (e.Target[1] == ':' || e.Target.StartsWith(@"\\"));
         if (e.Kind == EntryKind.Program && file)
             Add("Run as administrator", () => { Dismiss(false); _ = ShellWorker.Run(() => StartMenuShell.Execute(e.Target, e.Arguments, e.WorkingDirectory, null, true, "runas")); });
-        if (file) Add("Open file location", () => { Dismiss(false); StartMenuShell.Route(e.Target.TrimEnd('\\')); });
+        // a shortcut's file location is its program's, as the Windows menu has it
+        if (file) Add("Open file location", () =>
+        {
+            Dismiss(false);
+            string at = e.Target.EndsWith(".lnk", StringComparison.OrdinalIgnoreCase) && StartMenuShell.ReadShortcut(e.Target)?.Path is { } program && File.Exists(program) ? program : e.Target;
+            StartMenuShell.Route(at.TrimEnd('\\'));
+        });
+        if (e.Kind == EntryKind.Program && file)
+        {
+            menu.Items.Add(new Separator());
+            if (pinned.Contains(e)) Add("Unpin from Start menu", () => Change(() => StartMenuItems.Unpin(e)));
+            else if (!StartMenuItems.IsPinned(e)) Add("Pin to Start menu", () => Change(() => StartMenuItems.Pin(e)));
+            if (recent.Contains(e)) Add("Remove from this list", () => Change(() => StartMenuItems.ForgetRecent(e)));
+        }
+        if (file)
+        {
+            menu.Items.Add(new Separator());
+            Add("Properties", () => { Dismiss(false); StartMenuShell.Properties(e.Target); });
+        }
         return menu;
     }
 
@@ -310,6 +336,7 @@ internal sealed class StartMenuWindow : Window
         if (!IsVisible) return;
         flyout = new ContextMenu { PlacementTarget = allPrograms, Placement = PlacementMode.Right };
         foreach (var e in list) flyout.Items.Add(MenuItemFor(e, openFolders: false));
+        Cascade(flyout);
         flyout.IsOpen = true;
     }
 
@@ -367,7 +394,7 @@ internal sealed class StartMenuWindow : Window
         AutomationProperties.SetName(item, e.Name);
         if (e.Children == null)
         {
-            if (e.Kind != EntryKind.Command) item.Click += (_, _) => Launch(e);
+            if (e.Kind != EntryKind.Command) { item.Click += (_, _) => Launch(e); item.ContextMenu = ItemMenu(e); }
             else item.IsEnabled = e.Invoke != null;
             return item;
         }
@@ -408,8 +435,19 @@ internal sealed class StartMenuWindow : Window
         if (!IsVisible || !row.IsMouseOver && !row.IsKeyboardFocusWithin) return;
         submenu = new ContextMenu { PlacementTarget = row, Placement = PlacementMode.Right };
         foreach (var c in children) submenu.Items.Add(MenuItemFor(c, openFolders: true));
+        Cascade(submenu);
         submenu.IsOpen = true;
     }
+
+    /// An open menu holds the mouse, so the menu's own rows see no hover while it is open. As in Windows' cascading
+    /// menus, moving onto another of them closes it, and that row's hover takes over.
+    void Cascade(ContextMenu menu) => menu.PreviewMouseMove += (_, a) =>
+    {
+        if (a.OriginalSource != menu || !IsVisible) return; // over the menu or one of its submenus
+        if (InputHitTest(a.GetPosition(this)) is not DependencyObject over) return;
+        for (; over != null && over is not Button; over = VisualTreeHelper.GetParent(over)) { }
+        if (over is Button row && row != menu.PlacementTarget && (row.Tag is Entry || row == allPrograms)) menu.IsOpen = false;
+    };
 
     void PowerMenu(Button from)
     {

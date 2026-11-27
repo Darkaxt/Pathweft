@@ -64,6 +64,9 @@ internal static class StartMenuShell
 
     // ---- opening: SAB-06 folder routing to Pathweft, everything else as Windows' menu opens it ----
 
+    /// The Shell's Properties window of a file or shortcut, as the Windows menu shows it.
+    internal static void Properties(string path) => SHObjectProperties(IntPtr.Zero, 0x2 /* SHOP_FILEPATH */, path, null);
+
     /// Folders, drives and This PC open in Pathweft (a new tab in the running window, or a new window); a file
     /// path opens its folder with the file selected. Never through Explorer.
     internal static void Route(string path)
@@ -566,6 +569,7 @@ internal static class StartMenuShell
     [DllImport("shell32.dll", CharSet = CharSet.Unicode)] static extern int SHCreateItemFromParsingName(string path, IntPtr bc, [MarshalAs(UnmanagedType.LPStruct)] Guid riid, out IShellItem item);
     [DllImport("shell32.dll", CharSet = CharSet.Unicode)] static extern int SHParseDisplayName(string name, IntPtr bc, out IntPtr pidl, uint sfgaoIn, out uint sfgaoOut);
     [DllImport("shell32.dll", CharSet = CharSet.Unicode, SetLastError = true)] static extern bool ShellExecuteEx(ref SHELLEXECUTEINFO info);
+    [DllImport("shell32.dll", CharSet = CharSet.Unicode)] static extern bool SHObjectProperties(IntPtr owner, uint type, string name, string page);
     [DllImport("shell32.dll")] static extern int SHGetKnownFolderPath([MarshalAs(UnmanagedType.LPStruct)] Guid id, uint flags, IntPtr token, out IntPtr path);
     [DllImport("shell32.dll")] static extern int ILGetSize(IntPtr pidl);
     [DllImport("shlwapi.dll", CharSet = CharSet.Unicode)] static extern int SHLoadIndirectString(string source, StringBuilder output, int size, IntPtr reserved);
