@@ -16,6 +16,7 @@ internal sealed class StartMenuWindow : Window
     readonly TextBox search = new() { MinHeight = 30, Padding = new Thickness(8, 5, 8, 5), VerticalContentAlignment = VerticalAlignment.Center };
     readonly TextBlock hint = new() { Text = "Search programs and files", IsHitTestVisible = false, Margin = new Thickness(11, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
     readonly StackPanel programs = new(), places = new();
+    const double MenuWidth = 400, MenuHeight = 535;
     IntPtr handle, previous;
     StartMenuHost.Trigger openedBy;
     internal bool IsOpen => IsVisible;
@@ -27,7 +28,7 @@ internal sealed class StartMenuWindow : Window
     {
         Title = "Start"; WindowStyle = WindowStyle.None; AllowsTransparency = true; Background = Brushes.Transparent;
         ResizeMode = ResizeMode.NoResize; ShowInTaskbar = false; Topmost = true; ShowActivated = true;
-        Width = 400; Height = 535; Opacity = 0;
+        Width = MenuWidth; Height = MenuHeight; Opacity = 0;
         AutomationProperties.SetName(this, "Pathweft Start menu");
 
         var left = new DockPanel { Margin = new Thickness(8, 8, 4, 8) };
@@ -123,10 +124,12 @@ internal sealed class StartMenuWindow : Window
     /// against the orb on the taskbar's side, kept inside the monitor's work area.
     void Place(StartMenuHost.Orb orb)
     {
+        Width = MenuWidth; Height = MenuHeight; // a smaller screen's fit does not carry over to the next opening
         var area = WorkArea(orb);
         SetWindowPos(handle, IntPtr.Zero, area.Left, area.Top, 0, 0, 0x0001 | 0x0004 | 0x0010); // no size, no z-order, no activate
         GetWindowRect(handle, out var now);
-        int w = now.Right - now.Left, h = now.Bottom - now.Top;
+        // never taller or wider than the space beside the taskbar, so it never covers the orb that closes it
+        int w = Math.Min(now.Right - now.Left, area.Right - area.Left), h = Math.Min(now.Bottom - now.Top, area.Bottom - area.Top);
         int x, y;
         if (orb == null) { x = area.Left; y = area.Bottom - h; }
         else
@@ -140,7 +143,7 @@ internal sealed class StartMenuWindow : Window
         }
         x = Math.Max(area.Left, Math.Min(x, area.Right - w));
         y = Math.Max(area.Top, Math.Min(y, area.Bottom - h));
-        SetWindowPos(handle, (IntPtr)(-1), x, y, 0, 0, 0x0001 | 0x0010); // topmost, no size, no activate
+        SetWindowPos(handle, (IntPtr)(-1), x, y, w, h, 0x0010); // topmost, no activate
     }
 
     static StartMenuHost.RECT WorkArea(StartMenuHost.Orb orb)
