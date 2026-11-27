@@ -58,6 +58,19 @@ public partial class MainWindow
         for (int i = 0; i < 100 && !(Left.Listed && Left.Dir.Equals(folder, StringComparison.OrdinalIgnoreCase)); i++) { await settle(); await Task.Delay(50); }
         check(again.Handled && Left.Dir.Equals(folder, StringComparison.OrdinalIgnoreCase),
             $"A double-click whose rows moved between its presses opens the item its first press was on (handled {again.Handled}, opened {Left.Dir == folder}; {state})");
+        // TABS-09: + right after the last tab, on its row, with one row and with several
+        bool PlusAfterLast()
+        {
+            var last = (FrameworkElement)Left.TabStrip.Children[^1];
+            var plus = Left.NewTabBox.TranslatePoint(new Point(), Left.TabBand); var end = last.TranslatePoint(new Point(last.ActualWidth, 0), Left.TabBand);
+            return Math.Abs(plus.X - end.X) < 1 && Math.Abs(plus.Y - end.Y) < 1 && Left.NewTabButton.IsVisible;
+        }
+        Left.FitTabs(); await settle(); bool oneRow = Left.TabStrip.Rows == 1 && PlusAfterLast();
+        for (int i = 0; i < 12 && Left.TabStrip.Rows < 2; i++) { Left.OpenInBackgroundTab(root); Left.FitTabs(); await settle(); }
+        Left.OpenInBackgroundTab(root); Left.FitTabs(); await settle(); await Task.Delay(100); await settle();
+        var lastTab = (FrameworkElement)Left.TabStrip.Children[^1];
+        check(oneRow && Left.TabStrip.Rows > 1 && PlusAfterLast() && lastTab.TranslatePoint(new Point(), Left.TabBand).Y > 0,
+            $"The new-tab + sits right after the last tab, on the last tab's row, with one row and with {Left.TabStrip.Rows} rows ({Left.TabCount} tabs)");
         await S1Verification.Navigate(Left, root);
         while (Left.TabCount > tabsBefore) Left.CloseTab(Left.ActiveTab + 1 < Left.TabCount ? Left.ActiveTab + 1 : Left.ActiveTab);
 

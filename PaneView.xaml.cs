@@ -1984,7 +1984,7 @@ public partial class PaneView : UserControl
     // Each tab gets up to 170 px; when they don't all fit they shrink evenly, and below 120 px they
     // wrap into more rows instead, which stay put: switching tabs never reorders the rows.
     const double TabMax = 170, TabMin = 120;
-    void FitTabs()
+    internal void FitTabs()
     {
         double room = TabBand.ActualWidth - 4 /* left edge */ - NewTabBox.ActualWidth - CaptionSpace.Width - 8 /* keep some strip visible */;
         if (room <= 0) return;
@@ -2040,6 +2040,18 @@ public partial class PaneView : UserControl
         }
         shape.Freeze();
         StripShape.Data = shape;
+        PlaceNewTab();
+    }
+
+    /// TABS-09: + sits right after the last tab, on the last tab's row, also when the tabs wrap into several rows
+    /// (it stays docked after the tab grid for layout, so the room it needs is always kept, and is moved onto the row).
+    void PlaceNewTab()
+    {
+        if (TabStrip.Children.Count == 0 || TabStrip.Children[^1] is not FrameworkElement last || last.ActualWidth <= 0) { NewTabBox.RenderTransform = Transform.Identity; return; }
+        var at = last.TranslatePoint(new Point(last.ActualWidth, 0), TabBand);
+        var home = VisualTreeHelper.GetOffset(NewTabBox);
+        NewTabBox.Height = last.ActualHeight; // one row high, the + centred on it
+        NewTabBox.RenderTransform = new TranslateTransform(at.X - home.X, at.Y - home.Y);
     }
 
     public void NewTab() { ParkSpace(); tabs.Insert(tab + 1, Dir); pins.Insert(tab + 1, false); tab++; Navigate(Dir, record: false); }

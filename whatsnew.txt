@@ -1,6 +1,10 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.112 | 2026-11-27 | The new-tab button follows your tabs
+
+- The + that opens a new tab now sits right after your last tab. When the tabs wrap into two or more rows, it moves down with the last tab instead of staying at the top right of the header.
+
 ## 1.1.111 | 2026-11-27 | Searches no longer come up empty
 
 - A search whose first results were all hidden items, such as a path search in a folder with a .git folder, showed an empty list with More results. Pathweft now loads further results by itself until it finds ones it can show.

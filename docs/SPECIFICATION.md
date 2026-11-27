@@ -1,6 +1,6 @@
 # Pathweft specification
 
-Version 1.72 - 2026-11-27. Owner: Darkaxt.
+Version 1.73 - 2026-11-27. Owner: Darkaxt.
 
 ### Read-only MCP expansion (S48)
 
@@ -2502,6 +2502,7 @@ on-screen tabs hash, and one cache and queue serve the whole app.
 | COPY-02 | Copy... opens a two-column Pathweft dialog: left, every available property grouped (basic, hashes, version, media, document and the Windows property list) with search and check boxes, starting from the visible columns; right, the output format (Name: value blocks, values per line, tab-separated, CSV, JSON, Markdown table, checksum file), header row, relative or full paths, hash case, and a live preview of the first files. Copy writes the clipboard; choices are remembered. |
 | COLS-05 | TOOLS-10 design applies: Pathweft glyphs, dialog chrome and themes (dark, light, original at 100% and 150%). Verify the header menu routing, column persistence across tabs, More... and Copy... renders, hashing order and per-disk queue, cache hits without reads (file-read counts), size and placeholder limits, archive CRC, Copy details entries and every Copy... format on owned fixtures, then one normal release. |
 | TABS-08 | Owner request 2026-11-18 ("can we add to the tabs the duplicate context menu, and change the plus behavior to open pointing to `This PC`"): a tab's right-click menu starts with Duplicate, which opens a second, unpinned tab at the same location beside it and makes it active; the + button and Ctrl+T open a new tab at This PC instead of a copy of the current folder (Explorer's new tab also starts at a fixed place). Callers that open a tab for a known folder (Open in new tab, middle click, reopen closed tab, Show in folder) still go straight there. Verify Duplicate's location, position, pin state and activation, and + / Ctrl+T at This PC. |
+| TABS-09 | Owner request 2026-11-27 ("Can we move the open new tab to always be at the right of the last tab instead of floting in the header?"): the new-tab + sits right after the last tab, on the last tab's row, whether the tabs fit in one row or wrap into several; the room it needs is still kept, so it never covers a tab or the window buttons. Acceptance: the preview check opens enough tabs to wrap and the + is at the last tab's right edge on its row, with one row and with several. |
 
 ### Browsing productivity and smart destinations (S21)
 
