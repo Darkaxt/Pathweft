@@ -109,10 +109,10 @@ internal sealed class StartMenuWindow : Window
         frame.SetResourceReference(Border.BorderBrushProperty, "AccentEdge");
         Content = frame;
 
-        hover.Tick += (_, _) => { hover.Stop(); hoverAction?.Invoke(); };
+        hover.Tick += (_, _) => { hover.Stop(); if (!Resting()) hoverAction?.Invoke(); };
         Deactivated += (_, _) => Dismiss(false);
         PreviewKeyDown += Key;
-        PreviewMouseMove += (_, a) => Moved(a);
+        PreviewMouseMove += (_, _) => Moved();
         PreviewTextInput += (_, e) =>
         {
             if (search.IsKeyboardFocusWithin || e.Text.Length == 0 || char.IsControl(e.Text[0])) return;
@@ -127,21 +127,27 @@ internal sealed class StartMenuWindow : Window
 
     // Windows cascades on hover only after the pointer really moves: a menu opening under a resting pointer must not
     // open the flyout or a submenu (which would also take the keyboard from search)
-    Point? resting; UIElement restingOver; Action restingAction;
+    // WPF reports the row under the pointer as entered when the menu shows and when a popup closes, before or after
+    // the events that could arm a guard, so the guard compares the real cursor position whenever an action is due.
+    POINT? resting; UIElement restingOver; Action restingAction;
+    void Rest() { GetCursorPos(out var p); resting = p; restingOver = null; restingAction = null; hover.Stop(); }
+    bool Resting()
+    {
+        if (resting is not { } r) return false;
+        if (GetCursorPos(out var p) && Math.Abs(p.X - r.X) < 2 && Math.Abs(p.Y - r.Y) < 2) return true;
+        resting = null;
+        return false;
+    }
     void WhenMoved(UIElement over, Action action)
     {
-        if (resting == null) action();
+        if (!Resting()) action();
         else { restingOver = over; restingAction = action; }
     }
-    // a closing popup makes WPF report the row under the resting pointer as newly entered
-    void Rest() { if (IsVisible) { resting = Mouse.GetPosition(this); restingOver = null; restingAction = null; } }
-    void Moved(System.Windows.Input.MouseEventArgs a)
+    void Moved()
     {
-        if (resting is not { } r) return;
-        var at = a.GetPosition(this);
-        if (Math.Abs(at.X - r.X) < 2 && Math.Abs(at.Y - r.Y) < 2) return;
+        if (resting == null || Resting()) return;
         var (over, action) = (restingOver, restingAction);
-        resting = null; restingOver = null; restingAction = null;
+        restingOver = null; restingAction = null;
         if (over?.IsMouseOver == true) action?.Invoke();
     }
 
@@ -467,7 +473,8 @@ internal sealed class StartMenuWindow : Window
     {
         // only a real move: the menu taking the mouse reports where it rests, which may be over another row
         Point? from = Mouse.GetPosition(this);
-        menu.Closed += (_, _) => Rest();
+        bool switching = false; // closed by moving onto another row: that row's hover goes on
+        menu.Closed += (_, _) => { if (!switching) Rest(); };
         menu.PreviewMouseMove += (_, a) =>
         {
             if (a.OriginalSource != menu || !IsVisible) return; // over the menu or one of its submenus
@@ -476,7 +483,7 @@ internal sealed class StartMenuWindow : Window
             from = null;
             if (InputHitTest(at) is not DependencyObject over) return;
             for (; over != null && over is not Button; over = VisualTreeHelper.GetParent(over)) { }
-            if (over is Button row && row != menu.PlacementTarget && (row.Tag is Entry || row == allPrograms)) menu.IsOpen = false;
+            if (over is Button row && row != menu.PlacementTarget && (row.Tag is Entry || row == allPrograms)) { switching = true; menu.IsOpen = false; }
         };
     }
 
@@ -652,8 +659,8 @@ internal sealed class StartMenuWindow : Window
         Notice(null); ShowHome();
         Place(orb);
         Opacity = 1;
+        Rest(); // before Show: showing reports the row under the pointer as entered
         Show();
-        Rest();
         BringToFront(handle);
         search.Focus();
         Keyboard.Focus(search);
@@ -737,6 +744,7 @@ internal sealed class StartMenuWindow : Window
     [DllImport("user32.dll")] static extern int GetWindowLong(IntPtr h, int index);
     [DllImport("user32.dll")] static extern int SetWindowLong(IntPtr h, int index, int value);
     [DllImport("user32.dll")] static extern IntPtr GetForegroundWindow();
+    [DllImport("user32.dll")] static extern bool GetCursorPos(out POINT p);
     [DllImport("user32.dll")] static extern bool SetForegroundWindow(IntPtr h);
     [DllImport("user32.dll")] static extern bool IsWindow(IntPtr h);
     [DllImport("user32.dll")] static extern uint GetWindowThreadProcessId(IntPtr h, IntPtr pid);
