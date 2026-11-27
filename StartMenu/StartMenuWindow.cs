@@ -778,6 +778,7 @@ internal sealed class StartMenuWindow : Window
         bmp.Render(root);
         var encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(bmp));
         using (var f = File.Create(png)) encoder.Save(f);
+        File.WriteAllLines(png + ".jumps.txt", pinned.Concat(recent).Select(e => e.Name + " | " + StartMenuShell.DiagnoseJumpList(e.Owner, e.Target, options.JumpListItems, options.TrackDocuments)));
         File.WriteAllText(png + ".txt", $"icon={options.ProgramIcon} power={options.PowerAction} glyphs={options.RightPaneGlyphs} picture={options.UserPicture} sort={options.SortOrder} pinned={pinned.Count} recent={recent.Count} dpi={dpi.PixelsPerInchX} jumplists={string.Join(",", pinned.Concat(recent).Where(withJumpList.Contains).Select(e => e.Name))} nojumplist={string.Join(",", pinned.Concat(recent).Where(e => !withJumpList.Contains(e)).Select(e => e.Name))}");
         return 0;
     }

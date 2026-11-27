@@ -342,6 +342,23 @@ internal static class StartMenuShell
         return shown;
     }
 
+#if DEBUG
+    /// For the render check: what each part of a program's jump list holds, and the last error reading it.
+    internal static string DiagnoseJumpList(string appId, string owner, int max, bool track)
+    {
+        if (appId == null) return "no-appid";
+        string hash = AppIdHash(appId);
+        LastJumpError = null;
+        var (pinned, recent) = Automatic(Path.Combine(Recent, "AutomaticDestinations", hash + ".automaticDestinations-ms"), owner);
+        string autoError = LastJumpError; LastJumpError = null;
+        var custom = Custom(Path.Combine(Recent, "CustomDestinations", hash + ".customDestinations-ms"), owner);
+        return $"{hash} pinned={pinned.Count} recent={recent.Count} custom={string.Join('/', custom.Select(c => c.Known + ":" + c.Items.Count))} "
+            + $"shown={JumpList(appId, owner, max, track).Count} autoerr={autoError} customerr={LastJumpError}";
+    }
+
+    [ThreadStatic] static string LastJumpError;
+#endif
+
     static readonly Dictionary<(string, long, long, int, bool), bool> JumpListShown = [];
 
     /// Pinned, then the program's custom categories and tasks, then Recent (or Frequent when the program asks for
@@ -415,7 +432,12 @@ internal static class StartMenuShell
                 if (pin >= 0) pinned.Add((pin, entry)); else recent.Add((entry, score));
             }
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or COMException or ArgumentException) { }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or COMException or ArgumentException)
+        {
+#if DEBUG
+            LastJumpError = ex.GetType().Name + ": " + ex.Message;
+#endif
+        }
         finally { if (storage != null) Marshal.ReleaseComObject(storage); }
         return (pinned.OrderBy(p => p.Order).Select(p => p.Entry).ToList(), recent);
     }
