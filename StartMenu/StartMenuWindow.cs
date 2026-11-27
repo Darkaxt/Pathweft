@@ -133,6 +133,8 @@ internal sealed class StartMenuWindow : Window
         if (resting == null) action();
         else { restingOver = over; restingAction = action; }
     }
+    // a closing popup makes WPF report the row under the resting pointer as newly entered
+    void Rest() { if (IsVisible) { resting = Mouse.GetPosition(this); restingOver = null; restingAction = null; } }
     void Moved(System.Windows.Input.MouseEventArgs a)
     {
         if (resting is not { } r) return;
@@ -209,6 +211,7 @@ internal sealed class StartMenuWindow : Window
     {
         if (e.Kind == EntryKind.Command) return null;
         var menu = new ContextMenu();
+        menu.Closed += (_, _) => Rest();
         void Add(string header, Action run) { var item = new MenuItem { Header = header }; AutomationProperties.SetName(item, header); item.Click += (_, _) => run(); menu.Items.Add(item); }
         // the lists are read again at once, so the change shows while the menu is open
         void Change(Action change)
@@ -464,6 +467,7 @@ internal sealed class StartMenuWindow : Window
     {
         // only a real move: the menu taking the mouse reports where it rests, which may be over another row
         Point? from = Mouse.GetPosition(this);
+        menu.Closed += (_, _) => Rest();
         menu.PreviewMouseMove += (_, a) =>
         {
             if (a.OriginalSource != menu || !IsVisible) return; // over the menu or one of its submenus
@@ -479,6 +483,7 @@ internal sealed class StartMenuWindow : Window
     void PowerMenu(Button from)
     {
         var menu = new ContextMenu { PlacementTarget = from, Placement = PlacementMode.Top };
+        menu.Closed += (_, _) => Rest();
         foreach (var (name, run) in StartMenuPower.Available)
         {
             var item = new MenuItem { Header = name };
@@ -648,7 +653,7 @@ internal sealed class StartMenuWindow : Window
         Place(orb);
         Opacity = 1;
         Show();
-        resting = Mouse.GetPosition(this); restingOver = null; restingAction = null;
+        Rest();
         BringToFront(handle);
         search.Focus();
         Keyboard.Focus(search);
