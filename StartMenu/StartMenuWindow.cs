@@ -72,7 +72,7 @@ internal sealed class StartMenuWindow : Window
         allContent.Children.Add(allProgramsText);
         allPrograms.Content = allContent;
         allPrograms.Click += (_, _) => AllProgramsClicked();
-        allPrograms.MouseEnter += (_, _) => { if (options.Flyout && options.AutoCascade) Hover(null, () => OpenFlyout()); };
+        allPrograms.MouseEnter += (_, _) => WhenMoved(allPrograms, () => { if (options.Flyout && options.AutoCascade) Hover(null, () => OpenFlyout()); });
         DockPanel.SetDock(allPrograms, Dock.Bottom); leftColumn.Children.Add(allPrograms);
         var programsCard = new Border { CornerRadius = new CornerRadius(6), Padding = new Thickness(4), Child = left };
         programsCard.SetResourceReference(Border.BackgroundProperty, "CardBackground");
@@ -112,6 +112,7 @@ internal sealed class StartMenuWindow : Window
         hover.Tick += (_, _) => { hover.Stop(); hoverAction?.Invoke(); };
         Deactivated += (_, _) => Dismiss(false);
         PreviewKeyDown += Key;
+        PreviewMouseMove += (_, a) => Moved(a);
         PreviewTextInput += (_, e) =>
         {
             if (search.IsKeyboardFocusWithin || e.Text.Length == 0 || char.IsControl(e.Text[0])) return;
@@ -124,6 +125,24 @@ internal sealed class StartMenuWindow : Window
     Action hoverAction;
     void Hover(Entry over, Action action) { hovered = over; hoverAction = action; hover.Stop(); hover.Start(); }
 
+    // Windows cascades on hover only after the pointer really moves: a menu opening under a resting pointer must not
+    // open the flyout or a submenu (which would also take the keyboard from search)
+    Point? resting; UIElement restingOver; Action restingAction;
+    void WhenMoved(UIElement over, Action action)
+    {
+        if (resting == null) action();
+        else { restingOver = over; restingAction = action; }
+    }
+    void Moved(System.Windows.Input.MouseEventArgs a)
+    {
+        if (resting is not { } r) return;
+        var at = a.GetPosition(this);
+        if (Math.Abs(at.X - r.X) < 2 && Math.Abs(at.Y - r.Y) < 2) return;
+        var (over, action) = (restingOver, restingAction);
+        resting = null; restingOver = null; restingAction = null;
+        if (over?.IsMouseOver == true) action?.Invoke();
+    }
+
     // ---- rows ----
 
     Button Row(Entry e, int iconSize, bool hasJump = false, bool submenu = false, Action click = null)
@@ -134,7 +153,7 @@ internal sealed class StartMenuWindow : Window
         if (hasJump || submenu)
         {
             var arrow = new Border { Background = Brushes.Transparent, Width = 22, Child = new TextBlock { Text = "", FontFamily = new FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"), FontSize = 9, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center } };
-            arrow.MouseEnter += (_, _) => { hover.Stop(); if (hasJump) ShowJump(e, row, false); else OpenSubmenu(e, row); };
+            arrow.MouseEnter += (_, _) => WhenMoved(arrow, () => { hover.Stop(); if (hasJump) ShowJump(e, row, false); else OpenSubmenu(e, row); });
             DockPanel.SetDock(arrow, Dock.Right); content.Children.Add(arrow);
         }
         var image = new Image { Width = iconSize, Height = iconSize, Margin = new Thickness(0, 0, 8, 0), VerticalAlignment = VerticalAlignment.Center };
@@ -147,13 +166,13 @@ internal sealed class StartMenuWindow : Window
         AutomationProperties.SetName(row, e.Name);
         LoadIcon(image, e, iconSize);
         row.Click += (_, _) => { if (click != null) click(); else Launch(e); };
-        row.MouseEnter += (_, _) =>
+        row.MouseEnter += (_, _) => WhenMoved(row, () =>
         {
             if (hasJump) Hover(e, () => ShowJump(e, row, false));
             else if (submenu) Hover(e, () => OpenSubmenu(e, row));
             else if (jumpOwner != null && IsInLeft(row)) Hover(e, HideJump);
             else hover.Stop();
-        };
+        });
         row.ContextMenu = ItemMenu(e);
         return row;
     }
@@ -441,13 +460,21 @@ internal sealed class StartMenuWindow : Window
 
     /// An open menu holds the mouse, so the menu's own rows see no hover while it is open. As in Windows' cascading
     /// menus, moving onto another of them closes it, and that row's hover takes over.
-    void Cascade(ContextMenu menu) => menu.PreviewMouseMove += (_, a) =>
+    void Cascade(ContextMenu menu)
     {
-        if (a.OriginalSource != menu || !IsVisible) return; // over the menu or one of its submenus
-        if (InputHitTest(a.GetPosition(this)) is not DependencyObject over) return;
-        for (; over != null && over is not Button; over = VisualTreeHelper.GetParent(over)) { }
-        if (over is Button row && row != menu.PlacementTarget && (row.Tag is Entry || row == allPrograms)) menu.IsOpen = false;
-    };
+        // only a real move: the menu taking the mouse reports where it rests, which may be over another row
+        Point? from = Mouse.GetPosition(this);
+        menu.PreviewMouseMove += (_, a) =>
+        {
+            if (a.OriginalSource != menu || !IsVisible) return; // over the menu or one of its submenus
+            var at = a.GetPosition(this);
+            if (from is { } start && Math.Abs(at.X - start.X) < 2 && Math.Abs(at.Y - start.Y) < 2) return;
+            from = null;
+            if (InputHitTest(at) is not DependencyObject over) return;
+            for (; over != null && over is not Button; over = VisualTreeHelper.GetParent(over)) { }
+            if (over is Button row && row != menu.PlacementTarget && (row.Tag is Entry || row == allPrograms)) menu.IsOpen = false;
+        };
+    }
 
     void PowerMenu(Button from)
     {
@@ -621,6 +648,7 @@ internal sealed class StartMenuWindow : Window
         Place(orb);
         Opacity = 1;
         Show();
+        resting = Mouse.GetPosition(this); restingOver = null; restingAction = null;
         BringToFront(handle);
         search.Focus();
         Keyboard.Focus(search);
