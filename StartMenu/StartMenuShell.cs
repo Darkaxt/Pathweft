@@ -195,6 +195,20 @@ internal static class StartMenuShell
         finally { Marshal.FreeCoTaskMem(p); }
     }
 
+    /// A folder kept as an item-ID list (StartAllBack's custom folders): its display name and file-system path.
+    internal static (string Name, string Path)? FolderOf(byte[] ids)
+    {
+        var pidl = Marshal.AllocCoTaskMem(ids.Length);
+        try
+        {
+            Marshal.Copy(ids, 0, pidl, ids.Length);
+            if (SHCreateItemFromIDList(pidl, typeof(IShellItem).GUID, out var item) != 0) return null;
+            try { return Name(item, unchecked((int)0x80058000)) is { } path ? (Name(item, 0) ?? System.IO.Path.GetFileName(path), path) : null; }
+            finally { Marshal.ReleaseComObject(item); }
+        }
+        finally { Marshal.FreeCoTaskMem(pidl); }
+    }
+
     internal static string KnownFolder(Guid id)
     {
         if (SHGetKnownFolderPath(id, 0, IntPtr.Zero, out var p) != 0) return null;
@@ -567,6 +581,7 @@ internal static class StartMenuShell
     [ComImport, InterfaceType(ComInterfaceType.InterfaceIsIUnknown), Guid("0000000a-0000-0000-C000-000000000046")]
     interface ILockBytes { }
 
+    [DllImport("shell32.dll")] static extern int SHCreateItemFromIDList(IntPtr pidl, [MarshalAs(UnmanagedType.LPStruct)] Guid riid, out IShellItem item);
     [DllImport("shell32.dll", CharSet = CharSet.Unicode)] static extern int SHCreateItemFromParsingName(string path, IntPtr bc, [MarshalAs(UnmanagedType.LPStruct)] Guid riid, out IShellItem item);
     [DllImport("shell32.dll", CharSet = CharSet.Unicode)] static extern int SHParseDisplayName(string name, IntPtr bc, out IntPtr pidl, uint sfgaoIn, out uint sfgaoOut);
     [DllImport("shell32.dll", CharSet = CharSet.Unicode, SetLastError = true)] static extern bool ShellExecuteEx(ref SHELLEXECUTEINFO info);

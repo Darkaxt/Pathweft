@@ -29,9 +29,11 @@ internal sealed class StartMenuWindow : Window
     readonly ScrollViewer right = new() { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled, Focusable = false };
     readonly Button allPrograms;
     readonly TextBlock allProgramsText = new();
-    readonly Border picture = new() { Width = 64, Height = 64, CornerRadius = new CornerRadius(8), Margin = new Thickness(10, 10, 0, 6), HorizontalAlignment = HorizontalAlignment.Left, ClipToBounds = true };
+    // StartAllBack's user picture hangs over the menu's top edge, centred on the right column
+    readonly Border picture = new() { Width = 64, Height = 64, CornerRadius = new CornerRadius(8), HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top, ClipToBounds = true };
+    readonly Border frame = new() { CornerRadius = new CornerRadius(8), BorderThickness = new Thickness(1) };
     readonly DispatcherTimer hover = new() { Interval = TimeSpan.FromMilliseconds(Math.Max(1, SystemParameters.MenuShowDelay)) };
-    const double MenuWidth = 440, MenuHeight = 535, LeftWidth = 262;
+    const double MenuWidth = 440, MenuHeight = 535, LeftWidth = 262, Overhang = 36, PlaceRow = 35;
     IntPtr handle, previous;
     StartMenuHost.Trigger openedBy;
     StartMenuOptions options = StartMenuOptions.Read();
@@ -60,7 +62,10 @@ internal sealed class StartMenuWindow : Window
 
         var leftColumn = new DockPanel { Margin = new Thickness(8, 8, 4, 8), Width = LeftWidth };
         var searchHost = new Grid();
-        searchHost.Children.Add(search); searchHost.Children.Add(hint);
+        search.Padding = new Thickness(30, 5, 8, 5); hint.Margin = new Thickness(33, 0, 0, 0);
+        var lens = new TextBlock { Text = "", FontFamily = new FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"), FontSize = 13, Margin = new Thickness(10, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center, IsHitTestVisible = false };
+        lens.SetResourceReference(TextBlock.ForegroundProperty, "Muted");
+        searchHost.Children.Add(search); searchHost.Children.Add(lens); searchHost.Children.Add(hint);
         hint.SetResourceReference(TextBlock.ForegroundProperty, "Muted");
         notice.SetResourceReference(TextBlock.ForegroundProperty, "Muted");
         search.SetResourceReference(Control.BackgroundProperty, "Palette.0AFFFFFF");
@@ -85,20 +90,23 @@ internal sealed class StartMenuWindow : Window
         left.Content = home;
 
         var rightColumn = new DockPanel { Margin = new Thickness(4, 8, 8, 8) };
-        var power = new DockPanel { Margin = new Thickness(6, 6, 0, 0) };
+        // StartAllBack's power button: its glyph and action, the options arrow right beside it
+        var power = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 6, 0, 0) };
         var powerMenu = Small("", "Shut down options");
         powerMenu.Click += (_, _) => PowerMenu(powerMenu);
-        DockPanel.SetDock(powerMenu, Dock.Right); power.Children.Add(powerMenu);
         // the power button does StartAllBack's "Power button default action"
-        powerButton = new Button { Content = powerText, Padding = new Thickness(10, 5, 10, 5) };
+        var powerContent = new StackPanel { Orientation = Orientation.Horizontal };
+        powerContent.Children.Add(new TextBlock { Text = "", FontFamily = new FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"), FontSize = 16, Margin = new Thickness(0, 0, 8, 0), VerticalAlignment = VerticalAlignment.Center });
+        powerText.VerticalAlignment = VerticalAlignment.Center;
+        powerContent.Children.Add(powerText);
+        powerButton = new Button { Content = powerContent, Padding = new Thickness(8, 5, 8, 5) };
         powerButton.SetResourceReference(StyleProperty, "Ghost");
         powerButton.Click += (_, _) => { Dismiss(false); StartMenuPower.Button(options.PowerAction).Run(); };
-        power.Children.Add(powerButton);
+        power.Children.Add(powerButton); power.Children.Add(powerMenu);
         DockPanel.SetDock(power, Dock.Bottom); rightColumn.Children.Add(power);
         picture.SetResourceReference(Border.BackgroundProperty, "CardBackground");
         picture.MouseLeftButtonUp += (_, _) => Launch(new Entry("Your info", EntryKind.Shell, "ms-settings:yourinfo"));
         AutomationProperties.SetName(picture, "User picture");
-        DockPanel.SetDock(picture, Dock.Top); rightColumn.Children.Add(picture);
         right.Content = places;
         rightColumn.Children.Add(right);
 
@@ -108,10 +116,14 @@ internal sealed class StartMenuWindow : Window
         Grid.SetColumn(rightColumn, 1); columns.Children.Add(leftColumn); columns.Children.Add(rightColumn);
         // an opaque base under Pathweft's tint: the window is layered, so nothing blurs the desktop behind it (S6d brings StartAllBack's glass)
         var tinted = new Border { CornerRadius = new CornerRadius(8), Background = MainWindow.Tint(), Child = columns };
-        var frame = new Border { CornerRadius = new CornerRadius(8), BorderThickness = new Thickness(1), Child = tinted,
-            Background = new SolidColorBrush(Appearance.Light ? Color.FromArgb(0xF7, 0xF3, 0xF3, 0xF3) : Color.FromArgb(0xF7, 0x20, 0x20, 0x20)) };
+        frame.Child = tinted;
+        frame.Background = new SolidColorBrush(Appearance.Light ? Color.FromArgb(0xF7, 0xF3, 0xF3, 0xF3) : Color.FromArgb(0xF7, 0x20, 0x20, 0x20));
         frame.SetResourceReference(Border.BorderBrushProperty, "AccentEdge");
-        Content = frame;
+        // the right column's centre: past the programs column (its margins 8 and 4) and the right column's own margins
+        picture.Margin = new Thickness((LeftWidth + 12 + MenuWidth - 8) / 2 - picture.Width / 2, 0, 0, 0);
+        var whole = new Grid();
+        whole.Children.Add(frame); whole.Children.Add(picture);
+        Content = whole;
 
         hover.Tick += (_, _) => { hover.Stop(); if (!Resting()) hoverAction?.Invoke(); };
         Deactivated += (_, _) => Dismiss(false);
@@ -339,6 +351,7 @@ internal sealed class StartMenuWindow : Window
         {
             if (ReferenceEquals(e, StartMenuItems.Separator)) { places.Children.Add(Line()); continue; }
             var row = Row(e, 16, submenu: e.Children != null, glyph: options.RightPaneGlyphs);
+            row.MinHeight = PlaceRow;
             if (e.Tip == "Personal folder") ((TextBlock)((DockPanel)row.Content).Children[^1]).FontWeight = FontWeights.SemiBold;
             places.Children.Add(row);
         }
@@ -346,6 +359,9 @@ internal sealed class StartMenuWindow : Window
         powerText.Text = action;
         AutomationProperties.SetName(powerButton, action);
         picture.Visibility = options.UserPicture ? Visibility.Visible : Visibility.Collapsed;
+        // the picture's lower part reaches into the menu; the right column starts below it
+        frame.Margin = new Thickness(0, options.UserPicture ? Overhang : 0, 0, 0);
+        places.Margin = new Thickness(0, options.UserPicture ? picture.Height - Overhang + 14 : 0, 0, 0);
         picture.Child = null;
         if (user != null && options.UserPicture)
             try
@@ -740,9 +756,9 @@ internal sealed class StartMenuWindow : Window
     void Fit()
     {
         Width = MenuWidth;
-        home.Measure(new Size(LeftWidth, double.PositiveInfinity));
-        places.Measure(new Size(MenuWidth - LeftWidth, double.PositiveInfinity));
-        Height = Math.Max(MenuHeight, Math.Max(home.DesiredSize.Height + 130, places.DesiredSize.Height + 130));
+        var whole = (FrameworkElement)Content;
+        whole.Measure(new Size(MenuWidth, double.PositiveInfinity));
+        Height = Math.Max(MenuHeight + frame.Margin.Top, whole.DesiredSize.Height);
     }
 
 #if DEBUG

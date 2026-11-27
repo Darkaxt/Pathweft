@@ -9,6 +9,8 @@
 - The right column shows StartAllBack's glyph icons when "Display glyph icons" is on, and the user picture only when "Display user account picture" is.
 - Search leaves out programs, files or the public folders as Windows' Start-menu search settings say, and recent programs and recent items follow Windows' settings for keeping them.
 - A change in StartAllBack's configuration reaches Pathweft's menu at once, even while it is open.
+- The pinned programs are StartAllBack's, in its order, and Pin to / Unpin from Start menu changes StartAllBack's list too.
+- The right column has StartAllBack's custom folders, its names (This PC, Settings, Recent Items) and grouping, and its row height; the user picture hangs over the top edge, and the power button and search box have their glyphs.
 
 ## 1.1.113 | 2026-11-27 | Pathweft's own Start menu
 

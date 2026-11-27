@@ -300,6 +300,37 @@ public static class ShellMenu
     internal static double LastLoadMilliseconds;
 #endif
 
+    /// Runs one verb of one shell extension on one item, as Explorer would (Initialize, QueryContextMenu,
+    /// InvokeCommand), without showing a menu: the Start menu's Pin and Unpin through Windows' own pin handler.
+    internal static bool RunHandler(Guid clsid, string item, string verb)
+    {
+        var pidls = new List<IntPtr>();
+        IntPtr menu = IntPtr.Zero, ansi = IntPtr.Zero, wide = IntPtr.Zero;
+        object obj = null;
+        try
+        {
+            if (ItemsObject(IntPtr.Zero, [item], pidls, typeof(System.Runtime.InteropServices.ComTypes.IDataObject).GUID) is not System.Runtime.InteropServices.ComTypes.IDataObject data) return false;
+            var iid = typeof(IContextMenu).GUID;
+            if (CoCreateInstance(ref clsid, IntPtr.Zero, CLSCTX_INPROC_SERVER, ref iid, out obj) != 0) return false;
+            if (obj is not IShellExtInit init || init.Initialize(IntPtr.Zero, data, IntPtr.Zero) != 0) return false;
+            var ctx = (IContextMenu)obj;
+            menu = CreatePopupMenu();
+            if (ctx.QueryContextMenu(menu, 0, FirstId, LastId, CMF_NORMAL) < 0) return false;
+            ansi = Marshal.StringToHGlobalAnsi(verb); wide = Marshal.StringToHGlobalUni(verb);
+            var info = new CMINVOKECOMMANDINFOEX { cbSize = Marshal.SizeOf<CMINVOKECOMMANDINFOEX>(), fMask = CMIC_MASK_UNICODE, lpVerb = ansi, lpVerbW = wide, nShow = 1 };
+            return ctx.InvokeCommand(ref info) == 0;
+        }
+        catch (Exception ex) when (ex is COMException or InvalidCastException) { return false; }
+        finally
+        {
+            if (menu != IntPtr.Zero) DestroyMenu(menu);
+            if (ansi != IntPtr.Zero) Marshal.FreeHGlobal(ansi);
+            if (wide != IntPtr.Zero) Marshal.FreeHGlobal(wide);
+            if (obj != null) Marshal.ReleaseComObject(obj);
+            foreach (var p in pidls) Marshal.FreeCoTaskMem(p);
+        }
+    }
+
     /// One extension, as Explorer calls it: Initialize, then QueryContextMenu into a menu of its own.
     static List<Node> LoadHandler(Window owner, Guid clsid, IntPtr pidlFolder, System.Runtime.InteropServices.ComTypes.IDataObject data, string folder, IReadOnlyList<string> items, Extensions found)
     {

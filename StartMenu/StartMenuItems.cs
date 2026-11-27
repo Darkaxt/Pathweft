@@ -103,7 +103,7 @@ internal sealed record StartMenuOptions
 }
 
 /// SAB-02 (S6b): the menu's contents, read where Windows and StartAllBack keep them: the pinned programs in
-/// User Pinned\StartMenu (their order in StartPage2's Favorites), the recent programs from UserAssist, All Programs
+/// User Pinned\StartMenu that Windows' pin list (StartPage2's Favorites) holds, in its order, the recent programs from UserAssist, All Programs
 /// from both Start Menu\Programs folders and shell:AppsFolder, and the right column's known folders and commands.
 internal static class StartMenuItems
 {
@@ -118,20 +118,30 @@ internal static class StartMenuItems
 
     // ---- pinned ----
 
+    const string StartPage = @"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\StartPage2";
+
+    /// The pinned programs StartAllBack shows: the shortcuts in User Pinned\StartMenu that Windows' pin list
+    /// (StartPage2's Favorites, a list of item IDs whose names are UTF-16 at either byte alignment) holds, in its order.
+    /// A shortcut left in the folder but not in the list is not pinned. Without the list, every shortcut by name.
     internal static List<Entry> Pinned()
     {
-        var list = new List<(int Order, Entry Entry)>();
         if (!Directory.Exists(PinnedFolder)) return [];
-        byte[] favorites = Registry.GetValue(@"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\StartPage2", "Favorites", null) as byte[];
-        string order = favorites == null ? "" : Encoding.Unicode.GetString(favorites, 0, favorites.Length & ~1);
-        foreach (var file in Directory.EnumerateFiles(PinnedFolder))
+        var files = Directory.EnumerateFiles(PinnedFolder).Where(f => Launchable.Contains(Path.GetExtension(f), StringComparer.OrdinalIgnoreCase)).ToList();
+        if (Registry.GetValue(StartPage, "Favorites", null) is not byte[] favorites)
+            return files.Select(Program).OrderBy(e => e.Name, StringComparer.CurrentCultureIgnoreCase).ToList();
+        string even = Encoding.Unicode.GetString(favorites, 0, favorites.Length & ~1), odd = favorites.Length > 1 ? Encoding.Unicode.GetString(favorites, 1, (favorites.Length - 1) & ~1) : "";
+        int At(string name)
         {
-            if (!Launchable.Contains(Path.GetExtension(file), StringComparer.OrdinalIgnoreCase)) continue;
-            int at = order.IndexOf(Path.GetFileName(file), StringComparison.OrdinalIgnoreCase);
-            list.Add((at < 0 ? int.MaxValue : at, Program(file)));
+            // the name ends where the item's string does: a NUL after it
+            int Find(string s, int shift) { int i = s.IndexOf(name + "\0", StringComparison.OrdinalIgnoreCase); return i < 0 ? int.MaxValue : i * 2 + shift; }
+            return Math.Min(Find(even, 0), Find(odd, 1));
         }
-        return list.OrderBy(x => x.Order).ThenBy(x => x.Entry.Name, StringComparer.CurrentCultureIgnoreCase).Select(x => x.Entry).ToList();
+        return files.Select(f => (At: At(Path.GetFileName(f)), File: f)).Where(x => x.At != int.MaxValue).OrderBy(x => x.At).Select(x => Program(x.File)).ToList();
     }
+
+    /// Windows' Start-menu pin handler (shell32's "Start Menu Pin", verbs startpin and startunpin): what StartAllBack
+    /// and Windows 7 use, so a pin from Pathweft is in StartAllBack's menu too.
+    static readonly Guid StartMenuPin = new("a2a9545d-a0c2-42b4-9708-a0b2badd77c8");
 
     internal static Entry Program(string file)
     {
@@ -142,10 +152,12 @@ internal static class StartMenuItems
         };
     }
 
-    /// Pin to Start menu, as Windows 7 does: a copy of the shortcut in User Pinned\StartMenu, after the pinned ones.
+    /// Pin to Start menu, as Windows 7 does: Windows' pin handler adds it after the pinned ones; if the handler fails,
+    /// a copy of the shortcut in User Pinned\StartMenu (shown while Windows' pin list is absent).
     internal static void Pin(Entry e)
     {
         if (e.Target == null || !File.Exists(e.Target) || !Launchable.Contains(Path.GetExtension(e.Target), StringComparer.OrdinalIgnoreCase)) return;
+        if (FileExplorer.ShellMenu.RunHandler(StartMenuPin, e.Target, "startpin")) return;
         Directory.CreateDirectory(PinnedFolder);
         string to = Path.Combine(PinnedFolder, Path.GetFileName(e.Target));
         if (!File.Exists(to)) File.Copy(e.Target, to);
@@ -154,10 +166,30 @@ internal static class StartMenuItems
     /// Unpin from Start menu: the pinned copy is removed (never the program's own shortcut).
     internal static void Unpin(Entry e)
     {
+        if (e.Target != null && File.Exists(e.Target) && FileExplorer.ShellMenu.RunHandler(StartMenuPin, e.Target, "startunpin")) return;
         if (e.Target != null && string.Equals(Path.GetDirectoryName(e.Target), PinnedFolder, StringComparison.OrdinalIgnoreCase) && File.Exists(e.Target)) File.Delete(e.Target);
     }
 
-    internal static bool IsPinned(Entry e) => e.Target != null && File.Exists(Path.Combine(PinnedFolder, Path.GetFileName(e.Target)));
+    internal static bool IsPinned(Entry e) => e.Target != null && Pinned().Any(p => string.Equals(Path.GetFileName(p.Target), Path.GetFileName(e.Target), StringComparison.OrdinalIgnoreCase));
+
+    /// StartAllBack's "Custom folders...": the folders it adds to the right column, after the known folders, kept in
+    /// StartPage2's CustomFolders as item IDs, each after its 16-bit length.
+    internal static List<Entry> CustomFolders()
+    {
+        var list = new List<Entry>();
+        if (Registry.GetValue(StartPage, "CustomFolders", null) is not byte[] data) return list;
+        for (int at = 0; at + 2 <= data.Length;)
+        {
+            int size = BitConverter.ToUInt16(data, at);
+            if (size < 4 || at + 2 + size > data.Length) break;
+            var ids = new byte[size + 2]; // and a terminator, in case the stored list has none
+            Array.Copy(data, at + 2, ids, 0, size);
+            at += 2 + size;
+            if (StartMenuShell.FolderOf(ids) is { } folder && Directory.Exists(folder.Path))
+                list.Add(new Entry(folder.Name, EntryKind.Folder, folder.Path) { Glyph = "\uE90F" });
+        }
+        return list;
+    }
 
     /// Remove from this list, as Windows 7 does for a recent program: its UserAssist count is deleted.
     internal static void ForgetRecent(Entry e)
@@ -327,25 +359,26 @@ internal static class StartMenuItems
         Known("Start_ShowMyDocs", "Documents", Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "\uE8A5");
         Known("Start_ShowMyPics", "Pictures", Environment.GetFolderPath(Environment.SpecialFolder.MyPictures), "\uEB9F");
         Known("Start_ShowMyMusic", "Music", Environment.GetFolderPath(Environment.SpecialFolder.MyMusic), "\uEC4F");
-        Known("Start_ShowVideos", "Videos", Environment.GetFolderPath(Environment.SpecialFolder.MyVideos), "\uE714");
+        Known("Start_ShowVideos", "Videos", Environment.GetFolderPath(Environment.SpecialFolder.MyVideos), "\uE8B2");
         Known("Start_ShowDownloads", "Downloads", StartMenuShell.KnownFolder(Downloads), "\uE896");
         Known("Start_ShowSkyDrive", "OneDrive", StartMenuShell.KnownFolder(OneDrive) is { } od && Directory.Exists(od) ? od : null, "\uE753");
         Known("StartMenuFavorites", "Favorites", Environment.GetFolderPath(Environment.SpecialFolder.Favorites), "\uE734");
-        if (Mode("Start_ShowRecentDocs") != 0)
-            list.Add(new Entry("Recent items", EntryKind.Folder, Environment.GetFolderPath(Environment.SpecialFolder.Recent)) { Children = Mode("Start_ShowRecentDocs") == 2 ? () => RecentItems(o) : null, Glyph = "\uE823" });
+        list.AddRange(CustomFolders());
         list.Add(Separator);
+        if (Mode("Start_ShowRecentDocs") != 0)
+            list.Add(new Entry("Recent Items", EntryKind.Folder, Environment.GetFolderPath(Environment.SpecialFolder.Recent)) { Children = Mode("Start_ShowRecentDocs") == 2 ? () => RecentItems(o) : null, Glyph = "\uE823" });
         if (Mode("Start_ShowMyComputer") != 0)
-            list.Add(new Entry("Computer", EntryKind.Folder, StartMenuShell.ThisPC) { Children = Mode("Start_ShowMyComputer") == 2 ? Drives : null, Icon = "::{20D04FE0-3AEA-1069-A2D8-08002B30309D}", Glyph = "\uE977" });
+            list.Add(new Entry("This PC", EntryKind.Folder, StartMenuShell.ThisPC) { Children = Mode("Start_ShowMyComputer") == 2 ? Drives : null, Icon = "::{20D04FE0-3AEA-1069-A2D8-08002B30309D}", Glyph = "\uE977" });
         if (Mode("Start_ShowNetPlaces") != 0)
             list.Add(new Entry("Network", EntryKind.Shell, "shell:NetworkPlacesFolder") { Children = Mode("Start_ShowNetPlaces") == 2 ? () => ShellMenu("shell:NetworkPlacesFolder") : null, Glyph = "\uE968" });
         if (Mode("Start_ShowNetConn") != 0)
-            list.Add(new Entry("Connect To", EntryKind.Shell, "shell:ConnectionsFolder") { Children = Mode("Start_ShowNetConn") == 2 ? () => ShellMenu("shell:ConnectionsFolder") : null, Glyph = "\uE839" });
+            list.Add(new Entry("Network Connections", EntryKind.Shell, "shell:ConnectionsFolder") { Children = Mode("Start_ShowNetConn") == 2 ? () => ShellMenu("shell:ConnectionsFolder") : null, Glyph = "\uE839" });
         list.Add(Separator);
         const string controlPanel = "::{26EE0668-A00A-44D7-9371-BEB064C98683}";
         if (Mode("Start_ShowControlPanel") != 0)
             list.Add(new Entry("Control Panel", EntryKind.Shell, controlPanel) { Children = Mode("Start_ShowControlPanel") == 2 ? () => ShellMenu(controlPanel + @"\0") : null, Glyph = "\uE770" });
         if (Mode("Start_ShowPCSettings") != 0)
-            list.Add(new Entry("PC settings", EntryKind.Shell, "ms-settings:") { Children = Mode("Start_ShowPCSettings") == 2 ? () => SettingsPages.Where(p => p.Top).Select(p => p.Entry).ToList() : null, Icon = SettingsIcon, Glyph = "\uE713" });
+            list.Add(new Entry("Settings", EntryKind.Shell, "ms-settings:") { Children = Mode("Start_ShowPCSettings") == 2 ? () => SettingsPages.Where(p => p.Top).Select(p => p.Entry).ToList() : null, Icon = SettingsIcon, Glyph = "\uE713" });
         if (Mode("Start_ShowPrinters") != 0)
             list.Add(new Entry("Devices and Printers", EntryKind.Shell, "::{A8A91A66-3A7D-4424-8D24-04E180695C7A}") { Children = Mode("Start_ShowPrinters") == 2 ? () => ShellMenu("::{A8A91A66-3A7D-4424-8D24-04E180695C7A}") : null, Glyph = "\uE772" });
         if (Mode("Start_ShowSetProgramAccessAndDefaults") != 0) list.Add(new Entry("Default Programs", EntryKind.Shell, "ms-settings:defaultapps") { Icon = SettingsIcon, Glyph = "\uE71D" });
