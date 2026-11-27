@@ -193,7 +193,7 @@ internal static class Appearance
         if(app==null||app.Dispatcher.HasShutdownStarted)return;
         app.Dispatcher.BeginInvoke(()=>
         {
-            if(app.MainWindow is MainWindow main)main.ApplyAppearance();else Apply();
+            if(app.MainWindow is MainWindow main)main.ApplyAppearance();else{Apply();MainWindow.ApplyAccent();}
         });
     }
 

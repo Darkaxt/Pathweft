@@ -169,8 +169,9 @@ public static class Agent
         if(hook==IntPtr.Zero){ready.Dispose();stop.Dispose();single.ReleaseMutex();single.Dispose();return 1;}
         if(Settings.OwnStartMenu)
         {
-            // the menu follows Pathweft's colours; its window is made now so the first press only shows it
-            Appearance.Apply();
+            // the menu follows Pathweft's colours (the whole palette, as the main window has it, and its changes);
+            // its window is made now so the first press only shows it
+            Appearance.Initialize();
             if(!StartMenu.StartMenuHost.Start())Log("start menu: mouse hook unavailable, Win and Ctrl+Esc only");
         }
         waiting=ThreadPool.RegisterWaitForSingleObject(stop,(_,_)=>app.Dispatcher.BeginInvoke(()=>app.Shutdown()),null,-1,true);

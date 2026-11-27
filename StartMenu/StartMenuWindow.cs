@@ -134,7 +134,7 @@ internal sealed class StartMenuWindow : Window
         if (hasJump || submenu)
         {
             var arrow = new Border { Background = Brushes.Transparent, Width = 22, Child = new TextBlock { Text = "", FontFamily = new FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"), FontSize = 9, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center } };
-            arrow.MouseEnter += (_, _) => { hover.Stop(); if (hasJump) ShowJump(e, row); else OpenSubmenu(e, row); };
+            arrow.MouseEnter += (_, _) => { hover.Stop(); if (hasJump) ShowJump(e, row, false); else OpenSubmenu(e, row); };
             DockPanel.SetDock(arrow, Dock.Right); content.Children.Add(arrow);
         }
         var image = new Image { Width = iconSize, Height = iconSize, Margin = new Thickness(0, 0, 8, 0), VerticalAlignment = VerticalAlignment.Center };
@@ -149,7 +149,7 @@ internal sealed class StartMenuWindow : Window
         row.Click += (_, _) => { if (click != null) click(); else Launch(e); };
         row.MouseEnter += (_, _) =>
         {
-            if (hasJump) Hover(e, () => ShowJump(e, row));
+            if (hasJump) Hover(e, () => ShowJump(e, row, false));
             else if (submenu) Hover(e, () => OpenSubmenu(e, row));
             else if (jumpOwner != null && IsInLeft(row)) Hover(e, HideJump);
             else hover.Stop();
@@ -243,6 +243,9 @@ internal sealed class StartMenuWindow : Window
             });
             pinned = p; recent = r; column = c; withJumpList = jumps;
             BuildHome(); BuildPlaces(user);
+            // All Programs is highlighted while it holds a new program, as Windows 7's menu does
+            var all = await Programs();
+            if (StartMenuItems.Flatten(all).Any(x => x.New)) allPrograms.SetResourceReference(BackgroundProperty, "AccentSoft"); else allPrograms.ClearValue(BackgroundProperty);
             _ = StartMenuSearch.Load(o);
         }
         catch (Exception ex) when (ex is COMException or IOException or UnauthorizedAccessException or InvalidOperationException)
@@ -357,7 +360,7 @@ internal sealed class StartMenuWindow : Window
     MenuItem MenuItemFor(Entry e, bool openFolders)
     {
         var item = new MenuItem { Header = e.Name, ToolTip = e.Tip };
-        if (e.New) item.FontWeight = FontWeights.SemiBold;
+        if (e.New) { item.FontWeight = FontWeights.SemiBold; item.SetResourceReference(BackgroundProperty, "AccentSoft"); }
         var image = new Image { Width = 16, Height = 16 };
         item.Icon = image;
         LoadIcon(image, e, 16);
@@ -423,9 +426,9 @@ internal sealed class StartMenuWindow : Window
 
     // ---- jump lists ----
 
-    async void ShowJump(Entry e, Button row)
+    async void ShowJump(Entry e, Button row, bool focus)
     {
-        if (jumpOwner == e) return;
+        if (jumpOwner == e) { if (focus) FirstRow(jump)?.Focus(); return; }
         jumpOwner = e; jumpRow = row;
         var categories = await ShellWorker.Run(() => StartMenuShell.JumpList(e.Owner, e.Target));
         if (jumpOwner != e) return;
@@ -438,6 +441,8 @@ internal sealed class StartMenuWindow : Window
         if (categories.Count == 0) jump.Children.Add(new TextBlock { Text = "Nothing here yet.", Margin = new Thickness(8) });
         right.Content = jump;
         right.ScrollToTop();
+        // from the keyboard (Right), into the list once it is there
+        if (focus) Dispatcher.BeginInvoke(() => FirstRow(jump)?.Focus(), DispatcherPriority.Loaded);
     }
 
     void HideJump()
@@ -541,8 +546,7 @@ internal sealed class StartMenuWindow : Window
                 e.Handled = true; LastRow(left.Content as Panel)?.Focus();
                 break;
             case System.Windows.Input.Key.Right when focused is Button { Tag: Entry entry } row && withJumpList.Contains(entry):
-                e.Handled = true; ShowJump(entry, row);
-                Dispatcher.BeginInvoke(() => FirstRow(jump)?.Focus(), DispatcherPriority.Input);
+                e.Handled = true; ShowJump(entry, row, true);
                 break;
             case System.Windows.Input.Key.Right when focused is Button { Tag: Entry entry } row && entry.Children != null && !IsInLeft(row):
                 e.Handled = true; OpenSubmenu(entry, row);

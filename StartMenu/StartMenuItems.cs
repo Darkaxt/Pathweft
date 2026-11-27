@@ -204,7 +204,9 @@ internal static class StartMenuItems
             var sorted = Sort(children, options);
             list.Add(new Entry(StartMenuShell.DisplayName(dirs[0]) ?? name, EntryKind.Folder, dirs[0]) { Children = () => sorted, New = sorted.Any(c => c.New) });
         }
-        return list;
+        // one entry per name, as Windows shows them: the user's shortcut over the all-users one of the same name,
+        // and a shortcut over a folder shown with its name (Windows Tools and the Administrative Tools folder)
+        return list.GroupBy(e => e.Name, StringComparer.CurrentCultureIgnoreCase).Select(g => g.FirstOrDefault(e => e.Children == null) ?? g.First()).ToList();
     }
 
     /// Windows 7 order with StartAllBack's sorting on: programs first, then folders, each by name.
