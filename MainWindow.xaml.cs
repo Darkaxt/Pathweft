@@ -541,11 +541,22 @@ public partial class MainWindow : Window
         active.FocusList();
     }
 
+    /// SAB-06: "?search=<text>" opens a new This PC tab searching the index for the text.
+    internal const string SearchRequest = "?search=";
+
     /// A folder opens as a new tab; a file opens its folder with the file selected — what "show in
     /// folder" asks for (the agent passes those on from Explorer windows other programs open). A folder
     /// already open in a tab, in either pane, is switched to instead of opened twice.
     void OpenPath(PaneView pane, string path)
     {
+        // SAB-06 (S6b): the Start menu's Computer and "See more results" ('?' is never in a path)
+        if (path == PaneView.ThisPC) { pane.NewStartTab(); SetActive(pane); return; }
+        if (path.StartsWith(SearchRequest, StringComparison.Ordinal))
+        {
+            pane.NewStartTab(); SetActive(pane);
+            if (path.Length > SearchRequest.Length) pane.Search(path[SearchRequest.Length..]);
+            return;
+        }
         string folder, select = null;
         try
         {
