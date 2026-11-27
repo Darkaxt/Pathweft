@@ -1,6 +1,10 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.111 | 2026-11-27 | Searches no longer come up empty
+
+- A search whose first results were all hidden items, such as a path search in a folder with a .git folder, showed an empty list with More results. Pathweft now loads further results by itself until it finds ones it can show.
+
 ## 1.1.110 | 2026-11-27 | Web pages open in your browser
 
 - Double-clicking or pressing Enter on an .html, .htm or .svg file opens it in your browser again, as Explorer does, instead of the code editor. F4 still opens it in the editor.

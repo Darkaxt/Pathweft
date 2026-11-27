@@ -257,6 +257,7 @@ public partial class PaneView
     async Task LoadIndexedPage(CancellationToken token, int generation)
     {
         SearchLoading(generation);
+        int shown = indexedResults.Count; // CORE-38: a page whose hits are all hidden must not leave the list looking empty
         searching = true;
         MoreResults.IsEnabled = false;
         SearchCoverage.Text = searchNotice;
@@ -320,7 +321,7 @@ public partial class PaneView
                 SearchCoverage.Text = searchNotice;
                 MoreResults.IsEnabled = true;
                 UpdateFooter(); StatsChanged?.Invoke();
-                if(IsWidget&&indexedCanLoadMore&&indexedResults.Count==0)await LoadIndexedPage(token,generation);
+                if(indexedCanLoadMore&&indexedResults.Count==shown)await LoadIndexedPage(token,generation); // the next page, until visible hits arrive or the results end
             }
         }
     }
