@@ -325,13 +325,24 @@ internal static class StartMenuShell
 
     static string Recent => Environment.GetFolderPath(Environment.SpecialFolder.Recent);
 
-    internal static bool HasJumpList(string appId)
+    /// Whether the program's jump list has anything to show (Windows keeps empty jump-list files, such as one whose
+    /// items were all removed); the answer is kept until either file changes.
+    internal static bool HasJumpList(string appId, string owner, int max, bool track)
     {
         if (appId == null) return false;
         string hash = AppIdHash(appId);
-        return File.Exists(Path.Combine(Recent, "AutomaticDestinations", hash + ".automaticDestinations-ms"))
-            || File.Exists(Path.Combine(Recent, "CustomDestinations", hash + ".customDestinations-ms"));
+        var auto = new FileInfo(Path.Combine(Recent, "AutomaticDestinations", hash + ".automaticDestinations-ms"));
+        var custom = new FileInfo(Path.Combine(Recent, "CustomDestinations", hash + ".customDestinations-ms"));
+        if (!auto.Exists && !custom.Exists) return false;
+        var key = (hash, auto.Exists ? auto.LastWriteTimeUtc.Ticks ^ auto.Length : 0, custom.Exists ? custom.LastWriteTimeUtc.Ticks ^ custom.Length : 0, max, track);
+        lock (JumpListShown)
+            if (JumpListShown.TryGetValue(key, out bool known)) return known;
+        bool shown = JumpList(appId, owner, max, track).Count > 0;
+        lock (JumpListShown) JumpListShown[key] = shown;
+        return shown;
     }
+
+    static readonly Dictionary<(string, long, long, int, bool), bool> JumpListShown = [];
 
     /// Pinned, then the program's custom categories and tasks, then Recent (or Frequent when the program asks for
     /// it), the way the Windows 7 menu shows a jump list: at most max recent items, none while Windows keeps none.

@@ -44,6 +44,10 @@ Recent programs (StartAllBack's ranking source not found yet), which programs sh
 Programs highlight for newly installed programs. Visual style differences (colours, glass, the programs list's
 border) belong to S6d.
 
+## Owner decision on the remaining differences (2026-11-27)
+
+"That feature from StartAllBack is worse" and "I don't need flawed implementations in post of being a real replica": recent programs keep Pathweft's ranking by actual use and the All Programs highlight keeps Windows 7's rule (spec SAB-08). The jump-list arrows were Pathweft's flaw (an arrow for an empty jump list) and are fixed in 1.1.115.
+
 ## Not verified here
 
 A change in StartAllBack's configuration reaching an open Pathweft menu (StartMenuSettingsWatcher): it needs a

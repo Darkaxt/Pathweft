@@ -318,7 +318,7 @@ internal sealed class StartMenuWindow : Window
             {
                 var p = StartMenuItems.Pinned();
                 var r = o.TrackPrograms ? StartMenuItems.Recent(o.RecentPrograms, p) : new List<Entry>();
-                var jumps = p.Concat(r).Where(e => StartMenuShell.HasJumpList(e.Owner)).ToHashSet();
+                var jumps = p.Concat(r).Where(e => StartMenuShell.HasJumpList(e.Owner, e.Target, o.JumpListItems, o.TrackDocuments)).ToHashSet();
                 return (p, r, StartMenuItems.RightColumn(o), jumps, StartMenuItems.UserPicture());
             });
             pinned = p; recent = r; column = c; withJumpList = jumps;
@@ -778,7 +778,7 @@ internal sealed class StartMenuWindow : Window
         bmp.Render(root);
         var encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(bmp));
         using (var f = File.Create(png)) encoder.Save(f);
-        File.WriteAllText(png + ".txt", $"icon={options.ProgramIcon} power={options.PowerAction} glyphs={options.RightPaneGlyphs} picture={options.UserPicture} sort={options.SortOrder} pinned={pinned.Count} recent={recent.Count} dpi={dpi.PixelsPerInchX}");
+        File.WriteAllText(png + ".txt", $"icon={options.ProgramIcon} power={options.PowerAction} glyphs={options.RightPaneGlyphs} picture={options.UserPicture} sort={options.SortOrder} pinned={pinned.Count} recent={recent.Count} dpi={dpi.PixelsPerInchX} jumplists={string.Join(",", pinned.Concat(recent).Where(withJumpList.Contains).Select(e => e.Name))} nojumplist={string.Join(",", pinned.Concat(recent).Where(e => !withJumpList.Contains(e)).Select(e => e.Name))}");
         return 0;
     }
 #endif

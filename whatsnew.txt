@@ -1,6 +1,11 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.115 | 2026-11-28 | Start menu jump-list arrows
+
+- The Start menu shows a jump-list arrow only beside programs whose jump list has something in it.
+- Recent programs stay the ones you really use most, and newly installed programs stay highlighted, where StartAllBack's own menu does otherwise.
+
 ## 1.1.114 | 2026-11-27 | The Start menu follows StartAllBack's settings
 
 - The power button does what StartAllBack's "Power button default action" says (or the Start-menu power button policy), such as Hibernate, instead of always Shut down.
