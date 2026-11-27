@@ -25,6 +25,15 @@ internal static class StartMenuPower
         _ => true,
     });
 
+    /// The power button's own action, as StartAllBack's "Power button default action" sets it (Windows 7's
+    /// Start_PowerButtonAction: 1 sign out, 2 shut down, 4 restart, 0x10 sleep, 0x40 hibernate, 0x100 switch user,
+    /// 0x200 lock). An action this PC does not offer shows Sign out, as StartAllBack does.
+    internal static (string Name, Action Run) Button(int action)
+    {
+        string name = action switch { 1 => "Sign out", 4 => "Restart", 0x10 => "Sleep", 0x40 => "Hibernate", 0x100 => "Switch user", 0x200 => "Lock", _ => "Shut down" };
+        return Available.FirstOrDefault(a => a.Name == name) is { Name: not null } found ? found : Actions.First(a => a.Name == "Sign out");
+    }
+
     const uint Planned = 0x80000000; // SHTDN_REASON_FLAG_PLANNED
 
     static bool FastStartup => Registry.GetValue(@"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Session Manager\Power", "HiberbootEnabled", 0) is 1;

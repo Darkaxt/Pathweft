@@ -7,7 +7,6 @@ using System.Text;
 using System.Threading;
 using System.Windows.Interop;
 using System.Windows.Media.Imaging;
-using Microsoft.Win32;
 
 namespace FileExplorer.StartMenu;
 
@@ -56,6 +55,8 @@ internal sealed record Entry(string Name, EntryKind Kind, string Target)
     internal byte[] IdList { get; init; }
     /// A program's AppUserModelID (whose jump list it has); for a jump-list item, the program that opens it.
     internal string Owner { get; init; }
+    /// The right column's glyph (Segoe Fluent Icons), shown instead of the icon with StartAllBack's "Display glyph icons".
+    internal string Glyph { get; init; }
 }
 
 internal static class StartMenuShell
@@ -319,15 +320,15 @@ internal static class StartMenuShell
     }
 
     /// Pinned, then the program's custom categories and tasks, then Recent (or Frequent when the program asks for
-    /// it), the way the Windows 7 menu shows a jump list.
-    internal static List<JumpCategory> JumpList(string appId, string owner)
+    /// it), the way the Windows 7 menu shows a jump list: at most max recent items, none while Windows keeps none.
+    internal static List<JumpCategory> JumpList(string appId, string owner, int max, bool track)
     {
         var result = new List<JumpCategory>();
         if (appId == null) return result;
         string hash = AppIdHash(appId);
         var (pinned, recent) = Automatic(Path.Combine(Recent, "AutomaticDestinations", hash + ".automaticDestinations-ms"), owner);
         var custom = Custom(Path.Combine(Recent, "CustomDestinations", hash + ".customDestinations-ms"), owner);
-        int max = Registry.GetValue(@"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced", "JumpListItems_Maximum", 10) is int m and > 0 ? m : 10;
+        if (!track) { max = 0; recent.Clear(); }
         if (pinned.Count > 0) result.Add(new("Pinned", pinned));
         bool knownShown = false;
         foreach (var (name, known, items) in custom)

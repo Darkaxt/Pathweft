@@ -5,7 +5,8 @@ using Microsoft.Win32;
 
 namespace FileExplorer.StartMenu;
 
-/// StartAllBack's Start-menu settings, read from HKCU\Software\StartIsBack (read only; licensing is never read).
+/// StartAllBack's Start-menu settings, read from HKCU\Software\StartIsBack (read only; licensing is never read), and
+/// the Windows 7 menu settings StartAllBack keeps in Explorer\Advanced (power button, search, recent items).
 /// A value that is absent keeps StartAllBack's default. S6c verifies each against StartAllBack side by side.
 internal sealed record StartMenuOptions
 {
@@ -13,18 +14,43 @@ internal sealed record StartMenuOptions
     internal bool Flyout { get; init; } = true;
     internal bool AutoCascade { get; init; } = true;
     internal bool AppsFolder { get; init; } = true;
-    internal bool Sorted { get; init; } = true;
+    /// "Override sort order": 0 off (by name, programs first, as Windows lists them), 1 folders first, 2 programs
+    /// first, 3 no preference (folders and programs by name together).
+    internal int SortOrder { get; init; } = 1;
     internal bool NotifyNewApps { get; init; } = true;
-    internal bool RightPaneIcons { get; init; } = true;
+    /// "Display glyph icons": the right column's items show glyphs (2) rather than their icons.
+    internal bool RightPaneGlyphs { get; init; } = true;
     /// Right-column items: 0 hidden, 1 a link, 2 a menu.
     internal IReadOnlyDictionary<string, int> Show { get; init; } = new Dictionary<string, int>();
+    /// Icon sizes: the pinned and recent programs (Icon size S, M or L), and "Use large icons" for All Programs,
+    /// search results and the right column's menus.
+    internal int ProgramIcon { get; init; } = 32;
+    internal int AllProgramsIcon { get; init; } = 16;
+    internal int SearchIcon { get; init; } = 16;
+    internal int FlyoutIcon { get; init; } = 16;
+    /// "Display user account picture".
+    internal bool UserPicture { get; init; } = true;
+    /// The power button's action, as Windows 7 encodes it (Start_PowerButtonAction).
+    internal int PowerAction { get; init; } = 2;
+    /// "Search programs and settings"; files: 0 not searched, 1 without the public folders, 2 with them.
+    internal bool SearchPrograms { get; init; } = true;
+    internal int SearchFiles { get; init; } = 2;
+    /// Windows' "Store and display recently opened programs / items" (off: no recent programs, no recent items).
+    internal bool TrackPrograms { get; init; } = true;
+    internal bool TrackDocuments { get; init; } = true;
+    /// Recent items in jump lists and in Recent items.
+    internal int JumpListItems { get; init; } = 10;
 
-    internal const string Key = @"Software\StartIsBack";
+    internal const string Key = @"Software\StartIsBack", AdvancedKey = @"Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced";
 
     internal static StartMenuOptions Read()
     {
         using var key = Registry.CurrentUser.OpenSubKey(Key);
+        using var advanced = Registry.CurrentUser.OpenSubKey(AdvancedKey);
         int Get(string name, int fallback) => key?.GetValue(name) is int v ? v : fallback;
+        int Advanced(string name, int fallback) => advanced?.GetValue(name) is int v ? v : fallback;
+        // Icon size's S, L, M are 0, 1, 2 (the Cfg combo's order)
+        int programIcon = Get("Start_LargeMFUIcons", 1) switch { 0 => 16, 2 => 24, _ => 32 };
         var show = new Dictionary<string, int>();
         foreach (var (name, fallback) in Items) show[name] = Get(name, fallback);
         return new StartMenuOptions
@@ -33,11 +59,36 @@ internal sealed record StartMenuOptions
             Flyout = Get("AllProgramsFlyout", 1) != 0,
             AutoCascade = Get("Start_AutoCascade", 1) != 0,
             AppsFolder = Get("StartMetroAppsFolder", 1) != 0,
-            Sorted = Get("Start_SortOverride", 1) != 0,
+            SortOrder = Math.Clamp(Get("Start_SortOverride", 1), 0, 3),
             NotifyNewApps = Get("Start_NotifyNewApps", 1) != 0,
-            RightPaneIcons = Get("Start_RightPaneIcons", 2) != 0,
+            RightPaneGlyphs = Get("Start_RightPaneIcons", 2) == 2,
             Show = show,
+            ProgramIcon = programIcon,
+            AllProgramsIcon = Get("Start_LargeAllAppsIcons", 0) != 0 ? 24 : 16,
+            SearchIcon = Get("Start_LargeSearchIcons", 0) != 0 ? 24 : 16,
+            FlyoutIcon = Get("Start_LargeFlyoutIcons", 0) != 0 ? 24 : 16,
+            UserPicture = Get("HideUserFrame", 0) == 0,
+            PowerAction = PolicyPowerAction() ?? Advanced("Start_PowerButtonAction", 2),
+            SearchPrograms = Advanced("Start_SearchPrograms", 1) != 0,
+            SearchFiles = Math.Clamp(Advanced("Start_SearchFiles", 2), 0, 2),
+            TrackPrograms = Advanced("Start_TrackProgs", 1) != 0,
+            TrackDocuments = Advanced("Start_TrackDocs", 1) != 0,
+            JumpListItems = Math.Clamp(Advanced("Start_JumpListItems", Advanced("JumpListItems_Maximum", 10)), 0, 60),
         };
+    }
+
+    internal const string PolicyKey = @"Software\Microsoft\Windows\CurrentVersion\Policies\Explorer";
+
+    /// The power button's Group Policy ("Change Start Menu power button", PowerButtonAction), which wins over the
+    /// user's own choice: the machine's policy first, then the user's.
+    static int? PolicyPowerAction()
+    {
+        foreach (var root in new[] { Registry.LocalMachine, Registry.CurrentUser })
+        {
+            using var policy = root.OpenSubKey(PolicyKey);
+            if (policy?.GetValue("PowerButtonAction") is int v) return v;
+        }
+        return null;
     }
 
     /// The right column's items in StartAllBack's order, with their defaults.
@@ -235,9 +286,13 @@ internal static class StartMenuItems
         return list.GroupBy(e => e.Name, StringComparer.CurrentCultureIgnoreCase).Select(g => g.FirstOrDefault(e => e.Children == null) ?? g.First()).ToList();
     }
 
-    /// Windows 7 order with StartAllBack's sorting on: programs first, then folders, each by name.
-    static List<Entry> Sort(List<Entry> list, StartMenuOptions options) => options.Sorted
-        ? list.OrderBy(e => e.Children != null).ThenBy(e => e.Name, StringComparer.CurrentCultureIgnoreCase).ToList() : list;
+    /// StartAllBack's "Override sort order": folders first, programs first, or both by name together.
+    static List<Entry> Sort(List<Entry> list, StartMenuOptions options) => options.SortOrder switch
+    {
+        1 => list.OrderBy(e => e.Children == null).ThenBy(e => e.Name, StringComparer.CurrentCultureIgnoreCase).ToList(),
+        3 => list.OrderBy(e => e.Name, StringComparer.CurrentCultureIgnoreCase).ToList(),
+        _ => list.OrderBy(e => e.Children != null).ThenBy(e => e.Name, StringComparer.CurrentCultureIgnoreCase).ToList(),
+    };
 
     /// The packaged apps (an AppUserModelID with '!') from shell:AppsFolder; desktop programs come from the folders.
     internal static List<Entry> Apps() => StartMenuShell.Children("shell:AppsFolder")
@@ -261,44 +316,44 @@ internal static class StartMenuItems
     {
         var list = new List<Entry>();
         int Mode(string name) => o.Show.TryGetValue(name, out int v) ? v : 0;
-        void Known(string setting, string name, string path)
+        void Known(string setting, string name, string path, string glyph)
         {
             int mode = Mode(setting);
             if (mode == 0 || string.IsNullOrEmpty(path)) return;
-            list.Add(new Entry(name, EntryKind.Folder, path) { Children = mode == 2 ? () => FolderMenu(path) : null });
+            list.Add(new Entry(name, EntryKind.Folder, path) { Children = mode == 2 ? () => FolderMenu(path) : null, Glyph = glyph });
         }
         string profile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-        if (Mode("Start_ShowUser") != 0) list.Add(new Entry(UserName(), EntryKind.Folder, profile) { Children = Mode("Start_ShowUser") == 2 ? () => FolderMenu(profile) : null, Tip = "Personal folder" });
-        Known("Start_ShowMyDocs", "Documents", Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments));
-        Known("Start_ShowMyPics", "Pictures", Environment.GetFolderPath(Environment.SpecialFolder.MyPictures));
-        Known("Start_ShowMyMusic", "Music", Environment.GetFolderPath(Environment.SpecialFolder.MyMusic));
-        Known("Start_ShowVideos", "Videos", Environment.GetFolderPath(Environment.SpecialFolder.MyVideos));
-        Known("Start_ShowDownloads", "Downloads", StartMenuShell.KnownFolder(Downloads));
-        Known("Start_ShowSkyDrive", "OneDrive", StartMenuShell.KnownFolder(OneDrive) is { } od && Directory.Exists(od) ? od : null);
-        Known("StartMenuFavorites", "Favorites", Environment.GetFolderPath(Environment.SpecialFolder.Favorites));
+        if (Mode("Start_ShowUser") != 0) list.Add(new Entry(UserName(), EntryKind.Folder, profile) { Children = Mode("Start_ShowUser") == 2 ? () => FolderMenu(profile) : null, Tip = "Personal folder", Glyph = "\uE77B" });
+        Known("Start_ShowMyDocs", "Documents", Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "\uE8A5");
+        Known("Start_ShowMyPics", "Pictures", Environment.GetFolderPath(Environment.SpecialFolder.MyPictures), "\uEB9F");
+        Known("Start_ShowMyMusic", "Music", Environment.GetFolderPath(Environment.SpecialFolder.MyMusic), "\uEC4F");
+        Known("Start_ShowVideos", "Videos", Environment.GetFolderPath(Environment.SpecialFolder.MyVideos), "\uE714");
+        Known("Start_ShowDownloads", "Downloads", StartMenuShell.KnownFolder(Downloads), "\uE896");
+        Known("Start_ShowSkyDrive", "OneDrive", StartMenuShell.KnownFolder(OneDrive) is { } od && Directory.Exists(od) ? od : null, "\uE753");
+        Known("StartMenuFavorites", "Favorites", Environment.GetFolderPath(Environment.SpecialFolder.Favorites), "\uE734");
         if (Mode("Start_ShowRecentDocs") != 0)
-            list.Add(new Entry("Recent items", EntryKind.Folder, Environment.GetFolderPath(Environment.SpecialFolder.Recent)) { Children = Mode("Start_ShowRecentDocs") == 2 ? RecentItems : null });
+            list.Add(new Entry("Recent items", EntryKind.Folder, Environment.GetFolderPath(Environment.SpecialFolder.Recent)) { Children = Mode("Start_ShowRecentDocs") == 2 ? () => RecentItems(o) : null, Glyph = "\uE823" });
         list.Add(Separator);
         if (Mode("Start_ShowMyComputer") != 0)
-            list.Add(new Entry("Computer", EntryKind.Folder, StartMenuShell.ThisPC) { Children = Mode("Start_ShowMyComputer") == 2 ? Drives : null, Icon = "::{20D04FE0-3AEA-1069-A2D8-08002B30309D}" });
+            list.Add(new Entry("Computer", EntryKind.Folder, StartMenuShell.ThisPC) { Children = Mode("Start_ShowMyComputer") == 2 ? Drives : null, Icon = "::{20D04FE0-3AEA-1069-A2D8-08002B30309D}", Glyph = "\uE977" });
         if (Mode("Start_ShowNetPlaces") != 0)
-            list.Add(new Entry("Network", EntryKind.Shell, "shell:NetworkPlacesFolder") { Children = Mode("Start_ShowNetPlaces") == 2 ? () => ShellMenu("shell:NetworkPlacesFolder") : null });
+            list.Add(new Entry("Network", EntryKind.Shell, "shell:NetworkPlacesFolder") { Children = Mode("Start_ShowNetPlaces") == 2 ? () => ShellMenu("shell:NetworkPlacesFolder") : null, Glyph = "\uE968" });
         if (Mode("Start_ShowNetConn") != 0)
-            list.Add(new Entry("Connect To", EntryKind.Shell, "shell:ConnectionsFolder") { Children = Mode("Start_ShowNetConn") == 2 ? () => ShellMenu("shell:ConnectionsFolder") : null });
+            list.Add(new Entry("Connect To", EntryKind.Shell, "shell:ConnectionsFolder") { Children = Mode("Start_ShowNetConn") == 2 ? () => ShellMenu("shell:ConnectionsFolder") : null, Glyph = "\uE839" });
         list.Add(Separator);
         const string controlPanel = "::{26EE0668-A00A-44D7-9371-BEB064C98683}";
         if (Mode("Start_ShowControlPanel") != 0)
-            list.Add(new Entry("Control Panel", EntryKind.Shell, controlPanel) { Children = Mode("Start_ShowControlPanel") == 2 ? () => ShellMenu(controlPanel + @"\0") : null });
+            list.Add(new Entry("Control Panel", EntryKind.Shell, controlPanel) { Children = Mode("Start_ShowControlPanel") == 2 ? () => ShellMenu(controlPanel + @"\0") : null, Glyph = "\uE770" });
         if (Mode("Start_ShowPCSettings") != 0)
-            list.Add(new Entry("PC settings", EntryKind.Shell, "ms-settings:") { Children = Mode("Start_ShowPCSettings") == 2 ? () => SettingsPages.Where(p => p.Top).Select(p => p.Entry).ToList() : null, Icon = SettingsIcon });
+            list.Add(new Entry("PC settings", EntryKind.Shell, "ms-settings:") { Children = Mode("Start_ShowPCSettings") == 2 ? () => SettingsPages.Where(p => p.Top).Select(p => p.Entry).ToList() : null, Icon = SettingsIcon, Glyph = "\uE713" });
         if (Mode("Start_ShowPrinters") != 0)
-            list.Add(new Entry("Devices and Printers", EntryKind.Shell, "::{A8A91A66-3A7D-4424-8D24-04E180695C7A}") { Children = Mode("Start_ShowPrinters") == 2 ? () => ShellMenu("::{A8A91A66-3A7D-4424-8D24-04E180695C7A}") : null });
-        if (Mode("Start_ShowSetProgramAccessAndDefaults") != 0) list.Add(new Entry("Default Programs", EntryKind.Shell, "ms-settings:defaultapps") { Icon = SettingsIcon });
+            list.Add(new Entry("Devices and Printers", EntryKind.Shell, "::{A8A91A66-3A7D-4424-8D24-04E180695C7A}") { Children = Mode("Start_ShowPrinters") == 2 ? () => ShellMenu("::{A8A91A66-3A7D-4424-8D24-04E180695C7A}") : null, Glyph = "\uE772" });
+        if (Mode("Start_ShowSetProgramAccessAndDefaults") != 0) list.Add(new Entry("Default Programs", EntryKind.Shell, "ms-settings:defaultapps") { Icon = SettingsIcon, Glyph = "\uE71D" });
         if (Mode("Start_AdminToolsRoot") != 0)
-            list.Add(new Entry("Windows Tools", EntryKind.Shell, "shell:::{D20EA4E1-3957-11D2-A40B-0C5020524153}") { Children = Mode("Start_AdminToolsRoot") == 2 ? () => ShellMenu("shell:::{D20EA4E1-3957-11D2-A40B-0C5020524153}") : null });
-        if (Mode("Start_ShowTerminal") != 0) list.Add(Terminal());
-        if (Mode("Start_ShowCommandPrompt") != 0) list.Add(new Entry("Command Prompt", EntryKind.Program, Path.Combine(Environment.SystemDirectory, "cmd.exe")) { WorkingDirectory = profile });
-        if (Mode("Start_ShowRun") != 0) list.Add(new Entry("Run...", EntryKind.Shell, "shell:::{2559a1f3-21d7-11d4-bdaf-00c04f60b9f0}"));
+            list.Add(new Entry("Windows Tools", EntryKind.Shell, "shell:::{D20EA4E1-3957-11D2-A40B-0C5020524153}") { Children = Mode("Start_AdminToolsRoot") == 2 ? () => ShellMenu("shell:::{D20EA4E1-3957-11D2-A40B-0C5020524153}") : null, Glyph = "\uE90F" });
+        if (Mode("Start_ShowTerminal") != 0) list.Add(Terminal() with { Glyph = "\uE756" });
+        if (Mode("Start_ShowCommandPrompt") != 0) list.Add(new Entry("Command Prompt", EntryKind.Program, Path.Combine(Environment.SystemDirectory, "cmd.exe")) { WorkingDirectory = profile, Glyph = "\uE756" });
+        if (Mode("Start_ShowRun") != 0) list.Add(new Entry("Run...", EntryKind.Shell, "shell:::{2559a1f3-21d7-11d4-bdaf-00c04f60b9f0}") { Glyph = "\uE768" });
         // no separator first, last or twice
         for (int i = list.Count - 1; i >= 0; i--)
             if (ReferenceEquals(list[i], Separator) && (i == 0 || i == list.Count - 1 || ReferenceEquals(list[i - 1], Separator))) list.RemoveAt(i);
@@ -353,12 +408,14 @@ internal static class StartMenuItems
         return list;
     }
 
-    /// Recent items: the shortcuts in the Recent folder, newest first, as many as jump lists show.
-    internal static List<Entry> RecentItems()
+    /// Recent items: the shortcuts in the Recent folder, newest first, as many as jump lists show; none while Windows
+    /// keeps no recent items.
+    internal static List<Entry> RecentItems(StartMenuOptions o)
     {
         var folder = Environment.GetFolderPath(Environment.SpecialFolder.Recent);
-        int max = Registry.GetValue(@"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced", "JumpListItems_Maximum", 10) is int m and > 0 ? m : 10;
+        int max = o.JumpListItems;
         var list = new List<Entry>();
+        if (o.TrackDocuments && max > 0)
         try
         {
             foreach (var file in new DirectoryInfo(folder).EnumerateFiles("*.lnk").OrderByDescending(f => f.LastWriteTimeUtc))

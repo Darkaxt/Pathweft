@@ -17,7 +17,8 @@ namespace FileExplorer.StartMenu;
 /// programs column holds the pinned and recent programs (with their jump lists), All Programs (a cascading flyout or
 /// an in-place list, as StartAllBack is set) and the search box; the right column holds the user's picture and
 /// name, the known folders, Computer, Control Panel, PC settings and the commands, and the power button. Typing
-/// searches (SAB-03); folders open in Pathweft (SAB-06). S6c and S6d follow StartAllBack's layout and style settings.
+/// searches (SAB-03); folders open in Pathweft (SAB-06). S6c follows StartAllBack's layout and contents settings
+/// (icon sizes, sort order, glyphs, user picture, power button, search, recent items), live; S6d its visual styles.
 internal sealed class StartMenuWindow : Window
 {
     readonly TextBox search = new() { MinHeight = 30, Padding = new Thickness(8, 5, 8, 5), VerticalContentAlignment = VerticalAlignment.Center };
@@ -28,7 +29,7 @@ internal sealed class StartMenuWindow : Window
     readonly ScrollViewer right = new() { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled, Focusable = false };
     readonly Button allPrograms;
     readonly TextBlock allProgramsText = new();
-    readonly Border picture = new() { Width = 48, Height = 48, CornerRadius = new CornerRadius(8), Margin = new Thickness(10, 10, 0, 6), HorizontalAlignment = HorizontalAlignment.Left, ClipToBounds = true };
+    readonly Border picture = new() { Width = 64, Height = 64, CornerRadius = new CornerRadius(8), Margin = new Thickness(10, 10, 0, 6), HorizontalAlignment = HorizontalAlignment.Left, ClipToBounds = true };
     readonly DispatcherTimer hover = new() { Interval = TimeSpan.FromMilliseconds(Math.Max(1, SystemParameters.MenuShowDelay)) };
     const double MenuWidth = 440, MenuHeight = 535, LeftWidth = 262;
     IntPtr handle, previous;
@@ -42,6 +43,9 @@ internal sealed class StartMenuWindow : Window
     Entry jumpOwner, hovered;
     Button jumpRow;
     readonly List<FileSystemWatcher> watchers = [];
+    readonly TextBlock powerText = new();
+    Button powerButton;
+    StartMenuSettingsWatcher settingsWatcher;
     internal bool IsOpen => IsVisible;
 #if DEBUG
     internal StartMenuHost.Trigger OpenedByForVerification => openedBy;
@@ -85,11 +89,11 @@ internal sealed class StartMenuWindow : Window
         var powerMenu = Small("", "Shut down options");
         powerMenu.Click += (_, _) => PowerMenu(powerMenu);
         DockPanel.SetDock(powerMenu, Dock.Right); power.Children.Add(powerMenu);
-        var shutDown = new Button { Content = new TextBlock { Text = "Shut down" }, Padding = new Thickness(10, 5, 10, 5) };
-        shutDown.SetResourceReference(StyleProperty, "Ghost");
-        AutomationProperties.SetName(shutDown, "Shut down");
-        shutDown.Click += (_, _) => { Dismiss(false); StartMenuPower.Actions.First(a => a.Name == "Shut down").Run(); };
-        power.Children.Add(shutDown);
+        // the power button does StartAllBack's "Power button default action"
+        powerButton = new Button { Content = powerText, Padding = new Thickness(10, 5, 10, 5) };
+        powerButton.SetResourceReference(StyleProperty, "Ghost");
+        powerButton.Click += (_, _) => { Dismiss(false); StartMenuPower.Button(options.PowerAction).Run(); };
+        power.Children.Add(powerButton);
         DockPanel.SetDock(power, Dock.Bottom); rightColumn.Children.Add(power);
         picture.SetResourceReference(Border.BackgroundProperty, "CardBackground");
         picture.MouseLeftButtonUp += (_, _) => Launch(new Entry("Your info", EntryKind.Shell, "ms-settings:yourinfo"));
@@ -119,7 +123,7 @@ internal sealed class StartMenuWindow : Window
             search.Focus(); search.Text += e.Text; search.CaretIndex = search.Text.Length; e.Handled = true;
         };
         Closing += (_, e) => { if (!StartMenuHost.Stopping) { e.Cancel = true; Dismiss(false); } };
-        Closed += (_, _) => { foreach (var w in watchers) w.Dispose(); };
+        Closed += (_, _) => { foreach (var w in watchers) w.Dispose(); settingsWatcher?.Dispose(); };
     }
 
     Action hoverAction;
@@ -153,7 +157,7 @@ internal sealed class StartMenuWindow : Window
 
     // ---- rows ----
 
-    Button Row(Entry e, int iconSize, bool hasJump = false, bool submenu = false, Action click = null)
+    Button Row(Entry e, int iconSize, bool hasJump = false, bool submenu = false, Action click = null, bool glyph = false)
     {
         var row = new Button { HorizontalContentAlignment = HorizontalAlignment.Stretch, Tag = e, ToolTip = e.Tip };
         row.SetResourceReference(StyleProperty, "Ghost");
@@ -165,14 +169,16 @@ internal sealed class StartMenuWindow : Window
             DockPanel.SetDock(arrow, Dock.Right); content.Children.Add(arrow);
         }
         var image = new Image { Width = iconSize, Height = iconSize, Margin = new Thickness(0, 0, 8, 0), VerticalAlignment = VerticalAlignment.Center };
-        content.Children.Add(image);
+        if (glyph && e.Glyph != null)
+            content.Children.Add(new TextBlock { Text = e.Glyph, FontFamily = new FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"), FontSize = iconSize, Width = iconSize, Margin = image.Margin, VerticalAlignment = VerticalAlignment.Center, TextAlignment = TextAlignment.Center });
+        else content.Children.Add(image);
         var text = new TextBlock { Text = e.Name, TextTrimming = TextTrimming.CharacterEllipsis, VerticalAlignment = VerticalAlignment.Center };
         if (e.New) { text.FontWeight = FontWeights.SemiBold; row.SetResourceReference(BackgroundProperty, "AccentSoft"); }
         content.Children.Add(text);
         row.Content = content;
         if (iconSize >= 24) row.MinHeight = iconSize + 8;
         AutomationProperties.SetName(row, e.Name);
-        LoadIcon(image, e, iconSize);
+        if (image.Parent != null) LoadIcon(image, e, iconSize);
         row.Click += (_, _) => { if (click != null) click(); else Launch(e); };
         row.MouseEnter += (_, _) => WhenMoved(row, () =>
         {
@@ -275,6 +281,14 @@ internal sealed class StartMenuWindow : Window
             w.EnableRaisingEvents = true;
             watchers.Add(w);
         }
+        // StartAllBack's settings changed while Pathweft runs: an open menu follows at once, a closed one at its opening
+        settingsWatcher = new StartMenuSettingsWatcher(() =>
+        {
+            var was = options;
+            options = StartMenuOptions.Read();
+            if (was.Flyout != options.Flyout || was.AppsFolder != options.AppsFolder || was.SortOrder != options.SortOrder || was.NotifyNewApps != options.NotifyNewApps) Forget();
+            if (IsVisible) _ = Refresh();
+        });
         _ = Refresh();
     }
 
@@ -291,7 +305,7 @@ internal sealed class StartMenuWindow : Window
             var (p, r, c, jumps, user) = await ShellWorker.Run(() =>
             {
                 var p = StartMenuItems.Pinned();
-                var r = StartMenuItems.Recent(o.RecentPrograms, p);
+                var r = o.TrackPrograms ? StartMenuItems.Recent(o.RecentPrograms, p) : new List<Entry>();
                 var jumps = p.Concat(r).Where(e => StartMenuShell.HasJumpList(e.Owner)).ToHashSet();
                 return (p, r, StartMenuItems.RightColumn(o), jumps, StartMenuItems.UserPicture());
             });
@@ -311,9 +325,9 @@ internal sealed class StartMenuWindow : Window
     void BuildHome()
     {
         home.Children.Clear();
-        foreach (var e in pinned) home.Children.Add(Row(e, 32, withJumpList.Contains(e)));
+        foreach (var e in pinned) home.Children.Add(Row(e, options.ProgramIcon, withJumpList.Contains(e)));
         if (pinned.Count > 0 && recent.Count > 0) home.Children.Add(Line());
-        foreach (var e in recent) home.Children.Add(Row(e, 32, withJumpList.Contains(e)));
+        foreach (var e in recent) home.Children.Add(Row(e, options.ProgramIcon, withJumpList.Contains(e)));
         allProgramsText.Text = "All Programs";
         allProgramsText.FontWeight = FontWeights.Normal;
     }
@@ -324,16 +338,20 @@ internal sealed class StartMenuWindow : Window
         foreach (var e in column)
         {
             if (ReferenceEquals(e, StartMenuItems.Separator)) { places.Children.Add(Line()); continue; }
-            var row = Row(e, options.RightPaneIcons ? 16 : 0, submenu: e.Children != null);
+            var row = Row(e, 16, submenu: e.Children != null, glyph: options.RightPaneGlyphs);
             if (e.Tip == "Personal folder") ((TextBlock)((DockPanel)row.Content).Children[^1]).FontWeight = FontWeights.SemiBold;
             places.Children.Add(row);
         }
+        var action = StartMenuPower.Button(options.PowerAction).Name;
+        powerText.Text = action;
+        AutomationProperties.SetName(powerButton, action);
+        picture.Visibility = options.UserPicture ? Visibility.Visible : Visibility.Collapsed;
         picture.Child = null;
-        if (user != null)
+        if (user != null && options.UserPicture)
             try
             {
                 var image = new BitmapImage();
-                image.BeginInit(); image.UriSource = new Uri(user); image.DecodePixelWidth = 96; image.CacheOption = BitmapCacheOption.OnLoad; image.EndInit();
+                image.BeginInit(); image.UriSource = new Uri(user); image.DecodePixelWidth = 128; image.CacheOption = BitmapCacheOption.OnLoad; image.EndInit();
                 picture.Child = new Image { Source = image, Stretch = Stretch.UniformToFill };
             }
             catch (Exception ex) when (ex is IOException or NotSupportedException or UriFormatException or ArgumentException) { }
@@ -363,7 +381,7 @@ internal sealed class StartMenuWindow : Window
         var list = await Programs();
         if (!IsVisible) return;
         flyout = new ContextMenu { PlacementTarget = allPrograms, Placement = PlacementMode.Right };
-        foreach (var e in list) flyout.Items.Add(MenuItemFor(e, openFolders: false));
+        foreach (var e in list) flyout.Items.Add(MenuItemFor(e, openFolders: false, options.AllProgramsIcon));
         Cascade(flyout);
         flyout.IsOpen = true;
     }
@@ -383,7 +401,7 @@ internal sealed class StartMenuWindow : Window
     {
         bool open = false;
         Button row = null;
-        row = Row(e, 16, click: e.Children == null ? null : Toggle);
+        row = Row(e, options.AllProgramsIcon, click: e.Children == null ? null : Toggle);
         row.Margin = new Thickness(depth * 14, 0, 0, 0);
         if (e.Children == null) return row;
         async void Toggle()
@@ -412,13 +430,13 @@ internal sealed class StartMenuWindow : Window
         HideJump();
     }
 
-    MenuItem MenuItemFor(Entry e, bool openFolders)
+    MenuItem MenuItemFor(Entry e, bool openFolders, int iconSize)
     {
         var item = new MenuItem { Header = e.Name, ToolTip = e.Tip };
         if (e.New) { item.FontWeight = FontWeights.SemiBold; item.SetResourceReference(BackgroundProperty, "AccentSoft"); }
-        var image = new Image { Width = 16, Height = 16 };
+        var image = new Image { Width = iconSize, Height = iconSize };
         item.Icon = image;
-        LoadIcon(image, e, 16);
+        LoadIcon(image, e, iconSize);
         AutomationProperties.SetName(item, e.Name);
         if (e.Children == null)
         {
@@ -434,7 +452,7 @@ internal sealed class StartMenuWindow : Window
             filled = true;
             var children = await ShellWorker.Run(e.Children);
             item.Items.Clear();
-            foreach (var c in children) item.Items.Add(MenuItemFor(c, openFolders));
+            foreach (var c in children) item.Items.Add(MenuItemFor(c, openFolders, iconSize));
         };
         // a folder of the right column's menus opens when clicked, as in Windows; All Programs' folders only cascade
         if (openFolders && e.Target != null)
@@ -462,7 +480,7 @@ internal sealed class StartMenuWindow : Window
         var children = await ShellWorker.Run(e.Children);
         if (!IsVisible || !row.IsMouseOver && !row.IsKeyboardFocusWithin) return;
         submenu = new ContextMenu { PlacementTarget = row, Placement = PlacementMode.Right };
-        foreach (var c in children) submenu.Items.Add(MenuItemFor(c, openFolders: true));
+        foreach (var c in children) submenu.Items.Add(MenuItemFor(c, openFolders: true, options.FlyoutIcon));
         Cascade(submenu);
         submenu.IsOpen = true;
     }
@@ -507,7 +525,8 @@ internal sealed class StartMenuWindow : Window
     {
         if (jumpOwner == e) { if (focus) FirstRow(jump)?.Focus(); return; }
         jumpOwner = e; jumpRow = row;
-        var categories = await ShellWorker.Run(() => StartMenuShell.JumpList(e.Owner, e.Target));
+        var o = options;
+        var categories = await ShellWorker.Run(() => StartMenuShell.JumpList(e.Owner, e.Target, o.JumpListItems, o.TrackDocuments));
         if (jumpOwner != e) return;
         jump.Children.Clear();
         foreach (var c in categories)
@@ -545,15 +564,24 @@ internal sealed class StartMenuWindow : Window
         left.Content = results;
         allProgramsText.Text = "Back";
         int shown = 0;
-        foreach (var g in new[] { StartMenuSearch.Programs(text), StartMenuSearch.Settings(text) })
-            if (g is { Total: > 0 }) shown += AddGroup(g);
+        var o = options;
+        if (o.SearchPrograms)
+            foreach (var g in new[] { StartMenuSearch.Programs(text), StartMenuSearch.Settings(text) })
+                if (g is { Total: > 0 }) shown += AddGroup(g);
+        var more = Row(new Entry("See more results", EntryKind.Command, null) { Invoke = () => { Dismiss(false); StartMenuShell.Route(MainWindow.SearchRequest + text.Trim()); } }, 0);
+        // files not searched (Windows' "Don't search" for other files): programs and settings only
+        if (o.SearchFiles == 0)
+        {
+            if (shown == 0) results.Children.Add(new TextBlock { Text = "No items match your search.", Margin = new Thickness(8, 6, 8, 6) });
+            results.Children.Add(Line()); results.Children.Add(more);
+            return;
+        }
         var pending = new TextBlock { Text = "Searching files and folders…", Margin = new Thickness(8, 6, 8, 6) };
         pending.SetResourceReference(TextBlock.ForegroundProperty, "Muted");
         results.Children.Add(pending);
-        var more = Row(new Entry("See more results", EntryKind.Command, null) { Invoke = () => { Dismiss(false); StartMenuShell.Route(MainWindow.SearchRequest + text.Trim()); } }, 0);
         results.Children.Add(Line()); results.Children.Add(more);
         List<StartMenuSearch.Group> files; string problem = null;
-        try { files = await StartMenuSearch.FilesAsync(text, token); }
+        try { files = await StartMenuSearch.FilesAsync(text, o.SearchFiles == 2, token); }
         catch (OperationCanceledException) { return; }
         catch (Exception ex) when (ex is InvalidOperationException or IOException or TimeoutException) { files = null; problem = ex.Message; }
         if (token.IsCancellationRequested) return;
@@ -578,7 +606,7 @@ internal sealed class StartMenuWindow : Window
         to ??= results;
         to.Children.Add(Header($"{g.Name} ({g.Total:N0})"));
         int n = 0;
-        foreach (var e in g.Items.Take(StartMenuSearch.PerGroup)) { to.Children.Add(Row(e, 16)); n++; }
+        foreach (var e in g.Items.Take(StartMenuSearch.PerGroup)) { to.Children.Add(Row(e, options.SearchIcon)); n++; }
         if (g.Notice != null) { var t = new TextBlock { Text = g.Notice, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(8, 0, 8, 4), FontSize = 11 }; t.SetResourceReference(TextBlock.ForegroundProperty, "Muted"); to.Children.Add(t); }
         return n;
     }

@@ -61,11 +61,14 @@ internal static class StartMenuSearch
     internal static string Expression(string text) => string.Join(' ', text.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
         .Select(w => w.Replace("\"", "")).Where(w => w.Length > 0).Select(w => "\"" + w + "\""));
 
-    /// One query per file group, visible items only, newest first. Null groups: the index did not answer.
-    internal static async Task<List<Group>> FilesAsync(string text, CancellationToken token)
+    /// One query per file group, visible items only, newest first; without the public folders when StartAllBack's
+    /// "Search public folders" is off. Null groups: the index did not answer.
+    internal static async Task<List<Group>> FilesAsync(string text, bool publicFolders, CancellationToken token)
     {
         string words = Expression(text);
         if (words.Length == 0) return [];
+        if (!publicFolders && Environment.GetEnvironmentVariable("PUBLIC") is { Length: > 2 } shared && !shared.Contains('"'))
+            words += " !path:\"" + shared.TrimEnd('\\') + "\\\"";
         var other = "file: !" + string.Join(" !", FileGroups.Skip(1).Select(g => g.Filter));
         var queries = FileGroups.Append(("Files", other)).Select(async g =>
         {

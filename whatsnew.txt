@@ -1,6 +1,15 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.114 | 2026-11-27 | The Start menu follows StartAllBack's settings
+
+- The power button does what StartAllBack's "Power button default action" says (or the Start-menu power button policy), such as Hibernate, instead of always Shut down.
+- Icon size (S, M, L) and the "Use large icons" boxes for All Programs, search and the right column's menus set the menu's icons.
+- All Programs sorts as StartAllBack's "Override sort order" says: folders first, programs first or both together.
+- The right column shows StartAllBack's glyph icons when "Display glyph icons" is on, and the user picture only when "Display user account picture" is.
+- Search leaves out programs, files or the public folders as Windows' Start-menu search settings say, and recent programs and recent items follow Windows' settings for keeping them.
+- A change in StartAllBack's configuration reaches Pathweft's menu at once, even while it is open.
+
 ## 1.1.113 | 2026-11-27 | Pathweft's own Start menu
 
 - With StartAllBack's taskbar, Pathweft can now open its own Start menu. Turn it on in Settings → Windows integration → Keyboard; then Win, Ctrl+Esc and the Start button open Pathweft's menu at the Start button, and Esc or Win again closes it. Turning it off, or the helper ending, brings StartAllBack's menu back.
