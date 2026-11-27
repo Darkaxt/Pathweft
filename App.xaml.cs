@@ -238,7 +238,7 @@ public partial class App : Application
                 if(e.Args.Contains("--resume-agent"))
                 {
                     WindowsIntegration.UpgradeOwnedRegistration();
-                    if(Settings.TakeWinE)Agent.EnableAsync(Environment.ProcessPath).GetAwaiter().GetResult();
+                    if(Agent.Wanted)Agent.EnableAsync(Environment.ProcessPath).GetAwaiter().GetResult();
                     StartupTasks.ResumeRecorder();
                 }
                 else

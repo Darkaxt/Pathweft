@@ -307,6 +307,9 @@
             <CheckBox x:Name="WinEBox" Content="Win+E opens Pathweft" Click="WinE_Click"/>
             <TextBlock Style="{StaticResource Hint}" Text="Works independently of folder integration. Turning it off returns Win+E to Explorer."/>
             <TextBlock x:Name="WinEStatus" Style="{StaticResource Hint}"/>
+            <CheckBox x:Name="StartMenuBox" Content="Win, Ctrl+Esc and the Start button open Pathweft's Start menu" Margin="0,8,0,0" Click="StartMenu_Click"/>
+            <TextBlock Style="{StaticResource Hint}" Text="For StartAllBack's taskbar. Pathweft's helper catches the Win key, Ctrl+Esc and a click on the Start button and opens its own menu at the button; Win key shortcuts such as Win+R keep working. Nothing of StartAllBack or Explorer is changed: turning this off, or Pathweft's helper ending, gives you StartAllBack's menu again."/>
+            <TextBlock x:Name="StartMenuStatus" Style="{StaticResource Hint}"/>
             <TextBlock Text="Startup and window behavior" FontWeight="SemiBold" Margin="0,8,0,6"/>
             <CheckBox x:Name="TrayBox" Content="Close to the notification area" Click="Tray_Click"/>
             <TextBlock Style="{StaticResource Hint}" Text="Closing the window hides Pathweft next to the clock instead of quitting, so it opens again at once. Click its icon to bring it back; right-click the icon → Quit to really close."/>

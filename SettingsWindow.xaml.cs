@@ -121,11 +121,21 @@ public partial class SettingsWindow : Window
         TemplatesHideExtBox.IsChecked = Settings.NewPlusHideExtension;
         TemplatesHideDigitsBox.IsChecked = Settings.NewPlusHideDigits;
         TemplatesVariablesBox.IsChecked = Settings.NewPlusVariables;
-        DefaultBox.IsEnabled = WinEBox.IsEnabled = Settings.Profile == null;
+        DefaultBox.IsEnabled = WinEBox.IsEnabled = StartMenuBox.IsEnabled = Settings.Profile == null;
         RefreshFolderIntegration();
         WinEBox.IsChecked = Settings.TakeWinE;
-        try{WinEStatus.Text=Agent.IsReady?"Win+E is enabled.":Settings.TakeWinE?"Win+E is unavailable. Switch it off and on to start it.":"Win+E integration is off.";}
+        try{WinEStatus.Text=Agent.IsReady&&Settings.TakeWinE?"Win+E is enabled.":Settings.TakeWinE?"Win+E is unavailable. Switch it off and on to start it.":"Win+E integration is off.";}
         catch(Exception ex)when(ex is System.IO.IOException or System.IO.InvalidDataException or InvalidOperationException or System.ComponentModel.Win32Exception){WinEStatus.Text=ex.Message;}
+        StartMenuBox.IsChecked = Settings.OwnStartMenu;
+        try
+        {
+            var state=StartMenu.StartMenuHost.ReadState();
+            StartMenuStatus.Text=!Settings.OwnStartMenu?"Pathweft's Start menu is off; StartAllBack's opens."
+                :!Agent.IsReady||state==null?"Pathweft's Start menu is unavailable. Switch it off and on to start it."
+                :!state.Hooks?"Pathweft's Start menu opens with Win and Ctrl+Esc; the Start button could not be watched, so it opens StartAllBack's."
+                :state.Note??$"Pathweft's Start menu is on ({state.Orbs} Start button{(state.Orbs==1?"":"s")}).";
+        }
+        catch(Exception ex)when(ex is System.IO.IOException or System.IO.InvalidDataException or InvalidOperationException or System.ComponentModel.Win32Exception){StartMenuStatus.Text=ex.Message;}
         TrayBox.IsChecked = Settings.CloseToTray;
         StartupBox.IsChecked = Settings.StartWithWindows; // off unless the user turns it on: nothing else writes it
         StartupStatus.Text = Settings.Profile == null && !StartupTasks.ProtectedInstall ? StartupTasks.UnprotectedLaunch : "";
@@ -221,7 +231,7 @@ public partial class SettingsWindow : Window
     /// history retention in System analysis, and remembered state.
     internal static readonly string[] NotReset =
     {
-        "wine", "tray", "adminatstart", "taskbarsearch", "taskbarsearchbox", "preview", "previewwidth", "lastseen", "recent", "destinations", "sidebar", "sidebarorder", "sidebarcollapsed", "split", "maximized", "window", "quicklist",
+        "wine", "startmenu", "tray", "adminatstart", "taskbarsearch", "taskbarsearchbox", "preview", "previewwidth", "lastseen", "recent", "destinations", "sidebar", "sidebarorder", "sidebarcollapsed", "split", "maximized", "window", "quicklist",
         "performance.days", "crcfolders", "crcarchives", "hashlower", // chosen from a Details column header, like the other remembered view state
         "copydetails", // Copy…'s last choices
         "compress", // Compress…'s last choices, remembered as 7-Zip's Add to archive does
@@ -728,12 +738,27 @@ public partial class SettingsWindow : Window
         Settings.TakeWinE = WinEBox.IsChecked == true;
         Settings.Save();
         WinEBox.IsEnabled=false;
-        try { if(Settings.TakeWinE)await Agent.EnableAsync(Environment.ProcessPath);else await Agent.DisableAsync(); }
+        try { await Agent.ApplyAsync(Environment.ProcessPath); }
         catch (Exception ex) when (ex is UnauthorizedAccessException or System.Security.SecurityException or System.IO.IOException or InvalidOperationException or System.ComponentModel.Win32Exception)
         {
             Settings.TakeWinE = previous; Settings.Save(); WinEBox.IsChecked = previous;
             MessageBox.Show(this, ex.Message, "Couldn't change Win+E");
         }
         finally{ShowValues();}
+    }
+
+    async void StartMenu_Click(object s, RoutedEventArgs e)
+    {
+        bool previous = Settings.OwnStartMenu;
+        Settings.OwnStartMenu = StartMenuBox.IsChecked == true;
+        Settings.Save();
+        StartMenuBox.IsEnabled=false;
+        try { await Agent.ApplyAsync(Environment.ProcessPath); }
+        catch (Exception ex) when (ex is UnauthorizedAccessException or System.Security.SecurityException or System.IO.IOException or InvalidOperationException or System.ComponentModel.Win32Exception)
+        {
+            Settings.OwnStartMenu = previous; Settings.Save(); StartMenuBox.IsChecked = previous;
+            MessageBox.Show(this, ex.Message, "Couldn't change the Start menu");
+        }
+        finally{StartMenuBox.IsEnabled=Settings.Profile == null;ShowValues();}
     }
 }

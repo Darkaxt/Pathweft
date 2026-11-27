@@ -8,8 +8,8 @@ using Microsoft.Win32;
 
 namespace FileExplorer;
 
-// Optional, windowless Win+E ownership only. Folder requests use Shell verbs;
-// explicit Explorer launches, virtual locations and Open/Save dialogs stay native.
+// Optional, windowless helper for Win+E and Pathweft's Start menu (StartMenu/StartMenuHost.cs).
+// Folder requests use Shell verbs; explicit Explorer launches, virtual locations and Open/Save dialogs stay native.
 public static class Agent
 {
     const string RunKey=@"Software\Microsoft\Windows\CurrentVersion\Run",RunValue="Pathweft Agent";
@@ -59,7 +59,7 @@ public static class Agent
             _=process.Handle;
             if(process.HasExited||process.StartTime.ToUniversalTime().Ticks!=owner.Started){process.Dispose();return null;}
             if(!string.Equals(process.MainModule.FileName,owner.Exe,StringComparison.OrdinalIgnoreCase)||!string.Equals(owner.Exe,Environment.ProcessPath,StringComparison.OrdinalIgnoreCase))
-                throw new InvalidOperationException("A different Pathweft copy owns the Win+E helper.");
+                throw new InvalidOperationException("A different Pathweft copy owns the Pathweft helper.");
             return process;
         }
         catch{process.Dispose();throw;}
@@ -73,14 +73,23 @@ public static class Agent
             using(signal)return signal.WaitOne(0)&&!process.HasExited;
         }
     }
+    /// Whether the helper has anything to do: Win+E, the Start menu, or both.
+    internal static bool Wanted=>Settings.TakeWinE||Settings.OwnStartMenu;
     public static Task EnableAsync(string exe)=>Task.Run(()=>Enable(exe));
+    /// After either setting changes: a running helper restarts with the new settings, or stops when neither is on.
+    public static Task ApplyAsync(string exe)=>Task.Run(()=>
+    {
+        if(!Wanted){Disable();return;}
+        if(Settings.Profile!=null&&!Trial)throw new InvalidOperationException("A test profile cannot register the Pathweft helper.");
+        StopOwned();Enable(exe);
+    });
     static void Enable(string exe)
     {
-        if(Settings.Profile!=null&&!Trial)throw new InvalidOperationException("A test profile cannot register Win+E.");
+        if(Settings.Profile!=null&&!Trial)throw new InvalidOperationException("A test profile cannot register the Pathweft helper.");
         using var run=Registry.CurrentUser.CreateSubKey(StartupKey);
         var previous=run.GetValue(RunValue) as string;
         if(previous!=null && previous!=Command(exe))
-            throw new InvalidOperationException("Another Pathweft copy owns Win+E. Disable its integration before choosing this copy.");
+            throw new InvalidOperationException("Another Pathweft copy owns the Pathweft helper (Win+E and the Start menu). Turn them off in that copy first.");
         bool added=previous==null;
         Process launched=null;
         try
@@ -99,14 +108,14 @@ public static class Agent
                         var value=Environment.GetEnvironmentVariable(name,EnvironmentVariableTarget.User)??Environment.GetEnvironmentVariable(name,EnvironmentVariableTarget.Machine);
                         if(value!=null)launch.Environment[name]=Environment.ExpandEnvironmentVariables(value);else launch.Environment.Remove(name);
                     }
-                var process=launched=Process.Start(launch)??throw new IOException("Win+E helper did not start.");
+                var process=launched=Process.Start(launch)??throw new IOException("The Pathweft helper did not start.");
                 IntPtr[] handles={signal.SafeWaitHandle.DangerousGetHandle(),process.Handle};
                 uint result=WaitForMultipleObjects(2,handles,false,uint.MaxValue);
                 if(result==uint.MaxValue)throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error());
                 if(result!=0||!IsReady)
                 {
                     process.WaitForExit();
-                    throw new IOException($"Win+E helper exited before hook readiness (exit {process.ExitCode}).");
+                    throw new IOException($"The Pathweft helper exited before its hooks were ready (exit {process.ExitCode}).");
                 }
             }
             run.SetValue(RunValue,Command(exe));
@@ -131,18 +140,18 @@ public static class Agent
     {
         using var process=OwnedProcess();
         if(process==null)return;
-        if(!EventWaitHandle.TryOpenExisting(StopEventName,out var signal))throw new IOException("The Win+E helper has no shutdown signal.");
+        if(!EventWaitHandle.TryOpenExisting(StopEventName,out var signal))throw new IOException("The Pathweft helper has no shutdown signal.");
         using(signal)signal.Set();
         process.WaitForExit();
-        if(process.ExitCode!=0)throw new IOException($"The Win+E helper stopped with exit {process.ExitCode}.");
+        if(process.ExitCode!=0)throw new IOException($"The Pathweft helper stopped with exit {process.ExitCode}.");
     }
     public static void Disable()
     {
-        if(Settings.Profile!=null&&!Trial)throw new InvalidOperationException("A test profile cannot change Win+E.");
+        if(Settings.Profile!=null&&!Trial)throw new InvalidOperationException("A test profile cannot change the Pathweft helper.");
         using var run=Registry.CurrentUser.OpenSubKey(StartupKey,true);
         var current=run?.GetValue(RunValue) as string;
         if(current!=null && current!=Command(Environment.ProcessPath))
-            throw new InvalidOperationException("Another Pathweft copy owns Win+E; its settings were left unchanged.");
+            throw new InvalidOperationException("Another Pathweft copy owns the Pathweft helper; its settings were left unchanged.");
         StopOwned();
         run?.DeleteValue(RunValue,false);
     }
@@ -150,7 +159,7 @@ public static class Agent
     public static int Run(System.Windows.Application app)
     {
         Settings.Load();
-        if(Settings.Profile!=null&&!Trial || !Settings.TakeWinE)return 0;
+        if(Settings.Profile!=null&&!Trial || !Wanted)return 0;
         single=new Mutex(true,MutexName,out bool first);
         if(!first){single.Dispose();single=null;return 0;}
         stop=new EventWaitHandle(false,EventResetMode.AutoReset,StopEventName);
@@ -158,11 +167,17 @@ public static class Agent
         callback=Hook;
         hook=SetWindowsHookEx(13,callback,GetModuleHandle(null),0);
         if(hook==IntPtr.Zero){ready.Dispose();stop.Dispose();single.ReleaseMutex();single.Dispose();return 1;}
+        if(Settings.OwnStartMenu)
+        {
+            // the menu follows Pathweft's colours; its window is made now so the first press only shows it
+            Appearance.Apply();
+            if(!StartMenu.StartMenuHost.Start())Log("start menu: mouse hook unavailable, Win and Ctrl+Esc only");
+        }
         waiting=ThreadPool.RegisterWaitForSingleObject(stop,(_,_)=>app.Dispatcher.BeginInvoke(()=>app.Shutdown()),null,-1,true);
         app.ShutdownMode=System.Windows.ShutdownMode.OnExplicitShutdown;
         app.Exit+=(_,_)=>
         {
-            ready.Reset();UnhookWindowsHookEx(hook);waiting.Unregister(null);stop.Dispose();ready.Dispose();
+            ready.Reset();UnhookWindowsHookEx(hook);StartMenu.StartMenuHost.Stop();waiting.Unregister(null);stop.Dispose();ready.Dispose();
             File.Delete(OwnerPath);
             single.ReleaseMutex();single.Dispose();Log("stopped");
         };
@@ -175,7 +190,12 @@ public static class Agent
     internal static bool Matches(bool windows,bool control,bool alt,bool shift)=>windows&&!control&&!alt&&!shift;
     static IntPtr Hook(int code,IntPtr message,IntPtr data)
     {
-        if(code>=0 && Marshal.ReadInt32(data)==0x45)
+        if(code>=0&&Settings.OwnStartMenu)
+        {
+            bool pressed=message==(IntPtr)0x100||message==(IntPtr)0x104,released=message==(IntPtr)0x101||message==(IntPtr)0x105;
+            if(StartMenu.StartMenuHost.Keyboard(Marshal.ReadInt32(data),pressed,released,Marshal.ReadIntPtr(data,16)))return (IntPtr)1;
+        }
+        if(code>=0 && Settings.TakeWinE && Marshal.ReadInt32(data)==0x45)
         {
             bool down=message==(IntPtr)0x100||message==(IntPtr)0x104;
             if(down && Matches(Held(0x5b)||Held(0x5c),Held(0x11),Held(0x12),Held(0x10)))

@@ -55,6 +55,7 @@ public static class Settings
     public static string LastSeenVersion = "";   // What's new is shown once per version
     public static bool NativeMenu;          // right-click shows the Windows menu instead of ours
     public static bool TakeWinE;         // with Windows integration on, Win+E opens Pathweft; off = File Explorer
+    public static bool OwnStartMenu;     // Win, Ctrl+Esc and the Start button open Pathweft's Start menu (S6, beside StartAllBack); off = StartAllBack's
     public static bool PreviewLoop;             // the media preview starts each video or song over at its end (its Loop button)
     public static bool CloseToTray;             // closing hides the window to the notification area; the next open is instant
     public static bool CloseEmptyPane;          // closing the second pane's last tab hides that pane (one pane), as Ctrl+P does
@@ -172,6 +173,7 @@ public static class Settings
                 case "shortcutfolders": ShortcutsWithFolders = v == "1"; break;
                 case "nativemenu": NativeMenu = v == "1"; break;
                 case "wine": TakeWinE = v != "0"; break;
+                case "startmenu": OwnStartMenu = v == "1"; break;
                 case "lastseen": LastSeenVersion = v; break;
                 case "tray": CloseToTray = v == "1"; break;
                 case "previewloop": PreviewLoop = v == "1"; break;
@@ -270,6 +272,7 @@ public static class Settings
             $"shortcutfolders={(ShortcutsWithFolders ? 1 : 0)}",
             $"nativemenu={(NativeMenu ? 1 : 0)}",
             $"wine={(TakeWinE ? 1 : 0)}",
+            $"startmenu={(OwnStartMenu ? 1 : 0)}",
             $"lastseen={LastSeenVersion}",
             $"tray={(CloseToTray ? 1 : 0)}",
             $"previewloop={(PreviewLoop ? 1 : 0)}",
@@ -315,7 +318,7 @@ public static class Settings
     public static void SetDefaultFileManager(bool on) => WindowsIntegration.SetEnabled(on);
     public static void SetWinE(bool on)
     {
-        if (on) Agent.EnableAsync(Environment.ProcessPath).GetAwaiter().GetResult(); else Agent.Disable();
+        Agent.ApplyAsync(Environment.ProcessPath).GetAwaiter().GetResult();
     }
 
 }
