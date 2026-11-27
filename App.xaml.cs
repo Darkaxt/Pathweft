@@ -282,6 +282,24 @@ public partial class App : Application
             return;
         }
 
+#if DEBUG
+        // S6c: renders the Start menu with this user's settings to a PNG; before the single-instance mutex, so a
+        // running Pathweft is neither handed anything nor disturbed, and no window is shown.
+        if (e.Args.FirstOrDefault(a => a.StartsWith("--render-start-menu=")) is { } startRender)
+        {
+            string png = Path.GetFullPath(startRender["--render-start-menu=".Length..]);
+            if (!png.StartsWith(@"E:\Temp\pathweft-s6c\", StringComparison.OrdinalIgnoreCase)) { Shutdown(2); return; }
+            Settings.Load(); Appearance.Initialize();
+            ShutdownMode = ShutdownMode.OnExplicitShutdown;
+            Dispatcher.InvokeAsync(async () =>
+            {
+                int code = 1;
+                try { code = await new StartMenu.StartMenuWindow().RenderForVerification(png); }
+                finally { Shutdown(code); }
+            });
+            return;
+        }
+#endif
         // Single instance: a second launch (folder double-click, Win+E) hands its path to the
         // running window, which opens it as a new tab, then exits.
         instance = new Mutex(true, Program.PipeName, out bool first);

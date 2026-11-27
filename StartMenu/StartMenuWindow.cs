@@ -714,11 +714,7 @@ internal sealed class StartMenuWindow : Window
     /// against the orb on the taskbar's side, kept inside the monitor's work area.
     void Place(StartMenuHost.Orb orb)
     {
-        // as tall as the pinned and recent programs need, never less than Windows 7's menu
-        Width = MenuWidth;
-        home.Measure(new Size(LeftWidth, double.PositiveInfinity));
-        places.Measure(new Size(MenuWidth - LeftWidth, double.PositiveInfinity));
-        Height = Math.Max(MenuHeight, Math.Max(home.DesiredSize.Height + 130, places.DesiredSize.Height + 130));
+        Fit();
         var area = WorkArea(orb);
         SetWindowPos(handle, IntPtr.Zero, area.Left, area.Top, 0, 0, 0x0001 | 0x0004 | 0x0010); // no size, no z-order, no activate
         GetWindowRect(handle, out var now);
@@ -739,6 +735,37 @@ internal sealed class StartMenuWindow : Window
         y = Math.Max(area.Top, Math.Min(y, area.Bottom - h));
         SetWindowPos(handle, (IntPtr)(-1), x, y, w, h, 0x0010); // topmost, no activate
     }
+
+    /// As tall as the pinned and recent programs need, never less than Windows 7's menu.
+    void Fit()
+    {
+        Width = MenuWidth;
+        home.Measure(new Size(LeftWidth, double.PositiveInfinity));
+        places.Measure(new Size(MenuWidth - LeftWidth, double.PositiveInfinity));
+        Height = Math.Max(MenuHeight, Math.Max(home.DesiredSize.Height + 130, places.DesiredSize.Height + 130));
+    }
+
+#if DEBUG
+    /// S6c side-by-side check: the menu as the current settings make it, rendered to a PNG without being shown.
+    internal async Task<int> RenderForVerification(string png)
+    {
+        handle = new WindowInteropHelper(this).EnsureHandle();
+        await Refresh();
+        Fit();
+        var root = (FrameworkElement)Content;
+        void Layout() { root.Measure(new Size(Width, Height)); root.Arrange(new Rect(0, 0, Width, Height)); root.UpdateLayout(); }
+        Layout();
+        await Task.Delay(3000); // the icons load on the Shell thread
+        Layout();
+        var dpi = VisualTreeHelper.GetDpi(root);
+        var bmp = new RenderTargetBitmap((int)Math.Ceiling(Width * dpi.DpiScaleX), (int)Math.Ceiling(Height * dpi.DpiScaleY), dpi.PixelsPerInchX, dpi.PixelsPerInchY, PixelFormats.Pbgra32);
+        bmp.Render(root);
+        var encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(bmp));
+        using (var f = File.Create(png)) encoder.Save(f);
+        File.WriteAllText(png + ".txt", $"icon={options.ProgramIcon} power={options.PowerAction} glyphs={options.RightPaneGlyphs} picture={options.UserPicture} sort={options.SortOrder} pinned={pinned.Count} recent={recent.Count} dpi={dpi.PixelsPerInchX}");
+        return 0;
+    }
+#endif
 
     static StartMenuHost.RECT WorkArea(StartMenuHost.Orb orb)
     {
