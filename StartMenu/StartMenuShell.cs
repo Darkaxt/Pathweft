@@ -275,8 +275,9 @@ internal static class StartMenuShell
         var value = new PROPVARIANT();
         try
         {
-            if (store.GetValue(ref key, out value) != 0 || value.vt != 31) return null;
-            return Marshal.PtrToStringUni(value.p);
+            if (store.GetValue(ref key, out value) != 0) return null;
+            // VT_LPWSTR, or VT_BSTR as some installers (Inno Setup's, Directory Opus's) write a shortcut's AppUserModelID
+            return value.vt switch { 31 => Marshal.PtrToStringUni(value.p), 8 => Marshal.PtrToStringBSTR(value.p), _ => null };
         }
         finally { PropVariantClear(ref value); }
     }

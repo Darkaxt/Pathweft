@@ -3,7 +3,7 @@
 
 ## 1.1.115 | 2026-11-28 | Start menu jump-list arrows
 
-- The Start menu shows a jump-list arrow only beside programs whose jump list has something in it.
+- The Start menu shows a jump-list arrow only beside programs whose jump list has something in it, and Pathweft's and Directory Opus's jump lists now show (their shortcuts give their ID in a form the menu didn't read).
 - Recent programs stay the ones you really use most, and newly installed programs stay highlighted, where StartAllBack's own menu does otherwise.
 
 ## 1.1.114 | 2026-11-27 | The Start menu follows StartAllBack's settings
