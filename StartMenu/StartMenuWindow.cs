@@ -26,6 +26,7 @@ internal sealed class StartMenuWindow : Window
     readonly TextBlock hint = new() { Text = "Search programs and files", IsHitTestVisible = false, VerticalAlignment = VerticalAlignment.Center };
     readonly TextBlock lens = new() { FontFamily = new FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"), FontSize = 12, VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Center };
     readonly Border lensHost = new() { Width = 24, Background = Brushes.Transparent, HorizontalAlignment = HorizontalAlignment.Left };
+    ThemePart searchGlyph; // a theme's own search glyph (Windows 7: at the box's right), else the lens glyph at its left
     readonly SearchFrame searchFrame = new();
     readonly Grid searchHost = new();
     readonly TextBlock notice = new() { TextWrapping = TextWrapping.Wrap, Margin = new Thickness(8, 4, 8, 0), Visibility = Visibility.Collapsed };
@@ -38,7 +39,7 @@ internal sealed class StartMenuWindow : Window
     SkinButton allPrograms, powerButton, powerMenu;
     readonly TextBlock allProgramsText = new() { VerticalAlignment = VerticalAlignment.Center };
     readonly ContentControl allProgramsArrow = new() { VerticalAlignment = VerticalAlignment.Center, Focusable = false, IsTabStop = false };
-    readonly TextBlock allProgramsLens = new() { Text = "", FontFamily = new FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"), FontSize = 12, Margin = new Thickness(0, 0, 6, 0), VerticalAlignment = VerticalAlignment.Center, Visibility = Visibility.Collapsed };
+    readonly TextBlock allProgramsLens = new() { Text = "\uE721", FontFamily = new FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"), FontSize = 12, Margin = new Thickness(0, 0, 6, 0), VerticalAlignment = VerticalAlignment.Center, Visibility = Visibility.Collapsed };
     readonly StartMenuPicture picture = new();
     readonly DispatcherTimer hover = new() { Interval = TimeSpan.FromMilliseconds(Math.Max(1, SystemParameters.MenuShowDelay)) };
     const double PlaceRow = 35;
@@ -76,20 +77,16 @@ internal sealed class StartMenuWindow : Window
         {
             bool empty = search.Text.Length == 0;
             hint.Visibility = empty ? Visibility.Visible : Visibility.Collapsed;
-            lens.Text = empty ? "" : "";
-            lensHost.Cursor = empty ? null : Cursors.Arrow;
+            ShowLens();
             Search();
         };
         search.GotKeyboardFocus += (_, _) => { SelectFirst(); searchFrame.Show(searchHost.IsMouseOver, true); };
         search.LostKeyboardFocus += (_, _) => { SelectFirst(); searchFrame.Show(searchHost.IsMouseOver, false); };
         searchHost.MouseEnter += (_, _) => searchFrame.Show(true, search.IsKeyboardFocusWithin);
         searchHost.MouseLeave += (_, _) => searchFrame.Show(false, search.IsKeyboardFocusWithin);
-        lens.Text = "";
-        lensHost.Child = lens;
         lensHost.MouseLeftButtonUp += (_, _) => { if (search.Text.Length > 0) { search.Text = ""; search.Focus(); } };
         AutomationProperties.SetName(search, "Search programs and files");
         searchHost.Children.Add(searchFrame); searchHost.Children.Add(search); searchHost.Children.Add(hint); searchHost.Children.Add(lensHost);
-        search.Margin = new Thickness(26, 0, 4, 0); hint.Margin = new Thickness(28, 0, 0, 0);
 
         // All Programs, which during a search is "See more results"
         allPrograms = new SkinButton(SkinButton.Area.AllPrograms, skin);
@@ -111,7 +108,7 @@ internal sealed class StartMenuWindow : Window
         AutomationProperties.SetName(powerMenu, "Shut down options");
         powerMenu.Click += (_, _) => PowerMenu(powerMenu);
         var powerContent = new StackPanel { Orientation = Orientation.Horizontal };
-        powerContent.Children.Add(new TextBlock { Text = "", FontFamily = new FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"), FontSize = 14, Margin = new Thickness(0, 0, 6, 0), VerticalAlignment = VerticalAlignment.Center });
+        powerContent.Children.Add(new TextBlock { FontFamily = new FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"), FontSize = 14, Margin = new Thickness(0, 0, 6, 0), VerticalAlignment = VerticalAlignment.Center });
         powerContent.Children.Add(powerText);
         powerButton = new SkinButton(SkinButton.Area.SignOut, skin) { Content = powerContent, HorizontalContentAlignment = HorizontalAlignment.Left };
         powerButton.Click += (_, _) => { Dismiss(false); StartMenuPower.Button(options.PowerAction).Run(); };
@@ -149,6 +146,15 @@ internal sealed class StartMenuWindow : Window
     }
 
     bool Searching => left.Content == results;
+
+    /// The search box's glyph: the theme's own while the box is empty, else the lens; a clear button while there is text.
+    void ShowLens()
+    {
+        bool empty = search.Text.Length == 0;
+        if (empty && searchGlyph != null) lensHost.Child = searchGlyph;
+        else { lens.Text = empty ? "\uE721" : "\uE711"; lensHost.Child = lens; }
+        lensHost.Cursor = empty ? null : Cursors.Arrow;
+    }
     readonly List<UIElement> homeParts = [], searchParts = [];
 
     /// The panel as the current style lays it out: the left column, All Programs and the bottom band down the left;
@@ -196,7 +202,7 @@ internal sealed class StartMenuWindow : Window
             Put(band, 2, 0, cols: 2);
             Put(new Border { Background = s.Separator, Height = 1, VerticalAlignment = VerticalAlignment.Top }, 2, 0, cols: 2);
             Put(new Border { Background = s.Separator, Height = 1, VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(8, 0, 8, 0) }, 1, 0);
-            allProgramsArrow.Content = new TextBlock { Text = "", FontFamily = new FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"), FontSize = 10 };
+            allProgramsArrow.Content = new TextBlock { Text = "\uE76C", FontFamily = new FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"), FontSize = 10 };
             allPrograms.Margin = new Thickness(8, 2, 8, 1); allPrograms.Padding = new Thickness(29, 0, 14, 0);
         }
         allPrograms.Skin = s; allPrograms.Foreground = s.AllProgramsText;
@@ -210,6 +216,11 @@ internal sealed class StartMenuWindow : Window
         searchHost.Margin = new Thickness(r.X, r.Y, 0, 0);
         searchFrame.Skin = s;
         search.Foreground = s.SearchText; search.CaretBrush = s.SearchText; hint.Foreground = s.SearchHint; lens.Foreground = s.SearchHint;
+        searchGlyph = s.Themed && s.SearchPart(2) is { DpiImages.Length: > 0 } glyphPart ? new ThemePart(glyphPart) : null;
+        lensHost.HorizontalAlignment = searchGlyph != null ? HorizontalAlignment.Right : HorizontalAlignment.Left;
+        search.Margin = searchGlyph != null ? new Thickness(6, 0, 24, 0) : new Thickness(26, 0, 4, 0);
+        hint.Margin = searchGlyph != null ? new Thickness(8, 0, 24, 0) : new Thickness(28, 0, 0, 0);
+        ShowLens();
         Put(searchHost, 2, 0);
         var o = s.SignOutRect;
         power.Margin = new Thickness(o.X, o.Y, 0, 0);
@@ -217,8 +228,8 @@ internal sealed class StartMenuWindow : Window
         powerButton.Skin = powerMenu.Skin = s;
         powerButton.Foreground = powerMenu.Foreground = s.SignOutText;
         powerMenu.Content = s.Themed && s.Part(StartMenuSkin.SplitButton) != null
-            ? new TextBlock { Text = "", FontFamily = new FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"), FontSize = 8 }
-            : new TextBlock { Text = "", FontFamily = new FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"), FontSize = 10 };
+            ? new TextBlock { Text = "\uE76C", FontFamily = new FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"), FontSize = 8 }
+            : new TextBlock { Text = "\uE76C", FontFamily = new FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"), FontSize = 10 };
         Put(power, 2, 1);
         notice.Foreground = s.Muted;
         picture.Restyle(s);
@@ -298,7 +309,7 @@ internal sealed class StartMenuWindow : Window
             content.Children.Add(new TextBlock { Text = e.Glyph, FontFamily = new FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"), FontSize = iconSize, Width = iconSize, Margin = image.Margin, VerticalAlignment = VerticalAlignment.Center, TextAlignment = TextAlignment.Center });
         else content.Children.Add(image);
         var text = new TextBlock { Text = e.Name, TextTrimming = TextTrimming.CharacterEllipsis, VerticalAlignment = VerticalAlignment.Center };
-        if (e.New) { text.FontWeight = FontWeights.SemiBold; row.SetResourceReference(BackgroundProperty, "AccentSoft"); }
+        if (e.New) { text.FontWeight = FontWeights.SemiBold; row.Background = skin.NewFill; }
         content.Children.Add(text);
         // a right-column item shows its large icon in the user picture's place while it is hot
         if (area == SkinButton.Area.RightItem)
@@ -352,7 +363,7 @@ internal sealed class StartMenuWindow : Window
         var ink = area == SkinButton.Area.RightItem ? skin.RightText : skin.LeftText;
         if (skin.Themed)
             return new System.Windows.Shapes.Polygon { Points = [new Point(0, 0), new Point(4, 4), new Point(0, 8)], Fill = ink, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
-        return new TextBlock { Text = "", FontFamily = new FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"), FontSize = 9, Foreground = ink, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+        return new TextBlock { Text = "\uE76C", FontFamily = new FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"), FontSize = 9, Foreground = ink, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
     }
 
     /// A separator: the theme's separator part, or Default's faint grey line.
@@ -476,7 +487,7 @@ internal sealed class StartMenuWindow : Window
             BuildHome(); BuildPlaces(user);
             // All Programs is highlighted while it holds a new program, as Windows 7's menu does
             var all = await Programs();
-            if (StartMenuItems.Flatten(all).Any(x => x.New)) allPrograms.SetResourceReference(BackgroundProperty, "AccentSoft"); else allPrograms.ClearValue(BackgroundProperty);
+            if (StartMenuItems.Flatten(all).Any(x => x.New)) allPrograms.Background = skin.NewFill; else allPrograms.ClearValue(BackgroundProperty);
             _ = StartMenuSearch.Load(o);
         }
         catch (Exception ex) when (ex is COMException or IOException or UnauthorizedAccessException or InvalidOperationException)
@@ -507,6 +518,8 @@ internal sealed class StartMenuWindow : Window
         }
         var action = StartMenuPower.Button(options.PowerAction).Name;
         powerText.Text = action;
+        // StartAllBack shows a key beside Sign out and the power symbol beside the other actions
+        ((TextBlock)((StackPanel)powerButton.Content).Children[0]).Text = action == "Sign out" ? "\uE8D7" : "\uE7E8";
         AutomationProperties.SetName(powerButton, action);
         userPicture = null;
         if (user != null && options.UserPicture)

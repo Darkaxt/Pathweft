@@ -77,6 +77,9 @@ internal sealed class StartMenuSkin
     internal Brush RightText => Themed ? PartText(PlacesBack, Ink) : Solid(Ink);
     internal Brush AllProgramsText => Themed ? PartText(AllProgramsBand, Ink) : Solid(Ink);
     internal Brush SignOutText => Themed ? PartText(SignOut, Ink) : Solid(Ink);
+    /// A new program's row (and All Programs while it holds one): Pathweft keeps this highlight (SAB-08), drawn as the
+    /// menu's own translucent box in Windows' accent colour so the row's text stays readable over the glass.
+    internal Brush NewFill { get { var a = SystemParameters.WindowGlassColor; return Solid(Color.FromArgb(Dark ? (byte)0x66 : (byte)0x48, a.R, a.G, a.B)); } }
     internal Brush Muted => Solid(Dark ? Color.FromRgb(0xA0, 0xA0, 0xA0) : Color.FromRgb(0x60, 0x60, 0x60));
     /// Default's separators: grey at about a fifth (light) or a quarter (dark).
     internal Brush Separator => Solid(Color.FromArgb(Dark ? (byte)0x3B : (byte)0x33, 0x6E, 0x6E, 0x6E));
@@ -232,7 +235,7 @@ internal sealed class SearchFrame : FrameworkElement
             return;
         }
         var pen = new Pen(skin.SearchEdge, 1); pen.Freeze();
-        dc.DrawRectangle(skin.SearchFill, pen, new Rect(0.5, 0.5, r.Width - 1, r.Height - 1));
+        dc.DrawRoundedRectangle(skin.SearchFill, pen, new Rect(0.5, 0.5, r.Width - 1, r.Height - 1), 3, 3);
     }
 }
 
@@ -302,8 +305,20 @@ internal sealed class StartMenuPicture : Window
         bool showing = item != null;
         icon.Visibility = showing ? Visibility.Visible : Visibility.Collapsed;
         clip.Visibility = showing ? Visibility.Hidden : Visibility.Visible;
-        // Default drops its circle for the item's icon; a theme keeps its frame
-        ring.Visibility = showing && skin?.Themed != true ? Visibility.Hidden : Visibility.Visible;
+        // StartAllBack shows the item's icon alone, without the circle or a theme's frame
+        ring.Visibility = showing ? Visibility.Hidden : Visibility.Visible;
+#if DEBUG
+        // S6d guest check: what WPF itself draws in the picture window while an item's icon shows
+        if (showing && Environment.GetEnvironmentVariable("PATHWEFT_PICTURE_DUMP") is { Length: > 0 } dump)
+            Dispatcher.BeginInvoke(() =>
+            {
+                var bmp = new RenderTargetBitmap(Math.Max(1, (int)ActualWidth), Math.Max(1, (int)ActualHeight), 96, 96, PixelFormats.Pbgra32);
+                bmp.Render(root);
+                var png = new PngBitmapEncoder(); png.Frames.Add(BitmapFrame.Create(bmp));
+                using var f = System.IO.File.Create(System.IO.Path.Combine(dump, "picture-" + DateTime.Now.ToString("HHmmss") + ".png"));
+                png.Save(f);
+            }, System.Windows.Threading.DispatcherPriority.Render);
+#endif
     }
 
     [DllImport("user32.dll")] static extern int GetWindowLong(IntPtr h, int index);
