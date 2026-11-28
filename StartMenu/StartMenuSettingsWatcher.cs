@@ -6,7 +6,7 @@ using Microsoft.Win32.SafeHandles;
 namespace FileExplorer.StartMenu;
 
 /// SAB-07 (S6c): a change to StartAllBack's Start-menu settings (HKCU\Software\StartIsBack) or to the Windows 7 menu
-/// settings in Explorer\Advanced (or the power button's policy) reaches the menu at once, as it reaches StartAllBack's: both keys are watched
+/// settings in Explorer\Advanced (or the power button's policy, or Windows' dark mode for S6d's visual styles) reaches the menu at once, as it reaches StartAllBack's: both keys are watched
 /// (RegNotifyChangeKeyValue, values only, never their subkeys, so licensing is never touched) and each burst of
 /// changes is reported once, on the thread that made the watcher.
 internal sealed class StartMenuSettingsWatcher : IDisposable
@@ -26,7 +26,7 @@ internal sealed class StartMenuSettingsWatcher : IDisposable
 
     void Watch(Action changed)
     {
-        string[] names = [StartMenuOptions.Key, StartMenuOptions.AdvancedKey, StartMenuOptions.PolicyKey];
+        string[] names = [StartMenuOptions.Key, StartMenuOptions.AdvancedKey, StartMenuOptions.PolicyKey, StartMenuOptions.PersonalizeKey];
         var keys = new RegistryKey[names.Length];
         var events = new AutoResetEvent[names.Length];
         try

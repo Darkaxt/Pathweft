@@ -40,13 +40,23 @@ internal sealed record StartMenuOptions
     internal bool TrackDocuments { get; init; } = true;
     /// Recent items in jump lists and in Recent items.
     internal int JumpListItems { get; init; } = 10;
+    /// SAB-07 (S6d): "Visual style" (AlterStyle: empty for Default, else a theme file in StartAllBack's Styles folder),
+    /// the menu's translucency (StartMenuAlpha, 0 clear to 255 opaque) and its blur (StartMenuBlur: acrylic, or a plain
+    /// blur), and Windows' dark mode for the shell (Personalize's SystemUsesLightTheme), which StartAllBack's menu follows.
+    internal string AlterStyle { get; init; } = "";
+    internal int Alpha { get; init; } = 128;
+    internal bool Blur { get; init; } = true;
+    internal bool Dark { get; init; }
+    internal bool AppsDark { get; init; }
 
-    internal const string Key = @"Software\StartIsBack", AdvancedKey = @"Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced";
+    internal const string Key = @"Software\StartIsBack", AdvancedKey = @"Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced",
+        PersonalizeKey = @"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize";
 
     internal static StartMenuOptions Read()
     {
         using var key = Registry.CurrentUser.OpenSubKey(Key);
         using var advanced = Registry.CurrentUser.OpenSubKey(AdvancedKey);
+        using var personalize = Registry.CurrentUser.OpenSubKey(PersonalizeKey);
         int Get(string name, int fallback) => key?.GetValue(name) is int v ? v : fallback;
         int Advanced(string name, int fallback) => advanced?.GetValue(name) is int v ? v : fallback;
         // Icon size's S, L, M are 0, 1, 2 (the Cfg combo's order)
@@ -74,6 +84,11 @@ internal sealed record StartMenuOptions
             TrackPrograms = Advanced("Start_TrackProgs", 1) != 0,
             TrackDocuments = Advanced("Start_TrackDocs", 1) != 0,
             JumpListItems = Math.Clamp(Advanced("Start_JumpListItems", Advanced("JumpListItems_Maximum", 10)), 0, 60),
+            AlterStyle = key?.GetValue("AlterStyle") as string ?? "",
+            Alpha = Math.Clamp(Get("StartMenuAlpha", 128), 0, 255),
+            Blur = Get("StartMenuBlur", 1) != 0,
+            Dark = personalize?.GetValue("SystemUsesLightTheme") is int light && light == 0,
+            AppsDark = personalize?.GetValue("AppsUseLightTheme") is int apps && apps == 0,
         };
     }
 

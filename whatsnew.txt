@@ -1,6 +1,13 @@
 # Every release's notes, newest first, shown by What's new (WhatsNewWindow.cs).
 # "## version | date | title", then the notes: "- " a point, a line in ** ** a heading, anything else a paragraph.
 
+## 1.1.116 | 2026-11-28 | The Start menu looks like StartAllBack's
+
+- Pathweft's Start menu takes StartAllBack's Visual style: Default's rounded panel, or the Windows 7, Plain8 or another installed style, drawn from StartAllBack's own style file.
+- It is see-through over a blur of the desktop as StartAllBack's Transparency and Blur are set, light or dark with Windows' mode, and follows a change at once.
+- Searching fills the whole menu with the results, the first one highlighted for Enter; See more results takes All Programs' place and the search box has a clear button.
+- Pointing at a folder in the right column shows its icon where your picture is.
+
 ## 1.1.115 | 2026-11-28 | Start menu jump-list arrows
 
 - The Start menu shows a jump-list arrow only beside programs whose jump list has something in it, and Pathweft's and Directory Opus's jump lists now show (their shortcuts give their ID in a form the menu didn't read).

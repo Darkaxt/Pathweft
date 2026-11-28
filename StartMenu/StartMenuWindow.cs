@@ -18,22 +18,31 @@ namespace FileExplorer.StartMenu;
 /// an in-place list, as StartAllBack is set) and the search box; the right column holds the user's picture and
 /// name, the known folders, Computer, Control Panel, PC settings and the commands, and the power button. Typing
 /// searches (SAB-03); folders open in Pathweft (SAB-06). S6c follows StartAllBack's layout and contents settings
-/// (icon sizes, sort order, glyphs, user picture, power button, search, recent items), live; S6d its visual styles.
+/// (icon sizes, sort order, glyphs, user picture, power button, search, recent items), live; S6d its visual styles
+/// (StartMenuSkin): the window is the panel itself, over Windows' glass, with the user picture in its own window above.
 internal sealed class StartMenuWindow : Window
 {
-    readonly TextBox search = new() { MinHeight = 30, Padding = new Thickness(8, 5, 8, 5), VerticalContentAlignment = VerticalAlignment.Center };
-    readonly TextBlock hint = new() { Text = "Search programs and files", IsHitTestVisible = false, Margin = new Thickness(11, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
+    readonly TextBox search = new() { Background = Brushes.Transparent, BorderThickness = new Thickness(0), VerticalContentAlignment = VerticalAlignment.Center, Padding = new Thickness(0) };
+    readonly TextBlock hint = new() { Text = "Search programs and files", IsHitTestVisible = false, VerticalAlignment = VerticalAlignment.Center };
+    readonly TextBlock lens = new() { FontFamily = new FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"), FontSize = 12, VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Center };
+    readonly Border lensHost = new() { Width = 24, Background = Brushes.Transparent, HorizontalAlignment = HorizontalAlignment.Left };
+    readonly SearchFrame searchFrame = new();
+    readonly Grid searchHost = new();
     readonly TextBlock notice = new() { TextWrapping = TextWrapping.Wrap, Margin = new Thickness(8, 4, 8, 0), Visibility = Visibility.Collapsed };
     readonly StackPanel home = new(), results = new(), inPlace = new(), places = new(), jump = new();
     readonly ScrollViewer left = new() { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled, Focusable = false };
     readonly ScrollViewer right = new() { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled, Focusable = false };
-    readonly Button allPrograms;
-    readonly TextBlock allProgramsText = new();
-    // StartAllBack's user picture hangs over the menu's top edge, centred on the right column
-    readonly Border picture = new() { Width = 64, Height = 64, CornerRadius = new CornerRadius(8), HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top, ClipToBounds = true };
-    readonly Border frame = new() { CornerRadius = new CornerRadius(8), BorderThickness = new Thickness(1) };
+    readonly DockPanel leftArea = new();
+    readonly Grid panel = new() { ClipToBounds = true };
+    readonly StackPanel power = new() { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Top, HorizontalAlignment = HorizontalAlignment.Left };
+    SkinButton allPrograms, powerButton, powerMenu;
+    readonly TextBlock allProgramsText = new() { VerticalAlignment = VerticalAlignment.Center };
+    readonly ContentControl allProgramsArrow = new() { VerticalAlignment = VerticalAlignment.Center, Focusable = false, IsTabStop = false };
+    readonly TextBlock allProgramsLens = new() { Text = "", FontFamily = new FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"), FontSize = 12, Margin = new Thickness(0, 0, 6, 0), VerticalAlignment = VerticalAlignment.Center, Visibility = Visibility.Collapsed };
+    readonly StartMenuPicture picture = new();
     readonly DispatcherTimer hover = new() { Interval = TimeSpan.FromMilliseconds(Math.Max(1, SystemParameters.MenuShowDelay)) };
-    const double MenuWidth = 440, MenuHeight = 535, LeftWidth = 262, Overhang = 36, PlaceRow = 35;
+    const double PlaceRow = 35;
+    StartMenuSkin skin;
     IntPtr handle, previous;
     StartMenuHost.Trigger openedBy;
     StartMenuOptions options = StartMenuOptions.Read();
@@ -45,9 +54,9 @@ internal sealed class StartMenuWindow : Window
     Entry jumpOwner, hovered;
     Button jumpRow;
     readonly List<FileSystemWatcher> watchers = [];
-    readonly TextBlock powerText = new();
-    Button powerButton;
+    readonly TextBlock powerText = new() { VerticalAlignment = VerticalAlignment.Center };
     StartMenuSettingsWatcher settingsWatcher;
+    BitmapSource userPicture;
     internal bool IsOpen => IsVisible;
 #if DEBUG
     internal StartMenuHost.Trigger OpenedByForVerification => openedBy;
@@ -55,75 +64,63 @@ internal sealed class StartMenuWindow : Window
 
     internal StartMenuWindow()
     {
-        Title = "Start"; WindowStyle = WindowStyle.None; AllowsTransparency = true; Background = Brushes.Transparent;
+        Title = "Start"; WindowStyle = WindowStyle.None; AllowsTransparency = false; Background = Brushes.Transparent;
         ResizeMode = ResizeMode.NoResize; ShowInTaskbar = false; Topmost = true; ShowActivated = true;
-        Width = MenuWidth; Height = MenuHeight; Opacity = 0;
+        FontFamily = new FontFamily("Segoe UI"); FontSize = 12;
         AutomationProperties.SetName(this, "Pathweft Start menu");
+        skin = StartMenuSkin.For(options);
 
-        var leftColumn = new DockPanel { Margin = new Thickness(8, 8, 4, 8), Width = LeftWidth };
-        var searchHost = new Grid();
-        search.Padding = new Thickness(30, 5, 8, 5); hint.Margin = new Thickness(33, 0, 0, 0);
-        var lens = new TextBlock { Text = "", FontFamily = new FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"), FontSize = 13, Margin = new Thickness(10, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center, IsHitTestVisible = false };
-        lens.SetResourceReference(TextBlock.ForegroundProperty, "Muted");
-        searchHost.Children.Add(search); searchHost.Children.Add(lens); searchHost.Children.Add(hint);
-        hint.SetResourceReference(TextBlock.ForegroundProperty, "Muted");
-        notice.SetResourceReference(TextBlock.ForegroundProperty, "Muted");
-        search.SetResourceReference(Control.BackgroundProperty, "Palette.0AFFFFFF");
-        search.TextChanged += (_, _) => { hint.Visibility = search.Text.Length == 0 ? Visibility.Visible : Visibility.Collapsed; Search(); };
+        // the search box: the frame drawn behind a bare text box, the lens (a clear button while there is text) at its left
+        search.Template = BareTextBox();
+        search.TextChanged += (_, _) =>
+        {
+            bool empty = search.Text.Length == 0;
+            hint.Visibility = empty ? Visibility.Visible : Visibility.Collapsed;
+            lens.Text = empty ? "" : "";
+            lensHost.Cursor = empty ? null : Cursors.Arrow;
+            Search();
+        };
+        search.GotKeyboardFocus += (_, _) => { SelectFirst(); searchFrame.Show(searchHost.IsMouseOver, true); };
+        search.LostKeyboardFocus += (_, _) => { SelectFirst(); searchFrame.Show(searchHost.IsMouseOver, false); };
+        searchHost.MouseEnter += (_, _) => searchFrame.Show(true, search.IsKeyboardFocusWithin);
+        searchHost.MouseLeave += (_, _) => searchFrame.Show(false, search.IsKeyboardFocusWithin);
+        lens.Text = "";
+        lensHost.Child = lens;
+        lensHost.MouseLeftButtonUp += (_, _) => { if (search.Text.Length > 0) { search.Text = ""; search.Focus(); } };
         AutomationProperties.SetName(search, "Search programs and files");
-        DockPanel.SetDock(searchHost, Dock.Bottom); leftColumn.Children.Add(searchHost);
-        DockPanel.SetDock(notice, Dock.Bottom); leftColumn.Children.Add(notice);
-        allPrograms = new Button { HorizontalContentAlignment = HorizontalAlignment.Stretch, Margin = new Thickness(0, 6, 0, 6) };
-        allPrograms.SetResourceReference(StyleProperty, "Ghost");
+        searchHost.Children.Add(searchFrame); searchHost.Children.Add(search); searchHost.Children.Add(hint); searchHost.Children.Add(lensHost);
+        search.Margin = new Thickness(26, 0, 4, 0); hint.Margin = new Thickness(28, 0, 0, 0);
+
+        // All Programs, which during a search is "See more results"
+        allPrograms = new SkinButton(SkinButton.Area.AllPrograms, skin);
         var allContent = new DockPanel();
-        var arrow = new TextBlock { Text = "", FontFamily = new FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"), FontSize = 10, VerticalAlignment = VerticalAlignment.Center };
-        DockPanel.SetDock(arrow, Dock.Right); allContent.Children.Add(arrow);
+        DockPanel.SetDock(allProgramsArrow, Dock.Right); allContent.Children.Add(allProgramsArrow);
+        allContent.Children.Add(allProgramsLens);
         allContent.Children.Add(allProgramsText);
         allPrograms.Content = allContent;
         allPrograms.Click += (_, _) => AllProgramsClicked();
-        allPrograms.MouseEnter += (_, _) => WhenMoved(allPrograms, () => { if (options.Flyout && options.AutoCascade) Hover(null, () => OpenFlyout()); });
-        DockPanel.SetDock(allPrograms, Dock.Bottom); leftColumn.Children.Add(allPrograms);
-        var programsCard = new Border { CornerRadius = new CornerRadius(6), Padding = new Thickness(4), Child = left };
-        programsCard.SetResourceReference(Border.BackgroundProperty, "CardBackground");
-        programsCard.SetResourceReference(Border.BorderBrushProperty, "CardBorder"); programsCard.BorderThickness = new Thickness(1);
-        leftColumn.Children.Add(programsCard);
+        allPrograms.MouseEnter += (_, _) => WhenMoved(allPrograms, () => { if (options.Flyout && options.AutoCascade && !Searching) Hover(null, () => OpenFlyout()); });
+
+        // the left column: the programs (or All Programs in place, or the search results) and a notice under them
+        DockPanel.SetDock(notice, Dock.Bottom); leftArea.Children.Add(notice);
+        leftArea.Children.Add(left);
         left.Content = home;
 
-        var rightColumn = new DockPanel { Margin = new Thickness(4, 8, 8, 8) };
-        // StartAllBack's power button: its glyph and action, the options arrow right beside it
-        var power = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 6, 0, 0) };
-        var powerMenu = Small("", "Shut down options");
+        // StartAllBack's power button: its action, the options arrow right beside it
+        powerMenu = new SkinButton(SkinButton.Area.SplitArrow, skin) { Width = 22, Padding = new Thickness(0), HorizontalContentAlignment = HorizontalAlignment.Center };
+        AutomationProperties.SetName(powerMenu, "Shut down options");
         powerMenu.Click += (_, _) => PowerMenu(powerMenu);
-        // the power button does StartAllBack's "Power button default action"
         var powerContent = new StackPanel { Orientation = Orientation.Horizontal };
-        powerContent.Children.Add(new TextBlock { Text = "", FontFamily = new FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"), FontSize = 16, Margin = new Thickness(0, 0, 8, 0), VerticalAlignment = VerticalAlignment.Center });
-        powerText.VerticalAlignment = VerticalAlignment.Center;
+        powerContent.Children.Add(new TextBlock { Text = "", FontFamily = new FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"), FontSize = 14, Margin = new Thickness(0, 0, 6, 0), VerticalAlignment = VerticalAlignment.Center });
         powerContent.Children.Add(powerText);
-        powerButton = new Button { Content = powerContent, Padding = new Thickness(8, 5, 8, 5) };
-        powerButton.SetResourceReference(StyleProperty, "Ghost");
+        powerButton = new SkinButton(SkinButton.Area.SignOut, skin) { Content = powerContent, HorizontalContentAlignment = HorizontalAlignment.Left };
         powerButton.Click += (_, _) => { Dismiss(false); StartMenuPower.Button(options.PowerAction).Run(); };
         power.Children.Add(powerButton); power.Children.Add(powerMenu);
-        DockPanel.SetDock(power, Dock.Bottom); rightColumn.Children.Add(power);
-        picture.SetResourceReference(Border.BackgroundProperty, "CardBackground");
-        picture.MouseLeftButtonUp += (_, _) => Launch(new Entry("Your info", EntryKind.Shell, "ms-settings:yourinfo"));
-        AutomationProperties.SetName(picture, "User picture");
         right.Content = places;
-        rightColumn.Children.Add(right);
 
-        var columns = new Grid();
-        columns.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        columns.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        Grid.SetColumn(rightColumn, 1); columns.Children.Add(leftColumn); columns.Children.Add(rightColumn);
-        // an opaque base under Pathweft's tint: the window is layered, so nothing blurs the desktop behind it (S6d brings StartAllBack's glass)
-        var tinted = new Border { CornerRadius = new CornerRadius(8), Background = MainWindow.Tint(), Child = columns };
-        frame.Child = tinted;
-        frame.Background = new SolidColorBrush(Appearance.Light ? Color.FromArgb(0xF7, 0xF3, 0xF3, 0xF3) : Color.FromArgb(0xF7, 0x20, 0x20, 0x20));
-        frame.SetResourceReference(Border.BorderBrushProperty, "AccentEdge");
-        // the right column's centre: past the programs column (its margins 8 and 4) and the right column's own margins
-        picture.Margin = new Thickness((LeftWidth + 12 + MenuWidth - 8) / 2 - picture.Width / 2, 0, 0, 0);
-        var whole = new Grid();
-        whole.Children.Add(frame); whole.Children.Add(picture);
-        Content = whole;
+        picture.Clicked += () => Launch(new Entry("Your info", EntryKind.Shell, "ms-settings:yourinfo"));
+        Content = panel;
+        Restyle();
 
         hover.Tick += (_, _) => { hover.Stop(); if (!Resting()) hoverAction?.Invoke(); };
         Deactivated += (_, _) => Dismiss(false);
@@ -135,7 +132,123 @@ internal sealed class StartMenuWindow : Window
             search.Focus(); search.Text += e.Text; search.CaretIndex = search.Text.Length; e.Handled = true;
         };
         Closing += (_, e) => { if (!StartMenuHost.Stopping) { e.Cancel = true; Dismiss(false); } };
-        Closed += (_, _) => { foreach (var w in watchers) w.Dispose(); settingsWatcher?.Dispose(); };
+        Closed += (_, _) => { foreach (var w in watchers) w.Dispose(); settingsWatcher?.Dispose(); picture.Close(); };
+    }
+
+    static ControlTemplate BareTextBox()
+    {
+        var t = new ControlTemplate(typeof(TextBox));
+        var host = new FrameworkElementFactory(typeof(ScrollViewer), "PART_ContentHost");
+        host.SetValue(ScrollViewer.HorizontalScrollBarVisibilityProperty, ScrollBarVisibility.Hidden);
+        host.SetValue(ScrollViewer.VerticalScrollBarVisibilityProperty, ScrollBarVisibility.Hidden);
+        host.SetValue(VerticalAlignmentProperty, VerticalAlignment.Center);
+        host.SetValue(FocusableProperty, false);
+        t.VisualTree = host;
+        t.Seal();
+        return t;
+    }
+
+    bool Searching => left.Content == results;
+    readonly List<UIElement> homeParts = [], searchParts = [];
+
+    /// The panel as the current style lays it out: the left column, All Programs and the bottom band down the left;
+    /// the right column beside them; under them Default's bands and separators, or the theme's parts. Rows already made
+    /// are made again by Refresh, which follows.
+    void Restyle()
+    {
+        var s = skin;
+        Width = s.Width;
+        panel.Children.Clear(); panel.RowDefinitions.Clear(); panel.ColumnDefinitions.Clear();
+        panel.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+        panel.RowDefinitions.Add(new RowDefinition { Height = new GridLength(s.AllProgramsHeight) });
+        panel.RowDefinitions.Add(new RowDefinition { Height = new GridLength(s.BottomVisible) });
+        panel.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(s.LeftWidth) });
+        panel.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        void Put(UIElement e, int row, int col, int rows = 1, int cols = 1) { Grid.SetRow(e, row); Grid.SetColumn(e, col); Grid.SetRowSpan(e, rows); Grid.SetColumnSpan(e, cols); panel.Children.Add(e); }
+        homeParts.Clear(); searchParts.Clear();
+        if (s.Themed)
+        {
+            ThemePart P(int id) => new(s.Part(id));
+            void Home(UIElement e, int row, int col, int rows = 1) { Put(e, row, col, rows); homeParts.Add(e); }
+            void Find(UIElement e, int row, int col, int cols = 1) { Put(e, row, col, cols: cols); searchParts.Add(e); }
+            Home(P(StartMenuSkin.ProgramsBack), 0, 0);
+            var line = P(StartMenuSkin.ProgramsSeparator);
+            line.Height = 1; line.Width = 232; line.HorizontalAlignment = HorizontalAlignment.Left; line.VerticalAlignment = VerticalAlignment.Bottom; line.Margin = new Thickness(18, 0, 0, 2);
+            Home(line, 0, 0);
+            Home(P(StartMenuSkin.AllProgramsBand), 1, 0);
+            Home(P(StartMenuSkin.PlacesBack), 0, 1, rows: 2);
+            Find(P(StartMenuSkin.SearchBack), 0, 0, cols: 2);
+            Find(P(StartMenuSkin.SearchBand), 1, 0, cols: 2);
+            // the bottom parts at their full height, the taskbar's part of them cut off
+            foreach (var (id, col, home) in new[] { (StartMenuSkin.ProgramsBottom, 0, true), (StartMenuSkin.PlacesBottom, 1, true),
+                (StartMenuSkin.SearchBottom, 0, false), (StartMenuSkin.SearchBottomRight, 1, false) })
+            {
+                var part = P(id); part.Height = s.BottomHeight; part.VerticalAlignment = VerticalAlignment.Top;
+                if (home) Home(part, 2, col); else Find(part, 2, col);
+            }
+            var arrow = P(StartMenuSkin.AllProgramsArrow); arrow.Width = 12; arrow.Height = 12;
+            allProgramsArrow.Content = arrow;
+            allPrograms.Margin = new Thickness(11, 3, 4, 4); allPrograms.Padding = new Thickness(26, 0, 0, 0);
+        }
+        else
+        {
+            var band = new Border { Background = s.BottomBand };
+            Put(band, 2, 0, cols: 2);
+            Put(new Border { Background = s.Separator, Height = 1, VerticalAlignment = VerticalAlignment.Top }, 2, 0, cols: 2);
+            Put(new Border { Background = s.Separator, Height = 1, VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(8, 0, 8, 0) }, 1, 0);
+            allProgramsArrow.Content = new TextBlock { Text = "", FontFamily = new FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"), FontSize = 10 };
+            allPrograms.Margin = new Thickness(8, 2, 8, 1); allPrograms.Padding = new Thickness(29, 0, 14, 0);
+        }
+        allPrograms.Skin = s; allPrograms.Foreground = s.AllProgramsText;
+        allProgramsLens.Foreground = s.AllProgramsText;
+        Put(leftArea, 0, 0); Put(allPrograms, 1, 0);
+        leftArea.Margin = new Thickness(8, 8, 8, 4);
+        right.Margin = new Thickness(s.Themed ? 4 : 1, s.PlacesTop, 8, 4);
+        Put(right, 0, 1, rows: 2);
+        var r = s.SearchRect;
+        searchHost.Width = r.Width; searchHost.Height = r.Height; searchHost.HorizontalAlignment = HorizontalAlignment.Left; searchHost.VerticalAlignment = VerticalAlignment.Top;
+        searchHost.Margin = new Thickness(r.X, r.Y, 0, 0);
+        searchFrame.Skin = s;
+        search.Foreground = s.SearchText; search.CaretBrush = s.SearchText; hint.Foreground = s.SearchHint; lens.Foreground = s.SearchHint;
+        Put(searchHost, 2, 0);
+        var o = s.SignOutRect;
+        power.Margin = new Thickness(o.X, o.Y, 0, 0);
+        powerButton.Height = powerMenu.Height = o.Height; powerButton.MinWidth = o.Width;
+        powerButton.Skin = powerMenu.Skin = s;
+        powerButton.Foreground = powerMenu.Foreground = s.SignOutText;
+        powerMenu.Content = s.Themed && s.Part(StartMenuSkin.SplitButton) != null
+            ? new TextBlock { Text = "", FontFamily = new FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"), FontSize = 8 }
+            : new TextBlock { Text = "", FontFamily = new FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"), FontSize = 10 };
+        Put(power, 2, 1);
+        notice.Foreground = s.Muted;
+        picture.Restyle(s);
+        if (handle != IntPtr.Zero) s.ApplyGlass(handle);
+        ShowMode();
+    }
+
+    /// Searching, the results take both columns (the right column hides) and All Programs becomes "See more results",
+    /// as in StartAllBack; otherwise the left column holds the programs or All Programs in place.
+    void ShowMode()
+    {
+        bool searching = Searching;
+        foreach (var e in homeParts) e.Visibility = searching ? Visibility.Hidden : Visibility.Visible;
+        foreach (var e in searchParts) e.Visibility = searching ? Visibility.Visible : Visibility.Hidden;
+        Grid.SetColumnSpan(leftArea, searching ? 2 : 1);
+        Grid.SetColumnSpan(allPrograms, searching ? 2 : 1);
+        right.Visibility = searching ? Visibility.Collapsed : Visibility.Visible;
+        leftArea.Margin = searching ? new Thickness(11, 8, 10, 4) : new Thickness(8, 8, 8, 4);
+        allProgramsLens.Visibility = searching ? Visibility.Visible : Visibility.Collapsed;
+        allProgramsArrow.Visibility = searching ? Visibility.Collapsed : Visibility.Visible;
+        allProgramsText.Text = searching ? "See more results" : left.Content == inPlace ? "Back" : "All Programs";
+        AutomationProperties.SetName(allPrograms, allProgramsText.Text);
+        SelectFirst();
+    }
+
+    /// The search result Enter opens shows highlighted while the search box has the keyboard.
+    void SelectFirst()
+    {
+        var first = Searching && search.IsKeyboardFocusWithin ? FirstRow(results) : null;
+        foreach (var row in Rows(results)) if (row is SkinButton b) b.Selected = b == first;
     }
 
     Action hoverAction;
@@ -169,14 +282,14 @@ internal sealed class StartMenuWindow : Window
 
     // ---- rows ----
 
-    Button Row(Entry e, int iconSize, bool hasJump = false, bool submenu = false, Action click = null, bool glyph = false)
+    Button Row(Entry e, int iconSize, bool hasJump = false, bool submenu = false, Action click = null, bool glyph = false, SkinButton.Area area = SkinButton.Area.LeftItem)
     {
-        var row = new Button { HorizontalContentAlignment = HorizontalAlignment.Stretch, Tag = e, ToolTip = e.Tip };
-        row.SetResourceReference(StyleProperty, "Ghost");
+        var row = new SkinButton(area, skin) { Tag = e, ToolTip = e.Tip, Padding = new Thickness(6, 0, 0, 0) };
+        row.Foreground = area == SkinButton.Area.RightItem ? skin.RightText : skin.LeftText;
         var content = new DockPanel();
         if (hasJump || submenu)
         {
-            var arrow = new Border { Background = Brushes.Transparent, Width = 22, Child = new TextBlock { Text = "", FontFamily = new FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"), FontSize = 9, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center } };
+            var arrow = new Border { Background = Brushes.Transparent, Width = 22, Child = Arrow(area) };
             arrow.MouseEnter += (_, _) => WhenMoved(arrow, () => { hover.Stop(); if (hasJump) ShowJump(e, row, false); else OpenSubmenu(e, row); });
             DockPanel.SetDock(arrow, Dock.Right); content.Children.Add(arrow);
         }
@@ -187,6 +300,12 @@ internal sealed class StartMenuWindow : Window
         var text = new TextBlock { Text = e.Name, TextTrimming = TextTrimming.CharacterEllipsis, VerticalAlignment = VerticalAlignment.Center };
         if (e.New) { text.FontWeight = FontWeights.SemiBold; row.SetResourceReference(BackgroundProperty, "AccentSoft"); }
         content.Children.Add(text);
+        // a right-column item shows its large icon in the user picture's place while it is hot
+        if (area == SkinButton.Area.RightItem)
+        {
+            row.MouseEnter += (_, _) => ShowItemIcon(e, row);
+            row.MouseLeave += (_, _) => { if (pictureFor == row) { pictureFor = null; picture.ShowIcon(null); } };
+        }
         row.Content = content;
         if (iconSize >= 24) row.MinHeight = iconSize + 8;
         AutomationProperties.SetName(row, e.Name);
@@ -212,22 +331,41 @@ internal sealed class StartMenuWindow : Window
         catch (Exception ex) when (ex is COMException or IOException or UnauthorizedAccessException or ArgumentException) { }
     }
 
-    Button Small(string glyph, string name)
+    Button pictureFor;
+    async void ShowItemIcon(Entry e, Button row)
     {
-        var b = new Button { Content = new TextBlock { Text = glyph, FontFamily = new FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"), FontSize = 10 }, Padding = new Thickness(6, 5, 6, 5) };
-        b.SetResourceReference(StyleProperty, "Ghost");
-        AutomationProperties.SetName(b, name);
-        return b;
+        pictureFor = row;
+        if (!options.UserPicture || e.Kind == EntryKind.Command) return;
+        int pixels = (int)Math.Round(48 * VisualTreeHelper.GetDpi(this).DpiScaleX);
+        ImageSource icon = null;
+        try { icon = await StartMenuShell.Icon(e, pixels); }
+        catch (Exception ex) when (ex is COMException or IOException or UnauthorizedAccessException or ArgumentException) { }
+        if (pictureFor == row && row.IsMouseOver) picture.ShowIcon(icon);
     }
 
-    static FrameworkElement Line() { var b = new Border { Height = 1, Margin = new Thickness(8, 5, 8, 5) }; b.SetResourceReference(Border.BackgroundProperty, "Palette.1FFFFFFF"); return b; }
-
-    TextBlock Header(string text)
+    /// A submenu's or jump list's arrow: the theme's arrow glyph (Plain8's images), the small solid triangle StartAllBack
+    /// draws for a theme without one (Windows 7), or Default's chevron.
+    UIElement Arrow(SkinButton.Area area)
     {
-        var t = new TextBlock { Text = text, FontWeight = FontWeights.SemiBold, Margin = new Thickness(8, 8, 8, 3) };
-        t.SetResourceReference(TextBlock.ForegroundProperty, "Accent");
-        return t;
+        if (skin.Themed && skin.Part(StartMenuSkin.PlaceArrow) is { DpiImages.Length: > 0 } part)
+            return new ThemePart(part) { Width = 12, Height = 12, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+        var ink = area == SkinButton.Area.RightItem ? skin.RightText : skin.LeftText;
+        if (skin.Themed)
+            return new System.Windows.Shapes.Polygon { Points = [new Point(0, 0), new Point(4, 4), new Point(0, 8)], Fill = ink, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+        return new TextBlock { Text = "", FontFamily = new FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"), FontSize = 9, Foreground = ink, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
     }
+
+    /// A separator: the theme's separator part, or Default's faint grey line.
+    FrameworkElement Line()
+    {
+        if (skin.Themed && skin.Part(StartMenuSkin.ProgramsSeparator) is { } part)
+            return new ThemePart(part) { Height = 1, Margin = new Thickness(8, 5, 8, 5) };
+        return new Border { Height = 1, Margin = new Thickness(8, 5, 8, 5), Background = skin.Separator };
+    }
+
+    /// A group's heading in the search results (StartAllBack's larger "Programs", "Settings"), or a jump list's.
+    TextBlock Header(string text, bool rightColumn = false) =>
+        new() { Text = text, FontSize = rightColumn ? 12 : 15, FontWeight = rightColumn ? FontWeights.SemiBold : FontWeights.Normal, Margin = new Thickness(rightColumn ? 8 : 0, 6, 8, 4), Foreground = rightColumn ? skin.RightText : skin.LeftText };
 
     /// Windows 7's item menu, in Pathweft's style: Open, Run as administrator, Open file location (in Pathweft), Pin to
     /// or Unpin from Start menu, Remove from this list for a recent program, and Properties.
@@ -278,6 +416,12 @@ internal sealed class StartMenuWindow : Window
         handle = new WindowInteropHelper(this).EnsureHandle();
         int ex = GetWindowLong(handle, -20);
         SetWindowLong(handle, -20, (ex | 0x80) & ~0x40000); // tool window, not app window: no taskbar button, no Alt+Tab
+        // the window's own surface clear, so the glass under it shows through wherever the panel draws nothing
+        HwndSource.FromHwnd(handle).CompositionTarget.BackgroundColor = Colors.Transparent;
+        var all = new MARGINS { Left = -1, Right = -1, Top = -1, Bottom = -1 };
+        DwmExtendFrameIntoClientArea(handle, ref all);
+        skin.ApplyGlass(handle);
+        new WindowInteropHelper(picture) { Owner = handle }.EnsureHandle();
         // a new taskbar (Explorer restarted) has new orb windows: look them up again
         uint created = RegisterWindowMessage("TaskbarCreated");
         HwndSource.FromHwnd(handle).AddHook((IntPtr h, int message, IntPtr w, IntPtr l, ref bool handled) =>
@@ -299,7 +443,7 @@ internal sealed class StartMenuWindow : Window
             var was = options;
             options = StartMenuOptions.Read();
             if (was.Flyout != options.Flyout || was.AppsFolder != options.AppsFolder || was.SortOrder != options.SortOrder || was.NotifyNewApps != options.NotifyNewApps) Forget();
-            if (IsVisible) _ = Refresh();
+            if (IsVisible) { _ = Refresh(); PlacePicture(); }
         });
         _ = Refresh();
     }
@@ -312,6 +456,13 @@ internal sealed class StartMenuWindow : Window
         try
         {
             options = StartMenuOptions.Read();
+            // a new visual style, translucency or dark mode: the panel laid out and drawn again before its rows are made
+            if (options.AlterStyle != skin.Options.AlterStyle || options.Alpha != skin.Options.Alpha || options.Blur != skin.Options.Blur || options.Dark != skin.Options.Dark || options.AppsDark != skin.Options.AppsDark
+                || StartMenuTheme.Load(StartMenuTheme.Resolve(options.AlterStyle)) != skin.Theme)
+            {
+                skin = StartMenuSkin.For(options);
+                Restyle();
+            }
             if (programs == null || DateTime.UtcNow - programsRead > TimeSpan.FromMinutes(5)) Forget(); // packaged apps have no folder to watch
             var o = options;
             var (p, r, c, jumps, user) = await ShellWorker.Run(() =>
@@ -340,8 +491,6 @@ internal sealed class StartMenuWindow : Window
         foreach (var e in pinned) home.Children.Add(Row(e, options.ProgramIcon, withJumpList.Contains(e)));
         if (pinned.Count > 0 && recent.Count > 0) home.Children.Add(Line());
         foreach (var e in recent) home.Children.Add(Row(e, options.ProgramIcon, withJumpList.Contains(e)));
-        allProgramsText.Text = "All Programs";
-        allProgramsText.FontWeight = FontWeights.Normal;
     }
 
     void BuildPlaces(string user)
@@ -350,27 +499,25 @@ internal sealed class StartMenuWindow : Window
         foreach (var e in column)
         {
             if (ReferenceEquals(e, StartMenuItems.Separator)) { places.Children.Add(Line()); continue; }
-            var row = Row(e, 16, submenu: e.Children != null, glyph: options.RightPaneGlyphs);
-            row.MinHeight = PlaceRow;
+            var row = Row(e, 16, submenu: e.Children != null, glyph: options.RightPaneGlyphs, area: SkinButton.Area.RightItem);
+            // StartAllBack's rows: a 32-pixel highlight every 35
+            row.Height = PlaceRow - 3; row.Margin = new Thickness(0, 3, 0, 0);
             if (e.Tip == "Personal folder") ((TextBlock)((DockPanel)row.Content).Children[^1]).FontWeight = FontWeights.SemiBold;
             places.Children.Add(row);
         }
         var action = StartMenuPower.Button(options.PowerAction).Name;
         powerText.Text = action;
         AutomationProperties.SetName(powerButton, action);
-        picture.Visibility = options.UserPicture ? Visibility.Visible : Visibility.Collapsed;
-        // the picture's lower part reaches into the menu; the right column starts below it
-        frame.Margin = new Thickness(0, options.UserPicture ? Overhang : 0, 0, 0);
-        places.Margin = new Thickness(0, options.UserPicture ? picture.Height - Overhang + 14 : 0, 0, 0);
-        picture.Child = null;
+        userPicture = null;
         if (user != null && options.UserPicture)
             try
             {
                 var image = new BitmapImage();
                 image.BeginInit(); image.UriSource = new Uri(user); image.DecodePixelWidth = 128; image.CacheOption = BitmapCacheOption.OnLoad; image.EndInit();
-                picture.Child = new Image { Source = image, Stretch = Stretch.UniformToFill };
+                userPicture = image;
             }
             catch (Exception ex) when (ex is IOException or NotSupportedException or UriFormatException or ArgumentException) { }
+        picture.Picture = userPicture;
     }
 
     // ---- All Programs ----
@@ -384,7 +531,9 @@ internal sealed class StartMenuWindow : Window
     void AllProgramsClicked()
     {
         hover.Stop();
-        if (left.Content == inPlace || left.Content == results && search.Text.Length > 0) { search.Text = ""; ShowHome(); return; }
+        // "See more results": the search goes on in Pathweft's own search
+        if (Searching && search.Text.Trim().Length > 0) { var text = search.Text.Trim(); Dismiss(false); StartMenuShell.Route(MainWindow.SearchRequest + text); return; }
+        if (left.Content == inPlace) { ShowHome(); return; }
         if (options.Flyout) OpenFlyout(); else _ = ShowInPlace();
     }
 
@@ -409,7 +558,7 @@ internal sealed class StartMenuWindow : Window
         inPlace.Children.Clear();
         foreach (var e in list) inPlace.Children.Add(InPlaceRow(e, 0));
         left.Content = inPlace;
-        allProgramsText.Text = "Back";
+        ShowMode();
         left.ScrollToTop();
     }
 
@@ -442,7 +591,7 @@ internal sealed class StartMenuWindow : Window
     void ShowHome()
     {
         left.Content = home;
-        allProgramsText.Text = "All Programs";
+        ShowMode();
         HideJump();
     }
 
@@ -547,10 +696,10 @@ internal sealed class StartMenuWindow : Window
         jump.Children.Clear();
         foreach (var c in categories)
         {
-            jump.Children.Add(Header(c.Name));
-            foreach (var item in c.Items) jump.Children.Add(Row(item, 16));
+            jump.Children.Add(Header(c.Name, rightColumn: true));
+            foreach (var item in c.Items) jump.Children.Add(Row(item, 16, area: SkinButton.Area.RightItem));
         }
-        if (categories.Count == 0) jump.Children.Add(new TextBlock { Text = "Nothing here yet.", Margin = new Thickness(8) });
+        if (categories.Count == 0) jump.Children.Add(new TextBlock { Text = "Nothing here yet.", Margin = new Thickness(8), Foreground = skin.RightText });
         right.Content = jump;
         right.ScrollToTop();
         // from the keyboard (Right), into the list once it is there
@@ -578,24 +727,22 @@ internal sealed class StartMenuWindow : Window
         if (token.IsCancellationRequested) return;
         results.Children.Clear();
         left.Content = results;
-        allProgramsText.Text = "Back";
+        ShowMode();
         int shown = 0;
         var o = options;
         if (o.SearchPrograms)
             foreach (var g in new[] { StartMenuSearch.Programs(text), StartMenuSearch.Settings(text) })
                 if (g is { Total: > 0 }) shown += AddGroup(g);
-        var more = Row(new Entry("See more results", EntryKind.Command, null) { Invoke = () => { Dismiss(false); StartMenuShell.Route(MainWindow.SearchRequest + text.Trim()); } }, 0);
         // files not searched (Windows' "Don't search" for other files): programs and settings only
         if (o.SearchFiles == 0)
         {
-            if (shown == 0) results.Children.Add(new TextBlock { Text = "No items match your search.", Margin = new Thickness(8, 6, 8, 6) });
-            results.Children.Add(Line()); results.Children.Add(more);
+            if (shown == 0) results.Children.Add(new TextBlock { Text = "No items match your search.", Margin = new Thickness(8, 6, 8, 6), Foreground = skin.LeftText });
+            SelectFirst();
             return;
         }
-        var pending = new TextBlock { Text = "Searching files and folders…", Margin = new Thickness(8, 6, 8, 6) };
-        pending.SetResourceReference(TextBlock.ForegroundProperty, "Muted");
+        var pending = new TextBlock { Text = "Searching files and folders…", Margin = new Thickness(8, 6, 8, 6), Foreground = skin.Muted };
         results.Children.Add(pending);
-        results.Children.Add(Line()); results.Children.Add(more);
+        SelectFirst();
         List<StartMenuSearch.Group> files; string problem = null;
         try { files = await StartMenuSearch.FilesAsync(text, o.SearchFiles == 2, token); }
         catch (OperationCanceledException) { return; }
@@ -605,25 +752,39 @@ internal sealed class StartMenuWindow : Window
         results.Children.Remove(pending);
         if (files == null)
         {
-            var t = new TextBlock { Text = "Files and folders were not searched: " + (problem ?? "the Pathweft index is not answering."), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(8, 6, 8, 6) };
-            t.SetResourceReference(TextBlock.ForegroundProperty, "Muted");
+            var t = new TextBlock { Text = "Files and folders were not searched: " + (problem ?? "the Pathweft index is not answering."), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(8, 6, 8, 6), Foreground = skin.Muted };
             results.Children.Insert(at, t);
-            if (shown == 0) results.Children.Insert(at, new TextBlock { Text = "No programs or settings match your search.", Margin = new Thickness(8, 6, 8, 0) });
+            if (shown == 0) results.Children.Insert(at, new TextBlock { Text = "No programs or settings match your search.", Margin = new Thickness(8, 6, 8, 0), Foreground = skin.LeftText });
+            SelectFirst();
             return;
         }
         var groupPanel = new StackPanel();
         foreach (var g in files) shown += AddGroup(g, groupPanel);
         results.Children.Insert(at, groupPanel);
-        if (shown == 0) results.Children.Insert(at, new TextBlock { Text = "No items match your search.", Margin = new Thickness(8, 6, 8, 6) });
+        if (shown == 0) results.Children.Insert(at, new TextBlock { Text = "No items match your search.", Margin = new Thickness(8, 6, 8, 6), Foreground = skin.LeftText });
+        SelectFirst();
     }
 
     int AddGroup(StartMenuSearch.Group g, Panel to = null)
     {
         to ??= results;
-        to.Children.Add(Header($"{g.Name} ({g.Total:N0})"));
+        // StartAllBack heads each group with its name alone, in larger type
+        to.Children.Add(Header(g.Name));
         int n = 0;
-        foreach (var e in g.Items.Take(StartMenuSearch.PerGroup)) { to.Children.Add(Row(e, options.SearchIcon)); n++; }
-        if (g.Notice != null) { var t = new TextBlock { Text = g.Notice, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(8, 0, 8, 4), FontSize = 11 }; t.SetResourceReference(TextBlock.ForegroundProperty, "Muted"); to.Children.Add(t); }
+        foreach (var e in g.Items.Take(StartMenuSearch.PerGroup))
+        {
+            var row = Row(e, options.SearchIcon, area: SkinButton.Area.Result);
+            // StartAllBack's result rows: a 24-pixel highlight (more for large icons), indented under the heading
+            row.Height = Math.Max(24, options.SearchIcon + 8); row.Margin = new Thickness(9, 2, 0, 2); row.Padding = new Thickness(4, 0, 0, 0);
+            // the result under the pointer has its name underlined
+            if (row.Content is DockPanel dock && dock.Children.OfType<TextBlock>().LastOrDefault() is { } name)
+            {
+                row.MouseEnter += (_, _) => name.TextDecorations = TextDecorations.Underline;
+                row.MouseLeave += (_, _) => name.TextDecorations = null;
+            }
+            to.Children.Add(row); n++;
+        }
+        if (g.Notice != null) to.Children.Add(new TextBlock { Text = g.Notice, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(9, 0, 8, 4), FontSize = 11, Foreground = skin.Muted });
         return n;
     }
 
@@ -702,9 +863,9 @@ internal sealed class StartMenuWindow : Window
         search.Text = "";
         Notice(null); ShowHome();
         Place(orb);
-        Opacity = 1;
         Rest(); // before Show: showing reports the row under the pointer as entered
         Show();
+        PlacePicture();
         BringToFront(handle);
         search.Focus();
         Keyboard.Focus(search);
@@ -720,7 +881,7 @@ internal sealed class StartMenuWindow : Window
         hover.Stop();
         searching?.Cancel();
         foreach (var m in new[] { flyout, submenu }) if (m != null) m.IsOpen = false;
-        Opacity = 0; Hide();
+        Hide(); picture.Hide();
         HideJump();
         if (restore && previous != IntPtr.Zero && IsWindow(previous)) SetForegroundWindow(previous);
         previous = IntPtr.Zero;
@@ -742,23 +903,38 @@ internal sealed class StartMenuWindow : Window
         {
             var bar = orb.Taskbar; var b = orb.Rect;
             bool vertical = bar.Bottom - bar.Top > bar.Right - bar.Left;
-            if (!vertical && bar.Top > area.Top) { x = b.Left; y = bar.Top - h; }            // bottom
-            else if (!vertical) { x = b.Left; y = bar.Bottom; }                              // top
-            else if (bar.Left > area.Left) { x = bar.Left - w; y = b.Top; }                  // right
-            else { x = bar.Right; y = b.Top; }                                               // left
+            // StartAllBack's Default floats a little in from the screen's edge along the taskbar
+            int gap = (int)Math.Round(skin.EdgeGap * VisualTreeHelper.GetDpi(this).DpiScaleX);
+            if (!vertical && bar.Top > area.Top) { x = b.Left + gap; y = bar.Top - h; }      // bottom
+            else if (!vertical) { x = b.Left + gap; y = bar.Bottom; }                        // top
+            else if (bar.Left > area.Left) { x = bar.Left - w; y = b.Top + gap; }            // right
+            else { x = bar.Right; y = b.Top + gap; }                                         // left
         }
         x = Math.Max(area.Left, Math.Min(x, area.Right - w));
         y = Math.Max(area.Top, Math.Min(y, area.Bottom - h));
         SetWindowPos(handle, (IntPtr)(-1), x, y, w, h, 0x0010); // topmost, no activate
     }
 
+    /// The user picture above the panel, centred on the right column and rising above the panel's top edge by the
+    /// style's amount; shown with the menu, over it.
+    void PlacePicture()
+    {
+        if (!IsVisible || !options.UserPicture || handle == IntPtr.Zero) { picture.Hide(); return; }
+        GetWindowRect(handle, out var menu);
+        double scale = VisualTreeHelper.GetDpi(this).DpiScaleX;
+        int size = (int)Math.Round(skin.PictureFrame * scale);
+        int x = menu.Left + (int)Math.Round((skin.PictureCentre - skin.PictureFrame / 2) * scale), y = menu.Top - (int)Math.Round(skin.PictureRise * scale);
+        if (!picture.IsVisible) picture.Show();
+        var h = new WindowInteropHelper(picture).Handle;
+        SetWindowPos(h, (IntPtr)(-1), x, y, size, size, 0x0010); // topmost, no activate
+    }
+
     /// As tall as the pinned and recent programs need, never less than Windows 7's menu.
     void Fit()
     {
-        Width = MenuWidth;
-        var whole = (FrameworkElement)Content;
-        whole.Measure(new Size(MenuWidth, double.PositiveInfinity));
-        Height = Math.Max(MenuHeight + frame.Margin.Top, whole.DesiredSize.Height);
+        Width = skin.Width;
+        panel.Measure(new Size(skin.Width, double.PositiveInfinity));
+        Height = Math.Max(skin.MinHeight, panel.DesiredSize.Height);
     }
 
 #if DEBUG
@@ -807,6 +983,8 @@ internal sealed class StartMenuWindow : Window
     }
 
     [StructLayout(LayoutKind.Sequential)] struct POINT { public int X, Y; }
+    [StructLayout(LayoutKind.Sequential)] struct MARGINS { public int Left, Right, Top, Bottom; }
+    [DllImport("dwmapi.dll")] static extern int DwmExtendFrameIntoClientArea(IntPtr h, ref MARGINS margins);
     [StructLayout(LayoutKind.Sequential)] struct MONITORINFO { public int Size; public StartMenuHost.RECT Monitor, Work; public uint Flags; }
     [DllImport("user32.dll", CharSet = CharSet.Unicode)] static extern uint RegisterWindowMessage(string name);
     [DllImport("user32.dll")] static extern IntPtr MonitorFromPoint(POINT p, uint flags);
